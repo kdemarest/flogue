@@ -1,0 +1,335 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/minireset.css/0.0.2/minireset.css">
+
+<style>
+#map {
+	display: block;
+	white-space: pre;
+	font-family: "Courier New", Courier, sans-serif;
+	font-size: 14px;
+	line-height: 14px;
+	margin: 0 0;
+}
+#messageBox {
+	display: block;
+	white-space: pre;
+	font-family: "Ariel", serif;
+	font-size: 12px;
+	line-height: 12px;
+	height: 36px;
+	width: 100%;
+	margin: 0 0;
+	overflow-y: scroll;
+	overflow-x: auto;
+	margin-bottom: 10px;
+}
+</style>
+
+<script>
+
+// STATIC UTILITY FUNCTIONS
+
+(function(){
+	Math.clamp = function(value,min,max) {
+		return Math.max(min,Math.min(max,value));
+	}
+
+	Math.randInt = function(min, max) {
+		return Math.floor(Math.random() * (max - min)) + min;
+	}
+	Math.rand = function(min, max) {
+		return Math.random()*(max-min)+min;
+	}
+	Array.filterInPlace = function(a, condition, thisArg) {
+		let j = 0;
+
+		a.forEach((e, i) => { 
+			if (condition.call(thisArg, e, i, a)) {
+				if (i!==j) a[j] = e; 
+				j++;
+			}
+		});
+
+		a.length = j;
+	return a;
+	}
+})();
+
+// STATIC DATA
+
+const Command = { NONE: "none", UP:"goUp", RIGHT: "goRight", DOWN: "goDown", LEFT: "goLeft", WAIT: "wait", QUIT: "quit" };
+const Direction = [{x:0,y:-1,c:Command.UP},{x:1,y:0,c:Command.RIGHT},{x:0,y:1,c:Command.DOWN},{x:-1,y:0,c:Command.LEFT}];
+const DirectionCount = 4;
+const TileTypeList = {
+	"floor":     { symbol: ' ', mayWalk: true, name: "floor" },
+	"wall":      { symbol: '#', mayWalk: false, name: "wall" },
+	"shut door": { symbol: 'Ώ', mayWalk: false, name: "shut door" },
+	"stairs":    { symbol: '>', mayWalk: true, name: "staircase" },
+};
+const MonsterTypeList = {
+	"goblin": { symbol: 'g', healthMax: 10, damage: '1d4', brain: "monster", name: "goblin" },
+	"player": { symbol: '@', healthMax: 20, damage: '1d3+2', brain: "user", name: "player" }
+};
+
+const SymbolToType = (function() {
+	let lookup = {};
+	Object.entries(TileTypeList).forEach( ([id,tileType]) => { tileType.type = 'tile'; lookup[tileType.symbol] = tileType; } );
+	Object.entries(MonsterTypeList).forEach( ([id,monsterType]) =>  { monsterType.type = 'monster'; lookup[monsterType.symbol] = monsterType; } );
+	return lookup;
+})();
+
+// ENTITY (monsters, players etc)
+
+class Entity {
+	constructor(map,entityList,monsterType,position) {
+		Object.assign( this, monsterType, { x:position.x, y:position.y, map: map, entityList:entityList, health: monsterType.healthMax, command: Command.NONE } );
+	}
+
+	die() {
+		if( this.removed ) {
+			debugger;
+		}
+		tell(this.name+' dies!');
+	}
+
+	isDead() {
+		return this.removed || this.health <= 0;
+	}
+
+	enemyAtPos(x,y,exclude) {
+		return this.entityList.find( entity => entity.x==x && entity.y==y && entity!=exclude);
+	}
+
+	enemyAtDir(dir,exclude) {
+		let x = this.x + Direction[dir].x;
+		let y = this.y + Direction[dir].y;
+		return this.enemyAtPos(x,y,exclude);
+	}
+
+	think() {
+
+		if( this.brain == "monster" ) {
+			this.command = Command.WAIT;
+			for( let dir=0 ; dir<DirectionCount ; ++dir ) {
+				if( this.enemyAtDir(dir) ) {
+					this.command = Direction[dir].c;
+				}
+				else {
+					this.command = Direction[Math.randInt(0,DirectionCount)];
+				}
+			}
+		}
+
+		if( this.brain == "player" ) {
+			// Placeholder, since the onPlayerKey already sets the command for us
+		}
+	}
+
+	rollDamage(damageString) {
+		let parts = damageString.split( /[d\+]/ );
+		let numDice = parseInt(parts[0]);
+		let dieFaces = parseInt(parts[1]);
+		let plus = parseInt(parts[2]);
+		let damage = plus || 0;
+		while( numDice-- ) { damage += Math.randInt(1,dieFaces+1); }
+		return damage;
+	}
+
+	attack(other) {
+		let damage = this.rollDamage(this.damage);
+		tell(this.name+' hit '+other.name+' for '+damage+' damage!')
+		other.health -= damage;
+	}
+
+	setPosition(x,y) {
+		this.x = x;
+		this.y = y;
+	}
+
+	moveDir(dir) {
+		let xAdd = Direction[dir].x;
+		let yAdd = Direction[dir].y;
+		let x = this.x + xAdd;
+		let y = this.y + yAdd;
+		if( this.map.inBounds(x,y) ) {
+			let other = this.enemyAtPos(x,y,this);
+			if( other ) {
+				this.attack(other);
+				if( !other.isDead() ) {
+					return;
+				}
+			}
+			let symbol = this.map.tileGet(x,y);
+			let entityType = SymbolToType[symbol];
+			if( entityType.mayWalk ) {
+				this.setPosition(x,y);
+			}
+			else {
+				tell("You run into a "+entityType.name)
+			}
+		}
+	}
+
+	act() {
+		switch( this.command ) {
+			case Command.UP: {
+				this.moveDir(0);
+				break;
+			}
+			case Command.RIGHT: {
+				this.moveDir(1);
+				break;
+			}
+			case Command.DOWN: {
+				this.moveDir(2);
+				break;
+			}
+			case Command.LEFT: {
+				this.moveDir(3);
+				break;
+			}
+		};
+	}
+}
+
+// MAP
+
+class Map {
+	constructor(tile) {
+		this.tile = tile;
+		this.xLen = tile[0].length;
+		this.yLen = tile.length;
+	}
+	setDimensions(xLen,yLen) {
+		this.xLen = xLen;
+		this.yLen = yLen;
+	}
+	inBounds(x,y) {
+		return x>=0 && x<this.xLen && y>=0 && y<this.yLen;
+	}
+	tileSet(x,y,tileType) {
+		if( !this.inBounds(x,y) ) {
+			debugger;
+		}
+		this.tile[y] = this.tile[y].substr(0,x)+tileType.symbol+this.tile[y].substr(x+1);
+	}
+	tileGet(x,y) {
+		if( !this.inBounds(x,y) ) { debugger; }
+		return this.tile[y].charAt(x);
+	}
+}
+
+let messageHistory = [];
+function tell(message) {
+	messageHistory.unshift(message);
+	while( messageHistory.length > 10 ) { messageHistory.pop(); }
+	document.getElementById('messageBox').innerHTML = (messageHistory[2]||'')+'\n'+(messageHistory[1]||'')+'\n'+(messageHistory[0]||'');
+}
+
+function renderToString(map,entityList) {
+	let s = '';
+	let p = [];
+	for( let entity of entityList ) {
+		p[entity.y*map.xLen+entity.x] = entity.symbol;
+	}
+	for( let y=0 ; y<map.yLen ; ++y ) {
+		for( let x=0 ; x<map.xLen ; ++x ) {
+			s += p[y*map.xLen+x] || map.tile[y][x];
+		}
+		s += '\n';
+	}
+	return s;
+}
+
+
+
+// INIT GAME DATA
+
+function initGameData(tileRaw) {
+
+	let map = new Map(tileRaw.trim().split('\n'));;
+	let entityList = [];
+	for( let y=0 ; y<map.yLen ; ++y ) {
+		for( let x=0 ; x<map.xLen ; ++x ) {
+			let entityType = SymbolToType[map.tileGet(x,y)];
+			if( !entityType ) {
+				debugger;
+			}
+			if( entityType && entityType.type == 'monster' ) {
+				let fnName = entityType.brain == 'user' ? 'unshift' : 'push';
+				entityList[fnName]( new Entity( map, entityList, entityType, { x:x, y:y } ) );
+				map.tileSet(x,y,TileTypeList.floor)
+			}
+		}
+	}
+	return { map, entityList };
+}
+
+function loadGameData() {
+	let map = 
+		"########\n"+
+		"#> g   #\n"+
+		"###    #\n"+
+		"  #   @#\n"+
+		"  ####Ώ#\n"+
+		'';
+	return map;
+}
+
+function main() {
+
+	function render() {
+		document.getElementById('map').innerHTML = renderToString(map,entityList);
+	}
+
+	function tick() {
+		for( let entity of entityList ) {
+			entity.think();
+			entity.act();
+		}
+		Array.filterInPlace( entityList, entity => {
+			if( entity.isDead() ) {
+				entity.die();
+				return false;
+			}
+			return true;
+		});
+		entityList.forEach( entity => { entity.commandLast = entity.command; entity.command = Command.NONE; } );
+		render();
+	}
+
+	function onPlayerKey(e) {
+		// let keyUp=38, keyDown=40, keyLeft=37, keyRight=39;
+		let KeyToCommand = {
+			38: Command.UP,
+			40: Command.DOWN,
+			37: Command.LEFT,
+			39: Command.RIGHT
+		};
+
+		let player = entityList.find( entity => entity.brain=="user" );
+		if( !player.isDead() ) {
+			player.command = KeyToCommand[''+e.keyCode] !== undefined ? KeyToCommand[''+e.keyCode] : Command.NONE;
+
+			if( player.command !== Command.NONE ) {
+				tick();
+			}
+		}
+	}
+
+	let {map: map, entityList: entityList} = initGameData( loadGameData() );
+	document.addEventListener( "keydown", onPlayerKey, false );
+	render();
+	tell("Welcome to flogue! Use the arrow keys to move.")
+	// The tick is called each time the player takes an action.
+}
+
+</script>
+</head>
+<body>
+	<div id="messageBox"></div>
+	<div id="map"></div>
+	<script>main();</script>
+</body>
+</html>
