@@ -3,23 +3,31 @@
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/minireset.css/0.0.2/minireset.css">
 
 <style>
+body {
+	overflow-x: hidden;
+	overflow-y: hidden;
+}
 #map {
 	display: block;
 	white-space: pre;
 	font-family: "Courier New", Courier, sans-serif;
-	font-size: 14px;
-	line-height: 14px;
-	margin: 0 0;
+	font-size: 18px;
+	line-height: 18px;
+	margin-left: 10px;
+	margin-top: 10px;
+	border: 1px solid black;
+	width: 500px;
+	height: 500px;
 }
 #messageBox {
 	display: block;
 	white-space: pre;
 	font-family: "Ariel", serif;
-	font-size: 12px;
-	line-height: 12px;
-	height: 36px;
+	font-size: 16px;
+	line-height: 16px;
+	height: 48px;
 	width: 100%;
-	margin: 0 0;
+	margin: 0px 0px;
 	overflow-y: scroll;
 	overflow-x: auto;
 	margin-bottom: 10px;
@@ -59,13 +67,16 @@
 // STATIC DATA
 
 const Command = { NONE: "none", UP:"goUp", RIGHT: "goRight", DOWN: "goDown", LEFT: "goLeft", WAIT: "wait", QUIT: "quit" };
+function commandToDir(c) {
+	return c==Command.UP ? 0 : c==Command.RIGHT ? 1 : c==Command.DOWN ? 2 : c==Command.LEFT ? 3 : false;
+}
 const Direction = [{x:0,y:-1,c:Command.UP},{x:1,y:0,c:Command.RIGHT},{x:0,y:1,c:Command.DOWN},{x:-1,y:0,c:Command.LEFT}];
 const DirectionCount = 4;
 const TileTypeList = {
 	"floor":     { symbol: ' ', mayWalk: true, name: "floor" },
 	"wall":      { symbol: '#', mayWalk: false, name: "wall" },
 	"shut door": { symbol: 'Ώ', mayWalk: false, name: "shut door" },
-	"stairs":    { symbol: '>', mayWalk: true, name: "staircase" },
+	"stairs":    { symbol: '>', mayWalk: true, name: "staircase", isStairs: true },
 };
 const MonsterTypeList = {
 	"goblin": { symbol: 'g', healthMax: 10, damage: '1d4', brain: "monster", name: "goblin" },
@@ -87,14 +98,18 @@ class Entity {
 	}
 
 	die() {
+		if( this.isVictorious ) {
+			return;
+		}
 		if( this.removed ) {
 			debugger;
 		}
 		tell(this.name+' dies!');
+		this.removed = true;
 	}
 
 	isDead() {
-		return this.removed || this.health <= 0;
+		return this.removed || this.isVictorious || this.health <= 0;
 	}
 
 	enemyAtPos(x,y,exclude) {
@@ -114,10 +129,23 @@ class Entity {
 			for( let dir=0 ; dir<DirectionCount ; ++dir ) {
 				if( this.enemyAtDir(dir) ) {
 					this.command = Direction[dir].c;
+					break;
 				}
-				else {
-					this.command = Direction[Math.randInt(0,DirectionCount)];
-				}
+			}
+			if( this.command == Command.WAIT ) {
+				const RandCommand = [Command.UP, Command.RIGHT, Command.DOWN, Command.LEFT];
+				let reps = 4;
+				do {
+					this.command = RandCommand[Math.randInt(0,RandCommand.length)];
+					let dir = commandToDir(this.command);
+					if( dir !== false ) {
+						let targetType = this.map.entityGetDir(this.x,this.y,dir);
+						if( targetType.mayWalk ) {
+							break;
+						}
+					}
+				} while( --reps );
+				if( !reps ) { this.command = Command.WAIT; }
 			}
 		}
 
@@ -160,13 +188,13 @@ class Entity {
 					return;
 				}
 			}
-			let symbol = this.map.tileGet(x,y);
+			let symbol = this.map.tileSymbolGet(x,y);
 			let entityType = SymbolToType[symbol];
 			if( entityType.mayWalk ) {
 				this.setPosition(x,y);
 			}
 			else {
-				tell("You run into a "+entityType.name)
+				tell(this.name+" runs into a "+entityType.name)
 			}
 		}
 	}
@@ -189,6 +217,10 @@ class Entity {
 				this.moveDir(3);
 				break;
 			}
+			case Command.WAIT: {
+				tell(this.name+' waits.');
+				break;
+			}
 		};
 	}
 }
@@ -208,15 +240,24 @@ class Map {
 	inBounds(x,y) {
 		return x>=0 && x<this.xLen && y>=0 && y<this.yLen;
 	}
-	tileSet(x,y,tileType) {
+	tileSymbolSet(x,y,tileType) {
 		if( !this.inBounds(x,y) ) {
 			debugger;
 		}
 		this.tile[y] = this.tile[y].substr(0,x)+tileType.symbol+this.tile[y].substr(x+1);
 	}
-	tileGet(x,y) {
+	tileSymbolGet(x,y) {
 		if( !this.inBounds(x,y) ) { debugger; }
 		return this.tile[y].charAt(x);
+	}
+	entityGet(x,y) {
+		let symbol = this.tileSymbolGet(x,y);
+		return ( this.inBounds(x,y) ? SymbolToType[symbol] : false );
+	}
+	entityGetDir(x,y,dir) {
+		x += Direction[dir].x;
+		y += Direction[dir].y;
+		return this.entityGet(x,y);
 	}
 }
 
@@ -252,14 +293,14 @@ function initGameData(tileRaw) {
 	let entityList = [];
 	for( let y=0 ; y<map.yLen ; ++y ) {
 		for( let x=0 ; x<map.xLen ; ++x ) {
-			let entityType = SymbolToType[map.tileGet(x,y)];
+			let entityType = SymbolToType[map.tileSymbolGet(x,y)];
 			if( !entityType ) {
 				debugger;
 			}
 			if( entityType && entityType.type == 'monster' ) {
 				let fnName = entityType.brain == 'user' ? 'unshift' : 'push';
 				entityList[fnName]( new Entity( map, entityList, entityType, { x:x, y:y } ) );
-				map.tileSet(x,y,TileTypeList.floor)
+				map.tileSymbolSet(x,y,TileTypeList.floor)
 			}
 		}
 	}
@@ -283,11 +324,18 @@ function main() {
 		document.getElementById('map').innerHTML = renderToString(map,entityList);
 	}
 
-	function tick() {
-		for( let entity of entityList ) {
-			entity.think();
-			entity.act();
+	function testVictory() {
+		let player = entityList.find( entity => entity.brain=="user" );
+		if( player ) {
+			let entityType = map.entityGet(player.x,player.y);
+			if( entityType.isStairs ) {
+				tell('Congratulations! You descend the stairs to victory!');
+				player.isVictorious = true;
+			}
 		}
+	}
+
+	function checkDeaths() {
 		Array.filterInPlace( entityList, entity => {
 			if( entity.isDead() ) {
 				entity.die();
@@ -295,6 +343,15 @@ function main() {
 			}
 			return true;
 		});
+	}
+
+	function tick() {
+		for( let entity of entityList ) {
+			entity.think();
+			entity.act();
+		}
+		testVictory();
+		checkDeaths();
 		entityList.forEach( entity => { entity.commandLast = entity.command; entity.command = Command.NONE; } );
 		render();
 	}
@@ -305,7 +362,8 @@ function main() {
 			38: Command.UP,
 			40: Command.DOWN,
 			37: Command.LEFT,
-			39: Command.RIGHT
+			39: Command.RIGHT,
+			190: Command.WAIT
 		};
 
 		let player = entityList.find( entity => entity.brain=="user" );
@@ -321,7 +379,7 @@ function main() {
 	let {map: map, entityList: entityList} = initGameData( loadGameData() );
 	document.addEventListener( "keydown", onPlayerKey, false );
 	render();
-	tell("Welcome to flogue! Use the arrow keys to move.")
+	tell("Welcome to flogue! Use the arrow keys to move, and '.' to wait. Reach the > stairs!")
 	// The tick is called each time the player takes an action.
 }
 
