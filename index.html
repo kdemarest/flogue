@@ -1,466 +1,267 @@
 <html>
 <head>
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/minireset.css/0.0.2/minireset.css">
+<link rel="stylesheet" type="text/css" href="index.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
 <script src="nameList.js"></script>
-
-<style>
-body {
-	overflow-x: hidden;
-	overflow-y: hidden;
-}
-#map {
-	display: block;
-	white-space: pre;
-	font-family: "Courier New", Courier, sans-serif;
-	font-size: 18px;
-	line-height: 18px;
-	margin-left: 10px;
-	margin-top: 10px;
-	border: 1px solid black;
-	width: 500px;
-	height: 200px;
-}
-#messageBox {
-	display: block;
-	white-space: pre;
-	font-family: "Ariel", serif;
-	font-size: 16px;
-	line-height: 16px;
-	height: 48px;
-	width: 100%;
-	margin: 0px 0px;
-	overflow-y: scroll;
-	overflow-x: auto;
-	margin-bottom: 10px;
-}
-#readout {
-	border: 1px solid black;
-	width: 104px;
-}
-table tr td {
-	vertical-align: text-top;
-}
-.health-bar {
-	display: none;
-	-webkit-box-sizing: border-box;
-	-moz-box-sizing: border-box;
-	box-sizing: border-box;
-	width: 100px;
-	height: 20px;
-	padding: 2px;
-	background: #ddd;
-	-webkit-border-radius: 3px;
-	-moz-border-radius: 3px;
-	border-radius: 3px;
-	position: relative;
-	margin-bottom: 2px;
-}
-.bar {
-	background: #c54;
-	width: 100%;
-	height: 16px;
-	position: relative;
-
-	transition: width .5s linear;
-}
-
-.hit {
-	background: rgba(255,255,255,0.6);
-	position: absolute;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	width: 0px;
-
-	transition: width .5s linear;
-}
-</style>
-
+<script src="utilities.js"></script>
+<script src="data.js"></script>
+<script src="sentence.js"></script>
+<script src="finder.js"></script>
+<qscript src="levels.js"></script>
 <script>
 
-// STATIC UTILITY FUNCTIONS
-
-(function(){
-	Math.clamp = function(value,min,max) {
-		return Math.max(min,Math.min(max,value));
-	}
-
-	Math.randInt = function(min, max) {
-		return Math.floor(Math.random() * (max - min)) + min;
-	}
-	Math.rand = function(min, max) {
-		return Math.random()*(max-min)+min;
-	}
-	Math.chance = function(percent) {
-		return Math.rand(0,100) < percent;
-	}
-	String.capitalize = function(s) {
-	    return s.charAt(0).toUpperCase() + s.slice(1);
-	}
-	Array.filterInPlace = function(a, condition, thisArg) {
-		let j = 0;
-
-		a.forEach((e, i) => { 
-			if (condition.call(thisArg, e, i, a)) {
-				if (i!==j) a[j] = e; 
-				j++;
-			}
-		});
-
-		a.length = j;
-	return a;
-	}
-	Array.shuffle = function(array) {
-		for (let i = array.length - 1; i > 0; i--) {
-			let j = Math.floor(Math.random() * (i + 1));
-			[array[i], array[j]] = [array[j], array[i]];
-		}
-		return array;
-	}
-
-})();
-
-// STATIC DATA
-
-// WARNING: The strings for directions MUST remain the same for commandToDirection() to work.
-const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", QUIT: "quit" };
-const Direction = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
-const DirectionAdd = [
-	{ x:0,  y:-1, c:Command.N },
-	{ x:1,  y:-1, c:Command.NE },
-	{ x:1,  y:0,  c:Command.E },
-	{ x:1,  y:1,  c:Command.SE },
-	{ x:0,  y:1,  c:Command.S },
-	{ x:-1, y:1,  c:Command.SW },
-	{ x:-1, y:0,  c:Command.W },
-	{ x:-1, y:-1, c:Command.NW }
-];
-const DirectionCount = 8;
-function commandToDirection(c) {
-	return ( Direction[c] != undefined ? Direction[c] : false );
-}
-function directionToCommand(dir) {
-	let d2c = [ Command.N, Command.NE, Command.E, Command.SE, Command.S, Command.SW, Command.W, Command.NW ];
-	if( dir === false || dir < 0 || dir >= DirectionCount ) { debugger; }
-	return d2c[dir];
-}
-function deltasToDirPredictable(dx,dy) {
-	if( dy < 0 ) return dx==0 ? Direction.N : (dx<0 ? Direction.NW : Direction.NE);
-	if( dy > 0 ) return dx==0 ? Direction.S : (dx<0 ? Direction.SW : Direction.SE);
-	return dx==0 ? false : (dx<0 ? Direction.W : Direction.E);
-} 
-function deltasToDirNatural(dx,dy) {
-	let ax = Math.abs(dx);
-	let ay = Math.abs(dy);
-	if( ax != ay ) {
-		// We want to flatten our trajectory sometimes.
-		if( Math.rand(0,ax+ay)<Math.max(ax,ay) ) {
-			if( ax < ay ) { dx=0; } else { dy=0; }
-		}
-	}
-	return deltasToDirPredictable(dx,dy);
-}
 let humanNameList = Array.shuffle(getNameList());
 
-const DamageType = { CUT: "cut", STAB: "pierce", BITE: "bite", CLAW: "savage", BLUNT: "whomp", FIRE: "burn" };
 
-const TileTypeList = {
-	"floor":     { symbol: ' ', mayWalk: true,  mayFly: true,  name: "floor" },
-	"wall":      { symbol: '#', mayWalk: false, mayFly: false, name: "wall" },
-	"pit":       { symbol: ':', mayWalk: false, mayFly: true,  name: "pit" },
-	"door":      { symbol: '+', mayWalk: true,  mayFly: true,  name: "door" },
-	"shut door": { symbol: 'Ώ', mayWalk: false, mayFly: false, name: "shut door" },
-	"stairs":    { symbol: '>', mayWalk: true,  mayFly: true,  name: "staircase", isStairs: true },
-	"altar":     { symbol: 'A', mayWalk: false, mayFly: false, name: "glowing altar" },
-	"crystal":   { symbol: '*', mayWalk: false, mayFly: false, name: "shimmering crystal" },
-	"fire":      { symbol: 'ᵮ', mayWalk: true,  mayFly: true,  name: "fire", damage: '1d4', damageType: DamageType.FIRE },
-	"mud":       { symbol: '⍨', mayWalk: true,  mayFly: true,  name: "mud" },
-	"forcefield":{ symbol: '|', mayWalk: true,  mayFly: true,  name: "force field" }
-};
+let MessageManager = (new class {
+	constructor() {
+		this.recipientList = [];
+	}
+	addRecipient( observer, canPerceiveFn, receiveFn ) {
+		this.recipientList.push( { observer: observer, canPerceiveFn: canPerceiveFn, receiveFn: receiveFn, history: [] });
+	}
+	tell() {
+		let sentence = ( arguments[0] instanceof Sentence ) ? arguments[0] : new Sentence(...arguments);
+		if( !sentence.subject ) {
+			debugger;
+		}
+		this.recipientList.map( recipient => {
+			let cp = recipient.canPerceiveFn(recipient.observer,sentence.subject.x,sentence.subject.y);
+			if( sentence.object ) {
+				cp = cp || recipient.canPerceiveFn(recipient.observer,sentence.object.x,sentence.object.y);
+			}
 
-
-const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander" };
-const Brain = { MONSTER: "monster", USER: "user" };
-const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral" };
-const MonsterTypeList = {
-	"ogre": { 		name: "ogre",
-					symbol: 'Ǿ', mayWalk: false, healthMax: 20, reach: 1, damage: '1d8', damageType: DamageType.BLUNT, resists: DamageType.CUT, speed: 0.5,
-					brain: Brain.MONSTER, attitude: Attitude.AGGRESSIVE, team: Team.EVIL },
-	"goblin": { 	name: "goblin",
-					symbol: 'g', mayWalk: false, healthMax: 10, reach: 1, damage: '1d4',   damageType: DamageType.CUT, packAnimal: true,
-					brain: Brain.MONSTER, attitude: Attitude.AGGRESSIVE,   team: Team.EVIL },
-	"skeleton": { 	name: "skeleton",
-					symbol: 's', mayWalk: false, healthMax: 10, reach: 1, damage: '1d4',   damageType: DamageType.CUT, immune: DamageType.CUT+','+DamageType.STAB,
-					brain: Brain.MONSTER, attitude: Attitude.AGGRESSIVE,   team: Team.EVIL },
-	"kobold": { 	name: "kobold",
-					symbol: 'k', mayWalk: false, healthMax:  8, reach: 1, damage: '1d3',
-					brain: Brain.MONSTER, attitude: Attitude.HESITANT,   team: Team.EVIL },
-	"jaguar": {		name: "jaguar",
-					symbol: 'j', mayWalk: false, healthMax: 15, reach: 1, damage: '1d4+2', damageType: DamageType.CLAW, speed: 2.0,
-					brain: Brain.MONSTER, attitude: Attitude.HESITANT,   team: Team.EVIL },
-	"bat": { 		name: "bat",
-					symbol: 'ᵬ', mayWalk: false, healthMax:  6, reach: 1, damage: '1d2', damageType: DamageType.BITE, travelMode: "fly", packAnimal: true,
-					brain: Brain.MONSTER, attitude: Attitude.WANDER,    team: Team.NEUTRAL },
-	"porcupine": {	name: "porcupine",
-					symbol: 'p', mayWalk: false, healthMax: 12, reach: 1, damage: '2d3', damageType: DamageType.STAB,
-					brain: Brain.MONSTER, attitude: Attitude.WANDER,    team: Team.NEUTRAL },
-	"dog": {	 	name: "Fido",
-					symbol: 'd', mayWalk: false, healthMax: 20, reach: 1, damage: '1d4+1', damageType: DamageType.BITE, packAnimal: true, regenerate: 0.2,
-					brain: Brain.MONSTER, attitude: Attitude.AGGRESSIVE, team: Team.GOOD, watch:1 },
-	"imp": {	 	name: "imp",
-					symbol: 'i', mayWalk: false, healthMax: 30, reach: 1, damage: '1d2', damageType: DamageType.BITE, travelMode: "fly", immune: DamageType.FIRE,
-					brain: Brain.MONSTER, attitude: Attitude.CONFUSED,   team: Team.NEUTRAL },
-	"rabbit": { 	name: "rabbit",
-					symbol: 'r', mayWalk: false, healthMax: 30, reach: 1, damage: '1d2', damageType: DamageType.BITE, packAnimal: true,
-					brain: Brain.MONSTER, attitude: Attitude.FEARFUL,    team: Team.EVIL, watch:true },
-	"player": { 	name: "player",
-					symbol: '@', mayWalk: false, healthMax: 80, reach: 1, damage: '1d3+2', damageType: DamageType.CUT, resists: DamageType.FIRE,
-					brain: Brain.USER,    attitude: Attitude.AGGRESSIVE, team: Team.GOOD },
-};
-
-const SymbolToType = (function() {
-	let lookup = {};
-	Object.entries(TileTypeList).forEach( ([id,tileType]) => { tileType.type = 'tile'; lookup[tileType.symbol] = tileType; } );
-	Object.entries(MonsterTypeList).forEach( ([id,monsterType]) =>  { monsterType.type = 'monster'; lookup[monsterType.symbol] = monsterType; } );
-	return lookup;
-})();
-
-TileTypeList.altar.onTouch = function(entity,target) {
-	let help = Math.min( rollDice("2d3"), entity.healthMax-entity.health );
-	entity.health += help;
-	tell("The "+entity.name+(help ? " is healed for "+help+" health." : " is already healthy."));
-}
-
-TileTypeList.crystal.onTouch = function(entity,target) {
-	if( entity.speed <= 1 ) {
-		let speedIncrease = 1;
-		entity.speed += speedIncrease;
-		tell("The "+entity.name+" touches the crystal and blurs with speed!");
-		new Deed( entity, 3, function() {
-			entity.speed -= speedIncrease;
-			tell("The "+entity.name+" slows down!");
+			if( cp || recipient.observer.observeDistantEvents ) {
+				let message = (cp?'':'FAR: ')+sentence.refine(recipient.observer);
+				recipient.history.unshift(message);
+				recipient.receiveFn(message,recipient.history);
+			}
 		});
 	}
-	else {
-		tell("The "+entity.name+" touches the crystal, but is already moving fast.")
-	}
-}
+}());
 
-TileTypeList.pit.onTouch = function(entity,target) {
-	if( entity.travelMode == "walk" ) {
-		tell("The "+entity.name+" is at the edge of a pit!");
-	}
-}
-
-TileTypeList.fire.onEnterType = function(entity,target) {
-	tell( entity.name+' enters the '+target.name );
-}
-
-TileTypeList.fire.onDepartType = function(entity,target) {
-	tell( entity.name+' leaves the '+target.name );
-}
-
-TileTypeList.fire.isProblem = function(entity,target) {
-	return !entity.isImmune(target.damageType);
-}
-
-TileTypeList.fire.onTouch = function(entity,target) {
-	entity.takeDamage( target, rollDice(target.damage), target.damageType, entity.name, " burns!" );
-}
-
-TileTypeList.mud.isProblem = function(entity,target) {
-	return ( entity.travelMode == "walk" );
-}
-
-TileTypeList.mud.onEnterType = function(entity,target) {
-	if( entity.travelMode == "walk" ) {
-		tell( entity.name+' enters the '+target.name );
-	}
-}
-
-TileTypeList.mud.onDepartType = function(entity,target) {
-	if( entity.travelMode == "walk" ) {
-		tell( entity.name+' escapes the '+target.name );
-	}
-}
-
-TileTypeList.mud.onDepart = function(entity,target) {
-	if( entity.travelMode == "walk" && Math.chance(20) ) {
-		tell( entity.name+' is stuck in the mud.');
-		return false;
-	}
-}
-
-TileTypeList.forcefield.onEnterType = function(entity,target) {
-	if( Math.chance(80) ) {
-		tell( entity.name+' is stopped by the '+target.name );
-		return false;
-	}
-}
-
-MonsterTypeList.porcupine.onTouch = function(entity,target) {
-	let damage = entity.rollDamage(entity.damage);
-	entity.doDamage( target, damage, DamageType.STAB, "The "+entity.name, " is stabbed by the porcupine's quills!", " resists the porcupine's quills." );
-}
-
-function rollDice(diceString) {
-	let parts = diceString.split( /[d\+]/ );
-	let numDice = parseInt(parts[0] || "1");
-	let dieFaces = parseInt(parts[1]);
-	let plus = parseInt(parts[2] || "0");
-	let result = plus || 0;
-	while( numDice-- ) { result += Math.randInt(1,dieFaces+1); }
-	return result;
-}
-
-let messageHistory = [];
-function tell(message) {
-	messageHistory.unshift(message);
-	while( messageHistory.length > 10 ) { messageHistory.pop(); }
-	document.getElementById('messageBox').innerHTML = (messageHistory[2]||'')+'\n'+(messageHistory[1]||'')+'\n'+(messageHistory[0]||'');
+function tell() {
+	MessageManager.tell(...arguments);
 }
 
 function bonk(entity,target) {
-	tell(entity.name+" runs into the "+target.name)
+	tell( mSubject, entity, ' ', mVerb, 'run', ' into ', mObject, target, '.' );
 }
 
-class Finder {
-	constructor(entityList) {
-		this.result = entityList.slice();
-	}
-	filter(fn) {
-		Array.filterInPlace( this.result, fn );
-		return this;
-	}
-	exclude(entity) {
-		return this.filter( e => e!=entity );
-	}
-	at(x,y) {
-		return this.filter( e => e.x==x && e.y==y );
-	}
-	atDir(x,y,dir) {
-		return this.at( x + DirectionAdd[dir].x, y + DirectionAdd[dir].y );
-	}
-	near(x,y,rectDist=1) {
-		return this.filter( e => (Math.abs(e.x-x)<=rectDist && Math.abs(e.y-y)<=rectDist) );
-	}
-	far(x,y,rectDist=1) {
-		return this.filter( e => (Math.abs(e.x-x)>rectDist || Math.abs(e.y-y)>rectDist) );
-	}
-	teamDifferent(team) {
-		return this.filter( e => e.team!=team );
-	}
-	teamSame(team) {
-		return this.filter( e => e.team==team );
-	}
-	isAlive() {
-		return this.filter( e => !e.isDead() );
-	}
-	byHealth() {
-		this.result.sort( (a,b) => a.health-b.health );
-		return this;
-	}
-	byDistance(x,y) {
-		this.result.sort( (a,b) => ((a.x-x)*(a.x-x)+(a.y-y)*(a.y-y)) - ((b.x-x)*(b.x-x)+(b.y-y)*(b.y-y))  );
-		return this;
-	}
-	keepTop(n) {
-		this.result.length = Math.min(this.result.length,n);
-		return this;
-	}
-	get first() {
-		return this.result.length <= 0 ? false : this.result[0];
-	}
-	get count() {
-		return this.result.length;
-	}
-	get all() {
-		return this.result;
-	}
-}
-
-class EntityFinder extends Finder {
-	constructor(entity,entityList) {
-		super(entityList);
-		this.entity = entity;
-		this.exclude(this.entity);
-	}
-	dir(direction) {
-		return this.atDir(this.entity.x,this.entity.y,dir);
-	}
-	nearMe(rectDist=1) {
-		return this.near(this.entity.x,this.entity.y,rectDist);
-	}
-	farFromMe(rectDist=1) {
-		return this.far(this.entity.x,this.entity.y,rectDist);
-	}
-	isMyEnemy() {
-		return this.filter( e => this.entity.isMyEnemy(e) );
-	}
-	isMyFriend() {
-		return this.filter( e => this.entity.isMyFriend(e) );
-	}
-	isMyNeutral() {
-		return this.filter( e => this.entity.isMyNeutral(e) );
-	}
-}
 
 // DEED
 
 class Deed {
-	constructor(entity,duration,callback,data) {
+	// Set duration = true for perpetual
+	constructor(cause,entity,duration,stat,op,value,onTick,onEnd,data) {
+		if( entity[stat] === undefined ) {
+			debugger;
+		}this.cause = cause;
 		this.entity = entity;
+		this.stat = stat;
+		this.op = op;
+		this.value = value;
 		this.duration = duration;
-		this.timeLeft = duration;
-		this.callback = callback;
+		this.onTick = onTick;
+		this.onEnd = onEnd;
 		this.data = data;
+		this.timeLeft = duration;
 		this.killMe = false;
-		DeedManager.add(this);
 	}
 	expired() {
-		return this.killMe || this.timeLeft <= 0;
+		return this.killMe || (this.timeLeft!==true && this.timeLeft <= 0);
+	}
+	applyEffect() {
+		if( this.op == 'set' ) {
+			this.entity[this.stat] = this.value;
+		}
+		if( this.op == 'add' ) {
+			if( typeof this.entity[this.stat] === 'string' ) {
+				this.entity[this.stat] = String.arAdd(this.entity[this.stat],this.value);
+			}
+			else {
+				this.entity[this.stat] += this.value;
+			}
+		}
+		if( this.op == 'sub' ) {
+			if( typeof this.entity[this.stat] === 'string' ) {
+				this.entity[this.stat] = String.arSub(this.entity[this.stat],this.value);
+			}
+			else {
+				this.entity[this.stat] -= this.value;
+			}
+		}
+	}
+	end() {
+		if( this.killMe ) {
+			return false;
+		}
+		if( this.onEnd ) {
+			this.onEnd(this.entity,this.data);
+		}
+		this.killMe = true;
+		return true;
 	}
 	tick(dt) {
-		if( this.killMe ) {
+		if( this.killMe || !this.doTick ) {
 			return;
 		}
-		this.timeLeft -= dt;
+		if( this.timeLeft !== true ) {
+			this.timeLeft -= dt;
+		}
 		if( this.expired() ) {
-			this.callback(this.entity,this.data);
-			this.killMe = true;
+			this.end();
+		}
+		else
+		if( this.onTick ) {
+			this.onTick(this.entity,dt,this.data);
 		}
 	}
 }
 
 let DeedManager = (new class {
 	constructor() {
+		this.handler = {};
 		this.deedList = [];
 	}
-	add(deed) {
-		this.deedList.push(deed);
+	// If an item was involved, then the cause should be the item, and other functions must find the owner.
+	add(cause,entity,duration,stat,op,value,onTick,onEnd,data) {
+		let handlerFn = this.handler[stat+'_'+op];
+		if( handlerFn ) {
+			handlerFn(cause,entity,value);
+		}
+		else {
+			this.deedList.push( new Deed(cause,entity,duration,stat,op,value,onTick,onEnd,data) );
+		}
+	}
+	addHandler(stat,op,handlerFn) {
+		this.handler[stat+'_'+op] = handlerFn;
+	}
+	calcStat(entity,stat) {
+		let oldValue = entity[stat];
+		if( entity.type[stat] === undefined ) {
+			debugger;
+		}
+		entity[stat] = entity.type[stat];
+		for( let deed of this.deedList ) {
+			if( !deed.killMe && deed.entity.id == entity.id && deed.stat == stat ) {
+				deed.applyEffect();
+			}
+		}
+		deedTell(entity,stat,oldValue,entity[stat]);
+	}
+	calc(entity) {
+		let statList = {};
+		// WEIRD!! If we just ended a deed, we must STILL calc the value, at least once, so that we can
+		// emit notice that it happened!
+		this.deedList.map(
+			deed => { statList[deed.stat] = true; }
+		);
+		Object.entries(statList).forEach(
+			([stat,dummy]) => { this.calcStat(entity,stat); }
+		);
+	}
+	force(entity,stat,value) {
+		this.end(entity,stat);
+		this.add(entity,true,stat,'set',value);
+		this.calcStat(entity,stat);
+	}
+	end(entity,stat,value) {
+		let count = 0;
+		for( let deed of this.deedList ) {
+			if( !deed.killMe && deed.entity.id == entity.id && deed.stat == stat && (value===undefined || deed.value==value)) {
+				if( deed.end() ) {
+					count++;
+				}
+			}
+		}
+		return count;
+	}
+	cleanup() {
+		Array.filterInPlace(this.deedList, deed => !deed.killMe );
 	}
 	tick(entity,dt) {
+		// This makes sure that any deeds added while ticking do NOT actually tick this round.
+		this.deedList.map( deed => deed.doTick=true );
 		for( let deed of this.deedList ) {
-			// This makes sure that any deeds added while ticking do NOT actually tick this round.
-			deed.doTick = true;
-		}
-		for( let deed of this.deedList ) {
-			if( deed.doTick && deed.entity == entity ) {
+			if( deed.entity.id == entity.id ) {
 				deed.tick(dt);
 			}
-			deed.doTick = false;
 		}
 	}
 }());
 
-// ENTITY (monsters, players etc)
+let deedAdd = function() {
+	return DeedManager.add(...arguments);
+}
 
+let deedTell = function(entity,stat,oldValue,newValue ) {
+	if( typeof oldValue == 'string' ) {
+		// we have to do this before comparing, below, because we do NOT keep the elements sorted.
+		let ov = oldValue;
+		let nv = newValue;
+		oldValue = String.arExtra(ov,nv);
+		newValue = String.arExtra(nv,ov);
+	}
+	if( oldValue == newValue ) {
+		return;
+	}
+	let teller = {
+		invisible: function() {
+			return [mSubject,entity,' suddenly ',mVerb,newValue?'wink':'appear',newValue?' out of sight':' from thin air','!'];
+		},
+		speed: function() {
+			return [mSubject,entity,' ',mVerb,(newValue<oldValue?'slow':'speed'),' ',(newValue<oldValue?'down':'up'),'.'];
+		},
+		regenerate: function() {
+			return [mSubject|mPossessive,entity,' body ',newValue==0 ? 'stops regenerating.' : (newValue<oldValue ? 'regenerates a bit less.' : 'begins to knit itself back together.')];
+		},
+		immune: function() {
+			return [mSubject|mPossessive,entity,' ',mVerb,'is',' ',!oldValue ? 'now immune to '+newValue : 'no longer immune to '+oldValue,'s.'];
+		},
+		resist: function() {
+			return [mSubject|mPossessive,entity,' ',mVerb,'is',' ',!oldValue ? 'now resistant to '+newValue+'s.' : 'no longer resistant to '+oldValue+'s.'];
+		},
+		blind: function() {
+			return [mSubject,entity,' ',mSubject|mVerb,newValue?'lose':'regain',' ',mSubject|mPronoun|mPossessive,entity,' sight!'];
+		},
+		travelMode: function() {
+			return [mSubject,entity,' ',mSubject|mVerb,'begin',' to ',newValue,'.'];
+		},
+		attitude: function() {
+			return [mSubject,entity,' ',mSubject|mVerb,'become',' ',newValue,'.'];
+		},
+		_generic_: function() {
+			return [mSubject,entity,' ',stat,' ',mVerb,'is',' less enchanted.'];
+		}
+	}
+
+	let content = (teller[stat] || teller._generic_)();
+	tell(...content);
+}
+
+DeedManager.addHandler('health','add',function(cause,entity,value) { entity.takeHealing(cause,value,cause.effect.healingType);});
+DeedManager.addHandler('health','sub',function(cause,entity,value) { entity.takeDamage(cause,value,cause.effect.damageType,cause.effect.onDamage);});
+
+function adhoc(tileType,x,y) {
+	return Object.assign({},tileType,{x:x,y:y});
+}
+
+//
+// ENTITY (monsters, players etc)
+//
 class Entity {
 	constructor(map,entityList,monsterType,position) {
-		let defaults = { health: monsterType.healthMax, travelMode: "walk", actionCount: 0, speed: 1, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
-		let values   = { id: humanNameList.pop(), x:position.x, y:position.y, map: map, entityList:entityList };
-		Object.assign( this, defaults, monsterType, values );
+		let inits =    { inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
+		let values   = { id: humanNameList.pop(), health: monsterType.healthMax, x:position.x, y:position.y, map: map, entityList:entityList };
+		if( monsterType.pronoun == '*' ) {
+			values.pronoun = Math.chance(70) ? 'he' : 'she';
+		}
+		if( monsterType.name.indexOf('/')>0 ) {
+			values.name = monsterType.name.split('/')[values.pronoun=='she' ? 1 : 0];
+		}
+		Object.assign( this, monsterType, inits, values );
 	}
 
 	record(s,pending) {
@@ -475,7 +276,7 @@ class Entity {
 		}
 	}
 
-	finder(entityList = this.entityList) {
+	entityFinder(entityList = this.entityList) {
 		return new EntityFinder(this,entityList);
 	}
 
@@ -486,22 +287,25 @@ class Entity {
 		if( this.removed ) {
 			debugger;
 		}
-		tell(this.name+' dies!');
+		tell(mSubject,this,' ',mVerb,'die','!');
 		this.removed = true;
 	}
 
 	isDead() {
 		return this.removed || this.isVictorious || this.health <= 0;
 	}
+	isAlive() {
+		return !this.isDead();
+	}
 
-	dirToPredictable(xOrEntity,y) {
-		let dx = ( y === undefined ? xOrEntity.x : x ) - this.x;
-		let dy = ( y === undefined ? xOrEntity.y : y ) - this.y;
+	dirToPredictable(_x,_y) {
+		let dx = ( isEntity(_x) ? _x.x : _x ) - this.x;
+		let dy = ( isEntity(_x) ? _x.y : _y ) - this.y;
 		return deltasToDirPredictable(dx,dy);
 	}
-	dirToNatural(xOrEntity,y) {
-		let dx = ( y === undefined ? xOrEntity.x : x ) - this.x;
-		let dy = ( y === undefined ? xOrEntity.y : y ) - this.y;
+	dirToNatural(_x,_y) {
+		let dx = ( isEntity(_x) ? _x.x : _x ) - this.x;
+		let dy = ( isEntity(_x) ? _x.y : _y ) - this.y;
 		return deltasToDirNatural(dx,dy);
 	}
 
@@ -524,18 +328,53 @@ class Entity {
 		return this.team == Team.NEUTRAL || entity.team == Team.NEUTRAL;
 	}
 
+	calcVis() {
+		this.vis = calcVis(this.map,this.x,this.y,this.sightDistance,this.blind,this.vis);
+		return this.vis;
+	}
+
+	canPerceive(_x,_y) {
+		if( !this.vis ) {
+			return true;
+		}
+		if( isEntity(_x) && (this.blind || (_x.invisible && !this.seeInvisible)) && _x.id!==this.id /*you can always perceive yourself*/) {
+			return false;
+		}
+		let x = isEntity(_x) ? _x.x : _x;
+		let y = isEntity(_x) ? _x.y : _y;
+		if( x===undefined || y===undefined ) {
+			debugger;
+		}
+		if( typeof this.vis[y]==='undefined' || typeof this.vis[y][x]==='undefined' ) {
+			return false;
+		}
+		return this.vis[y][x];
+	}
+
+	itemRemove(item) {
+		if( !this.inventory.includes(item) ) {
+			debugger;
+		}
+		Array.filterInPlace(this.inventory, i => i.id!=item.id );
+	}
+	itemTake(item) {
+		if( this.inventory.includes(item) ) {
+			debugger;
+		}
+		this.inventory.push(item);
+	}
 
 	enemyAtPos(x,y) {
-		return this.finder().at(x,y).isMyEnemy();
+		return this.entityFinder().at(x,y).isMyEnemy();
 	}
 
 	at(x,y) {
-		let f = this.finder().at(x,y).isAlive();
+		let f = this.entityFinder().at(x,y).isAlive();
 		return f.first || this.map.tileTypeGet(x,y);
 	}
 
 	atDir(x,y,dir) {
-		let f = this.finder().atDir(x,y,dir).isAlive();
+		let f = this.entityFinder().atDir(x,y,dir).isAlive();
 		return f.first || this.map.tileTypeGetDir(x,y,dir);
 	}
 
@@ -603,7 +442,15 @@ class Entity {
 			return;
 		}
 
-		if( this.brain == "monster" ) {
+		let useAiTemporarily = false;
+		if( this.brain == Brain.USER ) {
+			// Placeholder, since the onPlayerKey already sets the command for us
+			if( this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.Attitude == Attitude.PANICKED ) {
+				useAiTemporarily = true;
+			}
+		}
+
+		if( this.brain == Brain.AI || useAiTemporarily ) {
 			this.command = (function() {
 
 				if( this.attitude == Attitude.CONFUSED ) {
@@ -620,12 +467,12 @@ class Entity {
 				}
 
 				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
-				let enemyList = this.finder().isMyEnemy().byDistance(this.x,this.y);
+				let enemyList = this.entityFinder().isMyEnemy().canPerceive().byDistance();
 
 				// If no enemy to attack or fles, then just wander around 
 				if( !enemyList.count ) {
 					this.record('no enemy',true);
-					let friendList = this.finder().isMyFriend().farFromMe(2).byDistance(this.x,this.y);
+					let friendList = this.entityFinder().isMyFriend().farFromMe(2).byDistance();
 					if( this.packAnimal && friendList.count ) {
 						this.record('back to a friend',true);
 						let c = this.thinkApproach(friendList.first);
@@ -650,7 +497,7 @@ class Entity {
 				}
 
 				// Attack if I am within reach, and aggressive or sometimes if hesitant
-				let adjacent = this.finder(enemyList.all).nearMe(this.reach);
+				let adjacent = this.entityFinder(enemyList.all).nearMe(this.reach);
 				if( adjacent.count ) {
 					let attack = ( this.attitude == Attitude.AGGRESSIVE || this.attitude == Attitude.ENRAGED || (this.attitude == Attitude.HESITANT && Math.chance(50)) );
 					if( attack ) {
@@ -669,10 +516,6 @@ class Entity {
 
 			this.record( this.attitude+" cmd: "+this.command );
 		}
-
-		if( this.brain == "player" ) {
-			// Placeholder, since the onPlayerKey already sets the command for us
-		}
 	}
 
 	rollDamage(damageString) {
@@ -680,37 +523,71 @@ class Entity {
 	}
 
 	isImmune(damageType) {
-		return( this.immune && this.immune.indexOf(damageType)>=0 );
+		return String.arIncludes(this.immune,damageType);
+	}
+	isResistant(damageType) {
+		return String.arIncludes(this.resist,damageType);
 	}
 
-	takeDamage(source,amount,damageType,message,onSuccess,onFailure) {
+	takeHealing(healer,amount,healingType) {
+		if( healer.isItemType ) {
+			healer = healer.cause || healer.owner;
+		}
+		amount = Math.min( amount, this.healthMax-this.health );
+		let quiet = false;
+		this.health += amount;
+		if( this.onHeal ) {
+			quiet = this.onHeal(healer,this,amount,healingType);
+		}
+		if( !quiet ) {
+			let result = (amount ? [' healed by ',mObject,healer,' for '+amount+' health.'] : [' already at full health.']);
+			tell(mSubject,this,' ',mVerb,'is',...result);
+		}
+	}
+
+	takeDamage(attacker,amount,damageType,onDamage) {
+		if( attacker.isItemType ) {
+			attacker = attacker.cause || attacker.owner;
+		}
 		if( this.isImmune(damageType) ) {
 			amount = 0;
-			message += (onFailure || " but it is immune!");
 		}
 		else
-		if( this.resists && this.resists.indexOf(damageType)>=0 ) {
+		if( this.isResistant(damageType) ) {
 			amount = amount / 2;
-			message += onSuccess + " It resists part of the damage.";
 		}
-		else {
-			message += onSuccess;
+		if( attacker && attacker.invisible ) { //&& !this.type.invisible ) {
+			DeedManager.force(attacker,"invisible",false);
 		}
+
 		this.health -= amount;
-		tell(message);
+		let quiet = false;
+		if( this.onDamage ) {
+			quiet = this.onDamage(attacker,this,amount,damageType);
+		}
+		if( !quiet ) {
+			tell(mSubject,attacker,' ',mVerb,damageType,' ',mObject,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!' );
+		}
 	}
 
-	doDamage(other,amount,damageType,message,onSuccess,onFailure) {
-		other.takeDamage(this,amount,damageType,message,onSuccess,onFailure);
+	doDamage(other,amount,damageType,onDamage) {
+		return other.takeDamage(this,amount,damageType,onDamage);
 	}
 
-	attack(other,isRanged) {
+	attack(other,isRanged,onDamage) {
+		if( (this.blind && !this.type().blind) || (other.invisible && !this.seeInvisible) ) {
+			if( Math.chance(50) ) {
+				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,other,' but in the wrong direction!');
+				return;
+			}
+		}
 		let damage = this.rollDamage(this.damage);
 		let damageType = this.damageType || DamageType.STAB;
-		this.doDamage( other, damage, damageType, this.name+' '+damageType+'s '+other.name, ' for '+damage+' damage!' );
+		let result = this.doDamage( other, damage, damageType, onDamage );
 		if( !isRanged && other.onTouch ) {
 			other.onTouch(this,other);
 		}
+		return result;
 	}
 
 	setPosition(x,y) {
@@ -725,15 +602,15 @@ class Entity {
 	moveDir(dir) {
 		let x = this.x + DirectionAdd[dir].x;
 		let y = this.y + DirectionAdd[dir].y;
+		return this.moveTo(x,y);
+	}
+	moveTo(x,y) {
 		if( this.map.inBounds(x,y) ) {
-			let entityList = this.finder().at(x,y);
+			let entityList = this.entityFinder().at(x,y);
 
 			// Attack enemies or neutrals
 			if( entityList.count && (this.isMyEnemy(entityList.first) || this.isMyNeutral(entityList.first)) ) {
 				this.attack(entityList.first);
-				//if( !entityList.first.isDead() ) {
-				//	return;
-				//}
 				return;
 			}
 			else
@@ -747,30 +624,32 @@ class Entity {
 				return;
 			}
 
-			let tileTypeHere = this.map.tileTypeGet(this.x,this.y);
+			let xOld = this.x;
+			let yOld = this.y;
+			let tileTypeHere = this.map.tileTypeGet(xOld,yOld);
 			let tileType = this.map.tileTypeGet(x,y);
 
 			if( tileTypeHere.onDepart ) {
-				if( tileTypeHere.onDepart(this,tileTypeHere) === false ) {
+				if( tileTypeHere.onDepart(this,adhoc(tileTypeHere,xOld,yOld)) === false ) {
 					return;
 				}
 			}
 			// Are we leaving this type of tile?
 			if( tileType.name != tileTypeHere.name && tileTypeHere.onDepartType ) {
-				if( tileTypeHere.onDepartType(this,tileTypeHere,tileType) === false ) {
+				if( tileTypeHere.onDepartType(this,adhoc(tileTypeHere,xOld,yOld),adhoc(tileType,x,y)) === false ) {
 					return;
 				}
 			}
 
-			// Now only tiles are left.
+			// Now only tiles and items are left.
 			if( !this.mayEnter(x,y) ) {
-				(tileType.onTouch || bonk)(this,tileType);
+				(tileType.onTouch || bonk)(this,adhoc(tileType,x,y));
 				return;
 			}
 
 			// Are we entering a new tile type?
 			if( tileType.name != tileTypeHere.name && tileType.onEnterType ) {
-				if( tileType.onEnterType(this,tileType,tileTypeHere,x,y) === false ) {
+				if( tileType.onEnterType(this,adhoc(tileType,x,y),tileTypeHere,xOld,yOld) === false ) {
 					return;
 				}
 			}
@@ -779,7 +658,15 @@ class Entity {
 
 			// We must be touching the new tile, so act on that.
 			if( tileType.onTouch ) {
-				tileType.onTouch(this,tileType,x,y);
+				tileType.onTouch(this,adhoc(tileType,x,y));
+			}
+
+			let f = new ItemFinder(this.map.itemList).at(x,y);
+			for( let item of f.all ) {
+				if( item.moveTo(this) !== false ) {
+					tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
+					item.trigger(item,this);
+				}
 			}
 		}
 	}
@@ -801,23 +688,76 @@ class Entity {
 		switch( this.command ) {
 			case Command.WAIT: {
 				if( this.brain == 'user' ) {
-					tell(this.name+' waits.');
+					tell(mSubject,this,' ',mVerb,'wait','.');
 				}
 				let tileType = this.map.tileTypeGet(this.x,this.y);
 				if( tileType.onTouch ) {
-					tileType.onTouch(this,tileType);
+					tileType.onTouch(this,adhoc(tileType,this.x,this.y));
 				}
 				break;
 			}
 		};
 	}
 }
+function isEntity(e) { return e instanceof Entity; }
+
+
+// ITEM
+let itemEffectCount = 0;
+
+class Item {
+	constructor(owner,itemType,position) {
+		let inits = { owner: owner, id: humanNameList.pop(), x:position.x, y:position.y };
+		Object.assign( this, itemType, inits );
+		this.effect = this.effect===false ? false : this.generateEffect();
+		this.name = this.namePattern.replace('*',this.effect.name);
+	}
+	generateEffect() {
+		let effectTypeArray = Object.entries(EffectTypeList);
+		let n = (itemEffectCount++)%effectTypeArray.length; //Math.randInt(0,effectTypeArray.length);
+		return Object.assign({},effectTypeArray[n][1]);
+	}
+	moveTo(entity,x,y) {
+		let ok = (!this.type.onPickup || this.type.onPickup(this,owner,entity)!==false);
+		if( !ok ) {
+			return false;
+		}
+		this.owner.itemRemove(this);	
+
+		this.x = x;
+		this.y = y;
+		this.owner = entity;
+		this.owner.itemTake(this);
+		return true;
+	}
+	trigger(cause,target) {
+		if( this.effect===false ) {
+			return false;
+		}
+		//add(cause,entity,duration,stat,op,value,onTick,onEnd,data) {
+		// Here is where we should figure out the area of effect and hit all as needed.
+		let effect = this.effect;
+		this.x = target.x;
+		this.y = target.y;
+		if( effect.requires && !effect.requires(target) ) {
+			tell(mSubject,this,' has no effect on ',mObject,target);
+		}
+		this.cause = cause;
+		deedAdd(this,target,rollDice(effect.duration),effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
+		this.charges -= 1;
+		if( this.charges < 0 ) {
+			this.owner.itemRemove(this);
+		}
+	}
+}
 
 // MAP
 
 class Map {
-	constructor(tile) {
+	constructor(tile,itemList) {
+		this.isMap = true;
 		this.tile = tile;
+		this.itemList = itemList;
 		while( tile[tile.length-1].trim() == '' ) {
 			tile.length -= 1;
 		}
@@ -850,28 +790,79 @@ class Map {
 		y += DirectionAdd[dir].y;
 		return this.tileTypeGet(x,y);
 	}
+	itemRemove(item) {
+		if( !this.itemList.includes(item) ) {
+			debuger;
+		}
+		Array.filterInPlace( this.itemList, i => i.id!=item.id )
+		this.tileSymbolSet(item.x,item.y,TileTypeList['floor']);
+	}
+	itemTake(item) {
+		if( this.itemList.includes(item) ) {
+			debuger;
+		}
+		this.itemList.push(item);
+		this.tileSymbolSet(item.x,item.y,item.symbol);
+	}
 }
 
-function showHealthBar(id,newValue,lastValue,total,label) {
-	let hBar = $(id);
-	let bar = hBar.find(' .bar');
-	let hit = hBar.find(' .hit');
+function calcVis(map,px,py,sightDistance,blind,cachedVis) {
 
-	let damage = lastValue - newValue;
-	// calculate the percentage of the total width
-	var barWidth = (newValue / total) * 100;
-	var hitWidth = (damage / lastValue) * 100 + "%";
+	function shoot(sx,sy,tx,ty) {
+		if( sx==tx && sy==ty ) {
+			return true;
+		}
+		if( blind ) {
+			return false;
+		}
+		let sxInt = Math.floor(sx);
+		let syInt = Math.floor(sy);
+		let dx = tx-sx;
+		let dy = ty-sy;
+		let dist = Math.sqrt(dx*dx+dy*dy);
+		let x = sx;
+		let y = sy;
+		let step = 0.25;
+		dx = dx / (dist/step);
+		dy = dy / (dist/step);
+		// Always allowed to see itself.
+		dist -= 0.5;
+		let wallAmount = 0; //let bad = {x:0,y:0,count:0};
+		while( dist > 0 ) {
+			let xInt = Math.floor(x);
+			let yInt = Math.floor(y);
+			let atPlayer = (xInt==px && yInt==py);
+			if( !atPlayer ) {
+				wallAmount += map.tileTypeGet(xInt,yInt).opacity;
+				if( wallAmount >= 1 ) { return false; }
+			}
+			x += dx;
+			y += dy;
+			dist -= step;
+		}
+		return true;
+	}
 
-	// show hit bar and set the width
-	bar.text('  '+label);
-	hit.css('width', hitWidth);
-	hBar.data('value', newValue);
+	let a = cachedVis || [];
 
-	setTimeout(function(){
-		hit.css({'width': '0'});
-		bar.css('width', barWidth + "%");
-	}, 500);
+	for( let y=0 ; y<map.yLen ; ++y ) {
+		a[y] = a[y] || [];
+		for( let x=0 ; x<map.xLen ; ++x ) {
+			if( Math.abs(y-py)>sightDistance || Math.abs(x-px)>sightDistance ) {
+				a[y][x] = false;
+			}
+			let tl = shoot(px,py,x,y);
+			let tr = shoot(px+0.95,py+0.00,x+0.95,y+0.00);
+			let bl = shoot(px+0.00,py+0.95,x+0.00,y+0.95);
+			let br = shoot(px+0.95,py+0.95,x+0.95,y+0.95);
+			let isVisible = tl || tr || bl || br;
+			a[y][x] = isVisible;
+		}
+	}
+	a[py][px] = true;
+	return a;
 }
+
 
 // READOUT
 
@@ -883,7 +874,7 @@ class Readout {
 		let player = entityList.find( entity => entity.brain=="user" );
 		if( !player ) { return; }
 
-		let f = new Finder(entityList).near(player.x,player.y,8).byDistance(player.x,player.y).keepTop(5);
+		let f = player.entityFinder().prepend(player).canPerceive().byDistance().keepTop(5);
 
 		for( let i=0 ; i<5 ; ++i ) {
 			if( i >= f.all.length ) {
@@ -900,14 +891,27 @@ class Readout {
 	}
 }
 
-function renderToString(map,entityList) {
+
+function renderToString(observer,map,entityList) {
+
+	// Recalc this here, just in case.
+	let a = observer.calcVis();
 	let s = '';
 	let p = [];
 	for( let entity of entityList ) {
-		p[entity.y*map.xLen+entity.x] = entity.symbol;
+		if( observer.canPerceive(entity) ) {
+			let symbol = ( entity.id == observer.id && observer.invisible ) ? selfInvisibilitySymbol : entity.symbol;
+			p[entity.y*map.xLen+entity.x] = symbol;
+		}
 	}
+
 	for( let y=0 ; y<map.yLen ; ++y ) {
 		for( let x=0 ; x<map.xLen ; ++x ) {
+			let vis = a[y][x];
+			if( vis === false ) {
+				s += ' ';
+				continue;
+			}
 			s += p[y*map.xLen+x] || map.tile[y][x];
 		}
 		s += '\n';
@@ -921,7 +925,8 @@ function renderToString(map,entityList) {
 
 function initGameData(tileRaw) {
 
-	let map = new Map(tileRaw.split('\n'));
+	let itemList = [];
+	let map = new Map(tileRaw.split('\n'),itemList);
 	let entityList = [];
 	for( let y=0 ; y<map.yLen ; ++y ) {
 		for( let x=0 ; x<map.xLen ; ++x ) {
@@ -932,10 +937,13 @@ function initGameData(tileRaw) {
 			if( !entityType ) {
 				debugger;
 			}
-			if( entityType && entityType.type == 'monster' ) {
+			if( entityType && entityType.isMonsterType ) {
 				let fnName = entityType.brain == 'user' ? 'unshift' : 'push';
 				entityList[fnName]( new Entity( map, entityList, entityType, { x:x, y:y } ) );
 				map.tileSymbolSet(x,y,TileTypeList.floor)
+			}
+			if( entityType && entityType.isItemType ) {
+				itemList.push( new Item( map, entityType, { x:x, y:y } ) );
 			}
 		}
 	}
@@ -945,22 +953,27 @@ function initGameData(tileRaw) {
 		// zero will be the player
 		entityList[entityList.length-1].watch = true;
 	}
-	return { map, entityList };
+	return { map, entityList, itemList };
 }
 
 function main(levelName) {
 
+	function playerFind() {
+		return entityList.find( entity => entity.brain==Brain.USER );
+	}
+
 	function render() {
-		document.getElementById('map').innerHTML = renderToString(map,entityList);
+		let player = playerFind();
+		document.getElementById('map').innerHTML = renderToString(player,map,entityList);
 		readout.render(entityList);
 	}
 
 	function testVictory() {
-		let player = entityList.find( entity => entity.brain=="user" );
+		let player = playerFind();
 		if( player ) {
 			let entityType = map.tileTypeGet(player.x,player.y);
 			if( entityType.isStairs ) {
-				tell('Congratulations! You descend the stairs to victory!');
+				tell('Congratulations! ',mSubject,player,' ',mVerb,'descend',' the stairs to victory!');
 				player.isVictorious = true;
 			}
 		}
@@ -982,22 +995,41 @@ function main(levelName) {
 			DeedManager.tick(entity,dt);
 			entity.actionCount += entity.speed / player.speed;
 			while( entity.actionCount >= 1 ) {
+				entity.calcVis();
 				entity.think();
 				entity.act();
+				DeedManager.calc(entity);
 				entity.actionCount -= 1;
 			}
 		}
+		DeedManager.cleanup();
 		testVictory();
 		checkDeaths();
 		entityList.forEach( entity => { entity.commandLast = entity.command; entity.command = Command.NONE; } );
 		render();
 	}
 
+	function messageCanPerceive(observer,x,y) {
+		if( !observer ) {
+			return true;
+		}
+		return observer.canPerceive(x,y);
+	}
+
+	function messageReceive(message,history) {
+		while( history.length > 10 ) {
+			history.pop();
+		}
+		let targetElement = document.getElementById('messageBox');
+		targetElement.innerHTML = (history[5]||'')+'\n'+(history[4]||'')+'\n'+(history[3]||'')+'\n'+(history[2]||'')+'\n'+(history[1]||'')+'\n'+(history[0]||'');
+		targetElement.scrollTop = targetElement.scrollHeight
+	}
+
 	function onPlayerKey(e) {
 		// let keyUp=38, keyDown=40, keyLeft=37, keyRight=39;
 		let KeyToCommand = loadKeyMapping("default");
 
-		let player = entityList.find( entity => entity.brain=="user" );
+		let player = playerFind();
 		if( player && !player.isDead() ) {
 			player.command = KeyToCommand[''+e.keyCode] !== undefined ? KeyToCommand[''+e.keyCode] : Command.NONE;
 
@@ -1007,13 +1039,56 @@ function main(levelName) {
 		}
 	}
 
-	let {map: map, entityList: entityList} = initGameData( loadGameData(levelName) );
+
+	let {map: map, entityList: entityList, itemList:itemList} = initGameData( loadLevel(levelName) );
 	let readout = new Readout();
+	let player = playerFind();
+	MessageManager.addRecipient(player,messageCanPerceive,messageReceive);
 	document.addEventListener( "keydown", onPlayerKey, false );
+
 	render();
-	tell("Welcome to flogue! Use the arrow keys to move, and '.' to wait. Reach the > stairs!")
+	tell([player,null,"Welcome to flogue! Use the arrow keys to move, and '.' to wait. Reach the > stairs!"]);
+	tell(mSubject,player,' ',mVerb,'step',' through the doorway...');
 	// The tick is called each time the player takes an action.
 }
+
+(function() {
+
+	// Ǿgidᵬj  AB*? ᵮ⍨|:░ ¡$
+
+	let level = { 
+		"test":
+			"#################\n"+
+			"#   #####⍨⍨⍨?BA*#\n"+
+			"#   |  ᵮ¡¡¡¡¡@  #\n"+
+			"#   # ### ¡¡¡ ᵮ #\n"+
+			"#ᵮᵮᵮ# # ¡¡¡¡¡ $ #\n"+
+			"#   # #:::      #\n"+
+			"#   # #::: ░░░░░#\n"+
+			"#   # #::: ░░░░░#\n"+
+			"#################\n"+
+			'',
+		"real":
+			"###################         ##########\n"+
+			"#>i+ggᵮ           ######### #     ᵬ  #\n"+
+			"####ggᵮ           #       # #⍨⍨⍨####j#\n"+
+			"   #ggᵮ           # ##### # #⍨⍨⍨#### #\n"+
+			"  #####           # | * |g###⍨⍨⍨#*## #\n"+
+			"  #Ǿ  ##+#      ᵬ + ##### +  g       #\n"+
+			"  #      #   d@   ###   ##############\n"+
+			"  #+##########Ώ## #     #  ::::::::#  \n"+
+			"  #░░░░░░░░#    # #     #  ᵮᵮᵮᵬᵬᵬ::#  \n"+
+			"  ####░░░░░#    # #######  :::::ᵬ::#  \n"+
+			"     #░░░░░##   #          ::::gAᵬ:#  \n"+
+			"     #░░░pp*#   ####################  \n"+
+			"     ########                         \n"+
+			''
+	};
+	window.loadLevel = function(levelName) {
+		return level[levelName] ? level[levelName] : level["real"];
+	}
+})();
+
 
 function loadKeyMapping(name) {
 	return {
@@ -1031,34 +1106,6 @@ function loadKeyMapping(name) {
 		89: Command.NW,
 		190: Command.WAIT
 	};
-}
-
-function loadGameData(levelName) {
-	// Ǿgidᵬj  A*ᵮ⍨|:
-	let map = { 
-		"test":
-		"#################\n"+
-		"#      ⍨        #\n"+
-		"#⍨⍨⍨⍨⍨⍨⍨    ᵮᵮᵮᵮ#\n"+
-		"#           ᵮ  d#\n"+
-		"#         @ ᵮ   #\n"+
-		"#  A   *    ᵮ   #\n"+
-		"#################\n"+
-		'',
-		"real":
-		"###################        ##########\n"+
-		"#> +       ᵬ  :::ᵬ######## #     ᵬ  #\n"+
-		"#### g        ::::#   |  # #⍨⍨⍨####j#\n"+
-		"   #            ::# #### # #⍨⍨⍨#### #\n"+
-		"  #####g          # #  #g###⍨⍨⍨#*## #\n"+
-		"  #Ǿ  ##+#        + #  # +  g       #\n"+
-		"  # p    #   d@   ###  ######ᵮᵮᵮᵮᵮ###\n"+
-		"  ############Ώ####         #:: ::#  \n"+
-		"                            #:gA :#  \n"+
-		"                            #######  \n"+
-		''
-	};
-	return map[levelName] ? map[levelName] : map["real"];
 }
 
 </script>
@@ -1103,7 +1150,7 @@ function loadGameData(levelName) {
 		</tr>
 	</table>
 	<script>
-		main("real");
+		main("test");
 	</script>
 </body>
 </html>

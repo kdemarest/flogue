@@ -1,0 +1,70 @@
+body {
+	overflow-x: hidden;
+	overflow-y: hidden;
+}
+#map {
+	display: block;
+	white-space: pre;
+	font-family: "Courier New", Courier, sans-serif;
+	font-size: 18px;
+	line-height: 18px;
+	margin-left: 10px;
+	margin-top: 10px;
+	border: 1px solid black;
+	width: 500px;
+	height: 200px;
+}
+#messageBox {
+	display: block;
+	white-space: pre;
+	font-family: "Ariel", serif;
+	font-size: 16px;
+	line-height: 16px;
+	height: 48px;
+	width: 100%;
+	margin: 0px 0px;
+	overflow-y: scroll;
+	overflow-x: auto;
+	margin-bottom: 10px;
+}
+#readout {
+	border: 1px solid black;
+	width: 104px;
+}
+table tr td {
+	vertical-align: text-top;
+}
+.health-bar {
+	display: none;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	width: 100px;
+	height: 20px;
+	padding: 2px;
+	background: #ddd;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	position: relative;
+	margin-bottom: 2px;
+}
+.bar {
+	background: #c54;
+	width: 100%;
+	height: 16px;
+	position: relative;
+
+	transition: width .5s linear;
+}
+
+.hit {
+	background: rgba(255,255,255,0.6);
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 0px;
+
+	transition: width .5s linear;
+}
