@@ -6,6 +6,9 @@ class FinderBase {
 		Array.filterInPlace( this.result, fn );
 		return this;
 	}
+	includesId(id) {
+		return this.result.find( e => e.id==id );
+	}
 	at(x,y) {
 		return this.filter( e => e.x==x && e.y==y );
 	}
@@ -18,7 +21,7 @@ class FinderBase {
 	far(x,y,rectDist=1) {
 		return this.filter( e => (Math.abs(e.x-x)>rectDist || Math.abs(e.y-y)>rectDist) );
 	}
-	byDistance(x,y) {
+	byDistanceFromPosition(x,y) {
 		this.result.sort( (a,b) => ((a.x-x)*(a.x-x)+(a.y-y)*(a.y-y)) - ((b.x-x)*(b.x-x)+(b.y-y)*(b.y-y))  );
 		return this;
 	}
@@ -30,7 +33,22 @@ class FinderBase {
 		this.result.map(fn);
 		return this;
 	}
+	isTypeId(typeId) {
+		return this.filter( e => e.typeId == typeId );
+	}
+	isId(id) {
+		return this.filter( e => e.id==id );
+	}
+	getId(id) {
+		for( let e of this.result ) {
+			if( e.id == id ) {
+				return e;
+			}
+		}
+		return false;
+	}
 	get first() {
+		// Readout.render depends on this returning false if there is nothing in the list.
 		return this.result.length <= 0 ? false : this.result[0];
 	}
 	get count() {
@@ -51,6 +69,10 @@ class ItemFinder extends FinderBase {
 
 class Finder extends FinderBase {
 	constructor(entityList) {
+		if( !entityList ) {
+			debugger;
+		}
+
 		super();
 		this.result = entityList.slice();
 	}
@@ -80,15 +102,25 @@ class Finder extends FinderBase {
 
 class EntityFinder extends Finder {
 	constructor(entity,entityList) {
+		if( entity instanceof EntityFinder ) {
+			super(entity.entityList);
+			this.entity = entity.entity;
+			return;
+		}
+		if( !entity ) {
+			debugger;
+		}
 		super(entityList);
 		this.entity = entity;
-		this.exclude(this.entity);
 	}
 	includeMe() {
 		this.result.unshift(this.entity);
 		return this;
 	}
-	dir(direction) {
+	excludeMe() {
+		return this.exclude(this.entity);
+	}
+	atDirFromMe(dir) {
 		return this.atDir(this.entity.x,this.entity.y,dir);
 	}
 	nearMe(rectDist=1) {
@@ -97,8 +129,11 @@ class EntityFinder extends Finder {
 	farFromMe(rectDist=1) {
 		return this.far(this.entity.x,this.entity.y,rectDist);
 	}
-	canPerceive() {
-		return this.filter( e => this.entity.canPerceive(e) );
+	canPeceivePosition(x,y) {
+		return this.filter( e => this.entity.canPerceivePosition(x,y) );
+	}
+	canPerceiveEntity() {
+		return this.filter( e => this.entity.canPerceiveEntity(e) );
 	}
 	isMyEnemy() {
 		return this.filter( e => this.entity.isMyEnemy(e) );
@@ -109,7 +144,7 @@ class EntityFinder extends Finder {
 	isMyNeutral() {
 		return this.filter( e => this.entity.isMyNeutral(e) );
 	}
-	byDistance(x,y) {	// optional parameters
-		return super.byDistance(x===undefined ? this.entity.x : x,y===undefined ? this.entity.y : y);
+	byDistanceFromMe(entity) {
+		return super.byDistanceFromPosition(this.entity.x,this.entity.y);
 	}
 }

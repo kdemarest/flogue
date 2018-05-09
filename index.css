@@ -1,6 +1,13 @@
 body {
 	overflow-x: hidden;
 	overflow-y: hidden;
+	color: white;
+	background-color: black;
+}
+#mapContainer {
+	width: 544px;
+	height: 544px;
+	position: relative;
 }
 #map {
 	display: block;
@@ -8,11 +15,26 @@ body {
 	font-family: "Courier New", Courier, sans-serif;
 	font-size: 18px;
 	line-height: 18px;
-	margin-left: 10px;
-	margin-top: 10px;
-	border: 1px solid black;
-	width: 500px;
-	height: 200px;
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top:0;
+	left:0;
+}
+.tile {
+	width: 32px;
+	height: 32px;
+}
+#inventory {
+	display: none;
+	z-index: 10;
+	white-space: pre;
+	background-color: rgba(177,177,99, 0.60);
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top:0;
+	left:0;
 }
 #messageBox {
 	display: block;
@@ -27,12 +49,27 @@ body {
 	overflow-x: auto;
 	margin-bottom: 10px;
 }
-#readout {
-	border: 1px solid black;
+#readoutStatus {
 	width: 104px;
 }
+#readoutSpells {
+	width: 104px;
+	height: 64px;
+	display: block;
+	white-space: pre;
+	font-family: "Ariel", serif;
+	font-size: 16px;
+	margin: 0px 0px;
+	overflow-y: hidden;
+	overflow-x: hidden;
+}
+.spell {
+}
+.lit {
+	background-color: green;
+}
 table tr td {
-	vertical-align: text-top;
+	vertical-align: top;
 }
 .health-bar {
 	display: none;

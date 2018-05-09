@@ -1,8 +1,10 @@
 <html>
 <head>
+<meta charset="utf-8"/>
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/minireset.css/0.0.2/minireset.css">
 <link rel="stylesheet" type="text/css" href="index.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+<script src="pixi.min.js"></script>
 <script src="nameList.js"></script>
 <script src="utilities.js"></script>
 <script src="data.js"></script>
@@ -11,15 +13,33 @@
 <qscript src="levels.js"></script>
 <script>
 
+/*
+Resources:
+* https://opengameart.org/content/2d-dungeon-and-roguelike-1
+* https://opengameart.org/content/2d-32x32
+
+
+*/
+
 let humanNameList = Array.shuffle(getNameList());
 
 
 let MessageManager = (new class {
 	constructor() {
 		this.recipientList = [];
+		this.accumulate = 0;
 	}
-	addRecipient( observer, canPerceiveFn, receiveFn ) {
-		this.recipientList.push( { observer: observer, canPerceiveFn: canPerceiveFn, receiveFn: receiveFn, history: [] });
+	addRecipient( observer, canPerceiveEntityFn, receiveFn ) {
+		this.recipientList.push( { observer: observer, canPerceiveEntityFn: canPerceiveEntityFn, receiveFn: receiveFn, history: [], buffer: [] });
+	}
+	hold() {
+		this.accumulate++;
+	}
+	release() {
+		this.accumulate--;
+		if( !this.accumulate ) {
+
+		}
 	}
 	tell() {
 		let sentence = ( arguments[0] instanceof Sentence ) ? arguments[0] : new Sentence(...arguments);
@@ -27,14 +47,22 @@ let MessageManager = (new class {
 			debugger;
 		}
 		this.recipientList.map( recipient => {
-			let cp = recipient.canPerceiveFn(recipient.observer,sentence.subject.x,sentence.subject.y);
+			let cp = recipient.canPerceiveEntityFn(recipient.observer,sentence.subject);
 			if( sentence.object ) {
-				cp = cp || recipient.canPerceiveFn(recipient.observer,sentence.object.x,sentence.object.y);
+				cp = cp || recipient.canPerceiveEntityFn(recipient.observer,sentence.object);
 			}
 
 			if( cp || recipient.observer.observeDistantEvents ) {
 				let message = (cp?'':'FAR: ')+sentence.refine(recipient.observer);
-				recipient.history.unshift(message);
+				if( this.accumulate ) {
+					recipient.buffer.unshift(message);
+				}
+				else {
+					while( recipient.buffer.length ) {
+						recipient.history.unshift( recipient.buffer.pop() );
+					}
+					recipient.history.unshift(message);
+				}
 				recipient.receiveFn(message,recipient.history);
 			}
 		});
@@ -57,7 +85,8 @@ class Deed {
 	constructor(cause,entity,duration,stat,op,value,onTick,onEnd,data) {
 		if( entity[stat] === undefined ) {
 			debugger;
-		}this.cause = cause;
+		}
+		this.cause = cause;
 		this.entity = entity;
 		this.stat = stat;
 		this.op = op;
@@ -164,7 +193,7 @@ let DeedManager = (new class {
 	}
 	force(entity,stat,value) {
 		this.end(entity,stat);
-		this.add(entity,true,stat,'set',value);
+		this.add(entity,entity,true,stat,'set',value);
 		this.calcStat(entity,stat);
 	}
 	end(entity,stat,value) {
@@ -241,11 +270,77 @@ let deedTell = function(entity,stat,oldValue,newValue ) {
 	tell(...content);
 }
 
-DeedManager.addHandler('health','add',function(cause,entity,value) { entity.takeHealing(cause,value,cause.effect.healingType);});
-DeedManager.addHandler('health','sub',function(cause,entity,value) { entity.takeDamage(cause,value,cause.effect.damageType,cause.effect.onDamage);});
+DeedManager.addHandler('health','add',function(cause,entity,value) {
+	entity.takeHealing(cause,value,cause.effect.healingType);
+});
+DeedManager.addHandler('health','sub',function(cause,entity,value) {
+	entity.takeDamage(cause,value,cause.effect.damageType,cause.effect.onDamage);
+});
+DeedManager.addHandler('position','push',function(cause,entity,value) {
+	while( cause.cause ) {
+		cause = cause.cause;
+	}
+	entity.takePush(cause,value);
+});
 
 function adhoc(tileType,x,y) {
+	if( tileType.isItemType ) {
+		// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
+		// This also means no permanent data can exist in them. Meanwhile, items and
+		// persistent in the map item list.
+		return tileType;
+	}
 	return Object.assign({},tileType,{x:x,y:y});
+}
+
+function objHas(obj,member) {
+	return( typeof obj=='object' && obj[member] !== undefined );
+}
+
+let StickerList = {
+	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 }
+}
+
+class AniPaste {
+	constructor(data) {
+		Object.assign(this,data);
+		this.isAnimation = true;
+		this.dead = false;
+		this.alpha = this.sticker.alpha || 1;
+		this.scale = this.sticker.scale || 1;
+		this.xAnchor = this.sticker.xAnchor || 0.5;
+		this.yAnchor = this.sticker.yAnchor || 0.5;
+	}
+	imgGet() {
+		if( this.dead ) {
+			return null;
+		}
+		return this.sticker.img;
+	}
+	tick(delta) {
+		if( this.dead ) {
+			return;
+		}
+		if( this.onTick ) {
+			this.onTick.call(this,delta);
+		}
+		this.duration -= delta;
+		if( this.duration <= 0 ) {
+			this.dead = true;
+			animationDeathCallback(this.sprite);
+		}
+	}
+}
+
+
+let animationList = [];
+let animationDeathCallback;
+function animationAdd(anim) {
+	animationList.push(anim);
+}
+function animationTick(delta) {
+	animationList.map( anim => anim.tick(delta) );
+	Array.filterInPlace( animationList, anim => !anim.dead );
 }
 
 //
@@ -276,16 +371,22 @@ class Entity {
 		}
 	}
 
-	entityFinder(entityList = this.entityList) {
-		return new EntityFinder(this,entityList);
+	findAliveOthers(entityList = this.entityList) {
+		return new EntityFinder(this,entityList).excludeMe().isAlive();
+	}
+	isUser() {
+		return this.brain == Brain.USER;
 	}
 
 	die() {
-		if( this.isVictorious ) {
+		if( this.removed && this.isUser() ) {
 			return;
 		}
 		if( this.removed ) {
 			debugger;
+		}
+		if( this.isVictorious ) {
+			return;
 		}
 		tell(mSubject,this,' ',mVerb,'die','!');
 		this.removed = true;
@@ -298,19 +399,22 @@ class Entity {
 		return !this.isDead();
 	}
 
-	dirToPredictable(_x,_y) {
-		let dx = ( isEntity(_x) ? _x.x : _x ) - this.x;
-		let dy = ( isEntity(_x) ? _x.y : _y ) - this.y;
+	dirToEntityPredictable(entity) {
+		let dx = entity.x - this.x;
+		let dy = entity.y - this.y;
 		return deltasToDirPredictable(dx,dy);
 	}
-	dirToNatural(_x,_y) {
-		let dx = ( isEntity(_x) ? _x.x : _x ) - this.x;
-		let dy = ( isEntity(_x) ? _x.y : _y ) - this.y;
+	dirToEntityNatural(entity) {
+		let dx = entity.x - this.x;
+		let dy = entity.y - this.y;
 		return deltasToDirNatural(dx,dy);
 	}
 
 	isMyEnemy(entity) {
 		if( this.attitude == Attitude.ENRAGED ) {
+			return true;
+		}
+		if( entity.id == this.personalEnemy ) {
 			return true;
 		}
 		return entity.team != this.team && entity.team != Team.NEUTRAL;
@@ -319,13 +423,22 @@ class Entity {
 		if( this.attitude == Attitude.ENRAGED ) {
 			return false;
 		}
+		if( entity.id == this.personalEnemy ) {
+			return false;
+		}
 		return entity.team == this.team && entity.team != Team.NEUTRAL;
 	}
 	isMyNeutral(entity) {
 		if( this.attitude == Attitude.ENRAGED ) {
 			return false;
 		}
+		if( entity.id == this.personalEnemy ) {
+			return false;
+		}
 		return this.team == Team.NEUTRAL || entity.team == Team.NEUTRAL;
+	}
+	healthPercent() {
+		return Math.floor((this.health/this.healthMax)*100);
 	}
 
 	calcVis() {
@@ -333,15 +446,22 @@ class Entity {
 		return this.vis;
 	}
 
-	canPerceive(_x,_y) {
+	canPerceiveEntity(entity) {
 		if( !this.vis ) {
 			return true;
 		}
-		if( isEntity(_x) && (this.blind || (_x.invisible && !this.seeInvisible)) && _x.id!==this.id /*you can always perceive yourself*/) {
+		// This gets us up to whoever actually owns this item. But on the map, you just use the item.
+		// This means that items can NOT be invisible independent of their owners.
+		while( entity.owner && !entity.owner.isMap ) {
+			entity = entity.owner;
+		}
+		if( (this.blind || (entity.invisible && !this.seeInvisible)) && entity.id!==this.id ) { // you can always perceive yourself
 			return false;
 		}
-		let x = isEntity(_x) ? _x.x : _x;
-		let y = isEntity(_x) ? _x.y : _y;
+		return this.canPerceivePosition(entity.x,entity.y);
+	}
+
+	canPerceivePosition(x,y) {
 		if( x===undefined || y===undefined ) {
 			debugger;
 		}
@@ -365,17 +485,29 @@ class Entity {
 	}
 
 	enemyAtPos(x,y) {
-		return this.entityFinder().at(x,y).isMyEnemy();
+		return this.findAliveOthers().at(x,y).isMyEnemy();
 	}
 
 	at(x,y) {
-		let f = this.entityFinder().at(x,y).isAlive();
+		let f = this.findAliveOthers().at(x,y);
 		return f.first || this.map.tileTypeGet(x,y);
 	}
 
 	atDir(x,y,dir) {
-		let f = this.entityFinder().atDir(x,y,dir).isAlive();
-		return f.first || this.map.tileTypeGetDir(x,y,dir);
+		return at(x + DirectionAdd[dir].x, y + DirectionAdd[dir].y);
+	}
+
+	mayOccupy(x,y,ignoreEntity) {
+		let mayTravel = 'may'+String.capitalize(this.travelMode || "walk");
+		let f = this.findAliveOthers().at(x,y);
+		if( ignoreEntity ) {
+			f.exclude(ignoreEntity);
+		}
+		if( f.first && !f.first[mayTravel] ) {
+			return false;
+		}
+		let tileOrItem = this.map.tileTypeGet(x,y);
+		return tileOrItem[mayTravel];
 	}
 
 	mayEnter(x,y,avoidProblem) {
@@ -384,6 +516,8 @@ class Entity {
 		if( !entityType[mayTravel] ) {
 			return false;
 		}
+		// If we are already in a problem, then we should probably just keep ignoring it. For example,
+		// once we've decided to enter fire, better just go for it!
 		if( avoidProblem && entityType.isProblem && entityType.isProblem(this,entityType) ) {
 			return false;
 		}
@@ -420,15 +554,19 @@ class Entity {
 
 	thinkApproach(target) {
 		// Can I walk towards them?
-		let dir = this.dirToNatural(target);
+		let dir = this.dirToEntityNatural(target);
 		// Aggressive creatures will completely avoid problems if 1/3 health, otherwide they
 		// avoid problems most of the time, but eventually will give in and take the risk.
-		let avoidProblem = (
-			this.attitude == Attitude.HESITANT ||
-			this.attitude == Attitude.FEARFUL ||
-			(this.attitude == Attitude.AGGRESSIVE && (this.health<this.healthMax/3 || Math.chance(85)) )
-		);
-		this.record( (avoidProblem ? '' : 'not ')+' avoiding problem', true );
+		let avoidProblem = true;
+		// Out of control attitudes just ignore caution.
+		if( this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
+			avoidProblem = false;
+		}
+		// If you're aggressive and healthy, there is a 15% change you will charge forward through problems.
+		if( this.attitude == Attitude.AGGRESSIVE && this.health>this.healthMax/3 && Math.chance(15) ) {
+			avoidProblem = false;
+		}
+		this.record( (avoidProblem ? '' : 'not ')+'avoiding problem', true );
 
 		if( this.mayGo(dir,avoidProblem) ) {
 			this.record('approach '+target.name,true);
@@ -445,7 +583,7 @@ class Entity {
 		let useAiTemporarily = false;
 		if( this.brain == Brain.USER ) {
 			// Placeholder, since the onPlayerKey already sets the command for us
-			if( this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.Attitude == Attitude.PANICKED ) {
+			if( this.loseTurn || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.Attitude == Attitude.PANICKED ) {
 				useAiTemporarily = true;
 			}
 		}
@@ -453,11 +591,19 @@ class Entity {
 		if( this.brain == Brain.AI || useAiTemporarily ) {
 			this.command = (function() {
 
+				if( this.loseTurn ) {
+					return Command.LOSETURN;
+				}
+
+				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
+				let enemyList = this.findAliveOthers().isMyEnemy().canPerceiveEntity().byDistanceFromMe();
+				let vendetta = enemyList.includesId(this.personalEnemy);
+
 				if( this.attitude == Attitude.CONFUSED ) {
 					return Math.chance(30) ? Command.WAIT : this.thinkWander(true);
 				}
 
-				if( this.attitude == Attitude.WANDER ) {
+				if( this.attitude == Attitude.WANDER && !vendetta ) {
 					let dirLast = commandToDirection(this.commandLast);
 					if( Math.chance(90) && dirLast !== false && this.mayGo(dirLast,this.avoidProblem()) ) {
 						this.record('keep walking',true);
@@ -466,43 +612,60 @@ class Entity {
 					return Math.chance(30) ? Command.WAIT : this.thinkWander();
 				}
 
-				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
-				let enemyList = this.entityFinder().isMyEnemy().canPerceive().byDistance();
-
-				// If no enemy to attack or fles, then just wander around 
-				if( !enemyList.count ) {
-					this.record('no enemy',true);
-					let friendList = this.entityFinder().isMyFriend().farFromMe(2).byDistance();
-					if( this.packAnimal && friendList.count ) {
+				// Pack animals and pets return to safety when...
+				let hurt = this.healthPercent()<30;
+				if( hurt && this.brainPet ) {
+					this.vocalize = [mSubject,this,' ',mVerb,Math.chance(50)?'wimper':'whine'];
+				}
+				if( (hurt || !enemyList.count) && (this.brainPet || this.packAnimal) ) {
+					// When hurt, your pet will run towards you. Once with 2 it will flee its enemies, but still stay within 2 of you.
+					let friendList = this.findAliveOthers().isMyFriend().farFromMe(2).byDistanceFromMe();
+					if( friendList.count ) {
 						this.record('back to a friend',true);
 						let c = this.thinkApproach(friendList.first);
 						if( c !== false ) {
 							return c;
 						}
 					}
+				}
+
+				// If no enemy to attack or fles, then just wander around 
+				if( !enemyList.count ) {
+					this.record('no enemy',true);
 					return this.thinkWander();
 				}
 
 				// Flee if I am fearful or sometimes if hesitant
-				let flee = ( this.attitude == Attitude.FEARFUL || this.attitude == Attitude.PANICKED || (this.attitude == Attitude.HESITANT && Math.chance(40)));
+				let flee = (hurt && this.brainFlee) || ( this.attitude == Attitude.FEARFUL || this.attitude == Attitude.PANICKED || (this.attitude == Attitude.HESITANT && !vendetta && Math.chance(40)));
 				if( flee ) {
+					// This is a very basic flee, trying to always move away from nearest enemy. However, a
+					// smarter version would pick every adjacent square and test whether any enemy could reach
+					// that square, and more to the safest square.
 					let panic = (this.attitude == Attitude.PANICKED);
-					let dirAway = this.dirToNatural(enemyList.first);
-					dirAway = (dirAway + 4 + Math.randInt(0,3)-1) % DirectionCount;
-					if( panic || this.mayGo(dirAway,this.avoidProblem()) ) {
-						this.record( (panic ? 'panicked flee' : 'fled')+' from '+enemyList.first.name, true );
-						return directionToCommand(dirAway);
+					let dirAwayPerfect = (this.dirToEntityNatural(enemyList.first)+4)%DirectionCount;;
+					let dirAwayRandom = (dirAwayPerfect+8+Math.randInt(0,3)-1) % DirectionCount;
+					let dirAway = [dirAwayRandom,dirAwayPerfect,(dirAwayPerfect+8-1)%DirectionCount,(dirAwayPerfect+1)%DirectionCount];
+					while( dirAway.length ) {
+						let dir = dirAway.shift();
+						if( panic || this.mayGo(dir,this.avoidProblem()) ) {
+							this.record( (panic ? 'panicked flee' : 'fled')+' from '+enemyList.first.name, true );
+							return directionToCommand(dir);
+						}
 					}
+
 					this.record('cannot flee',true);
 				}
 
 				// Attack if I am within reach, and aggressive or sometimes if hesitant
-				let adjacent = this.entityFinder(enemyList.all).nearMe(this.reach);
+				let adjacent = this.findAliveOthers(enemyList.all).nearMe(this.reach);
 				if( adjacent.count ) {
-					let attack = ( this.attitude == Attitude.AGGRESSIVE || this.attitude == Attitude.ENRAGED || (this.attitude == Attitude.HESITANT && Math.chance(50)) );
+					let attack = this.attitude != Attitude.FEARFUL;
+					if( this.attitude == Attitude.HESITANT && !vendetta && Math.chance(50) ) {
+						attack = false;
+					}
 					if( attack ) {
 						this.record('attack '+adjacent.first.name,true);
-						return directionToCommand(this.dirToPredictable(adjacent.first));
+						return directionToCommand(this.dirToEntityPredictable(adjacent.first));
 					}
 				}
 
@@ -530,8 +693,8 @@ class Entity {
 	}
 
 	takeHealing(healer,amount,healingType) {
-		if( healer.isItemType ) {
-			healer = healer.cause || healer.owner;
+		while( healer.cause ) {
+			healer = healer.cause;
 		}
 		amount = Math.min( amount, this.healthMax-this.health );
 		let quiet = false;
@@ -559,6 +722,18 @@ class Entity {
 		if( attacker && attacker.invisible ) { //&& !this.type.invisible ) {
 			DeedManager.force(attacker,"invisible",false);
 		}
+		if( this.brain!=='user' ) {
+			this.personalEnemy = attacker.id;
+		}
+
+		if( amount > 0 ) {
+			animationAdd( new AniPaste({
+				sticker: StickerList.hit,
+				x: this.x+0.5,
+				y: this.y+0.5,
+				duration: 0.3
+			}));
+		}
 
 		this.health -= amount;
 		let quiet = false;
@@ -568,6 +743,21 @@ class Entity {
 		if( !quiet ) {
 			tell(mSubject,attacker,' ',mVerb,damageType,' ',mObject,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!' );
 		}
+	}
+
+	takePush(attacker,distance) {
+		let dx = Math.sign(this.x-attacker.x);
+		let dy = Math.sign(this.y-attacker.y);
+		if( dx==0 && dy==0 ) {
+			debugger;
+			return;
+		}
+		tell(mSubject,this,' is pushed!');
+		let success = true;
+		while( success && distance-- ) {
+			success = this.moveTo(this.x+dx,this.y+dy,false);
+		}
+		this.loseTurn = true;
 	}
 
 	doDamage(other,amount,damageType,onDamage) {
@@ -597,6 +787,8 @@ class Entity {
 		this.tileTypeLast = this.map.tileTypeGet(this.x,this.y);
 		this.x = x;
 		this.y = y;
+		// This just makes sure that items have coordinates, for when they're the cause of things.
+		this.inventory.map( item => { item.x=x; item.y=y; } );
 	}
 
 	moveDir(dir) {
@@ -604,24 +796,27 @@ class Entity {
 		let y = this.y + DirectionAdd[dir].y;
 		return this.moveTo(x,y);
 	}
-	moveTo(x,y) {
+	// Returns false if the move fails. Very important for things like takePush().
+	moveTo(x,y,attackAllowed=true) {
 		if( this.map.inBounds(x,y) ) {
-			let entityList = this.entityFinder().at(x,y);
+			let f = this.findAliveOthers().at(x,y);
+			let allyToSwap = false;
 
 			// Attack enemies or neutrals
-			if( entityList.count && (this.isMyEnemy(entityList.first) || this.isMyNeutral(entityList.first)) ) {
-				this.attack(entityList.first);
-				return;
+			if( f.count && attackAllowed && (this.isMyEnemy(f.first) || this.isMyNeutral(f.first)) ) {
+				this.attack(f.first);
+				return "attack";
 			}
 			else
 			// Switch with friends, else bonk!
-			if( entityList.count && this.isMyFriend(entityList.first) ) {
-				if( this.brain == 'user' ) {
-					// swap places by revrsing the direction user moved with the drection friend moved.
-					//but for now simply deny.
-				}
-				(entityList.first.onTouch || bonk)(this,entityList.first);
-				return;
+			if( f.count && this.isMyFriend(f.first) && this.isUser() ) {
+				// swap places with allies
+				allyToSwap = f.first;
+			}
+			else
+			if( f.count ) {
+				(f.first.onTouch || bonk)(this,f.first);
+				return false;
 			}
 
 			let xOld = this.x;
@@ -631,29 +826,31 @@ class Entity {
 
 			if( tileTypeHere.onDepart ) {
 				if( tileTypeHere.onDepart(this,adhoc(tileTypeHere,xOld,yOld)) === false ) {
-					return;
+					return false;
 				}
 			}
 			// Are we leaving this type of tile?
 			if( tileType.name != tileTypeHere.name && tileTypeHere.onDepartType ) {
 				if( tileTypeHere.onDepartType(this,adhoc(tileTypeHere,xOld,yOld),adhoc(tileType,x,y)) === false ) {
-					return;
+					return false;
 				}
 			}
 
-			// Now only tiles and items are left.
-			if( !this.mayEnter(x,y) ) {
+			if( !this.mayOccupy(x,y,allyToSwap) ) {
 				(tileType.onTouch || bonk)(this,adhoc(tileType,x,y));
-				return;
+				return false;
 			}
 
 			// Are we entering a new tile type?
 			if( tileType.name != tileTypeHere.name && tileType.onEnterType ) {
 				if( tileType.onEnterType(this,adhoc(tileType,x,y),tileTypeHere,xOld,yOld) === false ) {
-					return;
+					return false;
 				}
 			}
 
+			if( allyToSwap ) {
+				allyToSwap.setPosition(this.x,this.y);
+			}
 			this.setPosition(x,y);
 
 			// We must be touching the new tile, so act on that.
@@ -661,13 +858,18 @@ class Entity {
 				tileType.onTouch(this,adhoc(tileType,x,y));
 			}
 
-			let f = new ItemFinder(this.map.itemList).at(x,y);
-			for( let item of f.all ) {
-				if( item.moveTo(this) !== false ) {
-					tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
-					item.trigger(item,this);
+			if( this.picksup ) {
+				let f = new ItemFinder(this.map.itemList).at(x,y);
+				for( let item of f.all ) {
+					if( item.moveTo(this) !== false ) {
+						tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
+						if( item.triggerOnPickup ) {
+							item.trigger(item,this);
+						}
+					}
 				}
 			}
+			return true;
 		}
 	}
 
@@ -680,12 +882,29 @@ class Entity {
 			this.health = Math.min(this.health+this.regenerate,this.healthMax);
 		}
 
+		if( this.vocalize ) {
+			tell(...this.vocalize);
+			this.vocalize = false;
+		}
+
+
 		if( commandToDirection(this.command) !== false ) {
 			let dir = commandToDirection(this.command);
 			this.moveDir(dir);
 		}
 		else 
 		switch( this.command ) {
+			case Command.LOSETURN: {
+				if( this.brain == 'user' ) {
+					tell(mSubject,this,' ',mVerb,'spend', ' time recovering.');
+				}
+				this.loseTurn = false;
+				let tileType = this.map.tileTypeGet(this.x,this.y);
+				if( tileType.onTouch ) {
+					tileType.onTouch(this,adhoc(tileType,this.x,this.y));
+				}
+				break;
+			}
 			case Command.WAIT: {
 				if( this.brain == 'user' ) {
 					tell(mSubject,this,' ',mVerb,'wait','.');
@@ -694,6 +913,19 @@ class Entity {
 				if( tileType.onTouch ) {
 					tileType.onTouch(this,adhoc(tileType,this.x,this.y));
 				}
+				break;
+			}
+			case Command.QUAFF: {
+				let item = this.commandItem;
+				tell(mSubject,this,' ',mVerb,'quaff',' ',mObject,item);
+				item.trigger(this,this);
+				break;
+			}
+			case Command.CAST: {
+				let item = this.commandItem;
+				let target = this.commandTarget;
+				tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');
+				item.trigger(this,target);
 				break;
 			}
 		};
@@ -709,13 +941,25 @@ class Item {
 	constructor(owner,itemType,position) {
 		let inits = { owner: owner, id: humanNameList.pop(), x:position.x, y:position.y };
 		Object.assign( this, itemType, inits );
-		this.effect = this.effect===false ? false : this.generateEffect();
-		this.name = this.namePattern.replace('*',this.effect.name);
+		if( this.choices ) {
+			this.effect = this.generateEffect();
+		}
+		this.name = this.name || this.namePattern.replace('*',this.effect.name);
 	}
 	generateEffect() {
-		let effectTypeArray = Object.entries(EffectTypeList);
-		let n = (itemEffectCount++)%effectTypeArray.length; //Math.randInt(0,effectTypeArray.length);
-		return Object.assign({},effectTypeArray[n][1]);
+		let effectType = pick(this.choices);
+		let effect = Object.assign({},effectType);
+		if( effect.valuePick ) {
+			effect.value = effect.valuePick();
+		}
+		effect.name = effect.name.replace('*',this.value);
+		return effect;
+	}
+	xGet() {
+		return this.owner.isMap ? this.x : this.owner.x;
+	}
+	yGet() {
+		return this.owner.isMap ? this.y : this.owner.y;
 	}
 	moveTo(entity,x,y) {
 		let ok = (!this.type.onPickup || this.type.onPickup(this,owner,entity)!==false);
@@ -744,18 +988,22 @@ class Item {
 		}
 		this.cause = cause;
 		deedAdd(this,target,rollDice(effect.duration),effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
-		this.charges -= 1;
-		if( this.charges < 0 ) {
-			this.owner.itemRemove(this);
+		if( this.charges !== true ) {	// true means it has infinite charges.
+			this.charges -= 1;
+			if( this.charges <= 0 ) {
+				this.owner.itemRemove(this);
+			}
 		}
 	}
 }
+function isItem(e) { return e instanceof Item; }
 
 // MAP
 
 class Map {
 	constructor(tile,itemList) {
 		this.isMap = true;
+		this.actionCount = 0;
 		this.tile = tile;
 		this.itemList = itemList;
 		while( tile[tile.length-1].trim() == '' ) {
@@ -782,8 +1030,17 @@ class Map {
 		return this.tile[y].charAt(x);
 	}
 	tileTypeGet(x,y) {
+		if( !this.inBounds(x,y) ) {
+			return false;
+		}
 		let symbol = this.tileSymbolGet(x,y);
-		return ( this.inBounds(x,y) ? SymbolToType[symbol] : false );
+		if( SymbolToType[symbol].isItemType ) {
+			let f = new ItemFinder(this.itemList).at(x,y);
+			if( f.count ) {
+				return f.first;
+			}
+		}
+		return SymbolToType[symbol];
 	}
 	tileTypeGetDir(x,y,dir) {
 		x += DirectionAdd[dir].x;
@@ -806,42 +1063,53 @@ class Map {
 	}
 }
 
-function calcVis(map,px,py,sightDistance,blind,cachedVis) {
 
-	function shoot(sx,sy,tx,ty) {
-		if( sx==tx && sy==ty ) {
-			return true;
-		}
-		if( blind ) {
-			return false;
-		}
-		let sxInt = Math.floor(sx);
-		let syInt = Math.floor(sy);
-		let dx = tx-sx;
-		let dy = ty-sy;
-		let dist = Math.sqrt(dx*dx+dy*dy);
-		let x = sx;
-		let y = sy;
-		let step = 0.25;
-		dx = dx / (dist/step);
-		dy = dy / (dist/step);
-		// Always allowed to see itself.
-		dist -= 0.5;
-		let wallAmount = 0; //let bad = {x:0,y:0,count:0};
-		while( dist > 0 ) {
-			let xInt = Math.floor(x);
-			let yInt = Math.floor(y);
-			let atPlayer = (xInt==px && yInt==py);
-			if( !atPlayer ) {
-				wallAmount += map.tileTypeGet(xInt,yInt).opacity;
-				if( wallAmount >= 1 ) { return false; }
-			}
-			x += dx;
-			y += dy;
-			dist -= step;
-		}
+function shoot(map,px,py,sx,sy,tx,ty,blind) {
+	if( sx==tx && sy==ty ) {
 		return true;
 	}
+	if( blind ) {
+		return false;
+	}
+	let sxInt = Math.floor(sx);
+	let syInt = Math.floor(sy);
+	let dx = tx-sx;
+	let dy = ty-sy;
+	let dist = Math.sqrt(dx*dx+dy*dy);
+	let x = sx;
+	let y = sy;
+	let step = 0.25;
+	dx = dx / (dist/step);
+	dy = dy / (dist/step);
+	// Always allowed to see itself.
+	dist -= 0.5;
+	let wallAmount = 0;
+	while( dist > 0 ) {
+		let xInt = Math.floor(x);
+		let yInt = Math.floor(y);
+		let atPlayer = (xInt==px && yInt==py);
+		if( !atPlayer ) {
+			wallAmount += map.tileTypeGet(xInt,yInt).opacity;
+			if( wallAmount >= 1 ) { return false; }
+		}
+		x += dx;
+		y += dy;
+		dist -= step;
+	}
+	return true;
+}
+
+function shoot4(map,px,py,x,y,blind) {
+	let tl = shoot(map,px,py,px,py,x,y,blind);
+	let tr = shoot(map,px,py,px+0.95,py+0.00,x+0.95,y+0.00,blind);
+	let bl = shoot(map,px,py,px+0.00,py+0.95,x+0.00,y+0.95,blind);
+	let br = shoot(map,px,py,px+0.95,py+0.95,x+0.95,y+0.95,blind);
+	let isVisible = tl || tr || bl || br;
+	return isVisible;
+}
+
+
+function calcVis(map,px,py,sightDistance,blind,cachedVis) {
 
 	let a = cachedVis || [];
 
@@ -850,13 +1118,9 @@ function calcVis(map,px,py,sightDistance,blind,cachedVis) {
 		for( let x=0 ; x<map.xLen ; ++x ) {
 			if( Math.abs(y-py)>sightDistance || Math.abs(x-px)>sightDistance ) {
 				a[y][x] = false;
+				continue;
 			}
-			let tl = shoot(px,py,x,y);
-			let tr = shoot(px+0.95,py+0.00,x+0.95,y+0.00);
-			let bl = shoot(px+0.00,py+0.95,x+0.00,y+0.95);
-			let br = shoot(px+0.95,py+0.95,x+0.95,y+0.95);
-			let isVisible = tl || tr || bl || br;
-			a[y][x] = isVisible;
+			a[y][x] = shoot4(map,px,py,x,y,blind);
 		}
 	}
 	a[py][px] = true;
@@ -867,21 +1131,34 @@ function calcVis(map,px,py,sightDistance,blind,cachedVis) {
 // READOUT
 
 class Readout {
-	constructor() {
+	constructor(spellDivId,inventoryDivId) {
+		this.spellDivId = spellDivId;
+		this.inventoryDivId = inventoryDivId;
 		this.lastHealth = [];
+		this.slotList = [];
+		this.inventoryOpen = false;
+		this.inventory = null;
+		this.command = Command.NONE;
+		this.commandItem = null;
+		this.commandTarget = null;
 	}
-	render(entityList) {
-		let player = entityList.find( entity => entity.brain=="user" );
-		if( !player ) { return; }
+	renderEntityStatus(observer,entityList) {
+		let SLOT_COUNT = 10;
 
-		let f = player.entityFinder().prepend(player).canPerceive().byDistance().keepTop(5);
+		let f = new EntityFinder(observer,entityList).isAlive().prepend(observer).canPerceiveEntity().byDistanceFromMe().keepTop(SLOT_COUNT);
+		Array.filterInPlace( this.slotList, slot => f.getId(slot) );
+		f.process( entity => {
+			if( !this.slotList.includes(entity.id) ) {
+				this.slotList.push(entity.id);
+			}
+		});
 
-		for( let i=0 ; i<5 ; ++i ) {
-			if( i >= f.all.length ) {
+		for( let i=0 ; i<SLOT_COUNT ; ++i ) {
+			if( i >= this.slotList.length ) {
 				$('#health'+i).hide();
 				continue;
 			}
-			let entity = f.all[i];
+			let entity = f.getId(this.slotList[i]);
 			let newValue = entity.health;
 			let lastValue = this.lastHealth[entity.id]!==undefined ? this.lastHealth[entity.id] : newValue;
 			$('#health'+i).show();
@@ -889,37 +1166,392 @@ class Readout {
 			this.lastHealth[entity.id] = newValue;
 		}
 	}
+	renderSpells(observer) {
+		$('#'+this.spellDivId).empty();
+		let spellList = new ItemFinder(observer.inventory).isTypeId("spell");
+		for( let i=0 ; i<spellList.all.length ; ++i ) {
+			let text = 'F'+(i+1)+' '+spellList.all[i].effect.name+'\n';
+			let lit = this.commandItem == spellList.all[i];
+			$('#'+this.spellDivId).append('<div class="spell'+(lit?' lit':'')+'">'+text+'</div>');
+		}
+	}
+	render(observer,entityList) {
+		this.renderEntityStatus(observer,entityList);
+		this.renderSpells(observer);
+	}
+	showInventory(f) {
+		this.inventory = f;
+		let s = '';
+		for( let i=0 ; i<f.all.length ; ++i ) {
+			s += (i+1)+'. '+f.all[i].name+'\n';
+		}
+		if( !s ) {
+			s += "Pick up some items by walking upon them.";
+		}
+		$('#'+this.inventoryDivId).show().html(s);
+		this.inventoryOpen = true;
+	}
+	hideInventory() {
+		$('#inventory').hide();
+		this.inventoryOpen = false;
+	}
+	clearCommand() {
+		this.command = Command.NONE;
+		this.commandItem = null;
+		this.commandTarget = null;
+		return false;
+	}
+	enactCommand(observer) {
+		observer.command = this.command;
+		observer.commandItem = this.commandItem;;
+		observer.commandTarget = this.commandTarget;
+		this.command = Command.NONE;
+		this.commandItem = null;
+		this.commandTarget = null;
+		return true;
+	}
+	evalCommand(observer,keyCode,command) {
+		let keyESCAPE = 27;
+		let keyONE = 49;
+
+		let dir = commandToDirection(command);
+
+		if( this.command == Command.CAST && this.commandItem ) {
+			let cancel = false;
+			if( dir !== false ) {
+				let x = observer.x + DirectionAdd[dir].x;
+				let y = observer.y + DirectionAdd[dir].y;
+				// Someday here is where the ranged spells will determine possible targets.
+				let target = new Finder(observer.entityList).at(x,y);
+				if( !target.count ) {
+					cancel = true;
+				}
+				else {
+					this.commandTarget = target.first;
+					return this.enactCommand(observer);
+				}
+			}
+			if( keyCode == keyESCAPE || this.command == command || cancel ) {
+				return this.clearCommand();
+			}
+		}
+
+
+		if( this.inventoryOpen ) {
+			if( keyCode == keyESCAPE || this.command == command ) {
+				this.hideInventory();
+				return this.clearCommand();
+			}
+			let n = keyCode-keyONE;
+			if( n>=0 && n<this.inventory.count ) {
+				this.hideInventory();
+				this.commandItem = this.inventory.all[n];
+				if( this.command == Command.QUAFF ) {
+					return this.enactCommand(observer);
+				}
+			}
+			return false;
+		}
+		if( command == Command.INVENTORY ) {
+			this.command = Command.INVENTORY;
+			this.showInventory(new ItemFinder(observer.inventory))
+			return false;
+		}
+		if( command == Command.QUAFF ) {
+			this.command = Command.QUAFF;
+			this.showInventory(new ItemFinder(observer.inventory).isTypeId("potion"));
+			return false;
+		}
+		if( command == Command.CAST ) {
+			this.command = Command.CAST;
+			this.showInventory(new ItemFinder(observer.inventory).isTypeId("spell"));
+			return false;
+		}
+		let castArray = [Command.CAST1,Command.CAST2,Command.CAST3,Command.CAST4,Command.CAST5];
+		if( castArray.includes(command) ) {
+			let spellList = new ItemFinder(observer.inventory).isTypeId("spell");
+			let index = castArray.indexOf(command);
+			if( !spellList.all[index] ) {
+				return false;
+			}
+			this.command = Command.CAST;
+			this.commandItem = spellList.all[index];
+			return false;
+		}
+		return true;
+	}
+
+
 }
 
 
-function renderToString(observer,map,entityList) {
+let GlobalRenderCache = [];
+function createDrawList(observer,map,entityList,asType) {
 
 	// Recalc this here, just in case.
-	let a = observer.calcVis();
-	let s = '';
-	let p = [];
-	for( let entity of entityList ) {
-		if( observer.canPerceive(entity) ) {
-			let symbol = ( entity.id == observer.id && observer.invisible ) ? selfInvisibilitySymbol : entity.symbol;
-			p[entity.y*map.xLen+entity.x] = symbol;
+	let vis = observer.calcVis();
+
+	function spillLight(px,py,x,y,light) {
+		let d2 = (MonsterTypeDefaults.sightDistance*2)+1;
+		if( light == 'glow' ) {
+			let fx = x+0;
+			let fy = y+0;
+			let rx = px+x-d;
+			let ry = py+y-d;
+			let rfx = px+fx-d;
+			let rfy = py+fy-d;
+			if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
+				a[fy][fx][0] = displaySightDistance;
+			}
+			return;
+		}
+		for( let ly=-light ; ly<=light ; ++ly ) {
+			for( let lx=-light ; lx<=light ; ++lx ) {
+				let fx = x+lx;
+				let fy = y+ly;
+				let rx = px+x-d;
+				let ry = py+y-d;
+				let rfx = px+fx-d;
+				let rfy = py+fy-d;
+				if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
+					let lightReaches = shoot4(map,rx,ry,rfx,rfy,false);
+					if( lightReaches ) {
+						a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
+					}
+					if( a[fy][fx][0] === undefined ) {
+						debugger;
+					}
+				}
+			}
 		}
 	}
 
-	for( let y=0 ; y<map.yLen ; ++y ) {
-		for( let x=0 ; x<map.xLen ; ++x ) {
-			let vis = a[y][x];
-			if( vis === false ) {
-				s += ' ';
-				continue;
-			}
-			s += p[y*map.xLen+x] || map.tile[y][x];
+	let displaySightDistance = MonsterTypeDefaults.sightDistance;
+
+	//let convert = { '#': '█' };
+	let py = observer.y;
+	let px = observer.x;
+	let d = displaySightDistance;
+	let d2 = (displaySightDistance*2)+1
+	let a = GlobalRenderCache || [];
+
+	// Initialize the array, and clear all light levels.
+	for( let y=py-d ; y<=py+d ; ++y ) {
+		a[y-(py-d)] = a[y-(py-d)] || [];
+		for( let x=px-d ; x<=px+d ; ++x ) {
+			let tx = x-(px-d);
+			let ty = y-(py-d);
+			a[ty][tx] = a[ty][tx] || [];
+			a[ty][tx][0] = 0;
+			a[ty][tx].length = 1;
 		}
-		s += '\n';
 	}
-	return s;
+
+	function testLight(x,y,light) {
+		if( !light ) { return; }
+		let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
+		if( inBounds ) {
+			let ty = y-(py-d);
+			let tx = x-(px-d);
+			if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
+				spillLight(px,py,tx,ty,light);
+			}
+		}
+	}
+
+	let p = [];
+	let q = [];
+	for( let entity of entityList ) {
+		if( observer.canPerceiveEntity(entity) ) {
+			let e = ( entity.id == observer.id && observer.invisible ) ? DrawOnlyList.invisibleObserver : entity;
+			p[entity.y*map.xLen+entity.x] = e;
+		}
+		testLight(entity.x,entity.y,entity.light)
+	}
+	for( let item of map.itemList ) {
+		q[item.y*map.xLen+item.x] = item;
+		testLight(item.x,item.y,item.light)
+	}
+	for( let anim of animationList ) {
+		testLight(anim.x,anim.y,anim.light)
+	}
+
+	// Now make the player's natural light show.
+	//spillLight(px,py,d,d,Math.max(2,observer.light||0));
+
+	let visId = {};
+
+	// Now assign tile layers, and remember that [0] is the light level. Tiles
+	// that shine light will do so in this loop.
+	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
+		let ty = y-(py-d);
+		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
+			let tx = x-(px-d);
+			let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
+			let visible = inBounds && vis[y][x];
+			let mapSymbol;
+			let item;
+			let entity;
+			if( inBounds ) {
+				mapSymbol = map.tile[y][x];
+				item =      q[y*map.xLen+x];
+				entity =    p[y*map.xLen+x];
+
+				spillLight(px,py,tx,ty,SymbolToType[mapSymbol].light || 0);
+			}
+			if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
+				if( !visible ) {
+					a[ty][tx][0] = 0;		// debatable whether we should pretend there is zero light here.
+					a[ty][tx].length = 1;
+				}
+				else {
+					let aa = a[ty][tx];
+					if( (item || SymbolToType[mapSymbol]).typeId !== 'floor' ) {
+						aa.push(TileTypeList.floor);
+					}
+					aa.push( item || SymbolToType[mapSymbol] );
+					aa.push( entity );
+
+					if( item ) { visId[item.id] = item; }
+					if( entity ) { visId[entity.id] = entity; }
+				}
+			}
+		}
+	}
+
+	for( let anim of animationList ) {
+		if( anim.entity && !visId[anim.entity.id] ) {
+			continue;
+		}
+		let tx = Math.floor((anim.entity ? anim.entity.x : anim.x)-(px-d));
+		let ty = Math.floor((anim.entity ? anim.entity.y : anim.y)-(py-d));
+		if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
+			a[ty][tx].push(anim);
+		}
+	}
+
+	GlobalRenderCache = a;
+	return a;
 }
 
+let tileDim = 32;
+function DefaultImgGet(effectId) {
+	return this.img;
+}
+class Display {
+	constructor(divId,sightDistance) {
+		this.image = {};
+		this.divId = divId;
+		this.sd = sightDistance;
+		this.d = ((sightDistance*2)+1);
+		this.tileWidth  = tileDim * this.d;
+		this.tileHeight = tileDim * this.d;
+		this.app = new PIXI.Application(this.tileWidth, this.tileHeight, {backgroundColor : 0x000000});
+		this.imgGet = [];
+		this.ready = false;
+		document.getElementById(this.divId).appendChild(this.app.view);
+		let imageList = [];
+		let exists = {};
 
+		function add(imgPath) {
+			if( imgPath === undefined ) {
+				debugger;
+			}
+			if( !imgPath ) {
+				return;
+			}
+			imgPath = 'tiles/'+imgPath;
+			if( !exists[imgPath] ) {
+				imageList.push(imgPath);
+				exists[imgPath] = true;
+			}
+		}
+
+		for( let symbol in SymbolToType ) {
+			let type = SymbolToType[symbol];
+			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
+			if( !type.choices ) {
+				add(type.img);
+			}
+			else {
+				for( let typeId in type.choices ) {
+					let imgGet = this.imgGet[type.typeId];
+					add(imgGet.call(type,typeId));
+				}
+			}
+		}
+
+		for( let sticker in StickerList ) {
+			add(StickerList[sticker].img);
+		}
+
+		let self = this;
+		function setup() {
+			self.ready = true;
+		}
+
+		animationDeathCallback = function(sprite) {
+			self.app.stage.removeChild(sprite);
+		}
+
+		PIXI.loader
+			.add(imageList)
+			.load(setup);
+
+		this.app.ticker.add(function(delta) {
+			// but only if real time is not stopped.
+			animationTick(delta/60);
+		});
+	}
+	draw(drawList,observer) {
+		while(this.app.stage.children[0]) {
+			this.app.stage.removeChild(this.app.stage.children[0]);
+		}
+		let dHalf = this.sd;
+		let lightAlpha = [];
+		for( let i=0 ; i<this.sd+2 ; ++i ) {
+			lightAlpha[i] = Math.clamp(i/this.sd,0.0,1.0);
+		}
+
+		function make(x,y,entity,imgPath,light) {
+			if( !imgPath ) {
+				return;
+			}
+			let resource = PIXI.loader.resources['tiles/'+imgPath];
+			if( !resource ) {
+				return;
+			}
+			let sprite = new PIXI.Sprite( resource.texture );
+			sprite.anchor.set(entity.xAnchor||0,entity.yAnchor||0);
+			sprite.x = x*32;
+			sprite.y = y*32;
+			sprite.scale._x = (entity.scale||1);
+			sprite.scale._y = (entity.scale||1);
+			sprite.alpha = (entity.alpha||1) * lightAlpha[light];
+			this.app.stage.addChild(sprite);
+			return sprite;
+		}
+
+		for( let y=0 ; y<this.d ; ++y ) {
+			for( let x=0 ; x<this.d ; ++x ) {
+				let tile = drawList[y][x];
+				let light = tile[0];
+				for( let i=1 ; i<tile.length ; ++i ) {
+					let entity = tile[i];
+					if( !entity ) continue;
+					if( entity.isAnimation ) {
+						entity.sprite = make.call(this,entity.x-(observer.x-this.sd),entity.y-(observer.y-this.sd),entity,entity.imgGet(),light);
+					}
+					else
+					if( this.imgGet[entity.typeId] ) {
+						let imgPath = this.imgGet[entity.typeId].call(entity,(entity.effect?entity.effect.typeId:null))
+						make.call(this,x,y,entity,imgPath,entity.glow ? dHalf : light);
+					}
+				}
+			}
+		}
+	}
+}
 
 // INIT GAME DATA
 
@@ -934,6 +1566,7 @@ function initGameData(tileRaw) {
 			// what is on the map...
 			let symbol = map.tileSymbolGet(x,y);
 			let entityType = SymbolToType[symbol];
+
 			if( !entityType ) {
 				debugger;
 			}
@@ -943,6 +1576,13 @@ function initGameData(tileRaw) {
 				map.tileSymbolSet(x,y,TileTypeList.floor)
 			}
 			if( entityType && entityType.isItemType ) {
+				if( entityType.isRandom ) {
+					let itemTypeArray = Object.entries(ItemTypeList);
+					// WARNING: This assumes that RANDOM is the zeroth element!!
+					let n = Math.randInt(1,itemTypeArray.length);
+					entityType = itemTypeArray[n][1];
+					map.tileSymbolSet(x,y,entityType);
+				}
 				itemList.push( new Item( map, entityType, { x:x, y:y } ) );
 			}
 		}
@@ -959,13 +1599,13 @@ function initGameData(tileRaw) {
 function main(levelName) {
 
 	function playerFind() {
-		return entityList.find( entity => entity.brain==Brain.USER );
+		return entityList.find( entity => entity.isUser() );
 	}
 
-	function render() {
-		let player = playerFind();
-		document.getElementById('map').innerHTML = renderToString(player,map,entityList);
-		readout.render(entityList);
+	function render(observer) {
+		let drawList = createDrawList(observer,map,entityList);
+		display.draw(drawList,observer);
+		readout.render(observer,entityList);
 	}
 
 	function testVictory() {
@@ -983,37 +1623,73 @@ function main(levelName) {
 		Array.filterInPlace( entityList, entity => {
 			if( entity.isDead() ) {
 				entity.die();
-				return false;
+				return entity.isUser();	// do not remove the player from the entity list.
 			}
 			return true;
 		});
 	}
 
-	function tick(player) {
-		let dt = 1 / player.speed;
-		for( let entity of entityList ) {
+	function orderByTurn(entityList) {
+		let list = [[],[],[]];	// players, pets, others
+		entityList.map( entity => {
+			let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
+			list[group].push(entity);
+		});
+		list[2].sort( (a,b) => a.speed-b.speed );
+		return [].concat(list[0],list[1],list[2]);
+	}
+
+	function tick(speed) {
+
+		function tickItemList(itemList,dt) {
+			for( let item of itemList ) {
+				if( item.rechargeLeft > 0 ) {
+					item.rechargeLeft = Math.max(0,item.rechargeLeft-1);
+				}
+				if( item.onTick ) {
+					item.onTick.call(item,dt);
+				}
+			}
+		}
+
+
+		let entityListByTurnOrder = orderByTurn(entityList);
+		let dt = 1 / speed;
+		for( let entity of entityListByTurnOrder ) {
 			DeedManager.tick(entity,dt);
-			entity.actionCount += entity.speed / player.speed;
+			entity.actionCount += entity.speed / speed;
 			while( entity.actionCount >= 1 ) {
 				entity.calcVis();
 				entity.think();
 				entity.act();
+				tickItemList(entity.inventory,dt);
 				DeedManager.calc(entity);
 				entity.actionCount -= 1;
 			}
 		}
+		map.actionCount += 1 / speed;
+		while( map.actionCount >= 1 ) {
+			tickItemList(map.itemList,dt);
+			map.actionCount -= 1;
+		}
 		DeedManager.cleanup();
 		testVictory();
 		checkDeaths();
-		entityList.forEach( entity => { entity.commandLast = entity.command; entity.command = Command.NONE; } );
-		render();
+		entityList.forEach( entity => {
+			entity.commandLast = entity.command;
+			entity.commandItemLast = entity.commandItem;
+			entity.commandTargetLast = entity.commandTarget;
+			entity.command = Command.NONE;
+			entity.commandItem = null;
+			entity.commandTarget = null;
+		} );
 	}
 
-	function messageCanPerceive(observer,x,y) {
+	function messageCanPerceiveEntity(observer,entity) {
 		if( !observer ) {
 			return true;
 		}
-		return observer.canPerceive(x,y);
+		return observer.canPerceiveEntity(entity);
 	}
 
 	function messageReceive(message,history) {
@@ -1030,59 +1706,151 @@ function main(levelName) {
 		let KeyToCommand = loadKeyMapping("default");
 
 		let player = playerFind();
-		if( player && !player.isDead() ) {
+		if( !player || player.isDead() ) {
+			tick(1.0);
+			render(player || spectator);
+		}
+		else {
 			player.command = KeyToCommand[''+e.keyCode] !== undefined ? KeyToCommand[''+e.keyCode] : Command.NONE;
 
-			if( player.command !== Command.NONE ) {
-				tick(player);
+			let timePass = readout.evalCommand(player,e.keyCode,player.command);
+
+			if( timePass && player.command !== Command.NONE ) {
+				tick(player.speed);
 			}
+			render(player);
+			spectator.x = player.x;
+			spectator.y = player.y;
 		}
 	}
 
 
 	let {map: map, entityList: entityList, itemList:itemList} = initGameData( loadLevel(levelName) );
-	let readout = new Readout();
+	let display = new Display('map',MonsterTypeDefaults.sightDistance);
+	let readout = new Readout('readoutSpells','inventory');
 	let player = playerFind();
-	MessageManager.addRecipient(player,messageCanPerceive,messageReceive);
-	document.addEventListener( "keydown", onPlayerKey, false );
+	let spectator = {
+		x: 0,
+		y: 0,
+		vis: [],
+		canPerceiveEntity: () => true,
+		calcVis: () => calcVis(map,spectator.x,spectator.y,MonsterTypeDefaults.sightDistance,false,spectator.vis)
+	};
+	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);
 
-	render();
-	tell([player,null,"Welcome to flogue! Use the arrow keys to move, and '.' to wait. Reach the > stairs!"]);
-	tell(mSubject,player,' ',mVerb,'step',' through the doorway...');
-	// The tick is called each time the player takes an action.
+	let handle = setInterval(function() {
+		if( !display.ready ) {
+			return;
+		}
+		clearInterval(handle);
+		document.addEventListener( "keydown", onPlayerKey, false );
+
+		render(player);
+		tell([player,null,"Welcome to flogue! Use the arrow keys to move, and '.' to wait. Reach the > stairs!"]);
+		tell(mSubject,player,' ',mVerb,'step',' through the doorway...');
+		// The tick is called each time the player takes an action.
+	}, 20);
 }
 
 (function() {
 
-	// Ǿgidᵬj  AB*? ᵮ⍨|:░ ¡$
+	// Ǿgidᵬje  AB*? ᵮ⍨|:░ ¡$
 
-	let level = { 
+	let level = {
 		"test":
 			"#################\n"+
-			"#   #####⍨⍨⍨?BA*#\n"+
-			"#   |  ᵮ¡¡¡¡¡@  #\n"+
-			"#   # ### ¡¡¡ ᵮ #\n"+
-			"#ᵮᵮᵮ# # ¡¡¡¡¡ $ #\n"+
-			"#   # #:::      #\n"+
-			"#   # #::: ░░░░░#\n"+
-			"#   # #::: ░░░░░#\n"+
+			"#             ᵮ #\n"+
+			"#               #\n"+
+			"#|              #\n"+
+			"#  ᵴ    @       #\n"+
+			"#               #\n"+
+			"#               #\n"+
 			"#################\n"+
+			'',
+		"all":
+ 			"#######################\n"+
+			"#Ǿ#g#s#k#e#T#v#ᵬ#f#i#r#\n"+
+			"#±#±#±#±#±#±#±#±#±#±#±#\n"+
+			"#                     #\n"+
+			"# :::                 #\n"+
+			"# :::                 #\n"+
+			"# ⍨⍨⍨       g ᵴ@      #\n"+
+			"# ᵮᵮᵮ            AB?F##\n"+
+			"#              ########\n"+
+			"#              + ░░░░░#\n"+
+			"# $ ††         | ░░░░░#\n"+
+			"# ᵴᵴᵴᵴᵴᵴᵴᵴᵴᵴᵴ  ± ░░░░░#\n"+
+			"#¡¡¡¡¡¡¡¡¡¡¡¡  # ░░░░>#\n"+
+			"#######################\n"+
 			'',
 		"real":
 			"###################         ##########\n"+
-			"#>i+ggᵮ           ######### #     ᵬ  #\n"+
-			"####ggᵮ           #       # #⍨⍨⍨####j#\n"+
-			"   #ggᵮ           # ##### # #⍨⍨⍨#### #\n"+
-			"  #####           # | * |g###⍨⍨⍨#*## #\n"+
-			"  #Ǿ  ##+#      ᵬ + ##### +  g       #\n"+
-			"  #      #   d@   ###   ##############\n"+
-			"  #+##########Ώ## #     #  ::::::::#  \n"+
+			"#>i+*gᵮ     *  * ?######### # ¡¡  ᵬ  #\n"+
+			"####  ᵮ           #     g # #⍨⍨⍨####v#\n"+
+			"   #ggᵮ      kk   # ##### # #⍨⍨⍨#### #\n"+
+			"  #####           # | A | ###⍨⍨⍨#*## #\n"+
+			"  #Ǿ ¡##+#      ᵬ ± ##### +  g       #\n"+
+			"  #      #   d@   ###***##############\n"+
+			"  #+##########Ώ## #B    #¡ ::::::::#  \n"+
 			"  #░░░░░░░░#    # #     #  ᵮᵮᵮᵬᵬᵬ::#  \n"+
-			"  ####░░░░░#    # #######  :::::ᵬ::#  \n"+
-			"     #░░░░░##   #          ::::gAᵬ:#  \n"+
-			"     #░░░pp*#   ####################  \n"+
-			"     ########                         \n"+
-			''
+			"  ####░░░░░#    # ###±###  :::::ᵬ::#  \n"+
+			"     #░░░░░##   #          ::::g ᵬ:#  \n"+
+			"     #e░░ffF#   # #############   ##  \n"+
+			"     ########   # #           #   #   \n"+
+			"                # #           #   #   \n"+
+			"        ######### ######      # A #   \n"+
+			"        #    |     ::  #      #####   \n"+
+			"        #    |     ::  #              \n"+
+			"        #e   |     ::  #              \n"+
+			"        #¡   |     ::  #              \n"+
+			"        #¡¡¡ |     ::  #              \n"+
+			"        ################              \n"+
+			'',
+		"huge":
+			"##########################################\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#     ᵮ            ᵮ                     #\n"+
+			"#                ####                    #\n"+
+			"#                                        #\n"+
+			"#                            e           #\n"+
+			"#                                        #\n"+
+			"#                    @                   #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#        ¡                               #\n"+
+			"#                                        #\n"+
+			"#                      A                 #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#             i                          #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"##########################################\n"+
+			'',
+
 	};
 	window.loadLevel = function(levelName) {
 		return level[levelName] ? level[levelName] : level["real"];
@@ -1104,6 +1872,14 @@ function loadKeyMapping(name) {
 		66: Command.SW,
 		72: Command.W,
 		89: Command.NW,
+		73: Command.INVENTORY,
+		81: Command.QUAFF,
+		67: Command.CAST,
+		112: Command.CAST1,
+		113: Command.CAST2,
+		114: Command.CAST3,
+		115: Command.CAST4,
+		116: Command.CAST5,
 		190: Command.WAIT
 	};
 }
@@ -1117,9 +1893,12 @@ function loadKeyMapping(name) {
 		</td></tr>
 		<tr>
 			<td>
-				<div id="map"></div>
+				<div id="mapContainer">
+					<div id="map"></div>
+					<div id="inventory"></div>
+				</div>
 			</td><td>
-				<div id="readout">
+				<div id="readoutStatus">
 					<div id='health0' class="health-bar" data-total="1000" data-value="1000">
 						<div class="bar">
 							<div class="hit"></div>
@@ -1145,12 +1924,39 @@ function loadKeyMapping(name) {
 							<div class="hit"></div>
 						</div>
 					</div>
+					<div id='health5' class="health-bar" data-total="1000" data-value="1000">
+						<div class="bar">
+							<div class="hit"></div>
+						</div>
+					</div>
+					<div id='health6' class="health-bar" data-total="1000" data-value="1000">
+						<div class="bar">
+							<div class="hit"></div>
+						</div>
+					</div>
+					<div id='health7' class="health-bar" data-total="1000" data-value="1000">
+						<div class="bar">
+							<div class="hit"></div>
+						</div>
+					</div>
+					<div id='health8' class="health-bar" data-total="1000" data-value="1000">
+						<div class="bar">
+							<div class="hit"></div>
+						</div>
+					</div>
+					<div id='health9' class="health-bar" data-total="1000" data-value="1000">
+						<div class="bar">
+							<div class="hit"></div>
+						</div>
+					</div>
+				</div>
+				<div id="readoutSpells">
 				</div>
 			</td>
 		</tr>
 	</table>
 	<script>
-		main("test");
+		main("huge");
 	</script>
 </body>
 </html>
