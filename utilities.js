@@ -10,8 +10,16 @@ function nop() {}
 	Math.randInt = function(min, max) {
 		return Math.floor(Math.random() * (max - min)) + min;
 	}
+	Math.randIntBell = function(min, max) {
+		let span = (max-min)/3;
+		return min + Math.floor( Math.random()*span + Math.random()*span + Math.random()*span );
+	}
 	Math.rand = function(min, max) {
 		return Math.random()*(max-min)+min;
+	}
+	Math.randBell = function(min, max) {
+		let span = (max-min)/3;
+		return min + Math.random()*span + Math.random()*span + Math.random()*span;
 	}
 	Math.chance = function(percent) {
 		return Math.rand(0,100) < percent;
@@ -73,6 +81,19 @@ function nop() {}
 		return '';
 	}
 })();
+
+function pick(list) {
+	if( typeof list == 'object' ) {
+		var keys = Object.keys(list);
+		let n;
+		do {
+			n = Math.randInt(0,keys.length);
+		} while( list[keys[n]].neverPick );
+
+	    return list[keys[n]];
+	}
+	return list[Math.randInt(0,list.length)];
+}
 
 function rollDice(diceString) {
 	if( typeof diceString !== 'string' ) {

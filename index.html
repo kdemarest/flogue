@@ -8,6 +8,7 @@
 <script src="nameList.js"></script>
 <script src="utilities.js"></script>
 <script src="data.js"></script>
+<script src="mason.js"></script>
 <script src="sentence.js"></script>
 <script src="finder.js"></script>
 <qscript src="levels.js"></script>
@@ -442,7 +443,22 @@ class Entity {
 	}
 
 	calcVis() {
-		this.vis = calcVis(this.map,this.x,this.y,this.sightDistance,this.blind,this.vis);
+		let doVis = false;
+		if( this.brain == Brain.USER ) {
+			doVis = true;
+		}
+		else {
+			let user = this.findAliveOthers().filter( e => e.brain==Brain.USER ).nearMe(9);
+			doVis = !!user.first;
+		}
+
+		if( doVis ) {
+			this.vis = calcVis(this.map,this.x,this.y,this.sightDistance,this.blind,this.vis);
+		}
+		else {
+			this.vis = null;
+		}
+
 		return this.vis;
 	}
 
@@ -710,7 +726,7 @@ class Entity {
 
 	takeDamage(attacker,amount,damageType,onDamage) {
 		if( attacker.isItemType ) {
-			attacker = attacker.cause || attacker.owner;
+			attacker = attacker.cause || attacker.owner || attacker;
 		}
 		if( this.isImmune(damageType) ) {
 			amount = 0;
@@ -728,6 +744,7 @@ class Entity {
 
 		if( amount > 0 ) {
 			animationAdd( new AniPaste({
+				entity: this.health > amount ? this : null,
 				sticker: StickerList.hit,
 				x: this.x+0.5,
 				y: this.y+0.5,
@@ -1218,9 +1235,9 @@ class Readout {
 
 		if( this.command == Command.CAST && this.commandItem ) {
 			let cancel = false;
-			if( dir !== false ) {
-				let x = observer.x + DirectionAdd[dir].x;
-				let y = observer.y + DirectionAdd[dir].y;
+			if( dir !== false || command==Command.WAIT ) {
+				let x = observer.x + (command==Command.WAIT ? 0 : DirectionAdd[dir].x);
+				let y = observer.y + (command==Command.WAIT ? 0 : DirectionAdd[dir].y);
 				// Someday here is where the ranged spells will determine possible targets.
 				let target = new Finder(observer.entityList).at(x,y);
 				if( !target.count ) {
@@ -1376,9 +1393,6 @@ function createDrawList(observer,map,entityList,asType) {
 		testLight(anim.x,anim.y,anim.light)
 	}
 
-	// Now make the player's natural light show.
-	//spillLight(px,py,d,d,Math.max(2,observer.light||0));
-
 	let visId = {};
 
 	// Now assign tile layers, and remember that [0] is the light level. Tiles
@@ -1397,7 +1411,9 @@ function createDrawList(observer,map,entityList,asType) {
 				item =      q[y*map.xLen+x];
 				entity =    p[y*map.xLen+x];
 
-				spillLight(px,py,tx,ty,SymbolToType[mapSymbol].light || 0);
+				if( SymbolToType[mapSymbol].isTileType ) {
+					spillLight(px,py,tx,ty,SymbolToType[mapSymbol].light || 0);
+				}
 			}
 			if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
 				if( !visible ) {
@@ -1584,6 +1600,8 @@ function initGameData(tileRaw) {
 					map.tileSymbolSet(x,y,entityType);
 				}
 				itemList.push( new Item( map, entityType, { x:x, y:y } ) );
+				// This can only happen once we make running into items a thing...
+				//map.tileSymbolSet(x,y,TileTypeList.floor)
 			}
 		}
 	}
@@ -1725,7 +1743,8 @@ function main(levelName) {
 	}
 
 
-	let {map: map, entityList: entityList, itemList:itemList} = initGameData( loadLevel(levelName) );
+	let mapRaw = buildLevel(150,TileTypeList,MonsterTypeList,ItemTypeList);  //loadLevel(levelName) );
+	let {map: map, entityList: entityList, itemList:itemList} = initGameData( mapRaw );
 	let display = new Display('map',MonsterTypeDefaults.sightDistance);
 	let readout = new Readout('readoutSpells','inventory');
 	let player = playerFind();
@@ -1824,7 +1843,7 @@ function main(levelName) {
 			"#                            e           #\n"+
 			"#                                        #\n"+
 			"#                    @                   #\n"+
-			"#                                        #\n"+
+			"#                    G                   #\n"+
 			"#                                        #\n"+
 			"#        ¡                               #\n"+
 			"#                                        #\n"+
@@ -1864,11 +1883,11 @@ function loadKeyMapping(name) {
 		37: Command.W,
 		40: Command.S,
 		39: Command.E,
-		74: Command.N,
+		74: Command.S,
 		85: Command.NE,
 		76: Command.E,
 		78: Command.SE,
-		75: Command.S,
+		75: Command.N,
 		66: Command.SW,
 		72: Command.W,
 		89: Command.NW,

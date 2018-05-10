@@ -41,7 +41,7 @@ function deltasToDirNatural(dx,dy) {
 	return deltasToDirPredictable(dx,dy);
 }
 
-const DamageType = { CUT: "cut", STAB: "pierce", BITE: "bite", CLAW: "claw", BLUNT: "whomp", FIRE: "burn", POISON: "poison", HOLY: "holy", UNHOLY: "unholy" };
+const DamageType = { CUT: "cut", STAB: "pierce", BITE: "bite", CLAW: "claw", BLUNT: "whomp", FIRE: "burn", COLD: "freeze", POISON: "poison", HOLY: "divine power", UNHOLY: "rotting" };
 const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm" };
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral" };
 const PickImmune = [DamageType.FIRE,DamageType.POISON,DamageType.HOLY,DamageType.UNHOLY];
@@ -57,14 +57,16 @@ let EffectTypeList = {
 	flight: 		{ duration: '2d4+9', stat: 'travelMode', op:'set', value: 'fly', requires: e=>e.travelMode==e.type.travelMode },
 	healing: 		{ duration: 0,       stat: 'health', op:'add', value: '1d4+4', healingType: DamageType.HOLY },
 	poison: 		{ duration: 0,       stat: 'health', op:'sub', value: '1d4+4', damageType: DamageType.POISON },
+	fire: 			{ duration: 0,       stat: 'health', op:'sub', value: '1d16', damageType: DamageType.FIRE },
+	cold: 			{ duration: 0,       stat: 'health', op:'sub', value: '1d16', damageType: DamageType.COLD },
+	holy: 			{ duration: 0,       stat: 'health', op:'sub', value: '1d1+6', damageType: DamageType.HOLY },
+	unholy: 		{ duration: 0,       stat: 'health', op:'sub', value: '2d4', damageType: DamageType.UNHOLY },
 	panic: 			{ duration: '1d4+4', stat: 'attitude', op:'set', value: Attitude.PANICKED },
 	rage: 			{ duration: '1d4+4', stat: 'attitude', op:'set', value: Attitude.ENRAGED },
 	confusion: 		{ duration: '1d4+4', stat: 'attitude', op:'set', value: Attitude.CONFUSED },
 	immunity: 		{ duration: '4d4+4', stat: 'immune', op:'add', value: null, valuePick: () => pick(PickImmune), name: 'immunity to *' },
 	resistance: 	{ duration: '8d4+4', stat: 'resist', op:'add', value: null, valuePick: () => pick(PickImmune), name: 'resist *s' },
 	shove: 			{ duration: 0,       stat: 'position', op:'push', value: 3 },
-//	fire: 			{ duration: 0,       stat: 'position', op:'fire', value: 3 },
-//	firering: 		{ duration: 0,       stat: 'position', op:'firering', value: 3 },
 };
 
 
@@ -76,7 +78,7 @@ let EffectTypeList = {
 })();
 
 const DrawOnlyList = {
-	"invisbleObserver": { symbol: '?', img: "spells/enchantment/invisibility.png" }
+	"invisibleObserver": { symbol: '?', img: "spells/enchantment/invisibility.png" }
 }
 
 const TileTypeDefaults = { mayWalk: false, mayFly: false, opacity: 0, isStairs: false, 
@@ -94,7 +96,7 @@ const TileTypeList = {
 	"fire":       { symbol: 'ᵮ', mayWalk: true,  mayFly: true,  opacity: 0, name: "fire", light: 5, glow:1, damage: '1d4', damageType: DamageType.FIRE, img: "dc-mon/nonliving/fire_elemental.png" },
 	"mist":       { symbol: '░', mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: '⍨', mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png", ivar: 3},
-	"ghoststone": { symbol: '?', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
+	"ghoststone": { symbol: 'G', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
 	"obelisk":    { symbol: 'B', mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png" },
 	"crystal":    { symbol: 'F', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png" },
 	"forcefield": { symbol: '|', mayWalk: true,  mayFly: true,  opacity: 1, name: "force field", light: 3, glow:1, img: "spells/air/static_discharge.png" },
@@ -132,7 +134,7 @@ const ItemPotionImg = {
 };
 
 const ItemTypeList = {
-	"random":	{ symbol: '*', isRandom: 1 },
+	"random":	{ symbol: '*', isRandom: 1, neverPick: true },
 	"gold": 	{ symbol: '$', namePattern: '* gold', effect: false, img: "item/misc/gold_pile.png" },
 	"altar":    { symbol: 'A', mayWalk: false, mayFly: false, name: "golden altar", light: 4, glow:true, rechargeTime: 12,
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
@@ -196,7 +198,7 @@ const MonsterTypeList = {
 	"player": { 	symbol: '@', pronoun: "he", light: 7,
 					brain: Brain.USER, brainOpensDoors: true, picksup: true, img: "dc-mon/human.png",
 					healthMax: 80, damage: '1d3+2', damageType: DamageType.CUT,
-					attitude: Attitude.CALM,        team: Team.GOOD }
+					attitude: Attitude.CALM,        team: Team.GOOD, neverPick: true }
 };
 
 const SymbolToType = (function() {
@@ -216,7 +218,7 @@ const SymbolToType = (function() {
 	Object.entries(ItemTypeList).forEach( ([typeId,itemType]) =>  {
 		itemType.isItemType = true;
 		itemType.typeId = typeId;
-		itemType.name = itemType.name || typeId;
+		itemType.namePattern = itemType.namePattern || typeId;
 		ItemTypeList[typeId] = Object.assign( {}, ItemTypeDefaults, ItemTypeList[typeId] );
 		lookup[itemType.symbol] = ItemTypeList[typeId];
 		ItemTypeList[typeId].type = ItemTypeList[typeId];
@@ -231,16 +233,6 @@ const SymbolToType = (function() {
 	} );
 	return lookup;
 })();
-
-function pick(list) {
-	if( typeof list == 'object' ) {
-		var keys = Object.keys(list)
-	    return list[keys[Math.randInt(0,keys.length)]];
-	}
-	return list[Math.randInt(0,list.length)];
-}
-
-
 
 TileTypeList['locked door'].onTouch = function(entity,self) {
 	if( entity.brainOpensDoors ) {

@@ -15,8 +15,8 @@
 	let NO_ZONE = -1;
 
 	let TileType = {
-		Unknown: ' ',
-		Floor: '.',
+		Unknown: '?',
+		Floor: ' ',
 		Wall: '#'
 	};
 	let T = TileType;
@@ -467,6 +467,7 @@
 				this.setTile(...this.randPos(-3),T.Floor);
 				++floorMade;
 			});
+			//yield i++;
 
 			let reps = 100000;
 			let zoneList = [];
@@ -493,6 +494,7 @@
 						++floorMade;
 					}
 				}
+				//yield i++;
 
 				console.log("floor="+floorMade+' of '+floorToMake);
 				let removeCount = 0;
@@ -507,13 +509,18 @@
 					floorMade -= count;
 					removeCount += 1;
 				}
+				// yield i++;
 				console.log("Removed "+removeCount+'. now floor='+floorMade);
 				console.log( zoneList.length+' zones remain');
 			}
 			this.removeDiagnoalQuads();
+			// yield i++;
 			this.removeSingletonWalls(3);
+			// yield i++;
 			this.wallify();
+			// yield i++;
 			this.sizeToExtents();
+			// yield i++;
 			return this;
 		}
 		makeDroplets() {
@@ -551,12 +558,33 @@
 		const cave = new Cave();
 		cave.setDimensions(dim).makeAmoeba(Math.rand(0.40, 0.70));
 		cave.paste(map,1,1);
-		map.populate(0.003,pickMonster);
-		map.populate(0.002,pickItem);
+		map.populate(0.01,pickMonster);
+		map.populate(0.01,pickItem);
 		map.placeRandom(MonsterTypeList.player.symbol,T.Floor);
 		map.convert(T.Unknown,T.Wall);
 		return map.renderToString();
 	}
 
+	function buildLevelSlow() {
+		let map = new Map();
+		const cave = new Cave().setDimensions(150); //Math.randIntBell(5,50));
+		let maker = cave.makeAmoeba(Math.rand(0.40, 0.70));
+		let m;
+
+		function makeMore() {
+			m = maker.next();
+			if( m.done ) {
+				return false;
+			}
+			map.fill(T.Unknown);
+			cave.paste(map,1,1);
+			map.render();
+		}
+
+		document.addEventListener( "keydown", makeMore, false );
+		makeMore();
+	}
+
 	window.buildLevel = buildLevel;
+	window.buildLevelSlow = buildLevelSlow;
 })();
