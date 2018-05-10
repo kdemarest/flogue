@@ -1,0 +1,38 @@
+<html>
+<head>
+<script src="utilities.js"></script>
+<script src="mason.js"></script>
+<style>
+pre {
+	font-family: "courier";
+}
+</style>
+<script>
+
+
+	function main() {
+		let map = new Map();
+		const cave = new Cave().setDimensions(200); //Math.randIntBell(5,50));
+		let maker = cave.makeAmoeba(Math.rand(0.40, 0.70));
+		let m;
+
+		function makeMore() {
+			m = maker.next();
+			if( m.done ) {
+				return false;
+			}
+			map.fill(T.Unknown);
+			cave.paste(map,1,1);
+			map.render();
+		}
+
+		document.addEventListener( "keydown", makeMore, false );
+		makeMore();
+	}
+</script>
+</head>
+<body>
+	<pre id='map'></pre>
+<script>main();</script>
+</body>
+</html>
