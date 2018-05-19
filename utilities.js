@@ -82,9 +82,13 @@ function nop() {}
 	}
 })();
 
-function pick(list) {
-	if( typeof list == 'object' ) {
+function pick(listRaw) {
+	let list = listRaw;
+	if( typeof list == 'object' && !Array.isArray(list) ) {
 		var keys = Object.keys(list);
+		if( keys.length <= 0 ) {
+			return null;
+		}
 		let n;
 		do {
 			n = Math.randInt(0,keys.length);
@@ -92,7 +96,7 @@ function pick(list) {
 
 	    return list[keys[n]];
 	}
-	return list[Math.randInt(0,list.length)];
+	return list.length==0 ? null : list[Math.randInt(0,list.length)];
 }
 
 function rollDice(diceString) {

@@ -2,7 +2,7 @@
 
 // WARNING: The strings for directions MUST remain the same for commandToDirection() to work.
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
-				INVENTORY: "inventory", QUAFF: "quaff", LOSETURN: "lose turn",
+				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", THROW: "throw", LOSETURN: "lose turn", PRAY: "pray",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit" };
 const Direction = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
 const DirectionAdd = [
@@ -41,12 +41,19 @@ function deltasToDirNatural(dx,dy) {
 	return deltasToDirPredictable(dx,dy);
 }
 
-const DamageType = { CUT: "cut", STAB: "pierce", BITE: "bite", CLAW: "claw", BLUNT: "whomp", FIRE: "burn", COLD: "freeze", POISON: "poison", HOLY: "divine power", UNHOLY: "rotting" };
-const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm" };
-const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral" };
-const PickImmune = [DamageType.FIRE,DamageType.POISON,DamageType.HOLY,DamageType.UNHOLY];
-const PickResist = [DamageType.CUT,DamageType.STAB,DamageType.BLUNT,DamageType.FIRE,DamageType.POISON,DamageType.HOLY,DamageType.UNHOLY];
+const StickerList = {
+	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
+	invisibleObserver: { symbol: '?', img: "spells/enchantment/invisibility.png" },
+	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
+	crosshairNo:  { img: "dc-misc/travel_exclusion.png", scale: 1.0, xAnchor: 0, yAnchor: 0 }
 
+}
+
+const DamageType = { CUT: "cut", STAB: "pierce", BITE: "bite", CLAW: "claw", BLUNT: "whomp", FIRE: "burn", COLD: "freeze", POISON: "poison", HOLY: "divine power", ROT: "rot" };
+const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm", WORSHIP: "worshipping" };
+const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral" };
+const PickImmune = [DamageType.FIRE,DamageType.POISON,DamageType.HOLY,DamageType.ROT];
+const PickResist = [DamageType.CUT,DamageType.STAB,DamageType.BLUNT,DamageType.FIRE,DamageType.POISON,DamageType.HOLY,DamageType.ROT];
 
 let EffectTypeList = {
 	invisibility: 	{ duration: '4d4+4', stat: 'invisible', op:'set', value: true, requires: e=>!e.invisible },
@@ -57,16 +64,54 @@ let EffectTypeList = {
 	flight: 		{ duration: '2d4+9', stat: 'travelMode', op:'set', value: 'fly', requires: e=>e.travelMode==e.type.travelMode },
 	healing: 		{ duration: 0,       stat: 'health', op:'add', value: '1d4+4', healingType: DamageType.HOLY },
 	poison: 		{ duration: 0,       stat: 'health', op:'sub', value: '1d4+4', damageType: DamageType.POISON },
-	fire: 			{ duration: 0,       stat: 'health', op:'sub', value: '1d16', damageType: DamageType.FIRE },
-	cold: 			{ duration: 0,       stat: 'health', op:'sub', value: '1d16', damageType: DamageType.COLD },
+	fire: 			{ duration: 0,       stat: 'health', op:'sub', value: '1d16', damageType: DamageType.FIRE, mayTargetPosition: true },
+	cold: 			{ duration: 0,       stat: 'health', op:'sub', value: '1d16', damageType: DamageType.COLD, mayTargetPosition: true },
 	holy: 			{ duration: 0,       stat: 'health', op:'sub', value: '1d1+6', damageType: DamageType.HOLY },
-	unholy: 		{ duration: 0,       stat: 'health', op:'sub', value: '2d4', damageType: DamageType.UNHOLY },
+	rot: 			{ duration: 0,       stat: 'health', op:'sub', value: '2d4', damageType: DamageType.ROT },
 	panic: 			{ duration: '1d4+4', stat: 'attitude', op:'set', value: Attitude.PANICKED },
 	rage: 			{ duration: '1d4+4', stat: 'attitude', op:'set', value: Attitude.ENRAGED },
 	confusion: 		{ duration: '1d4+4', stat: 'attitude', op:'set', value: Attitude.CONFUSED },
 	immunity: 		{ duration: '4d4+4', stat: 'immune', op:'add', value: null, valuePick: () => pick(PickImmune), name: 'immunity to *' },
 	resistance: 	{ duration: '8d4+4', stat: 'resist', op:'add', value: null, valuePick: () => pick(PickImmune), name: 'resist *s' },
 	shove: 			{ duration: 0,       stat: 'position', op:'push', value: 3 },
+};
+
+EffectTypeList.fire.onTargetPosition = function(map,x,y) {
+	map.tileSymbolSet(x,y,TileTypeList.fire.symbol);
+}
+
+EffectTypeList.cold.onTargetPosition = function(map,x,y) {
+	map.tileSymbolSet(x,y,TileTypeList.water.symbol);
+}
+
+let SayStatList = {
+	invisible: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' suddenly ',mVerb,newValue?'wink':'appear',newValue?' out of sight':' from thin air','!'];
+	},
+	speed: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' ',mVerb,(newValue<oldValue?'slow':'speed'),' ',(newValue<oldValue?'down':'up'),'.'];
+	},
+	regenerate: function(subj,obj,oldValue,newValue) {
+		return [mSubject|mPossessive,subj,' body ',newValue==0 ? 'stops regenerating.' : (newValue<oldValue ? 'regenerates a bit less.' : 'begins to knit itself back together.')];
+	},
+	immune: function(subj,obj,oldValue,newValue) {
+		return [mSubject|mPossessive,subj,' ',mVerb,'is',' ',!oldValue ? 'now immune to '+newValue : 'no longer immune to '+oldValue,'s.'];
+	},
+	resist: function(subj,obj,oldValue,newValue) {
+		return [mSubject|mPossessive,subj,' ',mVerb,'is',' ',!oldValue ? 'now resistant to '+newValue+'s.' : 'no longer resistant to '+oldValue+'s.'];
+	},
+	blind: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' ',mSubject|mVerb,newValue?'lose':'regain',' ',mSubject|mPronoun|mPossessive,subj,' sight!'];
+	},
+	travelMode: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' ',mSubject|mVerb,'begin',' to ',newValue,'.'];
+	},
+	attitude: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' ',mSubject|mVerb,'become',' ',newValue,'.'];
+	},
+	_generic_: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' ',stat,' ',mVerb,'is',' less enchanted.'];
+	}
 };
 
 
@@ -77,14 +122,10 @@ let EffectTypeList = {
 	});
 })();
 
-const DrawOnlyList = {
-	"invisibleObserver": { symbol: '?', img: "spells/enchantment/invisibility.png" }
-}
-
 const TileTypeDefaults = { mayWalk: false, mayFly: false, opacity: 0, isStairs: false, 
 							damage: '', damageType: DamageType.BLUNT, img: null };
 const TileTypeList = {
-	"floor":      { symbol: ' ', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", ivar: 9 },
+	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", ivar: 9 },
 	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", ivar: 8 },
 	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", img: "dc-dngn/pit.png" },
 	"shaft":      { symbol: ';', mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", img: "dc-dngn/dngn_trap_shaft.png" },
@@ -94,6 +135,7 @@ const TileTypeList = {
 	"stairsdown": { symbol: '>', mayWalk: true,  mayFly: true,  opacity: 0, name: "stairs down", isStairs: true, img: "dc-dngn/gateways/stone_stairs_down.png" },
 	"stairsup":   { symbol: '<', mayWalk: true,  mayFly: true,  opacity: 0, name: "stairs up", isStairs: true, img: "dc-dngn/gateways/stone_stairs_down.png" },
 	"fire":       { symbol: 'ᵮ', mayWalk: true,  mayFly: true,  opacity: 0, name: "fire", light: 5, glow:1, damage: '1d4', damageType: DamageType.FIRE, img: "dc-mon/nonliving/fire_elemental.png" },
+	"water":      { symbol: '~', mayWalk: false, mayFly: true,  maySwim: true, opacity: 0, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
 	"mist":       { symbol: '░', mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: '⍨', mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png", ivar: 3},
 	"ghoststone": { symbol: 'G', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
@@ -125,6 +167,8 @@ const ItemPotionImg = {
 	flight: 		"brilliant_blue",
 	healing: 		"ruby",
 	poison: 		"brown",
+	fire: 			"ruby", 
+	cold: 			"brilliant_blue", 
 	panic: 			"brown",
 	rage: 			"brown",
 	confusion: 		"brown",
@@ -133,16 +177,23 @@ const ItemPotionImg = {
 	shove: 			"pink"
 };
 
+const PotionChoices = Object.keys(EffectTypeList);
+const SpellChoices = Object.keys(EffectTypeList);
+const WeaponChoices = ['poison','fire','cold','blindness','slow','panic','rage','confusion','shove'];
+const DartChoices = ['poison','fire','cold','blindness','slow'];
+
 const ItemTypeList = {
 	"random":	{ symbol: '*', isRandom: 1, neverPick: true },
 	"gold": 	{ symbol: '$', namePattern: '* gold', effect: false, img: "item/misc/gold_pile.png" },
 	"altar":    { symbol: 'A', mayWalk: false, mayFly: false, name: "golden altar", light: 4, glow:true, rechargeTime: 12,
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
-	"potion":   { symbol: '¡', namePattern: 'potion of *', charges: 1, light: 3, glow: true, choices: EffectTypeList,
-				imgGet: (typeId)=>"item/potion/"+(ItemPotionImg[typeId] || "emerald")+".png" },
-	"spell":    { symbol: 'ᵴ', namePattern: 'spell of *', charges: true, choices: EffectTypeList,
+	"potion":   { symbol: '¡', namePattern: 'potion of *', charges: 1, light: 3, glow: true, effectChoices: PotionChoices, mayThrow: true, destroyOnLastCharge: true,
+				imgGet: (typeId)=>"item/potion/"+(ItemPotionImg[typeId] || "emerald")+".png", imgChoices: ItemPotionImg },
+	"spell":    { symbol: 'ᵴ', namePattern: 'spell of *', charges: true, rechargeTime: 3, effectChoices: SpellChoices,
 				img: "item/scroll/scroll.png" },
-	"dagger":   { symbol: '†', namePattern: 'dagger of *', charges: true, choices: EffectTypeList,
+	"dagger":   { symbol: '†', namePattern: 'dagger of *', charges: true, effectChoices: WeaponChoices, mayThrow: true,
+				img: "item/weapon/dagger.png" },
+	"dart":     { symbol: ',', namePattern: 'dart of *', charges: true, effectChoices: DartChoices, mayThrow: true,
 				img: "item/weapon/dagger.png" }
 }
 
@@ -153,22 +204,22 @@ const MonsterTypeDefaults = {
 					type: null, typeId: null, reach: 1, travelMode: "walk", speed: 1, loseTurn: false, pronoun: "it", packAnimal: false,
 					healthMax: 10, health: 10, regenerate: 0, resist: '', immune: '', picksup: false, 
 					damage: '1d1', damageType: DamageType.BLUNT, personalEnemy: '',
-					invisible: false, inaudible: false, blind: false, seeInvisible: false, sightDistance: 8, observeDistantEvents: false,
+					invisible: false, inaudible: false, blind: false, seeInvisible: false, sightDistance: 6, observeDistantEvents: false,
 					symbol: '?', mayWalk: false, mayFly: false,
-					brain: Brain.AI, brainFlee: false, brainPet: false, brainOpensDoors: false, attitude: Attitude.AGGRESSIVE, team: Team.EVIL
+					brain: Brain.AI, brainFlee: false, brainPet: false, brainOpensDoors: false, brainTalk: false, attitude: Attitude.AGGRESSIVE, team: Team.EVIL
 				};
 
 const MonsterTypeList = {
-	"ogre": { 		symbol: 'Ǿ', pronoun: "*", img: "dc-mon/ogre.png",
+	"ogre": { 		symbol: 'Ǿ', pronoun: "*", img: "dc-mon/ogre.png", brainTalk: true,
 					healthMax: 20, damage: '1d8',   damageType: DamageType.BLUNT, resist: DamageType.CUT, speed: 0.5,
 					attitude: Attitude.AGGRESSIVE,  team: Team.EVIL },
-	"goblin": { 	symbol: 'g', pronoun: "*", img: "dc-mon/goblin.png",
+	"goblin": { 	symbol: 'g', pronoun: "*", img: "dc-mon/goblin.png", brainTalk: true, isGoblin: true,
 					healthMax: 10, damage: '1d4',   damageType: DamageType.CUT, packAnimal: true,
-					attitude: Attitude.AGGRESSIVE,  team: Team.EVIL },
+					attitude: Attitude.AGGRESSIVE,  team: Team.EVIL, sayPrayer: 'Oh mighty Thagzog...' },
 	"skeleton": { 	symbol: 's', pronoun: "it", img: "dc-mon/undead/skeletons/skeleton_humanoid_small.png",
 					healthMax: 10, damage: '1d4',   damageType: DamageType.CUT, immune: DamageType.CUT+','+DamageType.STAB,
 					attitude: Attitude.AGGRESSIVE,  team: Team.EVIL },
-	"kobold": { 	symbol: 'k', pronoun: "*", img: "dc-mon/kobold.png",
+	"kobold": { 	symbol: 'k', pronoun: "*", img: "dc-mon/kobold.png", brainTalk: true,
 					healthMax:  8, damage: '1d3',   damageType: DamageType.CUT,
 					attitude: Attitude.HESITANT,    team: Team.EVIL },
 	"ethermite": { 	symbol: 'e', pronoun: "*", invisible: true, light:6, glow:true, img: "dc-mon/shining_eye.png",
@@ -195,48 +246,17 @@ const MonsterTypeList = {
 	"rabbit": { 	symbol: 'r', pronoun: "it", img: "dc-mon/animals/sheep.png",
 					healthMax: 30, damage: '1d2',   damageType: DamageType.BITE, packAnimal: true,
 					attitude: Attitude.FEARFUL,     team: Team.EVIL, watch:true },
-	"player": { 	symbol: '@', pronoun: "he", light: 7,
+	"player": { 	symbol: '@', pronoun: "he", light: 7, brainTalk: true,
 					brain: Brain.USER, brainOpensDoors: true, picksup: true, img: "dc-mon/human.png",
-					healthMax: 80, damage: '1d3+2', damageType: DamageType.CUT,
+					healthMax: 80, damage: '1d3+2', damageType: DamageType.CUT, sightDistance: 8,
 					attitude: Attitude.CALM,        team: Team.GOOD, neverPick: true }
 };
 
-const SymbolToType = (function() {
-	let lookup = {};
-	Object.entries(DrawOnlyList).forEach( ([typeId,drawType]) => {
-		drawType.isDrawOnly = true;
-		drawType.typeId = typeId;
-		lookup[drawType.symbol] = drawType;
-		drawType.type = drawType;
-	} );
-	Object.entries(TileTypeList).forEach( ([typeId,tileType]) => {
-		tileType.isTileType = true;
-		tileType.typeId = typeId;
-		lookup[tileType.symbol] = tileType;
-		tileType.type = tileType;
-	} );
-	Object.entries(ItemTypeList).forEach( ([typeId,itemType]) =>  {
-		itemType.isItemType = true;
-		itemType.typeId = typeId;
-		itemType.namePattern = itemType.namePattern || typeId;
-		ItemTypeList[typeId] = Object.assign( {}, ItemTypeDefaults, ItemTypeList[typeId] );
-		lookup[itemType.symbol] = ItemTypeList[typeId];
-		ItemTypeList[typeId].type = ItemTypeList[typeId];
-	} );
-	Object.entries(MonsterTypeList).forEach( ([typeId,monsterType]) =>  {
-		monsterType.isMonsterType = true;
-		monsterType.typeId = typeId;
-		MonsterTypeList[typeId].name = MonsterTypeList[typeId].name || typeId;
-		MonsterTypeList[typeId] = Object.assign( {}, MonsterTypeDefaults, MonsterTypeList[typeId] );
-		lookup[monsterType.symbol] = MonsterTypeList[typeId];
-		MonsterTypeList[typeId].type = MonsterTypeList[typeId];
-	} );
-	return lookup;
-})();
+let SymbolToType;
 
 TileTypeList['locked door'].onTouch = function(entity,self) {
 	if( entity.brainOpensDoors ) {
-		entity.map.tileSymbolSet( self.x, self.y, TileTypeList.door );
+		entity.map.tileSymbolSet( self.x, self.y, TileTypeList.door.symbol );
 		tell(mSubject,entity,' ',mVerb,'open',' the ',mObject,adhoc(self));
 	}
 }
@@ -372,3 +392,4 @@ MonsterTypeList.bat.onTouch = function(entity,self) {
 		}
 	}
 }
+
