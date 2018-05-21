@@ -111,15 +111,19 @@ let DeedManager = (new class {
 			([stat,dummy]) => { this.calcStat(entity,stat); }
 		);
 	}
-	force(entity,stat,value) {
-		this.end(entity,stat);
-		this.add(entity,entity,true,stat,'set',value);
+	forceSingle(entity,stat,value) {
+		this.end( deed => deed.entity.id==entity.id && deed.stat==stat );
 		this.calcStat(entity,stat);
+		if( entity[stat] !== value ) {
+			// this is a little hacked for invisibility. We'll have to see whether it is the right way for everything...
+			this.add(entity,entity,true,stat,'set',value);
+			this.calcStat(entity,stat);
+		}
 	}
-	end(entity,stat,value) {
+	end(fn) {
 		let count = 0;
 		for( let deed of this.deedList ) {
-			if( !deed.killMe && deed.entity.id == entity.id && deed.stat == stat && (value===undefined || deed.value==value)) {
+			if( !deed.killMe && fn(deed) ) {
 				if( deed.end() ) {
 					count++;
 				}
@@ -145,6 +149,29 @@ let deedAdd = function() {
 	return DeedManager.add(...arguments);
 }
 
+let deedEnd = function(fn) {
+	return DeedManager.end(fn);
+}
+
+let effectApply = function(cause,effect,target) {
+	//Some effects will NOT start unless their requirements are met. EG, no invis if you're already invis.
+	if( effect.requires && !effect.requires(target) ) {
+		tell(mSubject,cause,' has no effect on ',mObject,target);
+		return false;
+	}
+
+	if( target.isPosition ) {
+		if( !effect.onTargetPosition ) {
+			return false;
+		}
+		let map = target.map || cause.map || cause.owner.map;
+		effect.onTargetPosition(map,target.x,target.y)
+		return true;
+	}
+	deedAdd(cause,target,rollDice(effect.duration),effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
+	return true;
+}
+
 let deedTell = function(entity,stat,oldValue,newValue ) {
 	if( typeof oldValue == 'string' ) {
 		// we have to do this before comparing, below, because we do NOT keep the elements sorted.
@@ -165,7 +192,7 @@ DeedManager.addHandler('health','add',function(cause,entity,value) {
 	entity.takeHealing(cause,value,cause.effect.healingType);
 });
 DeedManager.addHandler('health','sub',function(cause,entity,value) {
-	entity.takeDamage(cause,value,cause.effect.damageType,cause.effect.onDamage);
+	entity.takeDamage(cause,value,cause.effect.damageType,cause.effect.onAttack);
 });
 DeedManager.addHandler('position','push',function(cause,entity,value) {
 	while( cause.cause ) {

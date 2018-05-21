@@ -1,8 +1,9 @@
 // READOUT
 
 class Readout {
-	constructor(spellDivId,inventoryDivId,worldOverlayAddFn,worldOverlayRemoveFn) {
+	constructor(spellDivId,infoDivId,inventoryDivId,worldOverlayAddFn,worldOverlayRemoveFn) {
 		this.spellDivId = spellDivId;
+		this.infoDivId = infoDivId;
 		this.inventoryDivId = inventoryDivId;
 		this.worldOverlayAddFn = worldOverlayAddFn;
 		this.worldOverlayRemoveFn = worldOverlayRemoveFn;
@@ -42,6 +43,30 @@ class Readout {
 			this.lastHealth[entity.id] = newValue;
 		}
 	}
+	renderInfo(entity) {
+		function test(t,text) {
+			if( t ) {
+				conditionList.push(text);
+			}
+		}
+		$('#'+this.infoDivId).empty();
+		let s = "Armor: "+entity.calcArmor()+"\n";
+		let conditionList = [];
+		test(entity.invisible,'invis');
+		test(entity.speed<1,'slow');
+		test(entity.speed>1,'fast');
+		test(entity.travelMode!=='walk',entity.travelMode);
+		test(entity.blind,'blind');
+		test(entity.regenerate>=0.02,'regen');
+		test(entity.attitude==Attitude.ENRAGED,'enraged');
+		test(entity.attitude==Attitude.CONFUSED,'confused');
+		test(entity.attitude==Attitude.PANICKED,'panicked');
+		s += conditionList.join(',')+'\n';
+		s += entity.resist ? "Resist: "+entity.resist+'\n' : '';
+		s += entity.immune ? "Immune: "+entity.immune+'\n' : '';
+		s += entity.vuln ? "Vulnerable: "+entity.vuln+'\n' : '';
+		$('#'+this.infoDivId).append(s);
+	}
 	renderSpells(observer) {
 		$('#'+this.spellDivId).empty();
 		let spellList = new ItemFinder(observer.inventory).isTypeId("spell");
@@ -65,6 +90,7 @@ class Readout {
 	render(observer,entityList) {
 		this.renderEntityStatus(observer,entityList);
 		this.renderSpells(observer);
+		this.renderInfo(observer);
 		if( this.pickingTarget() ) {
 			console.log("crosshair at "+(observer.x+this.xOfs)+','+(observer.y+this.yOfs));
 			this.worldOverlayRemoveFn( a=>a.group=='guiCrosshair' );
@@ -75,10 +101,21 @@ class Readout {
 		return (this.command == Command.CAST || this.command == Command.THROW) && this.commandItem;
 	}
 	showInventory(f) {
+		function order(typeId) {
+			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
+		}
 		this.inventory = f;
+		f.all.sort( function(a,b) { 
+			let as = order(a.typeId)+' '+a.name;
+			let bs = order(b.typeId)+' '+b.name;
+			if( as < bs ) return -1;
+			if( as > bs ) return 1;
+			return 0;
+		});
 		let s = '';
 		for( let i=0 ; i<f.all.length ; ++i ) {
-			s += this.inventorySelector.charAt(i)+'. '+f.all[i].name+'\n';
+			let item = f.all[i];
+			s += (item.inSlot ? '*' : ' ')+String.padLeft(this.inventorySelector.charAt(i),2,' ')+'. '+item.name+(item.inSlot?' ('+item.inSlot+')':'')+'\n';
 		}
 		if( !s ) {
 			s += "Pick up some items by walking upon them.";
@@ -106,7 +143,8 @@ class Readout {
 		this.clearCommand();
 		return true;
 	}
-	evalCommand(observer,keyCode,command) {
+	evalCommand(observer,event,command) {
+		let keyCode = event.keyCode;
 		let keyENTER = 13;
 		let keyESCAPE = 27;
 		let keyONE = 49;
@@ -133,7 +171,9 @@ class Readout {
 					cancel = true;
 				}
 				else {
-					this.commandTarget = target.first || {x:observer.x+this.xOfs,y:observer.y+this.yOfs,isPosition:true};
+					let x = observer.x+this.xOfs;
+					let y = observer.y+this.yOfs;
+					this.commandTarget = target.first || {x:x,y:y,isPosition:true,name:observer.map.tileTypeGet(x,y).name};
 					return this.enactCommand(observer);
 				}
 			}
@@ -148,12 +188,22 @@ class Readout {
 				this.hideInventory();
 				return this.clearCommand();
 			}
-			let n = this.inventorySelector.indexOf(String.fromCharCode(keyCode));
+			let keyPressed = String.fromCharCode(keyCode);
+			if( !event.shiftKey ) {
+				keyPressed = keyPressed.toLowerCase();
+			}
+			let n = this.inventorySelector.indexOf(keyPressed);
 			if( n>=0 && n<this.inventory.count ) {
 				this.hideInventory();
 				this.commandItem = this.inventory.all[n];
 				if( this.command == Command.QUAFF ) {
 					return this.enactCommand(observer);
+				}
+				if( this.command == Command.INVENTORY ) {
+					if( this.commandItem.slot ) {
+						this.command = Command.USE;
+						return this.enactCommand(observer);
+					}
 				}
 			}
 			return false;

@@ -151,8 +151,8 @@ function createDrawList(observer,map,entityList,asType) {
 }
 
 let tileDim = 32;
-function DefaultImgGet(effectId) {
-	return this.img;
+function DefaultImgGet(self) {
+	return self.img;
 }
 class Display {
 	constructor(divId,sightDistance) {
@@ -186,14 +186,14 @@ class Display {
 		for( let symbol in SymbolToType ) {
 			let type = SymbolToType[symbol];
 			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
-			if( !type.imgChoices ) {
-				add(type.img);
+			if( type.imgChoices ) {
+				let imgGet = this.imgGet[type.typeId];
+				for( let key in type.imgChoices ) {
+					add( imgGet(null,type.imgChoices[key].img) );
+				}
 			}
 			else {
-				for( let typeId in type.imgChoices ) {
-					let imgGet = this.imgGet[type.typeId];
-					add(imgGet.call(type,typeId));
-				}
+				add(type.img);
 			}
 		}
 
@@ -256,11 +256,11 @@ class Display {
 					let entity = tile[i];
 					if( !entity ) continue;
 					if( entity.isAnimation ) {
-						entity.sprite = make.call(this,entity.xGet()-(observer.x-this.sd),entity.yGet()-(observer.y-this.sd),entity,entity.imgGet(),light);
+						entity.sprite = make.call(this,entity.xGet()-(observer.x-this.sd),entity.yGet()-(observer.y-this.sd),entity,entity.imgGet(entity),light);
 					}
 					else
 					if( this.imgGet[entity.typeId] ) {
-						let imgPath = this.imgGet[entity.typeId].call(entity,(entity.effect?entity.effect.typeId:null))
+						let imgPath = this.imgGet[entity.typeId](entity);
 						make.call(this,x,y,entity,imgPath,entity.glow ? dHalf : light);
 					}
 					else {

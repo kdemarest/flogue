@@ -99,6 +99,18 @@ class SimpleMap {
 	toString() {
 		return this.tile.join('\n');
 	}
+	traverse(fn) {
+		for( let y=0 ; y<this.yLen ; ++ y ) {
+			for( let x=0 ; x<this.xLen ; ++x ) {
+				let go = fn.call(this,x,y);
+				if( go === false ) {
+					return this;
+				}
+			}
+		}
+		return this;
+	}
+
 	tileSymbolSet(x,y,symbol) {
 		if( !this.inBounds(x,y) ) {
 			debugger;

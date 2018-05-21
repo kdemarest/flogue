@@ -2,16 +2,39 @@
 // ENTITY (monsters, players etc)
 //
 class Entity {
-	constructor(map,entityList,monsterType,position,inject) {
+	constructor(map,entityList,monsterType,position,inject,levelOverride) {
 		let inits =    { inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
-		let values   = { id: humanNameList.pop(), health: monsterType.healthMax, x:position.x, y:position.y, map: map, entityList:entityList };
+		let values =   { id: humanNameList.pop(), x:position.x, y:position.y, map: map, entityList:entityList };
+		let level = levelOverride || monsterType.level;
+		let isPlayer = monsterType.brain==Brain.USER;
+		if( isPlayer ) {
+			values.healthMax = Rules.playerHealth(level);
+			values.armor     = Rules.playerArmor(level);
+			values.damage    = Rules.playerDamage(level);
+		}
+		else {
+			let hits = monsterType.power.split(':');
+			let hitsToKillMonster = parseInt(hits[0]);
+			let hitsToKillPlayer = parseInt(hits[1]);
+			values.healthMax = Rules.monsterHealth(level,hitsToKillMonster);
+			values.armor     = (monsterType.armor || 0);
+			values.damage    = Rules.monsterDamage(level,hitsToKillPlayer);
+		}
+		values.health = values.healthMax;
 		if( monsterType.pronoun == '*' ) {
 			values.pronoun = Math.chance(70) ? 'he' : 'she';
 		}
-		if( monsterType.name.indexOf('/')>0 ) {
-			values.name = monsterType.name.split('/')[values.pronoun=='she' ? 1 : 0];
-		}
 		Object.assign( this, monsterType, inits, inject || {}, values );
+
+		let self = this;
+		this.name = this.name || this.namePattern.replace(/{(\w+)}/g,function(whole,key) {
+			if( !self[key] ) { debugger; }
+			return self[key] || 'UNKNOWN '+key;
+		});
+
+		if( this.name && this.name.indexOf('/')>0 ) {
+			values.name = this.name.split('/')[values.pronoun=='she' ? 1 : 0];
+		}
 	}
 
 	record(s,pending) {
@@ -32,7 +55,19 @@ class Entity {
 	isUser() {
 		return this.brain == Brain.USER;
 	}
+	gateTo(area,gateId) {
+		let g = new ItemFinder(area.map.itemList).isId(gateId);
+		if( !g.first ) debugger;
 
+		// DANGER! Doing this while within a loop across the entityList will result in pain!
+		Array.filterInPlace( this.entityList, entity => entity.id!=this.id );
+		this.x = g.first.x;
+		this.y = g.first.y;
+		this.map = area.map;
+		this.entityList = area.entityList;
+		let fnName = this.isUser() ? 'unshift' : 'push';
+		area.entityList[fnName](this);
+	}
 	die() {
 		if( this.removed && this.isUser() ) {
 			return;
@@ -140,10 +175,33 @@ class Entity {
 		}
 		return this.vis[y][x];
 	}
+	doff(item) {
+		if( !item.inSlot || !item.slot ) {
+			debugger;
+			return;
+		}
+		tell(mSubject,this,' ',mVerb,'remove',' ',mObject,item);
+		DeedManager.end( deed => deed.cause.id==item.id );
+		item.inSlot = false;
+	}
+	don(item,slot) {
+		if( item.inSlot || !item.slot ) {
+			debugger;
+			return;
+		}
+		tell(mSubject,this,' ',mVerb,item.useVerb,' ',mObject,item);
+		item.inSlot = slot;
+		if( item.triggerOnUse || (item.triggerOnUseIfHelp && item.effect.isHelp) ) {
+			item.trigger(Command.USE,item,this);
+		}
+	}
 
 	_itemRemove(item) {
 		if( !this.inventory.includes(item) ) {
 			debugger;
+		}
+		if( item.inSlot ) {
+			this.doff(item);
 		}
 		Array.filterInPlace(this.inventory, i => i.id!=item.id );
 	}
@@ -396,6 +454,9 @@ class Entity {
 	isImmune(damageType) {
 		return String.arIncludes(this.immune,damageType);
 	}
+	isVuln(damageType) {
+		return String.arIncludes(this.vuln,damageType);
+	}
 	isResistant(damageType) {
 		return String.arIncludes(this.resist,damageType);
 	}
@@ -415,19 +476,39 @@ class Entity {
 		}
 	}
 
-	takeDamage(attacker,amount,damageType,onDamage) {
+	calcArmor(damageType) {
+		let f = new ItemFinder(this.inventory).filter( item=>item.inSlot );
+		let armor = 0;
+		f.process( item => { armor += item.calcArmor(damageType); });
+		return armor;
+	}
+
+	calcDamageReduction(damageType) {
+		let reduction = this.isResistant(damageType) ? 0.5 : 0.0;
+		reduction += this.calcArmor(damageType)/400;
+		return Math.min(0.8,reduction);
+	}
+
+	takeDamage(attacker,amount,damageType,callback) {
+		let noBacksies = attacker.isArmor || attacker.isHelm || attacker.isBoots;
 		if( attacker.isItemType ) {
 			attacker = attacker.cause || attacker.owner || attacker;
+		}
+		if( attacker && attacker.invisible && !this.seeInvisible ) {
+			amount *= (attacker.sneakAttackMult || 2);
+		}
+		if( this.isVuln(damageType) ) {
+			amount *= 2;
 		}
 		if( this.isImmune(damageType) ) {
 			amount = 0;
 		}
-		else
-		if( this.isResistant(damageType) ) {
-			amount = amount / 2;
+		else {
+			let damageReduction = this.calcDamageReduction(damageType);
+			amount = Math.max(1,Math.floor(amount*(1-damageReduction)));
 		}
-		if( attacker && attacker.invisible ) { //&& !this.type.invisible ) {
-			DeedManager.force(attacker,"invisible",false);
+		if( attacker && attacker.invisible ) {
+			DeedManager.forceSingle(attacker,"invisible",false);
 		}
 		if( this.brain!=='user' ) {
 			this.personalEnemy = attacker.id;
@@ -444,12 +525,26 @@ class Entity {
 		}
 
 		this.health -= amount;
+
+		if( callback ) {
+			callback(attacker,this,amount,damageType);	
+		}
+
 		let quiet = false;
-		if( this.onDamage ) {
-			quiet = this.onDamage(attacker,this,amount,damageType);
+		if( this.onHurt ) {
+			quiet = this.onHurt.call(this,attacker,amount,damageType);
 		}
 		if( !quiet ) {
 			tell(mSubject,attacker,' ',mVerb,damageType,' ',mObject,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!' );
+		}
+
+		if( !noBacksies && this.inventory ) {
+			let armorEffects = new ItemFinder(this.inventory).filter( item => item.inSlot );
+			armorEffects.process( item => {
+				if( item.effect.isHarm && Math.chance(10) ) {
+					item.trigger(Command.NONE,item,attacker);
+				}
+			})
 		}
 	}
 
@@ -468,8 +563,8 @@ class Entity {
 		this.loseTurn = true;
 	}
 
-	doDamage(other,amount,damageType,onDamage) {
-		return other.takeDamage(this,amount,damageType,onDamage);
+	doDamage(other,amount,damageType,callback) {
+		return other.takeDamage(this,amount,damageType,callback);
 	}
 
 	attack(other,isRanged,onDamage) {
@@ -482,8 +577,8 @@ class Entity {
 		let damage = this.rollDamage(this.damage);
 		let damageType = this.damageType || DamageType.STAB;
 		let result = this.doDamage( other, damage, damageType, onDamage );
-		if( !isRanged && other.onTouch ) {
-			other.onTouch(this,other);
+		if( this.onAttack ) {
+			this.onAttack(other);
 		}
 		return result;
 	}
@@ -571,7 +666,7 @@ class Entity {
 			}
 
 			if( this.picksup ) {
-				let f = new ItemFinder(this.map.itemList).at(x,y);
+				let f = new ItemFinder(this.map.itemList).at(x,y).filter( item => item.mayPickup!==false );
 				for( let item of f.all ) {
 					if( item.moveTo(this) !== false ) {
 						tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
@@ -591,7 +686,7 @@ class Entity {
 		}
 
 		if( this.regenerate ) {
-			this.health = Math.min(this.health+this.regenerate,this.healthMax);
+			this.health = Math.floor(Math.min(this.health+this.regenerate*this.healthMax,this.healthMax));
 		}
 
 		if( this.vocalize ) {
@@ -655,6 +750,22 @@ class Entity {
 				item.y = this.y;
 				tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');
 				item.trigger(this.command,this,target);
+				break;
+			}
+			case Command.USE: {
+				let item = this.commandItem;
+				// Remove anything already worn or used.
+				if( item.inSlot ) {
+					this.doff(item);
+				}
+				else
+				if( item.slot ) {
+					let itemToRemove = new ItemFinder(this.inventory).filter( i => i.inSlot==item.slot);
+					if( itemToRemove.first ) {
+						this.doff(itemToRemove.first);
+					}
+					this.don(item,item.slot);
+				}
 				break;
 			}
 			case Command.PRAY: {

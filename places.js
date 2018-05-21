@@ -3,11 +3,14 @@ let PlaceList = {};
 
 /*
 PlaceList.uniqueIdentity = {
+	// The map can use any symbols yu want. Just re-map them in the 'symbols' area below.
+	// However, . and # are generally floor and wall, just to avoid confusion.
 	map:
 `
 .......
 `,
 	symbols: {
+		A: 'typeId'	// allowed to be a function that picks what type to link to
 	},
 	stickers: {
 	},
@@ -43,10 +46,10 @@ PlaceList.goblinGathering = {
 	tileTypes: {
 	},
 	itemTypes: {
-		goblinAltar: { mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png" }
+		goblinAltar: { mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png", neverPick: true }
 	},
 	monsterTypes: {
-		goblinPriest: { basis: 'goblin', damage: '2d6+2', damageType: DamageType.ROT, isGoblin: true,
+		goblinPriest: { basis: 'goblin', name: "goblin priest", damage: '2d6+2', damageType: DamageType.ROT, isGoblin: true,
 						attitude: Attitude.WORSHIP, shout: 'Death to all heretic overworld invaders!',
 						img: "dc-mon/gnoll.png" }
 	},

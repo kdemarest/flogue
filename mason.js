@@ -249,6 +249,19 @@
 			return this;
 
 		}
+		placeEntrance(tile) {
+			let amount = 1;
+			while( amount ) {
+				let x,y;
+				[x,y] = this.randPos();
+				if( this.getTile(x,y) == T.Floor && this.countAdjacent(x,y,T.Floor)>=3 && this.countAdjacent(x,y,T.Wall)>=1 ) {
+					this.setTile(x,y,tile);
+					--amount;
+				}
+			}
+			return this;
+
+		}
 		removeZoneFlood(x,y,zone,ortho) {
 			_tile = this.tile;
 			_step = ortho ? 2 : 1;
@@ -263,35 +276,30 @@
 		}
 
 		flood(x,y,zone,ortho) {
-			/*
 			function expand(x,y) {
-				self.setZone(x,y,zone);
-				++count;
 				for( let dir=0; dir<DirAdd.length ; dir += step ) {
 					let nx = x + DirAdd[dir].x;
 					let ny = y + DirAdd[dir].y;
-					if( self.getTile(nx,ny) !== T.Floor ) { continue; }
-					if( self.getZone(nx,ny) == zone ) { continue; }
-					expand(nx,ny);
+					if( nx<self.xMin || ny<self.yMin || nx>self.xMax || ny>self.yMax ) continue;
+					let t = self.getAll(nx,ny);
+					if( t.tile !== T.Floor || t.zone == zone) { continue; }
+					t.zone = zone;
+					++count;
+					hotTiles.push(nx,ny);
 				}
 			}
 			let self = this;
 			let step = ortho ? 2 : 1;
-			let count = 0;
-			expand(x,y,zone);
-			return count;
+			let t = self.getAll(x,y);
+			if( t.tile !== T.Floor ) { return 0; }
+			t.zone = zone;
+			let count = 1;
+			let hotTiles = [x,y];
+			do {
+				expand( hotTiles.shift(), hotTiles.shift() );
+			} while( hotTiles.length );
 
-			*/
-			_tile = this.tile;
-			_step = ortho ? 2 : 1;
-			_count = 0;
-			_xMin = this.xMin;
-			_yMin = this.yMin;
-			_xMax = this.xMax;
-			_yMax = this.yMax;
-			_zone = zone;
-			_expand(x,y);
-			return _count;
+			return count;
 		}
 		floodAll(ortho) {
 			let zoneList = [];
@@ -541,7 +549,7 @@
 
 	}
 
-	function buildLevel(dim,TileTypeList,MonsterTypeList,ItemTypeList) {
+	function buildMap(style,TileTypeList,MonsterTypeList,ItemTypeList) {
 
 		function pickMonster(x,y) {
 			return pick(MonsterTypeList).symbol;
@@ -556,16 +564,21 @@
 		T.Unknown = "\0";
 		let map = new Map();
 		const cave = new Cave();
-		cave.setDimensions(dim).makeAmoeba(Math.rand(0.40, 0.70));
+		cave.setDimensions(style.dim);
+		cave.makeAmoeba(style.floorDensity);
 		cave.paste(map,1,1);
-		map.populate(0.01,pickMonster);
-		map.populate(0.01,pickItem);
-		map.placeRandom(MonsterTypeList.player.symbol,T.Floor);
+		map.populate(style.monsterDensity,pickMonster);
+		map.populate(style.itemDensity,pickItem);
 		map.convert(T.Unknown,T.Wall);
+
+		map.placeEntrance(ItemTypeList.stairsDown.symbol);
+		if( style.entrance ) {
+			map.placeEntrance(style.entrance.symbol);
+		}
 		return map.renderToString();
 	}
 
-	function buildLevelSlow() {
+	function buildMapSlow() {
 		let map = new Map();
 		const cave = new Cave().setDimensions(150); //Math.randIntBell(5,50));
 		let maker = cave.makeAmoeba(Math.rand(0.40, 0.70));
@@ -585,6 +598,8 @@
 		makeMore();
 	}
 
-	window.buildLevel = buildLevel;
-	window.buildLevelSlow = buildLevelSlow;
+	window.Mason = {
+		buildMap: buildMap,
+		buildMapSlow: buildMapSlow
+	};
 })();

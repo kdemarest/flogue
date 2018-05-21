@@ -51,14 +51,27 @@ body {
 }
 #readoutStatus {
 	width: 104px;
+	height: 160px;
 }
 #readoutSpells {
+	width: 104px;
+	height: 100px;
+	display: block;
+	white-space: pre;
+	font-family: "Ariel", serif;
+	font-size: 16px;
+	margin: 0px 0px;
+	overflow-y: hidden;
+	overflow-x: hidden;
+}
+#readoutInfo {
 	width: 104px;
 	height: 64px;
 	display: block;
 	white-space: pre;
 	font-family: "Ariel", serif;
-	font-size: 16px;
+	border-top: 1px solid white;
+	font-size: 12px;
 	margin: 0px 0px;
 	overflow-y: hidden;
 	overflow-x: hidden;
