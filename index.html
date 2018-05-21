@@ -1,14 +1,25 @@
 <html>
 <head>
 <meta charset="utf-8"/>
-<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/minireset.css/0.0.2/minireset.css">
+<!-- link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/minireset.css/0.0.2/minireset.css"-->
+<link rel="stylesheet" type="text/css" href="minireset.css">
 <link rel="stylesheet" type="text/css" href="index.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+<!--script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script-->
+<script src="jquery.3.3.1.js"></script>
 <script src="pixi.min.js"></script>
 <script src="nameList.js"></script>
 <script src="utilities.js"></script>
 <script src="data.js"></script>
+<script src="places.js"></script>
 <script src="mason.js"></script>
+<script src="deed.js"></script>
+<script src="map.js"></script>
+<script src="item.js"></script>
+<script src="entity.js"></script>
+<script src="anim.js"></script>
+<script src="tell.js"></script>
+<script src="readout.js"></script>
+<script src="display.js"></script>
 <script src="sentence.js"></script>
 <script src="finder.js"></script>
 <qscript src="levels.js"></script>
@@ -24,265 +35,10 @@ Resources:
 
 let humanNameList = Array.shuffle(getNameList());
 
-
-let MessageManager = (new class {
-	constructor() {
-		this.recipientList = [];
-		this.accumulate = 0;
-	}
-	addRecipient( observer, canPerceiveEntityFn, receiveFn ) {
-		this.recipientList.push( { observer: observer, canPerceiveEntityFn: canPerceiveEntityFn, receiveFn: receiveFn, history: [], buffer: [] });
-	}
-	hold() {
-		this.accumulate++;
-	}
-	release() {
-		this.accumulate--;
-		if( !this.accumulate ) {
-
-		}
-	}
-	tell() {
-		let sentence = ( arguments[0] instanceof Sentence ) ? arguments[0] : new Sentence(...arguments);
-		if( !sentence.subject ) {
-			debugger;
-		}
-		this.recipientList.map( recipient => {
-			let cp = recipient.canPerceiveEntityFn(recipient.observer,sentence.subject);
-			if( sentence.object ) {
-				cp = cp || recipient.canPerceiveEntityFn(recipient.observer,sentence.object);
-			}
-
-			if( cp || recipient.observer.observeDistantEvents ) {
-				let message = (cp?'':'FAR: ')+sentence.refine(recipient.observer);
-				if( this.accumulate ) {
-					recipient.buffer.unshift(message);
-				}
-				else {
-					while( recipient.buffer.length ) {
-						recipient.history.unshift( recipient.buffer.pop() );
-					}
-					recipient.history.unshift(message);
-				}
-				recipient.receiveFn(message,recipient.history);
-			}
-		});
-	}
-}());
-
-function tell() {
-	MessageManager.tell(...arguments);
-}
-
 function bonk(entity,target) {
 	tell( mSubject, entity, ' ', mVerb, 'run', ' into ', mObject, target, '.' );
 }
 
-
-// DEED
-
-class Deed {
-	// Set duration = true for perpetual
-	constructor(cause,entity,duration,stat,op,value,onTick,onEnd,data) {
-		if( entity[stat] === undefined ) {
-			debugger;
-		}
-		this.cause = cause;
-		this.entity = entity;
-		this.stat = stat;
-		this.op = op;
-		this.value = value;
-		this.duration = duration;
-		this.onTick = onTick;
-		this.onEnd = onEnd;
-		this.data = data;
-		this.timeLeft = duration;
-		this.killMe = false;
-	}
-	expired() {
-		return this.killMe || (this.timeLeft!==true && this.timeLeft <= 0);
-	}
-	applyEffect() {
-		if( this.op == 'set' ) {
-			this.entity[this.stat] = this.value;
-		}
-		if( this.op == 'add' ) {
-			if( typeof this.entity[this.stat] === 'string' ) {
-				this.entity[this.stat] = String.arAdd(this.entity[this.stat],this.value);
-			}
-			else {
-				this.entity[this.stat] += this.value;
-			}
-		}
-		if( this.op == 'sub' ) {
-			if( typeof this.entity[this.stat] === 'string' ) {
-				this.entity[this.stat] = String.arSub(this.entity[this.stat],this.value);
-			}
-			else {
-				this.entity[this.stat] -= this.value;
-			}
-		}
-	}
-	end() {
-		if( this.killMe ) {
-			return false;
-		}
-		if( this.onEnd ) {
-			this.onEnd(this.entity,this.data);
-		}
-		this.killMe = true;
-		return true;
-	}
-	tick(dt) {
-		if( this.killMe || !this.doTick ) {
-			return;
-		}
-		if( this.timeLeft !== true ) {
-			this.timeLeft -= dt;
-		}
-		if( this.expired() ) {
-			this.end();
-		}
-		else
-		if( this.onTick ) {
-			this.onTick(this.entity,dt,this.data);
-		}
-	}
-}
-
-let DeedManager = (new class {
-	constructor() {
-		this.handler = {};
-		this.deedList = [];
-	}
-	// If an item was involved, then the cause should be the item, and other functions must find the owner.
-	add(cause,entity,duration,stat,op,value,onTick,onEnd,data) {
-		let handlerFn = this.handler[stat+'_'+op];
-		if( handlerFn ) {
-			handlerFn(cause,entity,value);
-		}
-		else {
-			this.deedList.push( new Deed(cause,entity,duration,stat,op,value,onTick,onEnd,data) );
-		}
-	}
-	addHandler(stat,op,handlerFn) {
-		this.handler[stat+'_'+op] = handlerFn;
-	}
-	calcStat(entity,stat) {
-		let oldValue = entity[stat];
-		if( entity.type[stat] === undefined ) {
-			debugger;
-		}
-		entity[stat] = entity.type[stat];
-		for( let deed of this.deedList ) {
-			if( !deed.killMe && deed.entity.id == entity.id && deed.stat == stat ) {
-				deed.applyEffect();
-			}
-		}
-		deedTell(entity,stat,oldValue,entity[stat]);
-	}
-	calc(entity) {
-		let statList = {};
-		// WEIRD!! If we just ended a deed, we must STILL calc the value, at least once, so that we can
-		// emit notice that it happened!
-		this.deedList.map(
-			deed => { statList[deed.stat] = true; }
-		);
-		Object.entries(statList).forEach(
-			([stat,dummy]) => { this.calcStat(entity,stat); }
-		);
-	}
-	force(entity,stat,value) {
-		this.end(entity,stat);
-		this.add(entity,entity,true,stat,'set',value);
-		this.calcStat(entity,stat);
-	}
-	end(entity,stat,value) {
-		let count = 0;
-		for( let deed of this.deedList ) {
-			if( !deed.killMe && deed.entity.id == entity.id && deed.stat == stat && (value===undefined || deed.value==value)) {
-				if( deed.end() ) {
-					count++;
-				}
-			}
-		}
-		return count;
-	}
-	cleanup() {
-		Array.filterInPlace(this.deedList, deed => !deed.killMe );
-	}
-	tick(entity,dt) {
-		// This makes sure that any deeds added while ticking do NOT actually tick this round.
-		this.deedList.map( deed => deed.doTick=true );
-		for( let deed of this.deedList ) {
-			if( deed.entity.id == entity.id ) {
-				deed.tick(dt);
-			}
-		}
-	}
-}());
-
-let deedAdd = function() {
-	return DeedManager.add(...arguments);
-}
-
-let deedTell = function(entity,stat,oldValue,newValue ) {
-	if( typeof oldValue == 'string' ) {
-		// we have to do this before comparing, below, because we do NOT keep the elements sorted.
-		let ov = oldValue;
-		let nv = newValue;
-		oldValue = String.arExtra(ov,nv);
-		newValue = String.arExtra(nv,ov);
-	}
-	if( oldValue == newValue ) {
-		return;
-	}
-	let teller = {
-		invisible: function() {
-			return [mSubject,entity,' suddenly ',mVerb,newValue?'wink':'appear',newValue?' out of sight':' from thin air','!'];
-		},
-		speed: function() {
-			return [mSubject,entity,' ',mVerb,(newValue<oldValue?'slow':'speed'),' ',(newValue<oldValue?'down':'up'),'.'];
-		},
-		regenerate: function() {
-			return [mSubject|mPossessive,entity,' body ',newValue==0 ? 'stops regenerating.' : (newValue<oldValue ? 'regenerates a bit less.' : 'begins to knit itself back together.')];
-		},
-		immune: function() {
-			return [mSubject|mPossessive,entity,' ',mVerb,'is',' ',!oldValue ? 'now immune to '+newValue : 'no longer immune to '+oldValue,'s.'];
-		},
-		resist: function() {
-			return [mSubject|mPossessive,entity,' ',mVerb,'is',' ',!oldValue ? 'now resistant to '+newValue+'s.' : 'no longer resistant to '+oldValue+'s.'];
-		},
-		blind: function() {
-			return [mSubject,entity,' ',mSubject|mVerb,newValue?'lose':'regain',' ',mSubject|mPronoun|mPossessive,entity,' sight!'];
-		},
-		travelMode: function() {
-			return [mSubject,entity,' ',mSubject|mVerb,'begin',' to ',newValue,'.'];
-		},
-		attitude: function() {
-			return [mSubject,entity,' ',mSubject|mVerb,'become',' ',newValue,'.'];
-		},
-		_generic_: function() {
-			return [mSubject,entity,' ',stat,' ',mVerb,'is',' less enchanted.'];
-		}
-	}
-
-	let content = (teller[stat] || teller._generic_)();
-	tell(...content);
-}
-
-DeedManager.addHandler('health','add',function(cause,entity,value) {
-	entity.takeHealing(cause,value,cause.effect.healingType);
-});
-DeedManager.addHandler('health','sub',function(cause,entity,value) {
-	entity.takeDamage(cause,value,cause.effect.damageType,cause.effect.onDamage);
-});
-DeedManager.addHandler('position','push',function(cause,entity,value) {
-	while( cause.cause ) {
-		cause = cause.cause;
-	}
-	entity.takePush(cause,value);
-});
 
 function adhoc(tileType,x,y) {
 	if( tileType.isItemType ) {
@@ -298,1378 +54,363 @@ function objHas(obj,member) {
 	return( typeof obj=='object' && obj[member] !== undefined );
 }
 
-let StickerList = {
-	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 }
+
+
+
+function clearCommands(entityList) {
+	entityList.forEach( entity => {
+		entity.commandLast = entity.command;
+		entity.commandItemLast = entity.commandItem;
+		entity.commandTargetLast = entity.commandTarget;
+		entity.command = Command.NONE;
+		entity.commandItem = null;
+		entity.commandTarget = null;
+	});
 }
 
-class AniPaste {
-	constructor(data) {
-		Object.assign(this,data);
-		this.isAnimation = true;
-		this.dead = false;
-		this.alpha = this.sticker.alpha || 1;
-		this.scale = this.sticker.scale || 1;
-		this.xAnchor = this.sticker.xAnchor || 0.5;
-		this.yAnchor = this.sticker.yAnchor || 0.5;
-	}
-	imgGet() {
-		if( this.dead ) {
-			return null;
-		}
-		return this.sticker.img;
-	}
-	tick(delta) {
-		if( this.dead ) {
-			return;
-		}
-		if( this.onTick ) {
-			this.onTick.call(this,delta);
-		}
-		this.duration -= delta;
-		if( this.duration <= 0 ) {
-			this.dead = true;
-			animationDeathCallback(this.sprite);
-		}
-	}
+function playerFind(entityList) {
+	return entityList.find( entity => entity.isUser() );
 }
 
-
-let animationList = [];
-let animationDeathCallback;
-function animationAdd(anim) {
-	animationList.push(anim);
-}
-function animationTick(delta) {
-	animationList.map( anim => anim.tick(delta) );
-	Array.filterInPlace( animationList, anim => !anim.dead );
-}
-
-//
-// ENTITY (monsters, players etc)
-//
-class Entity {
-	constructor(map,entityList,monsterType,position) {
-		let inits =    { inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
-		let values   = { id: humanNameList.pop(), health: monsterType.healthMax, x:position.x, y:position.y, map: map, entityList:entityList };
-		if( monsterType.pronoun == '*' ) {
-			values.pronoun = Math.chance(70) ? 'he' : 'she';
-		}
-		if( monsterType.name.indexOf('/')>0 ) {
-			values.name = monsterType.name.split('/')[values.pronoun=='she' ? 1 : 0];
-		}
-		Object.assign( this, monsterType, inits, values );
-	}
-
-	record(s,pending) {
-		if( pending ) {
-			this.historyPending.push(s);
-			return;
-		}
-		this.history.unshift( this.name+' '+s+' '+this.historyPending.join(', ') );
-		this.historyPending.length = 0;
-		if( this.watch ) {
-			console.log(this.history[0]);
-		}
-	}
-
-	findAliveOthers(entityList = this.entityList) {
-		return new EntityFinder(this,entityList).excludeMe().isAlive();
-	}
-	isUser() {
-		return this.brain == Brain.USER;
-	}
-
-	die() {
-		if( this.removed && this.isUser() ) {
-			return;
-		}
-		if( this.removed ) {
-			debugger;
-		}
-		if( this.isVictorious ) {
-			return;
-		}
-		tell(mSubject,this,' ',mVerb,'die','!');
-		this.removed = true;
-	}
-
-	isDead() {
-		return this.removed || this.isVictorious || this.health <= 0;
-	}
-	isAlive() {
-		return !this.isDead();
-	}
-
-	dirToEntityPredictable(entity) {
-		let dx = entity.x - this.x;
-		let dy = entity.y - this.y;
-		return deltasToDirPredictable(dx,dy);
-	}
-	dirToEntityNatural(entity) {
-		let dx = entity.x - this.x;
-		let dy = entity.y - this.y;
-		return deltasToDirNatural(dx,dy);
-	}
-
-	isMyEnemy(entity) {
-		if( this.attitude == Attitude.ENRAGED ) {
-			return true;
-		}
-		if( entity.id == this.personalEnemy ) {
-			return true;
-		}
-		return entity.team != this.team && entity.team != Team.NEUTRAL;
-	}
-	isMyFriend(entity) {
-		if( this.attitude == Attitude.ENRAGED ) {
-			return false;
-		}
-		if( entity.id == this.personalEnemy ) {
-			return false;
-		}
-		return entity.team == this.team && entity.team != Team.NEUTRAL;
-	}
-	isMyNeutral(entity) {
-		if( this.attitude == Attitude.ENRAGED ) {
-			return false;
-		}
-		if( entity.id == this.personalEnemy ) {
-			return false;
-		}
-		return this.team == Team.NEUTRAL || entity.team == Team.NEUTRAL;
-	}
-	healthPercent() {
-		return Math.floor((this.health/this.healthMax)*100);
-	}
-
-	calcVis() {
-		let doVis = false;
-		if( this.brain == Brain.USER ) {
-			doVis = true;
-		}
-		else {
-			let user = this.findAliveOthers().filter( e => e.brain==Brain.USER ).nearMe(9);
-			doVis = !!user.first;
-		}
-
-		if( doVis ) {
-			this.vis = calcVis(this.map,this.x,this.y,this.sightDistance,this.blind,this.vis);
-		}
-		else {
-			this.vis = null;
-		}
-
-		return this.vis;
-	}
-
-	canPerceiveEntity(entity) {
-		if( !this.vis ) {
-			return true;
-		}
-		// This gets us up to whoever actually owns this item. But on the map, you just use the item.
-		// This means that items can NOT be invisible independent of their owners.
-		while( entity.owner && !entity.owner.isMap ) {
-			entity = entity.owner;
-		}
-		if( (this.blind || (entity.invisible && !this.seeInvisible)) && entity.id!==this.id ) { // you can always perceive yourself
-			return false;
-		}
-		return this.canPerceivePosition(entity.x,entity.y);
-	}
-
-	canPerceivePosition(x,y) {
-		if( x===undefined || y===undefined ) {
-			debugger;
-		}
-		if( typeof this.vis[y]==='undefined' || typeof this.vis[y][x]==='undefined' ) {
-			return false;
-		}
-		return this.vis[y][x];
-	}
-
-	itemRemove(item) {
-		if( !this.inventory.includes(item) ) {
-			debugger;
-		}
-		Array.filterInPlace(this.inventory, i => i.id!=item.id );
-	}
-	itemTake(item) {
-		if( this.inventory.includes(item) ) {
-			debugger;
-		}
-		this.inventory.push(item);
-	}
-
-	enemyAtPos(x,y) {
-		return this.findAliveOthers().at(x,y).isMyEnemy();
-	}
-
-	at(x,y) {
-		let f = this.findAliveOthers().at(x,y);
-		return f.first || this.map.tileTypeGet(x,y);
-	}
-
-	atDir(x,y,dir) {
-		return at(x + DirectionAdd[dir].x, y + DirectionAdd[dir].y);
-	}
-
-	mayOccupy(x,y,ignoreEntity) {
-		let mayTravel = 'may'+String.capitalize(this.travelMode || "walk");
-		let f = this.findAliveOthers().at(x,y);
-		if( ignoreEntity ) {
-			f.exclude(ignoreEntity);
-		}
-		if( f.first && !f.first[mayTravel] ) {
-			return false;
-		}
-		let tileOrItem = this.map.tileTypeGet(x,y);
-		return tileOrItem[mayTravel];
-	}
-
-	mayEnter(x,y,avoidProblem) {
-		let entityType = this.at(x,y);
-		let mayTravel = 'may'+String.capitalize(this.travelMode || "walk");
-		if( !entityType[mayTravel] ) {
-			return false;
-		}
-		// If we are already in a problem, then we should probably just keep ignoring it. For example,
-		// once we've decided to enter fire, better just go for it!
-		if( avoidProblem && entityType.isProblem && entityType.isProblem(this,entityType) ) {
-			return false;
+function checkDeaths(entityList) {
+	Array.filterInPlace( entityList, entity => {
+		if( entity.isDead() ) {
+			entity.die();
+			return entity.isUser();	// do not remove the player from the entity list.
 		}
 		return true;
+	});
+}
+
+function orderByTurn(entityList) {
+	let list = [[],[],[]];	// players, pets, others
+	entityList.map( entity => {
+		let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
+		list[group].push(entity);
+	});
+	list[2].sort( (a,b) => a.speed-b.speed );
+	return [].concat(list[0],list[1],list[2]);
+}
+
+function tickItemList(itemList,dt,map,entityList) {
+	for( let item of itemList ) {
+		if( item.rechargeLeft > 0 ) {
+			item.rechargeLeft = Math.max(0,item.rechargeLeft-1);
+		}
+		if( item.onTick ) {
+			item.onTick.call(item,dt,map,entityList);
+		}
+	}
+}
+
+class DataConditioner {
+	constructor() {
 	}
 
-	mayGo(dir,avoidProblem) {
-		return this.mayEnter(this.x+DirectionAdd[dir].x,this.y+DirectionAdd[dir].y,avoidProblem);
-	}
+	integratePlaceData() {
 
-	avoidProblem() {
-		// WARNING! This does NOT consider whether the creature is immune to the damage,
-		// nor does it understand that their movement mode might be immune.
-		return( this.attitude!=Attitude.ENRAGED && this.attitude!=Attitude.CONFUSED && this.attitude!=Attitude.PANICKED);
-	}
-
-	thinkWander(walkAnywhere=false) {
-		this.record('wander'+(walkAnywhere ? ' anywhere' : ''), true);
-
-		const RandCommand = [Command.N, Command.NE, Command.E, Command.SE, Command.S, Command.SW, Command.W, Command.NW];
-		let reps = 4;
-		let command;
-		do {
-			command = RandCommand[Math.randInt(0,RandCommand.length)];
-			let dir = commandToDirection(command);
-			if( dir !== false ) {
-				if( walkAnywhere || this.mayGo(dir,this.avoidProblem()) ) {
-					return command;
+		let s2t = {};
+		let t2s = {};
+		function extract() {
+			for( let typeList of arguments ) {
+				for( let t in typeList ) {
+					let s = typeList[t].symbol;
+					s2t[s] = t;
+					t2s[t] = s;
 				}
 			}
-		} while( --reps );
-		return Command.WAIT;
-	}
-
-	thinkApproach(target) {
-		// Can I walk towards them?
-		let dir = this.dirToEntityNatural(target);
-		// Aggressive creatures will completely avoid problems if 1/3 health, otherwide they
-		// avoid problems most of the time, but eventually will give in and take the risk.
-		let avoidProblem = true;
-		// Out of control attitudes just ignore caution.
-		if( this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
-			avoidProblem = false;
 		}
-		// If you're aggressive and healthy, there is a 15% change you will charge forward through problems.
-		if( this.attitude == Attitude.AGGRESSIVE && this.health>this.healthMax/3 && Math.chance(15) ) {
-			avoidProblem = false;
-		}
-		this.record( (avoidProblem ? '' : 'not ')+'avoiding problem', true );
-
-		if( this.mayGo(dir,avoidProblem) ) {
-			this.record('approach '+target.name,true);
-			return directionToCommand(dir);
-		}
-		return false;
-	}
-
-	think() {
-		if( this.isDead() ) {
-			return;
-		}
-
-		let useAiTemporarily = false;
-		if( this.brain == Brain.USER ) {
-			// Placeholder, since the onPlayerKey already sets the command for us
-			if( this.loseTurn || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.Attitude == Attitude.PANICKED ) {
-				useAiTemporarily = true;
-			}
-		}
-
-		if( this.brain == Brain.AI || useAiTemporarily ) {
-			this.command = (function() {
-
-				if( this.loseTurn ) {
-					return Command.LOSETURN;
-				}
-
-				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
-				let enemyList = this.findAliveOthers().isMyEnemy().canPerceiveEntity().byDistanceFromMe();
-				let vendetta = enemyList.includesId(this.personalEnemy);
-
-				if( this.attitude == Attitude.CONFUSED ) {
-					return Math.chance(30) ? Command.WAIT : this.thinkWander(true);
-				}
-
-				if( this.attitude == Attitude.WANDER && !vendetta ) {
-					let dirLast = commandToDirection(this.commandLast);
-					if( Math.chance(90) && dirLast !== false && this.mayGo(dirLast,this.avoidProblem()) ) {
-						this.record('keep walking',true);
-						return this.commandLast;
-					}
-					return Math.chance(30) ? Command.WAIT : this.thinkWander();
-				}
-
-				// Pack animals and pets return to safety when...
-				let hurt = this.healthPercent()<30;
-				if( hurt && this.brainPet ) {
-					this.vocalize = [mSubject,this,' ',mVerb,Math.chance(50)?'wimper':'whine'];
-				}
-				if( (hurt || !enemyList.count) && (this.brainPet || this.packAnimal) ) {
-					// When hurt, your pet will run towards you. Once with 2 it will flee its enemies, but still stay within 2 of you.
-					let friendList = this.findAliveOthers().isMyFriend().farFromMe(2).byDistanceFromMe();
-					if( friendList.count ) {
-						this.record('back to a friend',true);
-						let c = this.thinkApproach(friendList.first);
-						if( c !== false ) {
-							return c;
-						}
-					}
-				}
-
-				// If no enemy to attack or fles, then just wander around 
-				if( !enemyList.count ) {
-					this.record('no enemy',true);
-					return this.thinkWander();
-				}
-
-				// Flee if I am fearful or sometimes if hesitant
-				let flee = (hurt && this.brainFlee) || ( this.attitude == Attitude.FEARFUL || this.attitude == Attitude.PANICKED || (this.attitude == Attitude.HESITANT && !vendetta && Math.chance(40)));
-				if( flee ) {
-					// This is a very basic flee, trying to always move away from nearest enemy. However, a
-					// smarter version would pick every adjacent square and test whether any enemy could reach
-					// that square, and more to the safest square.
-					let panic = (this.attitude == Attitude.PANICKED);
-					let dirAwayPerfect = (this.dirToEntityNatural(enemyList.first)+4)%DirectionCount;;
-					let dirAwayRandom = (dirAwayPerfect+8+Math.randInt(0,3)-1) % DirectionCount;
-					let dirAway = [dirAwayRandom,dirAwayPerfect,(dirAwayPerfect+8-1)%DirectionCount,(dirAwayPerfect+1)%DirectionCount];
-					while( dirAway.length ) {
-						let dir = dirAway.shift();
-						if( panic || this.mayGo(dir,this.avoidProblem()) ) {
-							this.record( (panic ? 'panicked flee' : 'fled')+' from '+enemyList.first.name, true );
-							return directionToCommand(dir);
-						}
-					}
-
-					this.record('cannot flee',true);
-				}
-
-				// Attack if I am within reach, and aggressive or sometimes if hesitant
-				let adjacent = this.findAliveOthers(enemyList.all).nearMe(this.reach);
-				if( adjacent.count ) {
-					let attack = this.attitude != Attitude.FEARFUL;
-					if( this.attitude == Attitude.HESITANT && !vendetta && Math.chance(50) ) {
-						attack = false;
-					}
-					if( attack ) {
-						this.record('attack '+adjacent.first.name,true);
-						return directionToCommand(this.dirToEntityPredictable(adjacent.first));
-					}
-				}
-
-				let c = this.thinkApproach(enemyList.first);
-				if( c !== false ) {
-					return c;
-				}
-				return Math.random() < 0.50 ? Command.WAIT : this.thinkWander();
-
-			}).apply(this);			
-
-			this.record( this.attitude+" cmd: "+this.command );
-		}
-	}
-
-	rollDamage(damageString) {
-		return rollDice(damageString);
-	}
-
-	isImmune(damageType) {
-		return String.arIncludes(this.immune,damageType);
-	}
-	isResistant(damageType) {
-		return String.arIncludes(this.resist,damageType);
-	}
-
-	takeHealing(healer,amount,healingType) {
-		while( healer.cause ) {
-			healer = healer.cause;
-		}
-		amount = Math.min( amount, this.healthMax-this.health );
-		let quiet = false;
-		this.health += amount;
-		if( this.onHeal ) {
-			quiet = this.onHeal(healer,this,amount,healingType);
-		}
-		if( !quiet ) {
-			let result = (amount ? [' healed by ',mObject,healer,' for '+amount+' health.'] : [' already at full health.']);
-			tell(mSubject,this,' ',mVerb,'is',...result);
-		}
-	}
-
-	takeDamage(attacker,amount,damageType,onDamage) {
-		if( attacker.isItemType ) {
-			attacker = attacker.cause || attacker.owner || attacker;
-		}
-		if( this.isImmune(damageType) ) {
-			amount = 0;
-		}
-		else
-		if( this.isResistant(damageType) ) {
-			amount = amount / 2;
-		}
-		if( attacker && attacker.invisible ) { //&& !this.type.invisible ) {
-			DeedManager.force(attacker,"invisible",false);
-		}
-		if( this.brain!=='user' ) {
-			this.personalEnemy = attacker.id;
-		}
-
-		if( amount > 0 ) {
-			animationAdd( new AniPaste({
-				entity: this.health > amount ? this : null,
-				sticker: StickerList.hit,
-				x: this.x+0.5,
-				y: this.y+0.5,
-				duration: 0.3
-			}));
-		}
-
-		this.health -= amount;
-		let quiet = false;
-		if( this.onDamage ) {
-			quiet = this.onDamage(attacker,this,amount,damageType);
-		}
-		if( !quiet ) {
-			tell(mSubject,attacker,' ',mVerb,damageType,' ',mObject,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!' );
-		}
-	}
-
-	takePush(attacker,distance) {
-		let dx = Math.sign(this.x-attacker.x);
-		let dy = Math.sign(this.y-attacker.y);
-		if( dx==0 && dy==0 ) {
+		extract(TileTypeList,ItemTypeList,MonsterTypeList);
+		if( s2t[TILE_UNKNOWN] ) {
+			// WARNING: I'm reserving the ' ' symbol to mean 'nothing here, replaceable' in a place map.
 			debugger;
-			return;
 		}
-		tell(mSubject,this,' is pushed!');
-		let success = true;
-		while( success && distance-- ) {
-			success = this.moveTo(this.x+dx,this.y+dy,false);
+
+		let sIndex = 32+1;
+		function getUnusedSymbol() {
+			while( s2t[String.fromCharCode(sIndex)] ) {
+				++sIndex;
+			}
+			return String.fromCharCode(sIndex);
 		}
-		this.loseTurn = true;
-	}
 
-	doDamage(other,amount,damageType,onDamage) {
-		return other.takeDamage(this,amount,damageType,onDamage);
-	}
+		// Give symbols to anything that lacks a symbol.
+		for( let placeId in PlaceSourceList ) {
 
-	attack(other,isRanged,onDamage) {
-		if( (this.blind && !this.type().blind) || (other.invisible && !this.seeInvisible) ) {
-			if( Math.chance(50) ) {
-				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,other,' but in the wrong direction!');
-				return;
-			}
-		}
-		let damage = this.rollDamage(this.damage);
-		let damageType = this.damageType || DamageType.STAB;
-		let result = this.doDamage( other, damage, damageType, onDamage );
-		if( !isRanged && other.onTouch ) {
-			other.onTouch(this,other);
-		}
-		return result;
-	}
-
-	setPosition(x,y) {
-		if( this.x == x && this.y == y ) {
-			return;
-		}
-		this.tileTypeLast = this.map.tileTypeGet(this.x,this.y);
-		this.x = x;
-		this.y = y;
-		// This just makes sure that items have coordinates, for when they're the cause of things.
-		this.inventory.map( item => { item.x=x; item.y=y; } );
-	}
-
-	moveDir(dir) {
-		let x = this.x + DirectionAdd[dir].x;
-		let y = this.y + DirectionAdd[dir].y;
-		return this.moveTo(x,y);
-	}
-	// Returns false if the move fails. Very important for things like takePush().
-	moveTo(x,y,attackAllowed=true) {
-		if( this.map.inBounds(x,y) ) {
-			let f = this.findAliveOthers().at(x,y);
-			let allyToSwap = false;
-
-			// Attack enemies or neutrals
-			if( f.count && attackAllowed && (this.isMyEnemy(f.first) || this.isMyNeutral(f.first)) ) {
-				this.attack(f.first);
-				return "attack";
-			}
-			else
-			// Switch with friends, else bonk!
-			if( f.count && this.isMyFriend(f.first) && this.isUser() ) {
-				// swap places with allies
-				allyToSwap = f.first;
-			}
-			else
-			if( f.count ) {
-				(f.first.onTouch || bonk)(this,f.first);
-				return false;
-			}
-
-			let xOld = this.x;
-			let yOld = this.y;
-			let tileTypeHere = this.map.tileTypeGet(xOld,yOld);
-			let tileType = this.map.tileTypeGet(x,y);
-
-			if( tileTypeHere.onDepart ) {
-				if( tileTypeHere.onDepart(this,adhoc(tileTypeHere,xOld,yOld)) === false ) {
-					return false;
-				}
-			}
-			// Are we leaving this type of tile?
-			if( tileType.name != tileTypeHere.name && tileTypeHere.onDepartType ) {
-				if( tileTypeHere.onDepartType(this,adhoc(tileTypeHere,xOld,yOld),adhoc(tileType,x,y)) === false ) {
-					return false;
+			let place = PlaceSourceList[placeId];	// make a copy so that we can mangle it.
+			place.id = placeId;
+			let roster = Object.assign({},place.monsterTypes,place.itemTypes,place.tileTypes);
+			for( let typeId in roster ) {
+				// If there is no symbol in the existing corpus...
+				if( !t2s[typeId] ) {
+					let s = getUnusedSymbol();
+					t2s[typeId] = s;
+					s2t[s] = typeId;
 				}
 			}
 
-			if( !this.mayOccupy(x,y,allyToSwap) ) {
-				(tileType.onTouch || bonk)(this,adhoc(tileType,x,y));
-				return false;
-			}
+			Object.assign(StickerList,		place.stickers);
+			Object.assign(DamageType,		place.damageType);
+			Object.assign(Attitude,			place.attitude);
+			Object.assign(PickImmune,		place.pickImmune);
+			Object.assign(PickVuln,			place.pickVuln);
+			Object.assign(PickResist,		place.pickResist);
+			Object.assign(EffectTypeList,	place.effectList);
 
-			// Are we entering a new tile type?
-			if( tileType.name != tileTypeHere.name && tileType.onEnterType ) {
-				if( tileType.onEnterType(this,adhoc(tileType,x,y),tileTypeHere,xOld,yOld) === false ) {
-					return false;
+			function processTypeList(targetList,typeList) {
+				for( let typeId in typeList ) {
+					let type = typeList[typeId];
+					let targetType = targetList[typeId];
+					let newType = Object.assign( {}, type.basis ? targetList[type.basis] || {} : {}, targetType || {}, type, {symbol:t2s[typeId]} );
+					targetList[typeId] = newType;
 				}
 			}
-
-			if( allyToSwap ) {
-				allyToSwap.setPosition(this.x,this.y);
-			}
-			this.setPosition(x,y);
-
-			// We must be touching the new tile, so act on that.
-			if( tileType.onTouch ) {
-				tileType.onTouch(this,adhoc(tileType,x,y));
-			}
-
-			if( this.picksup ) {
-				let f = new ItemFinder(this.map.itemList).at(x,y);
-				for( let item of f.all ) {
-					if( item.moveTo(this) !== false ) {
-						tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
-						if( item.triggerOnPickup ) {
-							item.trigger(item,this);
-						}
-					}
-				}
-			}
-			return true;
+			processTypeList( TileTypeList, 		place.tileTypes );
+			processTypeList( ItemTypeList,		place.itemTypes );
+			processTypeList( MonsterTypeList,	place.monsterTypes );
 		}
 	}
 
-	act() {
-		if( this.isDead() ) {
-			return;
+	prepareStaticData() {
+		for( let list of FabList ) {
+			for( let key in list ) {
+				list[key] = fab(list[key],key);
+			}
 		}
 
-		if( this.regenerate ) {
-			this.health = Math.min(this.health+this.regenerate,this.healthMax);
-		}
+		Object.entries(StickerList).forEach( ([typeId,sticker]) => {
+			fab(sticker,typeId,'isSticker');
+		} );
+		Object.entries(TileTypeList).forEach( ([typeId,tileType]) => {
+			fab(tileType,typeId,'isTileType');
+		} );
+		Object.entries(ItemTypeList).forEach( ([typeId,itemType]) =>  {
+			itemType = Object.assign( {}, ItemTypeDefaults, itemType );
+			itemType.namePattern = itemType.namePattern || typeId;
+			ItemTypeList[typeId] = fab(itemType,typeId,'isItemType');
+		} );
+		Object.entries(MonsterTypeList).forEach( ([typeId,monsterType]) =>  {
+			monsterType = Object.assign( {}, MonsterTypeDefaults, MonsterTypeList[typeId] );
+			MonsterTypeList[typeId] = fab(monsterType,typeId,'isMonsterType');
+		} );
+	}
+};
 
-		if( this.vocalize ) {
-			tell(...this.vocalize);
-			this.vocalize = false;
-		}
+class AreaBuilder {
+	constructor() {
+	}
 
-
-		if( commandToDirection(this.command) !== false ) {
-			let dir = commandToDirection(this.command);
-			this.moveDir(dir);
-		}
-		else 
-		switch( this.command ) {
-			case Command.LOSETURN: {
-				if( this.brain == 'user' ) {
-					tell(mSubject,this,' ',mVerb,'spend', ' time recovering.');
-				}
-				this.loseTurn = false;
-				let tileType = this.map.tileTypeGet(this.x,this.y);
-				if( tileType.onTouch ) {
-					tileType.onTouch(this,adhoc(tileType,this.x,this.y));
-				}
-				break;
-			}
-			case Command.WAIT: {
-				if( this.brain == 'user' ) {
-					tell(mSubject,this,' ',mVerb,'wait','.');
-				}
-				let tileType = this.map.tileTypeGet(this.x,this.y);
-				if( tileType.onTouch ) {
-					tileType.onTouch(this,adhoc(tileType,this.x,this.y));
-				}
-				break;
-			}
-			case Command.QUAFF: {
-				let item = this.commandItem;
-				tell(mSubject,this,' ',mVerb,'quaff',' ',mObject,item);
-				item.trigger(this,this);
-				break;
-			}
-			case Command.CAST: {
-				let item = this.commandItem;
-				let target = this.commandTarget;
-				tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');
-				item.trigger(this,target);
-				break;
-			}
+	buildMap(dim,entrance,level) {
+		let style = {
+			architecture: "cave",
+			entrance: entrance,
+			dim: dim,
+			floorDensity: Math.rand(0.40,0.70),
+			monsterDensity: 0.01,
+			itemDensity: level==1 ? 0.20 : 0.01
 		};
+		let tileRaw = Mason.buildMap(style,TileTypeList,MonsterTypeList,ItemTypeList);
+		return tileRaw;
 	}
-}
-function isEntity(e) { return e instanceof Entity; }
 
+	preparePlaceForInjection(place) {
 
-// ITEM
-let itemEffectCount = 0;
-
-class Item {
-	constructor(owner,itemType,position) {
-		let inits = { owner: owner, id: humanNameList.pop(), x:position.x, y:position.y };
-		Object.assign( this, itemType, inits );
-		if( this.choices ) {
-			this.effect = this.generateEffect();
-		}
-		this.name = this.name || this.namePattern.replace('*',this.effect.name);
-	}
-	generateEffect() {
-		let effectType = pick(this.choices);
-		let effect = Object.assign({},effectType);
-		if( effect.valuePick ) {
-			effect.value = effect.valuePick();
-		}
-		effect.name = effect.name.replace('*',this.value);
-		return effect;
-	}
-	xGet() {
-		return this.owner.isMap ? this.x : this.owner.x;
-	}
-	yGet() {
-		return this.owner.isMap ? this.y : this.owner.y;
-	}
-	moveTo(entity,x,y) {
-		let ok = (!this.type.onPickup || this.type.onPickup(this,owner,entity)!==false);
-		if( !ok ) {
-			return false;
-		}
-		this.owner.itemRemove(this);	
-
-		this.x = x;
-		this.y = y;
-		this.owner = entity;
-		this.owner.itemTake(this);
-		return true;
-	}
-	trigger(cause,target) {
-		if( this.effect===false ) {
-			return false;
-		}
-		//add(cause,entity,duration,stat,op,value,onTick,onEnd,data) {
-		// Here is where we should figure out the area of effect and hit all as needed.
-		let effect = this.effect;
-		this.x = target.x;
-		this.y = target.y;
-		if( effect.requires && !effect.requires(target) ) {
-			tell(mSubject,this,' has no effect on ',mObject,target);
-		}
-		this.cause = cause;
-		deedAdd(this,target,rollDice(effect.duration),effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
-		if( this.charges !== true ) {	// true means it has infinite charges.
-			this.charges -= 1;
-			if( this.charges <= 0 ) {
-				this.owner.itemRemove(this);
-			}
-		}
-	}
-}
-function isItem(e) { return e instanceof Item; }
-
-// MAP
-
-class Map {
-	constructor(tile,itemList) {
-		this.isMap = true;
-		this.actionCount = 0;
-		this.tile = tile;
-		this.itemList = itemList;
-		while( tile[tile.length-1].trim() == '' ) {
-			tile.length -= 1;
-		}
-		this.xLen = tile[0].length;
-		this.yLen = tile.length;
-	}
-	setDimensions(xLen,yLen) {
-		this.xLen = xLen;
-		this.yLen = yLen;
-	}
-	inBounds(x,y) {
-		return x>=0 && x<this.xLen && y>=0 && y<this.yLen;
-	}
-	tileSymbolSet(x,y,tileType) {
-		if( !this.inBounds(x,y) ) {
-			debugger;
-		}
-		this.tile[y] = this.tile[y].substr(0,x)+tileType.symbol+this.tile[y].substr(x+1);
-	}
-	tileSymbolGet(x,y) {
-		if( !this.inBounds(x,y) ) { debugger; }
-		return this.tile[y].charAt(x);
-	}
-	tileTypeGet(x,y) {
-		if( !this.inBounds(x,y) ) {
-			return false;
-		}
-		let symbol = this.tileSymbolGet(x,y);
-		if( SymbolToType[symbol].isItemType ) {
-			let f = new ItemFinder(this.itemList).at(x,y);
-			if( f.count ) {
-				return f.first;
-			}
-		}
-		return SymbolToType[symbol];
-	}
-	tileTypeGetDir(x,y,dir) {
-		x += DirectionAdd[dir].x;
-		y += DirectionAdd[dir].y;
-		return this.tileTypeGet(x,y);
-	}
-	itemRemove(item) {
-		if( !this.itemList.includes(item) ) {
-			debuger;
-		}
-		Array.filterInPlace( this.itemList, i => i.id!=item.id )
-		this.tileSymbolSet(item.x,item.y,TileTypeList['floor']);
-	}
-	itemTake(item) {
-		if( this.itemList.includes(item) ) {
-			debuger;
-		}
-		this.itemList.push(item);
-		this.tileSymbolSet(item.x,item.y,item.symbol);
-	}
-}
-
-
-function shoot(map,px,py,sx,sy,tx,ty,blind) {
-	if( sx==tx && sy==ty ) {
-		return true;
-	}
-	if( blind ) {
-		return false;
-	}
-	let sxInt = Math.floor(sx);
-	let syInt = Math.floor(sy);
-	let dx = tx-sx;
-	let dy = ty-sy;
-	let dist = Math.sqrt(dx*dx+dy*dy);
-	let x = sx;
-	let y = sy;
-	let step = 0.25;
-	dx = dx / (dist/step);
-	dy = dy / (dist/step);
-	// Always allowed to see itself.
-	dist -= 0.5;
-	let wallAmount = 0;
-	while( dist > 0 ) {
-		let xInt = Math.floor(x);
-		let yInt = Math.floor(y);
-		let atPlayer = (xInt==px && yInt==py);
-		if( !atPlayer ) {
-			wallAmount += map.tileTypeGet(xInt,yInt).opacity;
-			if( wallAmount >= 1 ) { return false; }
-		}
-		x += dx;
-		y += dy;
-		dist -= step;
-	}
-	return true;
-}
-
-function shoot4(map,px,py,x,y,blind) {
-	let tl = shoot(map,px,py,px,py,x,y,blind);
-	let tr = shoot(map,px,py,px+0.95,py+0.00,x+0.95,y+0.00,blind);
-	let bl = shoot(map,px,py,px+0.00,py+0.95,x+0.00,y+0.95,blind);
-	let br = shoot(map,px,py,px+0.95,py+0.95,x+0.95,y+0.95,blind);
-	let isVisible = tl || tr || bl || br;
-	return isVisible;
-}
-
-
-function calcVis(map,px,py,sightDistance,blind,cachedVis) {
-
-	let a = cachedVis || [];
-
-	for( let y=0 ; y<map.yLen ; ++y ) {
-		a[y] = a[y] || [];
-		for( let x=0 ; x<map.xLen ; ++x ) {
-			if( Math.abs(y-py)>sightDistance || Math.abs(x-px)>sightDistance ) {
-				a[y][x] = false;
-				continue;
-			}
-			a[y][x] = shoot4(map,px,py,x,y,blind);
-		}
-	}
-	a[py][px] = true;
-	return a;
-}
-
-
-// READOUT
-
-class Readout {
-	constructor(spellDivId,inventoryDivId) {
-		this.spellDivId = spellDivId;
-		this.inventoryDivId = inventoryDivId;
-		this.lastHealth = [];
-		this.slotList = [];
-		this.inventoryOpen = false;
-		this.inventory = null;
-		this.command = Command.NONE;
-		this.commandItem = null;
-		this.commandTarget = null;
-	}
-	renderEntityStatus(observer,entityList) {
-		let SLOT_COUNT = 10;
-
-		let f = new EntityFinder(observer,entityList).isAlive().prepend(observer).canPerceiveEntity().byDistanceFromMe().keepTop(SLOT_COUNT);
-		Array.filterInPlace( this.slotList, slot => f.getId(slot) );
-		f.process( entity => {
-			if( !this.slotList.includes(entity.id) ) {
-				this.slotList.push(entity.id);
-			}
-		});
-
-		for( let i=0 ; i<SLOT_COUNT ; ++i ) {
-			if( i >= this.slotList.length ) {
-				$('#health'+i).hide();
-				continue;
-			}
-			let entity = f.getId(this.slotList[i]);
-			let newValue = entity.health;
-			let lastValue = this.lastHealth[entity.id]!==undefined ? this.lastHealth[entity.id] : newValue;
-			$('#health'+i).show();
-			showHealthBar('#health'+i,newValue,lastValue,entity.healthMax,entity.name);
-			this.lastHealth[entity.id] = newValue;
-		}
-	}
-	renderSpells(observer) {
-		$('#'+this.spellDivId).empty();
-		let spellList = new ItemFinder(observer.inventory).isTypeId("spell");
-		for( let i=0 ; i<spellList.all.length ; ++i ) {
-			let text = 'F'+(i+1)+' '+spellList.all[i].effect.name+'\n';
-			let lit = this.commandItem == spellList.all[i];
-			$('#'+this.spellDivId).append('<div class="spell'+(lit?' lit':'')+'">'+text+'</div>');
-		}
-	}
-	render(observer,entityList) {
-		this.renderEntityStatus(observer,entityList);
-		this.renderSpells(observer);
-	}
-	showInventory(f) {
-		this.inventory = f;
-		let s = '';
-		for( let i=0 ; i<f.all.length ; ++i ) {
-			s += (i+1)+'. '+f.all[i].name+'\n';
-		}
-		if( !s ) {
-			s += "Pick up some items by walking upon them.";
-		}
-		$('#'+this.inventoryDivId).show().html(s);
-		this.inventoryOpen = true;
-	}
-	hideInventory() {
-		$('#inventory').hide();
-		this.inventoryOpen = false;
-	}
-	clearCommand() {
-		this.command = Command.NONE;
-		this.commandItem = null;
-		this.commandTarget = null;
-		return false;
-	}
-	enactCommand(observer) {
-		observer.command = this.command;
-		observer.commandItem = this.commandItem;;
-		observer.commandTarget = this.commandTarget;
-		this.command = Command.NONE;
-		this.commandItem = null;
-		this.commandTarget = null;
-		return true;
-	}
-	evalCommand(observer,keyCode,command) {
-		let keyESCAPE = 27;
-		let keyONE = 49;
-
-		let dir = commandToDirection(command);
-
-		if( this.command == Command.CAST && this.commandItem ) {
-			let cancel = false;
-			if( dir !== false || command==Command.WAIT ) {
-				let x = observer.x + (command==Command.WAIT ? 0 : DirectionAdd[dir].x);
-				let y = observer.y + (command==Command.WAIT ? 0 : DirectionAdd[dir].y);
-				// Someday here is where the ranged spells will determine possible targets.
-				let target = new Finder(observer.entityList).at(x,y);
-				if( !target.count ) {
-					cancel = true;
-				}
-				else {
-					this.commandTarget = target.first;
-					return this.enactCommand(observer);
-				}
-			}
-			if( keyCode == keyESCAPE || this.command == command || cancel ) {
-				return this.clearCommand();
+		// If any of the symbols are pickable, get that done.
+		for( let s in place.symbols ) {
+			if( typeof place.symbols[s] == 'function' ) {
+				place.symbols[s] = place.symbols[s].call(place);
 			}
 		}
 
+		// Replace map symbols with allocated symbols
+		place.mapOriginal = place.map.trim();
+		let map = '';
+		for( let i=0 ; i<place.mapOriginal.length ; ++i ) {
+			let s = place.mapOriginal.charAt(i);
+			if( s=='\t' ) { continue; }
+			if( s=='\n' ) { map+=s; continue; }
+			let mappedToTypeId = place.symbols[s];
+			// Check if the place chose to used ad-hoc symbology for something
+			if( mappedToTypeId ) {
+				s = TypeToSymbol[mappedToTypeId];
+			}
+			if( !SymbolToType[s] ) debugger;	// By now we should have resolved what this symbol maps to
+			map += s;
+		}
+		place.map = new SimpleMap(map);
 
-		if( this.inventoryOpen ) {
-			if( keyCode == keyESCAPE || this.command == command ) {
-				this.hideInventory();
-				return this.clearCommand();
-			}
-			let n = keyCode-keyONE;
-			if( n>=0 && n<this.inventory.count ) {
-				this.hideInventory();
-				this.commandItem = this.inventory.all[n];
-				if( this.command == Command.QUAFF ) {
-					return this.enactCommand(observer);
-				}
-			}
-			return false;
+		if( place.flags && place.flags.rotate ) {
+			place.map.rotate(Math.randInt(0,4));
 		}
-		if( command == Command.INVENTORY ) {
-			this.command = Command.INVENTORY;
-			this.showInventory(new ItemFinder(observer.inventory))
-			return false;
-		}
-		if( command == Command.QUAFF ) {
-			this.command = Command.QUAFF;
-			this.showInventory(new ItemFinder(observer.inventory).isTypeId("potion"));
-			return false;
-		}
-		if( command == Command.CAST ) {
-			this.command = Command.CAST;
-			this.showInventory(new ItemFinder(observer.inventory).isTypeId("spell"));
-			return false;
-		}
-		let castArray = [Command.CAST1,Command.CAST2,Command.CAST3,Command.CAST4,Command.CAST5];
-		if( castArray.includes(command) ) {
-			let spellList = new ItemFinder(observer.inventory).isTypeId("spell");
-			let index = castArray.indexOf(command);
-			if( !spellList.all[index] ) {
-				return false;
-			}
-			this.command = Command.CAST;
-			this.commandItem = spellList.all[index];
-			return false;
-		}
-		return true;
 	}
 
-
-}
-
-
-let GlobalRenderCache = [];
-function createDrawList(observer,map,entityList,asType) {
-
-	// Recalc this here, just in case.
-	let vis = observer.calcVis();
-
-	function spillLight(px,py,x,y,light) {
-		let d2 = (MonsterTypeDefaults.sightDistance*2)+1;
-		if( light == 'glow' ) {
-			let fx = x+0;
-			let fy = y+0;
-			let rx = px+x-d;
-			let ry = py+y-d;
-			let rfx = px+fx-d;
-			let rfy = py+fy-d;
-			if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
-				a[fy][fx][0] = displaySightDistance;
-			}
-			return;
-		}
-		for( let ly=-light ; ly<=light ; ++ly ) {
-			for( let lx=-light ; lx<=light ; ++lx ) {
-				let fx = x+lx;
-				let fy = y+ly;
-				let rx = px+x-d;
-				let ry = py+y-d;
-				let rfx = px+fx-d;
-				let rfy = py+fy-d;
-				if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
-					let lightReaches = shoot4(map,rx,ry,rfx,rfy,false);
-					if( lightReaches ) {
-						a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
+	injectPlaces(map,numPlaces) {
+		let entityInject = {};
+		let placeReps = numPlaces;
+		while( placeReps-- ) {
+			let place = Object.assign( {}, pick(PlaceSourceList) );
+			console.log("Trying place "+place.id);
+			this.preparePlaceForInjection(place);
+			let fitReps = 300;
+			let x,y;
+			do {
+				[x,y] = map.pickPos(0,0,place.map.xLen,place.map.yLen);
+				console.log('('+x+','+y+')');
+			} while( !map.fit(x,y,place.map) && --fitReps );
+			if( fitReps ) {
+				map.inject(x,y,place.map,function(x,y,symbol) {
+					let typeId = SymbolToType[symbol];
+					if( !typeId ) debugger;
+					if( place.onEntityCreate && place.onEntityCreate[typeId] ) {
+						entityInject[''+x+','+y] = place.onEntityCreate[typeId];
 					}
-					if( a[fy][fx][0] === undefined ) {
-						debugger;
+				});
+			}
+		}
+		return entityInject;
+	}
+
+	extractEntitiesFromMap(map,entityList,gateList,entityInject) {
+
+		let noEntity = {};
+
+		for( let y=0 ; y<map.yLen ; ++y ) {
+			for( let x=0 ; x<map.xLen ; ++x ) {
+				// Note that this code uses the SIMPLEST function that do NOT assume
+				// what is on the map...
+				let symbol = map.tileSymbolGet(x,y);
+				let entityType = SymbolToType[symbol];
+				if( !entityType ) {
+					debugger;
+				}
+				// CREATE MONSTERS
+				let inject = entityInject[''+x+','+y] || noEntity;
+				if( entityType && entityType.isMonsterType ) {
+					let fnName = entityType.brain == 'user' ? 'unshift' : 'push';
+					entityList[fnName]( new Entity( map, entityList, entityType, { x:x, y:y }, inject ) );
+					map.tileSymbolSet(x,y,TileTypeList.floor.symbol)
+				}
+				// CREATE ITEMS
+				if( entityType && entityType.isItemType ) {
+					if( entityType.isRandom ) {
+						entityType = pick(ItemTypeList);
+					}
+					let item = new Item( map, entityType, { x:x, y:y }, inject );
+					map.itemList.push( item );
+					// WARNING: We could set this more carefully, like by checking around it and using majority
+					// of passable tiles.
+					map.tileSymbolSet(x,y,TileTypeList.floor.symbol);
+					if( item.gateDir !== undefined ) {
+						gateList.push(item);
 					}
 				}
 			}
 		}
-	}
 
-	let displaySightDistance = MonsterTypeDefaults.sightDistance;
-
-	//let convert = { '#': '█' };
-	let py = observer.y;
-	let px = observer.x;
-	let d = displaySightDistance;
-	let d2 = (displaySightDistance*2)+1
-	let a = GlobalRenderCache || [];
-
-	// Initialize the array, and clear all light levels.
-	for( let y=py-d ; y<=py+d ; ++y ) {
-		a[y-(py-d)] = a[y-(py-d)] || [];
-		for( let x=px-d ; x<=px+d ; ++x ) {
-			let tx = x-(px-d);
-			let ty = y-(py-d);
-			a[ty][tx] = a[ty][tx] || [];
-			a[ty][tx][0] = 0;
-			a[ty][tx].length = 1;
+		// When there is only one monster, we are probably testing, so watch it.
+		if( entityList.length == 2 ) {
+			// zero will be the player
+			entityList[entityList.length-1].watch = true;
 		}
 	}
+};
 
-	function testLight(x,y,light) {
-		if( !light ) { return; }
-		let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
-		if( inBounds ) {
-			let ty = y-(py-d);
-			let tx = x-(px-d);
-			if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
-				spillLight(px,py,tx,ty,light);
-			}
-		}
+class Area {
+	constructor(areaId,level,entrance) {
+		let builder = new AreaBuilder();
+		let sideDimension = Math.randInt(40,150);
+		let tileRaw = loadLevel('test');
+		//let tileRaw = builder.buildMap(sideDimension,entrance,level);
+		let map = new Map(tileRaw,[]);
+		map.level = level;
+
+		let numPlacesToInject = Math.floor(sideDimension/10);
+		let entityInject = builder.injectPlaces(map,numPlacesToInject);
+		let entityList = [];
+		let gateList = [];
+		builder.extractEntitiesFromMap(map,entityList,gateList,entityInject);
+		this.id = areaId;
+		this.level = level;
+		this.map = map;
+		this.entityList = entityList;
+		this.gateList = gateList;
+		return this;
 	}
-
-	let p = [];
-	let q = [];
-	for( let entity of entityList ) {
-		if( observer.canPerceiveEntity(entity) ) {
-			let e = ( entity.id == observer.id && observer.invisible ) ? DrawOnlyList.invisibleObserver : entity;
-			p[entity.y*map.xLen+entity.x] = e;
-		}
-		testLight(entity.x,entity.y,entity.light)
-	}
-	for( let item of map.itemList ) {
-		q[item.y*map.xLen+item.x] = item;
-		testLight(item.x,item.y,item.light)
-	}
-	for( let anim of animationList ) {
-		testLight(anim.x,anim.y,anim.light)
-	}
-
-	let visId = {};
-
-	// Now assign tile layers, and remember that [0] is the light level. Tiles
-	// that shine light will do so in this loop.
-	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
-		let ty = y-(py-d);
-		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
-			let tx = x-(px-d);
-			let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
-			let visible = inBounds && vis[y][x];
-			let mapSymbol;
-			let item;
-			let entity;
-			if( inBounds ) {
-				mapSymbol = map.tile[y][x];
-				item =      q[y*map.xLen+x];
-				entity =    p[y*map.xLen+x];
-
-				if( SymbolToType[mapSymbol].isTileType ) {
-					spillLight(px,py,tx,ty,SymbolToType[mapSymbol].light || 0);
-				}
-			}
-			if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
-				if( !visible ) {
-					a[ty][tx][0] = 0;		// debatable whether we should pretend there is zero light here.
-					a[ty][tx].length = 1;
-				}
-				else {
-					let aa = a[ty][tx];
-					if( (item || SymbolToType[mapSymbol]).typeId !== 'floor' ) {
-						aa.push(TileTypeList.floor);
-					}
-					aa.push( item || SymbolToType[mapSymbol] );
-					aa.push( entity );
-
-					if( item ) { visId[item.id] = item; }
-					if( entity ) { visId[entity.id] = entity; }
-				}
-			}
-		}
-	}
-
-	for( let anim of animationList ) {
-		if( anim.entity && !visId[anim.entity.id] ) {
-			continue;
-		}
-		let tx = Math.floor((anim.entity ? anim.entity.x : anim.x)-(px-d));
-		let ty = Math.floor((anim.entity ? anim.entity.y : anim.y)-(py-d));
-		if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
-			a[ty][tx].push(anim);
-		}
-	}
-
-	GlobalRenderCache = a;
-	return a;
-}
-
-let tileDim = 32;
-function DefaultImgGet(effectId) {
-	return this.img;
-}
-class Display {
-	constructor(divId,sightDistance) {
-		this.image = {};
-		this.divId = divId;
-		this.sd = sightDistance;
-		this.d = ((sightDistance*2)+1);
-		this.tileWidth  = tileDim * this.d;
-		this.tileHeight = tileDim * this.d;
-		this.app = new PIXI.Application(this.tileWidth, this.tileHeight, {backgroundColor : 0x000000});
-		this.imgGet = [];
-		this.ready = false;
-		document.getElementById(this.divId).appendChild(this.app.view);
-		let imageList = [];
-		let exists = {};
-
-		function add(imgPath) {
-			if( imgPath === undefined ) {
-				debugger;
-			}
-			if( !imgPath ) {
-				return;
-			}
-			imgPath = 'tiles/'+imgPath;
-			if( !exists[imgPath] ) {
-				imageList.push(imgPath);
-				exists[imgPath] = true;
-			}
-		}
-
-		for( let symbol in SymbolToType ) {
-			let type = SymbolToType[symbol];
-			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
-			if( !type.choices ) {
-				add(type.img);
-			}
-			else {
-				for( let typeId in type.choices ) {
-					let imgGet = this.imgGet[type.typeId];
-					add(imgGet.call(type,typeId));
-				}
-			}
-		}
-
-		for( let sticker in StickerList ) {
-			add(StickerList[sticker].img);
-		}
-
-		let self = this;
-		function setup() {
-			self.ready = true;
-		}
-
-		animationDeathCallback = function(sprite) {
-			self.app.stage.removeChild(sprite);
-		}
-
-		PIXI.loader
-			.add(imageList)
-			.load(setup);
-
-		this.app.ticker.add(function(delta) {
-			// but only if real time is not stopped.
-			animationTick(delta/60);
-		});
-	}
-	draw(drawList,observer) {
-		while(this.app.stage.children[0]) {
-			this.app.stage.removeChild(this.app.stage.children[0]);
-		}
-		let dHalf = this.sd;
-		let lightAlpha = [];
-		for( let i=0 ; i<this.sd+2 ; ++i ) {
-			lightAlpha[i] = Math.clamp(i/this.sd,0.0,1.0);
-		}
-
-		function make(x,y,entity,imgPath,light) {
-			if( !imgPath ) {
-				return;
-			}
-			let resource = PIXI.loader.resources['tiles/'+imgPath];
-			if( !resource ) {
-				return;
-			}
-			let sprite = new PIXI.Sprite( resource.texture );
-			sprite.anchor.set(entity.xAnchor||0,entity.yAnchor||0);
-			sprite.x = x*32;
-			sprite.y = y*32;
-			sprite.scale._x = (entity.scale||1);
-			sprite.scale._y = (entity.scale||1);
-			sprite.alpha = (entity.alpha||1) * lightAlpha[light];
-			this.app.stage.addChild(sprite);
-			return sprite;
-		}
-
-		for( let y=0 ; y<this.d ; ++y ) {
-			for( let x=0 ; x<this.d ; ++x ) {
-				let tile = drawList[y][x];
-				let light = tile[0];
-				for( let i=1 ; i<tile.length ; ++i ) {
-					let entity = tile[i];
-					if( !entity ) continue;
-					if( entity.isAnimation ) {
-						entity.sprite = make.call(this,entity.x-(observer.x-this.sd),entity.y-(observer.y-this.sd),entity,entity.imgGet(),light);
-					}
-					else
-					if( this.imgGet[entity.typeId] ) {
-						let imgPath = this.imgGet[entity.typeId].call(entity,(entity.effect?entity.effect.typeId:null))
-						make.call(this,x,y,entity,imgPath,entity.glow ? dHalf : light);
-					}
-				}
-			}
-		}
+	getGate(gateDir,onlyUnused) {
+		let g = this.gateList.filter( g => g.gateDir==gateDir && (!onlyUnused || !g.toAreaId) );
+		if( !g.length ) debugger;
+		return g[0];
 	}
 }
 
-// INIT GAME DATA
-
-function initGameData(tileRaw) {
-
-	let itemList = [];
-	let map = new Map(tileRaw.split('\n'),itemList);
-	let entityList = [];
-	for( let y=0 ; y<map.yLen ; ++y ) {
-		for( let x=0 ; x<map.xLen ; ++x ) {
-			// Note that this code uses the SIMPLEST function that do NOT assume
-			// what is on the map...
-			let symbol = map.tileSymbolGet(x,y);
-			let entityType = SymbolToType[symbol];
-
-			if( !entityType ) {
-				debugger;
-			}
-			if( entityType && entityType.isMonsterType ) {
-				let fnName = entityType.brain == 'user' ? 'unshift' : 'push';
-				entityList[fnName]( new Entity( map, entityList, entityType, { x:x, y:y } ) );
-				map.tileSymbolSet(x,y,TileTypeList.floor)
-			}
-			if( entityType && entityType.isItemType ) {
-				if( entityType.isRandom ) {
-					let itemTypeArray = Object.entries(ItemTypeList);
-					// WARNING: This assumes that RANDOM is the zeroth element!!
-					let n = Math.randInt(1,itemTypeArray.length);
-					entityType = itemTypeArray[n][1];
-					map.tileSymbolSet(x,y,entityType);
-				}
-				itemList.push( new Item( map, entityType, { x:x, y:y } ) );
-				// This can only happen once we make running into items a thing...
-				//map.tileSymbolSet(x,y,TileTypeList.floor)
-			}
-		}
+class World {
+	constructor(startingLevel=1) {
+		this.areaList = {};
+		this.currentArea = null;
+		this.startingLevel = startingLevel;
 	}
-
-	// When there is only one monster, we are probably testing, so watch it.
-	if( entityList.length == 2 ) {
-		// zero will be the player
-		entityList[entityList.length-1].watch = true;
+	createArea(levelDelta=0) {
+		let level = this.currentArea ? this.currentArea.level+levelDelta : this.startingLevel;
+		let areaId = 'area.'+humanNameList.pop()+'.'+level;
+		let entrance = this.currentArea===null ? ItemTypeList.stairsUp : (levelDelta>0 ? ItemTypeList.stairsUp : (levelDelta<0 ? ItemTypeList.stairsDown : ItemTypeList.gateway));
+		let area = new Area(areaId,level,entrance);
+		this.areaList[areaId] = area;
+		return area;
 	}
-	return { map, entityList, itemList };
+	gateTo(areaId) {
+		let area = this.areaList[areaId];
+		if( !area ) debugger;
+		this.currentArea = area;
+		return area;
+	}
 }
+
+function levelChange(world,map,entityList) {
+	let player = playerFind(entityList);
+	if( !player ) {
+		return;
+	}
+	let x = player.x;
+	let y = player.y;
+	let gateHere = new ItemFinder(map.itemList).at(x,y).filter( item => item.gateDir!==undefined );
+	if( !gateHere.first ) {
+		return;
+	}
+	let gate = gateHere.first;
+
+	if( map.level == 1 && gate.gateDir<0 ) {
+		return;
+	}
+	let verb = (gate.gateDir<0 ? 'ascend' : (gate.gateDir>0 ? 'descend' : 'enter'));
+	tell(mSubject,player,' ',mVerb,verb,' ',mObject,gate);
+
+	if( !gate.toAreaId ) {
+		let toArea = world.createArea(gate.gateDir);
+		let gate2 = toArea.getGate(-gate.gateDir);
+		gate.toAreaId = toArea.id;
+		gate.toGateId = gate2.id;
+		gate2.toAreaId = world.currentArea.id;
+		gate2.toGateId = gate.id;
+	}
+	// WARNING! Someday we will need to push the DeedList that is NOT the player into the old area.
+	// and resurrect the new area's deed list.
+	let newArea = world.gateTo(gate.toAreaId);
+	player.gateTo(newArea,gate.toGateId);
+	tell(mSubject,player,' ',mVerb,'are',' now on level '+newArea.id)
+	return newArea;
+}
+
+
 
 function main(levelName) {
 
-	function playerFind() {
-		return entityList.find( entity => entity.isUser() );
-	}
-
 	function render(observer) {
+		readout.render(observer,entityList);
 		let drawList = createDrawList(observer,map,entityList);
 		display.draw(drawList,observer);
-		readout.render(observer,entityList);
-	}
-
-	function testVictory() {
-		let player = playerFind();
-		if( player ) {
-			let entityType = map.tileTypeGet(player.x,player.y);
-			if( entityType.isStairs ) {
-				tell('Congratulations! ',mSubject,player,' ',mVerb,'descend',' the stairs to victory!');
-				player.isVictorious = true;
-			}
-		}
-	}
-
-	function checkDeaths() {
-		Array.filterInPlace( entityList, entity => {
-			if( entity.isDead() ) {
-				entity.die();
-				return entity.isUser();	// do not remove the player from the entity list.
-			}
-			return true;
-		});
-	}
-
-	function orderByTurn(entityList) {
-		let list = [[],[],[]];	// players, pets, others
-		entityList.map( entity => {
-			let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
-			list[group].push(entity);
-		});
-		list[2].sort( (a,b) => a.speed-b.speed );
-		return [].concat(list[0],list[1],list[2]);
 	}
 
 	function tick(speed) {
-
-		function tickItemList(itemList,dt) {
-			for( let item of itemList ) {
-				if( item.rechargeLeft > 0 ) {
-					item.rechargeLeft = Math.max(0,item.rechargeLeft-1);
-				}
-				if( item.onTick ) {
-					item.onTick.call(item,dt);
-				}
-			}
-		}
-
 
 		let entityListByTurnOrder = orderByTurn(entityList);
 		let dt = 1 / speed;
@@ -1680,27 +421,19 @@ function main(levelName) {
 				entity.calcVis();
 				entity.think();
 				entity.act();
-				tickItemList(entity.inventory,dt);
+				tickItemList(entity.inventory,dt,map,entityList);
 				DeedManager.calc(entity);
 				entity.actionCount -= 1;
 			}
 		}
 		map.actionCount += 1 / speed;
 		while( map.actionCount >= 1 ) {
-			tickItemList(map.itemList,dt);
+			tickItemList(map.itemList,dt,map,entityList);
 			map.actionCount -= 1;
 		}
 		DeedManager.cleanup();
-		testVictory();
-		checkDeaths();
-		entityList.forEach( entity => {
-			entity.commandLast = entity.command;
-			entity.commandItemLast = entity.commandItem;
-			entity.commandTargetLast = entity.commandTarget;
-			entity.command = Command.NONE;
-			entity.commandItem = null;
-			entity.commandTarget = null;
-		} );
+		checkDeaths(entityList);
+		clearCommands(entityList);
 	}
 
 	function messageCanPerceiveEntity(observer,entity) {
@@ -1723,7 +456,7 @@ function main(levelName) {
 		// let keyUp=38, keyDown=40, keyLeft=37, keyRight=39;
 		let KeyToCommand = loadKeyMapping("default");
 
-		let player = playerFind();
+		let player = playerFind(entityList);
 		if( !player || player.isDead() ) {
 			tick(1.0);
 			render(player || spectator);
@@ -1731,23 +464,40 @@ function main(levelName) {
 		else {
 			player.command = KeyToCommand[''+e.keyCode] !== undefined ? KeyToCommand[''+e.keyCode] : Command.NONE;
 
-			let timePass = readout.evalCommand(player,e.keyCode,player.command);
-
+			let timePass = readout.evalCommand(player,e,player.command);
 			if( timePass && player.command !== Command.NONE ) {
 				tick(player.speed);
 			}
+			let area = levelChange(world,map,entityList);
+			if( area ) {
+				map = area.map;
+				entityList = area.entityList;
+				player = playerFind(entityList);
+			}
+
 			render(player);
 			spectator.x = player.x;
 			spectator.y = player.y;
 		}
 	}
 
+	function worldOverlayAdd(group,x,y,sticker) {
+		return animationAdd( new AniPaste({ group:group, x:x, y:y, sticker:sticker, duration: true }) );
+	}
+	function worldOverlayRemove(fn) {
+		return animationRemove(fn);
+	}
 
-	let mapRaw = buildLevel(150,TileTypeList,MonsterTypeList,ItemTypeList);  //loadLevel(levelName) );
-	let {map: map, entityList: entityList, itemList:itemList} = initGameData( mapRaw );
+	window.PlaceSourceList = loadPlaceList();
+	let dataConditioner = new DataConditioner();
+	dataConditioner.integratePlaceData();
+	dataConditioner.prepareStaticData();
+
+	let startingLevel = 12;
+	let world = new World(startingLevel);
+
 	let display = new Display('map',MonsterTypeDefaults.sightDistance);
-	let readout = new Readout('readoutSpells','inventory');
-	let player = playerFind();
+	let readout = new Readout('readoutSpells','readoutInfo','inventory',worldOverlayAdd,worldOverlayRemove);
 	let spectator = {
 		x: 0,
 		y: 0,
@@ -1755,6 +505,18 @@ function main(levelName) {
 		canPerceiveEntity: () => true,
 		calcVis: () => calcVis(map,spectator.x,spectator.y,MonsterTypeDefaults.sightDistance,false,spectator.vis)
 	};
+
+	let area = world.createArea(0);
+	world.gateTo(area.id);
+	let map = area.map;
+	let entityList = area.entityList;
+	let player = playerFind(entityList);
+	if( !player ) {
+		let x = area.getGate(-1).x;
+		let y = area.getGate(-1).y;
+		player = new Entity( map, entityList, MonsterTypeList.player, { x:x, y:y }, null, startingLevel );
+		entityList.unshift( player );
+	}
 	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);
 
 	let handle = setInterval(function() {
@@ -1777,14 +539,14 @@ function main(levelName) {
 
 	let level = {
 		"test":
-			"#################\n"+
-			"#             ᵮ #\n"+
-			"#               #\n"+
-			"#|              #\n"+
-			"#  ᵴ    @       #\n"+
-			"#               #\n"+
-			"#               #\n"+
-			"#################\n"+
+			"############\n"+
+			"#          #\n"+
+			"#          #\n"+
+			"#<    h    #\n"+
+			"#          #\n"+
+			"#          #\n"+
+			"#        > #\n"+
+			"############\n"+
 			'',
 		"all":
  			"#######################\n"+
@@ -1828,6 +590,7 @@ function main(levelName) {
 		"huge":
 			"##########################################\n"+
 			"#                                        #\n"+
+			"#  @                                     #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
@@ -1837,21 +600,20 @@ function main(levelName) {
 			"#                                        #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
-			"#     ᵮ            ᵮ                     #\n"+
-			"#                ####                    #\n"+
-			"#                                        #\n"+
-			"#                            e           #\n"+
-			"#                                        #\n"+
-			"#                    @                   #\n"+
-			"#                    G                   #\n"+
-			"#                                        #\n"+
-			"#        ¡                               #\n"+
-			"#                                        #\n"+
-			"#                      A                 #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
-			"#             i                          #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
@@ -1893,6 +655,7 @@ function loadKeyMapping(name) {
 		89: Command.NW,
 		73: Command.INVENTORY,
 		81: Command.QUAFF,
+		84: Command.THROW,
 		67: Command.CAST,
 		112: Command.CAST1,
 		113: Command.CAST2,
@@ -1971,11 +734,13 @@ function loadKeyMapping(name) {
 				</div>
 				<div id="readoutSpells">
 				</div>
+				<div id="readoutInfo">
+				</div>
 			</td>
 		</tr>
 	</table>
 	<script>
-		main("huge");
+		main("test");
 	</script>
 </body>
 </html>

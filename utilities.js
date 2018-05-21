@@ -27,6 +27,12 @@ function nop() {}
 	String.capitalize = function(s) {
 	    return s.charAt(0).toUpperCase() + s.slice(1);
 	}
+	String.padLeft = function(s,len,char=' ') {
+		while( s.length < len ) {
+			s = char + s;
+		}
+		return s;
+	}
 	Array.filterInPlace = function(a, condition, thisArg) {
 		let j = 0;
 
@@ -46,6 +52,15 @@ function nop() {}
 			[array[i], array[j]] = [array[j], array[i]];
 		}
 		return array;
+	}
+	Object.filter = function(obj,fn) {
+		let result = {};
+		for( let key in obj ) {
+			if( fn(obj[key],key) ) {
+				result[key] = obj[key];
+			}
+		}
+		return result;
 	}
 	function betterSplit(s,delim) {
 		let temp = s.split(delim);
@@ -80,11 +95,43 @@ function nop() {}
 		}
 		return '';
 	}
+
+	window.Rules = new class {
+		constructor() {
+
+		}
+		 playerHealth(playerLevel) {
+		 	return 18+(2*playerLevel);
+		 }
+		 playerArmor(playerLevel) {
+		 	let armorAtLevel1 = 0.10;
+		 	let armorAtLevel100 = 0.80;
+		 	let armor = armorAtLevel1+((playerLevel-1)/100)*(armorAtLevel100-armorAtLevel1);
+		 	return armor;
+		 }
+		 playerDamage(playerLevel) {
+		 	let hitsToKillPlayer = 10;
+		 	let damage = this.playerHealth(playerLevel)/(hitsToKillPlayer*(1-this.playerArmor(playerLevel)));
+		 	return damage;
+		 }
+		 monsterHealth(monsterLevel,hitsToKillMonster=3) {
+		 	return this.playerDamage(monsterLevel)*hitsToKillMonster;
+		 }
+		 monsterDamage(monsterLevel,hitsToKillPlayer=10) {
+		 	let damage = this.playerHealth(monsterLevel)/(hitsToKillPlayer*(1-this.playerArmor(monsterLevel)));
+		 	return damage;
+		 }
+	};
 })();
 
-function pick(list) {
-	if( typeof list == 'object' ) {
+
+function pick(listRaw) {
+	let list = listRaw;
+	if( typeof list == 'object' && !Array.isArray(list) ) {
 		var keys = Object.keys(list);
+		if( keys.length <= 0 ) {
+			return null;
+		}
 		let n;
 		do {
 			n = Math.randInt(0,keys.length);
@@ -92,7 +139,7 @@ function pick(list) {
 
 	    return list[keys[n]];
 	}
-	return list[Math.randInt(0,list.length)];
+	return list.length==0 ? null : list[Math.randInt(0,list.length)];
 }
 
 function rollDice(diceString) {
