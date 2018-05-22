@@ -160,6 +160,11 @@ class Readout {
 		let pickingTarget = this.pickingTarget();
 
 		if( pickingTarget ) {
+			if( this.commandItem && !this.commandItem.isRecharged() ) {
+				tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,this.commandItem,' is still charging.');
+				this.clearCommand();
+				return false;
+			}
 			let cancel = false;
 			if( keyCode == keyESCAPE || this.command == command ) {
 				cancel = true;
@@ -205,6 +210,12 @@ class Readout {
 				if( this.command == Command.QUAFF ) {
 					return this.enactCommand(observer);
 				}
+				if( this.command == Command.CAST && !this.commandItem.isRecharged() ) {
+					tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,this.commandItem,' is still charging.');
+					this.clearCommand();
+					return false;
+				}
+
 				if( this.command == Command.INVENTORY ) {
 					if( this.commandItem.autoCommand ) {
 						this.command = this.commandItem.autoCommand;
@@ -243,6 +254,13 @@ class Readout {
 			}
 			this.command = Command.CAST;
 			this.commandItem = spellList.all[index];
+
+			if( !this.commandItem.isRecharged() ) {
+				tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,this.commandItem,' is still charging.');
+				this.clearCommand();
+				return false;
+			}
+
 			return false;
 		}
 		return true;

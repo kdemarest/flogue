@@ -2,6 +2,7 @@ let mSubject = 1;
 let mObject = 2;
 let mPronoun = 4;
 let mPossessive = 8;
+let mA = 16;
 let mVerb = 128;
 
 let SentenceReusableArray = [];
@@ -77,6 +78,7 @@ class Sentence {
 		return this.scan();
 	}
 	refine(you) {
+		let vowels = 'aeiou';
 
 		let s = '';
 		let i = 0;
@@ -95,8 +97,9 @@ class Sentence {
 			else
 			if( (typeof m[i]=='number') && (m[i] & (mSubject|mObject|mPronoun|mPossessive)) ) {
 				let flags = m[i] & (mPronoun|mPossessive);
+				let useA = m[i] & mA;
 				let who = m[++i];
-				let thing = (who.properNoun ? who.name : "the "+who.name);
+				let thing = (who.properNoun ? who.name : (useA ? (vowels.indexOf(who.name.charAt(0))>=0 ? 'an ' : 'a ') : "the ")+who.name);
 				let a = SentenceReusableArray;
 				a[0] = {you:'you',he:thing,she:thing,it:thing};
 				a[mPronoun] = {you:'you',he:'he',she:'she',it:'it'};

@@ -73,8 +73,8 @@ class Entity {
 		if( this.removed ) {
 			debugger;
 		}
-		if( this.deadBody ) {
-			this.map.itemCreateByTypeId(this.x,this.y,this.deadBody,{ usedToBe: this } );
+		if( this.corpse ) {
+			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{ usedToBe: this, isCorpse: true } );
 		}
 		tell(mSubject,this,' ',mVerb,'die','!');
 		this.removed = true;
@@ -593,6 +593,27 @@ class Entity {
 		return result;
 	}
 
+	itemCreateByType(type,inject,presets) {
+		if( type.isRandom ) debugger;
+		let item = new Item( this, type, { x:this.x, y:this.y }, inject, presets );
+		this.inventory.push(item);
+		return item;
+	}
+
+
+	pickup(item) {
+		if( !item ) debugger;
+		if( item.moveTo(this) !== false ) {
+			if( item.isArmor ) {
+				item.armor = this.calcArmor(DamageType.CUTS);
+			}
+			tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
+			if( item.triggerOnPickup ) {
+				item.trigger(Command.PICKUP,this,this);
+			}
+		}
+	}
+
 	setPosition(x,y) {
 		if( this.x == x && this.y == y ) {
 			return;
@@ -681,16 +702,7 @@ class Entity {
 			if( this.picksup ) {
 				let f = new ItemFinder(this.map.itemList).at(x,y).filter( item => item.mayPickup!==false );
 				for( let item of f.all ) {
-					if( item.moveTo(this) !== false ) {
-						if( item.isArmor ) {
-							item.armor = this.calcArmor(DamageType.CUTS);
-						}
-
-						tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
-						if( item.triggerOnPickup ) {
-							item.trigger(Command.PICKUP,this,this);
-						}
-					}
+					this.pickup(item);
 				}
 			}
 			return true;
@@ -742,6 +754,25 @@ class Entity {
 			case Command.TEST: {
 				let gate = this.map.itemCreateByTypeId(this.x,this.y,'portal',{ toAreaId: "test" } );
 				world.setPending( gate );
+				break;
+			}
+			case Command.LOOT: {
+				let item = this.commandItem;
+				tell(mSubject,this,' ',mVerb,'loot',' ',mObject,item);
+				let corpse = item.usedToBe;
+				if( corpse ) {
+					let picker = new Picker(corpse.level);
+					let itemTable = picker.buildItemTable();
+					let obj = picker.pick(itemTable,corpse.loot);
+					if( obj !== false ) {
+						let item = this.itemCreateByType(obj.item,null,obj.presets);
+						tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
+					}
+					else {
+						tell(mSubject,this,' ',mVerb,'find',' nothing.');
+					}
+				}
+				item.destroy();
 				break;
 			}
 			case Command.QUAFF: {

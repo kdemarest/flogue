@@ -73,6 +73,9 @@ class Item {
 	yGet() {
 		return this.owner.isMap ? this.y : this.owner.y;
 	}
+	isRecharged() {
+		return this.rechargeTime === undefined || !this.rechargeLeft;
+	}
 	calcArmor(damageType=DamageType.CUT) {
 		if( !ArmorDefendsAgainst.includes(damageType) ) {
 			return 0;
@@ -111,12 +114,18 @@ class Item {
 		if( this.effect===false ) {
 			return false;
 		}
-		this.origin = origin;
+		if( !this.isRecharged ) {
+			return false;
+		}
+		this.originEntity = originEntity;
 
 		// Here is where we should figure out the area of effect and hit all as needed.
 		let result = effectApply(this,this.effect,target);
 		if( !result ) {
 			return false;
+		}
+		if( this.rechargeTime !== undefined ) {
+			this.rechargeLeft = this.rechargeTime;
 		}
 
 		if( typeof this.charges =='number' ) {
