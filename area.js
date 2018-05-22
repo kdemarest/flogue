@@ -235,7 +235,7 @@ class Area {
 		this.map = new Map(tileRaw,[]);
 		this.map.level = level;
 
-		let numPlacesToInject = Math.floor(sideDimension/10);
+		let numPlacesToInject = Math.floor(sideDimension/1);
 		let entityInject = this.builder.injectPlaces(this.map,numPlacesToInject);
 		this.entityList = [];
 		this.gateList = [];

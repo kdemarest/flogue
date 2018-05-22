@@ -104,6 +104,128 @@ xx...xx
 	}
 }
 
+PlaceList.lunarEmbassy = {
+	map:
+`
+xxxxxxx.
+x...**x.
+x^..l.xl
+xAl...+.
+x^....xl
+x..lᵴ.x.
+xxxxxxx
+`,
+	flags: { rotate: true },
+	symbols: {
+		x: "wall"
+	}
+}
+
+PlaceList.ogreCamp = {
+	map:
+`
+.Ȱ.
+ǾuȰ
+.Ȱ.
+`,
+	flags: { rotate: true },
+	symbols: {
+		x: "wall"
+	}
+}
+
+PlaceList.nest = {
+	map:
+`
+⋍xx⋍x
+xy⋍⋍x
+xy⋍yx
+xyy⋍x
+.xx⋍.
+`,
+	flags: { rotate: true },
+	symbols: {
+		x: "wall",
+		y: function() { return pick(['bat','spinyFrog','scarab','viper']); }
+
+	}
+}
+
+PlaceList.den = {
+	map:
+`
+xxxxxxx
+xxy*.yx
+xy.....
+x.*yxxx
+xxxxx..
+`,
+	flags: { rotate: true },
+	symbols: {
+		x: "wall",
+		y: function() { return pick(['dog','kobold']); }
+
+	}
+}
+
+PlaceList.graveYard = {
+	map:
+`
+..M.M...B.MMM
+.Bs....M..s.M
+.M..B.M...BM.
+.sB.xxxxx.M..
+.MM.x*s*x.Bs.
+.B..xFS.+....
+.sM.x*s.x.M..
+BM..xxxxx...M
+..B.MM...M...
+..M.s..sB..M.
+M...B..M.....
+`,
+	flags: { rotate: true },
+	symbols: {
+		x: "wall",
+		M: "mist"
+	}
+}
+PlaceList.swamp = {
+	map:
+`
+mmmmmmmmmmmmm
+mmwwwfmmwwwmm
+mwwwwwwwwmwmm
+mmwwwfmwmwwmm
+mwwwwmmmwmfmm
+mmmwmwmwwwmmm
+mfwwwmwfmwwmm
+mmfwwfwwwwwmm
+mmwmmwmwwmwmm
+mmmwfwwwmwwmm
+mwwwwmwwwfwwm
+mmwmwwmmwwwwm
+mmmmmmmmmmmmm
+`,
+	flags: { rotate: true },
+	symbols: {
+		m: "mud",
+		w: "water"
+	}
+}
+PlaceList.etherHive = {
+	map:
+`
+xe.exx
+xee.e.
+.e.eex
+xx.e.x
+`,
+	flags: { rotate: true },
+	symbols: {
+		x: "wall"
+	}
+}
+
 
 	// Export the placelist.
 	window.loadPlaceList = () => PlaceList;
