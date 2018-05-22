@@ -319,8 +319,8 @@ class Area {
 	constructor(areaId,level,entrance) {
 		let builder = new AreaBuilder();
 		let sideDimension = Math.randInt(40,150);
-		let tileRaw = loadLevel('test');
-		//let tileRaw = builder.buildMap(sideDimension,entrance,level);
+		//let tileRaw = loadLevel('test');
+		let tileRaw = builder.buildMap(sideDimension,entrance,level);
 		let map = new Map(tileRaw,[]);
 		map.level = level;
 

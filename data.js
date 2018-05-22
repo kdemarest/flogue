@@ -79,7 +79,7 @@ const StickerList = {
 const DamageType = { CUT: "cut", STAB: "pierce", BITE: "bite", CLAW: "claw", BLUNT: "whomp", FIRE: "burn", COLD: "freeze", POISON: "poison", HOLY: "divine power", ROT: "rot" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
 const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm", WORSHIP: "worshipping" };
-const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral" };
+const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
 const Slot = { HEAD: "head", NECK: "neck", LEFTHAND: "left hand", RIGHTHAND: "right hand", WAIST: "waist", FEET: "feet", ARMOR: "torso", WEAPON: "weapon" };
 const PickImmune = [DamageType.FIRE,DamageType.COLD,DamageType.POISON,DamageType.HOLY,DamageType.ROT];
 const PickVuln   = [DamageType.FIRE,DamageType.COLD,DamageType.POISON,DamageType.HOLY,DamageType.ROT];
@@ -283,7 +283,7 @@ const OreList = toFab({
 	"lunariumOre": 	{ name: "lunarium ore", refinesTo: "lunarium ingot", img: 'i-protection' },
 	"solariumOre": 	{ name: "solarium ore", refinesTo: "solarium ingot", img: 'i-protection' },
 	"deepiumOre": 	{ name: "deepium ore", refinesTo: "deepium ingot", img: 'i-protection' },
-	"meteoriumOre": { name: "meteorium ore", refinesTo: "meteorium ingot", img: 'i-protection' }
+	"moonsteelOre": { name: "moonsteel ore", refinesTo: "moonsteel ingot", img: 'i-protection' }
 });
 
 const GemQualityList = toFab({
@@ -422,8 +422,11 @@ const MonsterTypeList = {
 					level: 12, power: '8:99', damageType: DamageType.BITE, travelMode: "fly", immune: DamageType.FIRE, vuln: DamageType.COLD,
 					attitude: Attitude.AGGRESSIVE,    team: Team.NEUTRAL },
 	"rabbit": { 	symbol: 'r', pronoun: "it", img: "dc-mon/animals/sheep.png",
-					level: 1, power: '1:20',   damageType: DamageType.BITE, packAnimal: true,
+					level: 1, power: '1:20',  damageType: DamageType.BITE, packAnimal: true,
 					attitude: Attitude.FEARFUL,     team: Team.EVIL, watch:true },
+	"lunarone": { 	symbol: 'l', pronoun: "*", img: "dc-mon/deep_elf_high_priest.png", brainTalk: true,
+					level:  12, power: '5:2', damageType: DamageType.COLD, immune: DamageType.COLD,
+					attitude: Attitude.AGGRESSIVE,  team: Team.LUNAR },
 	"player": { 	symbol: '@', pronoun: "he", light: 7, brainTalk: true,
 					brain: Brain.USER, brainOpensDoors: true, picksup: true, img: "dc-mon/human.png",
 					level: 1, power: null, regenerate: 0.1, damageType: DamageType.CUT, sightDistance: 8,
