@@ -268,7 +268,7 @@ class Area {
 		this.map = new Map(tileRaw,[]);
 		this.map.level = level;
 
-		let numPlacesToInject = Math.floor(sideDimension/10);
+		let numPlacesToInject = Math.floor(sideDimension/1);
 		let entityInject = this.builder.injectPlaces(this.map,numPlacesToInject,pickPlace);
 		this.entityList = [];
 		this.gateList = [];
@@ -278,8 +278,12 @@ class Area {
 		this.builder.extractEntitiesFromMap(this.map,this.entityList,this.gateList,entityInject,makeItem);
 		return this;
 	}
-	getUnusedGate(gateId,onlyUnused) {
-		let g = this.gateList.filter( g => g.typeId==gateId && (!onlyUnused || !g.toAreaId) );
+	getGate(id) {
+		let g = this.gateList.filter( g => g.id==id );
+		return g[0];
+	}
+	getUnusedGateByTypeId(typeId) {
+		let g = this.gateList.filter( g => g.typeId==typeId && !g.toAreaId );
 		return !g.length ? null : g[0];
 	}
 }

@@ -211,7 +211,7 @@ function main(levelName) {
 	let entityList = area.entityList;
 	let player = playerFind(entityList);
 	if( !player ) {
-		let gate = area.getUnusedGate('stairsUp');
+		let gate = area.getUnusedGateByTypeId('stairsUp');
 		if( !gate ) {
 			gate = map.itemCreateByTypeId(false,false,'stairsUp');
 		}
@@ -242,7 +242,7 @@ function main(levelName) {
 	// Ǿgidᵬje  AB*? ᵮ⍨|:░ ¡$
 
 	let level = {
-		"small":
+		"oldtest":
 			"############\n"+
 			"#   Ώ      #\n"+
 			"#          #\n"+
@@ -296,6 +296,7 @@ function main(levelName) {
 			"#Ώ < >                                   #\n"+
 			"#  @                                     #\n"+
 			"#           h                            #\n"+
+			"# <                                     Ώ#\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
@@ -333,6 +334,8 @@ function main(levelName) {
 			"#                                        #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                      > #\n"+
 			"##########################################\n"+
 			'',
 
