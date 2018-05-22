@@ -23,18 +23,6 @@
 
 	// This is an attempt, maybe useless, to avoid exceeding the stack limits.
 	let _tile,_xMin,_yMin,_xMax,_yMax,_count,_step,_zone;
-	function _expand(x,y) {
-		_tile[y][x].zone = _zone;
-		++_count;
-		for( let dir=0; dir<DirAdd.length ; dir += _step ) {
-			let nx = x + DirAdd[dir].x;
-			let ny = y + DirAdd[dir].y;
-			if( nx<_xMin || ny<_yMin || nx>_xMax || ny>_yMax ) continue;
-			if( !_tile[ny] || !_tile[ny][nx] || _tile[ny][nx].tile !== T.Floor ) continue;
-			if( _tile[ny][nx].zone == _zone ) continue;
-			_expand(nx,ny);
-		}
-	}
 	function _zapZone(x,y) {
 		_tile[y][x].zone = NO_ZONE;
 		_tile[y][x].tile = T.Unknown;
@@ -539,25 +527,9 @@
 
 	class Map extends Area {
 
-		populate(density,pickFn) {
-			this.traverse( (x,y) => {
-				if( this.getTile(x,y) == T.Floor && Math.rand(0,1)<density ) {
-					this.setTile(x,y,pickFn(x,y));
-				}
-			});
-		}
-
 	}
 
 	function buildMap(style,TileTypeList,MonsterTypeList,ItemTypeList) {
-
-		function pickMonster(x,y) {
-			return pick(MonsterTypeList).symbol;
-		}
-		function pickItem(x,y) {
-			return pick(ItemTypeList).symbol;
-		}
-
 
 		T.Floor = TileTypeList.floor.symbol;
 		T.Wall = TileTypeList.wall.symbol;
@@ -567,8 +539,6 @@
 		cave.setDimensions(style.dim);
 		cave.makeAmoeba(style.floorDensity);
 		cave.paste(map,1,1);
-		map.populate(style.monsterDensity,pickMonster);
-		map.populate(style.itemDensity,pickItem);
 		map.convert(T.Unknown,T.Wall);
 
 		map.placeEntrance(ItemTypeList.stairsDown.symbol);

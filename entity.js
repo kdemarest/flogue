@@ -135,14 +135,15 @@ class Entity {
 		let doVis = false;
 		if( this.brain == Brain.USER ) {
 			doVis = true;
+			this.mapMemory = world.area.mapMemory;
 		}
 		else {
-			let user = this.findAliveOthers().filter( e => e.brain==Brain.USER ).nearMe(9);
+			let user = this.findAliveOthers().filter( e => e.isUser() ).nearMe(9);
 			doVis = !!user.first;
 		}
 
 		if( doVis ) {
-			this.vis = calcVis(this.map,this.x,this.y,this.sightDistance,this.blind,this.vis);
+			this.vis = calcVis(this.map,this.x,this.y,this.sightDistance,this.blind,this.vis,this.mapMemory);
 		}
 		else {
 			this.vis = null;
@@ -157,8 +158,8 @@ class Entity {
 		}
 		// This gets us up to whoever actually owns this item. But on the map, you just use the item.
 		// This means that items can NOT be invisible independent of their owners.
-		while( entity.owner && !entity.owner.isMap ) {
-			entity = entity.owner;
+		if( entity.ownerOfRecord ) {
+			entity = entity.ownerOfRecord;
 		}
 		if( (this.blind || (entity.invisible && !this.seeInvisible)) && entity.id!==this.id ) { // you can always perceive yourself
 			return false;
@@ -181,7 +182,7 @@ class Entity {
 			return;
 		}
 		tell(mSubject,this,' ',mVerb,'remove',' ',mObject,item);
-		DeedManager.end( deed => deed.cause.id==item.id );
+		DeedManager.end( deed => deed.origin.id==item.id );
 		item.inSlot = false;
 	}
 	don(item,slot) {
@@ -192,7 +193,7 @@ class Entity {
 		tell(mSubject,this,' ',mVerb,item.useVerb,' ',mObject,item);
 		item.inSlot = slot;
 		if( item.triggerOnUse || (item.triggerOnUseIfHelp && item.effect.isHelp) ) {
-			item.trigger(Command.USE,item,this);
+			item.trigger(Command.USE,this,this);
 		}
 	}
 
@@ -462,9 +463,6 @@ class Entity {
 	}
 
 	takeHealing(healer,amount,healingType,quiet=false) {
-		while( healer.cause ) {
-			healer = healer.cause;
-		}
 		amount = Math.min( amount, this.healthMax-this.health );
 		this.health += amount;
 		if( this.onHeal ) {
@@ -491,8 +489,8 @@ class Entity {
 
 	takeDamage(attacker,amount,damageType,callback) {
 		let noBacksies = attacker.isArmor || attacker.isHelm || attacker.isBoots;
-		if( attacker.isItemType ) {
-			attacker = attacker.cause || attacker.owner || attacker;
+		if( attacker.ownerOfRecord ) {
+			attacker = attacker.ownerOfRecord;
 		}
 		if( attacker && attacker.invisible && !this.seeInvisible ) {
 			amount *= (attacker.sneakAttackMult || 2);
@@ -531,18 +529,18 @@ class Entity {
 		}
 
 		let quiet = false;
-		if( this.onHurt ) {
-			quiet = this.onHurt.call(this,attacker,amount,damageType);
+		if( this.onAttacked ) {
+			quiet = this.onAttacked.call(this,attacker,amount,damageType);
 		}
 		if( !quiet ) {
 			tell(mSubject,attacker,' ',mVerb,damageType,' ',mObject,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!' );
 		}
 
-		if( !noBacksies && this.inventory ) {
+		if( !noBacksies && attacker.isMonsterType && this.inventory ) {
 			let armorEffects = new ItemFinder(this.inventory).filter( item => item.inSlot );
 			armorEffects.process( item => {
 				if( item.effect.isHarm && Math.chance(10) ) {
-					item.trigger(Command.NONE,item,attacker);
+					item.trigger(Command.NONE,this,attacker);
 				}
 			})
 		}
@@ -567,6 +565,13 @@ class Entity {
 		return other.takeDamage(this,amount,damageType,callback);
 	}
 
+	calcWeapon() {
+		let weapon = new ItemFinder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || {};
+		let damage = weapon.damage || this.damage;
+		let damageType = weapon.damageType || this.damageType || DamageType.STAB;
+		return [weapon,damage,damageType];
+	}
+
 	attack(other,isRanged,onDamage) {
 		if( (this.blind && !this.type().blind) || (other.invisible && !this.seeInvisible) ) {
 			if( Math.chance(50) ) {
@@ -574,9 +579,13 @@ class Entity {
 				return;
 			}
 		}
-		let damage = this.rollDamage(this.damage);
-		let damageType = this.damageType || DamageType.STAB;
+		let weapon,damage,damageType;
+		[weapon,damage,damageType] = this.calcWeapon();
+		damage = this.rollDamage(damage);
 		let result = this.doDamage( other, damage, damageType, onDamage );
+		if( weapon && weapon.effect && Math.chance(10) ) {
+			weapon.trigger( Command.ATTACK, this, other );
+		}
 		if( this.onAttack ) {
 			this.onAttack(other);
 		}
@@ -590,7 +599,7 @@ class Entity {
 		this.tileTypeLast = this.map.tileTypeGet(this.x,this.y);
 		this.x = x;
 		this.y = y;
-		// This just makes sure that items have coordinates, for when they're the cause of things.
+		// This just makes sure that items have coordinates, for when they're the root of things.
 		this.inventory.map( item => { item.x=x; item.y=y; } );
 	}
 
@@ -659,6 +668,9 @@ class Entity {
 				allyToSwap.setPosition(this.x,this.y);
 			}
 			this.setPosition(x,y);
+			if( this.findAliveOthers().at(x,y).count ) {
+				debugger;
+			}
 
 			// We must be touching the new tile, so act on that.
 			if( tileType.onTouch ) {
@@ -669,9 +681,13 @@ class Entity {
 				let f = new ItemFinder(this.map.itemList).at(x,y).filter( item => item.mayPickup!==false );
 				for( let item of f.all ) {
 					if( item.moveTo(this) !== false ) {
+						if( item.isArmor ) {
+							item.armor = this.calcArmor(DamageType.CUTS);
+						}
+
 						tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
 						if( item.triggerOnPickup ) {
-							item.trigger(Command.PICKUP,item,this);
+							item.trigger(Command.PICKUP,this,this);
 						}
 					}
 				}
@@ -735,10 +751,10 @@ class Entity {
 				let target = this.commandTarget;
 				item.moveTo(this.map,target.x,target.y);
 				if( this.commandTarget.typeId ) {	// indicates it is not an (x,y) array
-					tell(mSubject,item,' ',mVerb,'splash',' ',mObject,target);
+					tell(mSubject,item,' ',mVerb,item.attackVerb||'hit',' ',mObject,target);
 				}
 				else {
-					tell(mSubject,item,' ',mVerb,'splash');
+					tell(mSubject,item,' ',mVerb,item.attackVerb||'hit');
 				}
 				item.trigger(this.command,this,target);
 				break;

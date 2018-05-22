@@ -5,8 +5,8 @@ body {
 	background-color: black;
 }
 #mapContainer {
-	width: 544px;
-	height: 544px;
+	width: 672px;
+	height: 672px;
 	position: relative;
 }
 #map {
@@ -15,8 +15,6 @@ body {
 	font-family: "Courier New", Courier, sans-serif;
 	font-size: 18px;
 	line-height: 18px;
-	width: 100%;
-	height: 100%;
 	position: absolute;
 	top:0;
 	left:0;
@@ -35,6 +33,7 @@ body {
 	position: absolute;
 	top:0;
 	left:0;
+	overflow-y: scroll;
 }
 #messageBox {
 	display: block;
@@ -52,6 +51,7 @@ body {
 #readoutStatus {
 	width: 104px;
 	height: 160px;
+	overflow-y: hidden;
 }
 #readoutSpells {
 	width: 104px;
@@ -72,6 +72,17 @@ body {
 	font-family: "Ariel", serif;
 	border-top: 1px solid white;
 	font-size: 12px;
+	margin: 0px 0px;
+	overflow-y: hidden;
+	overflow-x: hidden;
+}
+#miniMap {
+	width: 150px;
+	height: 150px;
+	display: block;
+	font-family: "Ariel", serif;
+	border: 1px solid white;
+	font-size: 10px;
 	margin: 0px 0px;
 	overflow-y: hidden;
 	overflow-x: hidden;
@@ -98,12 +109,14 @@ table tr td {
 	border-radius: 3px;
 	position: relative;
 	margin-bottom: 2px;
+	white-space: nowrap;
 }
 .bar {
 	background: #c54;
 	width: 100%;
 	height: 16px;
 	position: relative;
+	white-space: nowrap;
 
 	transition: width .5s linear;
 }

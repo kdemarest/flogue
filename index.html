@@ -20,8 +20,12 @@
 <script src="tell.js"></script>
 <script src="readout.js"></script>
 <script src="display.js"></script>
+<script src="minimap.js"></script>
 <script src="sentence.js"></script>
 <script src="finder.js"></script>
+<script src="dataConditioner.js"></script>
+<script src="area.js"></script>
+<script src="world.js"></script>
 <qscript src="levels.js"></script>
 <script>
 
@@ -35,10 +39,6 @@ Resources:
 
 let humanNameList = Array.shuffle(getNameList());
 
-function bonk(entity,target) {
-	tell( mSubject, entity, ' ', mVerb, 'run', ' into ', mObject, target, '.' );
-}
-
 
 function adhoc(tileType,x,y) {
 	if( tileType.isItemType ) {
@@ -49,12 +49,6 @@ function adhoc(tileType,x,y) {
 	}
 	return Object.assign({},tileType,{x:x,y:y});
 }
-
-function objHas(obj,member) {
-	return( typeof obj=='object' && obj[member] !== undefined );
-}
-
-
 
 
 function clearCommands(entityList) {
@@ -103,304 +97,6 @@ function tickItemList(itemList,dt,map,entityList) {
 	}
 }
 
-class DataConditioner {
-	constructor() {
-	}
-
-	integratePlaceData() {
-
-		let s2t = {};
-		let t2s = {};
-		function extract() {
-			for( let typeList of arguments ) {
-				for( let t in typeList ) {
-					let s = typeList[t].symbol;
-					s2t[s] = t;
-					t2s[t] = s;
-				}
-			}
-		}
-		extract(TileTypeList,ItemTypeList,MonsterTypeList);
-		if( s2t[TILE_UNKNOWN] ) {
-			// WARNING: I'm reserving the ' ' symbol to mean 'nothing here, replaceable' in a place map.
-			debugger;
-		}
-
-		let sIndex = 32+1;
-		function getUnusedSymbol() {
-			while( s2t[String.fromCharCode(sIndex)] ) {
-				++sIndex;
-			}
-			return String.fromCharCode(sIndex);
-		}
-
-		// Give symbols to anything that lacks a symbol.
-		for( let placeId in PlaceSourceList ) {
-
-			let place = PlaceSourceList[placeId];	// make a copy so that we can mangle it.
-			place.id = placeId;
-			let roster = Object.assign({},place.monsterTypes,place.itemTypes,place.tileTypes);
-			for( let typeId in roster ) {
-				// If there is no symbol in the existing corpus...
-				if( !t2s[typeId] ) {
-					let s = getUnusedSymbol();
-					t2s[typeId] = s;
-					s2t[s] = typeId;
-				}
-			}
-
-			Object.assign(StickerList,		place.stickers);
-			Object.assign(DamageType,		place.damageType);
-			Object.assign(Attitude,			place.attitude);
-			Object.assign(PickImmune,		place.pickImmune);
-			Object.assign(PickVuln,			place.pickVuln);
-			Object.assign(PickResist,		place.pickResist);
-			Object.assign(EffectTypeList,	place.effectList);
-
-			function processTypeList(targetList,typeList) {
-				for( let typeId in typeList ) {
-					let type = typeList[typeId];
-					let targetType = targetList[typeId];
-					let newType = Object.assign( {}, type.basis ? targetList[type.basis] || {} : {}, targetType || {}, type, {symbol:t2s[typeId]} );
-					targetList[typeId] = newType;
-				}
-			}
-			processTypeList( TileTypeList, 		place.tileTypes );
-			processTypeList( ItemTypeList,		place.itemTypes );
-			processTypeList( MonsterTypeList,	place.monsterTypes );
-		}
-	}
-
-	prepareStaticData() {
-		for( let list of FabList ) {
-			for( let key in list ) {
-				list[key] = fab(list[key],key);
-			}
-		}
-
-		Object.entries(StickerList).forEach( ([typeId,sticker]) => {
-			fab(sticker,typeId,'isSticker');
-		} );
-		Object.entries(TileTypeList).forEach( ([typeId,tileType]) => {
-			fab(tileType,typeId,'isTileType');
-		} );
-		Object.entries(ItemTypeList).forEach( ([typeId,itemType]) =>  {
-			itemType = Object.assign( {}, ItemTypeDefaults, itemType );
-			itemType.namePattern = itemType.namePattern || typeId;
-			ItemTypeList[typeId] = fab(itemType,typeId,'isItemType');
-		} );
-		Object.entries(MonsterTypeList).forEach( ([typeId,monsterType]) =>  {
-			monsterType = Object.assign( {}, MonsterTypeDefaults, MonsterTypeList[typeId] );
-			MonsterTypeList[typeId] = fab(monsterType,typeId,'isMonsterType');
-		} );
-	}
-};
-
-class AreaBuilder {
-	constructor() {
-	}
-
-	buildMap(dim,entrance,level) {
-		let style = {
-			architecture: "cave",
-			entrance: entrance,
-			dim: dim,
-			floorDensity: Math.rand(0.40,0.70),
-			monsterDensity: 0.01,
-			itemDensity: level==1 ? 0.20 : 0.01
-		};
-		let tileRaw = Mason.buildMap(style,TileTypeList,MonsterTypeList,ItemTypeList);
-		return tileRaw;
-	}
-
-	preparePlaceForInjection(place) {
-
-		// If any of the symbols are pickable, get that done.
-		for( let s in place.symbols ) {
-			if( typeof place.symbols[s] == 'function' ) {
-				place.symbols[s] = place.symbols[s].call(place);
-			}
-		}
-
-		// Replace map symbols with allocated symbols
-		place.mapOriginal = place.map.trim();
-		let map = '';
-		for( let i=0 ; i<place.mapOriginal.length ; ++i ) {
-			let s = place.mapOriginal.charAt(i);
-			if( s=='\t' ) { continue; }
-			if( s=='\n' ) { map+=s; continue; }
-			let mappedToTypeId = place.symbols[s];
-			// Check if the place chose to used ad-hoc symbology for something
-			if( mappedToTypeId ) {
-				s = TypeToSymbol[mappedToTypeId];
-			}
-			if( !SymbolToType[s] ) debugger;	// By now we should have resolved what this symbol maps to
-			map += s;
-		}
-		place.map = new SimpleMap(map);
-
-		if( place.flags && place.flags.rotate ) {
-			place.map.rotate(Math.randInt(0,4));
-		}
-	}
-
-	injectPlaces(map,numPlaces) {
-		let entityInject = {};
-		let placeReps = numPlaces;
-		while( placeReps-- ) {
-			let place = Object.assign( {}, pick(PlaceSourceList) );
-			console.log("Trying place "+place.id);
-			this.preparePlaceForInjection(place);
-			let fitReps = 300;
-			let x,y;
-			do {
-				[x,y] = map.pickPos(0,0,place.map.xLen,place.map.yLen);
-				console.log('('+x+','+y+')');
-			} while( !map.fit(x,y,place.map) && --fitReps );
-			if( fitReps ) {
-				map.inject(x,y,place.map,function(x,y,symbol) {
-					let typeId = SymbolToType[symbol];
-					if( !typeId ) debugger;
-					if( place.onEntityCreate && place.onEntityCreate[typeId] ) {
-						entityInject[''+x+','+y] = place.onEntityCreate[typeId];
-					}
-				});
-			}
-		}
-		return entityInject;
-	}
-
-	extractEntitiesFromMap(map,entityList,gateList,entityInject) {
-
-		let noEntity = {};
-
-		for( let y=0 ; y<map.yLen ; ++y ) {
-			for( let x=0 ; x<map.xLen ; ++x ) {
-				// Note that this code uses the SIMPLEST function that do NOT assume
-				// what is on the map...
-				let symbol = map.tileSymbolGet(x,y);
-				let entityType = SymbolToType[symbol];
-				if( !entityType ) {
-					debugger;
-				}
-				// CREATE MONSTERS
-				let inject = entityInject[''+x+','+y] || noEntity;
-				if( entityType && entityType.isMonsterType ) {
-					let fnName = entityType.brain == 'user' ? 'unshift' : 'push';
-					entityList[fnName]( new Entity( map, entityList, entityType, { x:x, y:y }, inject ) );
-					map.tileSymbolSet(x,y,TileTypeList.floor.symbol)
-				}
-				// CREATE ITEMS
-				if( entityType && entityType.isItemType ) {
-					if( entityType.isRandom ) {
-						entityType = pick(ItemTypeList);
-					}
-					let item = new Item( map, entityType, { x:x, y:y }, inject );
-					map.itemList.push( item );
-					// WARNING: We could set this more carefully, like by checking around it and using majority
-					// of passable tiles.
-					map.tileSymbolSet(x,y,TileTypeList.floor.symbol);
-					if( item.gateDir !== undefined ) {
-						gateList.push(item);
-					}
-				}
-			}
-		}
-
-		// When there is only one monster, we are probably testing, so watch it.
-		if( entityList.length == 2 ) {
-			// zero will be the player
-			entityList[entityList.length-1].watch = true;
-		}
-	}
-};
-
-class Area {
-	constructor(areaId,level,entrance) {
-		let builder = new AreaBuilder();
-		let sideDimension = Math.randInt(40,150);
-		let tileRaw = loadLevel('test');
-		//let tileRaw = builder.buildMap(sideDimension,entrance,level);
-		let map = new Map(tileRaw,[]);
-		map.level = level;
-
-		let numPlacesToInject = Math.floor(sideDimension/10);
-		let entityInject = builder.injectPlaces(map,numPlacesToInject);
-		let entityList = [];
-		let gateList = [];
-		builder.extractEntitiesFromMap(map,entityList,gateList,entityInject);
-		this.id = areaId;
-		this.level = level;
-		this.map = map;
-		this.entityList = entityList;
-		this.gateList = gateList;
-		return this;
-	}
-	getGate(gateDir,onlyUnused) {
-		let g = this.gateList.filter( g => g.gateDir==gateDir && (!onlyUnused || !g.toAreaId) );
-		if( !g.length ) debugger;
-		return g[0];
-	}
-}
-
-class World {
-	constructor(startingLevel=1) {
-		this.areaList = {};
-		this.currentArea = null;
-		this.startingLevel = startingLevel;
-	}
-	createArea(levelDelta=0) {
-		let level = this.currentArea ? this.currentArea.level+levelDelta : this.startingLevel;
-		let areaId = 'area.'+humanNameList.pop()+'.'+level;
-		let entrance = this.currentArea===null ? ItemTypeList.stairsUp : (levelDelta>0 ? ItemTypeList.stairsUp : (levelDelta<0 ? ItemTypeList.stairsDown : ItemTypeList.gateway));
-		let area = new Area(areaId,level,entrance);
-		this.areaList[areaId] = area;
-		return area;
-	}
-	gateTo(areaId) {
-		let area = this.areaList[areaId];
-		if( !area ) debugger;
-		this.currentArea = area;
-		return area;
-	}
-}
-
-function levelChange(world,map,entityList) {
-	let player = playerFind(entityList);
-	if( !player ) {
-		return;
-	}
-	let x = player.x;
-	let y = player.y;
-	let gateHere = new ItemFinder(map.itemList).at(x,y).filter( item => item.gateDir!==undefined );
-	if( !gateHere.first ) {
-		return;
-	}
-	let gate = gateHere.first;
-
-	if( map.level == 1 && gate.gateDir<0 ) {
-		return;
-	}
-	let verb = (gate.gateDir<0 ? 'ascend' : (gate.gateDir>0 ? 'descend' : 'enter'));
-	tell(mSubject,player,' ',mVerb,verb,' ',mObject,gate);
-
-	if( !gate.toAreaId ) {
-		let toArea = world.createArea(gate.gateDir);
-		let gate2 = toArea.getGate(-gate.gateDir);
-		gate.toAreaId = toArea.id;
-		gate.toGateId = gate2.id;
-		gate2.toAreaId = world.currentArea.id;
-		gate2.toGateId = gate.id;
-	}
-	// WARNING! Someday we will need to push the DeedList that is NOT the player into the old area.
-	// and resurrect the new area's deed list.
-	let newArea = world.gateTo(gate.toAreaId);
-	player.gateTo(newArea,gate.toGateId);
-	tell(mSubject,player,' ',mVerb,'are',' now on level '+newArea.id)
-	return newArea;
-}
-
-
 
 function main(levelName) {
 
@@ -408,6 +104,7 @@ function main(levelName) {
 		readout.render(observer,entityList);
 		let drawList = createDrawList(observer,map,entityList);
 		display.draw(drawList,observer);
+		miniMap.draw(observer);
 	}
 
 	function tick(speed) {
@@ -468,7 +165,7 @@ function main(levelName) {
 			if( timePass && player.command !== Command.NONE ) {
 				tick(player.speed);
 			}
-			let area = levelChange(world,map,entityList);
+			let area = world.levelChange(map,entityList);
 			if( area ) {
 				map = area.map;
 				entityList = area.entityList;
@@ -494,16 +191,18 @@ function main(levelName) {
 	dataConditioner.prepareStaticData();
 
 	let startingLevel = 12;
-	let world = new World(startingLevel);
+	window.world = new World(startingLevel);
 
-	let display = new Display('map',MonsterTypeDefaults.sightDistance);
-	let readout = new Readout('readoutSpells','readoutInfo','inventory',worldOverlayAdd,worldOverlayRemove);
+	let imageRepo = new ImageRepo(PIXI.loader);
+	let display = new Display('map',MaxSightDistance,imageRepo);
+	let miniMap = new MiniMap('#miniMapCanvas',imageRepo);
+	let readout = new Readout('readoutSpells','readoutInfo','inventory',imageRepo,worldOverlayAdd,worldOverlayRemove);
 	let spectator = {
 		x: 0,
 		y: 0,
 		vis: [],
 		canPerceiveEntity: () => true,
-		calcVis: () => calcVis(map,spectator.x,spectator.y,MonsterTypeDefaults.sightDistance,false,spectator.vis)
+		calcVis: () => calcVis(map,spectator.x,spectator.y,MaxSightDistance,false,spectator.vis)
 	};
 
 	let area = world.createArea(0);
@@ -520,14 +219,14 @@ function main(levelName) {
 	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);
 
 	let handle = setInterval(function() {
-		if( !display.ready ) {
+		if( !imageRepo.ready ) {
 			return;
 		}
 		clearInterval(handle);
 		document.addEventListener( "keydown", onPlayerKey, false );
 
 		render(player);
-		tell([player,null,"Welcome to flogue! Use the arrow keys to move, and '.' to wait. Reach the > stairs!"]);
+		tell([player,null,"Welcome to flogue! Use the arrow keys to move, and '.' to wait."]);
 		tell(mSubject,player,' ',mVerb,'step',' through the doorway...');
 		// The tick is called each time the player takes an action.
 	}, 20);
@@ -735,6 +434,8 @@ function loadKeyMapping(name) {
 				<div id="readoutSpells">
 				</div>
 				<div id="readoutInfo">
+				</div>
+				<div id="miniMap">
 				</div>
 			</td>
 		</tr>

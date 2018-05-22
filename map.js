@@ -127,6 +127,9 @@ class SimpleMap {
 		}
 		let symbol = this.tileSymbolGet(x,y);
 		if( SymbolToType[symbol].isItemType ) {
+			debugger;
+			// This should never happen anymore. Instead we need to use an ItemFinder for this...
+			// Or start caching an item quick lookup.
 			let f = new ItemFinder(this.itemList).at(x,y);
 			if( f.count ) {
 				return f.first;
@@ -236,9 +239,16 @@ function shoot4(map,px,py,x,y,blind) {
 }
 
 
-function calcVis(map,px,py,sightDistance,blind,cachedVis) {
+function calcVis(map,px,py,sightDistance,blind,cachedVis,mapMemory) {
 
 	let a = cachedVis || [];
+	let q = [];
+
+	if( mapMemory ) {
+		for( let item of map.itemList ) {
+			q[item.y*map.xLen+item.x] = item;
+		}
+	}
 
 	for( let y=0 ; y<map.yLen ; ++y ) {
 		a[y] = a[y] || [];
@@ -248,6 +258,11 @@ function calcVis(map,px,py,sightDistance,blind,cachedVis) {
 				continue;
 			}
 			a[y][x] = shoot4(map,px,py,x,y,blind);
+			if( mapMemory && a[y][x] ) {
+				let item = q[y*map.xLen+x];
+				mapMemory[y] = mapMemory[y] || [];
+				mapMemory[y][x] = item ? item : map.tileTypeGet(x,y);
+			}
 		}
 	}
 	a[py][px] = true;

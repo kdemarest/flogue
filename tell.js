@@ -43,6 +43,10 @@ let MessageManager = (new class {
 	}
 }());
 
+function bonk(entity,target) {
+	tell( mSubject, entity, ' ', mVerb, 'run', ' into ', mObject, target, '.' );
+}
+
 function tell() {
 	MessageManager.tell(...arguments);
 }
