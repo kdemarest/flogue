@@ -494,10 +494,10 @@ const MonsterTypeList = {
 /**/	"lunarOne": { 	symbol: 'l', pronoun: "*", img: "dc-mon/deep_elf_high_priest.png", brainTalk: true, name: "lunar one",
 					level:  12, power: '3:10', damageType: DamageType.COLD, immune: DamageType.COLD,
 					attitude: Attitude.AGGRESSIVE,  team: Team.LUNAR, rarity: 10},
-	"human": { 	symbol: 'H', pronoun: "*", brainTalk: true,
+/*	"human": { 	symbol: 'H', pronoun: "*", brainTalk: true,
 					brain: Brain.USER, brainOpensDoors: true, img: "dc-mon/human.png",
 					level: 1, damageType: DamageType.CUT, attitude: Attitude.CALM, team: Team.GOOD},
-	"player": { 	symbol: '@', pronoun: "he", light: 7, brainTalk: true,
+*/	"player": { 	symbol: '@', pronoun: "he", light: 7, brainTalk: true,
 					brain: Brain.USER, brainOpensDoors: true, picksup: true, img: "dc-mon/human.png",
 					level: 1, power: null, regenerate: 0.03, damageType: DamageType.CUT, sightDistance: MaxSightDistance,
 					attitude: Attitude.CALM, team: Team.GOOD, neverPick: true }
