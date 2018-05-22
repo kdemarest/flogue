@@ -86,6 +86,27 @@ PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityL
 	this.light = this.rechargeLeft ? 0 : 4;
 }
 
+PlaceList.graveYard = {
+	map:
+`
+..M.M...B.MMM
+.Bs....M..s.M
+.M..B.M...BM.
+.sB.xxxxx.M..
+.MM.x*s*x.Bs.
+.B..xFS.+....
+.sM.x*s.x.M..
+BM..xxxxx...M
+..B.MM...M...
+..M.s..sB..M.
+M...B..M.....
+`,
+	flags: { rotate: true },
+	symbols: {
+		x: "wall",
+		M: "mist"
+	}
+}
 
 PlaceList.circle = {
 	map:
@@ -101,7 +122,7 @@ PlaceList.circle = {
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: function() { return pick(['pit','fire','water','mist','mud','forcefield']); }
+		x: function() { return pick(['pit','fire','lava','water','mist','mud','forcefield']); }
 	}
 }
 
@@ -169,27 +190,6 @@ xxxxx..
 	}
 }
 
-PlaceList.graveYard = {
-	map:
-`
-..M.M...B.MMM
-.Bs....M..s.M
-.M..B.M...BM.
-.sB.xxxxx.M..
-.MM.x*s*x.Bs.
-.B..xFS.+....
-.sM.x*s.x.M..
-BM..xxxxx...M
-..B.MM...M...
-..M.s..sB..M.
-M...B..M.....
-`,
-	flags: { rotate: true },
-	symbols: {
-		x: "wall",
-		M: "mist"
-	}
-}
 PlaceList.swamp = {
 	map:
 `
@@ -226,6 +226,64 @@ xx.e.x
 		x: "wall"
 	}
 }
+PlaceList.demonNest = {
+	map:
+`
+
+LffLf
+fiDff
+fLiDL
+LDiff
+fLffL
+`,
+	flags: { rotate: true },
+	symbols: {
+		L: "lava",
+		f: "fire"
+	}
+}
+PlaceList.balgursChamber = {
+	map:
+`
+###########
+#LLDDDDD..#
+#fL.DDD.i.#
+#.f..a..f.#
+#.Li..f...#
+#L......i.#
+#.i.f...f.#
+#..f...f..#
+#ffi.fLi.L#
+#fL.....LL#
+#####|#####
+`,
+	flags: { rotate: true },
+	symbols: {
+		L: "lava",
+		f: "fire"
+	}
+}
+/*PlaceList.altar = {
+	map:
+`
+..M.M...B.MMM
+.Bs....M..s.M
+.M..B.M...BM.
+.sB.xxxxx.M..
+.MM.x*s*x.Bs.
+.B..xFS.+....
+.sM.x*s.x.M..
+BM..xxxxx...M
+..B.MM...M...
+..M.s..sB..M.
+M...B..M.....
+`,
+	flags: { rotate: true },
+	symbols: {
+		x: "wall",
+		M: "mist"
+	}
+}*/
 
 
 	// Export the placelist.

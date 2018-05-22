@@ -135,8 +135,9 @@ class Area {
 			dim: sideDimension,
 			placeDensity: 0.2,
 			floorDensity: Math.rand(0.40,0.70),
-			monsterDensity: 0.01,
-			itemDensity: level==1 ? 0.20 : 0.03
+			monsterDensity: 0.01, //Monster Density
+			itemDensity: level==1 ? 0.20 : 0.03 //Item Density
+
 		};
 
 		let self = this;
