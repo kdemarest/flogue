@@ -34,6 +34,15 @@ class SimpleMap {
 	pickPos(xa,ya,xb,yb) {
 		return [Math.randInt(0+xa,this.xLen-xb),Math.randInt(0+ya,this.yLen-yb)];
 	}
+	pickPosBy(xa,ya,xb,yb,fn) {
+		let x;
+		let y;
+		do {
+			x = Math.randInt(0+xa,this.xLen-xb)
+			y = Math.randInt(0+ya,this.yLen-yb);
+		} while( !fn(x,y,this.tileTypeGet(x,y)) );
+		return [x,y];
+	}
 
 	// Rotate in 90 degree increments clockwise. 0=none, 1=90, 2=180, 3=270
 	rotate(cw) {
@@ -127,9 +136,8 @@ class SimpleMap {
 		}
 		let symbol = this.tileSymbolGet(x,y);
 		if( SymbolToType[symbol].isItemType ) {
-			debugger;
-			// This should never happen anymore. Instead we need to use an ItemFinder for this...
-			// Or start caching an item quick lookup.
+			// WARNING! This only happens when you are processing the map to
+			// extract entities!!
 			let f = new ItemFinder(this.itemList).at(x,y);
 			if( f.count ) {
 				return f.first;
@@ -151,6 +159,21 @@ class Map extends SimpleMap {
 		this.actionCount = 0;
 		this.itemList = itemList;
 	}
+	itemCreateByType(x,y,type,inject,presets) {
+		if( x===false ) {
+			console.log("Picking random location for "+type.typeId);
+			let pos = this.pickPosBy(0,0,0,0,(x,y,type)=>type.isFloor);
+			x=pos[0];
+			y=pos[1];
+		}
+		let item = new Item( this, type, { x:x, y:y }, inject, presets );
+		this.itemList.push(item);
+		return item;
+	}
+	itemCreateByTypeId(x,y,typeId,inject,presets) {
+		return this.itemCreateByType(x,y,ItemTypeList[typeId],inject,presets);
+	}
+
 	_itemRemove(item) {
 		if( !this.itemList.includes(item) ) {
 			debuger;

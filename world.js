@@ -24,7 +24,7 @@ class World {
 	setPending(gate) {
 		if( gate && (!gate.toAreaId || !this.areaList[gate.toAreaId]) ) {
 			let toArea = this.createArea(gate.toAreaId,gate.gateDir);
-			let gate2 = toArea.getGate(gate.gateInverse);
+			let gate2 = toArea.getUnusedGate(gate.gateInverse);
 			gate.toAreaId = toArea.id;
 			gate.toGateId = gate2.id;
 			gate2.toAreaId = this.area.id;

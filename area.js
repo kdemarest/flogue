@@ -112,9 +112,9 @@ class AreaBuilder {
 
 	populate(map,density,makeFn) {
 		map.traverse( (x,y) => {
-			let symbol = map.tileSymbolGet(x,y);
-			if( symbol == TileTypeList.floor.symbol && Math.rand(0,1)<density ) {
-				makeFn(x,y,null);
+			let type = map.tileTypeGet(x,y);
+			if( type.isFloor && Math.rand(0,1)<density ) {
+				makeFn(x,y);
 			}
 		});
 	}
@@ -157,18 +157,18 @@ class AreaBuilder {
 			let place = Object.assign( {}, pickPlaceFn() );
 			console.log("Trying place "+place.id);
 			this.preparePlaceForInjection(place);
-			let fitReps = 300;
+			let fitReps = 100;
 			let x,y;
 			do {
 				[x,y] = map.pickPos(0,0,place.map.xLen,place.map.yLen);
-				console.log('('+x+','+y+')');
+				//console.log('('+x+','+y+')');
 			} while( !map.fit(x,y,place.map) && --fitReps );
 			if( fitReps ) {
 				map.inject(x,y,place.map,function(x,y,symbol) {
-					let typeId = SymbolToType[symbol];
-					if( !typeId ) debugger;
-					if( place.onEntityCreate && place.onEntityCreate[typeId] ) {
-						entityInject[''+x+','+y] = place.onEntityCreate[typeId];
+					let type = SymbolToType[symbol];
+					if( !type ) debugger;
+					if( place.onEntityCreate && place.onEntityCreate[type.typeId] ) {
+						entityInject[''+x+','+y] = place.onEntityCreate[type.typeId];
 					}
 				});
 			}
@@ -242,16 +242,20 @@ class Area {
 			let entityType = picker.pick(picker.monsterTable);
 			self.entityList.push( new Entity( self.map, self.entityList, entityType, { x:x, y:y } ) );
 		}
-		function makeItem(x,y,type,inject) {
-			if( type && type.isRandom ) {
-				type = null;
+		function makeItem(x,y,type,inject,presets) {
+			if( !type || type.isRandom ) {
+				let obj = picker.pick(picker.itemTable,type ? type.typeId : null);
+				if( obj !== false ) {
+					type = obj.item;
+					presets = obj.presets;
+				}
 			}
-			let obj = picker.pick(picker.itemTable,type ? type.typeId : null);
-			if( obj === false ) {
-				obj = { item: type };
+
+			if( self.map.tileTypeGet(x,y).typeId === 'wall' ) {
+				debugger;
 			}
-			let item = new Item( self.map, obj.item, { x:x, y:y }, inject, obj.presets );
-			self.map.itemList.push( item );
+			let item = self.map.itemCreateByType(x,y,type,inject,presets);
+			console.log( item.name+' created at ('+x+','+y+') on '+self.map.tileTypeGet(x,y).typeId );
 			if( item.gateDir !== undefined ) {
 				self.gateList.push(item);
 			}
@@ -269,14 +273,13 @@ class Area {
 		this.entityList = [];
 		this.gateList = [];
 
-		this.builder.populate( this.map, style.monsterDensity, makeMonster );
-		this.builder.populate( this.map, style.itemDensity, makeItem );
+		//this.builder.populate( this.map, style.monsterDensity, makeMonster );
+		//this.builder.populate( this.map, style.itemDensity, makeItem );
 		this.builder.extractEntitiesFromMap(this.map,this.entityList,this.gateList,entityInject,makeItem);
 		return this;
 	}
-	getGate(gateId,onlyUnused) {
+	getUnusedGate(gateId,onlyUnused) {
 		let g = this.gateList.filter( g => g.typeId==gateId && (!onlyUnused || !g.toAreaId) );
-		if( !g.length ) debugger;
-		return g[0];
+		return !g.length ? null : g[0];
 	}
 }

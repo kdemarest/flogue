@@ -17,7 +17,7 @@ class Item {
 		if( owner && owner.isMonsterType ) {
 			inits.ownerOfRecord = owner;
 		}
-		Object.assign( this, itemType, inject, presets||{}, inits );
+		Object.assign( this, itemType, inject||{}, presets||{}, inits );
 		if( this.qualities && !this.quality ) {
 			this.quality = pick(this.qualities);
 		}
@@ -34,6 +34,10 @@ class Item {
 		merge(this,this.material);
 		merge(this,this.variety);
 		this.armor = this.calcArmor();
+
+		if( this.x !== position.x || this.y !== position.y ) {
+			debugger;
+		}
 
 		let self = this;
 		this.name = this.name || this.namePattern.replace(/{(\w+)}/g,function(whole,key) {
