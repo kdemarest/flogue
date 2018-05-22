@@ -39,6 +39,9 @@ class MiniMap {
 				if( x==observer.x && y==observer.y ) {
 					entity = StickerList.observerProxy;
 				}
+				if( entity.gateDir !== undefined ) {
+					entity = StickerList.gateProxy;
+				}
 				let imgGet = this.imageRepo.imgGet[entity.typeId];
 				if( imgGet ) {
 					let imgPath = imgGet(entity);

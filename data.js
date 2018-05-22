@@ -69,6 +69,7 @@ function fab(type,typeId,isWhat) {
 const StickerList = {
 	wallProxy: { img: "spells/air/static_discharge.png" },
 	observerProxy: { img: "gems/Gem Type2 Purple.png" },
+	gateProxy: { img: "gems/Gem Type2 Purple.png" },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { symbol: '?', img: "spells/enchantment/invisibility.png" },
 	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
