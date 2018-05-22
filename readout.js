@@ -201,13 +201,13 @@ class Readout {
 			let n = this.inventorySelector.indexOf(keyPressed);
 			if( n>=0 && n<this.inventory.count ) {
 				this.hideInventory();
-				this.commandItem = this.inventory.all[n];
+				this.commandItem = this.inventory.all[n];				
 				if( this.command == Command.QUAFF ) {
 					return this.enactCommand(observer);
 				}
 				if( this.command == Command.INVENTORY ) {
-					if( this.commandItem.slot ) {
-						this.command = Command.USE;
+					if( this.commandItem.autoCommand ) {
+						this.command = this.commandItem.autoCommand;
 						return this.enactCommand(observer);
 					}
 				}

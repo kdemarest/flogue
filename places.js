@@ -90,13 +90,14 @@ PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityL
 PlaceList.circle = {
 	map:
 `
-..xxx..
-.xxxxx.
-xx...xx
-xx.....
-xx...xx
-.xxxxx.
-..xxx..
+.........
+...xxx...
+..xxxxx..
+.xx...xx.
+.xx......
+.xx...xx.
+..xxxxx..
+...xxx...
 `,
 	flags: { rotate: true },
 	symbols: {

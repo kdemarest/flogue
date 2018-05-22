@@ -1,17 +1,25 @@
-class AreaBuilder {
+class Picker {
 	constructor(level) {
 		this.level = level;
 	}
 
-	buildTables() {
-		this.monster = [];
-		this.item = [];
-
-		function add(count,typeId) {
-			while( count-- ) {
-				table.push(typeId);
+	buildPlaceTable() {
+		let placeTable = [];
+		for( let placeId in PlaceSourceList ) {
+			let p = PlaceSourceList[placeId];
+			if( p.level > this.level || p.neverPick ) {
+				continue;
 			}
+			let placeLevel = p.level || this.level;
+			let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(placeLevel,this.level) * 100000, 1, 100000));
+			chance *= (p.rarity || 1);
+			placeTable.push(chance,p);
 		}
+		return placeTable;
+	}
+
+	buildMonsterTable() {
+		let monsterTable = [];
 		for( let typeId in MonsterTypeList ) {
 			let m = MonsterTypeList[typeId];
 			if( m.level > this.level || m.neverPick ) {
@@ -19,12 +27,17 @@ class AreaBuilder {
 			}
 			let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(m.level,this.level) * 100000, 1, 100000));
 			chance *= (m.rarity || 1);
-			this.monster.push(chance,m);
+			monsterTable.push(chance,m);
 		}
+		return monsterTable;
+	}
+
+	buildItemTable() {
+		let itemTable = [];
 
 		let one = { nothing: { skip:true, level:0 } };
 		Object.each(ItemTypeList, item => {
-			let startIndex = this.item.length;
+			let startIndex = itemTable.length;
 			let chanceTotal = 0;
 			Object.each( item.varieties || one, v => {
 				Object.each( item.materials || one, m => {
@@ -42,7 +55,7 @@ class AreaBuilder {
 							if( !m.skip ) obj.presets.material = m;
 							if( !q.skip ) obj.presets.quality = q;
 							if( !e.skip ) obj.presets.effectType = e;
-							this.item.push(chance,obj);
+							itemTable.push(chance,obj);
 						});
 					});
 				});
@@ -51,15 +64,15 @@ class AreaBuilder {
 			if( chanceTotal ) {
 				let ratio = (100000 / chanceTotal) * (item.rarity||1);
 				console.log(item.typeId+' balanced by '+ratio);
-				for( let i=startIndex ; i<this.item.length ; i+=2 ) {
-					this.item[i] = Math.clamp(Math.floor(this.item[i]*ratio),1,100000);
+				for( let i=startIndex ; i<itemTable.length ; i+=2 ) {
+					itemTable[i] = Math.clamp(Math.floor(itemTable[i]*ratio),1,100000);
 				}
 			}
 		});
+		return itemTable;
 	}
 
-	pick(tableName,typeId) {
-		let table = this[tableName];
+	pick(table,typeId) {
 		let total = 0;
 		for( let i=0 ; i<table.length ; i += 2 ) {
 			if( !typeId || table[i+1].typeId == typeId ) {
@@ -82,6 +95,14 @@ class AreaBuilder {
 		}
 
 		return table[i+1];
+	}
+
+
+}
+
+class AreaBuilder {
+	constructor(picker) {
+		this.picker = picker;
 	}
 
 	buildMap(style) {
@@ -129,11 +150,11 @@ class AreaBuilder {
 		}
 	}
 
-	injectPlaces(map,numPlaces) {
+	injectPlaces(map,numPlaces,pickPlaceFn) {
 		let entityInject = {};
 		let placeReps = numPlaces;
 		while( placeReps-- ) {
-			let place = Object.assign( {}, pick(PlaceSourceList) );
+			let place = Object.assign( {}, pickPlaceFn() );
 			console.log("Trying place "+place.id);
 			this.preparePlaceForInjection(place);
 			let fitReps = 300;
@@ -196,8 +217,13 @@ class Area {
 		this.id = areaId;
 		this.level = level;
 		this.mapMemory = [];
-		this.builder = new AreaBuilder(level);
-		this.builder.buildTables();
+
+		let picker = new Picker(level);
+		picker.monsterTable = picker.buildMonsterTable();
+		picker.itemTable = picker.buildItemTable();
+		picker.placeTable = picker.buildPlaceTable();
+		this.builder = new AreaBuilder(picker);
+
 		let sideDimension = Math.randInt(40,150);
 		//let tileRaw = loadLevel('test');
 
@@ -213,14 +239,14 @@ class Area {
 
 		let self = this;
 		function makeMonster(x,y) {
-			let entityType = self.builder.pick('monster');
+			let entityType = picker.pick(picker.monsterTable);
 			self.entityList.push( new Entity( self.map, self.entityList, entityType, { x:x, y:y } ) );
 		}
 		function makeItem(x,y,type,inject) {
 			if( type && type.isRandom ) {
 				type = null;
 			}
-			let obj = self.builder.pick('item',type ? type.typeId : null);
+			let obj = picker.pick(picker.itemTable,type ? type.typeId : null);
 			if( obj === false ) {
 				obj = { item: type };
 			}
@@ -230,13 +256,16 @@ class Area {
 				self.gateList.push(item);
 			}
 		}
+		function pickPlace() {
+			return picker.pick(picker.placeTable);
+		}
 
-		let tileRaw = this.builder.buildMap(style);
+		let tileRaw = loadLevel(areaId) || this.builder.buildMap(style);
 		this.map = new Map(tileRaw,[]);
 		this.map.level = level;
 
 		let numPlacesToInject = Math.floor(sideDimension/1);
-		let entityInject = this.builder.injectPlaces(this.map,numPlacesToInject);
+		let entityInject = this.builder.injectPlaces(this.map,numPlacesToInject,pickPlace);
 		this.entityList = [];
 		this.gateList = [];
 
@@ -245,8 +274,8 @@ class Area {
 		this.builder.extractEntitiesFromMap(this.map,this.entityList,this.gateList,entityInject,makeItem);
 		return this;
 	}
-	getGate(gateDir,onlyUnused) {
-		let g = this.gateList.filter( g => g.gateDir==gateDir && (!onlyUnused || !g.toAreaId) );
+	getGate(gateId,onlyUnused) {
+		let g = this.gateList.filter( g => g.typeId==gateId && (!onlyUnused || !g.toAreaId) );
 		if( !g.length ) debugger;
 		return g[0];
 	}

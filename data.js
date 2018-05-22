@@ -3,7 +3,7 @@
 // WARNING: The strings for directions MUST remain the same for commandToDirection() to work.
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
 				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", THROW: "throw", LOSETURN: "lose turn", PRAY: "pray",
-				ATTACK: "attack", USE: "use",
+				ATTACK: "attack", USE: "use", TEST: "test",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit" };
 const Direction = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
 const DirectionAdd = [
@@ -183,7 +183,7 @@ let SayStatList = {
 
 
 
-const TileTypeDefaults = { mayWalk: false, mayFly: false, opacity: 0, isStairs: false, 
+const TileTypeDefaults = { mayWalk: false, mayFly: false, opacity: 0,
 							damage: '', damageType: DamageType.BLUNT, img: null };
 const TileTypeList = {
 	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", ivar: 9, isFloor: true },
@@ -366,17 +366,19 @@ const NulImg = { img: '' };
 
 const ItemTypeList = {
 	"random":	{ symbol: '*', isRandom: 1, mayPickup: false, neverPick: true },
-	"stairsDown": { symbol: '>', name: "stairs down", gateDir: 1, mayPickup: false, neverPick: true, img: "dc-dngn/gateways/stone_stairs_down.png" },
-	"stairsUp":   { symbol: '<', name: "stairs up", gateDir: -1, mayPickup: false, neverPick: true, img: "dc-dngn/gateways/stone_stairs_up.png" },
-	"gateway":    { symbol: 'Ώ', name: "gateway", gateDir: 0, mayPickup: false, neverPick: true, img: "dc-dngn/gateways/dngn_enter_dis.png" },
+	"stairsDown": { symbol: '>', name: "stairs down", gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, neverPick: true, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
+	"stairsUp":   { symbol: '<', name: "stairs up", gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, neverPick: true, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
+	"gateway":    { symbol: 'Ώ', name: "gateway", gateDir: 0, gateInverse: 'gateway', mayPickup: false, neverPick: true, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
+	"portal":     { symbol: '𝞟', name: "portal", gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
 
 	"gold": 	{ symbol: '$', namePattern: '* gold', effect: false, 
 				rarity: 2.00, img: "item/misc/gold_pile.png" },
 	"altar":    { symbol: 'A', mayWalk: false, mayFly: false, name: "golden altar", mayPickup: false, light: 4, glow:true,
 				rarity: 0.10, rechargeTime: 12,
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
+	"skull":    { symbol: 'X', namePattern: "remains of a {usedToBe}", img: 'UNUSED/spells/components/skull.png', neverPick: true },
 	"potion":   { symbol: '¡', namePattern: 'potion of {effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
-				rarity: 3.00,
+				rarity: 3.00, autoCommand: Command.QUAFF,
 				effectChoices: PotionEffectChoices, mayThrow: true, destroyOnLastCharge: true,
 				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect.typeId]||NulImg).img || "emerald")+".png", imgChoices: ImgPotion },
 	"spell":    { symbol: 'ᵴ', namePattern: 'spell of {effect}', rechargeTime: 3, effectChoices: SpellEffectChoices,
@@ -389,26 +391,26 @@ const ItemTypeList = {
 				rarity: 1.00,
 				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5 },
 	"weapon": 	{ symbol: '†', namePattern: '{material} {variety} of {effect}  [{damage} {damageType}]', materials: WeaponMaterialList, varieties: WeaponList, effectChoices: WeaponEffectChoices, slot: Slot.WEAPON, isWeapon: true,
-				rarity: 1.00,
+				rarity: 1.00, autoCommand: Command.USE,
 				useVerb: 'weild',
 				img: "item/weapon/dagger.png" },
 	"armor": 	{ symbol: '&', namePattern: "{material} {variety} armor of {effect} [{armor}]", materials: ArmorMaterialList, varieties: ArmorList, effectChoices: ArmorEffectChoices, slot: Slot.ARMOR, isArmor: true,
-				rarity: 1.00,
+				rarity: 1.00, autoCommand: Command.USE,
 				armorMultiplier: 0.75,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "player/body/armor_mummy.png" },
 	"helm": 	{ symbol: '[', namePattern: "{material} {variety} helm of {effect} [{armor}]", materials: ArmorMaterialList, varieties: ArmorList, effectChoices: ArmorEffectChoices, slot: Slot.HEAD, isHelm: true,
-				rarity: 0.50,
+				rarity: 0.50, autoCommand: Command.USE,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/headgear/helmet2_etched.png" },
 	"boots": 	{ symbol: 'Ⓑ', namePattern: "{material} {variety} boots of {effect} [{armor}]", materials: ArmorMaterialList, varieties: ArmorList, effectChoices: BootsEffectChoices, slot: Slot.FEET, isBoots: true,
-				rarity: 0.50,
+				rarity: 0.50, autoCommand: Command.USE,
 				armorMultiplier: 0.10,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/boots2_jackboots.png" },
 	"ring": 	{ symbol: '=', namePattern: "{material} {variety} ring of {effect}", materials: RingMaterialList, varieties: RingList, effectChoices: RingEffectChoices, slot: Slot.LEFTHAND, isRing: true,
-				rarity: 0.05,
+				rarity: 0.05, autoCommand: Command.USE,
 				useVerb: 'wear', triggerOnUse: true, effectOverride: { duration: true },
 				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList },
 };
@@ -424,6 +426,7 @@ const MonsterTypeDefaults = {
 					damage: '1d1', damageType: DamageType.BLUNT, personalEnemy: '',
 					invisible: false, inaudible: false, blind: false, seeInvisible: false, sightDistance: 6, observeDistantEvents: false,
 					symbol: '?', mayWalk: false, mayFly: false,
+					deadBody: 'skull',
 					brain: Brain.AI, brainFlee: false, brainPet: false, brainOpensDoors: false, brainTalk: false,
 					attitude: Attitude.AGGRESSIVE, team: Team.EVIL
 				};

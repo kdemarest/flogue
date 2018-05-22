@@ -61,7 +61,7 @@ class SimpleMap {
 	}
 	fit(px,py,placeMap) {
 		if( px<0 || py<0 || px+placeMap.xLen>this.xLen || py+placeMap.yLen>this.yLen ) {
-			debugger;
+			return false;
 		}
 		let floor = TileTypeList.floor.symbol;
 		let wall = TileTypeList.wall.symbol;

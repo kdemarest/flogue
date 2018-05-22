@@ -159,7 +159,7 @@ function main(levelName) {
 			render(player || spectator);
 		}
 		else {
-			player.command = KeyToCommand[''+e.keyCode] !== undefined ? KeyToCommand[''+e.keyCode] : Command.NONE;
+			player.command = KeyToCommand[''+e.key] !== undefined ? KeyToCommand[''+e.key] : Command.NONE;
 
 			let timePass = readout.evalCommand(player,e,player.command);
 			if( timePass && player.command !== Command.NONE ) {
@@ -205,14 +205,15 @@ function main(levelName) {
 		calcVis: () => calcVis(map,spectator.x,spectator.y,MaxSightDistance,false,spectator.vis)
 	};
 
-	let area = world.createArea(0);
+	let area = world.createArea(null,0);
 	world.gateTo(area.id);
 	let map = area.map;
 	let entityList = area.entityList;
 	let player = playerFind(entityList);
 	if( !player ) {
-		let x = area.getGate(-1).x;
-		let y = area.getGate(-1).y;
+		let gate = area.getGate('stairsUp');
+		let x = gate.x;
+		let y = gate.y;
 		player = new Entity( map, entityList, MonsterTypeList.player, { x:x, y:y }, null, startingLevel );
 		entityList.unshift( player );
 	}
@@ -223,7 +224,8 @@ function main(levelName) {
 			return;
 		}
 		clearInterval(handle);
-		document.addEventListener( "keydown", onPlayerKey, false );
+
+		$(document).keydown( onPlayerKey );
 
 		render(player);
 		tell([player,null,"Welcome to flogue! Use the arrow keys to move, and '.' to wait."]);
@@ -237,9 +239,9 @@ function main(levelName) {
 	// Ǿgidᵬje  AB*? ᵮ⍨|:░ ¡$
 
 	let level = {
-		"test":
+		"oldtest":
 			"############\n"+
-			"#          #\n"+
+			"#   Ώ      #\n"+
 			"#          #\n"+
 			"#<    h    #\n"+
 			"#          #\n"+
@@ -289,7 +291,7 @@ function main(levelName) {
 		"test":
 			"##########################################\n"+
 			"# <                                     Ώ#\n"+
-			"#  @                                     #\n"+
+			"#                                        #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+
@@ -333,35 +335,36 @@ function main(levelName) {
 
 	};
 	window.loadLevel = function(levelName) {
-		return level[levelName] ? level[levelName] : level["real"];
+		return level[levelName];
 	}
 })();
 
 
 function loadKeyMapping(name) {
 	return {
-		38: Command.N,
-		37: Command.W,
-		40: Command.S,
-		39: Command.E,
-		74: Command.S,
-		85: Command.NE,
-		76: Command.E,
-		78: Command.SE,
-		75: Command.N,
-		66: Command.SW,
-		72: Command.W,
-		89: Command.NW,
-		73: Command.INVENTORY,
-		81: Command.QUAFF,
-		84: Command.THROW,
-		67: Command.CAST,
-		112: Command.CAST1,
-		113: Command.CAST2,
-		114: Command.CAST3,
-		115: Command.CAST4,
-		116: Command.CAST5,
-		190: Command.WAIT
+		ArrowUp: Command.N,
+		ArrowLeft: Command.W,
+		ArrowDown: Command.S,
+		ArrowRight: Command.E,
+		k: Command.N,
+		u: Command.NE,
+		l: Command.E,
+		n: Command.SE,
+		j: Command.S,
+		b: Command.SW,
+		h: Command.W,
+		y: Command.NW,
+		T: Command.TEST,
+		i: Command.INVENTORY,
+		q: Command.QUAFF,
+		t: Command.THROW,
+		c: Command.CAST,
+		F1: Command.CAST1,
+		F2: Command.CAST2,
+		F3: Command.CAST3,
+		F4: Command.CAST4,
+		F4: Command.CAST5,
+		'.': Command.WAIT
 	};
 }
 
