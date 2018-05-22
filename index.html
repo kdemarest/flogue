@@ -211,8 +211,9 @@ function main(levelName) {
 	let entityList = area.entityList;
 	let player = playerFind(entityList);
 	if( !player ) {
-		let x = area.getGate(-1).x;
-		let y = area.getGate(-1).y;
+		let gate = area.getGate('stairsUp');
+		let x = gate.x;
+		let y = gate.y;
 		player = new Entity( map, entityList, MonsterTypeList.player, { x:x, y:y }, null, startingLevel );
 		entityList.unshift( player );
 	}

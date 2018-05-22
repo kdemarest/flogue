@@ -73,9 +73,6 @@ class Entity {
 		if( this.removed ) {
 			debugger;
 		}
-		if( this.isVictorious ) {
-			return;
-		}
 		if( this.deadBody ) {
 			let type = ItemTypeList[this.deadBody];
 			if( type ) {
@@ -88,7 +85,7 @@ class Entity {
 	}
 
 	isDead() {
-		return this.removed || this.isVictorious || this.health <= 0;
+		return this.removed || this.health <= 0;
 	}
 	isAlive() {
 		return !this.isDead();

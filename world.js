@@ -24,7 +24,7 @@ class World {
 	setPending(gate) {
 		if( gate && (!gate.toAreaId || !this.areaList[gate.toAreaId]) ) {
 			let toArea = this.createArea(gate.toAreaId,gate.gateDir);
-			let gate2 = toArea.getGate(gate.gateDir===undefined ? 0 : -gate.gateDir);
+			let gate2 = toArea.getGate(gate.gateInverse);
 			gate.toAreaId = toArea.id;
 			gate.toGateId = gate2.id;
 			gate2.toAreaId = this.area.id;
@@ -60,7 +60,7 @@ class World {
 			return;
 		}
 		this.pending.gate = null;
-		
+
 		let player = playerFind(entityList);
 		tell(mSubject,player,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
 
