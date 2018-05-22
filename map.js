@@ -80,8 +80,8 @@ class SimpleMap {
 				let pSym = placeMap.tileSymbolGet(x,y);
 				if( pSym !== TILE_UNKNOWN ) {
 					let mSym = this.tileSymbolGet(px+x,py+y);
-					if( mSym == floor && pSym == wall )
-						return false;
+//					if( pSym == wall && mSym == floor )
+//						return false;
 					if( mSym == wall && pSym != wall )
 						return false;
 					if( mSym != floor )
@@ -160,6 +160,8 @@ class Map extends SimpleMap {
 		this.itemList = itemList;
 	}
 	itemCreateByType(x,y,type,inject,presets) {
+		if( type.isRandom ) debugger;
+
 		if( x===false ) {
 			console.log("Picking random location for "+type.typeId);
 			let pos = this.pickPosBy(0,0,0,0,(x,y,type)=>type.isFloor);

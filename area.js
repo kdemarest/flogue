@@ -155,15 +155,17 @@ class AreaBuilder {
 		let placeReps = numPlaces;
 		while( placeReps-- ) {
 			let place = Object.assign( {}, pickPlaceFn() );
-			console.log("Trying place "+place.id);
+			console.log("Trying to place "+place.id);
 			this.preparePlaceForInjection(place);
 			let fitReps = 100;
 			let x,y;
+			let clear;
 			do {
 				[x,y] = map.pickPos(0,0,place.map.xLen,place.map.yLen);
-				//console.log('('+x+','+y+')');
-			} while( !map.fit(x,y,place.map) && --fitReps );
-			if( fitReps ) {
+				clear = map.fit(x,y,place.map);
+			} while( !clear && --fitReps );
+			if( clear ) {
+				console.log('Placed at ('+x+','+y+')');
 				map.inject(x,y,place.map,function(x,y,symbol) {
 					let type = SymbolToType[symbol];
 					if( !type ) debugger;
@@ -232,9 +234,10 @@ class Area {
 			entrance: entrance,
 			level: level,
 			dim: sideDimension,
+			placeDensity: 0.2,
 			floorDensity: Math.rand(0.40,0.70),
 			monsterDensity: 0.01,
-			itemDensity: level==1 ? 0.20 : 0.01
+			itemDensity: level==1 ? 0.20 : 0.03
 		};
 
 		let self = this;
@@ -243,19 +246,23 @@ class Area {
 			self.entityList.push( new Entity( self.map, self.entityList, entityType, { x:x, y:y } ) );
 		}
 		function makeItem(x,y,type,inject,presets) {
-			if( !type || type.isRandom ) {
+			if( type && type.isRandom ) {
+				type = null;
+			}
+			if( !type ) {
 				let obj = picker.pick(picker.itemTable,type ? type.typeId : null);
-				if( obj !== false ) {
-					type = obj.item;
-					presets = obj.presets;
+				if( obj === false ) {
+					debugger;
 				}
+				type = obj.item;
+				presets = obj.presets;
 			}
 
 			if( self.map.tileTypeGet(x,y).typeId === 'wall' ) {
 				debugger;
 			}
 			let item = self.map.itemCreateByType(x,y,type,inject,presets);
-			console.log( item.name+' created at ('+x+','+y+') on '+self.map.tileTypeGet(x,y).typeId );
+			//console.log( item.name+' created at ('+x+','+y+') on '+self.map.tileTypeGet(x,y).typeId );
 			if( item.gateDir !== undefined ) {
 				self.gateList.push(item);
 			}
@@ -268,13 +275,13 @@ class Area {
 		this.map = new Map(tileRaw,[]);
 		this.map.level = level;
 
-		let numPlacesToInject = Math.floor(sideDimension/1);
+		let numPlacesToInject = Math.floor(Math.sqrt(this.map.xLen*this.map.yLen)*style.placeDensity);
 		let entityInject = this.builder.injectPlaces(this.map,numPlacesToInject,pickPlace);
 		this.entityList = [];
 		this.gateList = [];
 
-		//this.builder.populate( this.map, style.monsterDensity, makeMonster );
-		//this.builder.populate( this.map, style.itemDensity, makeItem );
+		this.builder.populate( this.map, style.monsterDensity, makeMonster );
+		this.builder.populate( this.map, style.itemDensity, makeItem );
 		this.builder.extractEntitiesFromMap(this.map,this.entityList,this.gateList,entityInject,makeItem);
 		return this;
 	}
