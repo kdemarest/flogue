@@ -211,7 +211,10 @@ function main(levelName) {
 	let entityList = area.entityList;
 	let player = playerFind(entityList);
 	if( !player ) {
-		let gate = area.getGate('stairsUp');
+		let gate = area.getUnusedGateByTypeId('stairsUp');
+		if( !gate ) {
+			gate = map.itemCreateByTypeId(false,false,'stairsUp');
+		}
 		let x = gate.x;
 		let y = gate.y;
 		player = new Entity( map, entityList, MonsterTypeList.player, { x:x, y:y }, null, startingLevel );
@@ -290,6 +293,9 @@ function main(levelName) {
 			'',
 		"test":
 			"##########################################\n"+
+			"#Ώ < >                                   #\n"+
+			"#  @                                     #\n"+
+			"#           h                            #\n"+
 			"# <                                     Ώ#\n"+
 			"#                                        #\n"+
 			"#                                        #\n"+

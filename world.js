@@ -22,13 +22,22 @@ class World {
 		return area;
 	}
 	setPending(gate) {
-		if( gate && (!gate.toAreaId || !this.areaList[gate.toAreaId]) ) {
-			let toArea = this.createArea(gate.toAreaId,gate.gateDir);
-			let gate2 = toArea.getGate(gate.gateInverse);
-			gate.toAreaId = toArea.id;
-			gate.toGateId = gate2.id;
-			gate2.toAreaId = this.area.id;
-			gate2.toGateId = gate.id;
+		let toArea = this.areaList[gate.toAreaId];
+		if( !toArea ) {
+			toArea = this.createArea(gate.toAreaId,gate.gateDir);
+		}
+
+		let gate2 = gate.toGateId ? toArea.getGetById(gate.toGateId) : toArea.getUnusedGateByTypeId(gate.gateInverse);
+		if( !gate2 ) {
+			gate2 = toArea.map.itemCreateByTypeId(false,false,gate.gateInverse);
+		}
+
+		gate.toAreaId = toArea.id;
+		gate.toGateId = gate2.id;
+		gate2.toAreaId = this.area.id;
+		gate2.toGateId = gate.id;
+		if( !gate.toAreaId || !gate.toGateId || !gate2.toAreaId || !gate2.toGateId ) {
+			debugger;
 		}
 		this.pending.gate = gate;
 	}

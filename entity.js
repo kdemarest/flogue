@@ -74,11 +74,7 @@ class Entity {
 			debugger;
 		}
 		if( this.deadBody ) {
-			let type = ItemTypeList[this.deadBody];
-			if( type ) {
-				let item = new Item( this.map, type, { x:this.x, y:this.y }, null, { usedToBe: this } );
-				this.map.itemList.push( item );
-			}
+			this.map.itemCreateByTypeId(this.x,this.y,this.deadBody,{ usedToBe: this } );
 		}
 		tell(mSubject,this,' ',mVerb,'die','!');
 		this.removed = true;
@@ -744,9 +740,8 @@ class Entity {
 				break;
 			}
 			case Command.TEST: {
-				let item = new Item( this.map, ItemTypeList.portal, { x:this.x, y:this.y }, null, { toAreaId: "test" } );
-				this.map.itemList.push(item);
-				world.setPending( item );
+				let gate = this.map.itemCreateByTypeId(this.x,this.y,'portal',{ toAreaId: "test" } );
+				world.setPending( gate );
 				break;
 			}
 			case Command.QUAFF: {

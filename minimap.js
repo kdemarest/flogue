@@ -42,9 +42,12 @@ class MiniMap {
 				if( entity.gateDir !== undefined ) {
 					entity = StickerList.gateProxy;
 				}
+				if( !entity ) debugger;
 				let imgGet = this.imageRepo.imgGet[entity.typeId];
+				if( !entity ) debugger;
 				if( imgGet ) {
 					let imgPath = imgGet(entity);
+					if( !entity ) debugger;
 					let resource = this.imageRepo.get(imgPath);
 					c.drawImage(resource.texture.baseTexture.source,x*this.scale,y*this.scale,this.scale,this.scale);
 				}
