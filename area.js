@@ -231,7 +231,7 @@ class Area {
 			}
 		}
 
-		let tileRaw = this.builder.buildMap(style);
+		let tileRaw = loadLevel(areaId) || this.builder.buildMap(style);
 		this.map = new Map(tileRaw,[]);
 		this.map.level = level;
 

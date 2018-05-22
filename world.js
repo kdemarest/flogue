@@ -3,10 +3,13 @@ class World {
 		this.areaList = {};
 		this.area = null;
 		this.startingLevel = startingLevel;
+		this.pending = {
+			gate: null
+		};
 	}
-	createArea(levelDelta=0) {
+	createArea(areaId,levelDelta=0) {
 		let level = this.area ? this.area.level+levelDelta : this.startingLevel;
-		let areaId = 'area.'+humanNameList.pop()+'.'+level;
+		areaId = areaId || 'area.'+humanNameList.pop()+'.'+level;
 		let entrance = this.area===null ? ItemTypeList.stairsUp : (levelDelta>0 ? ItemTypeList.stairsUp : (levelDelta<0 ? ItemTypeList.stairsDown : ItemTypeList.gateway));
 		let area = new Area(areaId,level,entrance);
 		this.areaList[areaId] = area;
@@ -18,8 +21,18 @@ class World {
 		this.area = area;
 		return area;
 	}
-
-	levelChange(map,entityList) {
+	setPending(gate) {
+		if( gate && (!gate.toAreaId || !this.areaList[gate.toAreaId]) ) {
+			let toArea = this.createArea(gate.toAreaId,gate.gateDir);
+			let gate2 = toArea.getGate(gate.gateDir===undefined ? 0 : -gate.gateDir);
+			gate.toAreaId = toArea.id;
+			gate.toGateId = gate2.id;
+			gate2.toAreaId = this.area.id;
+			gate2.toGateId = gate.id;
+		}
+		this.pending.gate = gate;
+	}
+	detectPlayerOnGate(map,entityList) {
 		let player = playerFind(entityList);
 
 		// checking the commandToDirection means the player just moved, and isn't just standing there.
@@ -33,25 +46,31 @@ class World {
 			return;
 		}
 		let gate = gateHere.first;
-
 		if( map.level == 1 && gate.gateDir<0 ) {
 			return;
 		}
-		let verb = (gate.gateDir<0 ? 'ascend' : (gate.gateDir>0 ? 'descend' : 'enter'));
-		tell(mSubject,player,' ',mVerb,verb,' ',mObject,gate);
+		this.setPending(gate)
+	}
 
-		if( !gate.toAreaId ) {
-			let toArea = this.createArea(gate.gateDir);
-			let gate2 = toArea.getGate(-gate.gateDir);
-			gate.toAreaId = toArea.id;
-			gate.toGateId = gate2.id;
-			gate2.toAreaId = this.area.id;
-			gate2.toGateId = gate.id;
+	levelChange(map,entityList) {
+		this.detectPlayerOnGate(map,entityList);
+
+		let gate = this.pending.gate;
+		if( !gate ) {
+			return;
 		}
+		this.pending.gate = null;
+		
+		let player = playerFind(entityList);
+		tell(mSubject,player,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
+
 		// WARNING! Someday we will need to push the DeedList that is NOT the player into the old area.
 		// and resurrect the new area's deed list.
 		let newArea = this.gateTo(gate.toAreaId);
-		player.gateTo(newArea,gate.toGateId);
+		let g = new ItemFinder(newArea.map.itemList).isId(gate.toGateId);
+		if( !g.first ) debugger;
+
+		player.gateTo(newArea,g.first.x,g.first.y);
 		tell(mSubject,player,' ',mVerb,'are',' now on level '+newArea.id)
 		return newArea;
 	}

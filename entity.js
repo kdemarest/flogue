@@ -55,14 +55,12 @@ class Entity {
 	isUser() {
 		return this.brain == Brain.USER;
 	}
-	gateTo(area,gateId) {
-		let g = new ItemFinder(area.map.itemList).isId(gateId);
-		if( !g.first ) debugger;
+	gateTo(area,x,y) {
 
 		// DANGER! Doing this while within a loop across the entityList will result in pain!
 		Array.filterInPlace( this.entityList, entity => entity.id!=this.id );
-		this.x = g.first.x;
-		this.y = g.first.y;
+		this.x = x;
+		this.y = y;
 		this.map = area.map;
 		this.entityList = area.entityList;
 		let fnName = this.isUser() ? 'unshift' : 'push';
@@ -77,6 +75,13 @@ class Entity {
 		}
 		if( this.isVictorious ) {
 			return;
+		}
+		if( this.deadBody ) {
+			let type = ItemTypeList[this.deadBody];
+			if( type ) {
+				let item = new Item( this.map, type, { x:this.x, y:this.y }, null, { usedToBe: this } );
+				this.map.itemList.push( item );
+			}
 		}
 		tell(mSubject,this,' ',mVerb,'die','!');
 		this.removed = true;
@@ -547,6 +552,9 @@ class Entity {
 	}
 
 	takePush(attacker,distance) {
+		if( attacker.isItemType ) {
+			attacker = attacker.ownerOfRecord || attacker;
+		}
 		let dx = Math.sign(this.x-attacker.x);
 		let dy = Math.sign(this.y-attacker.y);
 		if( dx==0 && dy==0 ) {
@@ -736,6 +744,12 @@ class Entity {
 				if( tileType.onTouch ) {
 					tileType.onTouch(this,adhoc(tileType,this.x,this.y));
 				}
+				break;
+			}
+			case Command.TEST: {
+				let item = new Item( this.map, ItemTypeList.portal, { x:this.x, y:this.y }, null, { toAreaId: "test" } );
+				this.map.itemList.push(item);
+				world.setPending( item );
 				break;
 			}
 			case Command.QUAFF: {
