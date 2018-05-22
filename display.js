@@ -7,7 +7,7 @@ function createDrawList(observer,map,entityList,asType) {
 	let vis = observer.calcVis();
 
 	function spillLight(px,py,x,y,light) {
-		let d2 = (MonsterTypeDefaults.sightDistance*2)+1;
+		let d2 = (displaySightDistance*2)+1;
 		if( light == 'glow' ) {
 			let fx = x+0;
 			let fy = y+0;
@@ -41,7 +41,7 @@ function createDrawList(observer,map,entityList,asType) {
 		}
 	}
 
-	let displaySightDistance = MonsterTypeDefaults.sightDistance;
+	let displaySightDistance = MaxSightDistance;
 
 	//let convert = { '#': '█' };
 	let py = observer.y;
@@ -94,6 +94,7 @@ function createDrawList(observer,map,entityList,asType) {
 	}
 
 	let visId = {};
+	let mapMemoryLight = 2;
 
 	// Now assign tile layers, and remember that [0] is the light level. Tiles
 	// that shine light will do so in this loop.
@@ -117,8 +118,15 @@ function createDrawList(observer,map,entityList,asType) {
 			}
 			if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
 				if( !visible ) {
-					a[ty][tx][0] = 0;		// debatable whether we should pretend there is zero light here.
-					a[ty][tx].length = 1;
+					a[ty][tx][0] = mapMemoryLight;
+					if( observer.mapMemory && observer.mapMemory[y] && observer.mapMemory[y][x] ) {
+
+						a[ty][tx][1] = observer.mapMemory[y][x];
+						a[ty][tx].length = 2;
+					}
+					else {
+						a[ty][tx].length = 1;
+					}
 				}
 				else {
 					let aa = a[ty][tx];
@@ -154,18 +162,13 @@ let tileDim = 32;
 function DefaultImgGet(self) {
 	return self.img;
 }
-class Display {
-	constructor(divId,sightDistance) {
-		this.image = {};
-		this.divId = divId;
-		this.sd = sightDistance;
-		this.d = ((sightDistance*2)+1);
-		this.tileWidth  = tileDim * this.d;
-		this.tileHeight = tileDim * this.d;
-		this.app = new PIXI.Application(this.tileWidth, this.tileHeight, {backgroundColor : 0x000000});
+class ImageRepo {
+	constructor(loader) {
 		this.imgGet = [];
 		this.ready = false;
-		document.getElementById(this.divId).appendChild(this.app.view);
+		this.loader = loader;
+	}
+	load() {
 		let imageList = [];
 		let exists = {};
 
@@ -198,6 +201,7 @@ class Display {
 		}
 
 		for( let sticker in StickerList ) {
+			this.imgGet[sticker] = StickerList[sticker].imgGet || DefaultImgGet;
 			add(StickerList[sticker].img);
 		}
 
@@ -206,13 +210,37 @@ class Display {
 			self.ready = true;
 		}
 
-		animationDeathCallback = function(sprite) {
-			self.app.stage.removeChild(sprite);
-		}
-
-		PIXI.loader
+		this.loader
 			.add(imageList)
 			.load(setup);
+
+	}
+	get(imgPath) {
+		return this.loader.resources['tiles/'+imgPath];
+	}
+}
+
+
+class Display {
+	constructor(divId,sightDistance,imageRepo) {
+		this.divId = divId;
+		this.sd = sightDistance;
+		this.d = ((sightDistance*2)+1);
+		this.tileWidth  = tileDim * this.d;
+		this.tileHeight = tileDim * this.d;
+		this.app = new PIXI.Application(this.tileWidth, this.tileHeight, {backgroundColor : 0x000000});
+		document.getElementById(this.divId).appendChild(this.app.view);
+
+		this.imageRepo = imageRepo;
+		this.imageRepo.load();
+
+		let self = this;
+		animationDeathCallback = function(sprite) {
+			if( !sprite ) {
+				return;
+			}
+			self.app.stage.removeChild(sprite);
+		}
 
 		this.app.ticker.add(function(delta) {
 			// but only if real time is not stopped.
@@ -230,10 +258,7 @@ class Display {
 		}
 
 		function make(x,y,entity,imgPath,light) {
-			if( !imgPath ) {
-				return;
-			}
-			let resource = PIXI.loader.resources['tiles/'+imgPath];
+			let resource = this.imageRepo.get(imgPath);
 			if( !resource ) {
 				return;
 			}
@@ -259,8 +284,8 @@ class Display {
 						entity.sprite = make.call(this,entity.xGet()-(observer.x-this.sd),entity.yGet()-(observer.y-this.sd),entity,entity.imgGet(entity),light);
 					}
 					else
-					if( this.imgGet[entity.typeId] ) {
-						let imgPath = this.imgGet[entity.typeId](entity);
+					if( this.imageRepo.imgGet[entity.typeId] ) {
+						let imgPath = this.imageRepo.imgGet[entity.typeId](entity);
 						make.call(this,x,y,entity,imgPath,entity.glow ? dHalf : light);
 					}
 					else {

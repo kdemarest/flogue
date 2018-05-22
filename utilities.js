@@ -53,6 +53,11 @@ function nop() {}
 		}
 		return array;
 	}
+	Object.each = function(obj,fn) {
+		for( let key in obj ) {
+			fn(obj[key]);
+		}
+	}
 	Object.filter = function(obj,fn) {
 		let result = {};
 		for( let key in obj ) {
@@ -94,6 +99,42 @@ function nop() {}
 			}
 		}
 		return '';
+	}
+
+	Math.chanceToAppearSimple = function(entityLevel,mapLevel) {
+		if( mapLevel < entityLevel ) {
+			return 0;
+		}
+		let span = 10;
+		let x = (entityLevel+span)-mapLevel;
+		let n = 1-Math.abs(x/span);
+		return Math.clamp( n, 0.1, 1.0 );
+	}
+
+	Math.chanceToAppearBell = function(entityLevel,mapLevel) {
+		if( mapLevel < entityLevel ) {
+			return 0;
+		}
+		let o = 0.65;
+		let u = 2.0;
+		let x = mapLevel - entityLevel;
+
+		// Creates a bell curve which is near 1.0 at five levels above 
+		let chance = 1.629308 * (1/(o*Math.sqrt(2*Math.PI))) * Math.exp( -( Math.pow((x/5)-u,2) / (2*o*o) ) );
+
+		return chance;
+	}
+
+	Math.chanceToAppearSigmoid = function(entityLevel,mapLevel) {
+		if( mapLevel < entityLevel ) {
+			return 0;
+		}
+		let x = mapLevel - entityLevel;
+
+		// Near 0 at delta 0, about 0.5 at delta 4, and 1.0 at delta 8 and beyond
+		let chance = 1 / ( 1+Math.exp(4-x) );
+
+		return chance;
 	}
 
 	window.Rules = new class {

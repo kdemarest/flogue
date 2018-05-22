@@ -2,11 +2,11 @@
 
 class Deed {
 	// Set duration = true for perpetual
-	constructor(cause,entity,duration,stat,op,value,onTick,onEnd,data) {
+	constructor(origin,entity,duration,stat,op,value,onTick,onEnd,data) {
 		if( entity[stat] === undefined ) {
 			debugger;
 		}
-		this.cause = cause;
+		this.origin = origin;
 		this.entity = entity;
 		this.stat = stat;
 		this.op = op;
@@ -27,7 +27,9 @@ class Deed {
 		}
 		if( this.op == 'add' ) {
 			if( typeof this.entity[this.stat] === 'string' ) {
-				this.entity[this.stat] = String.arAdd(this.entity[this.stat],this.value);
+				if( !String.arIncludes(this.entity[this.stat],this.value) ) {
+					this.entity[this.stat] = String.arAdd(this.entity[this.stat],this.value);
+				}
 			}
 			else {
 				this.entity[this.stat] += this.value;
@@ -74,14 +76,14 @@ let DeedManager = (new class {
 		this.handler = {};
 		this.deedList = [];
 	}
-	// If an item was involved, then the cause should be the item, and other functions must find the owner.
-	add(cause,entity,duration,stat,op,value,onTick,onEnd,data) {
+	// The origin should ALWAYS be an item, unless intrinsic to a monster.
+	add(origin,entity,duration,stat,op,value,onTick,onEnd,data) {
 		let handlerFn = this.handler[stat+'_'+op];
 		if( handlerFn ) {
-			handlerFn(cause,entity,value);
+			handlerFn(origin,entity,value);
 		}
 		else {
-			this.deedList.push( new Deed(cause,entity,duration,stat,op,value,onTick,onEnd,data) );
+			this.deedList.push( new Deed(origin,entity,duration,stat,op,value,onTick,onEnd,data) );
 		}
 	}
 	addHandler(stat,op,handlerFn) {
@@ -153,22 +155,28 @@ let deedEnd = function(fn) {
 	return DeedManager.end(fn);
 }
 
-let effectApply = function(cause,effect,target) {
+let effectApply = function(origin,effect,target) {
 	//Some effects will NOT start unless their requirements are met. EG, no invis if you're already invis.
-	if( effect.requires && !effect.requires(target) ) {
-		tell(mSubject,cause,' has no effect on ',mObject,target);
+	if( effect.requires && !effect.requires(target,effect) ) {
+		tell(mSubject,origin,' has no effect on ',mObject,target);
 		return false;
 	}
+	if( effect.op=='set' && (target.isImmune(effect.typeId) || target.isImmune(effect.value)) ) {
+		let subject = target.isImmune(effect.typeId) ? effect.typeId : effect.value;
+		tell(mSubject|mPossessive,origin,' '+subject+' has no effect on ',mObject,target);
+		return false;
+	}
+
 
 	if( target.isPosition ) {
 		if( !effect.onTargetPosition ) {
 			return false;
 		}
-		let map = target.map || cause.map || cause.owner.map;
+		let map = target.map || origin.map || origin.ownerOfRecord.map;
 		effect.onTargetPosition(map,target.x,target.y)
 		return true;
 	}
-	deedAdd(cause,target,rollDice(effect.duration),effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
+	deedAdd(origin,target,rollDice(effect.duration),effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
 	return true;
 }
 
@@ -188,15 +196,12 @@ let deedTell = function(entity,stat,oldValue,newValue ) {
 	tell(...content);
 }
 
-DeedManager.addHandler('health','add',function(cause,entity,value) {
-	entity.takeHealing(cause,value,cause.effect.healingType);
+DeedManager.addHandler('health','add',function(origin,entity,value) {
+	entity.takeHealing(origin,value,origin.effect.healingType);
 });
-DeedManager.addHandler('health','sub',function(cause,entity,value) {
-	entity.takeDamage(cause,value,cause.effect.damageType,cause.effect.onAttack);
+DeedManager.addHandler('health','sub',function(origin,entity,value) {
+	entity.takeDamage(origin,value,origin.effect.damageType,origin.effect.onAttack);
 });
-DeedManager.addHandler('position','push',function(cause,entity,value) {
-	while( cause.cause ) {
-		cause = cause.cause;
-	}
-	entity.takePush(cause,value);
+DeedManager.addHandler('position','push',function(origin,entity,value) {
+	entity.takePush(origin,value);
 });

@@ -1,10 +1,11 @@
 // READOUT
 
 class Readout {
-	constructor(spellDivId,infoDivId,inventoryDivId,worldOverlayAddFn,worldOverlayRemoveFn) {
+	constructor(spellDivId,infoDivId,inventoryDivId,imageRepo,worldOverlayAddFn,worldOverlayRemoveFn) {
 		this.spellDivId = spellDivId;
 		this.infoDivId = infoDivId;
 		this.inventoryDivId = inventoryDivId;
+		this.imageRepo = imageRepo;
 		this.worldOverlayAddFn = worldOverlayAddFn;
 		this.worldOverlayRemoveFn = worldOverlayRemoveFn;
 		this.lastHealth = [];
@@ -50,7 +51,12 @@ class Readout {
 			}
 		}
 		$('#'+this.infoDivId).empty();
-		let s = "Armor: "+entity.calcArmor()+"\n";
+		let s = "";
+		s += "Health: "+entity.health+" / "+entity.healthMax+"\n";
+		s += "Armor: "+entity.calcArmor()+"\n";
+		let weapon,damage,damageType;
+		[weapon,damage,damageType] = entity.calcWeapon();
+		s += "Damage: "+Math.floor(damage)+" "+damageType+"\n";
 		let conditionList = [];
 		test(entity.invisible,'invis');
 		test(entity.speed<1,'slow');
