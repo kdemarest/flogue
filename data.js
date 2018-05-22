@@ -187,6 +187,7 @@ const TileTypeDefaults = { mayWalk: false, mayFly: false, opacity: 0,
 							damage: '', damageType: DamageType.BLUNT, img: null };
 const TileTypeList = {
 	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", ivar: 9, isFloor: true },
+	"grass":      { symbol: ',', mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", ivar: 9, isFloor: true },
 	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", ivar: 8, isWall: true },
 	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", img: "dc-dngn/pit.png" },
 	"shaft":      { symbol: ';', mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", img: "dc-dngn/dngn_trap_shaft.png" },
@@ -224,7 +225,7 @@ const ImgPotion = {
 	slow: 			{ img: "silver" },
 	regeneration: 	{ img: "orange" },
 	flight: 		{ img: "brilliant_blue" },
-	healing: 		{ img: "ruby" },
+	healing: 		{ img: "pink" },
 	poison: 		{ img: "emerald" },
 	fire: 			{ img: "ruby" }, 
 	cold: 			{ img: "brilliant_blue" }, 
@@ -234,7 +235,7 @@ const ImgPotion = {
 	immunity: 		{ img: "white" },
 	vuln: 			{ img: "black" },
 	resistance: 	{ img: "yellow" },
-	shove: 			{ img: "pink" }
+	shove: 			{ img: "black" }
 };
 
 let FabList = [];
@@ -368,8 +369,8 @@ const ItemTypeList = {
 	"random":	{ symbol: '*', isRandom: 1, mayPickup: false, neverPick: true },
 	"stairsDown": { symbol: '>', name: "stairs down", gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, neverPick: true, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
 	"stairsUp":   { symbol: '<', name: "stairs up", gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, neverPick: true, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
-	"gateway":    { symbol: 'Ώ', name: "gateway", gateDir: 0, gateInverse: 'gateway', mayPickup: false, neverPick: true, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
-	"portal":     { symbol: '𝞟', name: "portal", gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
+	"gateway":    { symbol: '𝞟', name: "gateway", gateDir: 0, gateInverse: 'gateway', mayPickup: false, neverPick: true, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
+	"portal":     { symbol: 'Ώ', name: "portal", gateDir: 0, gateInverse: 'portal', mayPickup: false, neverPick: true, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
 
 	"gold": 	{ symbol: '$', namePattern: '* gold', effect: false, 
 				rarity: 2.00, img: "item/misc/gold_pile.png" },
@@ -443,13 +444,13 @@ let UndeadImmunity = [DamageType.CUT,DamageType.STAB,DamageType.COLD,DamageType.
 
 const MonsterTypeList = {
 /**/	"ogreKid": { 	symbol: 'Ǿ', pronoun: "*", img: "dc-mon/ogre.png", brainTalk: true, name: "ogre child",
-					level:  2, power: '10:10', damageType: DamageType.BLUNT, resist: DamageType.CUT, speed: 0.5 },
+					level:  2, power: '10:10', damageType: DamageType.BLUNT, resist: DamageType.CUT, attitude: Attitude.HESITANT, speed: 0.75 },
 /**/	"ogre": { 		symbol: 'Ȱ', pronoun: "*", img: "dc-mon/ogre.png", brainTalk: true,
 					level:  10, power: '10:10', damageType: DamageType.BLUNT, resist: DamageType.CUT+','+DamageType.STAB, speed: 0.5 },
-/**/	"goblin": { 	symbol: 'g', pronoun: "*", img: "dc-mon/goblin.png", brainTalk: true, isGoblin: true,
+/**/	"goblin": { 	symbol: 'g', pronoun: "*", picksup: true, img: "dc-mon/goblin.png", brainTalk: true, isGoblin: true,
 					level:  1, power: '3:10',  damageType: DamageType.CUT, packAnimal: true,
 					sayPrayer: 'Oh mighty Thagzog...' },
-	"goblinWar": { 	symbol: 'W', pronoun: "*", img: "dc-mon/goblin.png", brainTalk: true, isGoblin: true,
+	"goblinWar": { 	symbol: 'W', pronoun: "*", picksup: true, img: "dc-mon/goblin.png", brainTalk: true, isGoblin: true,
 					level:  12, power: '3:8',  damageType: DamageType.CUT, name: 'goblin warrior',
 					sayPrayer: 'Oh warrior Thagzog...' },
 	"goblinMut": { 	symbol: 'I', pronoun: "*", img: "dc-mon/goblin.png", brainTalk: true, isGoblin: true,
@@ -457,8 +458,8 @@ const MonsterTypeList = {
 					sayPrayer: 'Oh mutant Thagzog...' },
 	"demon": { 	symbol: 'D', pronoun: "it", img: "player/base/draconian_red_f.png", brainTalk: true,
 					level:  5, power: '3:5',  damageType: DamageType.FIRE, immune: DamageType.FIRE, sayPrayer: 'Hail Balgur, ruler of the deep!', packAnimal: true},
-	"Avatar of Balgur": { 	symbol: 'a', pronoun: "he", img: "dc-mon/hell_knight.png", brainTalk: true,
-					level:  1, power: '25:2',  damageType: DamageType.FIRE, immune: DamageType.FIRE, sayPrayer: 'I shall rule this planet!'},
+	"Avatar of Balgur": { 	symbol: 'a', pronoun: "he", picksup: true, img: "dc-mon/hell_knight.png", brainTalk: true,
+					level:  1, power: '25:2',  damageType: DamageType.FIRE, immune: DamageType.FIRE, sayPrayer: 'I shall rule this planet!', rarity: 0},
 
 /**/	"skeleton": { 	symbol: 's', pronoun: "it", img: "dc-mon/undead/skeletons/skeleton_humanoid_small.png",
 					level:  3, power: '2:10',  damageType: DamageType.CUT, immune: UndeadImmunity, vuln: DamageType.HOLY },
@@ -491,14 +492,13 @@ const MonsterTypeList = {
 	"rabbit": { 	symbol: 'r', pronoun: "it", img: "dc-mon/animals/sheep.png",
 					level: 1, power: '1:20',  damageType: DamageType.BITE, packAnimal: true,
 					attitude: Attitude.FEARFUL },
-/**/	"lunarOne": { 	symbol: 'l', pronoun: "*", img: "dc-mon/deep_elf_high_priest.png", brainTalk: true, name: "lunar one",
+/**/	"lunarOne": { 	symbol: 'l', pronoun: "*", picksup: true, img: "dc-mon/deep_elf_high_priest.png", brainTalk: true, name: "lunar one",
 					level:  12, power: '3:10', damageType: DamageType.COLD, immune: DamageType.COLD,
 					attitude: Attitude.AGGRESSIVE,  team: Team.LUNAR, rarity: 10},
-/*	"human": { 	symbol: 'H', pronoun: "*", brainTalk: true,
-					brain: Brain.USER, brainOpensDoors: true, img: "dc-mon/human.png",
-					level: 1, damageType: DamageType.CUT, attitude: Attitude.CALM, team: Team.GOOD},
-*/	"player": { 	symbol: '@', pronoun: "he", light: 7, brainTalk: true,
-					brain: Brain.USER, brainOpensDoors: true, picksup: true, img: "dc-mon/human.png",
+	"human": { 	symbol: 'H', pronoun: "*", brainTalk: true, attitude: Attitude.HESITANT, brainOpensDoors: true, img: "dc-mon/human.png",
+					level: 1, power: '3:10', damageType: DamageType.CUT, attitude: Attitude.CALM, team: Team.GOOD},
+	"player": { 	symbol: '@', pronoun: "he", light: 7, brainTalk: true,
+					brain: Brain.USER, brainOpensDoors: true, picksup: true, img: "dc-mon/elf.png",
 					level: 1, power: null, regenerate: 0.03, damageType: DamageType.CUT, sightDistance: MaxSightDistance,
 					attitude: Attitude.CALM, team: Team.GOOD, neverPick: true }
 };

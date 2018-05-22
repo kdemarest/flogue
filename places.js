@@ -26,6 +26,7 @@ PlaceList.uniqueIdentity = {
 */
 
 PlaceList.goblinGathering = {
+	rarity: 3,
 	map:
 `
 .......
@@ -87,6 +88,7 @@ PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityL
 }
 
 PlaceList.graveYard = {
+	rarity: 0.05,
 	map:
 `
 ..M.M...B.MMM
@@ -127,6 +129,7 @@ PlaceList.circle = {
 }
 
 PlaceList.lunarEmbassy = {
+	rarity: 0.1,
 	map:
 `
 xxxxxxx.
@@ -143,20 +146,22 @@ xxxxxxx
 	}
 }
 
-PlaceList.ogreCamp = {
+PlaceList.camp = {
+	rarity: 5,
 	map:
 `
-.Ȱ.
-ǾuȰ
-.Ȱ.
+.y.
+yuy
+.y.
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: "wall"
+		y: function() { return pick(['ogre','human']); }
 	}
 }
 
 PlaceList.nest = {
+	rarity: 0.5,
 	map:
 `
 ⋍xx⋍x
@@ -174,6 +179,7 @@ xyy⋍x
 }
 
 PlaceList.den = {
+	rarity: 3,
 	map:
 `
 xxxxxxx
@@ -191,6 +197,7 @@ xxxxx..
 }
 
 PlaceList.swamp = {
+	rarity: 0.1,
 	map:
 `
 mmmmmmmmmmmmm
@@ -214,12 +221,14 @@ mmmmmmmmmmmmm
 	}
 }
 PlaceList.etherHive = {
+	rarity: 3,
 	map:
 `
-xe.exx
-xee.e.
-.e.eex
-xx.e.x
+x..xx
+xe.e.
+..e..
+.e.ex
+xx..x
 `,
 	flags: { rotate: true },
 	symbols: {
@@ -227,6 +236,7 @@ xx.e.x
 	}
 }
 PlaceList.demonNest = {
+	rarity: 1,
 	map:
 `
 
@@ -243,18 +253,19 @@ fLffL
 	}
 }
 PlaceList.balgursChamber = {
+	rarity: 0.01,
 	map:
 `
 ###########
-#LLDDDDD..#
-#fL.DDD.i.#
+#LLDDDDDLL#
+#L..DDD.iL#
 #.f..a..f.#
-#.Li..f...#
-#L......i.#
+#..i..f...#
+#.......i.#
 #.i.f...f.#
 #..f...f..#
-#ffi.fLi.L#
-#fL.....LL#
+#L.i.f.i.L#
+#LL.....LL#
 #####|#####
 `,
 	flags: { rotate: true },
@@ -263,27 +274,26 @@ PlaceList.balgursChamber = {
 		f: "fire"
 	}
 }
-/*PlaceList.altar = {
+PlaceList.portal = {
+	rarity: 3,
 	map:
 `
-..M.M...B.MMM
-.Bs....M..s.M
-.M..B.M...BM.
-.sB.xxxxx.M..
-.MM.x*s*x.Bs.
-.B..xFS.+....
-.sM.x*s.x.M..
-BM..xxxxx...M
-..B.MM...M...
-..M.s..sB..M.
-M...B..M.....
+..MMMMM..
+.MM,,,MM.
+MM,,,,,MM
+M,,~*~,,M
+M,,*Ώ*,,e
+M,,~*~,,M
+MM,,,,,MM
+.MM,,,MM.
+..MMMMM..
 `,
 	flags: { rotate: true },
 	symbols: {
 		x: "wall",
 		M: "mist"
 	}
-}*/
+}
 
 
 	// Export the placelist.
