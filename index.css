@@ -95,6 +95,19 @@ body {
 table tr td {
 	vertical-align: top;
 }
+table .inv tr td {
+	vertical-align: top;
+	text-align: left;
+    padding-left: 2px;
+    padding-right: 8px;
+    white-space: nowrap;
+}
+table .inv tr .right {
+	text-align: right;
+}
+table .inv tr .ctr {
+	text-align: center;
+}
 .health-bar {
 	display: none;
 	-webkit-box-sizing: border-box;

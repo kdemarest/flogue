@@ -28,7 +28,7 @@ class ViewInfo {
 		$('#'+this.infoDivId).empty();
 		let s = "";
 		s += "Health: "+entity.health+" / "+entity.healthMax+"\n";
-		s += "Armor: "+Math.floor(entity.calcArmor()*100)+"%\n";
+		s += "Armor: "+entity.calcArmor()+"%\n";
 		let weapon,damage,damageType;
 		[weapon,damage,damageType] = entity.calcWeapon();
 		s += "Damage: "+Math.floor(damage)+" "+damageType+"\n";
@@ -105,7 +105,7 @@ class ViewInventory {
 			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
 		}
 		this.inventory = f;
-		f.all.sort( function(a,b) { 
+		let list = f.all.sort( function(a,b) { 
 			let as = order(a.typeId)+' '+a.name;
 			let bs = order(b.typeId)+' '+b.name;
 			if( as < bs ) return -1;
@@ -113,12 +113,33 @@ class ViewInventory {
 			return 0;
 		});
 		let s = '';
-		for( let i=0 ; i<f.all.length ; ++i ) {
-			let item = f.all[i];
-			s += (item.inSlot ? '*' : ' ')+String.padLeft(this.inventorySelector.charAt(i),2,' ')+'. '+item.name+(item.inSlot?' ('+item.inSlot+')':'')+'\n';
+		s += '<table class="inv">';
+		s += '<thead>';
+		s += '<tr><td></td><td class="right"></td><td>Description</td><td>Slot</td><td class="right">Armor</td><td colspan="2">Damage</td><td class="right">Bonus</td><td class="right">Recharge</td></tr>';
+		s += '</thead>';
+		s += '<tbody>';
+		for( let i=0 ; i<list.length ; ++i ) {
+			let item = list[i];
+			s += '<tr>';
+			s += '<td>'+(item.inSlot ? '&nbsp;*&nbsp;' : '&nbsp;&nbsp;&nbsp;')+'</td>';
+			s += '<td class="right">'+this.inventorySelector.charAt(i)+')'+'</td>';
+			s += '<td>'+item.name+'</td>';
+			s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
+			s += '<td class="ctr">'+(item.isArmor?item.calcArmor():'&nbsp;')+'</td>';
+			s += '<td class="right">'+(item.isWeapon?item.damage:'&nbsp;')+'</td>';
+			s += '<td>'+(item.isWeapon?item.damageType:'&nbsp;')+'</td>';
+			let bonus = (item.isWeapon && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:'&nbsp;');
+			if( item.isArmor ) {
+				bonus = item.effect.name;
+			}
+			s += '<td class="right">'+bonus+'</td>';
+			s += '<td class="ctr">'+(item.rechargeTime?item.rechargeTime:'&nbsp;')+'</td>';
+			s += '</tr>';
 		}
+		s += '</tbody>';
+		s += '</table>';
 		if( !s ) {
-			s += "Pick up some items by walking upon them.";
+			s += "<tr><td colspan=4>Pick up some items by walking upon them.</td></tr>";
 		}
 		$('#'+this.inventoryDivId).show().html(s);
 		this.isOpen = true;

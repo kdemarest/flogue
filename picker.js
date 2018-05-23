@@ -115,7 +115,7 @@ class Picker {
 		let avgLevel = (itemLevel+this.level)/2;
 		let baseArmor = Rules.playerArmor(avgLevel)*am;
 		if( isNaN(baseArmor) ) debugger;
-		return Math.floor(baseArmor*100)/100;
+		return Math.floor(baseArmor*ARMOR_SCALE);
 	}
 	pickDamage(rechargeTime,i,m,v,q,e) {
 		let dm = 1;
@@ -126,7 +126,8 @@ class Picker {
 		if( e && e.damageMultiplier ) dm *= e.damageMultiplier;
 
 		let mult = (rechargeTime||0)>1 ? 1+rechargeTime*DEFAULT_DAMAGE_BONUS_FOR_RECHARGE : 1;
-		return Math.max(1,Math.floor(Rules.playerDamage(this.level) * mult * dm));
+		let damage = Rules.playerDamage(this.level) * mult * dm;
+		return Math.max(1,Math.floor(damage));
 	}
 	pickGoldCount() {
 		return Math.max(1,this.level);

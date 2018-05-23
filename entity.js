@@ -20,13 +20,14 @@ class Entity {
 			values.armor     = (monsterType.armor || 0);
 			values.damage    = Rules.monsterDamage(level,hitsToKillPlayer);
 		}
+		values.level = level;
 		values.health = values.healthMax;
 		if( monsterType.pronoun == '*' ) {
 			values.pronoun = Math.chance(70) ? 'he' : 'she';
 		}
 		Object.assign( this, monsterType, inits, inject || {}, values );
 
-		this.name = this.name || String.tokenReplace(this.namePattern,this);
+		this.name = 'L'+this.level+' '+(this.name || String.tokenReplace(this.namePattern,this));
 
 		if( this.name && this.name.indexOf('/')>0 ) {
 			values.name = this.name.split('/')[values.pronoun=='she' ? 1 : 0];
@@ -474,15 +475,15 @@ class Entity {
 	}
 
 	calcArmor(damageType) {
-		let f = new ItemFinder(this.inventory).filter( item=>item.inSlot );
+		let f = new ItemFinder(this.inventory).filter( item=>item.inSlot && item.isArmor );
 		let armor = 0;
 		f.process( item => { armor += item.calcArmor(damageType); });
-		return armor;
+		return Math.floor(armor);
 	}
 
 	calcDamageReduction(damageType) {
 		let reduction = this.isResistant(damageType) ? 0.5 : 0.0;
-		reduction += this.calcArmor(damageType)/400;
+		reduction += this.calcArmor(damageType)/ARMOR_SCALE;
 		return Math.min(0.8,reduction);
 	}
 
@@ -502,7 +503,7 @@ class Entity {
 		}
 		else {
 			let damageReduction = this.calcDamageReduction(damageType);
-			amount = Math.max(1,Math.floor(amount*(1-damageReduction)));
+			amount = Math.max(1,Math.floor(amount*(1.00-damageReduction)));
 		}
 		if( attacker && attacker.invisible ) {
 			DeedManager.forceSingle(attacker,"invisible",false);
@@ -597,7 +598,7 @@ class Entity {
 	itemCreateByType(type,presets,inject) {
 		if( type.isRandom ) debugger;
 		let item = new Item( this, type, { x:this.x, y:this.y }, presets, inject );
-		this.inventory.push(item);
+		this._itemTake(item);
 		return item;
 	}
 
@@ -608,13 +609,6 @@ class Entity {
 			if( item.isArmor && !item.armor ) {
 				debugger;
 			}
-/*
-			if( item.isWeapon ) {
-				let weapon,damage,damageType;
-				[weapon,damage,damageType] = this.calcWeapon();
-				item.damage = damage;
-			}
-*/
 			tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
 			if( item.triggerOnPickup ) {
 				item.trigger(Command.PICKUP,this,this);

@@ -81,8 +81,9 @@ const StickerList = {
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
 let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.20;
 let DEFAULT_EFFECT_DURATION = 10;
+let ARMOR_SCALE = 100;
 
-const DamageType = { CUT: "cut", STAB: "pierce", BITE: "bite", CLAW: "claw", BLUNT: "whomp", FIRE: "burn", COLD: "freeze", POISON: "poison", HOLY: "divine power", ROT: "rot" };
+const DamageType = { CUT: "cut", STAB: "pierce", BITE: "bite", CLAW: "claw", BLUNT: "whomp", FIRE: "burn", COLD: "freeze", POISON: "poison", HOLY: "smite", ROT: "rot" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
 const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm", WORSHIP: "worshipping" };
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
@@ -96,18 +97,18 @@ const PickResist = [DamageType.CUT,DamageType.STAB,DamageType.BLUNT,DamageType.F
 
 let EffectTypeList = {
 	invisibility: 	{ level: 10, rarity: 0.05, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible },
-	seeinvisible: 	{ level: 10, rarity: 0.50, op: 'set', stat: 'seeInvisible', value: true, isHelp: 1 },
+	seeinvisible: 	{ level: 10, rarity: 0.50, op: 'set', stat: 'seeInvisible', value: true, isHelp: 1, name: 'see invisible' },
 	blindness: 		{ level:  5, rarity: 1.00, op: 'set', stat: 'blind', value: true, isHarm: 1, requires: e=>!e.blind },
 	haste: 			{ level:  7, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5 },
 	slow: 			{ level:  3, rarity: 1.00, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, requires: e=>e.speed>0.5 },
 	regeneration: 	{ level: 20, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1 },
 	flight: 		{ level:  2, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.type.travelMode },
 	healing: 		{ level:  1, rarity: 1.00, op: 'heal',   valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.HOLY },
-	poison: 		{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.30, isHarm: 1, isInstant: 1, damageType: DamageType.POISON, namePattern: 'poison {value}' },
-	fire: 			{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.FIRE, namePattern: 'scorch {value}', mayTargetPosition: true },
-	cold: 			{ level:  2, rarity: 1.00, op: 'damage', valueDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.COLD, namePattern: 'freeze {value}', mayTargetPosition: true },
-	holy: 			{ level:  3, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.HOLY, namePattern: 'smite {value}' },
-	rot: 			{ level:  4, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, namePattern: 'rot {value}' },
+	poison: 		{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.30, isHarm: 1, isInstant: 1, damageType: DamageType.POISON },
+	fire: 			{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.FIRE, mayTargetPosition: true },
+	cold: 			{ level:  2, rarity: 1.00, op: 'damage', valueDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.COLD, mayTargetPosition: true },
+	holy: 			{ level:  3, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.HOLY },
+	rot: 			{ level:  4, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT },
 	rage: 			{ level:  1, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1 },
 	panic: 			{ level:  5, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1 },
 	confusion: 		{ level:  3, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1 },
@@ -382,7 +383,7 @@ const ItemTypeList = {
 				rarity: 2.00, autoCommand: Command.QUAFF, effectDuration: '1d4+4',
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
 				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect.typeId]||NulImg).img || "emerald")+".png", imgChoices: ImgPotion },
-	"spell":    { symbol: 'ᵴ', namePattern: 'spell of {effect} recharge: {rechargeTime}', rechargeTime: '3d4', effects: SpellEffects,
+	"spell":    { symbol: 'ᵴ', namePattern: 'spell of {effect}', rechargeTime: '3d4', effects: SpellEffects,
 				rarity: 0.50,
 				img: "item/scroll/scroll.png" },
 	"ore": 		{ symbol: '"', namePattern: '{variety}', varieties: OreList, isOre: true, neverPick: true,
@@ -391,26 +392,26 @@ const ItemTypeList = {
 	"gem": 		{ symbol: "^", namePattern: '{quality} {variety}', qualities: GemQualityList, varieties: GemList, isGem: true,
 				rarity: 1.00,
 				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5 },
-	"weapon": 	{ symbol: '†', namePattern: '{material} {variety} of {effect}  [{damage} {damageType}]', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
+	"weapon": 	{ symbol: '†', namePattern: '{material} {variety} {?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
 				rarity: 1.00, autoCommand: Command.USE,
 				useVerb: 'weild',
 				img: "item/weapon/dagger.png" },
-	"helm": 	{ symbol: '[', namePattern: "{variety} helm of {effect} [{%armor}]", varieties: ArmorList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
+	"helm": 	{ symbol: '[', namePattern: "{variety} helm {?effect}", varieties: ArmorList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
 				rarity: 0.50, autoCommand: Command.USE,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/headgear/helmet2_etched.png" },
-	"armor": 	{ symbol: '&', namePattern: "{variety} armor of {effect} [{%armor}]", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
+	"armor": 	{ symbol: '&', namePattern: "{variety} armor {?effect}", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
 				rarity: 1.00, autoCommand: Command.USE,
 				armorMultiplier: 0.60,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "player/body/armor_mummy.png" },
-	"bracers": 	{ symbol: ']', namePattern: "{variety} bracers of {effect} [{%armor}]", varieties: ArmorList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
+	"bracers": 	{ symbol: ']', namePattern: "{variety} bracers {?effect}", varieties: ArmorList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
 				rarity: 0.50, autoCommand: Command.USE,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "UNUSED/armour/gauntlet1.png" },
-	"boots": 	{ symbol: 'Ⓑ', namePattern: "{variety} boots of {effect} [{%armor}]", varieties: ArmorList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
+	"boots": 	{ symbol: 'Ⓑ', namePattern: "{variety} boots {?effect}", varieties: ArmorList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
 				rarity: 0.50, autoCommand: Command.USE,
 				armorMultiplier: 0.10,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
@@ -421,7 +422,7 @@ const ItemTypeList = {
 				useVerb: 'wear', triggerOnUse: true, effectOverride: { duration: true },
 				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList },
 };
-const ItemSortOrder = ['weapon','helm','armor','boots','ring','potion','gem','ore','gold','spell'];
+const ItemSortOrder = ['corpse','weapon','helm','armor','bracers','boots','ring','potion','gem','ore','gold','spell'];
 
 
 const selfInvisibilitySymbol = '?';

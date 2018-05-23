@@ -101,20 +101,21 @@ function nop() {}
 		return '';
 	}
 	String.tokenReplace = function(s,obj) {
-		return s.replace(/{([%]*)(\w+)}/g,function(whole,pct,key) {
+		return s.replace(/{([%]*)([?]*)(\w+)}/g,function(whole,pct,hasQ,key) {
 			let isPercent = pct=='%';
+			let useOf = hasQ=='?';
 
 			if( typeof obj[key] == 'number' ) {
-				return obj[key] * (isPercent?100:1)+(isPercent?'%':'');
+				return (obj[key] * (isPercent?100:1))+(isPercent?'%':'');
 			}
 			if( typeof obj[key] == 'string' ) {
-				return obj[key];
+				return (useOf && obj[key] ? 'of ' : '')+obj[key];
 			}
 			if( Array.isArray(obj[key]) ) {
 				return obj[key].join(',');
 			}
 			if( typeof obj[key] == 'object' ) {
-				if( obj[key] ) return obj[key].name || 'NONAME';
+				if( obj[key] ) return (useOf && obj[key].name ? 'of ' : '')+(obj[key].name || 'NONAME');
 			}
 			debugger;
 			return 'UNKNOWN '+key;

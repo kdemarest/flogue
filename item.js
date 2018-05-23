@@ -43,7 +43,7 @@ class Item {
 	assignEffect(effectType,picker,rechargeTime) {
 		let effect = Object.assign({},effectType);
 		if( effect.valueDamage ) {
-			effect.value = picker.pickDamage(this.rechargeTime) * effect.valueDamage;
+			effect.value = Math.floor(picker.pickDamage(this.rechargeTime) * effect.valueDamage);
 		}
 		if( effect.valuePick ) {
 			effect.value = effect.valuePick(this,picker);
