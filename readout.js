@@ -115,7 +115,7 @@ class ViewInventory {
 		let s = '';
 		s += '<table class="inv">';
 		s += '<thead>';
-		s += '<tr><td></td><td class="right"></td><td>Description</td><td>Slot</td><td class="right">Armor</td><td colspan="2">Damage</td><td class="right">Bonus</td><td class="right">Recharge</td></tr>';
+		s += '<tr><td></td><td class="right"></td><td>Description</td><td>Slot</td><td class="right">Armor</td><td colspan="2" class="ctr">Damage</td><td class="right">Bonus</td><td class="right">Recharge</td></tr>';
 		s += '</thead>';
 		s += '<tbody>';
 		for( let i=0 ; i<list.length ; ++i ) {
@@ -126,8 +126,10 @@ class ViewInventory {
 			s += '<td>'+item.name+'</td>';
 			s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
 			s += '<td class="ctr">'+(item.isArmor?item.calcArmor():'&nbsp;')+'</td>';
-			s += '<td class="right">'+(item.isWeapon?item.damage:'&nbsp;')+'</td>';
-			s += '<td>'+(item.isWeapon?item.damageType:'&nbsp;')+'</td>';
+			let damage = item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : '&nbsp;');
+			s += '<td class="right">'+damage+'</td>';
+			let dtype = item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : '&nbsp;');
+			s += '<td>'+dtype+'</td>';
 			let bonus = (item.isWeapon && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:'&nbsp;');
 			if( item.isArmor ) {
 				bonus = item.effect.name;
