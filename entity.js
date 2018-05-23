@@ -9,8 +9,8 @@ class Entity {
 		let isPlayer = monsterType.brain==Brain.USER;
 		if( isPlayer ) {
 			values.healthMax = Rules.playerHealth(level);
-			values.armor     = Rules.playerArmor(level);
-			values.damage    = Rules.playerDamage(level);
+			values.armor     = 0; //Rules.playerArmor(level);
+			values.damage    = Math.max(1,Math.floor(Rules.playerDamage(level)*0.5));
 		}
 		else {
 			let hits = monsterType.power.split(':');
@@ -786,13 +786,14 @@ class Entity {
 			}
 			case Command.DROP: {
 				let item = this.commandItem;
-				let type = findCollider('walk',this.x,this.y);
+				let type = this.findCollider('walk',this.x,this.y);
 				if( type !== null ) {
 					tell(mSubject,this,' may not drop anything here.');
 				}
 				else {
 					item.moveTo(this.map,this.x,this.y);
 				}
+				break;
 			}
 			case Command.QUAFF: {
 				let item = this.commandItem;

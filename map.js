@@ -130,8 +130,23 @@ class SimpleMap {
 		if( !this.inBounds(x,y) ) {
 			debugger;
 		}
-		let symbol = TileTypeList.floor.symbol;
-		this.tile[y] = this.tile[y].substr(0,x)+symbol+this.tile[y].substr(x+1);
+		let most = {};
+		let best = false;
+		for( let dir=0 ; dir<DirectionCount ; ++dir ) {
+			let dx = x+DirectionAdd[dir].x;
+			let dy = y+DirectionAdd[dir].y;
+			if( this.inBounds(dx,dy) ) {
+				let symbol = this.tileSymbolGet(dx,dy);
+				if( SymbolToType[symbol].isFloor ) {
+					most[symbol] = (most[symbol]||0)+1;
+					if( !best || most[symbol] > most[best] ) {
+						best = symbol;
+					}
+				}
+			}
+		}
+		let symbol = best || TileTypeList.floor.symbol;
+		this.tileSymbolSet(x,y,symbol);
 	}
 	tileSymbolGet(x,y) {
 		if( !this.inBounds(x,y) ) { debugger; }

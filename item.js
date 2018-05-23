@@ -49,7 +49,7 @@ class Item {
 		let effect = Object.assign({},effectType);
 		if( effect.valueDamage ) {
 			effect.value = Math.floor(picker.pickDamage(this.rechargeTime) * effect.valueDamage);
-			if( WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
+			if( (this.isWeapon || this.isArmor) && WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
 				effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
 			}
 		}

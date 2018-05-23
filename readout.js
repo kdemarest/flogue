@@ -2,12 +2,13 @@
 
 class ViewSpells {
 	constructor(spellDivId) {
+		this.MAX_SLOTS = 5;
 		this.spellDivId = spellDivId;
 	}
 	render(observer) {
 		$('#'+this.spellDivId).empty();
 		let spellList = new ItemFinder(observer.inventory).isTypeId("spell");
-		for( let i=0 ; i<spellList.all.length ; ++i ) {
+		for( let i=0 ; i<spellList.all.length && i<this.MAX_SLOTS ; ++i ) {
 			let text = 'F'+(i+1)+' '+spellList.all[i].effect.name+'\n';
 			let lit = this.commandItem == spellList.all[i];
 			$('#'+this.spellDivId).append('<div class="spell'+(lit?' lit':'')+'">'+text+'</div>');
@@ -304,6 +305,9 @@ class UserCommandHandler {
 			let item = this.viewInventory.getItemByKey(keyPressed);
 			if( item ) {
 				this.commandItem = item;
+				if( this.command == Command.DROP ) {
+					return this.enactCommand(observer);
+				}
 				if( this.command == Command.INVENTORY && item.isPotion ) {
 					this.command = item.effect.isHarm ? Command.THROW : Command.QUAFF;
 				}
@@ -349,6 +353,12 @@ class UserCommandHandler {
 			observer.command = Command.NONE;
 			this.command = Command.THROW;
 			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).filter( item => item.mayThrow ) );
+			return false;
+		}
+		if( command == Command.DROP ) {
+			observer.command = Command.NONE;
+			this.command = Command.DROP;
+			this.viewInventory.show( ()=>new ItemFinder(observer.inventory) );
 			return false;
 		}
 		if( command == Command.CAST ) {
