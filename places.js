@@ -24,9 +24,14 @@ PlaceList.uniqueIdentity = {
 	}
 };
 */
+let rCOMMON 	= 1.00;
+let rUNCOMMON 	= 0.50;
+let rRARE 		= 0.20;
+let rEPIC 		= 0.10;
+let rLEGENDARY 	= 0.01;
 
 PlaceList.goblinGathering = {
-	rarity: 3,
+	rarity: rRARE,
 	map:
 `
 .......
@@ -88,7 +93,7 @@ PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityL
 }
 
 PlaceList.graveYard = {
-	rarity: 0.05,
+	rarity: rEPIC,
 	map:
 `
 ..M.M...B.MMM
@@ -111,6 +116,7 @@ M...B..M.....
 }
 
 PlaceList.circle = {
+	rarity: rRARE,
 	map:
 `
 .........
@@ -129,7 +135,7 @@ PlaceList.circle = {
 }
 
 PlaceList.lunarEmbassy = {
-	rarity: 0.1,
+	rarity: rEPIC,
 	map:
 `
 xxxxxxx.
@@ -147,7 +153,7 @@ xxxxxxx
 }
 
 PlaceList.camp = {
-	rarity: 5,
+	rarity: rCOMMON,
 	map:
 `
 .y.
@@ -161,7 +167,7 @@ yuy
 }
 
 PlaceList.nest = {
-	rarity: 0.5,
+	rarity: rCOMMON,
 	map:
 `
 ⋍xx⋍x
@@ -179,7 +185,7 @@ xyy⋍x
 }
 
 PlaceList.den = {
-	rarity: 3,
+	rarity: rCOMMON,
 	map:
 `
 xxxxxxx
@@ -197,7 +203,7 @@ xxxxx..
 }
 
 PlaceList.swamp = {
-	rarity: 0.1,
+	rarity: rCOMMON,
 	map:
 `
 mmmmmmmmmmmmm
@@ -221,7 +227,7 @@ mmmmmmmmmmmmm
 	}
 }
 PlaceList.etherHive = {
-	rarity: 3,
+	rarity: rUNCOMMON,
 	map:
 `
 x..xx
@@ -236,7 +242,7 @@ xx..x
 	}
 }
 PlaceList.demonNest = {
-	rarity: 1,
+	rarity: rEPIC,
 	map:
 `
 
@@ -253,7 +259,7 @@ fLffL
 	}
 }
 PlaceList.balgursChamber = {
-	rarity: 0.01,
+	rarity: rLEGENDARY,
 	map:
 `
 ###########
@@ -275,7 +281,7 @@ PlaceList.balgursChamber = {
 	}
 }
 PlaceList.portal = {
-	rarity: 3,
+	rarity: rUNCOMMON,
 	map:
 `
 ..MMMMM..
@@ -296,7 +302,7 @@ MM,,,,,MM
 }
 
 PlaceList.bridge = {
-	rarity: 10,
+	rarity: rUNCOMMON,
 	map:
 `
 ..:::::::::.
@@ -311,7 +317,7 @@ PlaceList.bridge = {
 }
 
 PlaceList.sunDiscipleTemple = {
-	rarity: 10000.001,
+	rarity: rLEGENDARY,
 	map:
 `
 xxxxxxxxxxx...........
