@@ -126,6 +126,13 @@ class SimpleMap {
 		}
 		this.tile[y] = this.tile[y].substr(0,x)+symbol+this.tile[y].substr(x+1);
 	}
+	tileSymbolSetFloor(x,y) {
+		if( !this.inBounds(x,y) ) {
+			debugger;
+		}
+		let symbol = TileTypeList.floor.symbol;
+		this.tile[y] = this.tile[y].substr(0,x)+symbol+this.tile[y].substr(x+1);
+	}
 	tileSymbolGet(x,y) {
 		if( !this.inBounds(x,y) ) { debugger; }
 		return this.tile[y].charAt(x);

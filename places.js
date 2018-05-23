@@ -295,6 +295,60 @@ MM,,,,,MM
 	}
 }
 
+PlaceList.bridge = {
+	rarity: 10,
+	map:
+`
+..:::::::::.
+::::::::::::
+........T...
+:::::::::::.
+.:::::::::..
+`,
+	flags: { rotate: true },
+	symbols: {
+	}
+}
+
+PlaceList.sunDiscipleTemple = {
+	rarity: 10000.001,
+	map:
+`
+xxxxxxxxxxx...........
+x.....x...x...........
+x.ᵴ...x...x..F..B..G..
+xs=...+...x...........
+x.ᵴ...x...xxxxxxxxxxx.
+x.....x...x.........x.
+xxxxxxx...x.........x.
+x.....x...x.........x.
+x.[...x...x...u$....x.
+xs&†..+.......kA^...+.
+x.b...x...x...u$....x.
+x.....x...x.........x.
+xxxxxxx...x.........x.
+x.....x...x.........x.
+x.ii..x...xxxxxxxxxxx.
+xs$$..+...x...........
+x.ii..x...x..F..B..G..
+x.....x...x...........
+xxxxxxxxxxx...........
+`,
+	flags: { rotate: false },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		s: "masterStatue",
+		k: "kingStatue",
+	},
+	tileTypes: {
+		"tileStoneFloor":      { mayWalk: true,  mayFly: true,  opacity: 0, name: "tile stone floor", img: "dc-dngn/floor/rect_gray1.png", isFloor: true },
+		"tileStoneWall":       { mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall", img: "dc-dngn/floor/pedestal_full.png", isWall: true },
+		"masterStatue":    { mayWalk: false, mayFly: true, opacity: 0, name: "master statue", img: "dc-mon/statues/silver_statue.png"},
+		"kingStatue":    { mayWalk: false, mayFly: true, opacity: 0, name: "king statue", img: "dc-mon/statues/wucad_mu_statue.png"},
+	}
+}
+
 
 	// Export the placelist.
 	window.loadPlaceList = () => PlaceList;

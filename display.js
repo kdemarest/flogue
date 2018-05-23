@@ -130,11 +130,9 @@ function createDrawList(observer,map,entityList,asType) {
 				}
 				else {
 					let aa = a[ty][tx];
-					if( (item || SymbolToType[mapSymbol]).typeId !== 'floor' ) {
-						aa.push(TileTypeList.floor);
-					}
-					aa.push( item || SymbolToType[mapSymbol] );
-					aa.push( entity );
+					aa.push(SymbolToType[mapSymbol]);
+					if( item ) aa.push(item);
+					if( entity ) aa.push(entity);
 
 					if( item ) { visId[item.id] = item; }
 					if( entity ) { visId[entity.id] = entity; }

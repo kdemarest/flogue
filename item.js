@@ -30,7 +30,12 @@ class Item {
 		merge(this,this.variety);
 
 		if( this.effect !== undefined ) {
-			this.effect = this.assignEffect(this.effect,picker,this.rechargeTime);
+			if( this.effectChance !== undefined && Math.rand(0,1)>=this.effectChance ) {
+				delete this.effect;
+			}
+			else {
+				this.effect = this.assignEffect(this.effect,picker,this.rechargeTime);
+			}
 		}
 
 		if( this.x !== position.x || this.y !== position.y ) {
@@ -44,6 +49,9 @@ class Item {
 		let effect = Object.assign({},effectType);
 		if( effect.valueDamage ) {
 			effect.value = Math.floor(picker.pickDamage(this.rechargeTime) * effect.valueDamage);
+			if( WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
+				effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+			}
 		}
 		if( effect.valuePick ) {
 			effect.value = effect.valuePick(this,picker);

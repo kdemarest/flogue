@@ -105,6 +105,9 @@ function nop() {}
 			let isPercent = pct=='%';
 			let useOf = hasQ=='?';
 
+			if( useOf && obj[key] === undefined ) {
+				return '';
+			}
 			if( typeof obj[key] == 'number' ) {
 				return (obj[key] * (isPercent?100:1))+(isPercent?'%':'');
 			}
@@ -163,7 +166,7 @@ function nop() {}
 
 		}
 		 playerHealth(playerLevel) {
-		 	return 18+(2*playerLevel);
+		 	return 90+(10*playerLevel);
 		 }
 		 playerArmor(playerLevel) {
 		 	let armorAtLevel1 = 0.30;
@@ -172,14 +175,16 @@ function nop() {}
 		 	return Math.clamp(armor,0.0,1.0);
 		 }
 		 playerDamage(playerLevel) {
-		 	let hitsToKillPlayer = 10;
-		 	let damage = this.playerHealth(playerLevel)/(hitsToKillPlayer*(1-this.playerArmor(playerLevel)));
+		 	// Always just 1/10th of the player's hit points at this level. Monster health will scale to it.
+		 	let damage = this.playerHealth(playerLevel)/10;
 		 	return Math.max(1,Math.floor(damage));
 		 }
 		 monsterHealth(monsterLevel,hitsToKillMonster=3) {
+		 	if( !hitsToKillMonster ) debugger;
 		 	return Math.max(1,Math.floor(this.playerDamage(monsterLevel)*hitsToKillMonster));
 		 }
 		 monsterDamage(monsterLevel,hitsToKillPlayer=10) {
+		 	if( !hitsToKillPlayer ) debugger;
 		 	let damage = this.playerHealth(monsterLevel)/(hitsToKillPlayer*(1-this.playerArmor(monsterLevel)));
 		 	return Math.max(1,Math.floor(damage));
 		 }

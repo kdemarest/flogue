@@ -166,9 +166,13 @@ function main(levelName) {
 		else {
 			player.command = KeyToCommand[''+e.key] !== undefined ? KeyToCommand[''+e.key] : Command.NONE;
 
-			let timePass = gui.userCommandHandler.evalCommand(player,e,player.command);
-			if( timePass && player.command !== Command.NONE ) {
+			let timePasses = gui.userCommandHandler.evalCommand(player,e,player.command);
+			if( timePasses && player.command !== Command.NONE ) {
 				tick(player.speed);
+			}
+			else {
+				// This is required to make commands that do NOT pass time, like donning armor, work.
+				player.act(false);
 			}
 			let area = world.levelChange(map,entityList);
 			if( area ) {

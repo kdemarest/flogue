@@ -91,6 +91,7 @@ class ViewInventory {
 		this.imageRepo = imageRepo;
 		this.isOpen = false;
 		this.inventory = null;
+		this.inventoryFn = null;
 		this.inventorySelector = '123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	}
 	getItemByKey(keyPressed) {
@@ -100,18 +101,32 @@ class ViewInventory {
 		}
 		return null;
 	}
-	show(f) {
+	show(inventoryFn) {
+		this.inventoryFn = inventoryFn;
+		this.isOpen = true;
+		this.render();
+	}
+	hide() {
+		$('#'+this.inventoryDivId).hide();
+		this.isOpen = false;
+	}
+	render() {
 		function order(typeId) {
 			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
 		}
-		this.inventory = f;
-		let list = f.all.sort( function(a,b) { 
+		if( !this.isOpen ) {
+			return;
+		}
+
+		this.inventory = this.inventoryFn();
+		let list = this.inventory.all.sort( function(a,b) { 
 			let as = order(a.typeId)+' '+a.name;
 			let bs = order(b.typeId)+' '+b.name;
 			if( as < bs ) return -1;
 			if( as > bs ) return 1;
 			return 0;
 		});
+
 		let s = '';
 		s += '<table class="inv">';
 		s += '<thead>';
@@ -130,8 +145,8 @@ class ViewInventory {
 			s += '<td class="right">'+damage+'</td>';
 			let dtype = item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : '&nbsp;');
 			s += '<td>'+dtype+'</td>';
-			let bonus = (item.isWeapon && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:'&nbsp;');
-			if( item.isArmor ) {
+			let bonus = (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:'&nbsp;');
+			if( item.isArmor && item.effect ) {
 				bonus = item.effect.name;
 			}
 			s += '<td class="right">'+bonus+'</td>';
@@ -144,13 +159,6 @@ class ViewInventory {
 			s += "<tr><td colspan=4>Pick up some items by walking upon them.</td></tr>";
 		}
 		$('#'+this.inventoryDivId).show().html(s);
-		this.isOpen = true;
-	}
-	hide() {
-		$('#'+this.inventoryDivId).hide();
-		this.isOpen = false;
-	}
-	render() {
 	}
 }
 
@@ -204,19 +212,31 @@ class UserCommandHandler {
 		let self = this;
 		this.viewRange.pickingTargetFn = function() { return self.pickingTarget(); }
 	}
-	clearCommand() {
-		this.command = Command.NONE;
+	commandClosesInventory(command) {
+		return !CommandLeavesInventoryOpen.includes(command);
+	}
+	commandPassesTime(command) {
+		return !CommandIsInstant.includes(command);
+	}
+	clearCommand(retain) {
+		this.command = retain || Command.NONE;
 		this.commandItem = null;
 		this.commandTarget = null;
 		this.viewRange.clear();
 		return false;
 	}
-	enactCommand(observer) {
+	enactCommand(observer,retain) {
 		observer.command = this.command;
 		observer.commandItem = this.commandItem;;
 		observer.commandTarget = this.commandTarget;
-		this.clearCommand();
-		return true;
+		if( this.commandClosesInventory(observer.command) ) {
+			this.viewInventory.hide();
+			this.clearCommand();
+		}
+		else {
+			this.clearCommand(retain);
+		}
+		return this.commandPassesTime(observer.command);
 	}
 	pickingTarget() {
 		return (this.command == Command.CAST || this.command == Command.THROW) && this.commandItem;
@@ -229,7 +249,12 @@ class UserCommandHandler {
 
 		let dir = commandToDirection(command);
 
+		//
+		// PICK A TARGET
+		//
+
 		if( this.pickingTarget() ) {
+			observer.command = Command.NONE;
 			if( this.commandItem && !this.commandItem.isRecharged() ) {
 				tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,this.commandItem,' is still charging.');
 				this.clearCommand();
@@ -262,8 +287,12 @@ class UserCommandHandler {
 			}
 		}
 
+		//
+		// CHOOSE FROM INVENTORY
+		//
 
 		if( this.viewInventory.isOpen ) {
+			observer.command = Command.NONE;
 			if( keyCode == keyESCAPE || this.command == command ) {
 				this.viewInventory.hide();
 				return this.clearCommand();
@@ -274,48 +303,63 @@ class UserCommandHandler {
 			}
 			let item = this.viewInventory.getItemByKey(keyPressed);
 			if( item ) {
-				this.viewInventory.hide();
 				this.commandItem = item;
+				if( this.command == Command.INVENTORY && item.isPotion ) {
+					this.command = item.effect.isHarm ? Command.THROW : Command.QUAFF;
+				}
 				if( this.command == Command.QUAFF ) {
 					return this.enactCommand(observer);
 				}
 				if( this.command == Command.CAST && !this.commandItem.isRecharged() ) {
 					tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,this.commandItem,' is still charging.');
-					this.clearCommand();
+					this.clearCommand(Command.CAST);
 					return false;
 				}
-
+				if( this.command == Command.INVENTORY && item.isSpell ) {
+					this.command = Command.CAST;
+					this.viewInventory.hide();
+					return false;
+				}
 				if( this.command == Command.INVENTORY ) {
 					if( this.commandItem.autoCommand ) {
 						this.command = this.commandItem.autoCommand;
-						return this.enactCommand(observer);
+						return this.enactCommand(observer,Command.INVENTORY);
 					}
+				}
+				// for throw and any other that picks items.
+				if( this.commandClosesInventory(this.command) ) {
+					this.viewInventory.hide();
 				}
 			}
 			return false;
 		}
 		if( command == Command.INVENTORY ) {
+			observer.command = Command.NONE;
 			this.command = Command.INVENTORY;
-			this.viewInventory.show(new ItemFinder(observer.inventory))
+			this.viewInventory.show( ()=>new ItemFinder(observer.inventory) );
 			return false;
 		}
 		if( command == Command.QUAFF ) {
+			observer.command = Command.NONE;
 			this.command = Command.QUAFF;
-			this.viewInventory.show(new ItemFinder(observer.inventory).isTypeId("potion"));
+			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).isTypeId("potion") );
 			return false;
 		}
 		if( command == Command.THROW ) {
+			observer.command = Command.NONE;
 			this.command = Command.THROW;
-			this.viewInventory.show(new ItemFinder(observer.inventory).filter( item => item.mayThrow ));
+			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).filter( item => item.mayThrow ) );
 			return false;
 		}
 		if( command == Command.CAST ) {
+			observer.command = Command.NONE;
 			this.command = Command.CAST;
-			this.viewInventory.show(new ItemFinder(observer.inventory).isTypeId("spell"));
+			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).isTypeId("spell") );
 			return false;
 		}
 		let castArray = [Command.CAST1,Command.CAST2,Command.CAST3,Command.CAST4,Command.CAST5];
 		if( castArray.includes(command) ) {
+			observer.command = Command.NONE;
 			let spellList = new ItemFinder(observer.inventory).isTypeId("spell");
 			let index = castArray.indexOf(command);
 			if( !spellList.all[index] ) {

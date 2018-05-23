@@ -187,7 +187,7 @@ class Entity {
 		}
 		tell(mSubject,this,' ',mVerb,item.useVerb,' ',mObject,item);
 		item.inSlot = slot;
-		if( item.triggerOnUse || (item.triggerOnUseIfHelp && item.effect.isHelp) ) {
+		if( item.triggerOnUse || (item.triggerOnUseIfHelp && item.effect && item.effect.isHelp) ) {
 			item.trigger(Command.USE,this,this);
 		}
 	}
@@ -539,10 +539,13 @@ class Entity {
 		if( !noBacksies && attacker.isMonsterType && this.inventory ) {
 			let armorEffects = new ItemFinder(this.inventory).filter( item => item.inSlot );
 			armorEffects.process( item => {
-				if( item.effect.isHarm && Math.chance(10) ) {
-					item.trigger(Command.NONE,this,attacker);
+				if( item.effect && item.effect.isHarm ) {
+					let fireArmorEffect = ARMOR_EFFECT_OP_ALWAYS.includes(item.effect.op) || Math.chance(ARMOR_EFFECT_CHANCE_TO_FIRE);
+					if( fireArmorEffect ) {
+						item.trigger( Command.NONE, this, attacker );
+					}
 				}
-			})
+			});
 		}
 	}
 
@@ -586,8 +589,13 @@ class Entity {
 		[weapon,damage,damageType] = this.calcWeapon();
 		damage = this.rollDamage(damage);
 		let result = this.doDamage( other, damage, damageType, onDamage );
-		if( weapon && weapon.effect && Math.chance(10) ) {
-			weapon.trigger( Command.ATTACK, this, other );
+
+		// Trigger my weapon.
+		if( weapon && weapon.effect ) {
+			let fireWeaponEffect = WEAPON_EFFECT_OP_ALWAYS.includes(weapon.effect.op) || Math.chance(WEAPON_EFFECT_CHANCE_TO_FIRE);
+			if( fireWeaponEffect ) {
+				weapon.trigger( Command.ATTACK, this, other );
+			}
 		}
 		if( this.onAttack ) {
 			this.onAttack(other);
@@ -711,12 +719,12 @@ class Entity {
 		}
 	}
 
-	act() {
+	act(timePasses=true) {
 		if( this.isDead() ) {
 			return;
 		}
 
-		if( this.regenerate ) {
+		if( timePasses && this.regenerate ) {
 			this.health = Math.floor(Math.min(this.health+this.regenerate*this.healthMax,this.healthMax));
 		}
 

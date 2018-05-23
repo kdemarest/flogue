@@ -94,14 +94,14 @@ class AreaBuilder {
 			if( entityType && entityType.isMonsterType ) {
 				let fnName = entityType.brain == 'user' ? 'unshift' : 'push';
 				entityList[fnName]( new Entity( map, entityList, entityType, { x:x, y:y }, inject ) );
-				map.tileSymbolSet(x,y,TileTypeList.floor.symbol)
+				map.tileSymbolSetFloor(x,y)
 			}
 			// CREATE ITEMS
 			if( entityType && entityType.isItemType ) {
 				itemMakeFn(x,y,entityType,null,inject);	// the null means you have to generate presets for this item.
 				// WARNING: We could set this more carefully, like by checking around it and using majority
 				// of passable tiles.
-				map.tileSymbolSet(x,y,TileTypeList.floor.symbol);
+				map.tileSymbolSetFloor(x,y);
 			}
 		});
 

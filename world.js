@@ -27,7 +27,7 @@ class World {
 			toArea = this.createArea(gate.toAreaId,gate.gateDir);
 		}
 
-		let gate2 = gate.toGateId ? toArea.getGetById(gate.toGateId) : toArea.getUnusedGateByTypeId(gate.gateInverse);
+		let gate2 = gate.toGateId ? toArea.getGate(gate.toGateId) : toArea.getUnusedGateByTypeId(gate.gateInverse);
 		if( !gate2 ) {
 			let pos = toArea.map.pickPosEmpty();
 			gate2 = toArea.map.itemCreateByTypeId(pos[0],pos[1],gate.gateInverse);

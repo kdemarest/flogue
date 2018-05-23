@@ -83,14 +83,14 @@ let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.20;
 let DEFAULT_EFFECT_DURATION = 10;
 let ARMOR_SCALE = 100;
 
-const DamageType = { CUT: "cut", STAB: "pierce", BITE: "bite", CLAW: "claw", BLUNT: "whomp", FIRE: "burn", COLD: "freeze", POISON: "poison", HOLY: "smite", ROT: "rot" };
+const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", POISON: "poison", SMITE: "smite", ROT: "rot" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
 const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm", WORSHIP: "worshipping" };
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
 const Slot = { HEAD: "head", NECK: "neck", LEFTHAND: "left hand", RIGHTHAND: "right hand", ARMS: "arms", WAIST: "waist", FEET: "feet", ARMOR: "torso", WEAPON: "weapon" };
-const PickImmune = [DamageType.FIRE,DamageType.COLD,DamageType.POISON,DamageType.HOLY,DamageType.ROT];
-const PickVuln   = [DamageType.FIRE,DamageType.COLD,DamageType.POISON,DamageType.HOLY,DamageType.ROT];
-const PickResist = [DamageType.CUT,DamageType.STAB,DamageType.BLUNT,DamageType.FIRE,DamageType.COLD,DamageType.POISON,DamageType.HOLY,DamageType.ROT];
+const PickImmune = [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
+const PickVuln   = [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
+const PickResist = [DamageType.CUT,DamageType.STAB,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
 
 // Effect Events
 // onTargetPosition - if this effect is targeting a map tile, instead of a monster.
@@ -103,11 +103,11 @@ let EffectTypeList = {
 	slow: 			{ level:  3, rarity: 1.00, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, requires: e=>e.speed>0.5 },
 	regeneration: 	{ level: 20, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1 },
 	flight: 		{ level:  2, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.type.travelMode },
-	healing: 		{ level:  1, rarity: 1.00, op: 'heal',   valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.HOLY },
+	healing: 		{ level:  1, rarity: 1.00, op: 'heal',   valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE },
 	poison: 		{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.30, isHarm: 1, isInstant: 1, damageType: DamageType.POISON },
-	fire: 			{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.FIRE, mayTargetPosition: true },
-	cold: 			{ level:  2, rarity: 1.00, op: 'damage', valueDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.COLD, mayTargetPosition: true },
-	holy: 			{ level:  3, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.HOLY },
+	fire: 			{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true },
+	cold: 			{ level:  2, rarity: 1.00, op: 'damage', valueDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true },
+	holy: 			{ level:  3, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE },
 	rot: 			{ level:  4, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT },
 	rage: 			{ level:  1, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1 },
 	panic: 			{ level:  5, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1 },
@@ -188,20 +188,20 @@ let SayStatList = {
 
 
 const TileTypeDefaults = { mayWalk: false, mayFly: false, opacity: 0,
-							damage: '', damageType: DamageType.BLUNT, img: null };
+							damage: '', damageType: DamageType.BASH, img: null };
 const TileTypeList = {
-	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", ivar: 9, isFloor: true },
-	"grass":      { symbol: ',', mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", ivar: 9, isFloor: true },
-	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", ivar: 8, isWall: true },
+	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", isFloor: true },
+	"grass":      { symbol: ',', mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
+	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", isWall: true },
 	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", img: "dc-dngn/pit.png" },
 	"shaft":      { symbol: ';', mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", img: "dc-dngn/dngn_trap_shaft.png" },
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", img: "dc-dngn/dngn_open_door.png" },
 	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", img: "dc-dngn/dngn_closed_door.png" },
-	"fire":       { symbol: 'ᵮ', mayWalk: true,  mayFly: true,  opacity: 0, name: "fire", light: 5, glow:1, damage: '1d4', damageType: DamageType.FIRE, img: "dc-mon/nonliving/fire_elemental.png" },
+	"fire":       { symbol: 'ᵮ', mayWalk: true,  mayFly: true,  opacity: 0, name: "fire", light: 5, glow:1, damage: '1d4', damageType: DamageType.BURN, img: "dc-mon/nonliving/fire_elemental.png" },
 	"water":      { symbol: '~', mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
-	"lava":    	  { symbol: '⍨', mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "lava", light: 5, glow:1, damage: '3d20', damageType: DamageType.FIRE, img: "UNUSED/features/dngn_lava.png" },
+	"lava":    	  { symbol: '⍨', mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "lava", light: 5, glow:1, damage: '3d20', damageType: DamageType.BURN, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: '░', mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
-	"mud":        { symbol: '⋍', mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png", ivar: 3},
+	"mud":        { symbol: '⋍', mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png" },
 	"ghoststone": { symbol: 'G', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
 	"obelisk":    { symbol: 'B', mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png" },
 	"crystal":    { symbol: 'F', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png" },
@@ -252,8 +252,8 @@ const SpellEffects = toFab( Object.filter(EffectTypeList, e=>e.isHarm ) );
 const RingEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['regeneration','resistance'].includes(k) ) );
 const WeaponEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['poison','fire','cold','blindness','slow','panic','confusion','shove'].includes(k) ) );
 const HelmEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['regeneration', 'resistance', 'seeinvisible'].includes(k) ) );
-const ArmorEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['invisible', 'slow', 'regeneration', 'poison', 'fire', 'cold', 'confusion', 'immunity', 'resistance'].includes(k) ) );
-const BracersEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['regeneration', 'resistance', 'seeinvisible'].includes(k) ) );
+const ArmorEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['regeneration', 'immunity', 'resistance'].includes(k) ) );
+const BracersEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['resistance'].includes(k) ) );
 const BootsEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['regeneration', 'flight', 'resistance'].includes(k) ) );
 const DartEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['poison','fire','cold','blindness','slow','vuln'].includes(k) ) );
 
@@ -264,8 +264,8 @@ const WeaponList = toFab({
 	"dagger":   	{ level:  1, damageMultiplier: 0.60, damageType: DamageType.STAB, mayThrow: true, attackVerb: 'strike' },
 	"sword": 		{ level:  1, damageMultiplier: 1.00, damageType: DamageType.CUT },
 	"greatsword": 	{ level:  1, damageMultiplier: 1.20, damageType: DamageType.CUT },
-	"mace": 		{ level:  1, damageMultiplier: 0.90, damageType: DamageType.BLUNT },
-	"hammer": 		{ level:  1, damageMultiplier: 1.40, damageType: DamageType.BLUNT },
+	"mace": 		{ level:  1, damageMultiplier: 0.90, damageType: DamageType.BASH },
+	"hammer": 		{ level:  1, damageMultiplier: 1.40, damageType: DamageType.BASH },
 	"axe": 			{ level:  1, damageMultiplier: 1.00, damageType: DamageType.CUT, mayThrow: true, attackVerb: 'strike' },
 	"spear": 		{ level:  1, damageMultiplier: 0.70, damageType: DamageType.STAB, range: 2, mayThrow: true, attackVerb: 'strike' },
 	"pike": 		{ level:  1, damageMultiplier: 0.90, damageType: DamageType.STAB, range: 2 }
@@ -363,7 +363,16 @@ const NulImg = { img: '' };
 // Item Events
 // onPickup - fired just before an item is picked up. Return false to disallow the pickup.
 // onTick - fires each time a full turn has passed, for every item, whether in the world or in an inventory. 
+const CommandLeavesInventoryOpen = [Command.USE,Command.LOOT];
+const CommandIsInstant = [Command.USE];
 
+const ARMOR_EFFECT_CHANCE_TO_FIRE = 10;
+const ARMOR_EFFECT_OP_ALWAYS = ['damage'];
+const ARMOR_EFFECT_DAMAGE_PERCENT = 10;
+
+const WEAPON_EFFECT_CHANCE_TO_FIRE = 10;
+const WEAPON_EFFECT_OP_ALWAYS = ['damage'];
+const WEAPON_EFFECT_DAMAGE_PERCENT = 10;
 
 const ItemTypeList = {
 	"random":	{ symbol: '*', isRandom: 1, mayPickup: false, neverPick: true },
@@ -380,11 +389,11 @@ const ItemTypeList = {
 	"corpse":   { symbol: 'X', namePattern: "remains of a {usedToBe}", isCorpse: true, neverPick: true,
 				autoCommand: Command.LOOT, img: 'UNUSED/spells/components/skull.png' },
 	"potion":   { symbol: '¡', namePattern: 'potion of {effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
-				rarity: 2.00, autoCommand: Command.QUAFF, effectDuration: '1d4+4',
+				rarity: 2.00, autoCommand: Command.QUAFF, effectDuration: '1d4+4', isPotion: true,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
 				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect.typeId]||NulImg).img || "emerald")+".png", imgChoices: ImgPotion },
 	"spell":    { symbol: 'ᵴ', namePattern: 'spell of {effect}', rechargeTime: '3d4', effects: SpellEffects,
-				rarity: 0.50,
+				rarity: 0.50, autoCommand: Command.CAST, isSpell: true,
 				img: "item/scroll/scroll.png" },
 	"ore": 		{ symbol: '"', namePattern: '{variety}', varieties: OreList, isOre: true, neverPick: true,
 				rarity: 1.00,
@@ -395,30 +404,36 @@ const ItemTypeList = {
 	"weapon": 	{ symbol: '†', namePattern: '{material} {variety} {?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
 				rarity: 1.00, autoCommand: Command.USE,
 				useVerb: 'weild',
+				effectChance: 0.05,
 				img: "item/weapon/dagger.png" },
-	"helm": 	{ symbol: '[', namePattern: "{variety} helm {?effect}", varieties: ArmorList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
+	"helm": 	{ symbol: '[', namePattern: "{variety} helm{?effect}", varieties: ArmorList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
 				rarity: 0.50, autoCommand: Command.USE,
+				effectChance: 0.05,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/headgear/helmet2_etched.png" },
-	"armor": 	{ symbol: '&', namePattern: "{variety} armor {?effect}", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
+	"armor": 	{ symbol: '&', namePattern: "{variety} armor{?effect}", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
 				rarity: 1.00, autoCommand: Command.USE,
+				effectChance: 0.05,
 				armorMultiplier: 0.60,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "player/body/armor_mummy.png" },
-	"bracers": 	{ symbol: ']', namePattern: "{variety} bracers {?effect}", varieties: ArmorList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
+	"bracers": 	{ symbol: ']', namePattern: "{variety} bracers{?effect}", varieties: ArmorList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
 				rarity: 0.50, autoCommand: Command.USE,
+				effectChance: 0.05,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "UNUSED/armour/gauntlet1.png" },
-	"boots": 	{ symbol: 'Ⓑ', namePattern: "{variety} boots {?effect}", varieties: ArmorList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
+	"boots": 	{ symbol: 'b', namePattern: "{variety} boots{?effect}", varieties: ArmorList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
 				rarity: 0.50, autoCommand: Command.USE,
+				effectChance: 0.05,
 				armorMultiplier: 0.10,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/boots2_jackboots.png" },
-	"ring": 	{ symbol: '=', namePattern: "{material} {variety} ring of {effect}", materials: RingMaterialList, varieties: RingList,
+	"ring": 	{ symbol: '=', namePattern: "{material} {variety} ring{?effect}", materials: RingMaterialList, varieties: RingList,
 				effects: RingEffects, slot: Slot.LEFTHAND, isRing: true,
 				rarity: 0.05, autoCommand: Command.USE,
+				effectChance: 0.10,
 				useVerb: 'wear', triggerOnUse: true, effectOverride: { duration: true },
 				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList },
 };
@@ -429,14 +444,33 @@ const selfInvisibilitySymbol = '?';
 const Brain = { AI: "ai", USER: "user" };
 
 const MonsterTypeDefaults = {
-					type: null, typeId: null, reach: 1, travelMode: "walk", speed: 1, loseTurn: false, pronoun: "it", packAnimal: false,
-					power: '3:10', health: 10, healthMax: 10, regenerate: 0, resist: '', vuln: '', immune: '', picksup: false, 
-					damage: '1d1', damageType: DamageType.BLUNT, personalEnemy: '',
-					invisible: false, inaudible: false, blind: false, seeInvisible: false, sightDistance: 6, observeDistantEvents: false,
-					symbol: '?', mayWalk: false, mayFly: false,
+//					type: null, typeId: null, reach: 1, travelMode: "walk", speed: 1, loseTurn: false, pronoun: "it", packAnimal: false,
+//					power: '3:10', health: 10, healthMax: 10, regenerate: 0, resist: '', vuln: '', immune: '', picksup: false, 
+//					damage: 1, damageType: DamageType.BASH, personalEnemy: '',
+//					invisible: false, inaudible: false, blind: false, seeInvisible: false, sightDistance: 6, observeDistantEvents: false,
+//					symbol: '?', mayWalk: false, mayFly: false,
+//					corpse: 'corpse',
+//					brain: Brain.AI, brainFlee: false, brainPet: false, brainOpensDoors: false, brainTalk: false,
+//					attitude: Attitude.AGGRESSIVE, team: Team.EVIL
+
+					symbol: '?',level: 1, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
+					attitude: Attitude.AGGRESSIVE,
+					blind: false, invisible: false, seeInvisible: false, sightDistance: 6,
+					brain: Brain.AI, brainFlee: false, brainOpensDoors: false, brainTalk: false,
 					corpse: 'corpse',
-					brain: Brain.AI, brainFlee: false, brainPet: false, brainOpensDoors: false, brainTalk: false,
-					attitude: Attitude.AGGRESSIVE, team: Team.EVIL
+					immune: '', resist: '', vuln: '',
+					loseTurn: false,
+					packAnimal: false,
+					personalEnemy: '',
+					picksUp: false,
+					reach: 1,
+					regenerate: 0,
+					speed: 1,
+					travelMode: 'walk', mayWalk: false, mayFly: false,
+					type: null, typeId: null,
+
+					//debug only
+					observeDistantEvents: false
 				};
 
 let MaxSightDistance = 10;
@@ -447,72 +481,195 @@ let MaxSightDistance = 10;
 // onTouch - fires if somebody steps into you but doesn't attack you. Like when confused.
 // onHeal - fires when you get healing. return true to suppress the auto-generated message about healing.
 
-let UndeadImmunity = [DamageType.CUT,DamageType.STAB,DamageType.COLD,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'blind'].join(',');
+let UndeadImmunity = [DamageType.CUT,DamageType.STAB,DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'blind'].join(',');
 
 const MonsterTypeList = {
-	"ogreKid": { 	symbol: 'Ǿ', pronoun: "*", img: "dc-mon/ogre.png", brainTalk: true, name: "ogre child",
-					level:  2, power: '10:10', damageType: DamageType.BLUNT, resist: DamageType.CUT, speed: 0.5 },
-	"ogre": { 		symbol: 'Ȱ', pronoun: "*", img: "dc-mon/ogre.png", brainTalk: true,
-					level:  10, power: '10:10', damageType: DamageType.BLUNT, resist: DamageType.CUT+','+DamageType.STAB, speed: 0.5 },
-	"goblin": { 	symbol: 'g', pronoun: "*", img: "dc-mon/goblin.png", brainTalk: true, isGoblin: true,
-					level:  1, power: '3:10',  damageType: DamageType.CUT, packAnimal: true,
-					sayPrayer: 'Oh mighty Thagzog...' },
-	"goblinWar": { 	symbol: 'W', pronoun: "*", picksup: true, img: "dc-mon/goblin.png", brainTalk: true, isGoblin: true,
-					level:  12, power: '3:8',  damageType: DamageType.CUT, name: 'goblin warrior',
-					sayPrayer: 'Oh warrior Thagzog...' },
-	"goblinMut": { 	symbol: 'I', pronoun: "*", img: "dc-mon/goblin.png", brainTalk: true, isGoblin: true,
-					level:  22, power: '3:8',  damageType: DamageType.CUT, name: 'goblin mutant',
-					sayPrayer: 'Oh mutant Thagzog...' },
-	"demon": { 	symbol: 'D', pronoun: "it", img: "player/base/draconian_red_f.png", brainTalk: true,
-					level:  5, power: '3:5',  damageType: DamageType.FIRE, immune: DamageType.FIRE, sayPrayer: 'Hail Balgur, ruler of the deep!', packAnimal: true},
-	"Avatar of Balgur": { 	symbol: 'a', pronoun: "he", img: "dc-mon/hell_knight.png", brainTalk: true,
-					level:  1, power: '25:2',  damageType: DamageType.FIRE, immune: DamageType.FIRE, sayPrayer: 'I shall rule this planet!'},
-	"skeleton": { 	symbol: 's', pronoun: "it", img: "dc-mon/undead/skeletons/skeleton_humanoid_small.png", loot: 'bones',
-					level:  3, power: '2:10',  damageType: DamageType.CUT, immune: UndeadImmunity, vuln: DamageType.HOLY },
-	"skeletonLg": { symbol: 'S', pronoun: "it", img: "dc-mon/undead/skeletons/skeleton_humanoid_large.png", name: 'ogre skeleton', loot: 'bones',
-					level:  13, power: '2:8',  damageType: DamageType.CUT, immune: UndeadImmunity, vuln: DamageType.HOLY },
-	"kobold": { 	symbol: 'k', pronoun: "*", img: "dc-mon/kobold.png", brainTalk: true,
-					level:  1, power: '4:20',  damageType: DamageType.CUT, packAnimal: true,
-					attitude: Attitude.HESITANT,
-					loot: 'potion' },
-	"ethermite": { 	symbol: 'e', pronoun: "*", invisible: true, light:6, glow:true, img: "dc-mon/shining_eye.png",
-					level: 10, power: '3:20', sneakAttackMult: 3, damageType: DamageType.BITE, packAnimal: true,
-					loot: 'ring' },
-	"troll": {	 	symbol: 'T', pronoun: "*", regenerate: 0.15, img: "dc-mon/troll.png", vuln: DamageType.FIRE,
-					level:  8, power: '3:6',   damageType: DamageType.CLAW,
-					loot: 'trollHide' },
-	"viper": {		symbol: 'v', pronoun: "it", img: "dc-mon/animals/viper.png",
-					level:  5, power: '3:16', damageType: DamageType.CLAW, speed: 2.0,
-					attitude: Attitude.HESITANT,
-					loot: 'potion' },
-	"bat": { 		symbol: 'ᵬ', pronoun: "it", seeInvisible: true, img: "dc-mon/animals/giant_bat.png",
-					level:  1, power: '2:20', damageType: DamageType.BITE, travelMode: "fly", packAnimal: true,
-					attitude: Attitude.WANDER,      team: Team.NEUTRAL },
-	"spinyFrog": {	symbol: 'f', pronoun: "it", name: "spiny frog", img: "dc-mon/animals/spiny_frog.png",
-					level: 4, power: '3:10', damageType: DamageType.STAB, immune: DamageType.POISON,
-					attitude: Attitude.WANDER,      team: Team.NEUTRAL, loot: 'potion' },
-	"dog": {	 	symbol: 'd', name: "Fido/Lucy", properNoun: true, pronoun: "*", img: "UNUSED/spells/components/dog2.png",
-					level: 1, power: '10:10', damageType: DamageType.BITE, packAnimal: true, regenerate: 0.03,
-					brainFlee: true, brainPet: true, team: Team.GOOD, watch:1 },
-	"imp": {	 	symbol: 'i', pronoun: "it", seeInvisible: true, glow: 1, img: "dc-mon/demons/imp.png",
-					level: 7, power: '3:10', damageType: DamageType.BITE, travelMode: "fly", immune: DamageType.FIRE, vuln: DamageType.COLD,
-					attitude: Attitude.CONFUSED,    team: Team.EVIL },
-	"scarab": {	 	symbol: 'h', pronoun: "it", namePattern: "{color} scarab", color: 'red', glow: 3, img: "dc-mon/animals/boulder_beetle.png",
-					level: 12, power: '3:30', damageType: DamageType.BITE, travelMode: "fly", immune: DamageType.FIRE, vuln: DamageType.COLD,
-					loot: 'potion' },
-	"sheep": { 		symbol: 'r', pronoun: "it", img: "dc-mon/animals/sheep.png",
-					level: 1, power: '1:20',  damageType: DamageType.BITE, packAnimal: true,
-					attitude: Attitude.FEARFUL },
-	"lunarOne": { 	symbol: 'l', pronoun: "*", img: "dc-mon/deep_elf_high_priest.png", brainTalk: true, name: "lunar one",
-					level:  12, power: '3:10', damageType: DamageType.COLD, immune: DamageType.COLD,
-					attitude: Attitude.AGGRESSIVE,  team: Team.LUNAR, rarity: 10},
-	"human": { 	symbol: 'H', pronoun: "*", brainTalk: true, attitude: Attitude.HESITANT, brainOpensDoors: true, img: "dc-mon/human.png",
-					level: 1, power: '3:10', damageType: DamageType.CUT, attitude: Attitude.CALM, team: Team.GOOD},
-	"player": { 	symbol: '@', pronoun: "he", light: 7, brainTalk: true,
-					brain: Brain.USER, brainOpensDoors: true, picksup: true, img: "dc-mon/elf.png",
-					level: 1, power: null, regenerate: 0.03, damageType: DamageType.CUT, sightDistance: MaxSightDistance,
-					attitude: Attitude.CALM, team: Team.GOOD, neverPick: true }
+
+// GOOD TEAM
+	"player": {
+		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
+		attitude: Attitude.CALM,
+		brain: Brain.USER,
+		brainOpensDoors: true,
+		brainTalk: true,
+		light: 7,
+		neverPick: true,
+		picksup: true,
+		regenerate: 0.03,
+		sightDistance: MaxSightDistance
+	},
+	"dog": {
+		core: [ 'd', 1, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
+		name: "Fido/Lucy",
+		brainFlee: true,
+		brainPet: true,
+		properNoun: true,
+		packAnimal: true,
+		regenerate: 0.03,
+		watch:1
+	},
+	"human": {
+		core: [ 'H', 1, '3:10', 'good', 'cut', 'dc-mon/human.png', '*' ],
+		attitude: Attitude.CALM,
+		brainTalk: true,
+		brainOpensDoors: true,
+	},
+
+// EVIL TEAM
+	"Avatar of Balgur": {
+		core: [ 'a', 1, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
+		brainTalk: true,
+		immune: DamageType.BURN,
+		sayPrayer: 'I shall rule this planet!'
+	},
+	"demon": {
+		core: [ 'D', 5, '3:5', 'evil', 'burn', 'player/base/draconian_red_f.png', 'it' ],
+		brainTalk: true,
+		immune: DamageType.BURN,
+		packAnimal: true,
+		sayPrayer: 'Hail Balgur, ruler of the deep!'
+	},
+	"ethermite": {
+		core: [ 'e', 10, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
+		glow:true,
+		invisible: true,
+		light:6,
+		loot: 'ring',
+		packAnimal: true,
+		sneakAttackMult: 3
+	},
+	"goblin": {
+		core: [ 'g', 1, '3:10', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		brainTalk: true,
+		isGoblin: true,
+		packAnimal: true,
+		sayPrayer: 'Oh mighty Thagzog...'
+	},
+	"goblinWar": { 
+		core: [ 'W', 12, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		name: 'goblin warrior',
+		brainTalk: true,
+		isGoblin: true,
+		sayPrayer: 'Oh warrior Thagzog...'
+	},
+	"goblinMut": {
+		core: [ 'I', 22, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		name: 'goblin mutant',
+		brainTalk: true,
+		isGoblin: true,
+		sayPrayer: 'Oh mutant Thagzog...'
+	},
+	"imp": {
+		core: [ 'i', 7, '3:10', 'evil', 'claw', 'dc-mon/demons/imp.png', 'it' ],
+		attitude: Attitude.HESITANT,
+		glow: 1,
+		immune: DamageType.BURN,
+		seeInvisible: true,
+		travelMode: "fly",
+		vuln: DamageType.FREEZE
+	},
+	"kobold": {
+		core: [ 'k', 1, '4:20', 'evil', 'cut', 'dc-mon/kobold.png', '*' ],
+		attitude: Attitude.HESITANT,
+		brainTalk: true,
+		loot: 'potion',
+		packAnimal: true
+	},
+	"ogreKid": { 
+		core: [ 'Ǿ', 2, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
+		name: "ogre child",
+		brainTalk: true, 
+		resist: DamageType.CUT,
+		speed: 0.75
+	},
+	"ogre": {
+		core: [ 'Ȱ', 10, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
+		brainTalk: true,
+		resist: DamageType.CUT+','+DamageType.STAB,
+		speed: 0.5
+	},
+	"scarab": {
+		core: [ 'h', 12, '3:30', 'evil', 'bite', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		namePattern: "{color} scarab",
+		color: 'red',
+		glow: 3,
+		immune: DamageType.BURN,
+		loot: 'potion',
+		travelMode: "fly",
+		vuln: DamageType.FREEZE
+	},
+	"skeleton": {
+		core: [ 's', 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		immune: UndeadImmunity,
+		loot: 'bones',
+		vuln: DamageType.SMITE
+	},
+	"skeletonLg": {
+		core: [ 'S', 13, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
+		name: 'ogre skeleton',
+		immune: UndeadImmunity,
+		loot: 'bones',
+		vuln: DamageType.SMITE
+	},
+	"troll": {
+		core: [ 'T', 8, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
+		loot: 'trollHide',
+		regenerate: 0.15,
+		vuln: DamageType.BURN
+	},
+	"viper": {
+		core: [ 'v', 5, '3:16', 'evil', 'claw', 'dc-mon/animals/viper.png', 'it' ],
+		attitude: Attitude.HESITANT,
+		loot: 'potion',
+		speed: 2.0
+	},
+
+// LUNAR
+	"lunarOne": {
+		core: [ 'l', 12, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
+		brainTalk: true,
+		immune: DamageType.FREEZE,
+		name: "lunar one",
+		rarity: 10
+	},
+
+// NEUTRAL TEAM
+	"bat": {
+		core: [ 'ᵬ', 1, '2:20', 'neutral', 'bite', 'dc-mon/animals/giant_bat.png', 'it' ],
+		attitude: Attitude.WANDER,
+		packAnimal: true,
+		seeInvisible: true,
+		travelMode: "fly"
+	},
+	"spinyFrog": {
+		core: [ 'f', 4, '3:10', 'neutral', 'stab', 'dc-mon/animals/spiny_frog.png', 'it' ],
+		name: "spiny frog",
+		attitude: Attitude.WANDER,
+		immune: DamageType.POISON,
+		loot: 'potion'
+	},
+	"sheep": {
+		core: [ 'r', 1, '1:20', 'neutral', 'bite', 'dc-mon/animals/sheep.png', 'it' ],
+		attitude: Attitude.FEARFUL,
+		packAnimal: true
+	}
 };
+
+(function() {
+	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
+	for( let typeId in MonsterTypeList ) {
+		let m = MonsterTypeList[typeId];
+		m.symbol = m.core[0];
+		m.level = m.core[1];
+		m.power = m.core[2];
+		m.team  = m.core[3];
+		m.damageType = m.core[4];
+		m.img = m.core[5];
+		m.pronoun = m.core[6];
+		delete m.core;
+	}
+})();
+
 
 TileTypeList['lockedDoor'].onTouch = function(entity,self) {
 	if( entity.brainOpensDoors ) {
@@ -624,7 +781,7 @@ TileTypeList.ghoststone.onTouch = function(entity,self) {
 ItemTypeList.altar.onTouch = function(entity,self) {
 	if( !self.rechargeLeft) {
 		let picker = new Picker(entity.map.level);
-		entity.takeHealing(self,picker.pickDamage(self.rechargeTime)*self.healMultiplier,DamageType.HOLY);
+		entity.takeHealing(self,picker.pickDamage(self.rechargeTime)*self.healMultiplier,DamageType.SMITE);
 		self.rechargeLeft = self.rechargeTime;
 		self.depleted = true;
 	}
@@ -672,6 +829,6 @@ MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
 }
 
 MonsterTypeList.scarab.onAttack = function(target) {
-	let effect = Object.assign({},EffectTypeList.vulnerability,{value: DamageType.FIRE});
+	let effect = Object.assign({},EffectTypeList.vulnerability,{value: DamageType.BURN});
 	effectApply(this,effect,target);
 }
