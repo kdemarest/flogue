@@ -26,11 +26,7 @@ class Entity {
 		}
 		Object.assign( this, monsterType, inits, inject || {}, values );
 
-		let self = this;
-		this.name = this.name || this.namePattern.replace(/{(\w+)}/g,function(whole,key) {
-			if( !self[key] ) { debugger; }
-			return self[key] || 'UNKNOWN '+key;
-		});
+		this.name = this.name || String.tokenReplace(this.namePattern,this);
 
 		if( this.name && this.name.indexOf('/')>0 ) {
 			values.name = this.name.split('/')[values.pronoun=='she' ? 1 : 0];
@@ -74,7 +70,7 @@ class Entity {
 			debugger;
 		}
 		if( this.corpse ) {
-			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{ usedToBe: this, isCorpse: true } );
+			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{},{ usedToBe: this, isCorpse: true } );
 		}
 		tell(mSubject,this,' ',mVerb,'die','!');
 		this.removed = true;
@@ -209,6 +205,11 @@ class Entity {
 			debugger;
 		}
 		this.inventory.push(item);
+		if( item.isGold ) {
+			this.goldCount = (this.goldCount||0) + item.goldCount;
+			item.destroy();
+			return;
+		}
 	}
 
 	enemyAtPos(x,y) {
@@ -248,7 +249,7 @@ class Entity {
 		return null;
 	}
 	mayOccupy(travelMode,x,y,ignoreEntity) {
-		let type = findCollider(travelMode,x,y,ignoreEntity);
+		let type = this.findCollider(travelMode,x,y,ignoreEntity);
 		return type===null;
 	}
 
@@ -593,9 +594,9 @@ class Entity {
 		return result;
 	}
 
-	itemCreateByType(type,inject,presets) {
+	itemCreateByType(type,presets,inject) {
 		if( type.isRandom ) debugger;
-		let item = new Item( this, type, { x:this.x, y:this.y }, inject, presets );
+		let item = new Item( this, type, { x:this.x, y:this.y }, presets, inject );
 		this.inventory.push(item);
 		return item;
 	}
@@ -604,9 +605,16 @@ class Entity {
 	pickup(item) {
 		if( !item ) debugger;
 		if( item.moveTo(this) !== false ) {
-			if( item.isArmor ) {
-				item.armor = this.calcArmor(DamageType.CUTS);
+			if( item.isArmor && !item.armor ) {
+				debugger;
 			}
+/*
+			if( item.isWeapon ) {
+				let weapon,damage,damageType;
+				[weapon,damage,damageType] = this.calcWeapon();
+				item.damage = damage;
+			}
+*/
 			tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
 			if( item.triggerOnPickup ) {
 				item.trigger(Command.PICKUP,this,this);
@@ -752,7 +760,7 @@ class Entity {
 				break;
 			}
 			case Command.TEST: {
-				let gate = this.map.itemCreateByTypeId(this.x,this.y,'portal',{ toAreaId: "test" } );
+				let gate = this.map.itemCreateByTypeId(this.x,this.y,'portal',{},{ toAreaId: "test" } );
 				world.setPending( gate );
 				break;
 			}
@@ -762,10 +770,9 @@ class Entity {
 				let corpse = item.usedToBe;
 				if( corpse ) {
 					let picker = new Picker(corpse.level);
-					let itemTable = picker.buildItemTable();
-					let obj = picker.pick(itemTable,corpse.loot);
+					let obj = picker.pick(picker.itemTable,corpse.loot);
 					if( obj !== false ) {
-						let item = this.itemCreateByType(obj.item,null,obj.presets);
+						let item = this.itemCreateByType(obj.item,obj.presets,{isLoot:true});
 						tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
 					}
 					else {
@@ -774,6 +781,16 @@ class Entity {
 				}
 				item.destroy();
 				break;
+			}
+			case Command.DROP: {
+				let item = this.commandItem;
+				let type = findCollider('walk',this.x,this.y);
+				if( type !== null ) {
+					tell(mSubject,this,' may not drop anything here.');
+				}
+				else {
+					item.moveTo(this.map,this.x,this.y);
+				}
 			}
 			case Command.QUAFF: {
 				let item = this.commandItem;

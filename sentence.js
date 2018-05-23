@@ -3,6 +3,7 @@ let mObject = 2;
 let mPronoun = 4;
 let mPossessive = 8;
 let mA = 16;
+let mCares = 32;
 let mVerb = 128;
 
 let SentenceReusableArray = [];
@@ -77,8 +78,26 @@ class Sentence {
 		}
 		return this.scan();
 	}
+	doesObserverCare(observerId) {
+		let allCare = true;
+		let m = this.list;
+		let i = 0;
+		while( i < m.length ) {
+			if( (typeof m[i]=='number') && (m[i] & mCares) ) {
+				allCare = false;
+				++i;
+				let who = m[i];
+				if( typeof who=='object' && who.id == observerId ) {
+					return true;
+				}
+			}
+			++i;
+		}
+		return allCare;
+	}
 	refine(you) {
 		let vowels = 'aeiou';
+		let numbers = '0123456789';
 
 		let s = '';
 		let i = 0;
@@ -99,7 +118,14 @@ class Sentence {
 				let flags = m[i] & (mPronoun|mPossessive);
 				let useA = m[i] & mA;
 				let who = m[++i];
-				let thing = (who.properNoun ? who.name : (useA ? (vowels.indexOf(who.name.charAt(0))>=0 ? 'an ' : 'a ') : "the ")+who.name);
+				let specifier = 'the ';
+				if( useA ) {
+					specifier = vowels.indexOf(who.name.charAt(0))>=0 ? 'an ': 'a ';
+				}
+				if( numbers.indexOf(who.name.charAt(0))>=0 ) {
+					specifier = '';
+				}
+				let thing = (who.properNoun ? who.name : specifier)+who.name;
 				let a = SentenceReusableArray;
 				a[0] = {you:'you',he:thing,she:thing,it:thing};
 				a[mPronoun] = {you:'you',he:'he',she:'she',it:'it'};

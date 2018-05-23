@@ -225,9 +225,9 @@ PlaceList.etherHive = {
 	map:
 `
 x..xx
-xe.e.
-..e..
-.e.ex
+x....
+.eee.
+....x
 xx..x
 `,
 	flags: { rotate: true },

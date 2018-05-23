@@ -98,7 +98,7 @@ class AreaBuilder {
 			}
 			// CREATE ITEMS
 			if( entityType && entityType.isItemType ) {
-				itemMakeFn(x,y,entityType,inject);
+				itemMakeFn(x,y,entityType,null,inject);	// the null means you have to generate presets for this item.
 				// WARNING: We could set this more carefully, like by checking around it and using majority
 				// of passable tiles.
 				map.tileSymbolSet(x,y,TileTypeList.floor.symbol);
@@ -120,9 +120,6 @@ class Area {
 		this.mapMemory = [];
 
 		let picker = new Picker(level);
-		picker.monsterTable = picker.buildMonsterTable();
-		picker.itemTable = picker.buildItemTable();
-		picker.placeTable = picker.buildPlaceTable();
 		this.builder = new AreaBuilder(picker);
 
 		let sideDimension = Math.randInt(40,150);
@@ -135,8 +132,8 @@ class Area {
 			dim: sideDimension,
 			placeDensity: 0.2,
 			floorDensity: Math.rand(0.40,0.70),
-			monsterDensity: 0.01, //Monster Density
-			itemDensity: level==1 ? 0.20 : 0.03 //Item Density
+			monsterDensity: 0.005, //Monster Density
+			itemDensity: 0.02 //Item Density
 
 		};
 
@@ -145,7 +142,7 @@ class Area {
 			let entityType = picker.pick(picker.monsterTable);
 			self.entityList.push( new Entity( self.map, self.entityList, entityType, { x:x, y:y } ) );
 		}
-		function makeItem(x,y,type,inject,presets) {
+		function makeItem(x,y,type,presets,inject) {
 			if( type && type.isRandom ) {
 				type = null;
 			}
@@ -158,10 +155,7 @@ class Area {
 				presets = obj.presets;
 			}
 
-			if( self.map.tileTypeGet(x,y).typeId === 'wall' ) {
-				debugger;
-			}
-			let item = self.map.itemCreateByType(x,y,type,inject,presets);
+			let item = self.map.itemCreateByType(x,y,type,presets,inject);
 			//console.log( item.name+' created at ('+x+','+y+') on '+self.map.tileTypeGet(x,y).typeId );
 			if( item.gateDir !== undefined ) {
 				self.gateList.push(item);

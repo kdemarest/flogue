@@ -102,10 +102,14 @@ function tickItemList(itemList,dt,map,entityList) {
 function main(levelName) {
 
 	function render(observer) {
-		readout.render(observer,entityList);
+		gui.viewStatus.render(observer,entityList);
+		gui.viewSpells.render(observer);
+		gui.viewInfo.render(observer);
+		gui.viewInventory.render(observer);
+		gui.viewRange.render(observer);
+		gui.viewMiniMap.render(observer);
 		let drawList = createDrawList(observer,map,entityList);
-		display.draw(drawList,observer);
-		miniMap.draw(observer);
+		gui.viewMap.draw(drawList,observer);
 	}
 
 	function tick(speed) {
@@ -145,7 +149,7 @@ function main(levelName) {
 		while( history.length > 10 ) {
 			history.pop();
 		}
-		let targetElement = document.getElementById('messageBox');
+		let targetElement = document.getElementById('guiMessageBox');
 		targetElement.innerHTML = (history[5]||'')+'\n'+(history[4]||'')+'\n'+(history[3]||'')+'\n'+(history[2]||'')+'\n'+(history[1]||'')+'\n'+(history[0]||'');
 		targetElement.scrollTop = targetElement.scrollHeight
 	}
@@ -162,7 +166,7 @@ function main(levelName) {
 		else {
 			player.command = KeyToCommand[''+e.key] !== undefined ? KeyToCommand[''+e.key] : Command.NONE;
 
-			let timePass = readout.evalCommand(player,e,player.command);
+			let timePass = gui.userCommandHandler.evalCommand(player,e,player.command);
 			if( timePass && player.command !== Command.NONE ) {
 				tick(player.speed);
 			}
@@ -195,9 +199,15 @@ function main(levelName) {
 	window.world = new World(startingLevel);
 
 	let imageRepo = new ImageRepo(PIXI.loader);
-	let display = new Display('map',MaxSightDistance,imageRepo);
-	let miniMap = new MiniMap('#miniMapCanvas',imageRepo);
-	let readout = new Readout('readoutSpells','readoutInfo','inventory',imageRepo,worldOverlayAdd,worldOverlayRemove);
+	let gui = {};
+	gui.viewMap = new ViewMap('guiMap',MaxSightDistance,imageRepo);
+	gui.viewMiniMap = new ViewMiniMap('guiMiniMap',imageRepo);
+	gui.viewSpells = new ViewSpells('guiSpells');
+	gui.viewInfo = new ViewInfo('guiInfo')
+	gui.viewStatus = new ViewStatus('guiStatus');
+	gui.viewRange = new ViewRange(worldOverlayAdd,worldOverlayRemove);
+	gui.viewInventory = new ViewInventory('guiInventory',imageRepo);
+	gui.userCommandHandler = new UserCommandHandler(gui.viewInventory,gui.viewRange);
 	let spectator = {
 		x: 0,
 		y: 0,
@@ -214,7 +224,8 @@ function main(levelName) {
 	if( !player ) {
 		let gate = area.getUnusedGateByTypeId('stairsUp');
 		if( !gate ) {
-			gate = map.itemCreateByTypeId(false,false,'stairsUp');
+			let pos = map.pickPosEmpty();
+			gate = map.itemCreateByTypeId(pos[0],pos[1],'stairsUp');
 		}
 		let x = gate.x;
 		let y = gate.y;
@@ -380,16 +391,16 @@ function loadKeyMapping(name) {
 <body>
 	<table>
 		<tr><td colspan="2">
-			<div id="messageBox"></div>
+			<div id="guiMessageBox"></div>
 		</td></tr>
 		<tr>
 			<td>
 				<div id="mapContainer">
-					<div id="map"></div>
-					<div id="inventory"></div>
+					<div id="guiMap"></div>
+					<div id="guiInventory"></div>
 				</div>
 			</td><td>
-				<div id="readoutStatus">
+				<div id="guiStatus">
 					<div id='health0' class="health-bar" data-total="1000" data-value="1000">
 						<div class="bar">
 							<div class="hit"></div>
@@ -441,11 +452,11 @@ function loadKeyMapping(name) {
 						</div>
 					</div>
 				</div>
-				<div id="readoutSpells">
+				<div id="guiSpells">
 				</div>
-				<div id="readoutInfo">
+				<div id="guiInfo">
 				</div>
-				<div id="miniMap">
+				<div id="guiMiniMap">
 				</div>
 			</td>
 		</tr>

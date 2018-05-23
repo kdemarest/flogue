@@ -9,7 +9,7 @@ body {
 	height: 672px;
 	position: relative;
 }
-#map {
+#guiMap {
 	display: block;
 	white-space: pre;
 	font-family: "Courier New", Courier, sans-serif;
@@ -23,7 +23,7 @@ body {
 	width: 32px;
 	height: 32px;
 }
-#inventory {
+#guiInventory {
 	display: none;
 	z-index: 10;
 	white-space: pre;
@@ -35,7 +35,7 @@ body {
 	left:0;
 	overflow-y: scroll;
 }
-#messageBox {
+#guiMessageBox {
 	display: block;
 	white-space: pre;
 	font-family: "Ariel", serif;
@@ -48,12 +48,12 @@ body {
 	overflow-x: auto;
 	margin-bottom: 10px;
 }
-#readoutStatus {
+#guiStatus {
 	width: 104px;
 	height: 160px;
 	overflow-y: hidden;
 }
-#readoutSpells {
+#guiSpells {
 	width: 104px;
 	height: 100px;
 	display: block;
@@ -64,9 +64,9 @@ body {
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
-#readoutInfo {
+#guiInfo {
 	width: 104px;
-	height: 64px;
+	height: 90px;
 	display: block;
 	white-space: pre;
 	font-family: "Ariel", serif;
@@ -76,7 +76,7 @@ body {
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
-#miniMap {
+#guiMiniMap {
 	width: 150px;
 	height: 150px;
 	display: block;

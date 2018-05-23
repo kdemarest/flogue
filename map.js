@@ -159,21 +159,20 @@ class Map extends SimpleMap {
 		this.actionCount = 0;
 		this.itemList = itemList;
 	}
-	itemCreateByType(x,y,type,inject,presets) {
-		if( type.isRandom ) debugger;
+	pickPosEmpty() {
+		console.log("Picking random location for "+type.typeId);
+		let pos = this.pickPosBy(0,0,0,0,(x,y,type)=>type.isFloor);
+		return pos;
+	}
 
-		if( x===false ) {
-			console.log("Picking random location for "+type.typeId);
-			let pos = this.pickPosBy(0,0,0,0,(x,y,type)=>type.isFloor);
-			x=pos[0];
-			y=pos[1];
-		}
-		let item = new Item( this, type, { x:x, y:y }, inject, presets );
+	itemCreateByType(x,y,type,presets,inject) {
+		if( type.isRandom ) debugger;
+		let item = new Item( this, type, { x:x, y:y }, presets, inject );
 		this.itemList.push(item);
 		return item;
 	}
-	itemCreateByTypeId(x,y,typeId,inject,presets) {
-		return this.itemCreateByType(x,y,ItemTypeList[typeId],inject,presets);
+	itemCreateByTypeId(x,y,typeId,presets,inject) {
+		return this.itemCreateByType(x,y,ItemTypeList[typeId],presets,inject);
 	}
 
 	_itemRemove(item) {

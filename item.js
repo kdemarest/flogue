@@ -1,6 +1,12 @@
 // ITEM
 class Item {
-	constructor(owner,itemType,position,inject,presets) {
+	constructor(owner,itemType,position,presets,inject) {
+		let picker = new Picker(owner.level);
+		if( !presets ) {
+			let obj = picker.pick(picker.itemTable,itemType.typeId);
+			presets = obj.presets;
+		}
+
 		let ignore = { level:1, rarity:1, name:1, namePattern:1, ingredientId:1, type:1, typeId:1 };
 		function merge(target,source) {
 			if( !source ) { return; }
@@ -13,55 +19,36 @@ class Item {
 			return target;
 		}
 
-		let inits = { owner: owner, id: humanNameList.pop(), x:position.x, y:position.y };
+		let inits = { level: owner.level, owner: owner, id: humanNameList.pop(), x:position.x, y:position.y };
 		if( owner && owner.isMonsterType ) {
 			inits.ownerOfRecord = owner;
 		}
-		Object.assign( this, itemType, inject||{}, presets||{}, inits );
-		if( this.qualities && !this.quality ) {
-			this.quality = pick(this.qualities);
-		}
-		if( this.materials && !this.material ) {
-			this.material = pick(this.materials);
-		}
-		if( this.varieties && !this.variety ) {
-			this.variety = pick(this.varieties);
-		}
-		if( this.effectChoices ) {
-			this.effect = this.generateEffect(this.effectType);
-		}
+		Object.assign( this, itemType, presets, inject||{}, inits );
+
 		merge(this,this.quality);
 		merge(this,this.material);
 		merge(this,this.variety);
-		this.armor = this.calcArmor();
+
+		if( this.effect !== undefined ) {
+			this.effect = this.assignEffect(this.effect,picker,this.rechargeTime);
+		}
 
 		if( this.x !== position.x || this.y !== position.y ) {
 			debugger;
 		}
 
 		let self = this;
-		this.name = this.name || this.namePattern.replace(/{(\w+)}/g,function(whole,key) {
-			if( typeof self[key] == 'string' || typeof self[key] == 'number' ) {
-				return self[key];
-			}
-			if( Array.isArray(self[key]) ) {
-				return self[key].join(',');
-			}
-			if( typeof self[key] == 'object' ) {
-				if( self[key] ) return self[key].name || 'NONAME';
-			}
-			return 'UNKNOWN '+key;
-		});
+		this.name = 'L'+this.level+' '+(this.name || String.tokenReplace(this.namePattern,this));
 	}
-	generateEffect(effectType) {
-		effectType = effectType || pick(this.effectChoices);
+	assignEffect(effectType,picker,rechargeTime) {
 		let effect = Object.assign({},effectType);
-		if( effect.valuePick ) {
-			effect.value = effect.valuePick();
+		if( effect.valueDamage ) {
+			effect.value = picker.pickDamage(this.rechargeTime) * effect.valueDamage;
 		}
-		effect.name = effect.name || effect.namePattern.replace(/{(\w+)}/g,function(whole,key) {
-			return effect[key] || 'UNKNOWN '+key;
-		});
+		if( effect.valuePick ) {
+			effect.value = effect.valuePick(this,picker);
+		}
+		effect.name = effect.name || String.tokenReplace(effect.namePattern,effect);
 		if( this.effectOverride ) {
 			Object.assign( effect, this.effectOverride );
 		}
@@ -76,14 +63,15 @@ class Item {
 	isRecharged() {
 		return this.rechargeTime === undefined || !this.rechargeLeft;
 	}
-	calcArmor(damageType=DamageType.CUT) {
+	calcArmor(damageType) {
+		if( !this.isArmor ) {
+			debugger;
+			return 0;
+		}
 		if( !ArmorDefendsAgainst.includes(damageType) ) {
 			return 0;
 		}
-
-		let armorBase = (this.material?this.material.armor||0:0)+(this.variety?this.variety.armor||0:0)+(this.armor||0);
-		let armorMultiplier = (this.material?this.material.armorMultiplier||1:1)*(this.variety?this.variety.armorMultiplier||1:1)*(this.armorMultiplier||1);
-		return Math.floor(armorBase * armorMultiplier);
+		return this.armor;
 	}
 
 	moveTo(entity,x,y) {
@@ -124,8 +112,8 @@ class Item {
 		if( !result ) {
 			return false;
 		}
-		if( this.rechargeTime !== undefined ) {
-			this.rechargeLeft = this.rechargeTime;
+		if( this.effect && this.effect.rechargeTime !== undefined ) {
+			this.effect.rechargeLeft = this.effect.rechargeTime;
 		}
 
 		if( typeof this.charges =='number' ) {

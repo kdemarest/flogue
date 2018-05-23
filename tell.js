@@ -21,6 +21,10 @@ let MessageManager = (new class {
 			debugger;
 		}
 		this.recipientList.map( recipient => {
+			let observerCares = sentence.doesObserverCare(recipient.observer.id);
+			if( !observerCares ) {
+				return;
+			}
 			let cp = recipient.canPerceiveEntityFn(recipient.observer,sentence.subject);
 			if( sentence.object ) {
 				cp = cp || recipient.canPerceiveEntityFn(recipient.observer,sentence.object);
@@ -44,7 +48,7 @@ let MessageManager = (new class {
 }());
 
 function bonk(entity,target) {
-	tell( mSubject, entity, ' ', mVerb, 'run', ' into ', mObject, target, '.' );
+	tell( mSubject|mCares, entity, ' ', mVerb, 'run', ' into ', mObject, target, '.' );
 }
 
 function tell() {

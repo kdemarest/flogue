@@ -78,7 +78,7 @@ let DeedManager = (new class {
 	}
 	// The origin should ALWAYS be an item, unless intrinsic to a monster.
 	add(origin,entity,duration,stat,op,value,onTick,onEnd,data) {
-		let handlerFn = this.handler[stat+'_'+op];
+		let handlerFn = this.handler[op];
 		if( handlerFn ) {
 			handlerFn(origin,entity,value);
 		}
@@ -86,8 +86,8 @@ let DeedManager = (new class {
 			this.deedList.push( new Deed(origin,entity,duration,stat,op,value,onTick,onEnd,data) );
 		}
 	}
-	addHandler(stat,op,handlerFn) {
-		this.handler[stat+'_'+op] = handlerFn;
+	addHandler(op,handlerFn) {
+		this.handler[op] = handlerFn;
 	}
 	calcStat(entity,stat) {
 		let oldValue = entity[stat];
@@ -167,16 +167,16 @@ let effectApply = function(origin,effect,target) {
 		return false;
 	}
 
-
+	let map = target.map || origin.map || origin.ownerOfRecord.map;
 	if( target.isPosition ) {
 		if( !effect.onTargetPosition ) {
 			return false;
 		}
-		let map = target.map || origin.map || origin.ownerOfRecord.map;
 		effect.onTargetPosition(map,target.x,target.y)
 		return true;
 	}
-	deedAdd(origin,target,rollDice(effect.duration),effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
+	let duration = effect.isInstant ? 0 : (origin.inSlot ? true : DEFAULT_EFFECT_DURATION);
+	deedAdd(origin,target,duration,effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
 	return true;
 }
 
@@ -196,12 +196,12 @@ let deedTell = function(entity,stat,oldValue,newValue ) {
 	tell(...content);
 }
 
-DeedManager.addHandler('health','add',function(origin,entity,value) {
+DeedManager.addHandler('heal',function(origin,entity,value) {
 	entity.takeHealing(origin,value,origin.effect.healingType);
 });
-DeedManager.addHandler('health','sub',function(origin,entity,value) {
+DeedManager.addHandler('damage',function(origin,entity,value) {
 	entity.takeDamage(origin,value,origin.effect.damageType,origin.effect.onAttack);
 });
-DeedManager.addHandler('position','push',function(origin,entity,value) {
+DeedManager.addHandler('move',function(origin,entity,value) {
 	entity.takePush(origin,value);
 });

@@ -100,6 +100,26 @@ function nop() {}
 		}
 		return '';
 	}
+	String.tokenReplace = function(s,obj) {
+		return s.replace(/{([%]*)(\w+)}/g,function(whole,pct,key) {
+			let isPercent = pct=='%';
+
+			if( typeof obj[key] == 'number' ) {
+				return obj[key] * (isPercent?100:1)+(isPercent?'%':'');
+			}
+			if( typeof obj[key] == 'string' ) {
+				return obj[key];
+			}
+			if( Array.isArray(obj[key]) ) {
+				return obj[key].join(',');
+			}
+			if( typeof obj[key] == 'object' ) {
+				if( obj[key] ) return obj[key].name || 'NONAME';
+			}
+			debugger;
+			return 'UNKNOWN '+key;
+		});
+	}
 
 	Math.chanceToAppearSimple = function(entityLevel,mapLevel) {
 		if( mapLevel < entityLevel ) {
@@ -145,22 +165,22 @@ function nop() {}
 		 	return 18+(2*playerLevel);
 		 }
 		 playerArmor(playerLevel) {
-		 	let armorAtLevel1 = 0.10;
+		 	let armorAtLevel1 = 0.30;
 		 	let armorAtLevel100 = 0.80;
 		 	let armor = armorAtLevel1+((playerLevel-1)/100)*(armorAtLevel100-armorAtLevel1);
-		 	return armor;
+		 	return Math.clamp(armor,0.0,1.0);
 		 }
 		 playerDamage(playerLevel) {
 		 	let hitsToKillPlayer = 10;
 		 	let damage = this.playerHealth(playerLevel)/(hitsToKillPlayer*(1-this.playerArmor(playerLevel)));
-		 	return damage;
+		 	return Math.max(1,Math.floor(damage));
 		 }
 		 monsterHealth(monsterLevel,hitsToKillMonster=3) {
-		 	return this.playerDamage(monsterLevel)*hitsToKillMonster;
+		 	return Math.max(1,Math.floor(this.playerDamage(monsterLevel)*hitsToKillMonster));
 		 }
 		 monsterDamage(monsterLevel,hitsToKillPlayer=10) {
 		 	let damage = this.playerHealth(monsterLevel)/(hitsToKillPlayer*(1-this.playerArmor(monsterLevel)));
-		 	return damage;
+		 	return Math.max(1,Math.floor(damage));
 		 }
 	};
 })();

@@ -221,7 +221,7 @@ class ImageRepo {
 }
 
 
-class Display {
+class ViewMap {
 	constructor(divId,sightDistance,imageRepo) {
 		this.divId = divId;
 		this.sd = sightDistance;
