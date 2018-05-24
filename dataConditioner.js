@@ -32,7 +32,7 @@ class DataConditioner {
 		// Give symbols to anything that lacks a symbol.
 		for( let placeId in PlaceSourceList ) {
 
-			let place = PlaceSourceList[placeId];	// make a copy so that we can mangle it.
+			let place = PlaceSourceList[placeId];
 			place.id = placeId;
 			let roster = Object.assign({},place.monsterTypes,place.itemTypes,place.tileTypes);
 			for( let typeId in roster ) {
@@ -63,6 +63,28 @@ class DataConditioner {
 			processTypeList( TileTypeList, 		place.tileTypes );
 			processTypeList( ItemTypeList,		place.itemTypes );
 			processTypeList( MonsterTypeList,	place.monsterTypes );
+		}
+
+		// Be sure to do this afterwards, just in case a place uses a monster from a place further down the list.
+		for( let placeId in PlaceSourceList ) {
+			let NO_MONSTERS = -1;
+			let level = NO_MONSTERS;
+			let place = PlaceSourceList[placeId];
+			for( let i=0 ; i<place.map.length ; ++i ) {
+				let s = place.map.charAt(i);
+				let monster = MonsterTypeList[place.symbols[s] || s2t[s]];
+				if( monster ) {
+					level = Math.max(level,monster.level||1);
+				}
+			}
+			if( place.level && level > place.level+5 ) {
+				console.log("WARNING: Place "+placeId+" is level "+place.level+" but has level "+level+" monsters.");
+			}
+			place.level = place.level || level;
+			if( place.level == NO_MONSTERS ) {
+				place.level = 'any';
+			}
+			console.log("place "+place.id+" is level "+place.level);
 		}
 	}
 

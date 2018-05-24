@@ -91,10 +91,10 @@ let DeedManager = (new class {
 	}
 	calcStat(entity,stat) {
 		let oldValue = entity[stat];
-		if( entity.type[stat] === undefined ) {
+		if( entity.baseType[stat] === undefined ) {
 			debugger;
 		}
-		entity[stat] = entity.type[stat];
+		entity[stat] = entity.baseType[stat];
 		for( let deed of this.deedList ) {
 			if( !deed.killMe && deed.entity.id == entity.id && deed.stat == stat ) {
 				deed.applyEffect();
@@ -161,9 +161,18 @@ let effectApply = function(origin,effect,target) {
 		tell(mSubject,origin,' has no effect on ',mObject,target);
 		return false;
 	}
-	if( effect.op=='set' && (target.isImmune(effect.typeId) || target.isImmune(effect.value)) ) {
-		let subject = target.isImmune(effect.typeId) ? effect.typeId : effect.value;
+	if( target.isImmune(effect.typeId) ) {
+		tell(mSubject,target,' is immune to ',mObject,effect);
+		return false;
+	}
+	if( effect.op=='set' && target.isImmune(effect.value) ) {
+		let subject = effect.value;
 		tell(mSubject|mPossessive,origin,' '+subject+' has no effect on ',mObject,target);
+		return false;
+	}
+
+	if( (target.isResistant(effect.typeId) || (effect.op=='set' && target.isResistant(effect.value)) ) && Math.chance(50) ) {
+		tell(mSubject,target,' resists the effects of ',mObject,effect);
 		return false;
 	}
 
@@ -177,6 +186,11 @@ let effectApply = function(origin,effect,target) {
 	}
 	let duration = effect.isInstant ? 0 : (origin.inSlot ? true : DEFAULT_EFFECT_DURATION);
 	deedAdd(origin,target,duration,effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
+
+	if( origin && origin.isItemType && origin.rechargeTime !== undefined ) {
+		origin.rechargeLeft = origin.rechargeTime;
+	}
+
 	return true;
 }
 

@@ -186,10 +186,28 @@ class Map extends SimpleMap {
 		let pos = this.pickPosBy(0,0,0,0,(x,y,type)=>type.isFloor);
 		return pos;
 	}
+	pickDirWalkable(x,y) {
+		let list = [];
+		for( let dir=0 ; dir<DirectionCount ; ++dir ) {
+			let type = this.tileTypeGetDir(x,y,dir);
+			if( type && type.mayWalk ) {
+				list.push(dir);
+			}
+		}
+		return list.length ? pick(list) : false;
+	}
 
 	itemCreateByType(x,y,type,presets,inject) {
 		if( type.isRandom ) debugger;
+		if( !this.tileTypeGet(x,y).mayWalk ) {
+			let dir = this.pickDirWalkable(x,y);
+			if( dir !== false ) {
+				x += DirectionAdd[dir].x;
+				y += DirectionAdd[dir].y;
+			}
+		}
 		let item = new Item( this, type, { x:x, y:y }, presets, inject );
+
 		this.itemList.push(item);
 		return item;
 	}
@@ -285,7 +303,7 @@ function shoot4(map,px,py,x,y,blind) {
 }
 
 
-function calcVis(map,px,py,sightDistance,blind,cachedVis,mapMemory) {
+function calcVis(map,px,py,sightDistance,blind,xray,cachedVis,mapMemory) {
 
 	let a = cachedVis || [];
 	let q = [];
@@ -303,7 +321,7 @@ function calcVis(map,px,py,sightDistance,blind,cachedVis,mapMemory) {
 				a[y][x] = false;
 				continue;
 			}
-			a[y][x] = shoot4(map,px,py,x,y,blind);
+			a[y][x] = xray ? true : shoot4(map,px,py,x,y,blind);
 			if( mapMemory && a[y][x] ) {
 				let item = q[y*map.xLen+x];
 				mapMemory[y] = mapMemory[y] || [];

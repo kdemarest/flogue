@@ -199,7 +199,7 @@ function main(levelName) {
 	dataConditioner.integratePlaceData();
 	dataConditioner.prepareStaticData();
 
-	let startingLevel = 12;
+	let startingLevel = 10;
 	window.world = new World(startingLevel);
 
 	let imageRepo = new ImageRepo(PIXI.loader);
@@ -211,13 +211,13 @@ function main(levelName) {
 	gui.viewStatus = new ViewStatus('guiStatus');
 	gui.viewRange = new ViewRange(worldOverlayAdd,worldOverlayRemove);
 	gui.viewInventory = new ViewInventory('guiInventory',imageRepo);
-	gui.userCommandHandler = new UserCommandHandler(gui.viewInventory,gui.viewRange);
+	gui.userCommandHandler = new UserCommandHandler(gui.viewInventory,gui.viewRange,gui.viewSpells);
 	let spectator = {
 		x: 0,
 		y: 0,
 		vis: [],
 		canPerceiveEntity: () => true,
-		calcVis: () => calcVis(map,spectator.x,spectator.y,MaxSightDistance,false,spectator.vis)
+		calcVis: () => calcVis(map,spectator.x,spectator.y,MaxSightDistance,false,false,spectator.vis)
 	};
 
 	let area = world.createArea(null,0);
@@ -253,143 +253,6 @@ function main(levelName) {
 	}, 20);
 }
 
-(function() {
-
-	// Ǿgidᵬje  AB*? ᵮ⍨|:░ ¡$
-
-	let level = {
-		"oldtest":
-			"############\n"+
-			"#   Ώ      #\n"+
-			"#          #\n"+
-			"#<    h    #\n"+
-			"#          #\n"+
-			"#          #\n"+
-			"#        > #\n"+
-			"############\n"+
-			'',
-		"all":
- 			"#######################\n"+
-			"#Ǿ#g#s#k#e#T#v#ᵬ#f#i#r#\n"+
-			"#±#±#±#±#±#±#±#±#±#±#±#\n"+
-			"#                     #\n"+
-			"# :::                 #\n"+
-			"# :::                 #\n"+
-			"# ⍨⍨⍨       g ᵴ@      #\n"+
-			"# ᵮᵮᵮ            AB?F##\n"+
-			"#              ########\n"+
-			"#              + ░░░░░#\n"+
-			"# $ ††         | ░░░░░#\n"+
-			"# ᵴᵴᵴᵴᵴᵴᵴᵴᵴᵴᵴ  ± ░░░░░#\n"+
-			"#¡¡¡¡¡¡¡¡¡¡¡¡  # ░░░░>#\n"+
-			"#######################\n"+
-			'',
-		"real":
-			"###################         ##########\n"+
-			"#>i+*gᵮ     *  * ?######### # ¡¡  ᵬ  #\n"+
-			"####  ᵮ           #     g # #⍨⍨⍨####v#\n"+
-			"   #ggᵮ      kk   # ##### # #⍨⍨⍨#### #\n"+
-			"  #####           # | A | ###⍨⍨⍨#*## #\n"+
-			"  #Ǿ ¡##+#      ᵬ ± ##### +  g       #\n"+
-			"  #      #   d@   ###***##############\n"+
-			"  #+##########Ώ## #B    #¡ ::::::::#  \n"+
-			"  #░░░░░░░░#    # #     #  ᵮᵮᵮᵬᵬᵬ::#  \n"+
-			"  ####░░░░░#    # ###±###  :::::ᵬ::#  \n"+
-			"     #░░░░░##   #          ::::g ᵬ:#  \n"+
-			"     #e░░ffF#   # #############   ##  \n"+
-			"     ########   # #           #   #   \n"+
-			"                # #           #   #   \n"+
-			"        ######### ######      # A #   \n"+
-			"        #    |     ::  #      #####   \n"+
-			"        #    |     ::  #              \n"+
-			"        #e   |     ::  #              \n"+
-			"        #¡   |     ::  #              \n"+
-			"        #¡¡¡ |     ::  #              \n"+
-			"        ################              \n"+
-			'',
-		"test":
-			"##########################################\n"+
-			"#Ώ < >                                   #\n"+
-			"#  @                                     #\n"+
-			"#           h                            #\n"+
-			"# <                                      #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                        #\n"+
-			"#                                      > #\n"+
-			"##########################################\n"+
-			'',
-
-	};
-	window.loadLevel = function(levelName) {
-		return level[levelName];
-	}
-})();
-
-
-function loadKeyMapping(name) {
-	return {
-		ArrowUp: Command.N,
-		ArrowLeft: Command.W,
-		ArrowDown: Command.S,
-		ArrowRight: Command.E,
-		k: Command.N,
-		u: Command.NE,
-		l: Command.E,
-		n: Command.SE,
-		j: Command.S,
-		b: Command.SW,
-		h: Command.W,
-		y: Command.NW,
-		T: Command.TEST,
-		i: Command.INVENTORY,
-		q: Command.QUAFF,
-		t: Command.THROW,
-		d: Command.DROP,
-		c: Command.CAST,
-		F1: Command.CAST1,
-		F2: Command.CAST2,
-		F3: Command.CAST3,
-		F4: Command.CAST4,
-		F5: Command.CAST5,
-		'.': Command.WAIT
-	};
-}
 
 </script>
 </head>

@@ -5,12 +5,17 @@ class Entity {
 	constructor(map,entityList,monsterType,position,inject,levelOverride) {
 		let inits =    { inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
 		let values =   { id: humanNameList.pop(), x:position.x, y:position.y, map: map, entityList:entityList };
-		let level = levelOverride || monsterType.level;
+
+		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
+		// a deeper map level then they average their native level and the map's level.
+		let level = Math.max(1,Math.floor(levelOverride || Math.max(monsterType.level,monsterType.level+map.level/2)));
 		let isPlayer = monsterType.brain==Brain.USER;
 		if( isPlayer ) {
+			level = map.level;
 			values.healthMax = Rules.playerHealth(level);
 			values.armor     = 0; //Rules.playerArmor(level);
-			values.damage    = Math.max(1,Math.floor(Rules.playerDamage(level)*0.5));
+			let damageWhenJustStartingOut = 0.75;	// I found that 50% was getting me killed by single goblins. Not OK.
+			values.damage    = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
 		}
 		else {
 			let hits = monsterType.power.split(':');
@@ -27,11 +32,10 @@ class Entity {
 		}
 		Object.assign( this, monsterType, inits, inject || {}, values );
 
-		this.name = 'L'+this.level+' '+(this.name || String.tokenReplace(this.namePattern,this));
-
 		if( this.name && this.name.indexOf('/')>0 ) {
-			values.name = this.name.split('/')[values.pronoun=='she' ? 1 : 0];
+			this.name = this.name.split('/')[values.pronoun=='she' ? 1 : 0];
 		}
+		this.name = 'L'+this.level+' '+(this.name || String.tokenReplace(this.namePattern,this));
 	}
 
 	record(s,pending) {
@@ -44,6 +48,9 @@ class Entity {
 		if( this.watch ) {
 			console.log(this.history[0]);
 		}
+	}
+	get baseType() {
+		return MonsterTypeList[this.typeId];
 	}
 
 	findAliveOthers(entityList = this.entityList) {
@@ -71,7 +78,11 @@ class Entity {
 			debugger;
 		}
 		if( this.corpse ) {
-			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{},{ usedToBe: this, isCorpse: true } );
+			let mannerOfDeath = Say.damagePast[this.takenDamageType||DamageType.BITE];
+			if( !mannerOfDeath ) {
+				debugger;
+			}
+			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{},{ usedToBe: this, mannerOfDeath: mannerOfDeath, isCorpse: true } );
 		}
 		tell(mSubject,this,' ',mVerb,'die','!');
 		this.removed = true;
@@ -138,7 +149,7 @@ class Entity {
 		}
 
 		if( doVis ) {
-			this.vis = calcVis(this.map,this.x,this.y,this.sightDistance,this.blind,this.vis,this.mapMemory);
+			this.vis = calcVis(this.map,this.x,this.y,this.sightDistance,this.senseBlind,this.senseXray,this.vis,this.mapMemory);
 		}
 		else {
 			this.vis = null;
@@ -148,7 +159,7 @@ class Entity {
 	}
 
 	canPerceiveEntity(entity) {
-		if( !this.vis ) {
+		if( !this.vis || (entity.isMonsterType && this.senseLife) || (entity.isItemType && this.senseItems) ) {
 			return true;
 		}
 		// This gets us up to whoever actually owns this item. But on the map, you just use the item.
@@ -156,7 +167,7 @@ class Entity {
 		if( entity.ownerOfRecord ) {
 			entity = entity.ownerOfRecord;
 		}
-		if( (this.blind || (entity.invisible && !this.seeInvisible)) && entity.id!==this.id ) { // you can always perceive yourself
+		if( (this.senseBlind || (entity.invisible && !this.seeInvisible)) && entity.id!==this.id ) { // you can always perceive yourself
 			return false;
 		}
 		return this.canPerceivePosition(entity.x,entity.y);
@@ -342,6 +353,7 @@ class Entity {
 				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
 				let enemyList = this.findAliveOthers().isMyEnemy().canPerceiveEntity().byDistanceFromMe();
 				let vendetta = enemyList.includesId(this.personalEnemy);
+				let distanceToNearestEnemy = enemyList.count ? this.getDistance(enemyList.first.x,enemyList.first.y) : false;
 
 				// CONFUSED
 				if( this.attitude == Attitude.CONFUSED ) {
@@ -350,18 +362,21 @@ class Entity {
 
 				// WORSHIP
 				if( this.attitude == Attitude.WORSHIP ) {
-					if( enemyList.count && this.getDistance(enemyList.first.x,enemyList.first.y) < 4 ) {
-						this.attitude == Attitude.AGGRESSIVE;
-						if( this.brainTalk ) {
-							tell(mSubject,this,' ',mVerb,'shout',': INTERLOPER!');
-						}
-					}
-					else {
+					if( distanceToNearestEnemy > 3 ) {
 						return Command.PRAY;
+					}
+					this.attitude == Attitude.AGGRESSIVE;
+					if( this.brainTalk ) {
+						tell(mSubject,this,' ',mVerb,'shout',': INTERLOPER!');
 					}
 				}
 
-
+				if( this.attitude == Attitude.AWAIT ) {
+					if( distanceToNearestEnemy > 5 ) {
+						return Command.WAIT;
+					}
+					this.Attitude = Attitude.AGGRESSIVE;
+				}
 
 				// WANDER
 				if( this.attitude == Attitude.WANDER && !vendetta ) {
@@ -523,6 +538,9 @@ class Entity {
 		}
 
 		this.health -= amount;
+		this.takenDamage = amount;
+		this.takenDamageType = damageType;
+		this.takenDamageFromId = attacker.Id;
 
 		if( callback ) {
 			callback(attacker,this,amount,damageType);	
@@ -579,7 +597,7 @@ class Entity {
 	}
 
 	attack(other,isRanged,onDamage) {
-		if( (this.blind && !this.type().blind) || (other.invisible && !this.seeInvisible) ) {
+		if( (this.senseBlind && !this.baseType.senseBlind) || (other.invisible && !this.seeInvisible) ) {
 			if( Math.chance(50) ) {
 				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,other,' but in the wrong direction!');
 				return;
@@ -616,6 +634,11 @@ class Entity {
 		if( item.moveTo(this) !== false ) {
 			if( item.isArmor && !item.armor ) {
 				debugger;
+			}
+			if( item.isCorpse && Math.chance(90) ) {
+				tell(mSubject|mCares,this,' ',mVerb,'find',' nothing on ',mObject,item,'.');
+				item.destroy();
+				return;
 			}
 			tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
 			if( item.triggerOnPickup ) {
@@ -703,6 +726,9 @@ class Entity {
 			if( this.findAliveOthers().at(x,y).count ) {
 				debugger;
 			}
+			if( this.onMove ) {
+				this.onMove(this,x,y);
+			}
 
 			// We must be touching the new tile, so act on that.
 			if( tileType.onTouch ) {
@@ -761,9 +787,15 @@ class Entity {
 				}
 				break;
 			}
-			case Command.TEST: {
+			case Command.DEBUGTEST: {
 				let gate = this.map.itemCreateByTypeId(this.x,this.y,'portal',{},{ toAreaId: "test" } );
 				world.setPending( gate );
+				break;
+			}
+			case Command.DEBUGKILL: {
+				let target = this.commandTarget;
+				tell(mSubject,target,' killed.');
+				target.die();
 				break;
 			}
 			case Command.LOOT: {

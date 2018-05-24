@@ -14,14 +14,14 @@ class Picker {
 		if( !PickerCache.placeTable[this.level] ) {
 			let table = [];
 			for( let placeId in PlaceSourceList ) {
-				let p = PlaceSourceList[placeId];
-				if( p.level > this.level || p.neverPick ) {
+				let place = PlaceSourceList[placeId];
+				if( place.level != 'any' && place.level > this.level || place.neverPick ) {
 					continue;
 				}
-				let placeLevel = p.level || this.level;
+				let placeLevel = (place.level=='any' ? this.level : place.level);
 				let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(placeLevel,this.level) * 100000, 1, 100000));
-				chance *= (p.rarity || 1);
-				table.push(chance,p);
+				chance *= (place.rarity || 1);
+				table.push(chance,place);
 			}
 			PickerCache.placeTable[this.level] = table;
 		}

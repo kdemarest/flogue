@@ -3,7 +3,7 @@
 // WARNING: The strings for directions MUST remain the same for commandToDirection() to work.
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
 				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", THROW: "throw", LOSETURN: "lose turn", PRAY: "pray",
-				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop", TEST: "test",
+				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop", DEBUGKILL: "debugkill", DEBUGTEST: "debugtest",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit" };
 const Direction = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
 const DirectionAdd = [
@@ -54,7 +54,6 @@ function fab(type,typeId,isWhat) {
 		type.name = type.name || typeId;
 	}
 	type.typeId = typeId;
-	type.type = type;
 	if( type.symbol ) {
 		if( SymbolToType[type.symbol] ) {
 			debugger;
@@ -65,11 +64,14 @@ function fab(type,typeId,isWhat) {
 	return type;
 }
 
+let Say = {};
+
 
 const StickerList = {
 	wallProxy: { img: "spells/air/static_discharge.png" },
 	observerProxy: { img: "gems/Gem Type2 Purple.png" },
 	gateProxy: { img: "gems/Gem Type2 Purple.png" },
+	unvisitedMap: { img: "gui/grey.png" },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { symbol: '?', img: "spells/enchantment/invisibility.png" },
 	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
@@ -83,27 +85,48 @@ let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.20;
 let DEFAULT_EFFECT_DURATION = 10;
 let ARMOR_SCALE = 100;
 
-const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", POISON: "poison", SMITE: "smite", ROT: "rot" };
+const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
-const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm", WORSHIP: "worshipping" };
+const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", AWAIT: "await", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm", WORSHIP: "worshipping" };
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
 const Slot = { HEAD: "head", NECK: "neck", LEFTHAND: "left hand", RIGHTHAND: "right hand", ARMS: "arms", WAIST: "waist", FEET: "feet", ARMOR: "torso", WEAPON: "weapon" };
 const PickImmune = [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
 const PickVuln   = [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
 const PickResist = [DamageType.CUT,DamageType.STAB,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
 
+// IMMUNITY and RESISTANCE!
+// Note that you can be immune to almost anything that is a string. That is, you can be immune to a DamageType,
+// or an Attitude, an Effect, or even immune to the effects of 'mud' or 'forcefield' as long as their event handlers check it.
+
+Say.damagePast = {
+	"cut": "chopped",
+	"stab": "pierced",
+	"bite": "chewed",
+	"claw": "mauled",
+	"bash": "bashed up",
+	"burn": "scorched",
+	"freeze": "frosty",
+	"corrode": "corroded",
+	"poison": "posoned",
+	"smite": "smitten",
+	"rot": "rotted"
+};
+
+
 // Effect Events
 // onTargetPosition - if this effect is targeting a map tile, instead of a monster.
 
 let EffectTypeList = {
+	inert: 			{ level:  0, rarity: 1.00, isInert: 1 },
+	water: 			{ level:  0, rarity: 1.00, isWater: 1 },
+	blank: 			{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
 	invisibility: 	{ level: 10, rarity: 0.05, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible },
 	seeinvisible: 	{ level: 10, rarity: 0.50, op: 'set', stat: 'seeInvisible', value: true, isHelp: 1, name: 'see invisible' },
-	blindness: 		{ level:  5, rarity: 1.00, op: 'set', stat: 'blind', value: true, isHarm: 1, requires: e=>!e.blind },
 	haste: 			{ level:  7, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5 },
 	slow: 			{ level:  3, rarity: 1.00, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, requires: e=>e.speed>0.5 },
 	regeneration: 	{ level: 20, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1 },
 	flight: 		{ level:  2, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.type.travelMode },
-	healing: 		{ level:  1, rarity: 1.00, op: 'heal',   valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE },
+	healing: 		{ level:  1, rarity: 1.00, op: 'heal',   valueDamage: 2.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE },
 	poison: 		{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.30, isHarm: 1, isInstant: 1, damageType: DamageType.POISON },
 	fire: 			{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true },
 	cold: 			{ level:  2, rarity: 1.00, op: 'damage', valueDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true },
@@ -112,6 +135,10 @@ let EffectTypeList = {
 	rage: 			{ level:  1, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1 },
 	panic: 			{ level:  5, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1 },
 	confusion: 		{ level:  3, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1 },
+	blindness: 		{ level:  5, rarity: 1.00, op: 'set', stat: 'senseBlind', value: true, isHarm: 1, requires: e=>!e.blind },
+	xray: 			{ level:  1, rarity: 1.00, op: 'set', stat: 'senseXray', value: true, isPlayerOnly: 1, name: 'earth vision' },
+	greed: 			{ level:  1, rarity: 1.00, op: 'set', stat: 'senseItems', value: true, isPlayerOnly: 1, name: 'greed' },
+	echoloc: 		{ level:  1, rarity: 1.00, op: 'set', stat: 'senseLife', value: true, isPlayerOnly: 1, name: 'bat sense' },
 	immunity: 		{ level: 30, rarity: 0.20, op: 'add', stat: 'immune',
 					valuePick: () => pick(PickImmune), isHelp: 1, namePattern: 'immunity to {value}' },
 	vulnerability: 	{ level: 10, rarity: 1.00, op: 'add', stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
@@ -151,17 +178,26 @@ let SayStatList = {
 	resist: function(subj,obj,oldValue,newValue) {
 		return [mSubject|mPossessive,subj,' ',mVerb,'is',' ',!oldValue ? 'now resistant to '+newValue+'s.' : 'no longer resistant to '+oldValue+'s.'];
 	},
-	blind: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' ',mSubject|mVerb,newValue?'lose':'regain',' ',mSubject|mPronoun|mPossessive,subj,' sight!'];
-	},
 	travelMode: function(subj,obj,oldValue,newValue) {
 		return [mSubject,subj,' ',mSubject|mVerb,'begin',' to ',newValue,'.'];
 	},
 	attitude: function(subj,obj,oldValue,newValue) {
 		return [mSubject,subj,' ',mSubject|mVerb,'become',' ',newValue,'.'];
 	},
+	senseBlind: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' ',mSubject|mVerb,newValue?'lose':'regain',' ',mSubject|mPronoun|mPossessive,subj,' sight!'];
+	},
+	senseXray: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' can '+(newValue?'':'no longer')+' see through walls!'];
+	},
+	senseItems: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' treasure!'];
+	},
+	senseLife: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' treasure!'];
+	},
 	_generic_: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' ',stat,' ',mVerb,'is',' less enchanted.'];
+		return [mSubject,subj,' ',mVerb,'is',' less enchanted.'];
 	}
 };
 
@@ -202,9 +238,9 @@ const TileTypeList = {
 	"lava":    	  { symbol: '⍨', mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "lava", light: 5, glow:1, damage: '3d20', damageType: DamageType.BURN, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: '░', mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: '⋍', mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png" },
-	"ghoststone": { symbol: 'G', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
+	"ghoststone": { symbol: 'J', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
 	"obelisk":    { symbol: 'B', mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png" },
-	"crystal":    { symbol: 'F', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png" },
+	"crystal":    { symbol: 'C', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png" },
 	"forcefield": { symbol: '|', mayWalk: true,  mayFly: true,  opacity: 1, name: "force field", light: 3, glow:1, img: "spells/air/static_discharge.png" },
 	"brazier":    { symbol: 'u', mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" }
 };
@@ -222,8 +258,8 @@ const ItemTypeDefaults = {
 }
 
 const ImgPotion = {
+	water: 			{ img: "cyan" },
 	invisibility: 	{ img: "clear" },
-	blindness: 		{ img: "black" },
 	haste: 			{ img: "cyan" },
 	slow: 			{ img: "silver" },
 	regeneration: 	{ img: "orange" },
@@ -236,6 +272,10 @@ const ImgPotion = {
 	rage: 			{ img: "dark" },
 	confusion: 		{ img: "brown" },
 	immunity: 		{ img: "white" },
+	blindness: 		{ img: "black" },
+	xray: 			{ img: "white" },
+	greed: 			{ img: "white" },
+	echoloc: 		{ img: "white" },
 	vuln: 			{ img: "black" },
 	resistance: 	{ img: "yellow" },
 	shove: 			{ img: "black" }
@@ -247,28 +287,29 @@ function toFab(t) {
 	return t;
 }
 
-const PotionEffects = toFab( Object.assign({},EffectTypeList) );
-const SpellEffects = toFab( Object.filter(EffectTypeList, e=>e.isHarm ) );
-const RingEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['regeneration','resistance'].includes(k) ) );
-const WeaponEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['poison','fire','cold','blindness','slow','panic','confusion','shove'].includes(k) ) );
-const HelmEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['regeneration', 'resistance', 'seeinvisible'].includes(k) ) );
-const ArmorEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['regeneration', 'immunity', 'resistance'].includes(k) ) );
-const BracersEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['resistance'].includes(k) ) );
-const BootsEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['regeneration', 'flight', 'resistance'].includes(k) ) );
-const DartEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['poison','fire','cold','blindness','slow','vuln'].includes(k) ) );
+
+const PotionEffects = toFab( Object.filter(EffectTypeList, e=>!e.isInert && !e.isPaper ) );
+const SpellEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['blank','blindness','xray','echoloc','greed','slow','healing','poison','fire','cold','holy','rage','panic','confusion','push','xray'].includes(k) ) );
+const RingEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration','resistance','xray'].includes(k) ) );
+const WeaponEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','poison','fire','cold','blindness','slow','panic','confusion','shove'].includes(k) ) );
+const HelmEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'resistance', 'seeinvisible','xray'].includes(k) ) );
+const ArmorEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'immunity', 'resistance'].includes(k) ) );
+const BracersEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','resistance'].includes(k) ) );
+const BootsEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'flight', 'resistance'].includes(k) ) );
+const DartEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','poison','fire','cold','blindness','slow','vuln'].includes(k) ) );
 
 PotionEffects.healing.rarity = 10.00;
 
 const WeaponList = toFab({
-	"dart":     	{ level:  1, damageMultiplier: 0.50, damageType: DamageType.STAB, effects: DartEffects, mayThrow: true, attackVerb: 'strike' },
-	"dagger":   	{ level:  1, damageMultiplier: 0.60, damageType: DamageType.STAB, mayThrow: true, attackVerb: 'strike' },
-	"sword": 		{ level:  1, damageMultiplier: 1.00, damageType: DamageType.CUT },
-	"greatsword": 	{ level:  1, damageMultiplier: 1.20, damageType: DamageType.CUT },
-	"mace": 		{ level:  1, damageMultiplier: 0.90, damageType: DamageType.BASH },
-	"hammer": 		{ level:  1, damageMultiplier: 1.40, damageType: DamageType.BASH },
-	"axe": 			{ level:  1, damageMultiplier: 1.00, damageType: DamageType.CUT, mayThrow: true, attackVerb: 'strike' },
-	"spear": 		{ level:  1, damageMultiplier: 0.70, damageType: DamageType.STAB, range: 2, mayThrow: true, attackVerb: 'strike' },
-	"pike": 		{ level:  1, damageMultiplier: 0.90, damageType: DamageType.STAB, range: 2 }
+	"dart":     	{ level:  0, damageMultiplier: 0.50, damageType: DamageType.STAB, effects: DartEffects, mayThrow: true, attackVerb: 'strike' },
+	"dagger":   	{ level:  0, damageMultiplier: 0.60, damageType: DamageType.STAB, mayThrow: true, attackVerb: 'strike' },
+	"sword": 		{ level:  0, damageMultiplier: 1.00, damageType: DamageType.CUT },
+	"greatsword": 	{ level:  0, damageMultiplier: 1.20, damageType: DamageType.CUT },
+	"mace": 		{ level:  0, damageMultiplier: 0.90, damageType: DamageType.BASH },
+	"hammer": 		{ level:  0, damageMultiplier: 1.40, damageType: DamageType.BASH },
+	"axe": 			{ level:  0, damageMultiplier: 1.00, damageType: DamageType.CUT, mayThrow: true, attackVerb: 'strike' },
+	"spear": 		{ level:  0, damageMultiplier: 0.70, damageType: DamageType.STAB, range: 2, mayThrow: true, attackVerb: 'strike' },
+	"pike": 		{ level:  0, damageMultiplier: 0.90, damageType: DamageType.STAB, range: 2 }
 });
 
 const WeaponMaterialList = toFab({
@@ -380,26 +421,30 @@ const ItemTypeList = {
 	"stairsUp":   { symbol: '<', name: "stairs up", gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, neverPick: true, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
 	"gateway":    { symbol: '𝞟', name: "gateway", gateDir: 0, gateInverse: 'gateway', mayPickup: false, neverPick: true, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
 	"portal":     { symbol: 'Ώ', name: "portal", gateDir: 0, gateInverse: 'portal', mayPickup: false, neverPick: true, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
+	"columnBroken": { symbol: 'O', mayWalk: false, mayFly: false, name: "broken column", rarity: 0.05, img: "dc-dngn/crumbled_column.png" },
+	"columnStump":  { symbol: 'o', mayWalk: false, mayFly: true, name: "column stump", rarity: 0.05, img: "dc-dngn/granite_stump.png" },
 
 	"gold": 	{ symbol: '$', namePattern: '{goldCount} gold', goldCount: 0, isGold: true,
 				rarity: 2.00, img: "item/misc/gold_pile.png" },
 	"altar":    { symbol: 'A', mayWalk: false, mayFly: false, name: "golden altar", mayPickup: false, light: 4, glow:true,
 				rarity: 0.10, rechargeTime: 12, healMultiplier: 3.0,
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
-	"corpse":   { symbol: 'X', namePattern: "remains of a {usedToBe}", isCorpse: true, neverPick: true,
+	"fountain": { symbol: 'F', mayWalk: false, mayFly: true, name: "fountain", mayPickup: false,
+				rarity: 0.10, img: "dc-dngn/dngn_blue_fountain.png" },
+	"corpse":   { symbol: 'X', namePattern: "remains of a {mannerOfDeath} {usedToBe}", isCorpse: true, neverPick: true,
 				autoCommand: Command.LOOT, img: 'UNUSED/spells/components/skull.png' },
-	"potion":   { symbol: '¡', namePattern: 'potion of {effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
+	"potion":   { symbol: '¡', namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
 				rarity: 2.00, autoCommand: Command.QUAFF, effectDuration: '1d4+4', isPotion: true,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
-				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect.typeId]||NulImg).img || "emerald")+".png", imgChoices: ImgPotion },
-	"spell":    { symbol: 'ᵴ', namePattern: 'spell of {effect}', rechargeTime: '3d4', effects: SpellEffects,
+				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: ImgPotion },
+	"spell":    { symbol: 'ᵴ', namePattern: 'spell{?effect}', rechargeTime: '3d4', effects: SpellEffects,
 				rarity: 0.50, autoCommand: Command.CAST, isSpell: true,
 				img: "item/scroll/scroll.png" },
 	"ore": 		{ symbol: '"', namePattern: '{variety}', varieties: OreList, isOre: true, neverPick: true,
 				rarity: 1.00,
 				imgGet: (self,img) => "item/ring/"+(img || self.variety.img || "i-protection")+".png", imgChoices: OreList },
 	"gem": 		{ symbol: "^", namePattern: '{quality} {variety}', qualities: GemQualityList, varieties: GemList, isGem: true,
-				rarity: 1.00,
+				rarity: 1.00, mayThrow: 1, mayTargetPosition: 1,
 				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5 },
 	"weapon": 	{ symbol: '†', namePattern: '{material} {variety} {?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
 				rarity: 1.00, autoCommand: Command.USE,
@@ -444,18 +489,10 @@ const selfInvisibilitySymbol = '?';
 const Brain = { AI: "ai", USER: "user" };
 
 const MonsterTypeDefaults = {
-//					type: null, typeId: null, reach: 1, travelMode: "walk", speed: 1, loseTurn: false, pronoun: "it", packAnimal: false,
-//					power: '3:10', health: 10, healthMax: 10, regenerate: 0, resist: '', vuln: '', immune: '', picksup: false, 
-//					damage: 1, damageType: DamageType.BASH, personalEnemy: '',
-//					invisible: false, inaudible: false, blind: false, seeInvisible: false, sightDistance: 6, observeDistantEvents: false,
-//					symbol: '?', mayWalk: false, mayFly: false,
-//					corpse: 'corpse',
-//					brain: Brain.AI, brainFlee: false, brainPet: false, brainOpensDoors: false, brainTalk: false,
-//					attitude: Attitude.AGGRESSIVE, team: Team.EVIL
-
 					symbol: '?',level: 1, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
 					attitude: Attitude.AGGRESSIVE,
-					blind: false, invisible: false, seeInvisible: false, sightDistance: 6,
+					senseBlind: false, senseItems: false, senseLife: false,
+					invisible: false, senseInvisible: false, sightDistance: 6,
 					brain: Brain.AI, brainFlee: false, brainOpensDoors: false, brainTalk: false,
 					corpse: 'corpse',
 					immune: '', resist: '', vuln: '',
@@ -468,6 +505,7 @@ const MonsterTypeDefaults = {
 					speed: 1,
 					travelMode: 'walk', mayWalk: false, mayFly: false,
 					type: null, typeId: null,
+					xray: false,
 
 					//debug only
 					observeDistantEvents: false
@@ -481,7 +519,14 @@ let MaxSightDistance = 10;
 // onTouch - fires if somebody steps into you but doesn't attack you. Like when confused.
 // onHeal - fires when you get healing. return true to suppress the auto-generated message about healing.
 
-let UndeadImmunity = [DamageType.CUT,DamageType.STAB,DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'blind'].join(',');
+let UndeadImmunity = [DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'blind'].join(',');
+let SkeletonImmunity = UndeadImmunity+[DamageType.CUT,DamageType.STAB].join(',');
+let UndeadResistance = [DamageType.CUT,DamageType.STAB].join(',');
+let UndeadVulnerability = [DamageType.SMITE,DamageType.BURN].join(',');
+
+let OozeImmunity = ['blind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
+let OozeResistance = [DamageType.CUT,Attitude.ENRAGED,Attitude.CONFUSED].join(',');
+let OozeVulnerability = [DamageType.BURN,DamageType.FREEZE].join(',');
 
 const MonsterTypeList = {
 
@@ -495,7 +540,7 @@ const MonsterTypeList = {
 		light: 7,
 		neverPick: true,
 		picksup: true,
-		regenerate: 0.03,
+		regenerate: 0.01,
 		sightDistance: MaxSightDistance
 	},
 	"dog": {
@@ -505,8 +550,16 @@ const MonsterTypeList = {
 		brainPet: true,
 		properNoun: true,
 		packAnimal: true,
-		regenerate: 0.03,
-		watch:1
+		regenerate: 0.03
+	},
+	"mastiff": {
+		core: [ 'm', 10, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
+		name: "Rover/Fluffy",
+		brainFlee: true,
+		brainPet: true,
+		properNoun: true,
+		packAnimal: true,
+		regenerate: 0.03
 	},
 	"human": {
 		core: [ 'H', 1, '3:10', 'good', 'cut', 'dc-mon/human.png', '*' ],
@@ -517,7 +570,7 @@ const MonsterTypeList = {
 
 // EVIL TEAM
 	"Avatar of Balgur": {
-		core: [ 'a', 1, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
+		core: [ 'a', 30, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
 		brainTalk: true,
 		immune: DamageType.BURN,
 		sayPrayer: 'I shall rule this planet!'
@@ -537,6 +590,14 @@ const MonsterTypeList = {
 		loot: 'ring',
 		packAnimal: true,
 		sneakAttackMult: 3
+	},
+	"ghoul": {
+		core: [ 'G', 4, '1:2', 'evil', 'rot', 'dc-mon/undead/ghoul.png', 'it' ],
+		immune: UndeadImmunity,
+		isUndead: true,
+		loot: 'bones',
+		resist: UndeadResistance,
+		vuln: UndeadVulnerability
 	},
 	"goblin": {
 		core: [ 'g', 1, '3:10', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
@@ -588,6 +649,17 @@ const MonsterTypeList = {
 		resist: DamageType.CUT+','+DamageType.STAB,
 		speed: 0.5
 	},
+	"redOoze": {
+		core: [ 'z', 1, '2:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
+		name: "red ooze",
+		glow: 4,
+		immune: OozeImmunity,
+		loot: 'potion',
+		regenerate: 0.15,
+		resist: OozeResistance,
+		speed: 0.75,
+		vuln: OozeVulnerability
+	},
 	"scarab": {
 		core: [ 'h', 12, '3:30', 'evil', 'bite', 'dc-mon/animals/boulder_beetle.png', 'it' ],
 		namePattern: "{color} scarab",
@@ -600,16 +672,25 @@ const MonsterTypeList = {
 	},
 	"skeleton": {
 		core: [ 's', 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
-		immune: UndeadImmunity,
+		immune: SkeletonImmunity,
+		isUndead: true,
 		loot: 'bones',
 		vuln: DamageType.SMITE
 	},
 	"skeletonLg": {
 		core: [ 'S', 13, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
 		name: 'ogre skeleton',
-		immune: UndeadImmunity,
+		immune: SkeletonImmunity,
+		isUndead: true,
 		loot: 'bones',
 		vuln: DamageType.SMITE
+	},
+	"soldierAnt": {
+		core: [ 'c', 1, '2:22', 'evil', 'bite', 'dc-mon/animals/soldier_ant.png', 'it' ],
+		name: "soldier ant",
+		loot: 'potion',
+		speed: 1.5,
+		vuln: DamageType.FREEZE
 	},
 	"troll": {
 		core: [ 'T', 8, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
@@ -679,9 +760,9 @@ TileTypeList['lockedDoor'].onTouch = function(entity,self) {
 }
 
 TileTypeList.obelisk.onTouch = function(entity,self) {
-	if( !entity.blind ) {
+	if( !entity.senseBlind ) {
 		tell(mSubject,entity,' ',mVerb,'touch',' ',mObject,self,'.');
-		deedAdd(adhoc(self),entity,10,'blind','set',true);
+		deedAdd(adhoc(self),entity,10,'senseBlind','set',true);
 	}
 	else {
 		tell(mSubject,entity,' ',mVerb,'touch',' ',mObject,self,' but ',mVerb,'are',' already blind.');
@@ -755,6 +836,10 @@ TileTypeList.mud.onDepartType = function(entity,self) {
 }
 
 TileTypeList.mud.onDepart = function(entity,self) {
+	if( entity.isImmune(self.typeId) || ( entity.isResistant(self.typeId) && Math.chance(50) ) ) {
+		return;
+	}
+
 	if( entity.travelMode == "walk" && Math.chance(50) ) {
 		tell( mSubject|mCares,entity,' ',mVerb,'is',' stuck in the mud.');
 		return false;
@@ -762,7 +847,11 @@ TileTypeList.mud.onDepart = function(entity,self) {
 }
 
 TileTypeList.forcefield.onEnterType = function(entity,self) {
-	if( Math.chance(80) ) {
+	if( entity.isImmune(self.typeId) || ( entity.isResistant(self.typeId) && Math.chance(50) ) ) {
+		return;
+	}
+
+	if( Math.chance(70) ) {
 		tell( mSubject|mCares,entity,' ',mVerb,'is',' stopped by the ',mObject,self,'.' );
 		return false;
 	}
@@ -817,7 +906,7 @@ MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
 	let f = this.findAliveOthers().includeMe().isAlive().filter( e => e.name==this.name );
 	if( f.count ) {
 		f.process( e => {
-			if( e.attitude == Attitude.HESITANT || e.attitude == Attitude.WANDER ) {
+			if( e.attitude == Attitude.HESITANT || e.attitude == Attitude.WANDER || e.attacker == Attitude.AWAIT ) {
 				e.attitude = Attitude.AGGRESSIVE;
 			}
 			e.team = (attacker.team == Team.EVIL || attacker.team == Team.NEUTRAL) ? Team.GOOD : Team.EVIL;
@@ -832,3 +921,159 @@ MonsterTypeList.scarab.onAttack = function(target) {
 	let effect = Object.assign({},EffectTypeList.vulnerability,{value: DamageType.BURN});
 	effectApply(this,effect,target);
 }
+
+MonsterTypeList.redOoze.onMove = function(self,x,y) {
+	let f = new ItemFinder(self.map.itemList).at(x,y).filter( i=>i.isCorpse );
+	if( f.first && self.health < self.healthMax ) {
+		tell(mSubject,self,' ',mVerb,'absorb',' ',mObject,f.first,' and ',mVerb,'regain',' strength!');
+		let heal = Math.floor(self.healthMax * 0.25);
+		self.takeHealing(self,heal,DamageType.CORRODE,true);
+		animationAdd( new AniPaste({
+			entity: this, xOfs: 0.5, yOfs: 0.5,
+			sticker: self,
+			x: x,
+			y: y,
+			duration: 0.5,
+			onTick: function(delta) { this.scale *= delta*4; }
+		}));
+		f.first.destroy();
+	}
+}
+
+function loadKeyMapping(name) {
+	return {
+		ArrowUp: Command.N,
+		ArrowLeft: Command.W,
+		ArrowDown: Command.S,
+		ArrowRight: Command.E,
+		k: Command.N,
+		u: Command.NE,
+		l: Command.E,
+		n: Command.SE,
+		j: Command.S,
+		b: Command.SW,
+		h: Command.W,
+		y: Command.NW,
+		T: Command.DEBUGTEST,
+		X: Command.DEBUGKILL,
+		i: Command.INVENTORY,
+		q: Command.QUAFF,
+		t: Command.THROW,
+		d: Command.DROP,
+		c: Command.CAST,
+		F1: Command.CAST1,
+		F2: Command.CAST2,
+		F3: Command.CAST3,
+		F4: Command.CAST4,
+		F5: Command.CAST5,
+		'.': Command.WAIT
+	};
+}
+
+(function() {
+
+	// Ǿgidᵬje  AB*? ᵮ⍨|:░ ¡$
+
+	let level = {
+		"oldtest":
+			"############\n"+
+			"#   Ώ      #\n"+
+			"#          #\n"+
+			"#<    h    #\n"+
+			"#          #\n"+
+			"#          #\n"+
+			"#        > #\n"+
+			"############\n"+
+			'',
+		"all":
+ 			"#######################\n"+
+			"#Ǿ#g#s#k#e#T#v#ᵬ#f#i#r#\n"+
+			"#±#±#±#±#±#±#±#±#±#±#±#\n"+
+			"#                     #\n"+
+			"# :::                 #\n"+
+			"# :::                 #\n"+
+			"# ⍨⍨⍨       g ᵴ@      #\n"+
+			"# ᵮᵮᵮ            AB?F##\n"+
+			"#              ########\n"+
+			"#              + ░░░░░#\n"+
+			"# $ ††         | ░░░░░#\n"+
+			"# ᵴᵴᵴᵴᵴᵴᵴᵴᵴᵴᵴ  ± ░░░░░#\n"+
+			"#¡¡¡¡¡¡¡¡¡¡¡¡  # ░░░░>#\n"+
+			"#######################\n"+
+			'',
+		"real":
+			"###################         ##########\n"+
+			"#>i+*gᵮ     *  * ?######### # ¡¡  ᵬ  #\n"+
+			"####  ᵮ           #     g # #⍨⍨⍨####v#\n"+
+			"   #ggᵮ      kk   # ##### # #⍨⍨⍨#### #\n"+
+			"  #####           # | A | ###⍨⍨⍨#*## #\n"+
+			"  #Ǿ ¡##+#      ᵬ ± ##### +  g       #\n"+
+			"  #      #   d@   ###***##############\n"+
+			"  #+##########Ώ## #B    #¡ ::::::::#  \n"+
+			"  #░░░░░░░░#    # #     #  ᵮᵮᵮᵬᵬᵬ::#  \n"+
+			"  ####░░░░░#    # ###±###  :::::ᵬ::#  \n"+
+			"     #░░░░░##   #          ::::g ᵬ:#  \n"+
+			"     #e░░ffF#   # #############   ##  \n"+
+			"     ########   # #           #   #   \n"+
+			"                # #           #   #   \n"+
+			"        ######### ######      # A #   \n"+
+			"        #    |     ::  #      #####   \n"+
+			"        #    |     ::  #              \n"+
+			"        #e   |     ::  #              \n"+
+			"        #¡   |     ::  #              \n"+
+			"        #¡¡¡ |     ::  #              \n"+
+			"        ################              \n"+
+			'',
+		"test":
+			"##########################################\n"+
+			"#Ώ < >                                   #\n"+
+			"#  @                                     #\n"+
+			"#           h                            #\n"+
+			"# <                                      #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                        #\n"+
+			"#                                      > #\n"+
+			"##########################################\n"+
+			'',
+
+	};
+	window.loadLevel = function(levelName) {
+		return level[levelName];
+	}
+})();
