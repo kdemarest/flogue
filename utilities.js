@@ -112,13 +112,13 @@ function nop() {}
 				return (obj[key] * (isPercent?100:1))+(isPercent?'%':'');
 			}
 			if( typeof obj[key] == 'string' ) {
-				return (useOf && obj[key] ? 'of ' : '')+obj[key];
+				return (useOf && obj[key] ? ' of ' : '')+obj[key];
 			}
 			if( Array.isArray(obj[key]) ) {
 				return obj[key].join(',');
 			}
 			if( typeof obj[key] == 'object' ) {
-				if( obj[key] ) return (useOf && obj[key].name ? 'of ' : '')+(obj[key].name || 'NONAME');
+				if( obj[key] ) return (useOf && obj[key].name ? ' of ' : '')+(obj[key].name || 'NONAME');
 			}
 			debugger;
 			return 'UNKNOWN '+key;

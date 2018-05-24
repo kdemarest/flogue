@@ -39,12 +39,16 @@ class ViewMiniMap {
 			}
 		}
 
+		let unvisitedMap = StickerList.unvisitedMap;
 		let c = canvas.getContext("2d");
 		let mapMemory = world.area.mapMemory;
 		let drawLate = [];
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {
-				if( !mapMemory[y] || !mapMemory[y][x] ) continue;
+				if( !mapMemory[y] || !mapMemory[y][x] ) {
+					draw(unvisitedMap,x,y,this.scale);
+					continue;
+				}
 				let entity = mapMemory[y][x];
 				if( entity.isWall ) {
 					entity = StickerList.wallProxy;

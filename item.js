@@ -30,7 +30,7 @@ class Item {
 		merge(this,this.variety);
 
 		if( this.effect !== undefined ) {
-			if( this.effectChance !== undefined && Math.rand(0,1)>=this.effectChance ) {
+			if( this.effect.isInert || (this.effectChance !== undefined && Math.rand(0,1)>=this.effectChance) ) {
 				delete this.effect;
 			}
 			else {
@@ -45,11 +45,15 @@ class Item {
 		let self = this;
 		this.name = 'L'+this.level+' '+(this.name || String.tokenReplace(this.namePattern,this));
 	}
+	get baseType() {
+		return ItemTypeList[this.typeId];
+	}
+
 	assignEffect(effectType,picker,rechargeTime) {
 		let effect = Object.assign({},effectType);
 		if( effect.valueDamage ) {
 			effect.value = Math.floor(picker.pickDamage(this.rechargeTime) * effect.valueDamage);
-			if( WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
+			if( (this.isWeapon || this.isArmor) && WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
 				effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
 			}
 		}
@@ -107,10 +111,10 @@ class Item {
 	}
 
 	trigger(command,originEntity,target) {
-		if( this.effect===false ) {
+		if( this.effect===false || this.effect===undefined ) {
 			return false;
 		}
-		if( !this.isRecharged ) {
+		if( !this.isRecharged() ) {
 			return false;
 		}
 		this.originEntity = originEntity;
@@ -119,9 +123,6 @@ class Item {
 		let result = effectApply(this,this.effect,target);
 		if( !result ) {
 			return false;
-		}
-		if( this.effect && this.effect.rechargeTime !== undefined ) {
-			this.effect.rechargeLeft = this.effect.rechargeTime;
 		}
 
 		if( typeof this.charges =='number' ) {

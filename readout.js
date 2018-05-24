@@ -2,15 +2,21 @@
 
 class ViewSpells {
 	constructor(spellDivId) {
+		this.MAX_SLOTS = 5;
 		this.spellDivId = spellDivId;
+	}
+	getCastableSpellList(entity) {
+		return new ItemFinder(entity.inventory).filter( item=>item.isSpell && item.effect && !item.isBlank );
 	}
 	render(observer) {
 		$('#'+this.spellDivId).empty();
-		let spellList = new ItemFinder(observer.inventory).isTypeId("spell");
-		for( let i=0 ; i<spellList.all.length ; ++i ) {
-			let text = 'F'+(i+1)+' '+spellList.all[i].effect.name+'\n';
-			let lit = this.commandItem == spellList.all[i];
-			$('#'+this.spellDivId).append('<div class="spell'+(lit?' lit':'')+'">'+text+'</div>');
+		let spellList = this.getCastableSpellList(observer);
+		for( let i=0 ; i<spellList.all.length && i<this.MAX_SLOTS ; ++i ) {
+			let spell = spellList.all[i];
+			let text = 'F'+(i+1)+' '+spell.effect.name+'\n';
+			let lit = this.commandItem == spell && spell.isRecharged();
+			let unlit = !spell.isRecharged();
+			$('#'+this.spellDivId).append('<div class="spell'+(unlit?' unlit':(lit?' lit':''))+'">'+text+'</div>');
 		}
 	}
 }
@@ -37,8 +43,11 @@ class ViewInfo {
 		test(entity.speed<1,'slow');
 		test(entity.speed>1,'fast');
 		test(entity.travelMode!=='walk',entity.travelMode);
-		test(entity.blind,'blind');
-		test(entity.regenerate>=entity.type.regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
+		test(entity.senseBlind,'blind');
+		test(entity.senseXray,'xray');
+		test(entity.senseItems,'greed');
+		test(entity.senseLife,'bat');
+		test(entity.regenerate>MonsterTypeList[entity.typeId].regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
 		test(entity.attitude==Attitude.ENRAGED,'enraged');
 		test(entity.attitude==Attitude.CONFUSED,'confused');
 		test(entity.attitude==Attitude.PANICKED,'panicked');
@@ -93,6 +102,7 @@ class ViewInventory {
 		this.inventory = null;
 		this.inventoryFn = null;
 		this.inventorySelector = '123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		this.everSeen = {};
 	}
 	getItemByKey(keyPressed) {
 		let n = this.inventorySelector.indexOf(keyPressed);
@@ -107,6 +117,10 @@ class ViewInventory {
 		this.render();
 	}
 	hide() {
+		for( let i=0 ; i<this.inventory.all.length ; ++i ) {
+			this.everSeen[this.inventory.all[i].id]=true;
+		}
+
 		$('#'+this.inventoryDivId).hide();
 		this.isOpen = false;
 	}
@@ -136,7 +150,7 @@ class ViewInventory {
 		for( let i=0 ; i<list.length ; ++i ) {
 			let item = list[i];
 			s += '<tr>';
-			s += '<td>'+(item.inSlot ? '&nbsp;*&nbsp;' : '&nbsp;&nbsp;&nbsp;')+'</td>';
+			s += '<td>'+(item.inSlot ? '&nbsp;*&nbsp;' : (!this.everSeen[item.id]?'<span class="newItem">NEW</span>':'&nbsp;&nbsp;&nbsp;'))+'</td>';
 			s += '<td class="right">'+this.inventorySelector.charAt(i)+')'+'</td>';
 			s += '<td>'+item.name+'</td>';
 			s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
@@ -203,12 +217,13 @@ class ViewRange {
 }
 
 class UserCommandHandler {
-	constructor(viewInventory,viewRange) {
+	constructor(viewInventory,viewRange,viewSpells) {
 		this.command = Command.NONE;
 		this.commandItem = null;
 		this.commandTarget = null;
 		this.viewInventory = viewInventory;
 		this.viewRange = viewRange;
+		this.viewSpells = viewSpells;
 		let self = this;
 		this.viewRange.pickingTargetFn = function() { return self.pickingTarget(); }
 	}
@@ -272,7 +287,7 @@ class UserCommandHandler {
 			else
 			if( keyCode == keyENTER ) {
 				let target = new Finder(observer.entityList).at(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
-				if( !target.count && !this.commandItem.effect.mayTargetPosition) {
+				if( !target.count && !this.mayTargetPositon && (!this.commandItem.effect || !this.commandItem.effect.mayTargetPosition)) {
 					cancel = true;
 				}
 				else {
@@ -304,8 +319,11 @@ class UserCommandHandler {
 			let item = this.viewInventory.getItemByKey(keyPressed);
 			if( item ) {
 				this.commandItem = item;
+				if( this.command == Command.DROP ) {
+					return this.enactCommand(observer);
+				}
 				if( this.command == Command.INVENTORY && item.isPotion ) {
-					this.command = item.effect.isHarm ? Command.THROW : Command.QUAFF;
+					this.command = item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
 				}
 				if( this.command == Command.QUAFF ) {
 					return this.enactCommand(observer);
@@ -351,23 +369,28 @@ class UserCommandHandler {
 			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).filter( item => item.mayThrow ) );
 			return false;
 		}
+		if( command == Command.DROP ) {
+			observer.command = Command.NONE;
+			this.command = Command.DROP;
+			this.viewInventory.show( ()=>new ItemFinder(observer.inventory) );
+			return false;
+		}
 		if( command == Command.CAST ) {
 			observer.command = Command.NONE;
 			this.command = Command.CAST;
-			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).isTypeId("spell") );
+			this.viewInventory.show( ()=>this.viewSpells.getCastableSpellList(observer) );
 			return false;
 		}
 		let castArray = [Command.CAST1,Command.CAST2,Command.CAST3,Command.CAST4,Command.CAST5];
 		if( castArray.includes(command) ) {
 			observer.command = Command.NONE;
-			let spellList = new ItemFinder(observer.inventory).isTypeId("spell");
+			let spellList = this.viewSpells.getCastableSpellList(observer);
 			let index = castArray.indexOf(command);
 			if( !spellList.all[index] ) {
 				return false;
 			}
 			this.command = Command.CAST;
 			this.commandItem = spellList.all[index];
-
 			if( !this.commandItem.isRecharged() ) {
 				tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,this.commandItem,' is still charging.');
 				this.clearCommand();

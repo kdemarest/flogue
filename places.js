@@ -2,6 +2,11 @@
 let PlaceList = {};
 
 /*
+
+THe level of a place can be specified, BUT if not the place will be scanned and assigned a level
+equal to the highest level monster appearing
+
+
 PlaceList.uniqueIdentity = {
 	// The map can use any symbols yu want. Just re-map them in the 'symbols' area below.
 	// However, . and # are generally floor and wall, just to avoid confusion.
@@ -24,9 +29,24 @@ PlaceList.uniqueIdentity = {
 	}
 };
 */
+let rCOMMON 	= 1.00;
+let rUNCOMMON 	= 0.50;
+let rRARE 		= 0.20;
+let rEPIC 		= 0.10;
+let rLEGENDARY 	= 0.01;
+
+function PlaceMany(prefix,list,templateFn) {
+	let count = list.length;
+	while( list.length ) {
+		let VARIETY = list.pop();
+		let placeId = prefix+'_'+VARIETY;
+		PlaceList[placeId] = templateFn(VARIETY);
+		PlaceList[placeId].rarity /= count;
+	}
+}
 
 PlaceList.goblinGathering = {
-	rarity: 3,
+	rarity: rRARE,
 	map:
 `
 .......
@@ -88,7 +108,7 @@ PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityL
 }
 
 PlaceList.graveYard = {
-	rarity: 0.05,
+	rarity: rEPIC,
 	map:
 `
 ..M.M...B.MMM
@@ -106,11 +126,13 @@ M...B..M.....
 	flags: { rotate: true },
 	symbols: {
 		x: "wall",
-		M: "mist"
+		M: "mist",
+		F: "crystal"
 	}
 }
 
 PlaceList.circle = {
+	rarity: rRARE,
 	map:
 `
 .........
@@ -128,8 +150,94 @@ PlaceList.circle = {
 	}
 }
 
+PlaceList.shaft = {
+	rarity: rUNCOMMON,
+	map:
+`
+...
+.s.
+...
+`,
+	flags: { },
+	symbols: {
+		s: 'shaft'
+	}
+}
+
+PlaceList.collonade = {
+	rarity: rUNCOMMON,
+	map:
+`
+.............
+.o....o....o.
+.............
+.............
+.o....o....o.
+.............
+`,
+	flags: { rotate: true },
+	symbols: {
+		o: function() { return pick(['columnBroken','columnStump']); }
+	}
+}
+
+PlaceList.fountain1 = {
+	rarity: rUNCOMMON,
+	map:
+`
+...
+.F.
+...
+`,
+	flags: { rotate: true },
+	symbols: {
+		'.': 'tileStoneFloor',
+		F: 'fountain',
+	}
+}
+
+PlaceList.fountain4 = {
+	rarity: rUNCOMMON,
+	map:
+`
+F.F
+...
+F.F
+`,
+	flags: { },
+	symbols: {
+		F: 'fountain',
+	}
+}
+
+PlaceList.patch = {
+	rarity: rCOMMON,
+	map:
+`
+..mm
+.mmm
+mm..
+`,
+	flags: { rotate: true },
+	symbols: {
+		m: function() { return pick(['mud','grass','pit','fire','water','mist','mud']); }
+	}
+};
+
+PlaceList.veil = {
+	rarity: rCOMMON,
+	map:
+`
+mmmm
+`,
+	flags: { rotate: true },
+	symbols: {
+		m: function() { return pick(['fire','mist','mud']); }
+	}
+};
+
 PlaceList.lunarEmbassy = {
-	rarity: 0.1,
+	rarity: rEPIC,
 	map:
 `
 xxxxxxx.
@@ -146,8 +254,8 @@ xxxxxxx
 	}
 }
 
-PlaceList.camp = {
-	rarity: 5,
+PlaceMany( 'camp', ['ogre','human','goblin'], VARIETY => ({
+	rarity: rCOMMON,
 	map:
 `
 .y.
@@ -156,12 +264,18 @@ yuy
 `,
 	flags: { rotate: true },
 	symbols: {
-		y: function() { return pick(['ogre','human']); }
+		y: VARIETY
+	},
+	onEntityCreate: {
+		ogre: { attitude: Attitude.AWAIT },
+		human: { attitude: Attitude.AWAIT },
+		goblin: { attitude: Attitude.AWAIT }
 	}
-}
 
-PlaceList.nest = {
-	rarity: 0.5,
+}));
+
+PlaceMany( 'nest', ['bat','spinyFrog','scarab','viper'], VARIETY => ({
+	rarity: rCOMMON,
 	map:
 `
 ⋍xx⋍x
@@ -173,13 +287,18 @@ xyy⋍x
 	flags: { rotate: true },
 	symbols: {
 		x: "wall",
-		y: function() { return pick(['bat','spinyFrog','scarab','viper']); }
-
+		y: VARIETY
+	},
+	onEntityCreate: {
+		spinyFrog: { attitude: Attitude.AWAIT },
+		viper: { attitude: Attitude.AWAIT },
+		scarab: { attitude: Attitude.AWAIT }
 	}
-}
+}));
 
-PlaceList.den = {
-	rarity: 3,
+
+PlaceMany( 'den', ['dog','kobold'], VARIETY => ({
+	rarity: rCOMMON,
 	map:
 `
 xxxxxxx
@@ -191,13 +310,16 @@ xxxxx..
 	flags: { rotate: true },
 	symbols: {
 		x: "wall",
-		y: function() { return pick(['dog','kobold']); }
-
+		y: VARIETY
+	},
+	onEntityCreate: {
+		dog: { attitude: Attitude.AWAIT },
+		kobold: { attitude: Attitude.AWAIT }
 	}
-}
+}));
 
 PlaceList.swamp = {
-	rarity: 0.1,
+	rarity: rCOMMON,
 	map:
 `
 mmmmmmmmmmmmm
@@ -221,7 +343,7 @@ mmmmmmmmmmmmm
 	}
 }
 PlaceList.etherHive = {
-	rarity: 3,
+	rarity: rUNCOMMON,
 	map:
 `
 x..xx
@@ -235,8 +357,27 @@ xx..x
 		x: "wall"
 	}
 }
+PlaceList.anyHive = {
+	rarity: rUNCOMMON,
+	map:
+`
+.........
+.#.#####.
+.#.#a*a#.
+.#.#aaa#.
+.#.##..#.
+.##.##.#.
+..##...#.
+...#####.
+.........
+`,
+	flags: { rotate: true },
+	symbols: {
+		a: "soldierAnt"
+	}
+}
 PlaceList.demonNest = {
-	rarity: 1,
+	rarity: rEPIC,
 	map:
 `
 
@@ -253,7 +394,7 @@ fLffL
 	}
 }
 PlaceList.balgursChamber = {
-	rarity: 0.01,
+	rarity: rLEGENDARY,
 	map:
 `
 ###########
@@ -275,7 +416,7 @@ PlaceList.balgursChamber = {
 	}
 }
 PlaceList.portal = {
-	rarity: 3,
+	rarity: rUNCOMMON,
 	map:
 `
 ..MMMMM..
@@ -296,7 +437,7 @@ MM,,,,,MM
 }
 
 PlaceList.bridge = {
-	rarity: 10,
+	rarity: rUNCOMMON,
 	map:
 `
 ..:::::::::.
@@ -307,11 +448,14 @@ PlaceList.bridge = {
 `,
 	flags: { rotate: true },
 	symbols: {
+	},
+	onEntityCreate: {
+		troll: { attitude: Attitude.AWAIT }
 	}
 }
 
 PlaceList.sunDiscipleTemple = {
-	rarity: 10000.001,
+	rarity: rLEGENDARY,
 	map:
 `
 xxxxxxxxxxx...........
@@ -340,6 +484,7 @@ xxxxxxxxxxx...........
 		x: "tileStoneWall",
 		s: "masterStatue",
 		k: "kingStatue",
+		F: "crystal"
 	},
 	tileTypes: {
 		"tileStoneFloor":      { mayWalk: true,  mayFly: true,  opacity: 0, name: "tile stone floor", img: "dc-dngn/floor/rect_gray1.png", isFloor: true },

@@ -29,7 +29,7 @@ function createDrawList(observer,map,entityList,asType) {
 				let rfx = px+fx-d;
 				let rfy = py+fy-d;
 				if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
-					let lightReaches = shoot4(map,rx,ry,rfx,rfy,false);
+					let lightReaches = observer.xray || shoot4(map,rx,ry,rfx,rfy,false);
 					if( lightReaches ) {
 						a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
 					}
@@ -95,6 +95,7 @@ function createDrawList(observer,map,entityList,asType) {
 
 	let visId = {};
 	let mapMemoryLight = 2;
+	let revealLight = 7;
 
 	// Now assign tile layers, and remember that [0] is the light level. Tiles
 	// that shine light will do so in this loop.
@@ -117,22 +118,29 @@ function createDrawList(observer,map,entityList,asType) {
 				}
 			}
 			if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
+				let aa = a[ty][tx];
 				if( !visible ) {
-					a[ty][tx][0] = mapMemoryLight;
+					aa[0] = mapMemoryLight;
 					if( observer.mapMemory && observer.mapMemory[y] && observer.mapMemory[y][x] ) {
-
-						a[ty][tx][1] = observer.mapMemory[y][x];
-						a[ty][tx].length = 2;
+						aa[1] = observer.mapMemory[y][x];
+						aa.length = 2;
 					}
 					else {
-						a[ty][tx].length = 1;
+						aa.length = 1;
+					}
+					if( item && observer.senseItems ) {
+						aa.push(item);
+						aa[0] = revealLight;
+					}
+					if( entity && observer.senseLife ) {
+						aa.push(entity);
+						aa[0] = revealLight;
 					}
 				}
 				else {
-					let aa = a[ty][tx];
 					aa.push(SymbolToType[mapSymbol]);
-					if( item ) aa.push(item);
-					if( entity ) aa.push(entity);
+					if( item ) { aa.push(item); }
+					if( entity ) { aa.push(entity); }
 
 					if( item ) { visId[item.id] = item; }
 					if( entity ) { visId[entity.id] = entity; }

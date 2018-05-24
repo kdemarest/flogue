@@ -9,9 +9,19 @@ class World {
 	}
 	createArea(areaId,levelDelta=0) {
 		let level = this.area ? this.area.level+levelDelta : this.startingLevel;
-		areaId = areaId || 'area.'+humanNameList.pop()+'.'+level;
+		let isCore = false;
+		if( !areaId ) {
+			let coreAreaId = 'area.core.'+level;
+			if( !this.areaList[coreAreaId] ) {
+				areaId = coreAreaId;
+				isCore = true;
+			}
+			else {
+				areaId = 'area.'+humanNameList.pop()+'.'+level;
+			}
+		}
 		let entrance = this.area===null ? ItemTypeList.stairsUp : (levelDelta>0 ? ItemTypeList.stairsUp : (levelDelta<0 ? ItemTypeList.stairsDown : ItemTypeList.gateway));
-		let area = new Area(areaId,level,entrance);
+		let area = new Area(areaId,level,entrance,isCore);
 		this.areaList[areaId] = area;
 		return area;
 	}

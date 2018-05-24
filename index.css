@@ -92,6 +92,14 @@ body {
 .lit {
 	background-color: green;
 }
+.unlit {
+	color: gray;
+}
+.newItem {
+	font-size: 10px;
+	color: gold;
+	font-style: italic;
+}
 table tr td {
 	vertical-align: top;
 }
