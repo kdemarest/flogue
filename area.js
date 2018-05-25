@@ -143,7 +143,7 @@ class Area {
 
 		let self = this;
 		let placeCount = [];
-		PickerCache.theme = this.theme;	// WARNING! Horrible hack. But it works for now.
+		PickerSetTheme(this.theme);	// WARNING! Horrible hack. But it works for now.
 
 		function makeMonster(x,y) {
 			let entityType = picker.pick(picker.monsterTable);

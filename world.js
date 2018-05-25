@@ -17,7 +17,7 @@ class World {
 				isCore = true;
 			}
 			else {
-				areaId = 'area.'+humanNameList.pop()+'.'+level;
+				areaId = GetUniqueEntityId('area',level);
 			}
 		}
 		let palette = {

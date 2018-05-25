@@ -1,5 +1,11 @@
+(function() {
+
 let PickerCache = {
 };
+
+function PickerSetTheme(theme) {
+	PickerCache.theme = theme;
+}
 
 class Picker {
 	constructor(level,theme) {
@@ -195,3 +201,7 @@ class Picker {
 		return table[i+1];
 	}
 }
+
+window.Picker = Picker;
+window.PickerSetTheme = PickerSetTheme;
+})();

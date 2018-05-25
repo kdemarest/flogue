@@ -19,7 +19,7 @@ class Item {
 			return target;
 		}
 
-		let inits = { level: owner.level, owner: owner, id: humanNameList.pop(), x:position.x, y:position.y };
+		let inits = { level: owner.level, owner: owner, id: GetUniqueEntityId(itemType.typeId,owner.level), x:position.x, y:position.y };
 		if( owner && owner.isMonsterType ) {
 			inits.ownerOfRecord = owner;
 		}
