@@ -533,7 +533,7 @@ const MonsterTypeList = {
 
 // GOOD TEAM
 	"player": {
-		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
+		core: [ '@', 1, '3:10', 'good', 'cut', 'player.png', 'he' ],
 		attitude: Attitude.CALM,
 		brain: Brain.USER,
 		brainOpensDoors: true,
@@ -709,11 +709,21 @@ const MonsterTypeList = {
 
 // LUNAR
 	"lunarOne": {
-		core: [ 'l', 12, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
+		core: [ 'l', 12, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_demonologist.png', '*' ],
 		brainTalk: true,
 		immune: DamageType.FREEZE,
 		name: "lunar one",
-		rarity: 10
+		rarity: 10,
+		vuln: DamageType.BURN
+	},
+"lunarReaper": {
+		core: [ 'l', 1, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
+		brainTalk: true,
+		immune: DamageType.FREEZE,
+		name: "lunar reaper",
+		rarity: 10,
+		travelType: ''
+		vuln: DamageType.BURN
 	},
 
 // NEUTRAL TEAM
