@@ -233,6 +233,7 @@ const TileTypeList = {
 	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", isFloor: true },
 	"grass":      { symbol: ',', mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
 	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", isWall: true },
+	"glass":      { symbol: '▢', mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
 	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", img: "dc-dngn/pit.png" },
 	"shaft":      { symbol: ';', mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", img: "dc-dngn/dngn_trap_shaft.png" },
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", img: "dc-dngn/dngn_open_door.png" },
@@ -584,9 +585,10 @@ const MonsterTypeList = {
 	"Avatar of Balgur": {
 		core: [ 'a', 30, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
 		brainTalk: true,
-		immune: DamageType.BURN,
+		immune: [DamageType.BURN,Attitude.PANIC].join(','),
 		isDemon: true,
-		sayPrayer: 'I shall rule this planet!'
+		sayPrayer: 'I shall rule this planet!',
+		rarity: 0.000000001
 	},
 	"demon": {
 		core: [ 'D', 5, '3:5', 'evil', 'burn', 'player/base/draconian_red_f.png', 'it' ],
