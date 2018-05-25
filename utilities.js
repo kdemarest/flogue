@@ -155,8 +155,8 @@ function nop() {}
 		}
 		let x = mapLevel - entityLevel;
 
-		// Near 0 at delta 0, about 0.5 at delta 4, and 1.0 at delta 8 and beyond
-		let chance = 1 / ( 1+Math.exp(4-x) );
+		// Increases chances from about 7% to near 100% ten levels away from starting level.
+		let chance = 1 - (1 / (1+Math.exp(x/2-2.5)));
 
 		return chance;
 	}

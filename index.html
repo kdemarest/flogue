@@ -107,9 +107,9 @@ function main(levelName) {
 		gui.viewInfo.render(observer);
 		gui.viewInventory.render(observer);
 		gui.viewRange.render(observer);
-		gui.viewMiniMap.render(observer);
 		let drawList = createDrawList(observer,map,entityList);
 		gui.viewMap.draw(drawList,observer);
+		gui.viewMiniMap.render(observer);	// must be after viewMap so the visibility
 	}
 
 	function tick(speed) {
@@ -146,11 +146,11 @@ function main(levelName) {
 	}
 
 	function messageReceive(message,history) {
-		while( history.length > 10 ) {
-			history.pop();
+		while( history.length > 50 ) {
+			history.shift();
 		}
 		let targetElement = document.getElementById('guiMessageBox');
-		targetElement.innerHTML = (history[5]||'')+'\n'+(history[4]||'')+'\n'+(history[3]||'')+'\n'+(history[2]||'')+'\n'+(history[1]||'')+'\n'+(history[0]||'');
+		targetElement.innerHTML = history.join('\n');
 		targetElement.scrollTop = targetElement.scrollHeight
 	}
 
@@ -194,8 +194,8 @@ function main(levelName) {
 		return animationRemove(fn);
 	}
 
-	window.PlaceSourceList = loadPlaceList();
 	let dataConditioner = new DataConditioner();
+	dataConditioner.validateAndConditionThemeData();
 	dataConditioner.integratePlaceData();
 	dataConditioner.prepareStaticData();
 
@@ -205,7 +205,7 @@ function main(levelName) {
 	let imageRepo = new ImageRepo(PIXI.loader);
 	let gui = {};
 	gui.viewMap = new ViewMap('guiMap',MaxSightDistance,imageRepo);
-	gui.viewMiniMap = new ViewMiniMap('guiMiniMap',imageRepo);
+	gui.viewMiniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',imageRepo);
 	gui.viewSpells = new ViewSpells('guiSpells');
 	gui.viewInfo = new ViewInfo('guiInfo')
 	gui.viewStatus = new ViewStatus('guiStatus');
@@ -220,7 +220,7 @@ function main(levelName) {
 		calcVis: () => calcVis(map,spectator.x,spectator.y,MaxSightDistance,false,false,spectator.vis)
 	};
 
-	let area = world.createArea(null,0);
+	let area = world.createArea(null,0,ThemeList[startingLevel<=1 ? 'gameStart' : 'cavern'],startingLevel>1 ? 'stairsUp' : false);
 	world.gateTo(area.id);
 	let map = area.map;
 	let entityList = area.entityList;
@@ -325,6 +325,8 @@ function main(levelName) {
 				<div id="guiInfo">
 				</div>
 				<div id="guiMiniMap">
+				</div>
+				<div id="guiMiniMapCaption">
 				</div>
 			</td>
 		</tr>

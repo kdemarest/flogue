@@ -30,7 +30,7 @@ class Item {
 		merge(this,this.variety);
 
 		if( this.effect !== undefined ) {
-			if( this.effect.isInert || (this.effectChance !== undefined && Math.rand(0,1)>=this.effectChance) ) {
+			if( this.effect.isInert /* || (this.effectChance !== undefined && Math.chance((1-this.effectChance)*100) ) )*/ ) {
 				delete this.effect;
 			}
 			else {

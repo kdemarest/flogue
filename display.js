@@ -20,8 +20,9 @@ function createDrawList(observer,map,entityList,asType) {
 			}
 			return;
 		}
-		for( let ly=-light ; ly<=light ; ++ly ) {
-			for( let lx=-light ; lx<=light ; ++lx ) {
+		let range = Math.abs(light);
+		for( let ly=-range ; ly<=range ; ++ly ) {
+			for( let lx=-range ; lx<=range ; ++lx ) {
 				let fx = x+lx;
 				let fy = y+ly;
 				let rx = px+x-d;
@@ -29,9 +30,15 @@ function createDrawList(observer,map,entityList,asType) {
 				let rfx = px+fx-d;
 				let rfy = py+fy-d;
 				if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
-					let lightReaches = observer.xray || shoot4(map,rx,ry,rfx,rfy,false);
+					let lightReaches = observer.senseXray || shoot4(map,rx,ry,rfx,rfy,false);
 					if( lightReaches ) {
-						a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
+						if( light < 0 ) {
+							let b = Math.max(Math.abs(lx),Math.abs(ly));
+							a[fy][fx][0] = Math.max(0,a[fy][fx][0]+light+b);
+						}
+						else {
+							a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
+						}
 					}
 					if( a[fy][fx][0] === undefined ) {
 						debugger;
@@ -82,7 +89,7 @@ function createDrawList(observer,map,entityList,asType) {
 			let e = ( entity.id == observer.id && observer.invisible ) ? StickerList.invisibleObserver : entity;
 			p[entity.y*map.xLen+entity.x] = e;
 		}
-		testLight(entity.x,entity.y,entity.light)
+		testLight(entity.x,entity.y,entity.light||0);
 	}
 	// Remember all items in the area
 	for( let item of map.itemList ) {
@@ -92,6 +99,10 @@ function createDrawList(observer,map,entityList,asType) {
 	for( let anim of animationList ) {
 		testLight(anim.xGet(),anim.yGet(),anim.light)
 	}
+	for( let entity of entityList ) {
+		testLight(entity.x,entity.y,-(entity.dark||0));
+	}
+
 
 	let visId = {};
 	let mapMemoryLight = 2;

@@ -21,23 +21,20 @@
 	};
 	let T = TileType;
 
-	// This is an attempt, maybe useless, to avoid exceeding the stack limits.
-	let _tile,_xMin,_yMin,_xMax,_yMax,_count,_step,_zone;
-	function _zapZone(x,y) {
-		_tile[y][x].zone = NO_ZONE;
-		_tile[y][x].tile = T.Unknown;
-		++_count;
-		for( let dir=0; dir<DirAdd.length ; dir += _step ) {
-			let nx = x + DirAdd[dir].x;
-			let ny = y + DirAdd[dir].y;
-			if( nx<_xMin || ny<_yMin || nx>_xMax || ny>_yMax ) continue;
-			if( !_tile[ny] || !_tile[ny][nx] || _tile[ny][nx].zone !== _zone ) continue;
-			_zapZone(nx,ny);
-		}
+	function deltasToDirPredictable(dx,dy) {
+		if( dy < 0 ) return dx==0 ? Dir.N : (dx<0 ? Dir.NW : Dir.NE);
+		if( dy > 0 ) return dx==0 ? Dir.S : (dx<0 ? Dir.SW : Dir.SE);
+		return dx==0 ? false : (dx<0 ? Dir.W : Dir.E);
+	} 
+	function deltasToDirNaturalOrtho(dx,dy) {
+		let ax = Math.abs(dx);
+		let ay = Math.abs(dy);
+		if( Math.rand(0,ax+ay) < ay ) { dx=0; } else { dy=0; }
+		return deltasToDirPredictable(dx,dy);
 	}
 
 
-	class Area {
+	class Mason {
 		constructor(whoseGrid) {
 			this.xMin = 0;
 			this.yMin = 0;
@@ -81,7 +78,7 @@
 			}
 			return this.tile[y][x].tile || T.Unknown;
 		}
-		getZone(x,y) {
+		getZoneId(x,y) {
 			x = Math.floor(x);
 			y = Math.floor(y);
 			if( !this.tile[y] ) {
@@ -90,7 +87,7 @@
 			if( !this.tile[y][x] ) {
 				return NO_ZONE;
 			}
-			return this.tile[y][x].zone;
+			return this.tile[y][x].zoneId;
 		}
 		ext(x,y) {
 			this.xMin = Math.min(x,this.xMin);
@@ -123,23 +120,23 @@
 			}
 			return this.tile[y][x];
 		}
-		setTile(x,y,tileType,zone=NO_ZONE) {
+		setTile(x,y,tileType,zoneId=NO_ZONE) {
 			x = Math.floor(x);
 			y = Math.floor(y);
 			this.ext(x,y);
 			this.tile[y] = this.tile[y] || [];
 			this.tile[y][x] = this.tile[y][x] || {};
 			this.tile[y][x].tile = tileType;
-			this.tile[y][x].zone = zone;
+			this.tile[y][x].zoneId = zoneId;
 			return this;
 		}
-		setZone(x,y,zone) {
+		setZoneId(x,y,zoneId) {
 			x = Math.floor(x);
 			y = Math.floor(y);
 			this.ext(x,y);
 			this.tile[y] = this.tile[y] || [];
 			this.tile[y][x] = this.tile[y][x] || {};
-			this.tile[y][x].zone = zone;
+			this.tile[y][x].zoneId = zoneId;
 			return this;
 		}
 		area() {
@@ -210,7 +207,7 @@
 		sizeToExtents() {
 			let xMin,yMin,xMax,yMax;
 			[xMin,yMin,xMax,yMax] = this.getExtents();
-			let area = new Area();
+			let area = new Mason();
 			area.copyFrom(this,xMin,yMin,xMax,yMax);
 			Object.assign(this,area);
 		}
@@ -250,61 +247,6 @@
 			return this;
 
 		}
-		removeZoneFlood(x,y,zone,ortho) {
-			_tile = this.tile;
-			_step = ortho ? 2 : 1;
-			_count = 0;
-			_xMin = this.xMin;
-			_yMin = this.yMin;
-			_xMax = this.xMax;
-			_yMax = this.yMax;
-			_zone = zone;
-			_zapZone(x,y);
-			return _count;
-		}
-
-		flood(x,y,zone,ortho) {
-			function expand(x,y) {
-				for( let dir=0; dir<DirAdd.length ; dir += step ) {
-					let nx = x + DirAdd[dir].x;
-					let ny = y + DirAdd[dir].y;
-					if( nx<self.xMin || ny<self.yMin || nx>self.xMax || ny>self.yMax ) continue;
-					let t = self.getAll(nx,ny);
-					if( t.tile !== T.Floor || t.zone == zone) { continue; }
-					t.zone = zone;
-					++count;
-					hotTiles.push(nx,ny);
-				}
-			}
-			let self = this;
-			let step = ortho ? 2 : 1;
-			let t = self.getAll(x,y);
-			if( t.tile !== T.Floor ) { return 0; }
-			t.zone = zone;
-			let count = 1;
-			let hotTiles = [x,y];
-			do {
-				expand( hotTiles.shift(), hotTiles.shift() );
-			} while( hotTiles.length );
-
-			return count;
-		}
-		floodAll(ortho) {
-			let zoneList = [];
-			let zone = 0;
-
-			this.clearZones();
-
-			this.traverse( (x,y) => {
-				if( this.getZone(x,y) == NO_ZONE && this.getTile(x,y) == T.Floor ) {
-					zoneList[zone] = { x:x, y:y, zone: zone, count: this.flood(x,y,zone,ortho) };
-					++zone;
-				}
-			});
-
-			let zoneBySizeDescending = zoneList.sort( (a,b) => b.count-a.count );
-			return zoneBySizeDescending;
-		}
 		gather(fn) {
 			let list = [];
 			this.traverse( (x,y) => {
@@ -336,6 +278,196 @@
 			}
 			return count;
 		}
+		zoneFlood(x,y,zoneId,ortho,toZoneId=NO_ZONE,toTile=T.Unknown) {
+			function zap(x,y) {
+				for( let dir=0; dir<DirAdd.length ; dir += step ) {
+					let nx = x + DirAdd[dir].x;
+					let ny = y + DirAdd[dir].y;
+					if( nx<self.xMin || ny<self.yMin || nx>self.xMax || ny>self.yMax ) continue;
+					let t = self.getAll(nx,ny);
+					if( t.zoneId !== zoneId) { continue; }
+					t.zoneId = toZoneId;
+					t.tile = toTile || t.tile;
+					++count;
+					hotTiles.push(nx,ny);
+				}
+			}
+			let self = this;
+			let step = ortho ? 2 : 1;
+			let t = self.getAll(x,y);
+			if( t.zoneId !== zoneId ) debugger;
+			t.zoneId = toZoneId;
+			t.tile = toTile || t.tile;
+			let count = 1;
+			let hotTiles = [x,y];
+			do {
+				zap( hotTiles.shift(), hotTiles.shift() );
+			} while( hotTiles.length );
+
+			return count;
+		}
+
+		flood(x,y,zoneId,ortho,keepTiles) {
+			function expand(x,y) {
+				for( let dir=0; dir<DirAdd.length ; dir += step ) {
+					let nx = x + DirAdd[dir].x;
+					let ny = y + DirAdd[dir].y;
+					if( nx<self.xMin || ny<self.yMin || nx>self.xMax || ny>self.yMax ) continue;
+					let t = self.getAll(nx,ny);
+					if( t.tile !== T.Floor || t.zoneId == zoneId) { continue; }
+					t.zoneId = zoneId;
+					++count;
+					hotTiles.push(nx,ny);
+				}
+			}
+			let self = this;
+			let step = ortho ? 2 : 1;
+			let t = self.getAll(x,y);
+			if( t.tile !== T.Floor ) { return 0; }
+			t.zoneId = zoneId;
+			let count = 1;
+			let hotTiles = [x,y];
+			let index = 0;
+			do {
+				expand( hotTiles[index++], hotTiles[index++] );
+			} while( index < hotTiles.length );
+
+			return keepTiles ? hotTiles : { length: hotTiles.length };
+		}
+		floodAll(ortho,keepTiles) {
+			let zoneList = [];
+			let zoneId = 0;
+
+			this.clearZones();
+
+			this.traverse( (x,y) => {
+				if( this.getZoneId(x,y) == NO_ZONE && this.getTile(x,y) == T.Floor ) {
+					let z = this.flood(x,y,zoneId,ortho,keepTiles);
+					zoneList[zoneId] = { x:x, y:y, zoneId: zoneId, tiles: z, count: z.length/2 };
+					++zoneId;
+				}
+			});
+
+			let zoneBySizeDescending = zoneList.sort( (a,b) => b.count-a.count );
+			return zoneBySizeDescending;
+		}
+		findCenter(zone) {
+			let x = 0;
+			let y = 0;
+			zone.tiles.map( t => { x+=t.x; y+=t.y; } );
+			return { x: x/zone.tiles.length, y:y/zone.tiles.length };
+		}
+
+		spiralFindOther(x,y,avoidZoneId,haltAtLength) {
+			let dir = 0;
+			let span = 0.5;
+			let remain = span;
+			let sameZoneCount = 0;
+			let count = 0;
+			let countLimit = 4*this.xLen()*this.yLen();	// mult by 4 because you might have started in a corner
+			let sx = x;
+			let sy = y;
+			do {
+				count += 1;
+				if( count >= haltAtLength ) {
+					return false;
+				}
+				x += DirAdd[dir].x;
+				y += DirAdd[dir].y;
+				let zoneId = this.getZoneId(x,y);
+				if( count <= 8 ) {
+					if( zoneId == avoidZoneId ) {
+						sameZoneCount++;
+						if( sameZoneCount==8 ) {
+							// Halt early because the first eight tiles were all my zone, that is,
+							// I am an interior tile!
+							return false;
+						}
+					}
+				}
+				if( zoneId != NO_ZONE && zoneId != avoidZoneId) {
+					return {x:sx,y:sy,zoneId:avoidZoneId,tx:x,ty:y,tZoneId:zoneId,count:count};
+				}
+				remain -= 1;
+				if( remain <= 0 ) {
+					dir = (dir + 2) % 8;
+					span += 0.5;
+					remain = span;
+				}
+			} while( count < countLimit );
+			return false;
+		}
+
+		zoneLink(x,y,tx,ty,zoneId,linkFn) {
+			// to - from
+			let reps = 9999;
+			while( reps-- ) {
+				let dir = linkFn(tx-x,ty-y);
+				x += DirAdd[dir].x;
+				y += DirAdd[dir].y;
+				if( x==tx && y==ty ) {
+					return;
+				}
+				this.setTile(x,y,T.Floor);
+				this.setZoneId(x,y,zoneId);
+			}
+		}
+
+		findProximity(zoneList) {
+			// Find the closest tile for every single tile in every zone, that is on the edge.
+			let proximity = [];
+			for( let zone of zoneList) {
+				let maxLength = 4*this.xLen()*this.yLen();
+				for( let tileIndex=0 ; tileIndex<zone.tiles.length ; tileIndex += 2 ) {
+					let x = zone.tiles[tileIndex];
+					let y = zone.tiles[tileIndex+1];
+					let result = this.spiralFindOther(x,y,zone.zoneId,maxLength);
+					if( result !== false ) {
+						proximity.push(result);
+					}
+				}
+			}
+
+			// Sort them so that the closest are first.
+			proximity.sort( (a,b) => a.count-b.count );
+			return proximity;
+		}
+
+		connectAll(wanderLink) {
+			let i = 0;
+			let reps = 100;
+			do {
+				let zoneList = this.floodAll(true,true);
+				if( zoneList.length <= 1 ) {
+					break;
+				}
+
+				let proximity = this.findProximity(zoneList);
+
+
+				// Now, in order, make connections.
+				let link = {};
+				while( proximity.length ) {
+					let p = proximity.shift();
+					let pair = ZoneChar.charAt(Math.min(p.zoneId,p.tZoneId))+'-'+ZoneChar.charAt(Math.max(p.zoneId,p.tZoneId));
+					if( link[pair] ) {
+						//console.log('skipping '+pair);
+						continue;
+					}
+					let lean = Math.chance(50);
+					function deltasToDirStrict(dx,dy) {
+						if( dx && dy ) {
+							if( lean ) { dx=0; } else { dy=0; }
+						}
+						return deltasToDirPredictable(dx,dy);
+					}
+					this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,wanderLink?deltasToDirNaturalOrtho:deltasToDirStrict);
+					console.log("Linked "+pair);
+					link[pair] = true;
+				}
+			} while( reps-- );
+		}
+
 		tweakOrtho(find,surroundedBy,howMany,become) {
 			let count = 0;
 			let any = true;
@@ -386,8 +518,8 @@
 			},-1,-1,-1,-1);
 			return this;
 		}
-		clearZones(zone=NO_ZONE) {
-			this.traverse( (x,y) => this.setZone(x,y,zone) );
+		clearZones(zoneId=NO_ZONE) {
+			this.traverse( (x,y) => this.setZoneId(x,y,zoneId) );
 		}
 		fill(tileType) {
 			this.traverse( (x,y) => this.setTile(x,y,tileType) );
@@ -409,28 +541,32 @@
 				}
 			});
 		}
-		paste(area,xPos,yPos,zone) {
+		paste(area,xPos,yPos,zoneId) {
 			xPos = Math.floor(xPos);
 			yPos = Math.floor(yPos);
 			this.traverse( (x,y) => {
 				let tile = this.getTile(x,y);
 				if( tile !== T.Unknown ) {
 					area.setTile(xPos+x,yPos+y,tile);
-					area.setZone(xPos+x,yPos+y,zone==NO_ZONE ? this.getZone(x,y) : zone);
+					area.setZoneId(xPos+x,yPos+y,zoneId==NO_ZONE ? this.getZoneId(x,y) : zoneId);
 				}
 			});
-			return this;
+			return area;
 		}
 
-		renderToString(zones) {
+		renderToString(drawZones) {
 			let s = '';
 			let yLast = this.yMin;
 			this.traverse( (x,y) => {
 				if( y !== yLast ) {
 					s += '\n';
 				}
-				if( zones ) {
-					s += ZoneChar.charAt(this.getZone(x,y)+1);
+				if( drawZones ) {
+					let c = ZoneChar.charAt(this.getZoneId(x,y)+1);
+					if( c == ' ' && this.getTile(x,y) !== T.Unknown ) {
+						c = this.getTile(x,y);
+					}
+					s += c;
 				}
 				else {
 					s += this.getTile(x,y);
@@ -438,10 +574,6 @@
 				yLast = y;
 			});
 			return s;
-		}
-		render(zones) {
-			let s = this.renderToString(zones);
-			document.getElementById('map').innerHTML = s;
 		}
 	}
 
@@ -451,125 +583,146 @@
 		}
 	}
 
-	class Cave extends Area {
-		makeAmoeba(percentToEat,mustConnect=true) {
-			let i=0;
-			percentToEat = Math.clamp(percentToEat,0.02,1.0);
-			let floorToMake = Math.ceil(this.area() * percentToEat);
-			let floorMade = 0;
-			let makeChance = 30;
+	function makeAmoeba(map,percentToEat,seedPercent,mustConnect=true) {
+		let i=0;
+		percentToEat = Math.clamp(percentToEat||0,0.01,1.0);
+		seedPercent = Math.clamp(seedPercent||0,0.001,1.0);
+		let floorToMake = Math.max(1,Math.ceil(map.area() * percentToEat));
+		let floorMade = 0;
+		let makeChance = 30;
 
-			repeat( Math.max(1,floorToMake/8), n => {
-				this.setTile(...this.randPos(-3),T.Floor);
-				++floorMade;
-			});
-			//yield i++;
+		repeat( Math.max(1,floorToMake*seedPercent), n => {
+			map.setTile(...map.randPos(-3),T.Floor);
+			++floorMade;
+		});
 
-			let reps = 100000;
-			let zoneList = [];
+		let reps = 50;
+		let zoneList = [];
 
-			function more() {
-				if( !reps-- ) { return false; }
-				if( floorMade < floorToMake ) { return true; }
-				if( mustConnect ) {
-					if( zoneList.length != 1 ) { return true; }
+		function more() {
+			if( !reps-- ) { return false; }
+			if( floorMade < floorToMake ) { return true; }
+			if( mustConnect ) {
+				if( zoneList.length != 1 ) { return true; }
+			}
+			return false;
+		}
+
+		while( more.call(this) ) {
+			let list = map.gather( (x,y) => map.countOrtho(x,y,T.Floor) > 0 );
+			console.log("Gathered "+list.length);
+			console.log("floor="+floorMade+' of '+floorToMake);
+
+			while( list.length ) {
+				let y = list.pop();
+				let x = list.pop();
+				if( Math.randInt(0,100) < makeChance ) {
+					map.setTile(x,y,T.Floor);
+					++floorMade;
 				}
-				return false;
 			}
 
-			while( more.call(this) ) {
-				let list = this.gather( (x,y) => this.countOrtho(x,y,T.Floor) > 0 );
-				console.log("Gathered "+list.length);
-				console.log("floor="+floorMade+' of '+floorToMake);
-
-				while( list.length ) {
-					let y = list.pop();
-					let x = list.pop();
-					if( Math.randInt(0,100) < makeChance ) {
-						this.setTile(x,y,T.Floor);
-						++floorMade;
-					}
+			console.log("floor="+floorMade+' of '+floorToMake);
+			let removeCount = 0;
+			zoneList = map.floodAll();
+			console.log( zoneList.length+' zones');
+			while( zoneList.length && zoneList[zoneList.length-1].count < floorMade-floorToMake ) {
+				let zone = zoneList.pop();
+				let count = map.zoneFlood(zone.x,zone.y,zone.zoneId,false,NO_ZONE,T.Unknown);
+				if( count !== zone.count ) {
+					debugger;
 				}
-				//yield i++;
-
-				console.log("floor="+floorMade+' of '+floorToMake);
-				let removeCount = 0;
-				zoneList = this.floodAll();
-				console.log( zoneList.length+' zones');
-				while( zoneList.length && zoneList[zoneList.length-1].count < floorMade-floorToMake ) {
-					let z = zoneList.pop();
-					let count = this.removeZoneFlood(z.x,z.y,z.zone);
-					if( count !== z.count ) {
-						debugger;
-					}
-					floorMade -= count;
-					removeCount += 1;
-				}
-				// yield i++;
-				console.log("Removed "+removeCount+'. now floor='+floorMade);
-				console.log( zoneList.length+' zones remain');
+				floorMade -= count;
+				removeCount += 1;
 			}
-			this.removeDiagnoalQuads();
-			// yield i++;
-			this.removeSingletonWalls(3);
-			// yield i++;
-			this.wallify();
-			// yield i++;
-			this.sizeToExtents();
-			// yield i++;
-			return this;
+			console.log("Removed "+removeCount+'. now floor='+floorMade);
+			console.log( zoneList.length+' zones remain');
 		}
-		makeDroplets() {
+		map.removeDiagnoalQuads();
+		map.removeSingletonWalls(3);
+		return this;
+	}
 
+	function makeRooms(map,floorDensity,maxRoomScale) {
+		floorDensity = Math.clamp(floorDensity,0.02,1.0);
+		let minRoomX = 3;
+		let minRoomY = 3;
+		let maxRoomX = Math.clamp(map.xLen() * maxRoomScale,minRoomX,map.xLen()-2);
+		let maxRoomY = Math.clamp(map.yLen() * maxRoomScale,minRoomY,map.yLen()-2);
+		let floorToMake = Math.ceil(map.area() * floorDensity);
+		let floorMade = 0;
+
+		while( floorToMake > 0 ) {
+			let xLen = Math.randInt(minRoomX,maxRoomX);
+			let yLen = Math.randInt(minRoomY,maxRoomY);
+			let fit = false;
+			--floorToMake;
+		}
+
+	}
+
+	function runImmediate(maker) {
+		while( !maker.next().done ) {
 		}
 	}
 
-
-	class Map extends Area {
-
-	}
-
-	function buildMap(style,TileTypeList,MonsterTypeList,ItemTypeList) {
-
-		T.Floor = TileTypeList.floor.symbol;
-		T.Wall = TileTypeList.wall.symbol;
-		T.Unknown = "\0";
-		let map = new Map();
-		const cave = new Cave();
-		cave.setDimensions(style.dim);
-		cave.makeAmoeba(style.floorDensity);
-		cave.paste(map,1,1);
-		map.convert(T.Unknown,T.Wall);
-
-		map.placeEntrance(ItemTypeList.stairsDown.symbol);
-		if( style.entrance ) {
-			map.placeEntrance(style.entrance.symbol);
-		}
-		return map.renderToString();
-	}
-
-	function buildMapSlow() {
-		let map = new Map();
-		const cave = new Cave().setDimensions(150); //Math.randIntBell(5,50));
-		let maker = cave.makeAmoeba(Math.rand(0.40, 0.70));
-		let m;
-
+	function runSlow(maker,callback) {
 		function makeMore() {
-			m = maker.next();
-			if( m.done ) {
+			if( maker.next().done ) {
 				return false;
 			}
-			map.fill(T.Unknown);
-			cave.paste(map,1,1);
-			map.render();
+			callback(maker);
 		}
 
 		document.addEventListener( "keydown", makeMore, false );
 		makeMore();
 	}
 
+	function buildMap(scape,palette,onStep) {
+		let drawZones = true;
+		function render() {
+			//map.fill(T.Unknown);
+			//cave.paste(map,1,1);
+			let s = cave.renderToString(drawZones);
+			if( !drawZones ) debugger;
+			onStep(s);
+		}
+		palette = palette || {};
+
+		T.Floor = palette.floor || T.Floor;
+		T.Wall = palette.wall || T.Wall;
+		T.Unknown = palette.unknown || T.Unknown;
+		if( T.Floor == T.Wall || T.Floor == T.Unknown || T.Wall == T.Unknown ) {
+			debugger;
+		}
+
+		let map = new Mason();
+		map.setDimensions(scape.dim);
+
+		if( scape.architecture == 'cave' ) {
+			makeAmoeba(map,scape.floorDensity,scape.seedPercent,scape.mustConnect);
+		}
+		if( scape.architecture == 'rooms' ) {
+			makeRooms(map,scape.floorDensity,scape.maxRoomScale);
+		}
+
+		map.connectAll(scape.wanderingPassage);
+		map.wallify();
+		map.sizeToExtents();
+		map = map.paste(new Mason(),1,1);
+		map.convert(T.Unknown,T.Wall);
+
+		for( let i=0; i<scape.entranceCount; ++i ) {
+			map.placeEntrance(palette.entrance);
+		}
+		for( let i=0; i<scape.exitCount; ++i ) {
+			map.placeEntrance(palette.exit);
+		}
+		return map;
+	}
+
+
 	window.Mason = {
-		buildMap: buildMap,
-		buildMapSlow: buildMapSlow
+		buildMap: buildMap
 	};
 })();

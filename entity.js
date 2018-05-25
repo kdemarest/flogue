@@ -795,7 +795,15 @@ class Entity {
 			case Command.DEBUGKILL: {
 				let target = this.commandTarget;
 				tell(mSubject,target,' killed.');
-				target.die();
+				target.health = -1000;
+				break;
+			}
+			case Command.DEBUGTHRIVE: {
+				this.healthMax = 100000;
+				this.health = this.healthMax;
+				this.damage = 100000;
+				this.senseItems = true;
+				this.senseLife = true;
 				break;
 			}
 			case Command.LOOT: {
@@ -833,6 +841,15 @@ class Entity {
 				item.y = this.y;
 				tell(mSubject,this,' ',mVerb,'quaff',' ',mObject,item);
 				item.trigger(this.command,this,this);
+				break;
+			}
+			case Command.GAZE: {
+				let item = this.commandItem;
+				item.x = this.x;
+				item.y = this.y;
+				tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'. It shatters!');
+				item.trigger(this.command,this,this);
+				item.destroy();
 				break;
 			}
 			case Command.THROW: {

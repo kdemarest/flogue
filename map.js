@@ -182,7 +182,6 @@ class Map extends SimpleMap {
 		this.itemList = itemList;
 	}
 	pickPosEmpty() {
-		console.log("Picking random location for "+type.typeId);
 		let pos = this.pickPosBy(0,0,0,0,(x,y,type)=>type.isFloor);
 		return pos;
 	}

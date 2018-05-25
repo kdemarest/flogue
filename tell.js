@@ -37,9 +37,9 @@ let MessageManager = (new class {
 				}
 				else {
 					while( recipient.buffer.length ) {
-						recipient.history.unshift( recipient.buffer.pop() );
+						recipient.history.push( recipient.buffer.pop() );
 					}
-					recipient.history.unshift(message);
+					recipient.history.push(message);
 				}
 				recipient.receiveFn(message,recipient.history);
 			}

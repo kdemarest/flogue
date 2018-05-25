@@ -4,8 +4,9 @@ class AreaBuilder {
 		this.picker = picker;
 	}
 
-	buildMap(style) {
-		let tileRaw = Mason.buildMap(style,TileTypeList,MonsterTypeList,ItemTypeList);
+	buildMap(scape,palette) {
+		let map = Mason.buildMap(scape,palette);
+		let tileRaw = map.renderToString();
 		return tileRaw;
 	}
 
@@ -130,31 +131,20 @@ class AreaBuilder {
 };
 
 class Area {
-	constructor(areaId,level,entrance,isCore) {
+	constructor(areaId,level,theme,isCore) {
 		this.id = areaId;
 		this.level = level;
 		this.isCore = isCore;
+		this.theme = theme;
 		this.mapMemory = [];
+	}
 
-		let picker = new Picker(level);
-		this.builder = new AreaBuilder(picker);
-
-		let sideDimension = 60; //Math.randInt(40,150);
-		//let tileRaw = loadLevel('test');
-
-		let floorDensity = Math.rand(0.50,0.70);
-		let style = {
-			architecture: "cave",
-			entrance: entrance,
-			level: level,
-			dim: sideDimension,
-			placeDensity: floorDensity * 0.20,
-			floorDensity: floorDensity,
-			monsterDensity: 0.01, //Monster Density
-			itemDensity: 0.008 //Item Density
-		};
+	build(palette) {
 
 		let self = this;
+		let placeCount = [];
+		PickerCache.theme = this.theme;	// WARNING! Horrible hack. But it works for now.
+
 		function makeMonster(x,y) {
 			let entityType = picker.pick(picker.monsterTable);
 			self.entityList.push( new Entity( self.map, self.entityList, entityType, { x:x, y:y } ) );
@@ -179,29 +169,47 @@ class Area {
 			}
 		}
 
-		let placeCount = [];
-
 		function pickPlace() {
 			let reps = 5;
 			let place;
 			do {
 				place = picker.pick(picker.placeTable);
-			} while( reps-- && Math.chance((placeCount[place.id]||0)*10) );
+			} while( reps-- && Math.chance((placeCount[place.id]||0)*30) );
 			placeCount[place.id] = (placeCount[place.id]||0)+1;
 			return place;
 		}
 
-		let tileRaw = loadLevel(areaId) || this.builder.buildMap(style);
-		this.map = new Map(tileRaw,[]);
-		this.map.level = level;
+		let picker = new Picker(this.level,this.theme);
+		this.builder = new AreaBuilder(picker);
 
-		let numPlaceTiles = Math.floor(this.map.xLen*this.map.yLen*style.placeDensity);
+		let scapeId = pick(this.theme.scapes);
+		let scape = Object.assign(
+			{
+				placeDensity: 0.20,
+				monsterDensity: 0.01,
+				itemDensity: 0.008
+			}, 
+			ScapeList[scapeId](),
+			{
+				level: this.level,
+				entranceCount: 1,
+				exitCount: 1
+			}
+		);
+		this.scape = scape;
+
+		let tileRaw = loadLevel(this.id) || this.builder.buildMap(scape,palette);
+
+		this.map = new Map(tileRaw,[]);
+		this.map.level = this.level;
+
+		let numPlaceTiles = Math.floor(this.map.xLen*this.map.yLen*scape.floorDensity*scape.placeDensity);
 		let entityInject = this.builder.injectPlaces(this.map,numPlaceTiles,pickPlace);
 		this.entityList = [];
 		this.gateList = [];
 
-		this.builder.populate( this.map, style.monsterDensity, makeMonster );
-		this.builder.populate( this.map, style.itemDensity, makeItem );
+		this.builder.populate( this.map, scape.monsterDensity, makeMonster );
+		this.builder.populate( this.map, scape.itemDensity, makeItem );
 		this.builder.extractEntitiesFromMap(this.map,this.entityList,this.gateList,entityInject,makeItem);
 		return this;
 	}

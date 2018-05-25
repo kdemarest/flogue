@@ -117,6 +117,9 @@ class ViewInventory {
 		this.render();
 	}
 	hide() {
+		if( !this.isOpen ) {
+			return;
+		}
 		for( let i=0 ; i<this.inventory.all.length ; ++i ) {
 			this.everSeen[this.inventory.all[i].id]=true;
 		}
@@ -254,7 +257,10 @@ class UserCommandHandler {
 		return this.commandPassesTime(observer.command);
 	}
 	pickingTarget() {
-		return (this.command == Command.CAST || this.command == Command.THROW) && this.commandItem;
+		if( this.command === Command.DEBUGKILL ) {
+			return true;
+		}
+		return (this.command == Command.CAST || this.command == Command.THROW ) && this.commandItem;
 	}
 	evalCommand(observer,event,command) {
 		let keyCode = event.keyCode;
@@ -325,6 +331,10 @@ class UserCommandHandler {
 				if( this.command == Command.INVENTORY && item.isPotion ) {
 					this.command = item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
 				}
+				if( this.command == Command.INVENTORY && item.isGem && item.effect ) {
+					this.command = Command.GAZE;
+					return this.enactCommand(observer);
+				}
 				if( this.command == Command.QUAFF ) {
 					return this.enactCommand(observer);
 				}
@@ -367,6 +377,11 @@ class UserCommandHandler {
 			observer.command = Command.NONE;
 			this.command = Command.THROW;
 			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).filter( item => item.mayThrow ) );
+			return false;
+		}
+		if( command == Command.DEBUGKILL ) {
+			observer.command = Command.NONE;
+			this.command = Command.DEBUGKILL;
 			return false;
 		}
 		if( command == Command.DROP ) {

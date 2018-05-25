@@ -125,7 +125,7 @@ class Sentence {
 				if( numbers.indexOf(who.name.charAt(0))>=0 ) {
 					specifier = '';
 				}
-				let thing = (who.properNoun ? who.name : specifier)+who.name;
+				let thing = (who.properNoun ? '' : specifier)+who.name;
 				let a = SentenceReusableArray;
 				a[0] = {you:'you',he:thing,she:thing,it:thing};
 				a[mPronoun] = {you:'you',he:'he',she:'she',it:'it'};
