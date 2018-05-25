@@ -96,29 +96,28 @@ class ViewMiniMap {
 	constructor(divId,captionDivId,imageRepo) {
 		this.divId = divId;
 		this.captionDivId = captionDivId;
-		this.areaId = '';
-		this.map = null;
+		this.caption = '';
+		this.mapMemory = null;
 		this.imageRepo = imageRepo;
 	}
-	create() {
+	create(area) {
 		$( '#'+this.divId+'Canvas' ).remove();
-		this.map = world.mapMemory;
-		this.xLen = world.area.map.xLen;
-		this.yLen = world.area.map.yLen;
+		this.xLen = area.map.xLen;
+		this.yLen = area.map.yLen;
 		this.scale = Math.max(this.yLen,this.xLen) < 2000 ? 2 : 1;
 		let dim = Math.max(this.xLen,this.yLen);
 		$( '#'+this.divId)
 			.width(dim*this.scale)
 			.height(dim*this.scale)
 			.append('<canvas id="'+this.divId+'Canvas'+'" height="'+dim*this.scale+'" width="'+dim*this.scale+'"></canvas>');
-		this.areaId = world.area.id;
+	}
+	setArea(area) {
+		this.caption = area.id;
+		this.mapMemory = area.mapMemory;
+		this.create(area);
 	}
 	render(observer) { 
-		if( this.areaId !== world.area.id ) {
-			this.create();
-		}
-
-		$('#'+this.captionDivId).html(this.areaId);
+		$('#'+this.captionDivId).html(this.caption);
 
 		var canvas = document.getElementById(this.divId+'Canvas');
 		if( !canvas.getContext ) {
@@ -141,7 +140,7 @@ class ViewMiniMap {
 		let c = canvas.getContext("2d");
 		draw(unvisitedMap,0,0,200);
 
-		let mapMemory = world.area.mapMemory;
+		let mapMemory = this.mapMemory;
 		let drawLate = [];
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {

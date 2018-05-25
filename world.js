@@ -1,11 +1,12 @@
 class World {
-	constructor(startingLevel=1) {
+	constructor(startingLevel=1,onAreaChange) {
 		this.areaList = {};
 		this.area = null;
 		this.startingLevel = startingLevel;
 		this.pending = {
 			gate: null
 		};
+		this.onAreaChange = onAreaChange;
 	}
 	createArea(areaId,levelDelta,theme,entranceSymbol) {
 		let level = this.area ? this.area.level+levelDelta : this.startingLevel;
@@ -38,6 +39,7 @@ class World {
 		let area = this.areaList[areaId];
 		if( !area ) debugger;
 		this.area = area;
+		this.onAreaChange(this.area);
 		return area;
 	}
 	setPending(gate) {

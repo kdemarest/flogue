@@ -190,6 +190,9 @@ function main(levelName) {
 	function worldOverlayRemove(fn) {
 		return animationRemove(fn);
 	}
+	function onAreaChange(area) {
+		gui.viewMiniMap.setArea(area);
+	}
 
 	let dataConditioner = new DataConditioner();
 	dataConditioner.validateAndConditionThemeData();
@@ -197,7 +200,7 @@ function main(levelName) {
 	dataConditioner.prepareStaticData();
 
 	let startingLevel = 10;
-	window.world = new World(startingLevel);
+	window.world = new World(startingLevel,onAreaChange);
 
 	let imageRepo = new ImageRepo(PIXI.loader);
 	let gui = {};
