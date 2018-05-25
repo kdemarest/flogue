@@ -1,5 +1,3 @@
-// READOUT
-
 class ViewSpells {
 	constructor(spellDivId) {
 		this.MAX_SLOTS = 5;
@@ -94,6 +92,85 @@ class ViewStatus {
 	}
 }
 
+class ViewMiniMap {
+	constructor(divId,captionDivId,imageRepo) {
+		this.divId = divId;
+		this.captionDivId = captionDivId;
+		this.caption = '';
+		this.mapMemory = null;
+		this.imageRepo = imageRepo;
+	}
+	create(area) {
+		$( '#'+this.divId+'Canvas' ).remove();
+		this.xLen = area.map.xLen;
+		this.yLen = area.map.yLen;
+		this.scale = Math.max(this.yLen,this.xLen) < 2000 ? 2 : 1;
+		let dim = Math.max(this.xLen,this.yLen);
+		$( '#'+this.divId)
+			.width(dim*this.scale)
+			.height(dim*this.scale)
+			.append('<canvas id="'+this.divId+'Canvas'+'" height="'+dim*this.scale+'" width="'+dim*this.scale+'"></canvas>');
+	}
+	setArea(area) {
+		this.caption = area.id;
+		this.mapMemory = area.mapMemory;
+		this.create(area);
+	}
+	render(observer) { 
+		$('#'+this.captionDivId).html(this.caption);
+
+		var canvas = document.getElementById(this.divId+'Canvas');
+		if( !canvas.getContext ) {
+			debugger;
+		}
+
+		let self = this;
+		function draw(entity,x,y,scale) {
+			let imgGet = self.imageRepo.imgGet[entity.typeId];
+			if( !imgGet ) debugger;
+			if( imgGet ) {
+				let imgPath = imgGet(entity);
+				if( !entity ) debugger;
+				let resource = self.imageRepo.get(imgPath);
+				c.drawImage(resource.texture.baseTexture.source,x*self.scale,y*self.scale,scale,scale);
+			}
+		}
+
+		let unvisitedMap = StickerList.unvisitedMap;
+		let c = canvas.getContext("2d");
+		draw(unvisitedMap,0,0,200);
+
+		let mapMemory = this.mapMemory;
+		let drawLate = [];
+		for( let y=0 ; y<this.yLen ; ++y ) {
+			for( let x=0 ; x<this.xLen ; ++x ) {
+				if( !mapMemory[y] || !mapMemory[y][x] ) {
+					draw(unvisitedMap,x,y,this.scale);
+					continue;
+				}
+				let entity = mapMemory[y][x];
+				if( entity.isWall ) {
+					entity = StickerList.wallProxy;
+				}
+				if( x==observer.x && y==observer.y ) {
+					entity = StickerList.observerProxy;
+					drawLate.push({entity:entity,x:x,y:y,scale:this.scale*4});
+				}
+				if( entity.gateDir !== undefined ) {
+					entity = StickerList.gateProxy;
+					drawLate.push({entity:entity,x:x,y:y,scale:this.scale*3});
+				}
+				draw(entity,x,y,this.scale);
+			}
+		}
+		while( drawLate.length ) {
+			let d = drawLate.pop();
+			draw(d.entity,d.x,d.y,d.scale);
+		}
+	}
+}
+
+
 class ViewInventory {
 	constructor(inventoryDivId,imageRepo) {
 		this.inventoryDivId = inventoryDivId;
@@ -117,6 +194,9 @@ class ViewInventory {
 		this.render();
 	}
 	hide() {
+		if( !this.isOpen ) {
+			return;
+		}
 		for( let i=0 ; i<this.inventory.all.length ; ++i ) {
 			this.everSeen[this.inventory.all[i].id]=true;
 		}
@@ -254,7 +334,10 @@ class UserCommandHandler {
 		return this.commandPassesTime(observer.command);
 	}
 	pickingTarget() {
-		return (this.command == Command.CAST || this.command == Command.THROW) && this.commandItem;
+		if( this.command === Command.DEBUGKILL ) {
+			return true;
+		}
+		return (this.command == Command.CAST || this.command == Command.THROW ) && this.commandItem;
 	}
 	evalCommand(observer,event,command) {
 		let keyCode = event.keyCode;
@@ -325,6 +408,10 @@ class UserCommandHandler {
 				if( this.command == Command.INVENTORY && item.isPotion ) {
 					this.command = item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
 				}
+				if( this.command == Command.INVENTORY && item.isGem && item.effect ) {
+					this.command = Command.GAZE;
+					return this.enactCommand(observer);
+				}
 				if( this.command == Command.QUAFF ) {
 					return this.enactCommand(observer);
 				}
@@ -367,6 +454,11 @@ class UserCommandHandler {
 			observer.command = Command.NONE;
 			this.command = Command.THROW;
 			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).filter( item => item.mayThrow ) );
+			return false;
+		}
+		if( command == Command.DEBUGKILL ) {
+			observer.command = Command.NONE;
+			this.command = Command.DEBUGKILL;
 			return false;
 		}
 		if( command == Command.DROP ) {

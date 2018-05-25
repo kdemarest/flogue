@@ -1,5 +1,6 @@
-(function() {
-let PlaceList = {};
+let ScapeList = { };
+let ThemeList = { };
+let PlaceList = { };
 
 /*
 
@@ -39,14 +40,131 @@ function PlaceMany(prefix,list,templateFn) {
 	let count = list.length;
 	while( list.length ) {
 		let VARIETY = list.pop();
-		let placeId = prefix+'_'+VARIETY;
+		let placeId = prefix+'.'+VARIETY;
 		PlaceList[placeId] = templateFn(VARIETY);
 		PlaceList[placeId].rarity /= count;
 	}
 }
 
+// Theme caps are for a 40x40 area. These will be ratiod to the size of the actual map.
+// prefer - means that, when a pick choice needs to happen, that theme strongly (maybe 100%) prefers to chose that.
+ScapeList.caveRandom = theme => ({
+	dim: 				Math.randInt(40,80),
+	architecture: 		"cave",
+	floorDensity: 		Math.rand(0.10,0.70),
+	seedPercent: 		Math.rand(0.0001,0.90),
+	mustConnect: 		Math.chance(50),
+	wanderingPassage: 	Math.chance(50),
+});
+
+ScapeList.caveWeblike = theme => ({
+	dim: 				Math.randInt(30,60),
+	architecture: 		"cave",
+	floorDensity: 		0.12,
+	seedPercent: 		0.63,
+	mustConnect: 		false,
+	wanderingPassage: 	true,
+});
+
+ScapeList.caveMazelike = theme => ({
+	dim: 				Math.randInt(30,60),
+	architecture: 		"cave",
+	floorDensity: 		0.12,
+	seedPercent: 		0.63,
+	mustConnect: 		false,
+	wanderingPassage: 	false,
+});
+
+ScapeList.caveSpacious = theme => ({
+	dim: 				Math.randInt(40,80),
+	architecture: 		"cave",
+	floorDensity: 		0.68,
+	seedPercent: 		0.20,
+	mustConnect: 		false,
+	wanderingPassage: 	false,
+});
+
+ScapeList.caveBroadWinding = theme => ({
+	dim: 				Math.randInt(40,80),
+	architecture: 		"cave",
+	floorDensity: 		0.30,
+	seedPercent: 		0.60,
+	mustConnect: 		false,
+	wanderingPassage: 	true,
+});
+
+
+ThemeList.gameStart = {
+	isCore: 	true,
+	scapes: 	['caveRandom'],
+	rCOMMON: 	['camp.human'],
+	monsters: 	['isPet']
+}
+
+ThemeList.cavern = {
+	isCore: 	true,
+	scapes: 	['caveRandom'],
+	rCOMMON: 	['nest.bat','nest.spinyFrog','nest.scarab','nest.viper','camp.ogre','camp.goblin','den.kobold'],
+	rUNCOMMON: 	['camp.human','antHive','trollBridge','shaft','collonade','fountain1','fountain4','patch','veil'],
+	rRARE: 		['den.dog','goblinGathering','demonNest','portal','circle','ruin','swamp','etherHive'],
+	rEPIC: 		['graveYard','lunarEmbassy'],
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+}
+
+ThemeList.spooky = {
+	isCore: 	true,
+	scapes: 	['caveRandom'],
+	rCOMMON: 	['graveYard','nest.bat'],
+	rUNCOMMON: 	['ruin','nest.viper'],
+	rRARE: 		['shaft','fountain1','camp.human','swamp'],
+	rEPIC: 		['portal'],
+	prefer: 	['mist'],
+	monsters: 	['isUndead'],
+}
+
+ThemeList.ruins = {
+	isCore: 	true,
+	scapes: 	['caveRandom'],
+	rCOMMON: 	['camp.ogre','camp.goblin'],
+	rUNCOMMON: 	['collonade','ruin','fountain1','camp.goblin','antHive'],
+	rRARE: 		['swamp','demonNest'],
+	rEPIC: 		['portal'],
+	monsters: 	['isEarthChild','isAnimal'],
+}
+
+ThemeList.hellscape = {
+	scapes: 	['caveRandom'],
+	rCOMMON: 	['demonNest'],
+	rUNCOMMON: 	['collonade','ruin','fountain1'],
+	rRARE: 		['etherHive','balgursChamber'],
+	prefer: 	['fire','mud'],
+	monsters: 	['isDemon','isPlanar'],
+	//items: 		['isGem'],
+}
+
+ThemeList.refugeeCamp = {
+	scapes: 	['caveRandom'],
+	rCOMMON: 	['den.dog'],
+	monsters: 	['isSunChild','isPet']
+}
+
+ThemeList.lunarColony = {
+	scapes: 	['caveRandom'],
+	rCOMMON: 	['lunarEmbassy'],
+	rRARE: 		['etherHive'],
+	rEPIC: 		['portal'],
+	monsters: 	['isLunarChild','isPlanar'],
+}
+
+ThemeList.sunPlane = {
+	scapes: 	['caveRandom'],
+	rREQUIRED: 	['sunDiscipleTemple'],
+	rCOMMON: 	[],
+	rEPIC: 		['portal'],
+	monsters: 	['isSunChild','isPlanar'],
+}
+
 PlaceList.goblinGathering = {
-	rarity: rRARE,
 	map:
 `
 .......
@@ -108,7 +226,6 @@ PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityL
 }
 
 PlaceList.graveYard = {
-	rarity: rEPIC,
 	map:
 `
 ..M.M...B.MMM
@@ -132,7 +249,6 @@ M...B..M.....
 }
 
 PlaceList.circle = {
-	rarity: rRARE,
 	map:
 `
 .........
@@ -150,8 +266,24 @@ PlaceList.circle = {
 	}
 }
 
+PlaceList.ruin = {
+	map:
+`
+.o...
+.s..a
+a.o..
+..*a.
+.a...
+`,
+	flags: { rotate: true },
+	symbols: {
+		s: 'shadow',
+		o: 'columnBroken',
+		a: 'columnStump'
+	}
+}
+
 PlaceList.shaft = {
-	rarity: rUNCOMMON,
 	map:
 `
 ...
@@ -165,7 +297,6 @@ PlaceList.shaft = {
 }
 
 PlaceList.collonade = {
-	rarity: rUNCOMMON,
 	map:
 `
 .............
@@ -182,7 +313,6 @@ PlaceList.collonade = {
 }
 
 PlaceList.fountain1 = {
-	rarity: rUNCOMMON,
 	map:
 `
 ...
@@ -197,7 +327,6 @@ PlaceList.fountain1 = {
 }
 
 PlaceList.fountain4 = {
-	rarity: rUNCOMMON,
 	map:
 `
 F.F
@@ -211,21 +340,19 @@ F.F
 }
 
 PlaceList.patch = {
-	rarity: rCOMMON,
 	map:
 `
-..mm
-.mmm
-mm..
+..mm..
+.mmmm.
+..mm..
 `,
 	flags: { rotate: true },
 	symbols: {
-		m: function() { return pick(['mud','grass','pit','fire','water','mist','mud']); }
+		m: function() { return pick(['mud','grass','pit','fire','water','mist']); }
 	}
 };
 
 PlaceList.veil = {
-	rarity: rCOMMON,
 	map:
 `
 mmmm
@@ -237,7 +364,6 @@ mmmm
 };
 
 PlaceList.lunarEmbassy = {
-	rarity: rEPIC,
 	map:
 `
 xxxxxxx.
@@ -255,7 +381,6 @@ xxxxxxx
 }
 
 PlaceMany( 'camp', ['ogre','human','goblin'], VARIETY => ({
-	rarity: rCOMMON,
 	map:
 `
 .y.
@@ -275,7 +400,6 @@ yuy
 }));
 
 PlaceMany( 'nest', ['bat','spinyFrog','scarab','viper'], VARIETY => ({
-	rarity: rCOMMON,
 	map:
 `
 ⋍xx⋍x
@@ -298,7 +422,6 @@ xyy⋍x
 
 
 PlaceMany( 'den', ['dog','kobold'], VARIETY => ({
-	rarity: rCOMMON,
 	map:
 `
 xxxxxxx
@@ -319,7 +442,6 @@ xxxxx..
 }));
 
 PlaceList.swamp = {
-	rarity: rCOMMON,
 	map:
 `
 mmmmmmmmmmmmm
@@ -343,7 +465,6 @@ mmmmmmmmmmmmm
 	}
 }
 PlaceList.etherHive = {
-	rarity: rUNCOMMON,
 	map:
 `
 x..xx
@@ -357,8 +478,7 @@ xx..x
 		x: "wall"
 	}
 }
-PlaceList.anyHive = {
-	rarity: rUNCOMMON,
+PlaceList.antHive = {
 	map:
 `
 .........
@@ -377,7 +497,6 @@ PlaceList.anyHive = {
 	}
 }
 PlaceList.demonNest = {
-	rarity: rEPIC,
 	map:
 `
 
@@ -394,7 +513,6 @@ fLffL
 	}
 }
 PlaceList.balgursChamber = {
-	rarity: rLEGENDARY,
 	map:
 `
 ###########
@@ -416,7 +534,6 @@ PlaceList.balgursChamber = {
 	}
 }
 PlaceList.portal = {
-	rarity: rUNCOMMON,
 	map:
 `
 ..MMMMM..
@@ -432,12 +549,15 @@ MM,,,,,MM
 	flags: { rotate: true },
 	symbols: {
 		x: "wall",
+		Ώ: "gateway",
 		M: "mist"
+	},
+	onEntityCreate: {
+		gateway: { themeId: 'hellscape' }
 	}
 }
 
-PlaceList.bridge = {
-	rarity: rUNCOMMON,
+PlaceList.trollBridge = {
 	map:
 `
 ..:::::::::.
@@ -455,7 +575,6 @@ PlaceList.bridge = {
 }
 
 PlaceList.sunDiscipleTemple = {
-	rarity: rLEGENDARY,
 	map:
 `
 xxxxxxxxxxx...........
@@ -493,8 +612,3 @@ xxxxxxxxxxx...........
 		"kingStatue":    { mayWalk: false, mayFly: true, opacity: 0, name: "king statue", img: "dc-mon/statues/wucad_mu_statue.png"},
 	}
 }
-
-
-	// Export the placelist.
-	window.loadPlaceList = () => PlaceList;
-})();

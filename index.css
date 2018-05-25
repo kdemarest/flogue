@@ -87,6 +87,16 @@ body {
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
+#guiMiniMap canvas {
+	align-self: center;
+}
+#guiMiniMapCaption {
+	text-align: center;
+	font-size: 10px;
+	font-family: "Ariel", serif;
+	overflow-y: hidden;
+	overflow-x: hidden;
+}
 .spell {
 }
 .lit {

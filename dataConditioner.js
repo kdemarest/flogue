@@ -2,6 +2,32 @@ class DataConditioner {
 	constructor() {
 	}
 
+	validateAndConditionThemeData() {
+		function extractRarity(theme,rarity,list) {
+			if( !list ) {
+				return;
+			}
+			list.map( placeId => {
+				theme.rarityTable[placeId] = rarity;
+				if( !PlaceList[placeId] ) {
+					debugger;
+				}
+			});
+
+		}
+
+		for( let themeId in ThemeList ) {
+			let theme = ThemeList[themeId];
+			theme.id = themeId;
+			theme.rarityTable = {};
+			extractRarity(theme,rCOMMON,theme.rCOMMON);
+			extractRarity(theme,rUNCOMMON,theme.rUNCOMMON);
+			extractRarity(theme,rRARE,theme.rRARE);
+			extractRarity(theme,rEPIC,theme.rEPIC);
+			extractRarity(theme,rLEGENDARY,theme.rLEGENDARY);
+		}
+	}
+
 	integratePlaceData() {
 
 		let s2t = {};
@@ -30,9 +56,9 @@ class DataConditioner {
 		}
 
 		// Give symbols to anything that lacks a symbol.
-		for( let placeId in PlaceSourceList ) {
+		for( let placeId in PlaceList ) {
 
-			let place = PlaceSourceList[placeId];
+			let place = PlaceList[placeId];
 			place.id = placeId;
 			let roster = Object.assign({},place.monsterTypes,place.itemTypes,place.tileTypes);
 			for( let typeId in roster ) {
@@ -66,10 +92,10 @@ class DataConditioner {
 		}
 
 		// Be sure to do this afterwards, just in case a place uses a monster from a place further down the list.
-		for( let placeId in PlaceSourceList ) {
+		for( let placeId in PlaceList ) {
 			let NO_MONSTERS = -1;
 			let level = NO_MONSTERS;
-			let place = PlaceSourceList[placeId];
+			let place = PlaceList[placeId];
 			for( let i=0 ; i<place.map.length ; ++i ) {
 				let s = place.map.charAt(i);
 				let monster = MonsterTypeList[place.symbols[s] || s2t[s]];

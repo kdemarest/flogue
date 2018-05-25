@@ -1,39 +1,64 @@
+(function() {
+
 let PickerCache = {
-	placeTable: [],
-	monsterTable: [],
-	itemTable: []
 };
 
+function PickerSetTheme(theme) {
+	PickerCache.theme = theme;
+}
+
 class Picker {
-	constructor(level) {
+	constructor(level,theme) {
 		this.level = level;
+		this.theme = theme || PickerCache.theme;
+		this.cacheId = this.theme.id+'.'+this.level;
 	}
 
-	// Contains entries from PlaceSourceList
+	cache(type,table) {
+		if( table ) {
+			PickerCache[this.cacheId+'.'+type] = table;
+		}
+		return PickerCache[this.cacheId+'.'+type];
+	}
+
+	// Contains entries from PlaceList
 	get placeTable() {
-		if( !PickerCache.placeTable[this.level] ) {
+		if( !this.cache('place') ) {
 			let table = [];
-			for( let placeId in PlaceSourceList ) {
-				let place = PlaceSourceList[placeId];
-				if( place.level != 'any' && place.level > this.level || place.neverPick ) {
+			for( let placeId in PlaceList ) {
+				let place = PlaceList[placeId];
+				if( place.neverPick || (place.level != 'any' && place.level > this.level) ) {
+					continue;
+				}
+				if( !this.theme.rarityTable[placeId] ) {
 					continue;
 				}
 				let placeLevel = (place.level=='any' ? this.level : place.level);
 				let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(placeLevel,this.level) * 100000, 1, 100000));
-				chance *= (place.rarity || 1);
+				chance *= (this.theme.rarityTable[placeId] || 1);
 				table.push(chance,place);
 			}
-			PickerCache.placeTable[this.level] = table;
+			this.cache('place',table);
 		}
-		return PickerCache.placeTable[this.level];
+		return this.cache('place');
 	}
 
 	// Contains entries in MonsterTypeList
 	get monsterTable() {
-		if( !PickerCache.monsterTable[this.level] ) {
+		if( !this.cache('monster') ) {
 			let table = [];
 			for( let typeId in MonsterTypeList ) {
 				let m = MonsterTypeList[typeId];
+
+				if( this.theme.monsters ) {
+					let ok = false;
+					for( let stat of this.theme.monsters ) {
+						ok = ok || m[stat];		// like 'isAnimal' or 'isUndead'
+					}
+					if( !ok ) {
+						continue;
+					}
+				}
 				if( m.level > this.level || m.neverPick ) {
 					continue;
 				}
@@ -41,14 +66,14 @@ class Picker {
 				chance *= (m.rarity || 1);
 				table.push(chance,m);
 			}
-			PickerCache.monsterTable[this.level] = table;
+			this.cache('monster',table);
 		}
-		return PickerCache.monsterTable[this.level];
+		return this.cache('monster');
 	}
 
 	// Contains { typeId, itemType, presets }
 	get itemTable() {
-		if( !PickerCache.itemTable[this.level] ) {
+		if( !this.cache('item') ) {
 
 			let table = [];
 
@@ -67,8 +92,11 @@ class Picker {
 								if( !this.level ) debugger;
 								let chance = Math.floor(Math.clamp(Math.chanceToAppearSigmoid(level,this.level) * 100000, 1000, 100000));
 								chance *= (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
+
+								// Someday let the theme prefer items
+
 								chanceTotal += chance;
-								let obj = { typeId: item.typeId, item: item, presets: {} };
+								let obj = { level: level, typeId: item.typeId, item: item, presets: {} };
 								if( !v.skip ) obj.presets.variety = v;
 								if( !m.skip ) obj.presets.material = m;
 								if( !q.skip ) obj.presets.quality = q;
@@ -91,9 +119,24 @@ class Picker {
 					}
 				}
 			});
-			PickerCache.itemTable[this.level] = table;
+/*
+	Really handy for debugging the item lists!
+			let t = [];
+			for( let i=0 ; i<table.length ; i+=2 ) {
+				t.push([table[i],'L'+table[i+1].level+' '+table[i+1].item.typeId+' '+(table[i+1].presets.effect ? table[i+1].presets.effect.typeId : 'x')]);
+			}
+			t.sort( function(a,b) { return b[0]-a[0]; } );
+			let q = {};
+			for( let i=0 ; i<100 ; ++i ) {
+				let obj = this.pick(table);
+				let id = obj.item.typeId+' '+(obj.presets.effect ? obj.presets.effect.typeId : 'x');
+				q[id] = (q[id]||0)+1;
+			}
+			debugger;
+*/
+			this.cache('item',table);
 		}
-		return PickerCache.itemTable[this.level];
+		return this.cache('item');
 	}
 
 	pickRechargeTime(itemType) {
@@ -158,3 +201,7 @@ class Picker {
 		return table[i+1];
 	}
 }
+
+window.Picker = Picker;
+window.PickerSetTheme = PickerSetTheme;
+})();

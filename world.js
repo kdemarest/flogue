@@ -1,13 +1,14 @@
 class World {
-	constructor(startingLevel=1) {
+	constructor(startingLevel=1,onAreaChange) {
 		this.areaList = {};
 		this.area = null;
 		this.startingLevel = startingLevel;
 		this.pending = {
 			gate: null
 		};
+		this.onAreaChange = onAreaChange;
 	}
-	createArea(areaId,levelDelta=0) {
+	createArea(areaId,levelDelta,theme,entranceSymbol) {
 		let level = this.area ? this.area.level+levelDelta : this.startingLevel;
 		let isCore = false;
 		if( !areaId ) {
@@ -17,24 +18,36 @@ class World {
 				isCore = true;
 			}
 			else {
-				areaId = 'area.'+humanNameList.pop()+'.'+level;
+				areaId = GetUniqueEntityId('area',level);
 			}
 		}
-		let entrance = this.area===null ? ItemTypeList.stairsUp : (levelDelta>0 ? ItemTypeList.stairsUp : (levelDelta<0 ? ItemTypeList.stairsDown : ItemTypeList.gateway));
-		let area = new Area(areaId,level,entrance,isCore);
-		this.areaList[areaId] = area;
+		let palette = {
+			floor: TileTypeList.floor.symbol,
+			wall: TileTypeList.wall.symbol,
+			unknown: '?',
+			entrance: this.area===null ? ItemTypeList.stairsUp.symbol : entranceSymbol,
+			// (levelDelta>0 ? ItemTypeList.stairsUp : (levelDelta<0 ? ItemTypeList.stairsDown : ItemTypeList.gateway)),
+			exit: ItemTypeList.stairsDown.symbol
+		};
+
+		let area = new Area(areaId,level,theme,isCore);
+		this.areaList[areaId] = area;	// critical that this happen BEFORE the .build() so that the theme is set for the picker.
+		area.build(palette)
 		return area;
 	}
 	gateTo(areaId) {
 		let area = this.areaList[areaId];
 		if( !area ) debugger;
 		this.area = area;
+		this.onAreaChange(this.area);
 		return area;
 	}
 	setPending(gate) {
 		let toArea = this.areaList[gate.toAreaId];
 		if( !toArea ) {
-			toArea = this.createArea(gate.toAreaId,gate.gateDir);
+			let theme = ThemeList[gate.themeId || 'cavern'];
+			let inverseGateSymbol = ItemTypeList[gate.gateInverse].symbol;
+			toArea = this.createArea(gate.toAreaId,gate.gateDir,theme,inverseGateSymbol);
 		}
 
 		let gate2 = gate.toGateId ? toArea.getGate(gate.toGateId) : toArea.getUnusedGateByTypeId(gate.gateInverse);

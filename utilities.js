@@ -155,8 +155,8 @@ function nop() {}
 		}
 		let x = mapLevel - entityLevel;
 
-		// Near 0 at delta 0, about 0.5 at delta 4, and 1.0 at delta 8 and beyond
-		let chance = 1 / ( 1+Math.exp(4-x) );
+		// Increases chances from about 7% to near 100% ten levels away from starting level.
+		let chance = 1 - (1 / (1+Math.exp(x/2-2.5)));
 
 		return chance;
 	}
@@ -191,6 +191,36 @@ function nop() {}
 	};
 })();
 
+let GetUniqueEntityId = (function() {
+	let humanNameList = null;
+	let shuffled = false;
+	let codes = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	let counter = 0;
+
+	function timeBasedUid() {
+		counter = (counter+1)%10000;	// assumes we won't make more than 10,000 items in the same millisecond
+		let n = (new Date().getTime())*10000 + counter;
+		let uid = '';
+		while( n > 0 ) {
+			let q = n - Math.floor(n/codes.length)*codes.length;
+			n = Math.floor(n/codes.length);
+			uid += codes.charAt(q);
+		}
+		return uid;
+
+	}
+
+	return function(typeId,level) {
+		if( !shuffled && getHumanNameList ) {
+			humanNameList = Array.shuffle(getHumanNameList());
+			shuffled = true;
+		}
+
+		let id = +(humanNameList?pick(humanNameList)+'.':'')+typeId+(level?'.'+level:'')+'.'+timeBasedUid();
+		return id;
+	}
+
+})();
 
 function pick(listRaw) {
 	let list = listRaw;

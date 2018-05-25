@@ -2,8 +2,8 @@
 
 // WARNING: The strings for directions MUST remain the same for commandToDirection() to work.
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
-				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", THROW: "throw", LOSETURN: "lose turn", PRAY: "pray",
-				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop", DEBUGKILL: "debugkill", DEBUGTEST: "debugtest",
+				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", LOSETURN: "lose turn", PRAY: "pray",
+				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop", DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGTEST: "debugtest",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit" };
 const Direction = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
 const DirectionAdd = [
@@ -117,18 +117,18 @@ Say.damagePast = {
 // onTargetPosition - if this effect is targeting a map tile, instead of a monster.
 
 let EffectTypeList = {
-	inert: 			{ level:  0, rarity: 1.00, isInert: 1 },
+	inert: 			{ level:  0, rarity: 0.05, isInert: 1 },
 	water: 			{ level:  0, rarity: 1.00, isWater: 1 },
 	blank: 			{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
 	invisibility: 	{ level: 10, rarity: 0.05, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible },
-	seeinvisible: 	{ level: 10, rarity: 0.50, op: 'set', stat: 'seeInvisible', value: true, isHelp: 1, name: 'see invisible' },
+	seeinvisible: 	{ level: 10, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, isHelp: 1, name: 'see invisible' },
 	haste: 			{ level:  7, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5 },
 	slow: 			{ level:  3, rarity: 1.00, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, requires: e=>e.speed>0.5 },
 	regeneration: 	{ level: 20, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1 },
 	flight: 		{ level:  2, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.type.travelMode },
-	healing: 		{ level:  1, rarity: 1.00, op: 'heal',   valueDamage: 2.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE },
+	healing: 		{ level:  0, rarity: 1.00, op: 'heal',   valueDamage: 2.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE },
 	poison: 		{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.30, isHarm: 1, isInstant: 1, damageType: DamageType.POISON },
-	fire: 			{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true },
+	fire: 			{ level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true },
 	cold: 			{ level:  2, rarity: 1.00, op: 'damage', valueDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true },
 	holy: 			{ level:  3, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE },
 	rot: 			{ level:  4, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT },
@@ -136,14 +136,15 @@ let EffectTypeList = {
 	panic: 			{ level:  5, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1 },
 	confusion: 		{ level:  3, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1 },
 	blindness: 		{ level:  5, rarity: 1.00, op: 'set', stat: 'senseBlind', value: true, isHarm: 1, requires: e=>!e.blind },
-	xray: 			{ level:  1, rarity: 1.00, op: 'set', stat: 'senseXray', value: true, isPlayerOnly: 1, name: 'earth vision' },
-	greed: 			{ level:  1, rarity: 1.00, op: 'set', stat: 'senseItems', value: true, isPlayerOnly: 1, name: 'greed' },
+	xray: 			{ level:  8, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, isPlayerOnly: 1, name: 'earth vision' },
+	greed: 			{ level:  0, rarity: 2.00, op: 'set', stat: 'senseItems', value: true, isPlayerOnly: 1, name: 'greed' },
 	echoloc: 		{ level:  1, rarity: 1.00, op: 'set', stat: 'senseLife', value: true, isPlayerOnly: 1, name: 'bat sense' },
+	luminari: 		{ level:  1, rarity: 1.00, op: 'add', stat: 'light', value: 5, isPlayerOnly: 1, name: 'luminari' },
 	immunity: 		{ level: 30, rarity: 0.20, op: 'add', stat: 'immune',
 					valuePick: () => pick(PickImmune), isHelp: 1, namePattern: 'immunity to {value}' },
 	vulnerability: 	{ level: 10, rarity: 1.00, op: 'add', stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
 					valuePick: () => pick(PickVuln), isHarm: 1, namePattern: 'vulnerability to {value}' },
-	resistance: 	{ level: 10, rarity: 0.50, op: 'add', stat: 'resist',
+	resistance: 	{ level:  5, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickImmune), isHelp: 1, namePattern: 'resist {value}s' },
 	shove: 			{ level:  3, rarity: 1.00, op: 'push', value: 3, isInstant: 1 },
 };
@@ -194,7 +195,10 @@ let SayStatList = {
 		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' treasure!'];
 	},
 	senseLife: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' treasure!'];
+		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' creatures!'];
+	},
+	light: function(subj,obj,oldValue,newValue) {
+		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'glow','.'];
 	},
 	_generic_: function(subj,obj,oldValue,newValue) {
 		return [mSubject,subj,' ',mVerb,'is',' less enchanted.'];
@@ -277,6 +281,7 @@ const ImgPotion = {
 	xray: 			{ img: "white" },
 	greed: 			{ img: "white" },
 	echoloc: 		{ img: "white" },
+	luminari: 		{ img: "white" },
 	vuln: 			{ img: "black" },
 	resistance: 	{ img: "yellow" },
 	shove: 			{ img: "black" }
@@ -290,14 +295,15 @@ function toFab(t) {
 
 
 const PotionEffects = toFab( Object.filter(EffectTypeList, e=>!e.isInert && !e.isPaper ) );
-const SpellEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['blank','blindness','xray','echoloc','greed','slow','healing','poison','fire','cold','holy','rage','panic','confusion','push','xray'].includes(k) ) );
-const RingEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration','resistance','xray'].includes(k) ) );
+const SpellEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['blank','blindness','luminari','xray','echoloc','greed','slow','healing','poison','fire','cold','holy','rage','panic','confusion','push','xray'].includes(k) ) );
+const RingEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration','resistance','greed'].includes(k) ) );
 const WeaponEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','poison','fire','cold','blindness','slow','panic','confusion','shove'].includes(k) ) );
-const HelmEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'resistance', 'seeinvisible','xray'].includes(k) ) );
+const HelmEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'luminari', 'resistance', 'seeinvisible','echoloc'].includes(k) ) );
 const ArmorEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'immunity', 'resistance'].includes(k) ) );
 const BracersEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','resistance'].includes(k) ) );
 const BootsEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'flight', 'resistance'].includes(k) ) );
 const DartEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','poison','fire','cold','blindness','slow','vuln'].includes(k) ) );
+const GemEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','luminari','greed','echoloc','seeinvisible'].includes(k) ) );
 
 PotionEffects.healing.rarity = 10.00;
 
@@ -444,8 +450,8 @@ const ItemTypeList = {
 	"ore": 		{ symbol: '"', namePattern: '{variety}', varieties: OreList, isOre: true, neverPick: true,
 				rarity: 1.00,
 				imgGet: (self,img) => "item/ring/"+(img || self.variety.img || "i-protection")+".png", imgChoices: OreList },
-	"gem": 		{ symbol: "^", namePattern: '{quality} {variety}', qualities: GemQualityList, varieties: GemList, isGem: true,
-				rarity: 1.00, mayThrow: 1, mayTargetPosition: 1,
+	"gem": 		{ symbol: "^", namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
+				rarity: 1.00, effectChance: 1.00, mayThrow: 1, mayTargetPosition: 1, autoCommand: Command.USE,
 				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5 },
 	"weapon": 	{ symbol: '†', namePattern: '{material} {variety} {?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
 				rarity: 1.00, autoCommand: Command.USE,
@@ -492,7 +498,8 @@ const Brain = { AI: "ai", USER: "user" };
 const MonsterTypeDefaults = {
 					symbol: '?',level: 1, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
 					attitude: Attitude.AGGRESSIVE,
-					senseBlind: false, senseItems: false, senseLife: false,
+					light: 0,
+					senseBlind: false, senseXray: false, senseItems: false, senseLife: false,
 					invisible: false, senseInvisible: false, sightDistance: 6,
 					brain: Brain.AI, brainFlee: false, brainOpensDoors: false, brainTalk: false,
 					corpse: 'corpse',
@@ -506,7 +513,6 @@ const MonsterTypeDefaults = {
 					speed: 1,
 					travelMode: 'walk', mayWalk: false, mayFly: false,
 					type: null, typeId: null,
-					xray: false,
 
 					//debug only
 					observeDistantEvents: false
@@ -524,6 +530,7 @@ let UndeadImmunity = [DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitud
 let SkeletonImmunity = UndeadImmunity+[DamageType.CUT,DamageType.STAB].join(',');
 let UndeadResistance = [DamageType.CUT,DamageType.STAB].join(',');
 let UndeadVulnerability = [DamageType.SMITE,DamageType.BURN].join(',');
+let ShadowImmunity = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.CORRODE,DamageType.POISON,DamageType.ROT].join(',');
 
 let OozeImmunity = ['blind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
 let OozeResistance = [DamageType.CUT,Attitude.ENRAGED,Attitude.CONFUSED].join(',');
@@ -549,6 +556,8 @@ const MonsterTypeList = {
 		name: "Fido/Lucy",
 		brainFlee: true,
 		brainPet: true,
+		isAnimal: true,
+		isPet: true,
 		properNoun: true,
 		packAnimal: true,
 		regenerate: 0.03
@@ -558,6 +567,8 @@ const MonsterTypeList = {
 		name: "Rover/Fluffy",
 		brainFlee: true,
 		brainPet: true,
+		isAnimal: true,
+		isPet: true,
 		properNoun: true,
 		packAnimal: true,
 		regenerate: 0.03
@@ -567,6 +578,7 @@ const MonsterTypeList = {
 		attitude: Attitude.CALM,
 		brainTalk: true,
 		brainOpensDoors: true,
+		isSunChild: true,
 	},
 
 // EVIL TEAM
@@ -574,6 +586,7 @@ const MonsterTypeList = {
 		core: [ 'a', 30, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
 		brainTalk: true,
 		immune: [DamageType.BURN,Attitude.PANIC].join(','),
+		isDemon: true,
 		sayPrayer: 'I shall rule this planet!',
 		rarity: 0.000000001
 	},
@@ -581,14 +594,16 @@ const MonsterTypeList = {
 		core: [ 'D', 5, '3:5', 'evil', 'burn', 'player/base/draconian_red_f.png', 'it' ],
 		brainTalk: true,
 		immune: DamageType.BURN,
+		isDemon: true,
 		packAnimal: true,
 		sayPrayer: 'Hail Balgur, ruler of the deep!'
 	},
 	"ethermite": {
 		core: [ 'e', 10, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
-		glow:true,
+		glow: true,
 		invisible: true,
-		light:6,
+		isPlanar: 1,
+		light: 6,
 		loot: 'ring',
 		packAnimal: true,
 		sneakAttackMult: 3
@@ -596,8 +611,10 @@ const MonsterTypeList = {
 	"ghoul": {
 		core: [ 'G', 4, '1:2', 'evil', 'rot', 'dc-mon/undead/ghoul.png', 'it' ],
 		immune: UndeadImmunity,
+		dark: 2,
 		isUndead: true,
 		loot: 'bones',
+		senseLife: true,
 		resist: UndeadResistance,
 		vuln: UndeadVulnerability
 	},
@@ -605,6 +622,7 @@ const MonsterTypeList = {
 		core: [ 'g', 1, '3:10', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		brainTalk: true,
 		isGoblin: true,
+		isEarthChild: true,
 		packAnimal: true,
 		sayPrayer: 'Oh mighty Thagzog...'
 	},
@@ -613,6 +631,7 @@ const MonsterTypeList = {
 		name: 'goblin warrior',
 		brainTalk: true,
 		isGoblin: true,
+		isEarthChild: true,
 		sayPrayer: 'Oh warrior Thagzog...'
 	},
 	"goblinMut": {
@@ -620,6 +639,7 @@ const MonsterTypeList = {
 		name: 'goblin mutant',
 		brainTalk: true,
 		isGoblin: true,
+		isEarthChild: true,
 		sayPrayer: 'Oh mutant Thagzog...'
 	},
 	"imp": {
@@ -627,7 +647,8 @@ const MonsterTypeList = {
 		attitude: Attitude.HESITANT,
 		glow: 1,
 		immune: DamageType.BURN,
-		seeInvisible: true,
+		isDemon: true,
+		senseInvisible: true,
 		travelMode: "fly",
 		vuln: DamageType.FREEZE
 	},
@@ -635,6 +656,7 @@ const MonsterTypeList = {
 		core: [ 'k', 1, '4:20', 'evil', 'cut', 'dc-mon/kobold.png', '*' ],
 		attitude: Attitude.HESITANT,
 		brainTalk: true,
+		isEarthChild: true,
 		loot: 'potion',
 		packAnimal: true
 	},
@@ -642,12 +664,14 @@ const MonsterTypeList = {
 		core: [ 'Ǿ', 2, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
 		name: "ogre child",
 		brainTalk: true, 
+		isEarthChild: true,
 		resist: DamageType.CUT,
 		speed: 0.75
 	},
 	"ogre": {
 		core: [ 'Ȱ', 10, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
 		brainTalk: true,
+		isEarthChild: true,
 		resist: DamageType.CUT+','+DamageType.STAB,
 		speed: 0.5
 	},
@@ -655,8 +679,9 @@ const MonsterTypeList = {
 		core: [ 'z', 1, '2:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
 		name: "red ooze",
 		glow: 4,
-		immune: OozeImmunity,
 		loot: 'potion',
+		immune: OozeImmunity,
+		isPlanar: true,
 		regenerate: 0.15,
 		resist: OozeResistance,
 		speed: 0.75,
@@ -668,9 +693,18 @@ const MonsterTypeList = {
 		color: 'red',
 		glow: 3,
 		immune: DamageType.BURN,
+		isPlanar: true,
 		loot: 'potion',
 		travelMode: "fly",
 		vuln: DamageType.FREEZE
+	},
+	"shadow": {
+		core: [ 'w', 8, '1:12', 'evil', 'rot', 'dc-mon/undead/shadow.png', 'it' ],
+		dark: 6,
+		immune: ShadowImmunity,
+		isUndead: true,
+		speed: 0.75,
+		vuln: DamageType.SMITE
 	},
 	"skeleton": {
 		core: [ 's', 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
@@ -691,18 +725,21 @@ const MonsterTypeList = {
 		core: [ 'c', 1, '2:22', 'evil', 'bite', 'dc-mon/animals/soldier_ant.png', 'it' ],
 		name: "soldier ant",
 		loot: 'potion',
+		isAnimal: true,
 		speed: 1.5,
 		vuln: DamageType.FREEZE
 	},
 	"troll": {
 		core: [ 'T', 8, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
 		loot: 'trollHide',
+		isEarthChild: true,
 		regenerate: 0.15,
 		vuln: DamageType.BURN
 	},
 	"viper": {
 		core: [ 'v', 5, '3:16', 'evil', 'claw', 'dc-mon/animals/viper.png', 'it' ],
 		attitude: Attitude.HESITANT,
+		isAnimal: true,
 		loot: 'potion',
 		speed: 2.0
 	},
@@ -712,6 +749,7 @@ const MonsterTypeList = {
 		core: [ 'l', 12, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_demonologist.png', '*' ],
 		brainTalk: true,
 		immune: DamageType.FREEZE,
+		isLunarChild: true,
 		name: "lunar one",
 		rarity: 10,
 		vuln: DamageType.BURN
@@ -730,8 +768,10 @@ const MonsterTypeList = {
 	"bat": {
 		core: [ 'ᵬ', 1, '2:20', 'neutral', 'bite', 'dc-mon/animals/giant_bat.png', 'it' ],
 		attitude: Attitude.WANDER,
+		isAnimal: true,
 		packAnimal: true,
-		seeInvisible: true,
+		senseInvisible: true,
+		senseLife: true,
 		travelMode: "fly"
 	},
 	"spinyFrog": {
@@ -739,11 +779,13 @@ const MonsterTypeList = {
 		name: "spiny frog",
 		attitude: Attitude.WANDER,
 		immune: DamageType.POISON,
+		isAnimal: true,
 		loot: 'potion'
 	},
 	"sheep": {
 		core: [ 'r', 1, '1:20', 'neutral', 'bite', 'dc-mon/animals/sheep.png', 'it' ],
 		attitude: Attitude.FEARFUL,
+		isAnimal: true,
 		packAnimal: true
 	}
 };
@@ -968,6 +1010,7 @@ function loadKeyMapping(name) {
 		y: Command.NW,
 		T: Command.DEBUGTEST,
 		X: Command.DEBUGKILL,
+		a: Command.DEBUGTHRIVE,
 		i: Command.INVENTORY,
 		q: Command.QUAFF,
 		t: Command.THROW,

@@ -1,4 +1,4 @@
-function getNameList() { return [
+function getHumanNameList() { return [
 	'aaron',
 	'abbey',
 	'abbie',

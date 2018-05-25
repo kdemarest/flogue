@@ -3,12 +3,12 @@
 //
 class Entity {
 	constructor(map,entityList,monsterType,position,inject,levelOverride) {
+		let level = Math.max(1,Math.floor(levelOverride || Math.max(monsterType.level,monsterType.level+map.level/2)));
 		let inits =    { inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
-		let values =   { id: humanNameList.pop(), x:position.x, y:position.y, map: map, entityList:entityList };
+		let values =   { id: GetUniqueEntityId(monsterType.typeId,level), x:position.x, y:position.y, map: map, entityList:entityList };
 
 		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
 		// a deeper map level then they average their native level and the map's level.
-		let level = Math.max(1,Math.floor(levelOverride || Math.max(monsterType.level,monsterType.level+map.level/2)));
 		let isPlayer = monsterType.brain==Brain.USER;
 		if( isPlayer ) {
 			level = map.level;
@@ -795,7 +795,15 @@ class Entity {
 			case Command.DEBUGKILL: {
 				let target = this.commandTarget;
 				tell(mSubject,target,' killed.');
-				target.die();
+				target.health = -1000;
+				break;
+			}
+			case Command.DEBUGTHRIVE: {
+				this.healthMax = 100000;
+				this.health = this.healthMax;
+				this.damage = 100000;
+				this.senseItems = true;
+				this.senseLife = true;
 				break;
 			}
 			case Command.LOOT: {
@@ -833,6 +841,15 @@ class Entity {
 				item.y = this.y;
 				tell(mSubject,this,' ',mVerb,'quaff',' ',mObject,item);
 				item.trigger(this.command,this,this);
+				break;
+			}
+			case Command.GAZE: {
+				let item = this.commandItem;
+				item.x = this.x;
+				item.y = this.y;
+				tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'. It shatters!');
+				item.trigger(this.command,this,this);
+				item.destroy();
 				break;
 			}
 			case Command.THROW: {
