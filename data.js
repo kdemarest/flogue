@@ -53,7 +53,7 @@ function fab(type,typeId,isWhat) {
 	}
 	if( !type.namePattern ) {
 		if( typeId=='immunity' ) debugger;
-		type.name = type.name || typeId;
+		type.name = type.name || String.uncamel(typeId);
 	}
 	type.typeId = typeId;
 	if( type.symbol ) {
@@ -72,8 +72,9 @@ let Say = {};
 
 const StickerList = {
 	wallProxy: { img: "spells/air/static_discharge.png" },
-	observerProxy: { img: "gems/Gem Type2 Purple.png" },
-	gateProxy: { img: "gems/Gem Type2 Purple.png" },
+	observerProxy: { img: "gems/Gem Type2 Yellow.png" },
+	gateProxy: { img: "gems/Gem Type2 Green.png" },
+	gateDownProxy: { img: "gems/Gem Type2 Purple.png" },
 	unvisitedMap: { img: "gui/grey.png" },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
@@ -311,15 +312,19 @@ const GemEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','luminar
 PotionEffects.healing.rarity = 10.00;
 
 const WeaponList = toFab({
-	"dart":     	{ level:  0, damageMultiplier: 0.50, damageType: DamageType.STAB, effects: DartEffects, mayThrow: true, attackVerb: 'strike' },
+	"rock":     	{ level:  0, damageMultiplier: 0.50, damageType: DamageType.BASH, mayThrow: true, attackVerb: 'strike' },
+	"dart":     	{ level:  0, damageMultiplier: 0.20, damageType: DamageType.STAB, effectChance: 0.80, effects: DartEffects, mayThrow: true, attackVerb: 'strike' },
 	"dagger":   	{ level:  0, damageMultiplier: 0.60, damageType: DamageType.STAB, mayThrow: true, attackVerb: 'strike' },
+	"solKnife":   	{ level:  0, damageMultiplier: 0.60, damageType: DamageType.CUT , attackVerb: 'carve', neverPick: true, isSoulCollector: true, name: "sol knife" },
+	"club":   		{ level:  0, damageMultiplier: 0.70, damageType: DamageType.BASH, attackVerb: 'smash' },
 	"sword": 		{ level:  0, damageMultiplier: 1.00, damageType: DamageType.CUT },
 	"greatsword": 	{ level:  0, damageMultiplier: 1.20, damageType: DamageType.CUT },
 	"mace": 		{ level:  0, damageMultiplier: 0.90, damageType: DamageType.BASH },
 	"hammer": 		{ level:  0, damageMultiplier: 1.40, damageType: DamageType.BASH },
 	"axe": 			{ level:  0, damageMultiplier: 1.00, damageType: DamageType.CUT, mayThrow: true, attackVerb: 'strike' },
 	"spear": 		{ level:  0, damageMultiplier: 0.70, damageType: DamageType.STAB, range: 2, mayThrow: true, attackVerb: 'strike' },
-	"pike": 		{ level:  0, damageMultiplier: 0.90, damageType: DamageType.STAB, range: 2 }
+	"pike": 		{ level:  0, damageMultiplier: 0.90, damageType: DamageType.STAB, range: 2 },
+	"pitchfork": 	{ level:  0, damageMultiplier: 1.20, damageType: DamageType.STAB, range: 2 },
 });
 
 const WeaponMaterialList = toFab({
@@ -380,9 +385,32 @@ const GemList = toFab({
 });
 
 const StuffList = toFab({
-	"trollHide": { name: "troll hide" },
-	"bones": {},
+	"trollHide": 		{ },
+	"bones": 			{ },
+	"antGrubMush": 		{ },
+	"viperVenom": 		{ },
+	"bones": 			{ },
+	"dogCollar": 		{ },
+	"skull": 			{ },
+	"mushroomBread": 	{ },
+	"demonScale": 		{ },
+	"demonEye": 		{ },
+	"ghoulFlesh": 		{ },
+	"pinchOfEarth": 	{ },
+	"impBrain": 		{ },
+	"ogreDrool": 		{ },
+	"redOozeSlime": 	{ },
+	"scarabCarapace": 	{ },
+	"darkEssence": 		{ },
+	"facetedEye": 		{ },
+	"trollBlood": 		{ },
+	"lunarEssence": 	{ },
+	"batWing": 			{ },
+	"frogSpine": 		{ },
+	"wool": 			{ },
 });
+
+
 
 /* RING IMG NAMES
 	"agate"
@@ -506,7 +534,7 @@ const ItemTypeList = {
 				imgGet: (self,img) => "item/"+(img || (self?self.variety.img:'') || 'misc/misc_rune')+".png", imgChoices: StuffList },
 
 };
-const ItemSortOrder = ['corpse','weapon','helm','armor','bracers','boots','ring','potion','gem','ore','coin','spell'];
+const ItemSortOrder = ['corpse','weapon','helm','armor','bracers','boots','ring','potion','gem','ore','coin','spell','stuff'];
 
 
 const Brain = { AI: "ai", USER: "user" };
@@ -574,6 +602,7 @@ const MonsterTypeList = {
 		brainPet: true,
 		isAnimal: true,
 		isPet: true,
+		loot: '30% dogCollar',
 		properNoun: true,
 		packAnimal: true,
 		regenerate: 0.03
@@ -585,6 +614,7 @@ const MonsterTypeList = {
 		brainPet: true,
 		isAnimal: true,
 		isPet: true,
+		loot: '30% dogCollar',
 		properNoun: true,
 		packAnimal: true,
 		regenerate: 0.03
@@ -596,6 +626,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		brainOpensDoors: true,
 		isSunChild: true,
+		loot: '30% mushroomBread, 30% coin, 10% potion.healing',
 	},
 
 // EVIL TEAM
@@ -614,6 +645,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		immune: DamageType.BURN,
 		isDemon: true,
+		loot: '30% coin, 50% potion.fire, 30% demonScale, 20% pitchfork, 30% demonEye',
 		packAnimal: true,
 		sayPrayer: 'Hail Balgur, ruler of the deep!'
 	},
@@ -623,7 +655,7 @@ const MonsterTypeList = {
 		invisible: true,
 		isPlanar: 1,
 		light: 6,
-		loot: 'ring.seeInvisible',
+		loot: '50% gem.seeInvisible, 30% gem, 20% gem',
 		packAnimal: true,
 		sneakAttackMult: 3
 	},
@@ -632,7 +664,7 @@ const MonsterTypeList = {
 		immune: UndeadImmunity,
 		dark: 2,
 		isUndead: true,
-		loot: 'potion.rot',
+		loot: '30% coin, 20% potion.rot, 50% ghoulFlesh',
 		senseLife: true,
 		resist: UndeadResistance,
 		vuln: UndeadVulnerability
@@ -643,8 +675,8 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
+		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 30% pinchOfEarth',
 		packAnimal: true,
-		loot: 'coin',
 		sayPrayer: 'Oh mighty Thagzog...'
 	},
 	"goblinWar": { 
@@ -654,6 +686,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
+		loot: '50% coin, 80% weapon.sword, 20% weapon.club, 30% pinchOfEarth',
 		sayPrayer: 'Oh warrior Thagzog...'
 	},
 	"goblinMut": {
@@ -663,6 +696,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
+		loot: '50% coin, 80% weapon.mace, 30% pinchOfEarth',
 		sayPrayer: 'Oh mutant Thagzog...'
 	},
 	"imp": {
@@ -671,7 +705,7 @@ const MonsterTypeList = {
 		glow: 1,
 		immune: DamageType.BURN,
 		isDemon: true,
-		loot: 'potion.fire',
+		loot: '30% potion.fire, 30% impBrain',
 		senseInvisible: true,
 		travelMode: "fly",
 		vuln: DamageType.FREEZE
@@ -682,7 +716,7 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		isEarthChild: true,
-		loot: 'weapon.dart',
+		loot: '50% coin, 50% weapon.dart, 30% weapon.dagger, 30% dogCollar',
 		packAnimal: true
 	},
 	"ogreKid": { 
@@ -690,6 +724,7 @@ const MonsterTypeList = {
 		name: "ogre child",
 		brainTalk: true, 
 		isEarthChild: true,
+		loot: '50% weapon.club, 20% ogreDrool',
 		resist: DamageType.CUT,
 		speed: 0.75
 	},
@@ -697,6 +732,7 @@ const MonsterTypeList = {
 		core: [ 'Ȱ', 10, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
 		brainTalk: true,
 		isEarthChild: true,
+		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: DamageType.CUT+','+DamageType.STAB,
 		speed: 0.5
 	},
@@ -704,22 +740,31 @@ const MonsterTypeList = {
 		core: [ 'z', 1, '2:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
 		name: "red ooze",
 		glow: 4,
-		loot: 'potion',
 		immune: OozeImmunity,
 		isPlanar: true,
+		loot: '90% potion.corrode, 40% redOozeSlime',
 		regenerate: 0.15,
 		resist: OozeResistance,
 		speed: 0.75,
 		vuln: OozeVulnerability
 	},
-	"scarab": {
-		core: [ 'h', 12, '3:30', 'evil', 'bite', 'dc-mon/animals/boulder_beetle.png', 'it' ],
-		namePattern: "{color} scarab",
-		color: 'red',
+	"blueScarab": {
+		core: [ 'q', 6, '3:30', 'evil', 'freeze', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		namePattern: "blue scarab",
+		glow: 3,
+		immune: DamageType.FREEZE,
+		isPlanar: true,
+		loot: '30% gem, 50% scarabCarapace',
+		travelMode: "fly",
+		vuln: DamageType.BURN
+	},
+	"redScarab": {
+		core: [ 'h', 12, '3:30', 'evil', 'burn', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		namePattern: "red scarab",
 		glow: 3,
 		immune: DamageType.BURN,
 		isPlanar: true,
-		loot: 'potion',
+		loot: '30% gem, 50% scarabCarapace',
 		travelMode: "fly",
 		vuln: DamageType.FREEZE
 	},
@@ -728,6 +773,7 @@ const MonsterTypeList = {
 		dark: 6,
 		immune: ShadowImmunity,
 		isUndead: true,
+		loot: '50% darkEssence, 20% potion.blindness',
 		speed: 0.75,
 		vuln: DamageType.SMITE
 	},
@@ -735,7 +781,7 @@ const MonsterTypeList = {
 		core: [ 's', 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		immune: SkeletonImmunity,
 		isUndead: true,
-		loot: 'bones',
+		loot: '50% bones, 50% skull',
 		vuln: DamageType.SMITE
 	},
 	"skeletonLg": {
@@ -743,21 +789,21 @@ const MonsterTypeList = {
 		name: 'ogre skeleton',
 		immune: SkeletonImmunity,
 		isUndead: true,
-		loot: 'bones',
+		loot: '50% bones, 50% skull',
 		vuln: DamageType.SMITE
 	},
 	"soldierAnt": {
 		core: [ 'c', 1, '2:22', 'evil', 'bite', 'dc-mon/animals/soldier_ant.png', 'it' ],
 		name: "soldier ant",
 		brainAlertFriends: true,
-		loot: 'potion',
+		loot: '10% potion, 20% facetedEye, 10% antGrubMush',
 		isAnimal: true,
 		speed: 1.5,
 		vuln: DamageType.FREEZE
 	},
 	"troll": {
 		core: [ 'T', 8, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
-		loot: 'trollHide',
+		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
 		regenerate: 0.15,
 		vuln: DamageType.BURN
@@ -766,27 +812,29 @@ const MonsterTypeList = {
 		core: [ 'v', 5, '3:16', 'evil', 'bite', 'dc-mon/animals/viper.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		isAnimal: true,
-		loot: 'potion.poison',
+		loot: '40% viperVenom',
 		speed: 2.0
 	},
 
 // LUNAR
 	"lunarOne": {
 		core: [ 'L', 12, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_demonologist.png', '*' ],
+		name: "lunar one",
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
 		isLunarChild: true,
-		name: "lunar one",
+		loot: '50% coin, 50% coin, 40% lunarEssence',
 		rarity: 1.0,
 		vuln: DamageType.BURN
 	},
 "lunarReaper": {
 		core: [ 'l', 1, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
+		name: "lunar reaper",
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
-		name: "lunar reaper",
+		loot: '50% coin, 50% coin, 40% lunarEssence',
 		rarity: 1.0,
 		travelType: 'fly',
 		vuln: DamageType.BURN
@@ -797,6 +845,7 @@ const MonsterTypeList = {
 		core: [ 'ᵬ', 1, '2:20', 'neutral', 'bite', 'dc-mon/animals/giant_bat.png', 'it' ],
 		attitude: Attitude.WANDER,
 		isAnimal: true,
+		loot: '50% batWing',
 		packAnimal: true,
 		senseInvisible: true,
 		senseLife: true,
@@ -808,12 +857,13 @@ const MonsterTypeList = {
 		attitude: Attitude.WANDER,
 		immune: DamageType.POISON,
 		isAnimal: true,
-		loot: 'potion.poison'
+		loot: '50% frogSpine',
 	},
 	"sheep": {
 		core: [ 'r', 1, '1:20', 'neutral', 'bite', 'dc-mon/animals/sheep.png', 'it' ],
 		attitude: Attitude.FEARFUL,
 		isAnimal: true,
+		loot: '50% wool',
 		packAnimal: true
 	}
 };
@@ -975,7 +1025,7 @@ ItemTypeList.altar.onTick = function(dt) {
 
 MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 	let damage = this.rollDamage(this.damage);
-	attacker.takeDamage( this, damage, DamageType.POISON, function(attacker,victim,amount,damageType) {
+	attacker.takeDamagePassive( this, damage, DamageType.POISON, function(attacker,victim,amount,damageType) {
 		if( amount<=0 ) {
 			tell(mSubject,victim,' ',mVerb,'ignore',' ',mObject|mPossessive,attacker,' spines.');
 		}
@@ -983,11 +1033,11 @@ MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 			tell(mSubject,victim,' ',mVerb,'is',' stabbed by ',mObject|mPossessive,attacker,' spines.');			
 		}
 		return true;
-	});
+	}, true);
 }
 
 MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
-	let f = this.findAliveOthers().includeMe().isAlive().filter( e => e.typeId==this.typeId );
+	let f = this.findAliveOthers().includeMe().filter( e => e.typeId==this.typeId );
 	if( f.count ) {
 		let numAlerted = 0;
 		f.process( e => {
@@ -1003,13 +1053,18 @@ MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
 	}
 }
 
-MonsterTypeList.scarab.onAttack = function(target) {
+MonsterTypeList.blueScarab.onAttack = function(target) {
+	let effect = Object.assign({},EffectTypeList.vulnerability,{value: DamageType.FREEZE});
+	effectApply(this,effect,target);
+}
+
+MonsterTypeList.redScarab.onAttack = function(target) {
 	let effect = Object.assign({},EffectTypeList.vulnerability,{value: DamageType.BURN});
 	effectApply(this,effect,target);
 }
 
 MonsterTypeList.redOoze.onMove = function(self,x,y) {
-	let f = new ItemFinder(self.map.itemList).at(x,y).filter( i=>i.isCorpse );
+	let f = self.map.findItem().at(x,y).filter( i=>i.isCorpse );
 	if( f.first && self.health < self.healthMax ) {
 		tell(mSubject,self,' ',mVerb,'absorb',' ',mObject,f.first,' and ',mVerb,'regain',' strength!');
 		let heal = Math.floor(self.healthMax * 0.25);

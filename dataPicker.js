@@ -99,8 +99,12 @@ class Picker {
 					Object.each( item.materials || one, m => {
 						Object.each( item.qualities || one, q => {
 							Object.each( item.effects || one, e => {
-								let level = (item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.level||0);
-								if( level > this.level || item.neverPick || v.neverPick || m.neverPick || q.neverPick || e.neverPick ) {
+								let level;
+								level = (item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.level||0);
+								if( level > this.level ) {
+									return;
+								}
+								if( item.neverPick || v.neverPick || m.neverPick || q.neverPick || e.neverPick ) {
 									return;
 								}
 								if( !this.level ) debugger;
@@ -220,6 +224,18 @@ class Picker {
 		return base;
 	}
 
+	pickLoot(_table,lootString) {
+		let lootList = String.lootParse(lootString);
+		let idList = new Finder( Array.lootPick(lootList) );
+		let list = [];
+		idList.process( id => {
+			let obj = this.pick(_table,id);
+			if( obj ) {
+				list.push(obj);
+			}
+		});
+		return new Finder(list);
+	}
 	pick(_table,typeId) {
 
 		let table;

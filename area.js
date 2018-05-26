@@ -106,7 +106,7 @@ class Area {
 		function safeToMake(x,y) {
 			let tile = self.map.tileTypeGet(x,y);
 			if( !tile.mayWalk ) return false;
-			let item = new ItemFinder(self.map.itemList).at(x,y);
+			let item = self.map.findItem().at(x,y);
 			if( item.count ) return false;
 			let entity = new Finder(self.entityList).at(x,y);
 			return !entity.count;

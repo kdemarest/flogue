@@ -121,13 +121,18 @@ class SimpleMap {
 			return false;
 		}
 		let symbol = this.tileSymbolGet(x,y);
-		if( SymbolToType[symbol].isItemType ) {
-			// WARNING! This only happens when you are processing the map to
-			// extract entities!!
-			let f = new ItemFinder(this.itemList).at(x,y);
-			if( f.count ) {
-				return f.first;
+		if( !SymbolToType[symbol].isTileType ) {
+			debugger;
+
+			if( SymbolToType[symbol].isItemType ) {
+				// WARNING! This only happens when you are processing the map to
+				// extract entities!!
+				let f = new Finder(this.itemList).at(x,y);
+				if( f.count ) {
+					return f.first;
+				}
 			}
+
 		}
 		return SymbolToType[symbol];
 	}
@@ -159,7 +164,9 @@ class Map extends SimpleMap {
 		}
 		return list.length ? pick(list) : false;
 	}
-
+	findItem(me) {
+		return new Finder(this.itemList,me);
+	}
 	itemCreateByType(x,y,type,presets,inject) {
 		if( type.isRandom ) debugger;
 		if( !this.tileTypeGet(x,y).mayWalk ) {

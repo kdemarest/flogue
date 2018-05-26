@@ -4,7 +4,9 @@ let mPronoun = 4;
 let mPossessive = 8;
 let mA = 16;
 let mCares = 32;
-let mVerb = 128;
+let mList = 64;
+let mBold = 128;
+let mVerb = 256;
 
 let SentenceReusableArray = [];
 class Sentence {
@@ -103,6 +105,7 @@ class Sentence {
 		let i = 0;
 		let m = this.list;
 		let lastNounWasYou;
+		let inListCount = 0;
 		while( i < m.length ) {
 			if( (typeof m[i]=='number') && (m[i] & mVerb) ) {
 				let flags = m[i];
@@ -117,6 +120,8 @@ class Sentence {
 			if( (typeof m[i]=='number') && (m[i] & (mSubject|mObject|mPronoun|mPossessive)) ) {
 				let flags = m[i] & (mPronoun|mPossessive);
 				let useA = m[i] & mA;
+				let inList = m[i] & mList;
+				let isBold = m[i] & mBold;
 				let who = m[++i];
 				let specifier = 'the ';
 				if( useA ) {
@@ -134,7 +139,15 @@ class Sentence {
 
 				lastNounWasYou = (who.id == you.id);
 				let index = lastNounWasYou ? 'you' : (who.pronoun || 'it');
-				s += a[flags][index];
+				if( inList && inListCount>0 && (i+1>=m.length || !(parseInt(m[i+1])&mList) ) ) {
+					s += ' and ';
+				}
+				else
+				if( inList && i>1 && (parseInt(m[i-3])&mList) && inListCount>0 ) {
+					s += ', ';
+				}
+				if( !inList ) { inListCount = 0; } else { ++inListCount; }
+				s += (isBold?'<b>':'')+a[flags][index]+(isBold?'</b>':'');
 			}
 			else {
 				s += (typeof m[i]=="string") ? m[i] : (m[i].name ? m[i].name : 'UNKNOWN');

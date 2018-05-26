@@ -48,6 +48,9 @@ body {
 	overflow-x: auto;
 	margin-bottom: 10px;
 }
+#guiMessageBox b {
+	color: orange;
+}
 #guiStatus {
 	width: 104px;
 	height: 160px;

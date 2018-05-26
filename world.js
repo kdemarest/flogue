@@ -74,7 +74,7 @@ class World {
 		}
 		let x = player.x;
 		let y = player.y;
-		let gateHere = new ItemFinder(map.itemList).at(x,y).filter( item => item.gateDir!==undefined );
+		let gateHere = map.findItem().at(x,y).filter( item => item.gateDir!==undefined );
 		if( !gateHere.first ) {
 			return;
 		}
@@ -100,7 +100,7 @@ class World {
 		// WARNING! Someday we will need to push the DeedList that is NOT the player into the old area.
 		// and resurrect the new area's deed list.
 		let newArea = this.gateTo(gate.toAreaId);
-		let g = new ItemFinder(newArea.map.itemList).isId(gate.toGateId);
+		let g = newArea.map.findItem().isId(gate.toGateId);
 		if( !g.first ) debugger;
 
 		player.gateTo(newArea,g.first.x,g.first.y);

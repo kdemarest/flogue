@@ -1,6 +1,36 @@
-class FinderBase {
-	constructor() {
-		this.result = null;
+class Finder {
+	constructor(entityList,me) {
+		if( !entityList ) {
+			debugger;
+		}
+		if( entityList instanceof Finder ) {
+			debugger;
+			me = me || entityList.me;
+			entityList = entityList.result;
+		}
+		this.result = entityList.slice();
+		this.me = me;
+
+	}
+	get first() {
+		// Readout.render depends on this returning false if there is nothing in the list.
+		return this.result.length <= 0 ? false : this.result[0];
+	}
+	get count() {
+		return this.result.length;
+	}
+	get all() {
+		return this.result;
+	}
+
+	exclude(entity) {
+		return this.filter( e => e!=entity );
+	}
+	prepend(entity) {
+		if( !this.result.includes(entity) ) {
+			this.result.unshift(entity);
+		}
+		return this;
 	}
 	filter(fn) {
 		Array.filterInPlace( this.result, fn );
@@ -47,50 +77,7 @@ class FinderBase {
 		}
 		return false;
 	}
-	get first() {
-		// Readout.render depends on this returning false if there is nothing in the list.
-		return this.result.length <= 0 ? false : this.result[0];
-	}
-	get count() {
-		return this.result.length;
-	}
-	get all() {
-		return this.result;
-	}
-}
 
-class ItemFinder extends FinderBase {
-	constructor(itemList) {
-		super();
-		this.result = itemList.slice();
-	}
-}
-
-
-class Finder extends FinderBase {
-	constructor(entityList) {
-		if( !entityList ) {
-			debugger;
-		}
-
-		super();
-		this.result = entityList.slice();
-	}
-	exclude(entity) {
-		return this.filter( e => e!=entity );
-	}
-	prepend(entity) {
-		if( !this.result.includes(entity) ) {
-			this.result.unshift(entity);
-		}
-		return this;
-	}
-	teamDifferent(team) {
-		return this.filter( e => e.team!=team );
-	}
-	teamSame(team) {
-		return this.filter( e => e.team==team );
-	}
 	isAlive() {
 		return this.filter( e => !e.isDead() );
 	}
@@ -98,53 +85,40 @@ class Finder extends FinderBase {
 		this.result.sort( (a,b) => a.health-b.health );
 		return this;
 	}
-}
 
-class EntityFinder extends Finder {
-	constructor(entity,entityList) {
-		if( entity instanceof EntityFinder ) {
-			super(entity.entityList);
-			this.entity = entity.entity;
-			return;
-		}
-		if( !entity ) {
-			debugger;
-		}
-		super(entityList);
-		this.entity = entity;
-	}
+// ME-oriented capabilities
 	includeMe() {
-		this.result.unshift(this.entity);
+		this.result.unshift(this.me);
 		return this;
 	}
 	excludeMe() {
-		return this.exclude(this.entity);
+		return this.exclude(this.me);
 	}
 	atDirFromMe(dir) {
-		return this.atDir(this.entity.x,this.entity.y,dir);
+		return this.atDir(this.me.x,this.me.y,dir);
 	}
 	nearMe(rectDist=1) {
-		return this.near(this.entity.x,this.entity.y,rectDist);
+		return this.near(this.me.x,this.me.y,rectDist);
 	}
 	farFromMe(rectDist=1) {
-		return this.far(this.entity.x,this.entity.y,rectDist);
+		return this.far(this.me.x,this.me.y,rectDist);
 	}
 	canPeceivePosition(x,y) {
-		return this.filter( e => this.entity.canPerceivePosition(x,y) );
+		return this.filter( e => this.me.canPerceivePosition(x,y) );
 	}
 	canPerceiveEntity() {
-		return this.filter( e => this.entity.canPerceiveEntity(e) );
+		return this.filter( e => this.me.canPerceiveEntity(e) );
 	}
 	isMyEnemy() {
-		return this.filter( e => this.entity.isMyEnemy(e) );
+		return this.filter( e => this.me.isMyEnemy(e) );
 	}
 	isMyFriend() {
-		return this.filter( e => this.entity.isMyFriend(e) );
+		return this.filter( e => this.me.isMyFriend(e) );
 	}
 	isMyNeutral() {
-		return this.filter( e => this.entity.isMyNeutral(e) );
+		return this.filter( e => this.me.isMyNeutral(e) );
 	}
-	byDistanceFromMe(entity) {
-		return super.byDistanceFromPosition(this.entity.x,this.entity.y);
+	byDistanceFromMe() {
+		return this.byDistanceFromPosition(this.me.x,this.me.y);
 	}
 }

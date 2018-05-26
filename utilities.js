@@ -36,6 +36,24 @@ function nop() {}
 	String.capitalize = function(s) {
 	    return s.charAt(0).toUpperCase() + s.slice(1);
 	}
+	String.uncamel = function(id) {
+		let s = '';
+		for( let i=0 ; i<id.length ; ++i ) {
+			let c = id.charAt(i);
+			s += c != c.toLowerCase() ? ' '+c.toLowerCase() : c;
+		}
+		return s;
+	}
+	String.lootParse = function(lootString) {
+		let result = [];
+		lootString.replace( /\s*(\d+%)*\s*([\w]+[.]*[\w]+)\s*/g, function( match, chance, id ) {
+			if( chance===undefined ) { chance='100'; }
+			result.push( { chance: parseInt(chance)||0, id: id } );
+
+		});
+		return result;
+	}
+
 	String.padLeft = function(s,len,char=' ') {
 		while( s.length < len ) {
 			s = char + s;
@@ -83,6 +101,16 @@ function nop() {}
 		}
 		return result;
 	}
+	Array.lootPick = function(lootArray) {
+		let result = [];
+		for( let loot of lootArray ) {
+			if( Math.chance(loot.chance) ) {
+				result.push(loot.id);
+			}
+		}
+		return result;
+	}
+
 	function betterSplit(s,delim) {
 		let temp = s.split(delim);
 		if( temp.length==1 && temp[0]=='' ) {

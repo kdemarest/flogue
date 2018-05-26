@@ -56,7 +56,7 @@ class Entity {
 	}
 
 	findAliveOthers(entityList = this.entityList) {
-		return new EntityFinder(this,entityList).excludeMe().isAlive();
+		return new Finder(entityList,this).excludeMe().isAlive();
 	}
 	isUser() {
 		return this.brain == Brain.USER;
@@ -258,7 +258,7 @@ class Entity {
 		if( f.first && !f.first[mayTravel] ) {
 			return f.first;
 		}
-		let g = new ItemFinder(this.map.itemList).at(x,y);
+		let g = this.map.findItem().at(x,y);
 		if( g.first && !g.first[mayTravel] ) {
 			return g.first;
 		}
@@ -541,7 +541,7 @@ class Entity {
 	}
 
 	calcArmor(damageType) {
-		let f = new ItemFinder(this.inventory).filter( item=>item.inSlot && item.isArmor );
+		let f = new Finder(this.inventory).filter( item=>item.inSlot && item.isArmor );
 		let armor = 0;
 		f.process( item => { armor += item.calcArmor(damageType); });
 		return Math.floor(armor);
@@ -573,8 +573,11 @@ class Entity {
 		return numAlerted;
 	}
 
-	takeDamage(attacker,amount,damageType,callback) {
-		let noBacksies = attacker.isArmor || attacker.isHelm || attacker.isBoots;
+	takeDamagePassive(attacker,amount,damageType,callback) {
+		return this.takeDamage(attacker,amount,damageType,callback,true);
+	}
+
+	takeDamage(attacker,amount,damageType,callback,noBacksies) {
 		if( attacker.ownerOfRecord ) {
 			attacker = attacker.ownerOfRecord;
 		}
@@ -628,15 +631,15 @@ class Entity {
 		}
 
 		let quiet = false;
-		if( this.onAttacked ) {
+		if( this.onAttacked && !noBacksies ) {
 			quiet = this.onAttacked.call(this,attacker,amount,damageType);
 		}
 		if( !quiet ) {
-			tell(mSubject,attacker,' ',mVerb,damageType,' ',mObject,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!' );
+			tell(mSubject|mCares,attacker,' ',mVerb,damageType,' ',mObject,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!' );
 		}
 
 		if( !noBacksies && attacker.isMonsterType && this.inventory ) {
-			let armorEffects = new ItemFinder(this.inventory).filter( item => item.inSlot );
+			let armorEffects = new Finder(this.inventory).filter( item => item.inSlot );
 			armorEffects.process( item => {
 				if( item.effect && item.effect.isHarm ) {
 					let fireArmorEffect = ARMOR_EFFECT_OP_ALWAYS.includes(item.effect.op) || Math.chance(ARMOR_EFFECT_CHANCE_TO_FIRE);
@@ -671,7 +674,7 @@ class Entity {
 	}
 
 	calcWeapon() {
-		let weapon = new ItemFinder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || {};
+		let weapon = new Finder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || {};
 		let damage = weapon.damage || this.damage;
 		let damageType = weapon.damageType || this.damageType || DamageType.STAB;
 		return [weapon,damage,damageType];
@@ -714,18 +717,21 @@ class Entity {
 			tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
 			return;
 		}
+		let self = this;
 		let picker = new Picker(corpse.level);
-		let obj = picker.pick(picker.itemTable,corpse.loot);
-		if( obj === false || !obj.item || !obj.item.isTreasure ) {
-			obj = picker.pick(picker.itemTable,'coin');
-		}
-		if( obj === false || !obj.item || !obj.item.isTreasure ) {
-			tell(mSubject,this,' ',mVerb,'find',' nothing.');
-		}
-		else {
-			let loot = this.itemCreateByType(obj.item,obj.presets,{isLoot:true});
-			tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,loot,' on ',mObject,item);
-		}
+		let objList = picker.pickLoot(picker.itemTable,corpse.loot);
+		let found = [];
+		objList.process( obj => {
+			let loot = self.itemCreateByType(obj.item,obj.presets,{isLoot:true});
+			found.push(mObject|mA|mList|mBold,loot);
+		});
+		let description = [
+			mSubject,this,' ',mVerb,'find',' '
+		].concat( 
+			found.length ? found : ['<b>nothing</b>'],
+			[' on ',mObject,item]
+		);
+		tell(...description);
 		item.destroy();
 		return 
 	}
@@ -739,7 +745,7 @@ class Entity {
 				this.findLoot(item);
 				return;
 			}
-			tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
+			tell(mSubject,this,' ',mVerb,'pick',' up ',mObject|mBold,item,'.');
 			if( item.triggerOnPickup ) {
 				item.trigger(Command.PICKUP,this,this);
 			}
@@ -835,7 +841,7 @@ class Entity {
 			}
 
 			if( this.picksup ) {
-				let f = new ItemFinder(this.map.itemList).at(x,y).filter( item => item.mayPickup!==false );
+				let f = this.map.findItem().at(x,y).filter( item => item.mayPickup!==false );
 				for( let item of f.all ) {
 					this.pickup(item);
 				}
@@ -978,7 +984,7 @@ class Entity {
 				}
 				else
 				if( item.slot ) {
-					let itemToRemove = new ItemFinder(this.inventory).filter( i => i.inSlot==item.slot);
+					let itemToRemove = new Finder(this.inventory).filter( i => i.inSlot==item.slot);
 					if( itemToRemove.first ) {
 						this.doff(itemToRemove.first);
 					}

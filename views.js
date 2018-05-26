@@ -4,7 +4,7 @@ class ViewSpells {
 		this.spellDivId = spellDivId;
 	}
 	getCastableSpellList(entity) {
-		return new ItemFinder(entity.inventory).filter( item=>item.isSpell && item.effect && item.effect.op && !item.effect.isBlank );
+		return new Finder(entity.inventory).filter( item=>item.isSpell && item.effect && item.effect.op && !item.effect.isBlank );
 	}
 	render(observer) {
 		$('#'+this.spellDivId).empty();
@@ -78,7 +78,7 @@ class ViewStatus {
 	render(observer,entityList) {
 		let SLOT_COUNT = 10;
 
-		let f = new EntityFinder(observer,entityList).isAlive().prepend(observer).canPerceiveEntity().byDistanceFromMe().keepTop(SLOT_COUNT);
+		let f = new Finder(entityList,observer).isAlive().exclude(observer).prepend(observer).canPerceiveEntity().byDistanceFromMe().keepTop(SLOT_COUNT);
 		Array.filterInPlace( this.slotList, slot => f.getId(slot) );
 		f.process( entity => {
 			if( !this.slotList.includes(entity.id) ) {
@@ -166,7 +166,7 @@ class ViewMiniMap {
 					drawLate.push({entity:entity,x:x,y:y,scale:this.scale*4});
 				}
 				if( entity.gateDir !== undefined ) {
-					entity = StickerList.gateProxy;
+					entity = StickerList[entity.gateDir>0 ? 'gateDownProxy' : 'gateProxy'];
 					drawLate.push({entity:entity,x:x,y:y,scale:this.scale*3});
 				}
 				draw(entity,x,y,this.scale);
@@ -454,19 +454,19 @@ class UserCommandHandler {
 		if( command == Command.INVENTORY ) {
 			observer.command = Command.NONE;
 			this.command = Command.INVENTORY;
-			this.viewInventory.show( ()=>new ItemFinder(observer.inventory) );
+			this.viewInventory.show( ()=>new Finder(observer.inventory) );
 			return false;
 		}
 		if( command == Command.QUAFF ) {
 			observer.command = Command.NONE;
 			this.command = Command.QUAFF;
-			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).isTypeId("potion") );
+			this.viewInventory.show( ()=>new Finder(observer.inventory).isTypeId("potion") );
 			return false;
 		}
 		if( command == Command.THROW ) {
 			observer.command = Command.NONE;
 			this.command = Command.THROW;
-			this.viewInventory.show( ()=>new ItemFinder(observer.inventory).filter( item => item.mayThrow ) );
+			this.viewInventory.show( ()=>new Finder(observer.inventory).filter( item => item.mayThrow ) );
 			return false;
 		}
 		if( command == Command.DEBUGKILL ) {
@@ -477,7 +477,7 @@ class UserCommandHandler {
 		if( command == Command.DROP ) {
 			observer.command = Command.NONE;
 			this.command = Command.DROP;
-			this.viewInventory.show( ()=>new ItemFinder(observer.inventory) );
+			this.viewInventory.show( ()=>new Finder(observer.inventory) );
 			return false;
 		}
 		if( command == Command.CAST ) {

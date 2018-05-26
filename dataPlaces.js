@@ -105,7 +105,7 @@ ThemeList.gameStart = {
 ThemeList.cavern = {
 	isCore: 	true,
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['nest.bat',,'nest.scarab','nest.viper','camp.ogre','camp.goblin','den.kobold'],
+	rCOMMON: 	['nest.bat','nest.blueScarab','nest.redScarab','nest.viper','camp.ogre','camp.goblin','den.kobold'],
 	rUNCOMMON: 	['camp.human','antHive','trollBridge','trollPit','shaft','collonade','fountain1','fountain4','patch','veil'],
 	rRARE: 		['den.dog','goblinGathering','demonNest','portal','circle','ruin','swamp','etherHive'],
 	rEPIC: 		['graveYard','lunarEmbassy'],
@@ -126,7 +126,7 @@ ThemeList.spooky = {
 ThemeList.ruins = {
 	isCore: 	true,
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['camp.ogre','camp.goblin'],
+	rCOMMON: 	['camp.ogre','camp.goblin','nest.blueScarab','nest.redScarab'],
 	rUNCOMMON: 	['collonade','ruin','fountain1','camp.goblin','antHive'],
 	rRARE: 		['swamp','demonNest'],
 	rEPIC: 		['portal'],
@@ -136,7 +136,7 @@ ThemeList.ruins = {
 ThemeList.hellscape = {
 	scapes: 	['caveRandom'],
 	rCOMMON: 	['demonNest'],
-	rUNCOMMON: 	['collonade','ruin','fountain1'],
+	rUNCOMMON: 	['nest.blueScarab','nest.redScarab','collonade','ruin','fountain1'],
 	rRARE: 		['etherHive','balgursChamber'],
 	prefer: 	['fire','mud'],
 	monsters: 	['isDemon','isPlanar'],
@@ -145,7 +145,7 @@ ThemeList.hellscape = {
 
 ThemeList.refugeeCamp = {
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['den.dog'],
+	rCOMMON: 	['camp.human','den.dog'],
 	monsters: 	['isSunChild','isPet']
 }
 
@@ -401,7 +401,7 @@ yuy
 
 }));
 
-PlaceMany( 'nest', ['scarab','viper'], VARIETY => ({
+PlaceMany( 'nest', ['blueScarab','redScarab','viper'], VARIETY => ({
 	map:
 `
 .x⋍x.
@@ -417,7 +417,8 @@ x⋍y⋍x
 	},
 	onEntityCreate: {
 		viper: { attitude: Attitude.WANDER, tether: 2, tooClose: 2 },
-		scarab: { attitude: Attitude.AGGRESSIVE, tether: 2 }
+		redScarab: { attitude: Attitude.AGGRESSIVE, tether: 2 },
+		blueScarab: { attitude: Attitude.AGGRESSIVE, tether: 2 }
 	}
 }));
 
@@ -582,14 +583,17 @@ MM,,,,,MM
 PlaceList.trollBridge = {
 	map:
 `
-:::::::::
-:::::::::
-.....T...
-:::::::::
-:::::::::
+xxxxx
+:::::
+..T..
+:::::
+xxxxx
 `,
-	flags: { rotate: true, hasWall: true },
+	flags: { rotate: true },
 	symbols: {
+		x: 'wall',
+		T: 'troll',
+		':': 'pit'
 	},
 	onEntityCreate: {
 		troll: { attitude: Attitude.AWAIT, tooClose: 2 }
@@ -599,11 +603,11 @@ PlaceList.trollBridge = {
 PlaceList.trollPit = {
 	map:
 `
-::::::::
-:...::::
-:.*..T..
-:...::::
-::::::::
+  ::::::
+::::...:
+..T..*.:
+::::...:
+  ::::::
 `,
 	flags: { rotate: true },
 	symbols: {
