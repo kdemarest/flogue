@@ -1,101 +1,26 @@
-
 class AreaBuilder {
 	constructor(picker) {
 		this.picker = picker;
 	}
 
-	buildMap(scape,palette) {
-		let map = Mason.buildMap(scape,palette);
-		let tileRaw = map.renderToString();
-		return tileRaw;
+	buildMap(picker,scape,palette,injectList) {
+		let masonMap = Mason.buildMap(picker,scape,palette,injectList);
+		return masonMap.renderToString();
 	}
 
-	populate(map,density,makeFn) {
+	populate(map,density,safeToMakeFn,makeFn) {
 		map.traverse( (x,y) => {
 			let type = map.tileTypeGet(x,y);
-			if( type.isFloor && Math.rand(0,1)<density ) {
+			if( type.isFloor && Math.rand(0,1)<density && safeToMakeFn(x,y) ) {
 				makeFn(x,y);
 			}
 		});
 	}
 
-	preparePlaceForInjection(place) {
-		let tileCount = 0;
-
-		// If any of the symbols are pickable, get that done.
-		for( let s in place.symbols ) {
-			if( typeof place.symbols[s] == 'function' ) {
-				place.symbols[s] = place.symbols[s].call(place);
-				console.log(place.id+" chose "+s+"="+place.symbols[s]);
-			}
-		}
-
-		// Replace map symbols with allocated symbols
-		place.mapOriginal = place.map.trim();
-		let map = '';
-		for( let i=0 ; i<place.mapOriginal.length ; ++i ) {
-			let s = place.mapOriginal.charAt(i);
-			if( s=='\t' ) { continue; }
-			if( s=='\n' ) { map+=s; continue; }
-			let mappedToTypeId = place.symbols[s];
-			// Check if the place chose to used ad-hoc symbology for something
-			if( mappedToTypeId ) {
-				if( !TypeToSymbol[mappedToTypeId] ) {
-					console.log('ERROR: Place '+place.id+' uses unknown type '+mappedToTypeId);
-					map += TileTypeList.floor.symbol;
-					continue;
-				}
-				s = TypeToSymbol[mappedToTypeId];
-			}
-			if( !SymbolToType[s] ) {
-				console.log('ERROR: unknown symbol ['+s+']');
-				map += TileTypeList.floor.symbol;
-				debugger;	// By now we should have resolved what this symbol maps to
-				continue;
-			}
-			map += s;
-		}
-		place.map = new SimpleMap(map);
-
-		if( place.flags && place.flags.rotate ) {
-			place.map.rotate(Math.randInt(0,4));
-		}
-		return tileCount;
-	}
-
-	injectPlaces(map,numPlaceTiles,pickPlaceFn) {
-		let entityInject = {};
-		let reps = 40;
-		while( numPlaceTiles && reps-- ) {
-			// WARNING! Important for this to be a DEEP copy.
-			let place = jQuery.extend(true, {}, pickPlaceFn());
-
-			console.log("Trying to place "+place.id);
-			let tileCount = this.preparePlaceForInjection(place);
-			let fitReps = 100;
-			let x,y;
-			let fits;
-			do {
-				[x,y] = map.pickPos(0,0,place.map.xLen,place.map.yLen);
-				fits = map.fit(x,y,place.map);
-			} while( !fits && --fitReps );
-			if( fits ) {
-				console.log('Placed at ('+x+','+y+')');
-				map.inject(x,y,place.map,function(x,y,symbol) {
-					let type = SymbolToType[symbol];
-					if( !type ) debugger;
-					if( place.onEntityCreate && place.onEntityCreate[type.typeId] ) {
-						entityInject[''+x+','+y] = place.onEntityCreate[type.typeId];
-					}
-				});
-				numPlaceTiles -= tileCount;
-			}
-		}
-		return entityInject;
-	}
-
-	extractEntitiesFromMap(map,entityList,gateList,entityInject,itemMakeFn) {
+	extractEntitiesFromMap(map,entityList,gateList,injectList,itemMakeFn) {
 		let noEntity = {};
+		let itemCount = 0;
+		let entityCount = 0;
 
 		map.traverse( (x,y) => {
 			// Note that this code uses the SIMPLEST function that do NOT assume
@@ -107,18 +32,24 @@ class AreaBuilder {
 				debugger;
 			}
 			// CREATE MONSTERS
-			let inject = entityInject[''+x+','+y] || noEntity;
+			let inject = injectList[''+x+','+y] || noEntity;
 			if( entityType && entityType.isMonsterType ) {
 				let fnName = entityType.brain == 'user' ? 'unshift' : 'push';
 				// WARNING: Set the underlying tile symbol first so that the entity you're placing doesn't collide with it.
 				map.tileSymbolSetFloor(x,y)
-				entityList[fnName]( new Entity( map, entityList, entityType, { x:x, y:y }, inject ) );
+				let entity = new Entity( map, entityList, entityType, { x:x, y:y }, inject );
+				entityList[fnName]( entity );
+				++entityCount;
+				//console.log("Extracted "+entity.typeId+" with attitude "+entity.attitude,inject );
 			}
 			// CREATE ITEMS
 			if( entityType && entityType.isItemType ) {
 				// WARNING: Set the underlying tile symbol first so that the entity you're placing doesn't collide with it.
 				map.tileSymbolSetFloor(x,y);
-				itemMakeFn(x,y,entityType,null,inject);	// the null means you have to generate presets for this item.
+				let item = itemMakeFn(x,y,entityType,null,inject);	// the null means you have to generate presets for this item.
+				if( item.isTreasure ) { 
+					++itemCount;
+				}
 			}
 		});
 
@@ -127,6 +58,7 @@ class AreaBuilder {
 			// zero will be the player
 			entityList[entityList.length-1].watch = true;
 		}
+		return [entityCount,itemCount];
 	}
 };
 
@@ -142,12 +74,14 @@ class Area {
 	build(palette) {
 
 		let self = this;
-		let placeCount = [];
 		PickerSetTheme(this.theme);	// WARNING! Horrible hack. But it works for now.
 
-		function makeMonster(x,y) {
+		function makeMonster(x,y,inject) {
 			let entityType = picker.pick(picker.monsterTable);
-			self.entityList.push( new Entity( self.map, self.entityList, entityType, { x:x, y:y } ) );
+			let entity = new Entity( self.map, self.entityList, entityType, { x:x, y:y }, inject );
+			console.log("Created "+entity.typeId+" with attitude "+entity.attitude );
+			self.entityList.push(entity);
+			return entity;
 		}
 		function makeItem(x,y,type,presets,inject) {
 			if( type && type.isRandom ) {
@@ -167,16 +101,15 @@ class Area {
 			if( item.gateDir !== undefined ) {
 				self.gateList.push(item);
 			}
+			return item;
 		}
-
-		function pickPlace() {
-			let reps = 5;
-			let place;
-			do {
-				place = picker.pick(picker.placeTable);
-			} while( reps-- && Math.chance((placeCount[place.id]||0)*30) );
-			placeCount[place.id] = (placeCount[place.id]||0)+1;
-			return place;
+		function safeToMake(x,y) {
+			let tile = self.map.tileTypeGet(x,y);
+			if( !tile.mayWalk ) return false;
+			let item = new ItemFinder(self.map.itemList).at(x,y);
+			if( item.count ) return false;
+			let entity = new Finder(self.entityList).at(x,y);
+			return !entity.count;
 		}
 
 		let picker = new Picker(this.level,this.theme);
@@ -185,9 +118,9 @@ class Area {
 		let scapeId = pick(this.theme.scapes);
 		let scape = Object.assign(
 			{
-				placeDensity: 0.20,
+				placeDensity: 0.40,
 				monsterDensity: 0.01,
-				itemDensity: 0.008
+				itemDensity: 0.04
 			}, 
 			ScapeList[scapeId](),
 			{
@@ -198,19 +131,20 @@ class Area {
 		);
 		this.scape = scape;
 
-		let tileRaw = loadLevel(this.id) || this.builder.buildMap(scape,palette);
+		let injectList = [];
+		let tileRaw = loadLevel(this.id) || this.builder.buildMap(picker,scape,palette,injectList);
 
 		this.map = new Map(tileRaw,[]);
 		this.map.level = this.level;
-
-		let numPlaceTiles = Math.floor(this.map.xLen*this.map.yLen*scape.floorDensity*scape.placeDensity);
-		let entityInject = this.builder.injectPlaces(this.map,numPlaceTiles,pickPlace);
 		this.entityList = [];
 		this.gateList = [];
 
-		this.builder.populate( this.map, scape.monsterDensity, makeMonster );
-		this.builder.populate( this.map, scape.itemDensity, makeItem );
-		this.builder.extractEntitiesFromMap(this.map,this.entityList,this.gateList,entityInject,makeItem);
+		let entityCount,itemCount;
+		[entityCount,itemCount] = this.builder.extractEntitiesFromMap(this.map,this.entityList,this.gateList,injectList,makeItem);
+		let monsterDensity = scape.floorDensity * (scape.monsterDensity - entityCount/(this.map.getArea()*scape.floorDensity));
+		this.builder.populate( this.map, monsterDensity, safeToMake, makeMonster );
+		let itemDensity = scape.floorDensity * (scape.itemDensity - itemCount/(this.map.getArea()*scape.floorDensity));
+		this.builder.populate( this.map, itemDensity, safeToMake, makeItem );
 		return this;
 	}
 	getGate(id) {

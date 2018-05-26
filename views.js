@@ -4,7 +4,7 @@ class ViewSpells {
 		this.spellDivId = spellDivId;
 	}
 	getCastableSpellList(entity) {
-		return new ItemFinder(entity.inventory).filter( item=>item.isSpell && item.effect && !item.isBlank );
+		return new ItemFinder(entity.inventory).filter( item=>item.isSpell && item.effect && item.effect.op && !item.effect.isBlank );
 	}
 	render(observer) {
 		$('#'+this.spellDivId).empty();
@@ -29,7 +29,7 @@ class ViewInfo {
 				conditionList.push(text);
 			}
 		}
-		$('#'+this.infoDivId).empty();
+		$('#'+this.infoDivId).empty().removeClass('healthWarn healthCritical');
 		let s = "";
 		s += "Health: "+entity.health+" / "+entity.healthMax+"\n";
 		s += "Armor: "+entity.calcArmor()+"%\n";
@@ -55,6 +55,15 @@ class ViewInfo {
 		s += entity.vuln ? "Vulnerable: "+entity.vuln+'\n' : '';
 		s += "Gold: "+Math.floor(entity.goldCount||0)+"\n";
 		$('#'+this.infoDivId).append(s);
+		let healthRatio = entity.health/entity.healthMax;
+		if( healthRatio < 0.15 ) {
+			$('#'+this.infoDivId).addClass('healthCritical');
+		}
+		else
+		if( healthRatio < 0.30 ) {
+			$('#'+this.infoDivId).addClass('healthWarn');
+		}
+
 	}
 
 }
@@ -346,6 +355,10 @@ class UserCommandHandler {
 		let keyONE = 49;
 
 		let dir = commandToDirection(command);
+		if( observer.isDead() ) {
+			observer.command = command;
+			return true;
+		}
 
 		//
 		// PICK A TARGET

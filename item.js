@@ -43,7 +43,7 @@ class Item {
 		}
 
 		let self = this;
-		this.name = 'L'+this.level+' '+(this.name || String.tokenReplace(this.namePattern,this));
+		this.name = /*'L'+this.level+' '+*/(this.name || String.tokenReplace(this.namePattern,this));
 	}
 	get baseType() {
 		return ItemTypeList[this.typeId];

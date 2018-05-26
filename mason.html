@@ -1,20 +1,25 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 
-<script src="utilities.js"></script>
-<script src="data.js"></script>
-<script src="dataHumanNames.js"></script>
-<script src="dataPlaces.js"></script>
-<script src="dataConditioner.js"></script>
-<script src="dataPicker.js"></script>
-<script src="dataMason.js"></script>
+<script src="jquery.3.3.1.js" charset="utf-8"></script>
+<script src="utilities.js" charset="utf-8"></script>
+<script src="data.js" charset="utf-8"></script>
+<script src="dataHumanNames.js" charset="utf-8"></script>
+<script src="dataPlaces.js" charset="utf-8"></script>
+<script src="dataConditioner.js" charset="utf-8"></script>
+<script src="dataPicker.js" charset="utf-8"></script>
+<script src="dataMason.js" charset="utf-8"></script>
+<script src="place.js" charset="utf-8"></script>
+<script src="map.js" charset="utf-8"></script>
+<!-- WARNING: This map function is ALMOST expendable. The places happen to use it for insertions... -->
 
 <style>
 pre {
 	font-family: "courier";
 	line-height: 0.8;
-	font-size:6px;
+	font-size:12px;
 }
 </style>
 <script>
@@ -22,13 +27,15 @@ pre {
 
 	function main() {
 
+		new DataConditioner();
+
 		let palette = {
-			floor: '.',
-			wall: '#',
-			unknown: ' '
+			floor: TileTypeList.floor.symbol,
+			wall:  TileTypeList.wall.symbol,
+			unknown: TILE_UNKNOWN
 		};
 
-		let sideDimension = 80; //Math.randInt(40,150);
+		let sideDimension = 40; //Math.randInt(40,150);
 
 		// Floor Density
 		// 0.10 - 0.30 - spindly maps. Below 0.10 it is all just passage.
@@ -39,26 +46,26 @@ pre {
 		// Lower number (0.05) means each room is more consolidated
 		// Higher number (0.50) means lots of little rooms that connect.
 		// floor=0.50, seed 0.02, wanderingPassage false, makes nice connected rooms
-		let floorDensity = 0.9;
-		let style = {
+		let scape = {
 			dim: sideDimension,
 			architecture: "cave",
 			mustConnect: false,
 			wanderingPassage: true,
-			floorDensity: floorDensity,
-			seedPercent: 0.0001,
-			placeDensity: floorDensity * 0.9
+			floorDensity: 	0.40,
+			seedPercent: 	0.20,
+			placeDensity: 	0.50			// always relative to floor
 		};
-/*
-		style = {
-			dim: sideDimension,
-			architecture: "rooms",
-			floorDensity: floorDensity,
-			maxRoomScale: 0.25
-		};
-*/
-		let map = Mason.buildMap( style, palette, map => document.getElementById('map').innerHTML = map );
-		document.getElementById('map').innerHTML = map.renderToString();
+
+		let level = 10;
+		let theme = ThemeList.cavern;
+		// NOTICE that I am NOT passing the theme's scape, but instead overriding it
+		// so that you can tweak it.
+		let injectList = [];
+		let picker = new Picker(level,theme);
+		let map = Mason.buildMap( picker, scape, palette, injectList, map => document.getElementById('map').innerHTML = map );
+		if( map ) {
+			document.getElementById('map').innerHTML = map.renderToString();
+		}
 	}
 </script>
 </head>

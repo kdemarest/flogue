@@ -24,7 +24,7 @@ class World {
 		let palette = {
 			floor: TileTypeList.floor.symbol,
 			wall: TileTypeList.wall.symbol,
-			unknown: '?',
+			unknown: TILE_UNKNOWN,
 			entrance: this.area===null ? ItemTypeList.stairsUp.symbol : entranceSymbol,
 			// (levelDelta>0 ? ItemTypeList.stairsUp : (levelDelta<0 ? ItemTypeList.stairsDown : ItemTypeList.gateway)),
 			exit: ItemTypeList.stairsDown.symbol

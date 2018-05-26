@@ -12,30 +12,32 @@ class Entity {
 		let isPlayer = monsterType.brain==Brain.USER;
 		if( isPlayer ) {
 			level = map.level;
-			values.healthMax = Rules.playerHealth(level);
-			values.armor     = 0; //Rules.playerArmor(level);
+			inits.healthMax = Rules.playerHealth(level);
+			inits.armor     = 0; //Rules.playerArmor(level);
 			let damageWhenJustStartingOut = 0.75;	// I found that 50% was getting me killed by single goblins. Not OK.
-			values.damage    = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
+			inits.damage    = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
 		}
 		else {
 			let hits = monsterType.power.split(':');
 			let hitsToKillMonster = parseInt(hits[0]);
 			let hitsToKillPlayer = parseInt(hits[1]);
-			values.healthMax = Rules.monsterHealth(level,hitsToKillMonster);
-			values.armor     = (monsterType.armor || 0);
-			values.damage    = Rules.monsterDamage(level,hitsToKillPlayer);
+			inits.healthMax = Rules.monsterHealth(level,hitsToKillMonster);
+			inits.armor     = (monsterType.armor || 0);
+			inits.damage    = Rules.monsterDamage(level,hitsToKillPlayer);
 		}
-		values.level = level;
-		values.health = values.healthMax;
+		inits.level = level;
+		inits.health = inits.healthMax;
 		if( monsterType.pronoun == '*' ) {
-			values.pronoun = Math.chance(70) ? 'he' : 'she';
+			inits.pronoun = Math.chance(70) ? 'he' : 'she';
 		}
 		Object.assign( this, monsterType, inits, inject || {}, values );
+		this.xOrigin = this.x;
+		this.yOrigin = this.y;
 
 		if( this.name && this.name.indexOf('/')>0 ) {
-			this.name = this.name.split('/')[values.pronoun=='she' ? 1 : 0];
+			this.name = this.name.split('/')[this.pronoun=='she' ? 1 : 0];
 		}
-		this.name = 'L'+this.level+' '+(this.name || String.tokenReplace(this.namePattern,this));
+		this.name = /*'L'+this.level+' '+*/(this.name || String.tokenReplace(this.namePattern,this));
 	}
 
 	record(s,pending) {
@@ -105,6 +107,11 @@ class Entity {
 		let dy = entity.y - this.y;
 		return deltasToDirNatural(dx,dy);
 	}
+	dirToPosNatural(x,y) {
+		let dx = x - this.x;
+		let dy = y - this.y;
+		return deltasToDirNatural(dx,dy);
+	}
 
 	isMyEnemy(entity) {
 		if( this.attitude == Attitude.ENRAGED ) {
@@ -144,6 +151,7 @@ class Entity {
 			this.mapMemory = world.area.mapMemory;
 		}
 		else {
+			// Calc vis if I am near the user, that it, I might be interacting with him!
 			let user = this.findAliveOthers().filter( e => e.isUser() ).nearMe(9);
 			doVis = !!user.first;
 		}
@@ -198,7 +206,7 @@ class Entity {
 		}
 		tell(mSubject,this,' ',mVerb,item.useVerb,' ',mObject,item);
 		item.inSlot = slot;
-		if( item.triggerOnUse || (item.triggerOnUseIfHelp && item.effect && item.effect.isHelp) ) {
+		if( item.triggerOnUse || (item.triggerOnUseIfHelp && item.effect && (item.effect.isHelp || item.effect.isPlayerOnly)) ) {
 			item.trigger(Command.USE,this,this);
 		}
 	}
@@ -296,7 +304,9 @@ class Entity {
 		let reps = 4;
 		let command;
 		do {
-			command = RandCommand[Math.randInt(0,RandCommand.length)];
+			command = this.beyondTether() && Math.chance(90) ?
+				directionToCommand[deltasToDirNatural(this.xOrigin-this.x,this.yOrigin-this.y)] :
+				RandCommand[Math.randInt(0,RandCommand.length)];
 			let dir = commandToDirection(command);
 			if( dir !== false ) {
 				if( walkAnywhere || this.mayGo(dir,this.avoidProblem()) ) {
@@ -307,9 +317,9 @@ class Entity {
 		return Command.WAIT;
 	}
 
-	thinkApproach(target) {
+	thinkApproach(x,y,target) {
 		// Can I walk towards them?
-		let dir = this.dirToEntityNatural(target);
+		let dir = this.dirToPosNatural(x,y);
 		// Aggressive creatures will completely avoid problems if 1/3 health, otherwide they
 		// avoid problems most of the time, but eventually will give in and take the risk.
 		let avoidProblem = true;
@@ -324,10 +334,16 @@ class Entity {
 		this.record( (avoidProblem ? '' : 'not ')+'avoiding problem', true );
 
 		if( this.mayGo(dir,avoidProblem) ) {
-			this.record('approach '+target.name,true);
+			this.record('approach '+(target ? target.name : '('+x+','+y+')'),true);
 			return directionToCommand(dir);
 		}
 		return false;
+	}
+	beyondTether() {
+		return this.tether && this.getDistance(this.xOrigin,this.yOrigin) > this.tether;
+	}
+	beyondOrigin() {
+		return this.getDistance(this.xOrigin,this.yOrigin) > 0;
 	}
 
 	think() {
@@ -338,7 +354,7 @@ class Entity {
 		let useAiTemporarily = false;
 		if( this.brain == Brain.USER ) {
 			// Placeholder, since the onPlayerKey already sets the command for us
-			if( this.loseTurn || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.Attitude == Attitude.PANICKED ) {
+			if( this.loseTurn || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
 				useAiTemporarily = true;
 			}
 		}
@@ -352,8 +368,9 @@ class Entity {
 
 				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
 				let enemyList = this.findAliveOthers().isMyEnemy().canPerceiveEntity().byDistanceFromMe();
+				let theEnemy = enemyList.first;
 				let vendetta = enemyList.includesId(this.personalEnemy);
-				let distanceToNearestEnemy = enemyList.count ? this.getDistance(enemyList.first.x,enemyList.first.y) : false;
+				let distanceToNearestEnemy = enemyList.count ? this.getDistance(theEnemy.x,theEnemy.y) : false;
 
 				// CONFUSED
 				if( this.attitude == Attitude.CONFUSED ) {
@@ -362,7 +379,13 @@ class Entity {
 
 				// WORSHIP
 				if( this.attitude == Attitude.WORSHIP ) {
-					if( distanceToNearestEnemy > 3 ) {
+					if( distanceToNearestEnemy===false && this.beyondOrigin() ) {
+						let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+						if( c ) {
+							return c;
+						}
+					}
+					if( distanceToNearestEnemy===false || distanceToNearestEnemy > (this.tooClose||3) ) {
 						return Command.PRAY;
 					}
 					this.attitude == Attitude.AGGRESSIVE;
@@ -372,20 +395,33 @@ class Entity {
 				}
 
 				if( this.attitude == Attitude.AWAIT ) {
-					if( distanceToNearestEnemy > 5 ) {
+					if( distanceToNearestEnemy===false && this.beyondOrigin() ) {
+						let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+						if( c ) {
+							return c;
+						}
+					}
+					if( distanceToNearestEnemy===false || distanceToNearestEnemy > (this.tooClose||4) ) {
 						return Command.WAIT;
 					}
-					this.Attitude = Attitude.AGGRESSIVE;
+					this.changeAttitude( Attitude.AGGRESSIVE );
 				}
 
 				// WANDER
 				if( this.attitude == Attitude.WANDER && !vendetta ) {
-					let dirLast = commandToDirection(this.commandLast);
-					if( Math.chance(90) && dirLast !== false && this.mayGo(dirLast,this.avoidProblem()) ) {
-						this.record('keep walking',true);
-						return this.commandLast;
+					if( this.tooClose && distanceToNearestEnemy && distanceToNearestEnemy < this.tooClose ) {
+						// Fall through to the aggression, BUT don't change to aggressive
+						// until you are attacked. If the player manages to flee beyond your tooClose
+						// range, then more power to him.
 					}
-					return Math.chance(30) ? Command.WAIT : this.thinkWander();
+					else {
+						let dirLast = commandToDirection(this.commandLast);
+						if( Math.chance(90) && dirLast !== false && !this.beyondTether() && this.mayGo(dirLast,this.avoidProblem()) ) {
+							this.record('keep walking',true);
+							return this.commandLast;
+						}
+						return Math.chance(20) ? Command.WAIT : this.thinkWander();
+					}
 				}
 
 				// FLOCK
@@ -399,12 +435,19 @@ class Entity {
 					let friendList = this.findAliveOthers().isMyFriend().farFromMe(2).byDistanceFromMe();
 					if( friendList.count ) {
 						this.record('back to a friend',true);
-						let c = this.thinkApproach(friendList.first);
+						let c = this.thinkApproach(friendList.first.x,friendList.first.y,friendList.first);
 						if( c !== false ) {
 							return c;
 						}
 					}
 				}
+
+				if( !enemyList.count && this.attitude!==this.baseType.attitude ) {
+					// This will revert us from being angry to wandering or whatever, once
+					// the enemy is gone.
+					this.changeAttitude( this.baseType.attitude );
+				}
+
 
 				// If no enemy to attack or fles, then just wander around 
 				if( !enemyList.count ) {
@@ -423,13 +466,13 @@ class Entity {
 					// that square, and more to the safest square.
 					// PANICKED
 					let panic = (this.attitude == Attitude.PANICKED);
-					let dirAwayPerfect = (this.dirToEntityNatural(enemyList.first)+4)%DirectionCount;;
+					let dirAwayPerfect = (this.dirToEntityNatural(theEnemy)+4)%DirectionCount;;
 					let dirAwayRandom = (dirAwayPerfect+8+Math.randInt(0,3)-1) % DirectionCount;
 					let dirAway = [dirAwayRandom,dirAwayPerfect,(dirAwayPerfect+8-1)%DirectionCount,(dirAwayPerfect+1)%DirectionCount];
 					while( dirAway.length ) {
 						let dir = dirAway.shift();
 						if( panic || this.mayGo(dir,this.avoidProblem()) ) {
-							this.record( (panic ? 'panicked flee' : 'fled')+' from '+enemyList.first.name, true );
+							this.record( (panic ? 'panicked flee' : 'fled')+' from '+theEnemy.name, true );
 							return directionToCommand(dir);
 						}
 					}
@@ -437,7 +480,7 @@ class Entity {
 					this.record('cannot flee',true);
 				}
 
-				// AGGRESSIVE and all other emoptions
+				// AGGRESSIVE
 				// Attack if I am within reach, and aggressive or sometimes if hesitant
 				let adjacent = this.findAliveOthers(enemyList.all).nearMe(this.reach);
 				if( adjacent.count ) {
@@ -451,8 +494,16 @@ class Entity {
 					}
 				}
 
-				let c = this.thinkApproach(enemyList.first);
-				if( c !== false ) {
+				if( this.beyondTether() && !this.brainDisengageFailed ) {
+					let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+					if( c ) {
+						this.brainDisengageAttempt = true;
+						return c;
+					}
+				}
+
+				let c = this.thinkApproach(theEnemy.x,theEnemy.y,theEnemy);
+				if( c ) {
 					return c;
 				}
 				return Math.random() < 0.50 ? Command.WAIT : this.thinkWander();
@@ -502,6 +553,26 @@ class Entity {
 		return Math.min(0.8,reduction);
 	}
 
+	changeAttitude(newAttitude) {
+		this.attitude = newAttitude;
+	}
+
+	alertFriends(tellAbout=true) {
+		let friendList = this.findAliveOthers().isMyFriend().canPerceiveEntity().nearMe(7);
+		let numAlerted = 0;
+		let self=this;
+		friendList.process( entity => {
+			if( entity.attitude == Attitude.WANDER || entity.attitude == Attitude.AWAIT ) {
+				entity.changeAttitude(Attitude.AGGRESSIVE);
+				if( tellAbout && !numAlerted && this.brainTalk ) {
+					tell(mSubject,self,' ',mVerb,'shout',' to nearby allies.');
+				}
+				++numAlerted;
+			}
+		});
+		return numAlerted;
+	}
+
 	takeDamage(attacker,amount,damageType,callback) {
 		let noBacksies = attacker.isArmor || attacker.isHelm || attacker.isBoots;
 		if( attacker.ownerOfRecord ) {
@@ -523,9 +594,7 @@ class Entity {
 		if( attacker && attacker.invisible ) {
 			DeedManager.forceSingle(attacker,"invisible",false);
 		}
-		if( this.brain!=='user' ) {
-			this.personalEnemy = attacker.id;
-		}
+		this.personalEnemy = attacker.id;
 
 		if( amount > 0 ) {
 			animationAdd( new AniPaste({
@@ -541,6 +610,18 @@ class Entity {
 		this.takenDamage = amount;
 		this.takenDamageType = damageType;
 		this.takenDamageFromId = attacker.Id;
+
+		if( amount > 0 ) {
+			if( this.brainDisengageAttempt ) {
+				this.brainDisengageFailed = true;
+			}
+			if( this.attitude == Attitude.HESITANT || this.attitude == Attitude.WANDER || this.attitude == Attitude.AWAIT ) {
+				this.changeAttitude(Attitude.AGGRESSIVE);
+			}
+			if( this.brainAlertFriends ) {
+				this.alertFriends();
+			}
+		}
 
 		if( callback ) {
 			callback(attacker,this,amount,damageType);	
@@ -627,17 +708,35 @@ class Entity {
 		this._itemTake(item);
 		return item;
 	}
-
-
+	findLoot(item) {
+		let corpse = item.usedToBe;
+		if( !corpse ) {
+			tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
+			return;
+		}
+		let picker = new Picker(corpse.level);
+		let obj = picker.pick(picker.itemTable,corpse.loot);
+		if( obj === false || !obj.item || !obj.item.isTreasure ) {
+			obj = picker.pick(picker.itemTable,'gold');
+		}
+		if( obj === false || !obj.item || !obj.item.isTreasure ) {
+			tell(mSubject,this,' ',mVerb,'find',' nothing.');
+		}
+		else {
+			let loot = this.itemCreateByType(obj.item,obj.presets,{isLoot:true});
+			tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,loot,' on ',mObject,item);
+		}
+		item.destroy();
+		return 
+	}
 	pickup(item) {
 		if( !item ) debugger;
 		if( item.moveTo(this) !== false ) {
 			if( item.isArmor && !item.armor ) {
 				debugger;
 			}
-			if( item.isCorpse && Math.chance(90) ) {
-				tell(mSubject|mCares,this,' ',mVerb,'find',' nothing on ',mObject,item,'.');
-				item.destroy();
+			if( item.isCorpse ) {
+				this.findLoot(item);
 				return;
 			}
 			tell(mSubject,this,' ',mVerb,'pick',' up ',mObject,item,'.');
@@ -746,8 +845,17 @@ class Entity {
 	}
 
 	act(timePasses=true) {
+		let dir = commandToDirection(this.command);
 		if( this.isDead() ) {
-			return;
+			if( this.isSpectator && dir !== false ) {
+				let x = this.x + DirectionAdd[dir].x;
+				let y = this.y + DirectionAdd[dir].y;
+				if( this.map.inBounds(x,y) ) {
+					this.x = x;
+					this.y = y;
+				}
+			}
+			return true;
 		}
 
 		if( timePasses && this.regenerate ) {
@@ -761,7 +869,6 @@ class Entity {
 
 
 		if( commandToDirection(this.command) !== false ) {
-			let dir = commandToDirection(this.command);
 			this.moveDir(dir);
 		}
 		else 
@@ -802,26 +909,15 @@ class Entity {
 				this.healthMax = 100000;
 				this.health = this.healthMax;
 				this.damage = 100000;
+				break;
+			}
+			case Command.DEBUGVIEW: {
 				this.senseItems = true;
 				this.senseLife = true;
 				break;
 			}
 			case Command.LOOT: {
-				let item = this.commandItem;
-				tell(mSubject,this,' ',mVerb,'loot',' ',mObject,item);
-				let corpse = item.usedToBe;
-				if( corpse ) {
-					let picker = new Picker(corpse.level);
-					let obj = picker.pick(picker.itemTable,corpse.loot);
-					if( obj !== false ) {
-						let item = this.itemCreateByType(obj.item,obj.presets,{isLoot:true});
-						tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
-					}
-					else {
-						tell(mSubject,this,' ',mVerb,'find',' nothing.');
-					}
-				}
-				item.destroy();
+				findLoot(this.commandItem);
 				break;
 			}
 			case Command.DROP: {

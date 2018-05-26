@@ -3,7 +3,8 @@
 // WARNING: The strings for directions MUST remain the same for commandToDirection() to work.
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
 				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", LOSETURN: "lose turn", PRAY: "pray",
-				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop", DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGTEST: "debugtest",
+				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop",
+				DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGVIEW: "debugview", DEBUGTEST: "debugtest",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit" };
 const Direction = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
 const DirectionAdd = [
@@ -42,6 +43,7 @@ function deltasToDirNatural(dx,dy) {
 	return deltasToDirPredictable(dx,dy);
 }
 
+let TILE_UNKNOWN = ' ';		// reserved so that map creation can look sane.
 let SymbolToType = {};
 let TypeToSymbol = {};
 
@@ -56,6 +58,7 @@ function fab(type,typeId,isWhat) {
 	type.typeId = typeId;
 	if( type.symbol ) {
 		if( SymbolToType[type.symbol] ) {
+			// If you get this, you have a duplicate type.symbol
 			debugger;
 		}
 		SymbolToType[type.symbol] = type;
@@ -73,7 +76,7 @@ const StickerList = {
 	gateProxy: { img: "gems/Gem Type2 Purple.png" },
 	unvisitedMap: { img: "gui/grey.png" },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
-	invisibleObserver: { symbol: '?', img: "spells/enchantment/invisibility.png" },
+	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
 	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
 	crosshairNo:  { img: "dc-misc/travel_exclusion.png", scale: 1.0, xAnchor: 0, yAnchor: 0 }
 
@@ -125,21 +128,21 @@ let EffectTypeList = {
 	haste: 			{ level:  7, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5 },
 	slow: 			{ level:  3, rarity: 1.00, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, requires: e=>e.speed>0.5 },
 	regeneration: 	{ level: 20, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1 },
-	flight: 		{ level:  2, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.type.travelMode },
-	healing: 		{ level:  0, rarity: 1.00, op: 'heal',   valueDamage: 2.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE },
-	poison: 		{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 1.30, isHarm: 1, isInstant: 1, damageType: DamageType.POISON },
-	fire: 			{ level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true },
-	cold: 			{ level:  2, rarity: 1.00, op: 'damage', valueDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true },
-	holy: 			{ level:  3, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE },
-	rot: 			{ level:  4, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT },
+	flight: 		{ level:  2, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode },
+	healing: 		{ level:  0, rarity: 1.00, op: 'heal',   valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE },
+	poison: 		{ level:  1, rarity: 1.00, op: 'damage', valueDamage: 2.50, isHarm: 1, isInstant: 1, damageType: DamageType.POISON },
+	fire: 			{ level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true },
+	cold: 			{ level:  2, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true },
+	holy: 			{ level:  3, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE },
+	rot: 			{ level:  4, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT },
 	rage: 			{ level:  1, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1 },
 	panic: 			{ level:  5, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1 },
 	confusion: 		{ level:  3, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1 },
 	blindness: 		{ level:  5, rarity: 1.00, op: 'set', stat: 'senseBlind', value: true, isHarm: 1, requires: e=>!e.blind },
 	xray: 			{ level:  8, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, isPlayerOnly: 1, name: 'earth vision' },
-	greed: 			{ level:  0, rarity: 2.00, op: 'set', stat: 'senseItems', value: true, isPlayerOnly: 1, name: 'greed' },
-	echoloc: 		{ level:  1, rarity: 1.00, op: 'set', stat: 'senseLife', value: true, isPlayerOnly: 1, name: 'bat sense' },
-	luminari: 		{ level:  1, rarity: 1.00, op: 'add', stat: 'light', value: 5, isPlayerOnly: 1, name: 'luminari' },
+	greed: 			{ level:  0, rarity: 0.50, op: 'set', stat: 'senseItems', value: true, isPlayerOnly: 1, name: 'greed' },
+	echoloc: 		{ level:  1, rarity: 0.50, op: 'set', stat: 'senseLife', value: true, isPlayerOnly: 1, name: 'bat sense' },
+	luminari: 		{ level:  1, rarity: 1.00, op: 'add', stat: 'light', value: 3, isPlayerOnly: 1, name: 'luminari' },
 	immunity: 		{ level: 30, rarity: 0.20, op: 'add', stat: 'immune',
 					valuePick: () => pick(PickImmune), isHelp: 1, namePattern: 'immunity to {value}' },
 	vulnerability: 	{ level: 10, rarity: 1.00, op: 'add', stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
@@ -257,7 +260,7 @@ function resolve(memberName) {
 }
 
 const ItemTypeDefaults = {
-	symbol: '?', namePattern: 'nameless *',
+	namePattern: 'nameless *',
 	mayWalk: true, mayFly: true, opacity: 0, triggerOnPickup: false,
 	img: null
 }
@@ -298,7 +301,7 @@ const PotionEffects = toFab( Object.filter(EffectTypeList, e=>!e.isInert && !e.i
 const SpellEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['blank','blindness','luminari','xray','echoloc','greed','slow','healing','poison','fire','cold','holy','rage','panic','confusion','push','xray'].includes(k) ) );
 const RingEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration','resistance','greed'].includes(k) ) );
 const WeaponEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','poison','fire','cold','blindness','slow','panic','confusion','shove'].includes(k) ) );
-const HelmEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'luminari', 'resistance', 'seeinvisible','echoloc'].includes(k) ) );
+const HelmEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'resistance','luminari'].includes(k) ) );
 const ArmorEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'immunity', 'resistance'].includes(k) ) );
 const BracersEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','resistance'].includes(k) ) );
 const BootsEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'flight', 'resistance'].includes(k) ) );
@@ -320,8 +323,8 @@ const WeaponList = toFab({
 });
 
 const WeaponMaterialList = toFab({
-	"ironium": 		{ level:  1, toMake: 'ironium ingot'},
-	"silverium": 	{ level:  5, toMake: 'silverium ingot' },
+	"iron": 		{ level:  1, toMake: 'iron ingot'},
+	"silver": 		{ level:  5, toMake: 'silver ingot' },
 	"ice": 			{ level: 10, toMake: 'ice block' },
 	"glass": 		{ level: 20, toMake: 'malachite' },
 	"lunarium": 	{ level: 30, toMake: 'lunarium ingot' },
@@ -333,9 +336,9 @@ const ArmorList = toFab({
 	"fur": 			{ level:  1, armorMultiplier: 0.50, ingredientId: 'leather' },
 	"hide": 		{ level:  2, armorMultiplier: 0.60, ingredientId: 'leather' },
 	"leather": 		{ level:  4, armorMultiplier: 0.80, ingredientId: 'leather' },
-	"studded": 		{ level:  6, armorMultiplier: 0.90, ingredientId: 'ironium ingot' },
-	"chain": 		{ level: 10, armorMultiplier: 1.00, ingredientId: 'ironium ingot' },
-	"steel plate": 	{ level: 15, armorMultiplier: 1.00, ingredientId: 'ironium ingot' },
+	"studded": 		{ level:  6, armorMultiplier: 0.90, ingredientId: 'iron ingot' },
+	"chain": 		{ level: 10, armorMultiplier: 1.00, ingredientId: 'iron ingot' },
+	"steel plate": 	{ level: 15, armorMultiplier: 1.00, ingredientId: 'iron ingot' },
 	"troll hide": 	{ level: 20, armorMultiplier: 1.20, ingredientId: 'troll hide' },
 	"chitin": 		{ level: 25, armorMultiplier: 1.00, ingredientId: 'chitin' },
 	"elven": 		{ level: 30, armorMultiplier: 1.30, ingredientId: 'chitin' },
@@ -349,11 +352,11 @@ const ArmorList = toFab({
 });
 
 const OreList = toFab({
-	"ironOre": 		{ name: "ironium ore", refinesTo: "ironium ingot", img: 'i-protection' },
-	"copperOre": 	{ name: "copperium ore", refinesTo: "copperium ingot", img: 'i-protection' },
-	"silverOre": 	{ name: "silverium ore", refinesTo: "silverium ingot", img: 'i-protection' },
-	"goldOre": 		{ name: "goldium ore", refinesTo: "goldium ingot", img: 'i-protection' },
-	"tinOre": 		{ name: "tinium ore", refinesTo: "tinium ingot", img: 'i-protection' },
+	"ironOre": 		{ name: "iron ore", refinesTo: "iron ingot", img: 'i-protection' },
+	"copperOre": 	{ name: "copper ore", refinesTo: "copper ingot", img: 'i-protection' },
+	"silverOre": 	{ name: "silver ore", refinesTo: "silver ingot", img: 'i-protection' },
+	"goldOre": 		{ name: "gold ore", refinesTo: "gold ingot", img: 'i-protection' },
+	"tinOre": 		{ name: "tin ore", refinesTo: "tin ingot", img: 'i-protection' },
 	"malachiteOre": { name: "malachite ore", refinesTo: "malachite ingot", img: 'i-protection' },
 	"lunariumOre": 	{ name: "lunarium ore", refinesTo: "lunarium ingot", img: 'i-protection' },
 	"solariumOre": 	{ name: "solarium ore", refinesTo: "solarium ingot", img: 'i-protection' },
@@ -398,10 +401,10 @@ const GemList = toFab({
 
 
 const RingMaterialList = toFab({
-	"brassium": 	{ img: 'brass' },
-	"copperium": 	{ img: 'bronze' },
-	"silverium": 	{ img: 'silver' },
-	"goldium": 		{ img: 'gold' }
+	"brass": 	{ img: 'brass' },
+	"copper": 	{ img: 'bronze' },
+	"silver": 	{ img: 'silver' },
+	"gold": 		{ img: 'gold' }
 });
 
 const RingList = GemList;
@@ -428,63 +431,63 @@ const ItemTypeList = {
 	"stairsUp":   { symbol: '<', name: "stairs up", gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, neverPick: true, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
 	"gateway":    { symbol: '𝞟', name: "gateway", gateDir: 0, gateInverse: 'gateway', mayPickup: false, neverPick: true, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
 	"portal":     { symbol: 'Ώ', name: "portal", gateDir: 0, gateInverse: 'portal', mayPickup: false, neverPick: true, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
-	"columnBroken": { symbol: 'O', mayWalk: false, mayFly: false, name: "broken column", rarity: 0.05, img: "dc-dngn/crumbled_column.png" },
-	"columnStump":  { symbol: 'o', mayWalk: false, mayFly: true, name: "column stump", rarity: 0.05, img: "dc-dngn/granite_stump.png" },
+	"columnBroken": { symbol: 'O', mayWalk: false, mayFly: false, name: "broken column", neverPick: true, img: "dc-dngn/crumbled_column.png" },
+	"columnStump":  { symbol: 'o', mayWalk: false, mayFly: true, name: "column stump", neverPick: true, img: "dc-dngn/granite_stump.png" },
 
-	"gold": 	{ symbol: '$', namePattern: '{goldCount} gold', goldCount: 0, isGold: true,
-				rarity: 2.00, img: "item/misc/gold_pile.png" },
 	"altar":    { symbol: 'A', mayWalk: false, mayFly: false, name: "golden altar", mayPickup: false, light: 4, glow:true,
-				rarity: 0.10, rechargeTime: 12, healMultiplier: 3.0,
+				rechargeTime: 12, healMultiplier: 3.0, neverPick: true,
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
 	"fountain": { symbol: 'F', mayWalk: false, mayFly: true, name: "fountain", mayPickup: false,
-				rarity: 0.10, img: "dc-dngn/dngn_blue_fountain.png" },
+				neverPick: true, img: "dc-dngn/dngn_blue_fountain.png" },
 	"corpse":   { symbol: 'X', namePattern: "remains of a {mannerOfDeath} {usedToBe}", isCorpse: true, neverPick: true,
 				autoCommand: Command.LOOT, img: 'UNUSED/spells/components/skull.png' },
-	"potion":   { symbol: '¡', namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
-				rarity: 2.00, autoCommand: Command.QUAFF, effectDuration: '1d4+4', isPotion: true,
+	"gold": 	{ symbol: '$', isTreasure: 1, namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true,
+				rarity: 50.00, img: "item/misc/gold_pile.png" },
+	"potion":   { symbol: '¡', isTreasure: 1, namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
+				rarity: 20.00, autoCommand: Command.QUAFF, effectDuration: '1d4+4', isPotion: true,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
 				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: ImgPotion },
-	"spell":    { symbol: 'ᵴ', namePattern: 'spell{?effect}', rechargeTime: '3d4', effects: SpellEffects,
-				rarity: 0.50, autoCommand: Command.CAST, isSpell: true,
+	"spell":    { symbol: 'ᵴ', isTreasure: 1, namePattern: 'spell{?effect}', rechargeTime: '3d4', effects: SpellEffects,
+				rarity:  0.50, autoCommand: Command.CAST, isSpell: true,
 				img: "item/scroll/scroll.png" },
-	"ore": 		{ symbol: '"', namePattern: '{variety}', varieties: OreList, isOre: true, neverPick: true,
-				rarity: 1.00,
+	"ore": 		{ symbol: '"', isTreasure: 1, namePattern: '{variety}', varieties: OreList, isOre: true, neverPick: true,
+				rarity:  5.00,
 				imgGet: (self,img) => "item/ring/"+(img || self.variety.img || "i-protection")+".png", imgChoices: OreList },
-	"gem": 		{ symbol: "^", namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
-				rarity: 1.00, effectChance: 1.00, mayThrow: 1, mayTargetPosition: 1, autoCommand: Command.USE,
+	"gem": 		{ symbol: "^", isTreasure: 1, namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
+				rarity: 2.00, effectChance: 0.20, mayThrow: 1, mayTargetPosition: 1, autoCommand: Command.USE,
 				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5 },
-	"weapon": 	{ symbol: '†', namePattern: '{material} {variety} {?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
-				rarity: 1.00, autoCommand: Command.USE,
+	"weapon": 	{ symbol: '†', isTreasure: 1, namePattern: '{material} {variety} {?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
+				rarity: 10.00, autoCommand: Command.USE,
 				useVerb: 'weild',
 				effectChance: 0.05,
 				img: "item/weapon/dagger.png" },
-	"helm": 	{ symbol: '[', namePattern: "{variety} helm{?effect}", varieties: ArmorList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
-				rarity: 0.50, autoCommand: Command.USE,
+	"helm": 	{ symbol: '[', isTreasure: 1, namePattern: "{variety} helm{?effect}", varieties: ArmorList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
+				rarity: 2.00, autoCommand: Command.USE,
 				effectChance: 0.05,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/headgear/helmet2_etched.png" },
-	"armor": 	{ symbol: '&', namePattern: "{variety} armor{?effect}", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
-				rarity: 1.00, autoCommand: Command.USE,
+	"armor": 	{ symbol: '&', isTreasure: 1, namePattern: "{variety} armor{?effect}", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
+				rarity: 2.00, autoCommand: Command.USE,
 				effectChance: 0.05,
 				armorMultiplier: 0.60,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "player/body/armor_mummy.png" },
-	"bracers": 	{ symbol: ']', namePattern: "{variety} bracers{?effect}", varieties: ArmorList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
-				rarity: 0.50, autoCommand: Command.USE,
+	"bracers": 	{ symbol: ']', isTreasure: 1, namePattern: "{variety} bracers{?effect}", varieties: ArmorList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
+				rarity: 2.00, autoCommand: Command.USE,
 				effectChance: 0.05,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "UNUSED/armour/gauntlet1.png" },
-	"boots": 	{ symbol: 'b', namePattern: "{variety} boots{?effect}", varieties: ArmorList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
-				rarity: 0.50, autoCommand: Command.USE,
+	"boots": 	{ symbol: 'b', isTreasure: 1, namePattern: "{variety} boots{?effect}", varieties: ArmorList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
+				rarity: 2.00, autoCommand: Command.USE,
 				effectChance: 0.05,
 				armorMultiplier: 0.10,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/boots2_jackboots.png" },
-	"ring": 	{ symbol: '=', namePattern: "{material} {variety} ring{?effect}", materials: RingMaterialList, varieties: RingList,
+	"ring": 	{ symbol: '=', isTreasure: 1, namePattern: "{material} {variety} ring{?effect}", materials: RingMaterialList, varieties: RingList,
 				effects: RingEffects, slot: Slot.LEFTHAND, isRing: true,
-				rarity: 0.05, autoCommand: Command.USE,
+				rarity: 0.50, autoCommand: Command.USE,
 				effectChance: 0.10,
 				useVerb: 'wear', triggerOnUse: true, effectOverride: { duration: true },
 				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList },
@@ -492,11 +495,10 @@ const ItemTypeList = {
 const ItemSortOrder = ['corpse','weapon','helm','armor','bracers','boots','ring','potion','gem','ore','gold','spell'];
 
 
-const selfInvisibilitySymbol = '?';
 const Brain = { AI: "ai", USER: "user" };
 
 const MonsterTypeDefaults = {
-					symbol: '?',level: 1, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
+					level: 1, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
 					attitude: Attitude.AGGRESSIVE,
 					light: 0,
 					senseBlind: false, senseXray: false, senseItems: false, senseLife: false,
@@ -545,7 +547,7 @@ const MonsterTypeList = {
 		brain: Brain.USER,
 		brainOpensDoors: true,
 		brainTalk: true,
-		light: 7,
+		light: 9,
 		neverPick: true,
 		picksup: true,
 		regenerate: 0.01,
@@ -576,6 +578,7 @@ const MonsterTypeList = {
 	"human": {
 		core: [ 'H', 1, '3:10', 'good', 'cut', 'dc-mon/human.png', '*' ],
 		attitude: Attitude.CALM,
+		brainAlertFriends: true,
 		brainTalk: true,
 		brainOpensDoors: true,
 		isSunChild: true,
@@ -584,6 +587,7 @@ const MonsterTypeList = {
 // EVIL TEAM
 	"Avatar of Balgur": {
 		core: [ 'a', 30, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
+		brainAlertFriends: true,
 		brainTalk: true,
 		immune: [DamageType.BURN,Attitude.PANIC].join(','),
 		isDemon: true,
@@ -592,6 +596,7 @@ const MonsterTypeList = {
 	},
 	"demon": {
 		core: [ 'D', 5, '3:5', 'evil', 'burn', 'player/base/draconian_red_f.png', 'it' ],
+		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.BURN,
 		isDemon: true,
@@ -620,6 +625,7 @@ const MonsterTypeList = {
 	},
 	"goblin": {
 		core: [ 'g', 1, '3:10', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		brainAlertFriends: true,
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
@@ -629,6 +635,7 @@ const MonsterTypeList = {
 	"goblinWar": { 
 		core: [ 'W', 12, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		name: 'goblin warrior',
+		brainAlertFriends: true,
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
@@ -637,6 +644,7 @@ const MonsterTypeList = {
 	"goblinMut": {
 		core: [ 'I', 22, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		name: 'goblin mutant',
+		brainAlertFriends: true,
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
@@ -655,6 +663,7 @@ const MonsterTypeList = {
 	"kobold": {
 		core: [ 'k', 1, '4:20', 'evil', 'cut', 'dc-mon/kobold.png', '*' ],
 		attitude: Attitude.HESITANT,
+		brainAlertFriends: true,
 		brainTalk: true,
 		isEarthChild: true,
 		loot: 'potion',
@@ -724,6 +733,7 @@ const MonsterTypeList = {
 	"soldierAnt": {
 		core: [ 'c', 1, '2:22', 'evil', 'bite', 'dc-mon/animals/soldier_ant.png', 'it' ],
 		name: "soldier ant",
+		brainAlertFriends: true,
 		loot: 'potion',
 		isAnimal: true,
 		speed: 1.5,
@@ -737,7 +747,7 @@ const MonsterTypeList = {
 		vuln: DamageType.BURN
 	},
 	"viper": {
-		core: [ 'v', 5, '3:16', 'evil', 'claw', 'dc-mon/animals/viper.png', 'it' ],
+		core: [ 'v', 5, '3:16', 'evil', 'bite', 'dc-mon/animals/viper.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		isAnimal: true,
 		loot: 'potion',
@@ -747,6 +757,7 @@ const MonsterTypeList = {
 // LUNAR
 	"lunarOne": {
 		core: [ 'l', 12, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
+		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
 		isLunarChild: true,
@@ -884,10 +895,12 @@ TileTypeList.mud.onDepart = function(entity,self) {
 		return;
 	}
 
-	if( entity.travelMode == "walk" && Math.chance(50) ) {
+	if( entity.travelMode == "walk" && !entity.mudded ) {
+		entity.mudded = true;
 		tell( mSubject|mCares,entity,' ',mVerb,'is',' stuck in the mud.');
 		return false;
 	}
+	entity.mudded = false;
 }
 
 TileTypeList.forcefield.onEnterType = function(entity,self) {
@@ -947,15 +960,17 @@ MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 }
 
 MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
-	let f = this.findAliveOthers().includeMe().isAlive().filter( e => e.name==this.name );
+	let f = this.findAliveOthers().includeMe().isAlive().filter( e => e.typeId==this.typeId );
 	if( f.count ) {
+		let numAlerted = 0;
 		f.process( e => {
 			if( e.attitude == Attitude.HESITANT || e.attitude == Attitude.WANDER || e.attacker == Attitude.AWAIT ) {
-				e.attitude = Attitude.AGGRESSIVE;
+				e.changeAttitude( Attitude.AGGRESSIVE );
 			}
 			e.team = (attacker.team == Team.EVIL || attacker.team == Team.NEUTRAL) ? Team.GOOD : Team.EVIL;
+			numAlerted++;
 		});
-		if( this.isAlive() && f.count > 1 ) {
+		if( this.isAlive() && numAlerted ) {
 			tell(mSubject,this,' sonically ',mVerb,'alert',' ',mSubject|mPronoun|mPossessive,this,' friend'+(f.count>2?'s':''),' to attack team '+attacker.team+'!');
 		}
 	}
@@ -1001,6 +1016,7 @@ function loadKeyMapping(name) {
 		T: Command.DEBUGTEST,
 		X: Command.DEBUGKILL,
 		a: Command.DEBUGTHRIVE,
+		s: Command.DEBUGVIEW,
 		i: Command.INVENTORY,
 		q: Command.QUAFF,
 		t: Command.THROW,

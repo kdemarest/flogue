@@ -156,6 +156,11 @@ let deedEnd = function(fn) {
 }
 
 let effectApply = function(origin,effect,target) {
+	if( !effect.op ) {
+		// This is an inert effect. Do nothing.
+		return false;
+	}
+
 	//Some effects will NOT start unless their requirements are met. EG, no invis if you're already invis.
 	if( effect.requires && !effect.requires(target,effect) ) {
 		tell(mSubject,origin,' has no effect on ',mObject,target);

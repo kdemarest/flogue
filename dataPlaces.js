@@ -30,6 +30,7 @@ PlaceList.uniqueIdentity = {
 	}
 };
 */
+let rPROFUSE	= 1000.00;
 let rCOMMON 	= 1.00;
 let rUNCOMMON 	= 0.50;
 let rRARE 		= 0.20;
@@ -104,8 +105,8 @@ ThemeList.gameStart = {
 ThemeList.cavern = {
 	isCore: 	true,
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['nest.bat','nest.spinyFrog','nest.scarab','nest.viper','camp.ogre','camp.goblin','den.kobold'],
-	rUNCOMMON: 	['camp.human','antHive','trollBridge','shaft','collonade','fountain1','fountain4','patch','veil'],
+	rCOMMON: 	['nest.bat',,'nest.scarab','nest.viper','camp.ogre','camp.goblin','den.kobold'],
+	rUNCOMMON: 	['camp.human','antHive','trollBridge','trollPit','shaft','collonade','fountain1','fountain4','patch','veil'],
 	rRARE: 		['den.dog','goblinGathering','demonNest','portal','circle','ruin','swamp','etherHive'],
 	rEPIC: 		['graveYard','lunarEmbassy'],
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
@@ -199,9 +200,10 @@ PlaceList.goblinGathering = {
 
 PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityList) {
 	if( !this.rechargeLeft ) {
-		let f = new Finder(entityList).filter(e=>e.isGoblin && e.health<e.healthMax).near(this.x,this.y,6);
+		let f = new Finder(entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).near(this.x,this.y,6);
 		if( f.count ) {
 			let entity = pick(f.all);
+			let amount = Math.floor((entity.healthMax/2) - entity.health);
 			entity.takeHealing(this,rollDice('1d4'),DamageType.ROT,true);
 			tell( mSubject,this,' ',mVerb,'imbue',' ',mObject,entity,' with dark power.');
 			animationAdd( new AniPaste({
@@ -374,7 +376,7 @@ x^....xl
 x..lᵴ.x.
 xxxxxxx
 `,
-	flags: { rotate: true },
+	flags: { rotate: true, hasWall: true },
 	symbols: {
 		x: "wall"
 	}
@@ -392,31 +394,49 @@ yuy
 		y: VARIETY
 	},
 	onEntityCreate: {
-		ogre: { attitude: Attitude.AWAIT },
-		human: { attitude: Attitude.AWAIT },
-		goblin: { attitude: Attitude.AWAIT }
+		ogre: { attitude: Attitude.AWAIT, tether: 8, tooClose: 2 },
+		human: { attitude: Attitude.WANDER, tether: 1 },
+		goblin: { attitude: Attitude.AWAIT, tether: 8, tooClose: 4 }
 	}
 
 }));
 
-PlaceMany( 'nest', ['bat','spinyFrog','scarab','viper'], VARIETY => ({
+PlaceMany( 'nest', ['scarab','viper'], VARIETY => ({
 	map:
 `
-⋍xx⋍x
-xy⋍⋍x
-xy⋍yx
-xyy⋍x
-.xx⋍.
+.x⋍x.
+x⋍y⋍x
+⋍yyy⋍
+x⋍y⋍x
+.x⋍x.
 `,
-	flags: { rotate: true },
+	flags: { rotate: true, hasWall: true },
 	symbols: {
 		x: "wall",
 		y: VARIETY
 	},
 	onEntityCreate: {
-		spinyFrog: { attitude: Attitude.AWAIT },
-		viper: { attitude: Attitude.AWAIT },
-		scarab: { attitude: Attitude.AWAIT }
+		viper: { attitude: Attitude.WANDER, tether: 2, tooClose: 2 },
+		scarab: { attitude: Attitude.AGGRESSIVE, tether: 2 }
+	}
+}));
+
+PlaceMany( 'nest', ['bat'], VARIETY => ({
+	map:
+`
+b:::b
+:::::
+:::::
+:::::
+b:::b
+`,
+	flags: { rotate: true },
+	symbols: {
+		':': 'pit',
+		b: VARIETY
+	},
+	onEntityCreate: {
+		bat: { attitude: Attitude.WANDER, tether: 7 },
 	}
 }));
 
@@ -428,40 +448,44 @@ xxxxxxx
 xxy*.yx
 xy.....
 x.*yxxx
-xxxxx..
+xxxxx  
 `,
-	flags: { rotate: true },
+	flags: { rotate: true, hasWall: true },
 	symbols: {
 		x: "wall",
 		y: VARIETY
 	},
 	onEntityCreate: {
-		dog: { attitude: Attitude.AWAIT },
-		kobold: { attitude: Attitude.AWAIT }
+		dog: { attitude: Attitude.WANDER, tether: 4, tooClose: 1 },
+		kobold: { tether: 2 }
 	}
 }));
 
 PlaceList.swamp = {
 	map:
 `
-mmmmmmmmmmmmm
+.mmmmmmmmmmm.
 mmwwwfmmwwwmm
 mwwwwwwwwmwmm
 mmwwwfmwmwwmm
-mwwwwmmmwmfmm
+mwwww*mmwmfmm
 mmmwmwmwwwmmm
 mfwwwmwfmwwmm
-mmfwwfwwwwwmm
+mmfwwf*wwwwmm
 mmwmmwmwwmwmm
 mmmwfwwwmwwmm
 mwwwwmwwwfwwm
 mmwmwwmmwwwwm
-mmmmmmmmmmmmm
+.mmmmmmmmmmm.
 `,
 	flags: { rotate: true },
 	symbols: {
 		m: "mud",
-		w: "water"
+		w: "water",
+		f: "spinyFrog"
+	},
+	onEntityCreate: {
+		spinyFrog: { attitude: Attitude.WANDER, tether: 3, tooClose: 3 },
 	}
 }
 PlaceList.etherHive = {
@@ -481,17 +505,15 @@ xx..x
 PlaceList.antHive = {
 	map:
 `
-.........
-.#.#####.
-.#.#a*a#.
-.#.#aaa#.
-.#.##..#.
-.##.##.#.
-..##...#.
-...#####.
-.........
+#.#####
+#.#a*a#
+#.#aaa#
+#.##..#
+##.##.#
+ ##...#
+  #####
 `,
-	flags: { rotate: true },
+	flags: { rotate: true, hasWall: true },
 	symbols: {
 		a: "soldierAnt"
 	}
@@ -527,7 +549,7 @@ PlaceList.balgursChamber = {
 #LL.....LL#
 #####|#####
 `,
-	flags: { rotate: true },
+	flags: { rotate: true, hasWall: true },
 	symbols: {
 		L: "lava",
 		f: "fire"
@@ -540,7 +562,7 @@ PlaceList.portal = {
 .MM,,,MM.
 MM,,,,,MM
 M,,~*~,,M
-M,,*Ώ*,,e
+M,,*P*,,e
 M,,~*~,,M
 MM,,,,,MM
 .MM,,,MM.
@@ -549,30 +571,48 @@ MM,,,,,MM
 	flags: { rotate: true },
 	symbols: {
 		x: "wall",
-		Ώ: "gateway",
+		P: "portal",
 		M: "mist"
 	},
 	onEntityCreate: {
-		gateway: { themeId: 'hellscape' }
+		portal: { themeId: 'hellscape' }
 	}
 }
 
 PlaceList.trollBridge = {
 	map:
 `
-..:::::::::.
-::::::::::::
-........T...
-:::::::::::.
-.:::::::::..
+:::::::::
+:::::::::
+.....T...
+:::::::::
+:::::::::
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+	},
+	onEntityCreate: {
+		troll: { attitude: Attitude.AWAIT, tooClose: 2 }
+	}
+}
+
+PlaceList.trollPit = {
+	map:
+`
+::::::::
+:...::::
+:.*..T..
+:...::::
+::::::::
 `,
 	flags: { rotate: true },
 	symbols: {
 	},
 	onEntityCreate: {
-		troll: { attitude: Attitude.AWAIT }
+		troll: { attitude: Attitude.AWAIT, tooClose: 2 }
 	}
 }
+
 
 PlaceList.sunDiscipleTemple = {
 	map:
@@ -597,7 +637,7 @@ x.ii..x...x..F..B..G..
 x.....x...x...........
 xxxxxxxxxxx...........
 `,
-	flags: { rotate: false },
+	flags: { rotate: false, hasWall: true },
 	symbols: {
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",

@@ -53,6 +53,14 @@ body {
 	height: 160px;
 	overflow-y: hidden;
 }
+.healthWarn {
+	background-color: yellow;
+	color: black;
+}
+.healthCritical {
+	background-color: red;
+	color: black;
+}
 #guiSpells {
 	width: 104px;
 	height: 100px;

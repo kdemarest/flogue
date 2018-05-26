@@ -21,6 +21,17 @@ class Picker {
 		return PickerCache[this.cacheId+'.'+type];
 	}
 
+	get placesRequired() {
+		let table = [];
+		for( let placeId in PlaceList ) {
+			let place = PlaceList[placeId];
+			if( this.theme.rarityTable[placeId]=='required' ) {
+				table.push(place);
+			}
+		}
+		return table;
+	}
+
 	// Contains entries from PlaceList
 	get placeTable() {
 		if( !this.cache('place') ) {
@@ -30,7 +41,7 @@ class Picker {
 				if( place.neverPick || (place.level != 'any' && place.level > this.level) ) {
 					continue;
 				}
-				if( !this.theme.rarityTable[placeId] ) {
+				if( !this.theme.rarityTable[placeId] || this.theme.rarityTable[placeId]=='required' ) {
 					continue;
 				}
 				let placeLevel = (place.level=='any' ? this.level : place.level);
@@ -76,7 +87,10 @@ class Picker {
 		if( !this.cache('item') ) {
 
 			let table = [];
+			let gScale = 1000000;
 
+			let chanceGrandTotal = 0;
+			let itemTypeChance = {};
 			let one = { nothing: { skip:true, level:0 } };
 			Object.each(ItemTypeList, item => {
 				let startIndex = table.length;
@@ -90,7 +104,7 @@ class Picker {
 									return;
 								}
 								if( !this.level ) debugger;
-								let chance = Math.floor(Math.clamp(Math.chanceToAppearSigmoid(level,this.level) * 100000, 1000, 100000));
+								let chance = Math.chanceToAppearSigmoid(level,this.level) * gScale;
 								chance *= (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
 
 								// Someday let the theme prefer items
@@ -104,36 +118,59 @@ class Picker {
 								if( item.rechargeTime ) obj.presets.rechargeTime = this.pickRechargeTime(item);
 								if( item.isArmor ) obj.presets.armor = this.pickArmor(item,m,v,q,e);
 								if( item.isWeapon ) obj.presets.damage = this.pickDamage(obj.presets.rechargeTime,item,m,v,q,e);
-								if( item.isGold ) obj.presets.goldCount = this.pickGoldCount();
+								if( item.isGold ) obj.presets.goldCount = this.pickGoldCount(item);
 								table.push(chance,obj);
 							});
 						});
 					});
 				});
-				// Now rebalance because the number of varieties should not tilt the chance...
-				if( chanceTotal ) {
-					let ratio = (100000 / chanceTotal) * (item.rarity||1);
-					console.log(item.typeId+' balanced by '+ratio);
-					for( let i=startIndex ; i<table.length ; i+=2 ) {
-						table[i] = Math.clamp(Math.floor(table[i]*ratio),1,100000);
-					}
-				}
+				itemTypeChance[item.typeId] = chanceTotal;
+				chanceGrandTotal += chanceTotal;
 			});
-/*
-	Really handy for debugging the item lists!
+
+			if( chanceGrandTotal ) {
+				Object.each(ItemTypeList, item => {
+					if( !itemTypeChance[item.typeId] ) {
+						return;
+					}
+					// Now rebalance because the number of varieties should not tilt the chance...
+					if( !item.rarity ) debugger;
+					let ratio = (gScale / itemTypeChance[item.typeId]) * item.rarity;
+					console.log(item.typeId+' balanced by '+ratio);
+					for( let i=0 ; i<table.length ; i+=2 ) {
+						if( table[i+1].item.typeId == item.typeId ) {
+							table[i] = table[i]*ratio;
+						}
+					}
+				});
+			}
+
+			let actual = {};
+			let count = {};
+			let actualTotal = 0;
+			for( let i=0 ; i<table.length ; i += 2 ) {
+				let t = table[i+1].item.typeId;
+				actual[t] = (actual[t] || 0)+table[i];
+				count[t] = (count[t] || 0)+1;
+				actualTotal += table[i];
+			}
+			Object.each( ItemTypeList, item => {
+				let t = item.typeId;
+				if( !actual[t] ) return;
+				let pct = Math.percent(actual[t]/actualTotal,3);
+				console.log(pct+'% '+t+' in '+count[t]+' varieties');
+			});
+
 			let t = [];
 			for( let i=0 ; i<table.length ; i+=2 ) {
 				t.push([table[i],'L'+table[i+1].level+' '+table[i+1].item.typeId+' '+(table[i+1].presets.effect ? table[i+1].presets.effect.typeId : 'x')]);
 			}
 			t.sort( function(a,b) { return b[0]-a[0]; } );
-			let q = {};
-			for( let i=0 ; i<100 ; ++i ) {
-				let obj = this.pick(table);
-				let id = obj.item.typeId+' '+(obj.presets.effect ? obj.presets.effect.typeId : 'x');
-				q[id] = (q[id]||0)+1;
+			console.log("Top 20 items are: ");
+			for( let i=0 ; i<20 ; ++i ) {
+				console.log( Math.percent(t[i][0]/actualTotal,3)+'  '+t[i][1]);
 			}
-			debugger;
-*/
+
 			this.cache('item',table);
 		}
 		return this.cache('item');
@@ -172,8 +209,17 @@ class Picker {
 		let damage = Rules.playerDamage(this.level) * mult * dm;
 		return Math.max(1,Math.floor(damage));
 	}
-	pickGoldCount() {
-		return Math.max(1,this.level);
+	pickGoldCount(item) {
+		let base = this.level;
+		let v = item.goldVariance;
+		if( v ) {
+			base -= (this.level*v);
+			do {
+				base += Math.randInt(0,this.level*v*2);
+				v = v / 2;
+			} while( Math.chance(20) );
+		}
+		return Math.max(1,base);
 	}
 
 	pick(table,typeId) {

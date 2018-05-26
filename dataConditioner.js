@@ -1,5 +1,8 @@
 class DataConditioner {
 	constructor() {
+		this.validateAndConditionThemeData();
+		this.integratePlaceData();
+		this.prepareStaticData();
 	}
 
 	validateAndConditionThemeData() {
@@ -20,6 +23,8 @@ class DataConditioner {
 			let theme = ThemeList[themeId];
 			theme.id = themeId;
 			theme.rarityTable = {};
+			extractRarity(theme,'required',theme.rREQUIRED);
+			extractRarity(theme,rPROFUSE,theme.rPROFUSE);
 			extractRarity(theme,rCOMMON,theme.rCOMMON);
 			extractRarity(theme,rUNCOMMON,theme.rUNCOMMON);
 			extractRarity(theme,rRARE,theme.rRARE);
@@ -96,8 +101,11 @@ class DataConditioner {
 			let NO_MONSTERS = -1;
 			let level = NO_MONSTERS;
 			let place = PlaceList[placeId];
+			place.tileCount = 0;
 			for( let i=0 ; i<place.map.length ; ++i ) {
 				let s = place.map.charAt(i);
+				if( s=='\t' || s=='\n' ) continue;
+				place.tileCount ++;
 				let monster = MonsterTypeList[place.symbols[s] || s2t[s]];
 				if( monster ) {
 					level = Math.max(level,monster.level||1);
@@ -110,7 +118,7 @@ class DataConditioner {
 			if( place.level == NO_MONSTERS ) {
 				place.level = 'any';
 			}
-			console.log("place "+place.id+" is level "+place.level);
+			//console.log("place "+place.id+" is level "+place.level);
 		}
 	}
 

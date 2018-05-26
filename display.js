@@ -293,7 +293,7 @@ class ViewMap {
 		for( let y=0 ; y<this.d ; ++y ) {
 			for( let x=0 ; x<this.d ; ++x ) {
 				let tile = drawList[y][x];
-				let light = tile[0];
+				let light = observer.isSpectator ? 10 : tile[0];
 				for( let i=1 ; i<tile.length ; ++i ) {
 					let entity = tile[i];
 					if( !entity ) continue;

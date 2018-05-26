@@ -15,8 +15,8 @@
 	let NO_ZONE = -1;
 
 	let TileType = {
-		Unknown: '?',
-		Floor: ' ',
+		Unknown: ' ',
+		Floor: '.',
 		Wall: '#'
 	};
 	let T = TileType;
@@ -193,23 +193,42 @@
 			this.xMax += amount;
 			this.yMax += amount;
 		}
-		copyFrom(area,xMin,yMin,xMax,yMax) {
+		copyFrom(area,xMin,yMin,xMax,yMax,tx,ty) {
 			area.traverse( (x,y) => {
 				if( x>=xMin && x<=xMax && y>=yMin && y<=yMax ) {
 					let obj = area.getAll(x,y);
 					if( obj && obj.tile !== T.Unknown ) {
-						this.setAll(x-xMin,y-yMin,obj);
+						this.setAll(tx+x-xMin,ty+y-yMin,obj);
 					}
 				}
 			});
 			return this;
 		}
-		sizeToExtents() {
+		moveInjectList(injectList,dx,dy) {
+			let newInjectList = [];
+			for( let key in injectList ) {
+				let pos = key.split(',');
+				let x = parseInt(pos[0])+dx;
+				let y = parseInt(pos[1])+dy;
+				newInjectList[''+x+','+y] = injectList[key];
+			}
+			// Very important here to NOT replace the inject list, but only mondify it.
+			for(var key in injectList) {
+				delete injectList[key];
+			}
+			Object.assign(injectList,newInjectList);
+		}
+		sizeToExtentsWithBorder(injectList,border) {
 			let xMin,yMin,xMax,yMax;
 			[xMin,yMin,xMax,yMax] = this.getExtents();
 			let area = new Mason();
-			area.copyFrom(this,xMin,yMin,xMax,yMax);
+			area.setDimensions(xMax-xMin+1+border*2,yMax-yMin+1+border*2);
+			let tx = border;
+			let ty = border;
+			area.copyFrom(this,xMin,yMin,xMax,yMax,tx,ty);
 			Object.assign(this,area);
+
+			this.moveInjectList(injectList,border-xMin,border-yMin);
 		}
 		randPos(expand=0) {
 			let xExpand = expand;
@@ -218,9 +237,21 @@
 			let y = Math.randInt(this.yMin-yExpand,this.yMax+1+yExpand);
 			return [x,y];
 		}
+		randPos4(xa=0,ya=0,xb=0,yb=0) {
+			return [Math.randInt(this.xMin+xa,this.xMax+1+xb),Math.randInt(this.yMin+ya,this.xMax+1+yb)];
+		}
+
 		count(tileType) {
 			let c = 0;
 			this.traverse( (x,y) => c += (this.getTile(x,y)==tileType ? 1 : 0) );
+			return c;
+		}
+		countNonWallNonUnkown() {
+			let c = 0;
+			this.traverse( (x,y) => {
+				let tile = this.getTile(x,y);
+				c += (tile!=T.Wall && tile!=T.Unknown ? 1 : 0);
+		});
 			return c;
 		}
 		placeRandom(tile,onTile,amount=1) {
@@ -267,6 +298,18 @@
 			}
 			return count;
 		}
+		countAdjacentFloorish(x,y) {
+			x = Math.floor(x);
+			y = Math.floor(y);
+			let count = 0;
+			for( let dir=0 ; dir<DirAdd.length ; ++dir ) {
+				let tile = this.getTile(x+DirAdd[dir].x,y+DirAdd[dir].y);
+				if( tile != T.Unknown && tile != T.Wall ) {
+					++count;
+				}
+			}
+			return count;
+		}
 		countOrtho(x,y,tileType) {
 			x = Math.floor(x);
 			y = Math.floor(y);
@@ -278,7 +321,7 @@
 			}
 			return count;
 		}
-		zoneFlood(x,y,zoneId,ortho,toZoneId=NO_ZONE,toTile=T.Unknown) {
+		zoneFlood(x,y,zoneId,ortho,toZoneId=NO_ZONE) {
 			function zap(x,y) {
 				for( let dir=0; dir<DirAdd.length ; dir += step ) {
 					let nx = x + DirAdd[dir].x;
@@ -287,7 +330,6 @@
 					let t = self.getAll(nx,ny);
 					if( t.zoneId !== zoneId) { continue; }
 					t.zoneId = toZoneId;
-					t.tile = toTile || t.tile;
 					++count;
 					hotTiles.push(nx,ny);
 				}
@@ -297,7 +339,6 @@
 			let t = self.getAll(x,y);
 			if( t.zoneId !== zoneId ) debugger;
 			t.zoneId = toZoneId;
-			t.tile = toTile || t.tile;
 			let count = 1;
 			let hotTiles = [x,y];
 			do {
@@ -314,7 +355,7 @@
 					let ny = y + DirAdd[dir].y;
 					if( nx<self.xMin || ny<self.yMin || nx>self.xMax || ny>self.yMax ) continue;
 					let t = self.getAll(nx,ny);
-					if( t.tile !== T.Floor || t.zoneId == zoneId) { continue; }
+					if( t.tile == T.Unknown || t.tile==T.Wall || (SymbolToType[t.tile].isTileType && !SymbolToType[t.tile].mayWalk) || t.zoneId == zoneId) { continue; }
 					t.zoneId = zoneId;
 					++count;
 					hotTiles.push(nx,ny);
@@ -323,7 +364,7 @@
 			let self = this;
 			let step = ortho ? 2 : 1;
 			let t = self.getAll(x,y);
-			if( t.tile !== T.Floor ) { return 0; }
+			if( t.tile == T.Unknown || t.tile == T.Wall ) { return 0; }
 			t.zoneId = zoneId;
 			let count = 1;
 			let hotTiles = [x,y];
@@ -449,7 +490,7 @@
 				let link = {};
 				while( proximity.length ) {
 					let p = proximity.shift();
-					let pair = ZoneChar.charAt(Math.min(p.zoneId,p.tZoneId))+'-'+ZoneChar.charAt(Math.max(p.zoneId,p.tZoneId));
+					let pair = Math.min(p.zoneId,p.tZoneId)+'-'+Math.max(p.zoneId,p.tZoneId);
 					if( link[pair] ) {
 						//console.log('skipping '+pair);
 						continue;
@@ -467,6 +508,38 @@
 				}
 			} while( reps-- );
 		}
+
+		fit(px,py,expand,placeMap) {
+			if( px<0 || py<0 || px+placeMap.xLen>this.xLen || py+placeMap.yLen>this.yLen ) {
+				return false;
+			}
+			for( let y=0-expand ; y<placeMap.yLen+expand ; ++y ) {
+				for( let x=0-expand ; x<placeMap.xLen+expand ; ++x ) {
+					let tile = this.getTile(px+x,py+y);
+					if( tile !== T.Unknown ) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		inject(px,py,placeMap,fn) {
+			for( let y=0 ; y<placeMap.yLen ; ++y ) {
+				for( let x=0 ; x<placeMap.xLen ; ++x ) {
+					let pSym = placeMap.tileSymbolGet(x,y);
+					if( pSym === undefined ) {
+						debugger;
+					}
+					let mSym = this.getTile(px+x,py+y)
+					if( mSym !== TILE_UNKNOWN ) {
+						debugger;
+					}
+					fn(px+x,py+y,pSym);
+					this.setTile(px+x,py+y,pSym);
+				}
+			}
+		}
+
 
 		tweakOrtho(find,surroundedBy,howMany,become) {
 			let count = 0;
@@ -512,7 +585,7 @@
 		}
 		wallify() {
 			this.traverse( (x,y)=> {
-				if( this.getTile(x,y)!=T.Floor && this.countAdjacent(x,y,T.Floor)>0 ) {
+				if( this.getTile(x,y)==T.Unknown && this.countAdjacentFloorish(x,y)>0 ) {
 					this.setTile(x,y,T.Wall);
 				}
 			},-1,-1,-1,-1);
@@ -541,6 +614,7 @@
 				}
 			});
 		}
+/*
 		paste(area,xPos,yPos,zoneId) {
 			xPos = Math.floor(xPos);
 			yPos = Math.floor(yPos);
@@ -553,7 +627,7 @@
 			});
 			return area;
 		}
-
+*/
 		renderToString(drawZones) {
 			let s = '';
 			let yLast = this.yMin;
@@ -591,10 +665,25 @@
 		let floorMade = 0;
 		let makeChance = 30;
 
-		repeat( Math.max(1,floorToMake*seedPercent), n => {
-			map.setTile(...map.randPos(-3),T.Floor);
-			++floorMade;
+		let seedToMake = Math.max(1,floorToMake*seedPercent);
+
+		map.traverse( (x,y) => {
+			let tile = map.getTile(x,y);
+			if( tile != T.Wall && tile != T.Unknown ) {
+				seedToMake--;
+				floorMade++;
+			}
 		});
+
+		while( seedToMake>0 ) {
+			let x,y;
+			[x,y] = map.randPos(-3),T.Floor
+			if( map.getTile(x,y) == T.Unknown ) {
+				map.setTile(x,y,T.Floor);
+				--seedToMake;
+				++floorMade;
+			}
+		}
 
 		let reps = 50;
 		let zoneList = [];
@@ -609,9 +698,12 @@
 		}
 
 		while( more.call(this) ) {
-			let list = map.gather( (x,y) => map.countOrtho(x,y,T.Floor) > 0 );
+			let list = map.gather( (x,y) => {
+				let tile = map.getTile(x,y);
+				return tile == T.Unknown && map.countOrtho(x,y,T.Floor) > 0;
+			});
 			console.log("Gathered "+list.length);
-			console.log("floor="+floorMade+' of '+floorToMake);
+			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
 
 			while( list.length ) {
 				let y = list.pop();
@@ -622,7 +714,8 @@
 				}
 			}
 
-			console.log("floor="+floorMade+' of '+floorToMake);
+			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
+			console.log("floor-likes = floor="+Math.floor(map.countNonWallNonUnkown()/map.area()*100)+'%');
 			let removeCount = 0;
 			zoneList = map.floodAll();
 			console.log( zoneList.length+' zones');
@@ -635,8 +728,10 @@
 				floorMade -= count;
 				removeCount += 1;
 			}
-			console.log("Removed "+removeCount+'. now floor='+floorMade);
-			console.log( zoneList.length+' zones remain');
+			if( removeCount ) {
+				console.log("Removed "+removeCount+'. now floor='+floorMade);
+				console.log( zoneList.length+' zones remain');
+			}
 		}
 		map.removeDiagnoalQuads();
 		map.removeSingletonWalls(3);
@@ -661,6 +756,76 @@
 
 	}
 
+	function positionPlaces(map,picker,numPlaceTiles,injectList) {
+
+		function pickPlace() {
+			// We try to resist picking the same place multiple times on a level.
+			let reps = 5;
+			let place;
+			do {
+				place = picker.pick(picker.placeTable);
+			} while( reps-- && Math.chance((placeUsed[place.id]||0)*30) );
+			placeUsed[place.id] = (placeUsed[place.id]||0)+1;
+			return place;
+		}
+
+		function tryToFit(place) {
+			// WARNING! Important for this to be a DEEP copy.
+			place = jQuery.extend(true, {}, place);
+
+			console.log("Trying to place "+place.id);
+			Place.selectSymbols(place);
+			Place.generateMap(place);
+			Place.rotateIfNeeded(place);
+			let fitReps = 300;
+			let x,y;
+			let fits;
+			do {
+				[x,y] = map.randPos4(0,0,-place.map.xLen,-place.map.yLen);
+				let expand = place.hasWall ? 0 : 1;
+				fits = map.fit(x,y,expand,place.map);
+			} while( !fits && --fitReps );
+			if( !fits ) debugger;
+			if( fits ) {
+				console.log('Placed at ('+x+','+y+')');
+				map.inject(x,y,place.map,function(x,y,symbol) {
+					let type = SymbolToType[symbol];
+					if( !type ) debugger;
+					if( place.onEntityCreate && place.onEntityCreate[type.typeId] ) {
+						//console.log(type.typeId+' at '+x+','+y+' will get ',place.onEntityCreate[type.typeId]);
+						injectList[''+x+','+y] = place.onEntityCreate[type.typeId];
+					}
+				});
+				return true;
+			}
+			return false;
+		}
+
+		let placeUsed = [];	// used to avoid duplicating places too much
+		let placeRosterRequired = picker.placesRequired;
+		placeRosterRequired.map( place => { numPlaceTiles -= place.tileCount; } );
+
+		let placeRosterRandom = [];
+		let reps = 1000;
+		while( numPlaceTiles>0 && --reps) {
+			let place = pickPlace();
+			placeRosterRandom.push(place);
+			numPlaceTiles -= place.tileCount;
+		}
+		if( !reps ) debugger;
+
+		placeRosterRandom.sort( (a,b) => b.tileCount-a.tileCount );
+		let placeRoster = placeRosterRequired.concat(placeRosterRandom);
+
+		for( let place of placeRoster ) {
+			let success = tryToFit(place);
+			if( !success && placeRosterRequired.includes(place) ) {
+				debugger;
+			}
+		}
+	}
+
+
 	function runImmediate(maker) {
 		while( !maker.next().done ) {
 		}
@@ -678,13 +843,10 @@
 		makeMore();
 	}
 
-	function buildMap(scape,palette,onStep) {
-		let drawZones = true;
+	function buildMap(picker,scape,palette,injectList,onStep) {
+		let drawZones = false;
 		function render() {
-			//map.fill(T.Unknown);
-			//cave.paste(map,1,1);
-			let s = cave.renderToString(drawZones);
-			if( !drawZones ) debugger;
+			let s = map.renderToString(drawZones);
 			onStep(s);
 		}
 		palette = palette || {};
@@ -699,17 +861,19 @@
 		let map = new Mason();
 		map.setDimensions(scape.dim);
 
+		let numPlaceTiles = Math.floor(map.xLen()*map.yLen()*scape.floorDensity*scape.placeDensity);
+		positionPlaces(map,picker,numPlaceTiles,injectList);
+
 		if( scape.architecture == 'cave' ) {
 			makeAmoeba(map,scape.floorDensity,scape.seedPercent,scape.mustConnect);
 		}
-		if( scape.architecture == 'rooms' ) {
-			makeRooms(map,scape.floorDensity,scape.maxRoomScale);
-		}
+//		if( scape.architecture == 'rooms' ) {
+//			makeRooms(map,scape.floorDensity,scape.maxRoomScale);
+//		}
 
 		map.connectAll(scape.wanderingPassage);
 		map.wallify();
-		map.sizeToExtents();
-		map = map.paste(new Mason(),1,1);
+		map.sizeToExtentsWithBorder(injectList,1);
 		map.convert(T.Unknown,T.Wall);
 
 		for( let i=0; i<scape.entranceCount; ++i ) {

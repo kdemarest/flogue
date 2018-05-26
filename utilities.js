@@ -24,6 +24,15 @@ function nop() {}
 	Math.chance = function(percent) {
 		return Math.rand(0,100) < percent;
 	}
+	Math.fixed = function(value,decimals) {
+		return Number.parseFloat(value).toFixed(decimals);
+	}
+	Math.percent = function(value,decimals) {
+		let p = 100*Math.pow(10,decimals);
+		let n = '            '+Math.floor(value*p);
+		n = n.substr(0,n.length-decimals)+'.'+n.substr(n.length-decimals);
+		return n.substr(-(3+decimals));
+	}
 	String.capitalize = function(s) {
 	    return s.charAt(0).toUpperCase() + s.slice(1);
 	}
@@ -52,6 +61,13 @@ function nop() {}
 			[array[i], array[j]] = [array[j], array[i]];
 		}
 		return array;
+	}
+	Object.isEmpty= function(obj) {
+		for(var key in obj) {
+			if(obj.hasOwnProperty(key))
+				return false;
+		}
+		return true;
 	}
 	Object.each = function(obj,fn) {
 		for( let key in obj ) {
@@ -216,7 +232,7 @@ let GetUniqueEntityId = (function() {
 			shuffled = true;
 		}
 
-		let id = +(humanNameList?pick(humanNameList)+'.':'')+typeId+(level?'.'+level:'')+'.'+timeBasedUid();
+		let id = (humanNameList?pick(humanNameList)+'.':'')+typeId+(level?'.'+level:'')+'.'+timeBasedUid();
 		return id;
 	}
 

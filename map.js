@@ -1,5 +1,3 @@
-let TILE_UNKNOWN = ' ';
-
 function isItem(e) { return e instanceof Item; }
 
 // MAP
@@ -27,6 +25,9 @@ class SimpleMap {
 	setDimensions(xLen,yLen) {
 		this.xLen = xLen;
 		this.yLen = yLen;
+	}
+	getArea() {
+		return this.xLen*this.yLen;
 	}
 	inBounds(x,y) {
 		return x>=0 && x<this.xLen && y>=0 && y<this.yLen;
@@ -66,43 +67,6 @@ class SimpleMap {
 		this.tile = [];
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			this.tile[y] = m[y].join('');
-		}
-	}
-	fit(px,py,placeMap) {
-		if( px<0 || py<0 || px+placeMap.xLen>this.xLen || py+placeMap.yLen>this.yLen ) {
-			return false;
-		}
-		let floor = TileTypeList.floor.symbol;
-		let wall = TileTypeList.wall.symbol;
-		//debugger;
-		for( let y=0 ; y<placeMap.yLen ; ++y ) {
-			for( let x=0 ; x<placeMap.xLen ; ++x ) {
-				let pSym = placeMap.tileSymbolGet(x,y);
-				if( pSym !== TILE_UNKNOWN ) {
-					let mSym = this.tileSymbolGet(px+x,py+y);
-//					if( pSym == wall && mSym == floor )
-//						return false;
-					if( mSym == wall && pSym != wall )
-						return false;
-					if( mSym != floor )
-						return false;
-				}
-			}
-		}
-		return true;
-	}
-	inject(px,py,placeMap,fn) {
-		for( let y=0 ; y<placeMap.yLen ; ++y ) {
-			for( let x=0 ; x<placeMap.xLen ; ++x ) {
-				let pSym = placeMap.tileSymbolGet(x,y);
-				if( pSym === undefined ) {
-					debugger;
-				}
-				if( pSym !== TILE_UNKNOWN ) {
-					fn(px+x,py+y,pSym);
-					this.tileSymbolSet(px+x,py+y,pSym);
-				}
-			}
 		}
 	}
 	toString() {

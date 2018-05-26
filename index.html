@@ -5,28 +5,29 @@
 <link rel="stylesheet" type="text/css" href="minireset.css">
 <link rel="stylesheet" type="text/css" href="index.css">
 <!--script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script-->
-<script src="utilities.js"></script>
-<script src="data.js"></script>
-<script src="dataHumanNames.js"></script>
-<script src="dataPlaces.js"></script>
-<script src="dataConditioner.js"></script>
-<script src="dataPicker.js"></script>
-<script src="dataMason.js"></script>
-<script src="jquery.3.3.1.js"></script>
-<script src="pixi.min.js"></script>
-<script src="deed.js"></script>
-<script src="map.js"></script>
-<script src="item.js"></script>
-<script src="entity.js"></script>
-<script src="anim.js"></script>
-<script src="tell.js"></script>
-<script src="views.js"></script>
-<script src="display.js"></script>
-<script src="sentence.js"></script>
-<script src="finder.js"></script>
-<script src="area.js"></script>
-<script src="world.js"></script>
-<qscript src="levels.js"></script>
+<script src="utilities.js" charset="utf-8"></script>
+<script src="data.js" charset="utf-8"></script>
+<script src="dataHumanNames.js" charset="utf-8"></script>
+<script src="dataPlaces.js" charset="utf-8"></script>
+<script src="dataConditioner.js" charset="utf-8"></script>
+<script src="dataPicker.js" charset="utf-8"></script>
+<script src="dataMason.js" charset="utf-8"></script>
+<script src="jquery.3.3.1.js" charset="utf-8"></script>
+<script src="pixi.min.js" charset="utf-8"></script>
+<script src="deed.js" charset="utf-8"></script>
+<script src="map.js" charset="utf-8"></script>
+<script src="item.js" charset="utf-8"></script>
+<script src="entity.js" charset="utf-8"></script>
+<script src="place.js" charset="utf-8"></script>
+<script src="anim.js" charset="utf-8"></script>
+<script src="tell.js" charset="utf-8"></script>
+<script src="views.js" charset="utf-8"></script>
+<script src="display.js" charset="utf-8"></script>
+<script src="sentence.js" charset="utf-8"></script>
+<script src="finder.js" charset="utf-8"></script>
+<script src="area.js" charset="utf-8"></script>
+<script src="world.js" charset="utf-8"></script>
+<qscript src="levels.js" charset="utf-8"></script>
 <script>
 
 /*
@@ -68,7 +69,7 @@ function checkDeaths(entityList) {
 	Array.filterInPlace( entityList, entity => {
 		if( entity.isDead() ) {
 			entity.die();
-			return entity.isUser();	// do not remove the player from the entity list.
+			return false;
 		}
 		return true;
 	});
@@ -156,32 +157,35 @@ function main(levelName) {
 		let KeyToCommand = loadKeyMapping("default");
 
 		let player = playerFind(entityList);
-		if( !player || player.isDead() ) {
-			tick(1.0);
-			render(player || spectator);
+		if( !player ) {
+			spectator.isSpectator = true;
+			spectator.senseXray = true;
+			spectator.light = 12;
+			player = spectator;
+		}
+
+		spectator = player;
+		player.command = KeyToCommand[''+e.key] !== undefined ? KeyToCommand[''+e.key] : Command.NONE;
+
+		let timePasses = gui.userCommandHandler.evalCommand(player,e,player.command);
+		if( player.isSpectator ) {
+			player.act();
+		}
+		if( timePasses && player.command !== Command.NONE ) {
+			tick(player.speed);
 		}
 		else {
-			player.command = KeyToCommand[''+e.key] !== undefined ? KeyToCommand[''+e.key] : Command.NONE;
-
-			let timePasses = gui.userCommandHandler.evalCommand(player,e,player.command);
-			if( timePasses && player.command !== Command.NONE ) {
-				tick(player.speed);
-			}
-			else {
-				// This is required to make commands that do NOT pass time, like donning armor, work.
-				player.act(false);
-			}
-			let area = world.levelChange(map,entityList);
-			if( area ) {
-				map = area.map;
-				entityList = area.entityList;
-				player = playerFind(entityList);
-			}
-
-			render(player);
-			spectator.x = player.x;
-			spectator.y = player.y;
+			// This is required to make commands that do NOT pass time, like donning armor, work.
+			player.act(false);
 		}
+		let area = world.levelChange(map,entityList);
+		if( area ) {
+			map = area.map;
+			entityList = area.entityList;
+			player = playerFind(entityList);
+		}
+
+		render(player);
 	}
 
 	function worldOverlayAdd(group,x,y,sticker) {
@@ -194,10 +198,7 @@ function main(levelName) {
 		gui.viewMiniMap.setArea(area);
 	}
 
-	let dataConditioner = new DataConditioner();
-	dataConditioner.validateAndConditionThemeData();
-	dataConditioner.integratePlaceData();
-	dataConditioner.prepareStaticData();
+	new DataConditioner();
 
 	let startingLevel = 10;
 	window.world = new World(startingLevel,onAreaChange);
@@ -212,13 +213,7 @@ function main(levelName) {
 	gui.viewRange = new ViewRange(worldOverlayAdd,worldOverlayRemove);
 	gui.viewInventory = new ViewInventory('guiInventory',imageRepo);
 	gui.userCommandHandler = new UserCommandHandler(gui.viewInventory,gui.viewRange,gui.viewSpells);
-	let spectator = {
-		x: 0,
-		y: 0,
-		vis: [],
-		canPerceiveEntity: () => true,
-		calcVis: () => calcVis(map,spectator.x,spectator.y,MaxSightDistance,false,false,spectator.vis)
-	};
+	let spectator;
 
 	let area = world.createArea(null,0,ThemeList[startingLevel<=1 ? 'gameStart' : 'cavern'],startingLevel>1 ? 'stairsUp' : false);
 	world.gateTo(area.id);
