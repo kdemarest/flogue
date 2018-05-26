@@ -124,7 +124,7 @@ let EffectTypeList = {
 	water: 			{ level:  0, rarity: 1.00, isWater: 1 },
 	blank: 			{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
 	invisibility: 	{ level: 10, rarity: 0.05, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible },
-	seeinvisible: 	{ level: 10, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, isHelp: 1, name: 'see invisible' },
+	seeInvisible: 	{ level: 10, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, isHelp: 1, name: 'see invisible' },
 	haste: 			{ level:  7, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5 },
 	slow: 			{ level:  3, rarity: 1.00, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, requires: e=>e.speed>0.5 },
 	regeneration: 	{ level: 20, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1 },
@@ -164,7 +164,7 @@ let SayStatList = {
 	invisible: function(subj,obj,oldValue,newValue) {
 		return [mSubject,subj,' suddenly ',mVerb,newValue?'wink':'appear',newValue?' out of sight':' from thin air','!'];
 	},
-	seeInvisible: function(subj,obj,oldValue,newValue) {
+	senseInvisible: function(subj,obj,oldValue,newValue) {
 		return [mSubject,subj,' can see invisible things!'];
 	},
 	speed: function(subj,obj,oldValue,newValue) {
@@ -306,7 +306,7 @@ const ArmorEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regen
 const BracersEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','resistance'].includes(k) ) );
 const BootsEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'flight', 'resistance'].includes(k) ) );
 const DartEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','poison','fire','cold','blindness','slow','vuln'].includes(k) ) );
-const GemEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','luminari','greed','echoloc','seeinvisible'].includes(k) ) );
+const GemEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','luminari','greed','echoloc','seeInvisible'].includes(k) ) );
 
 PotionEffects.healing.rarity = 10.00;
 
@@ -338,8 +338,8 @@ const ArmorList = toFab({
 	"leather": 		{ level:  4, armorMultiplier: 0.80, ingredientId: 'leather' },
 	"studded": 		{ level:  6, armorMultiplier: 0.90, ingredientId: 'iron ingot' },
 	"chain": 		{ level: 10, armorMultiplier: 1.00, ingredientId: 'iron ingot' },
-	"steel plate": 	{ level: 15, armorMultiplier: 1.00, ingredientId: 'iron ingot' },
-	"troll hide": 	{ level: 20, armorMultiplier: 1.20, ingredientId: 'troll hide' },
+	"steelPlate": 	{ level: 15, armorMultiplier: 1.00, ingredientId: 'iron ingot' },
+	"trollHideArmor": 	{ level: 20, armorMultiplier: 1.20, ingredientId: 'troll hide' },
 	"chitin": 		{ level: 25, armorMultiplier: 1.00, ingredientId: 'chitin' },
 	"elven": 		{ level: 30, armorMultiplier: 1.30, ingredientId: 'chitin' },
 	"dwarven": 		{ level: 35, armorMultiplier: 1.10, ingredientId: 'chitin' },
@@ -379,6 +379,11 @@ const GemList = toFab({
 	"diamond": 		{ intrinsicEffect: "invisibility", img: "Gem Type3 Black" },
 });
 
+const StuffList = toFab({
+	"trollHide": { name: "troll hide" },
+	"bones": {},
+});
+
 /* RING IMG NAMES
 	"agate"
 	"brass"
@@ -404,7 +409,7 @@ const RingMaterialList = toFab({
 	"brass": 	{ img: 'brass' },
 	"copper": 	{ img: 'bronze' },
 	"silver": 	{ img: 'silver' },
-	"gold": 		{ img: 'gold' }
+	"gold": 	{ img: 'gold' }
 });
 
 const RingList = GemList;
@@ -427,10 +432,12 @@ const WEAPON_EFFECT_DAMAGE_PERCENT = 10;
 
 const ItemTypeList = {
 	"random":	{ symbol: '*', isRandom: 1, mayPickup: false, neverPick: true },
+// GATEWAYS
 	"stairsDown": { symbol: '>', name: "stairs down", gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, neverPick: true, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
 	"stairsUp":   { symbol: '<', name: "stairs up", gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, neverPick: true, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
 	"gateway":    { symbol: '𝞟', name: "gateway", gateDir: 0, gateInverse: 'gateway', mayPickup: false, neverPick: true, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
 	"portal":     { symbol: 'Ώ', name: "portal", gateDir: 0, gateInverse: 'portal', mayPickup: false, neverPick: true, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
+// DECOR
 	"columnBroken": { symbol: 'O', mayWalk: false, mayFly: false, name: "broken column", neverPick: true, img: "dc-dngn/crumbled_column.png" },
 	"columnStump":  { symbol: 'o', mayWalk: false, mayFly: true, name: "column stump", neverPick: true, img: "dc-dngn/granite_stump.png" },
 
@@ -439,12 +446,14 @@ const ItemTypeList = {
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
 	"fountain": { symbol: 'F', mayWalk: false, mayFly: true, name: "fountain", mayPickup: false,
 				neverPick: true, img: "dc-dngn/dngn_blue_fountain.png" },
+// CORPSE
 	"corpse":   { symbol: 'X', namePattern: "remains of a {mannerOfDeath} {usedToBe}", isCorpse: true, neverPick: true,
 				autoCommand: Command.LOOT, img: 'UNUSED/spells/components/skull.png' },
-	"gold": 	{ symbol: '$', isTreasure: 1, namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true,
+// TREASURE
+	"coin": { symbol: '$', isTreasure: 1, namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true,
 				rarity: 50.00, img: "item/misc/gold_pile.png" },
 	"potion":   { symbol: '¡', isTreasure: 1, namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
-				rarity: 20.00, autoCommand: Command.QUAFF, effectDuration: '1d4+4', isPotion: true,
+				rarity:  5.00, autoCommand: Command.QUAFF, effectDuration: '1d4+4', isPotion: true,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
 				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: ImgPotion },
 	"spell":    { symbol: 'ᵴ', isTreasure: 1, namePattern: 'spell{?effect}', rechargeTime: '3d4', effects: SpellEffects,
@@ -491,8 +500,13 @@ const ItemTypeList = {
 				effectChance: 0.10,
 				useVerb: 'wear', triggerOnUse: true, effectOverride: { duration: true },
 				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList },
+// INGREDIENTS
+	"stuff": 	{ symbol: '%', isTreasure: 1, namePattern: "{variety}{?effect}", varieties: StuffList,
+				rarity: 15.00, autoCommand: Command.USE, 
+				imgGet: (self,img) => "item/"+(img || (self?self.variety.img:'') || 'misc/misc_rune')+".png", imgChoices: StuffList },
+
 };
-const ItemSortOrder = ['corpse','weapon','helm','armor','bracers','boots','ring','potion','gem','ore','gold','spell'];
+const ItemSortOrder = ['corpse','weapon','helm','armor','bracers','boots','ring','potion','gem','ore','coin','spell'];
 
 
 const Brain = { AI: "ai", USER: "user" };
@@ -609,7 +623,7 @@ const MonsterTypeList = {
 		invisible: true,
 		isPlanar: 1,
 		light: 6,
-		loot: 'ring',
+		loot: 'ring.seeInvisible',
 		packAnimal: true,
 		sneakAttackMult: 3
 	},
@@ -618,7 +632,7 @@ const MonsterTypeList = {
 		immune: UndeadImmunity,
 		dark: 2,
 		isUndead: true,
-		loot: 'bones',
+		loot: 'potion.rot',
 		senseLife: true,
 		resist: UndeadResistance,
 		vuln: UndeadVulnerability
@@ -630,6 +644,7 @@ const MonsterTypeList = {
 		isGoblin: true,
 		isEarthChild: true,
 		packAnimal: true,
+		loot: 'coin',
 		sayPrayer: 'Oh mighty Thagzog...'
 	},
 	"goblinWar": { 
@@ -656,6 +671,7 @@ const MonsterTypeList = {
 		glow: 1,
 		immune: DamageType.BURN,
 		isDemon: true,
+		loot: 'potion.fire',
 		senseInvisible: true,
 		travelMode: "fly",
 		vuln: DamageType.FREEZE
@@ -666,7 +682,7 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		isEarthChild: true,
-		loot: 'potion',
+		loot: 'weapon.dart',
 		packAnimal: true
 	},
 	"ogreKid": { 
@@ -750,7 +766,7 @@ const MonsterTypeList = {
 		core: [ 'v', 5, '3:16', 'evil', 'bite', 'dc-mon/animals/viper.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		isAnimal: true,
-		loot: 'potion',
+		loot: 'potion.poison',
 		speed: 2.0
 	},
 
@@ -792,7 +808,7 @@ const MonsterTypeList = {
 		attitude: Attitude.WANDER,
 		immune: DamageType.POISON,
 		isAnimal: true,
-		loot: 'potion'
+		loot: 'potion.poison'
 	},
 	"sheep": {
 		core: [ 'r', 1, '1:20', 'neutral', 'bite', 'dc-mon/animals/sheep.png', 'it' ],

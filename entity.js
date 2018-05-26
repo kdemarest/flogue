@@ -175,7 +175,7 @@ class Entity {
 		if( entity.ownerOfRecord ) {
 			entity = entity.ownerOfRecord;
 		}
-		if( (this.senseBlind || (entity.invisible && !this.seeInvisible)) && entity.id!==this.id ) { // you can always perceive yourself
+		if( (this.senseBlind || (entity.invisible && !this.senseInvisible)) && entity.id!==this.id ) { // you can always perceive yourself
 			return false;
 		}
 		return this.canPerceivePosition(entity.x,entity.y);
@@ -578,7 +578,7 @@ class Entity {
 		if( attacker.ownerOfRecord ) {
 			attacker = attacker.ownerOfRecord;
 		}
-		if( attacker && attacker.invisible && !this.seeInvisible ) {
+		if( attacker && attacker.invisible && !this.senseInvisible ) {
 			amount *= (attacker.sneakAttackMult || 2);
 		}
 		if( this.isVuln(damageType) ) {
@@ -678,7 +678,7 @@ class Entity {
 	}
 
 	attack(other,isRanged,onDamage) {
-		if( (this.senseBlind && !this.baseType.senseBlind) || (other.invisible && !this.seeInvisible) ) {
+		if( (this.senseBlind && !this.baseType.senseBlind) || (other.invisible && !this.senseInvisible) ) {
 			if( Math.chance(50) ) {
 				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,other,' but in the wrong direction!');
 				return;
@@ -717,7 +717,7 @@ class Entity {
 		let picker = new Picker(corpse.level);
 		let obj = picker.pick(picker.itemTable,corpse.loot);
 		if( obj === false || !obj.item || !obj.item.isTreasure ) {
-			obj = picker.pick(picker.itemTable,'gold');
+			obj = picker.pick(picker.itemTable,'coin');
 		}
 		if( obj === false || !obj.item || !obj.item.isTreasure ) {
 			tell(mSubject,this,' ',mVerb,'find',' nothing.');

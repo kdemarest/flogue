@@ -2,7 +2,7 @@
 class Item {
 	constructor(owner,itemType,position,presets,inject) {
 		let picker = new Picker(owner.level);
-		if( !presets ) {
+		if( !presets && !itemType.neverPick ) {
 			let obj = picker.pick(picker.itemTable,itemType.typeId);
 			presets = obj.presets;
 		}
@@ -28,6 +28,13 @@ class Item {
 		merge(this,this.quality);
 		merge(this,this.material);
 		merge(this,this.variety);
+
+		// Important to check whether the gold comes from a preset. If so, it was randomly
+		// generated and needs to be perturbed.
+		if( presets && presets.goldCount && this.goldVariance ) {
+			// Can't do this in the pick table! Has to be somewhere else.
+			this.goldCount = Math.floor(this.goldCount+Math.rand(0,this.goldCount*this.goldVariance));
+		}
 
 		if( this.effect !== undefined ) {
 			if( this.effect.isInert /* || (this.effectChance !== undefined && Math.chance((1-this.effectChance)*100) ) )*/ ) {

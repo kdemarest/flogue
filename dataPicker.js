@@ -110,14 +110,20 @@ class Picker {
 								// Someday let the theme prefer items
 
 								chanceTotal += chance;
-								let obj = { level: level, typeId: item.typeId, item: item, presets: {} };
-								if( !v.skip ) obj.presets.variety = v;
-								if( !m.skip ) obj.presets.material = m;
+								let obj = {
+									level: level,
+									keywords: '!'+item.typeId+'!',
+									item: item,
+									presets: {}
+								};
+								if( !v.skip ) { obj.presets.variety = v; obj.keywords += item.typeId+'.'+v.typeId+'!'+v.typeId+'!'; }
+								if( !m.skip ) { obj.presets.material = m; obj.keywords += item.typeId+'.'+m.typeId+'!'+m.typeId+'!'; }
 								if( !q.skip ) obj.presets.quality = q;
-								if( !e.skip ) obj.presets.effect = e;
+								if( !e.skip ) { obj.presets.effect = e; obj.keywords += item.typeId+'.'+e.typeId+'!' }
 								if( item.rechargeTime ) obj.presets.rechargeTime = this.pickRechargeTime(item);
 								if( item.isArmor ) obj.presets.armor = this.pickArmor(item,m,v,q,e);
 								if( item.isWeapon ) obj.presets.damage = this.pickDamage(obj.presets.rechargeTime,item,m,v,q,e);
+								// WARNING! This will skew the gold count improperly!
 								if( item.isGold ) obj.presets.goldCount = this.pickGoldCount(item);
 								table.push(chance,obj);
 							});
@@ -211,34 +217,50 @@ class Picker {
 	}
 	pickGoldCount(item) {
 		let base = this.level;
-		let v = item.goldVariance;
-		if( v ) {
-			base -= (this.level*v);
-			do {
-				base += Math.randInt(0,this.level*v*2);
-				v = v / 2;
-			} while( Math.chance(20) );
-		}
-		return Math.max(1,base);
+		return base;
 	}
 
-	pick(table,typeId) {
+	pick(_table,typeId) {
+
+		let table;
 		let total = 0;
-		for( let i=0 ; i<table.length ; i += 2 ) {
-			if( !typeId || table[i+1].typeId == typeId ) {
+
+		if( !typeId ) {
+			table = _table;
+			for( let i=0 ; i<table.length ; i += 2 ) {
 				total += table[i];
 			}
 		}
+		else {
+			// We are allowed to pass in any VARIETY or MATERIAL to this, and it will
+			let choices = [];
+			table = _table;
+			let k = '!'+typeId+'!';
+			for( let i=0 ; i<table.length ; i += 2 ) {
+				let t = table[i+1];
+				let ok = ( t.typeId && t.typeId == typeId ) || ( t.keywords && t.keywords.indexOf(k)>=0 );
+				if( ok ) {
+					choices.push(table[i],table[i+1]);
+					total += table[i];
+				}
+			}
+			table = choices;
+		}
+
 		if( !total ) {
+			debugger;
 			return false;
 		}
+
+//		if( table.length == 2 ) {
+//			debugger;
+//		}
+
 		let n = Math.rand(0,total);
 		let i = -2;
 		do {
 			i += 2;
-			if( !typeId || table[i+1].typeId == typeId ) {
-				n -= table[i];
-			}
+			n -= table[i];
 		} while( n>0 );
 		if( i>table.length ) {
 			debugger;
