@@ -756,22 +756,23 @@ const MonsterTypeList = {
 
 // LUNAR
 	"lunarOne": {
-		core: [ 'l', 12, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_demonologist.png', '*' ],
+		core: [ 'L', 12, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_demonologist.png', '*' ],
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
 		isLunarChild: true,
 		name: "lunar one",
-		rarity: 10,
+		rarity: 1.0,
 		vuln: DamageType.BURN
 	},
 "lunarReaper": {
 		core: [ 'l', 1, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
+		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
 		name: "lunar reaper",
-		rarity: 10,
-		travelType: ''
+		rarity: 1.0,
+		travelType: 'fly',
 		vuln: DamageType.BURN
 	},
 
