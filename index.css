@@ -23,25 +23,13 @@ body {
 	width: 32px;
 	height: 32px;
 }
-#guiInventory {
-	display: none;
-	z-index: 10;
-	white-space: pre;
-	background-color: rgba(177,177,99, 0.60);
-	width: 100%;
-	height: 100%;
-	position: absolute;
-	top:0;
-	left:0;
-	overflow-y: scroll;
-}
 #guiMessageBox {
 	display: block;
 	white-space: pre;
-	font-family: "Ariel", serif;
-	font-size: 16px;
-	line-height: 16px;
-	height: 48px;
+	font-family: 'Raleway', sans-serif;
+	font-size: 14px;
+	line-height: 14px;
+	height: 56px;
 	width: 100%;
 	margin: 0px 0px;
 	overflow-y: scroll;
@@ -52,9 +40,11 @@ body {
 	color: orange;
 }
 #guiStatus {
-	width: 104px;
+	width: 140px;
 	height: 160px;
 	overflow-y: hidden;
+	font-family: 'Raleway', sans-serif;
+	font-size: 14px;
 }
 .healthWarn {
 	background-color: yellow;
@@ -65,24 +55,24 @@ body {
 	color: black;
 }
 #guiSpells {
-	width: 104px;
+	width: 140px;
 	height: 100px;
 	display: block;
 	white-space: pre;
-	font-family: "Ariel", serif;
+	font-family: 'Raleway', sans-serif;
 	font-size: 16px;
 	margin: 0px 0px;
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
 #guiInfo {
-	width: 104px;
+	width: 140px;
 	height: 90px;
 	display: block;
 	white-space: pre;
-	font-family: "Ariel", serif;
 	border-top: 1px solid white;
-	font-size: 12px;
+	font-family: 'Raleway', sans-serif;
+	font-size: 14px;
 	margin: 0px 0px;
 	overflow-y: hidden;
 	overflow-x: hidden;
@@ -116,27 +106,153 @@ body {
 .unlit {
 	color: gray;
 }
-.newItem {
+.guiInventory {
+	display: none;
+	z-index: 10;
+	white-space: pre;
+	background-color: rgba(0,0,0,0.63);
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top:0;
+	left:0;
+	overflow-y: auto;
+}
+.guiInventory table {
+	font-family: 'Raleway', sans-serif;
+	font-size: 14px;
+	opacity: 0.8;
+}
+
+.guiInventory::-webkit-scrollbar {
+    width: 20px;
+}
+.guiInventory::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 5px grey; 
+    border-radius: 10px;
+}
+.guiInventory::-webkit-scrollbar-thumb {
+    background: grey; 
+    border-radius: 10px;
+}
+.guiInventory::-webkit-scrollbar-thumb:hover {
+    background: #b30000; 
+}
+
+.invCategories img:hover {
+	background-color: rgb(110,110,110,0.73);
+}
+
+.invCategories .iconLit {
+	background-color: rgb(120,120,120,0.85);
+	border-bottom-left-radius: 0px;
+	border-bottom-right-radius: 0px;
+}
+
+
+.invCategories {
+	margin-left: 90px;
+	margin-top: 8px;
+	margin-bottom: 12px;
+}
+
+.invCategories img {
+	margin-right: 14px;
+	cursor: pointer;
+	width: 32px;
+	border-radius: 4px;
+	opacity: 0.8;
+}
+
+
+.inv .newItem {
 	font-size: 10px;
 	color: gold;
 	font-style: italic;
 }
-table tr td {
-	vertical-align: top;
+table .inv {
+	border-collapse: separate;
+	margin-left: 6px;
 }
-table .inv tr td {
-	vertical-align: top;
-	text-align: left;
-    padding-left: 2px;
-    padding-right: 8px;
-    white-space: nowrap;
+table .inv thead tr td {
+	padding-bottom: 10px;
 }
-table .inv tr .right {
-	text-align: right;
+
+table .inv thead tr td:nth-child(1) {
+	width: 35px;
 }
-table .inv tr .ctr {
+table .inv thead tr td:nth-child(2) {
+	width: 24px;
+	padding-right: 0px;
+}
+table .inv thead tr td:nth-child(3) {
+	width: 22px;
+}
+table .inv thead tr td:nth-child(4) {
+	width: 190px;
+}
+table .inv thead tr td:nth-child(5) {
+	width: 48px;
 	text-align: center;
 }
+table .inv thead tr td:nth-child(6) {
+	width: 98px;
+	text-align: center;
+
+}
+table .inv thead tr td:nth-child(7) {
+	width: 64px;
+}
+
+table .inv tbody tr td:nth-child(1) img {
+	margin-left: 6px;
+	width: 16px;
+}
+table .inv tbody tr td:nth-child(2) {
+    padding-right: 6px;
+    font-size: 16px;
+}
+table .inv tbody tr td:nth-child(3) {
+	padding-right: 4px;
+	font-size: 18px;
+}
+table .inv tbody tr td:nth-child(6) {
+	padding-right: 3px;
+}
+
+
+table .inv tbody tr {
+	border-radius: 6px;
+	cursor: pointer;
+}
+table .inv tbody tr:hover {
+	background-color: rgb(110,110,110,0.73);
+}
+table .inv tbody tr img {
+	width: 20px;
+}
+
+table .inv tr:first-child td:first-child { border-top-left-radius: 4px; }
+table .inv tr:first-child td:last-child { border-top-right-radius: 4px; }
+table .inv tr:last-child td:first-child { border-bottom-left-radius: 4px; }
+table .inv tr:last-child td:last-child { border-bottom-right-radius: 4px; }
+
+table .inv tbody tr td {
+	vertical-align: middle;
+	text-align: left;
+    padding-left: 2px;
+	padding-right: 8px;
+	white-space: nowrap;
+	vertical-align: bottom;
+	padding-bottom: 1px;
+}
+table .inv tbody tr .right {
+	text-align: right;
+}
+table .inv tbody tr .ctr {
+	text-align: center;
+}
+
 .health-bar {
 	display: none;
 	-webkit-box-sizing: border-box;

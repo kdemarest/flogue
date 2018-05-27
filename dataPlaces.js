@@ -94,6 +94,15 @@ ScapeList.caveBroadWinding = theme => ({
 	wanderingPassage: 	true,
 });
 
+ScapeList.caveTown = theme => ({
+	dim: 				Math.randInt(30,40),
+	architecture: 		"cave",
+	floorDensity: 		Math.rand(0.60,0.70),
+	seedPercent: 		Math.rand(0.10,0.20),
+	mustConnect: 		false,
+	wanderingPassage: 	false,
+});
+
 
 ThemeList.gameStart = {
 	isCore: 	true,
@@ -110,6 +119,13 @@ ThemeList.cavern = {
 	rRARE: 		['den.dog','goblinGathering','demonNest','portal','circle','ruin','swamp','etherHive'],
 	rEPIC: 		['graveYard','lunarEmbassy'],
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+}
+
+ThemeList.dwarfTown = {
+	scapes: 	['caveTown'],
+	rREQUIRED: 	['dwarfHouse','dwarfHouse','dwarfHouse','dwarfSmithy'],
+	rCOMMON: 	['dwarfTemple','dwarfHouse','dwarfPlaza'],
+	monsters: 	['isDwarf']
 }
 
 ThemeList.spooky = {
@@ -138,7 +154,7 @@ ThemeList.hellscape = {
 	rCOMMON: 	['demonNest'],
 	rUNCOMMON: 	['nest.blueScarab','nest.redScarab','collonade','ruin','fountain1'],
 	rRARE: 		['etherHive','balgursChamber'],
-	prefer: 	['fire','mud'],
+	prefer: 	['flames','mud'],
 	monsters: 	['isDemon','isPlanar'],
 	//items: 		['isGem'],
 }
@@ -264,7 +280,7 @@ PlaceList.circle = {
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: function() { return pick(['pit','fire','lava','water','mist','mud','forcefield']); }
+		x: function() { return pick(['pit','flames','lava','water','mist','mud','forcefield']); }
 	}
 }
 
@@ -350,7 +366,7 @@ PlaceList.patch = {
 `,
 	flags: { rotate: true },
 	symbols: {
-		m: function() { return pick(['mud','grass','pit','fire','water','mist']); }
+		m: function() { return pick(['mud','grass','pit','flames','water','mist']); }
 	}
 };
 
@@ -361,7 +377,7 @@ mmmm
 `,
 	flags: { rotate: true },
 	symbols: {
-		m: function() { return pick(['fire','mist','mud']); }
+		m: function() { return pick(['flames','mist','mud']); }
 	}
 };
 
@@ -532,7 +548,7 @@ fLffL
 	flags: { rotate: true },
 	symbols: {
 		L: "lava",
-		f: "fire"
+		f: "flames"
 	}
 }
 PlaceList.balgursChamber = {
@@ -553,7 +569,7 @@ PlaceList.balgursChamber = {
 	flags: { rotate: true, hasWall: true },
 	symbols: {
 		L: "lava",
-		f: "fire"
+		f: "flames"
 	}
 }
 PlaceList.portal = {
@@ -656,3 +672,89 @@ xxxxxxxxxxx...........
 		"kingStatue":    { mayWalk: false, mayFly: true, opacity: 0, name: "king statue", img: "dc-mon/statues/wucad_mu_statue.png"},
 	}
 }
+
+PlaceList.dwarfTemple = {
+	map:
+`
+ xxxxxxx 
+ xf.A.fx 
+xx.....xx
+xb.....bx
+x.......x
+xb.....bx
+x.......x
+xb.....bx
+x.......x
+xxxx+xxxx
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		A: "altar",
+		b: "brazier",
+		f: "fountain"
+	}
+}
+
+PlaceList.dwarfHouse = {
+	map:
+`
+xxxxxxxxx
+x.......x
+x.......x
+x..d....x
+x.......+
+x.......x
+x.......x
+x....d..x
+x.......x
+x.......x
+xxxx+xxxx
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		d: "dwarf",
+	},
+}
+
+PlaceList.dwarfSmithy = {
+	map:
+`
+ xxxxx
+ xfffx 
+.......
+..d....
+.......
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		d: "dwarf",
+		f: "flames",
+	},
+	onEntityCreate: {
+		dwarf: { job: "smith", attitude: Attitude.AWAIT, tether: 2 }
+	}
+}
+
+PlaceList.dwarfPlaza = {
+	map:
+`
+ ....
+......
+..ff..
+..ff..
+......
+ .... 
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		f: "fountain"
+	}
+}
+

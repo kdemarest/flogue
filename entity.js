@@ -38,6 +38,12 @@ class Entity {
 			this.name = this.name.split('/')[this.pronoun=='she' ? 1 : 0];
 		}
 		this.name = /*'L'+this.level+' '+*/(this.name || String.tokenReplace(this.namePattern,this));
+
+		if( this.inventoryLoot ) {
+			this.lootGenerate(new Picker(this.level),this.inventoryLoot,this,loot => {
+				this._itemTake(loot);
+			});
+		}
 	}
 
 	record(s,pending) {
@@ -166,6 +172,16 @@ class Entity {
 		return this.vis;
 	}
 
+	canPerceivePosition(x,y) {
+		if( x===undefined || y===undefined ) {
+			debugger;
+		}
+		if( typeof this.vis[y]==='undefined' || typeof this.vis[y][x]==='undefined' ) {
+			return false;
+		}
+		return this.vis[y][x];
+	}
+
 	canPerceiveEntity(entity) {
 		if( !this.vis || (entity.isMonsterType && this.senseLife) || (entity.isItemType && this.senseItems) ) {
 			return true;
@@ -181,7 +197,7 @@ class Entity {
 		return this.canPerceivePosition(entity.x,entity.y);
 	}
 
-	canPerceivePosition(x,y) {
+	canTargetPosition(x,y) {
 		if( x===undefined || y===undefined ) {
 			debugger;
 		}
@@ -190,6 +206,10 @@ class Entity {
 		}
 		return this.vis[y][x];
 	}
+	canTargetEntity(entity) {
+		return this.canTargetPosition(entity.x,entity.y);
+	}
+
 	doff(item) {
 		if( !item.inSlot || !item.slot ) {
 			debugger;
@@ -651,7 +671,7 @@ class Entity {
 		}
 	}
 
-	takePush(attacker,distance) {
+	takeShove(attacker,distance) {
 		if( attacker.isItemType ) {
 			attacker = attacker.ownerOfRecord || attacker;
 		}
@@ -661,7 +681,7 @@ class Entity {
 			debugger;
 			return;
 		}
-		tell(mSubject,this,' is pushed!');
+		tell(mSubject,this,' is shoved!');
 		let success = true;
 		while( success && distance-- ) {
 			success = this.moveTo(this.x+dx,this.y+dy,false);
@@ -681,6 +701,8 @@ class Entity {
 	}
 
 	attack(other,isRanged,onDamage) {
+		this.lastAttackTargetId = other.id;	// Set this early, despite blindness!
+
 		if( (this.senseBlind && !this.baseType.senseBlind) || (other.invisible && !this.senseInvisible) ) {
 			if( Math.chance(50) ) {
 				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,other,' but in the wrong direction!');
@@ -711,18 +733,22 @@ class Entity {
 		this._itemTake(item);
 		return item;
 	}
+	lootGenerate(picker,lootString,target=this,callback) {
+		let objList = picker.pickLoot(picker.itemTable,lootString);
+		objList.process( obj => {
+			let loot = new Item( target, obj.item, { x:target.x, y:target.y }, obj.presets, {isLoot:true} );
+			callback(loot);
+		});
+	}
 	findLoot(item) {
 		let corpse = item.usedToBe;
 		if( !corpse ) {
 			tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
 			return;
 		}
-		let self = this;
-		let picker = new Picker(corpse.level);
-		let objList = picker.pickLoot(picker.itemTable,corpse.loot);
 		let found = [];
-		objList.process( obj => {
-			let loot = self.itemCreateByType(obj.item,obj.presets,{isLoot:true});
+		this.lootGenerate(new Picker(corpse.level),corpse.loot,this,loot=>{
+			this._itemTake(loot);
 			found.push(mObject|mA|mList|mBold,loot);
 		});
 		let description = [
@@ -768,7 +794,7 @@ class Entity {
 		let y = this.y + DirectionAdd[dir].y;
 		return this.moveTo(x,y);
 	}
-	// Returns false if the move fails. Very important for things like takePush().
+	// Returns false if the move fails. Very important for things like takeShove().
 	moveTo(x,y,attackAllowed=true) {
 		if( this.map.inBounds(x,y) ) {
 			let f = this.findAliveOthers().at(x,y);
@@ -781,12 +807,18 @@ class Entity {
 			}
 			else
 			// Switch with friends, else bonk!
-			if( f.count && this.isMyFriend(f.first) && this.isUser() ) {
+			if( f.count && !f.first.job && this.isMyFriend(f.first) && this.isUser() ) {
 				// swap places with allies
 				allyToSwap = f.first;
 			}
 			else
+			if( f.count && f.first.job ) {
+				this.guiViewCreator = { view: f.first.job, entity: f.first };
+				return false;
+			}
+			else
 			if( f.count ) {
+
 				(f.first.onTouch || bonk)(this,f.first);
 				return false;
 			}
@@ -798,14 +830,14 @@ class Entity {
 
 			// Does this tile type always do something to you when you depart any single instance of it?
 			if( tileTypeHere.onDepart ) {
-				if( tileTypeHere.onDepart(this,adhoc(tileTypeHere,xOld,yOld)) === false ) {
+				if( tileTypeHere.onDepart(this,adhoc(tileTypeHere,this.map,xOld,yOld)) === false ) {
 					return false;
 				}
 			}
 
 			// Are we leaving this TYPE of tile entirely? Like leaving water, fire or mud?
 			if( tileType.name != tileTypeHere.name && tileTypeHere.onDepartType ) {
-				if( tileTypeHere.onDepartType(this,adhoc(tileTypeHere,xOld,yOld),adhoc(tileType,x,y)) === false ) {
+				if( tileTypeHere.onDepartType(this,adhoc(tileTypeHere,this.map,xOld,yOld),adhoc(tileType,this.map,x,y)) === false ) {
 					return false;
 				}
 			}
@@ -813,13 +845,13 @@ class Entity {
 			// If we can not occupy the target tile, then touch it/bonk into it
 			let collider = this.findCollider(this.travelMode,x,y,allyToSwap);
 			if( collider ) {
-				(collider.onTouch || bonk)(this,adhoc(collider,x,y));
+				(collider.onTouch || bonk)(this,adhoc(collider,this.map,x,y));
 				return false;
 			}
 
 			// Are we entering a new tile TYPE?
 			if( tileType.name != tileTypeHere.name && tileType.onEnterType ) {
-				if( tileType.onEnterType(this,adhoc(tileType,x,y),tileTypeHere,xOld,yOld) === false ) {
+				if( tileType.onEnterType(this,adhoc(tileType,this.map,x,y),tileTypeHere,xOld,yOld) === false ) {
 					return false;
 				}
 			}
@@ -837,7 +869,7 @@ class Entity {
 
 			// We must be touching the new tile, so act on that.
 			if( tileType.onTouch ) {
-				tileType.onTouch(this,adhoc(tileType,x,y));
+				tileType.onTouch(this,adhoc(tileType,this.map,x,y));
 			}
 
 			if( this.picksup ) {
@@ -886,7 +918,7 @@ class Entity {
 				this.loseTurn = false;
 				let tileType = this.map.tileTypeGet(this.x,this.y);
 				if( tileType.onTouch ) {
-					tileType.onTouch(this,adhoc(tileType,this.x,this.y));
+					tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
 				}
 				break;
 			}
@@ -896,7 +928,7 @@ class Entity {
 				}
 				let tileType = this.map.tileTypeGet(this.x,this.y);
 				if( tileType.onTouch ) {
-					tileType.onTouch(this,adhoc(tileType,this.x,this.y));
+					tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
 				}
 				break;
 			}
@@ -957,19 +989,22 @@ class Entity {
 			case Command.THROW: {
 				let item = this.commandItem;
 				let target = this.commandTarget;
+				this.lastAttackTargetId = target.id;
 				item.moveTo(this.map,target.x,target.y);
-				if( this.commandTarget.typeId ) {	// indicates it is not an (x,y) array
+				if( !this.commandTarget.isPosition ) {	// indicates it is not an (x,y) array
 					tell(mSubject,item,' ',mVerb,item.attackVerb||'hit',' ',mObject,target);
 				}
 				else {
 					tell(mSubject,item,' ',mVerb,item.attackVerb||'hit');
 				}
-				item.trigger(this.command,this,target);
+				let result = item.trigger(this.command,this,target);
+				// the result tells whether an effect was applied to the target (entity or psition)
 				break;
 			}
 			case Command.CAST: {
 				let item = this.commandItem;
 				let target = this.commandTarget;
+				this.lastAttackTargetId = target.id;
 				item.x = this.x;
 				item.y = this.y;
 				tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');

@@ -1,5 +1,6 @@
 class World {
-	constructor(startingLevel=1,onAreaChange) {
+	constructor(startingLevel=1,getPlayer,onAreaChange) {
+		this.getPlayer = getPlayer;
 		this.areaList = {};
 		this.area = null;
 		this.startingLevel = startingLevel;
@@ -7,6 +8,9 @@ class World {
 			gate: null
 		};
 		this.onAreaChange = onAreaChange;
+	}
+	get player() {
+		return this.getPlayer();
 	}
 	createArea(areaId,levelDelta,theme,entranceSymbol) {
 		let level = this.area ? this.area.level+levelDelta : this.startingLevel;
@@ -35,13 +39,6 @@ class World {
 		area.build(palette)
 		return area;
 	}
-	gateTo(areaId) {
-		let area = this.areaList[areaId];
-		if( !area ) debugger;
-		this.area = area;
-		this.onAreaChange(this.area);
-		return area;
-	}
 	setPending(gate) {
 		let toArea = this.areaList[gate.toAreaId];
 		if( !toArea ) {
@@ -66,15 +63,11 @@ class World {
 		this.pending.gate = gate;
 	}
 	detectPlayerOnGate(map,entityList) {
-		let player = playerFind(entityList);
-
 		// checking the commandToDirection means the player just moved, and isn't just standing there.
-		if( !player || ( player.commandLast!=Command.WAIT && commandToDirection(player.commandLast)===false) ) {
+		if( !this.player || ( this.player.commandLast!=Command.WAIT && commandToDirection(this.player.commandLast)===false) ) {
 			return;
 		}
-		let x = player.x;
-		let y = player.y;
-		let gateHere = map.findItem().at(x,y).filter( item => item.gateDir!==undefined );
+		let gateHere = map.findItem().at(this.player.x,this.player.y).filter( item => item.gateDir!==undefined );
 		if( !gateHere.first ) {
 			return;
 		}
@@ -84,9 +77,14 @@ class World {
 		}
 		this.setPending(gate)
 	}
-
-	levelChange(map,entityList) {
-		this.detectPlayerOnGate(map,entityList);
+	gateTo(areaId) {
+		let area = this.areaList[areaId];
+		if( !area ) debugger;
+		this.area = area;
+		return area;
+	}
+	levelChange() {
+		this.detectPlayerOnGate(this.area.map,this.area.entityList);
 
 		let gate = this.pending.gate;
 		if( !gate ) {
@@ -94,17 +92,12 @@ class World {
 		}
 		this.pending.gate = null;
 
-		let player = playerFind(entityList);
-		tell(mSubject,player,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
+		tell(mSubject,this.player,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
 
 		// WARNING! Someday we will need to push the DeedList that is NOT the player into the old area.
 		// and resurrect the new area's deed list.
 		let newArea = this.gateTo(gate.toAreaId);
-		let g = newArea.map.findItem().isId(gate.toGateId);
-		if( !g.first ) debugger;
-
-		player.gateTo(newArea,g.first.x,g.first.y);
-		tell(mSubject,player,' ',mVerb,'are',' now on level '+newArea.id)
+		this.onAreaChange(newArea,gate.toGateId);
 		return newArea;
 	}
 

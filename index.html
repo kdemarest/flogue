@@ -2,6 +2,7 @@
 <head>
 <meta charset="utf-8"/>
 <!-- link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/minireset.css/0.0.2/minireset.css"-->
+<link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="minireset.css">
 <link rel="stylesheet" type="text/css" href="index.css">
 <!--script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script-->
@@ -22,12 +23,14 @@
 <script src="anim.js" charset="utf-8"></script>
 <script src="tell.js" charset="utf-8"></script>
 <script src="views.js" charset="utf-8"></script>
+<script src="viewJobs.js" charset="utf-8"></script>
 <script src="display.js" charset="utf-8"></script>
 <script src="sentence.js" charset="utf-8"></script>
 <script src="finder.js" charset="utf-8"></script>
+<script src="gui.js" charset="utf-8"></script>
 <script src="area.js" charset="utf-8"></script>
 <script src="world.js" charset="utf-8"></script>
-<qscript src="levels.js" charset="utf-8"></script>
+<qscript src="levels.js" charset="utf-8"></qscript>
 <script>
 
 /*
@@ -39,14 +42,15 @@ Resources:
 */
 
 
-function adhoc(tileType,x,y) {
+
+function adhoc(tileType,map,x,y) {
 	if( tileType.isItemType ) {
 		// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
 		// This also means no permanent data can exist in them. Meanwhile, items and
 		// persistent in the map item list.
 		return tileType;
 	}
-	return Object.assign({},tileType,{x:x,y:y});
+	return Object.assign({},tileType,{x:x,y:y,map:map,isPosition:true});
 }
 
 
@@ -61,80 +65,97 @@ function clearCommands(entityList) {
 	});
 }
 
-function playerFind(entityList) {
-	return entityList.find( entity => entity.isUser() );
-}
 
-function checkDeaths(entityList) {
-	Array.filterInPlace( entityList, entity => {
-		if( entity.isDead() ) {
-			entity.die();
-			return false;
-		}
-		return true;
-	});
-}
+function tick(speed,map,entityList) {
 
-function orderByTurn(entityList) {
-	let list = [[],[],[]];	// players, pets, others
-	entityList.map( entity => {
-		let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
-		list[group].push(entity);
-	});
-	list[2].sort( (a,b) => a.speed-b.speed );
-	return [].concat(list[0],list[1],list[2]);
-}
+	function orderByTurn() {
+		let list = [[],[],[]];	// players, pets, others
+		entityList.map( entity => {
+			let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
+			list[group].push(entity);
+		});
+		list[2].sort( (a,b) => a.speed-b.speed );
+		return [].concat(list[0],list[1],list[2]);
+	}
 
-function tickItemList(itemList,dt,map,entityList) {
-	for( let item of itemList ) {
-		if( item.rechargeLeft > 0 ) {
-			item.rechargeLeft = Math.max(0,item.rechargeLeft-1);
-		}
-		if( item.onTick ) {
-			item.onTick.call(item,dt,map,entityList);
+	function tickItemList(itemList,dt) {
+		for( let item of itemList ) {
+			if( item.rechargeLeft > 0 ) {
+				item.rechargeLeft = Math.max(0,item.rechargeLeft-1);
+			}
+			if( item.onTick ) {
+				item.onTick.call(item,dt,map,entityList);
+			}
 		}
 	}
-}
 
+	function checkDeaths(entityList) {
+		Array.filterInPlace( entityList, entity => {
+			if( entity.isDead() ) {
+				entity.die();
+				return false;
+			}
+			return true;
+		});
+	}
+
+	if( speed === false ) {
+		let player = entityList.find( entity => entity.isUser() );
+		player.act(false);
+		clearCommands(entityList);
+		return;
+	}
+
+	let entityListByTurnOrder = orderByTurn(entityList);
+	let dt = 1 / speed;
+	for( let entity of entityListByTurnOrder ) {
+		DeedManager.tick(entity,dt);
+		entity.actionCount += entity.speed / speed;
+		while( entity.actionCount >= 1 ) {
+			entity.calcVis();
+			entity.think();
+			entity.act();
+			tickItemList(entity.inventory,dt,map,entityList);
+			DeedManager.calc(entity);
+			entity.actionCount -= 1;
+		}
+	}
+	map.actionCount += 1 / speed;
+	while( map.actionCount >= 1 ) {
+		tickItemList(map.itemList,dt,map,entityList);
+		map.actionCount -= 1;
+	}
+	DeedManager.cleanup();
+	checkDeaths(entityList);
+	clearCommands(entityList);
+}
 
 function main(levelName) {
 
-	function render(observer) {
-		gui.viewStatus.render(observer,entityList);
-		gui.viewSpells.render(observer);
-		gui.viewInfo.render(observer);
-		gui.viewInventory.render(observer);
-		gui.viewRange.render(observer);
-		let drawList = createDrawList(observer,map,entityList);
-		gui.viewMap.draw(drawList,observer);
-		gui.viewMiniMap.render(observer);	// must be after viewMap so the visibility
+	function playerFind() {
+		return player;
 	}
 
-	function tick(speed) {
-
-		let entityListByTurnOrder = orderByTurn(entityList);
-		let dt = 1 / speed;
-		for( let entity of entityListByTurnOrder ) {
-			DeedManager.tick(entity,dt);
-			entity.actionCount += entity.speed / speed;
-			while( entity.actionCount >= 1 ) {
-				entity.calcVis();
-				entity.think();
-				entity.act();
-				tickItemList(entity.inventory,dt,map,entityList);
-				DeedManager.calc(entity);
-				entity.actionCount -= 1;
-			}
-		}
-		map.actionCount += 1 / speed;
-		while( map.actionCount >= 1 ) {
-			tickItemList(map.itemList,dt,map,entityList);
-			map.actionCount -= 1;
-		}
-		DeedManager.cleanup();
-		checkDeaths(entityList);
-		clearCommands(entityList);
+	function areaFind() {
+		return world.area;
 	}
+
+	function onUserEvent(event) {
+		let timePasses = gui.userCommandHandler.evalCommand(player,event);
+		TickWorld(timePasses);
+	}
+	window.onUserEvent = onUserEvent;
+
+	function TickWorld(timePasses) {
+		tick( timePasses ? player.speed : false, area.map, area.entityList );
+		if( world.levelChange() ) {
+			area = world.area;
+		}
+
+		gui.tick();
+		gui.render();
+	}
+	window.TickWorld = TickWorld;
 
 	function messageCanPerceiveEntity(observer,entity) {
 		if( !observer ) {
@@ -152,104 +173,54 @@ function main(levelName) {
 		targetElement.scrollTop = targetElement.scrollHeight
 	}
 
-	function onPlayerKey(e) {
-		// let keyUp=38, keyDown=40, keyLeft=37, keyRight=39;
-		let KeyToCommand = loadKeyMapping("default");
-
-		let player = playerFind(entityList);
-		if( !player ) {
-			spectator.isSpectator = true;
-			spectator.senseXray = true;
-			spectator.light = 12;
-			player = spectator;
+	function playerStartup(area) {
+		let gate = area.getUnusedGateByTypeId('stairsUp');
+		if( !gate ) {
+			let pos = area.map.pickPosEmpty();
+			gate = area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp');
 		}
-
-		spectator = player;
-		player.command = KeyToCommand[''+e.key] !== undefined ? KeyToCommand[''+e.key] : Command.NONE;
-
-		let timePasses = gui.userCommandHandler.evalCommand(player,e,player.command);
-		if( player.isSpectator ) {
-			player.act();
-		}
-		if( timePasses && player.command !== Command.NONE ) {
-			tick(player.speed);
-		}
-		else {
-			// This is required to make commands that do NOT pass time, like donning armor, work.
-			player.act(false);
-		}
-		let area = world.levelChange(map,entityList);
-		if( area ) {
-			map = area.map;
-			entityList = area.entityList;
-			player = playerFind(entityList);
-		}
-
-		render(player);
+		let player = new Entity( area.map, area.entityList, MonsterTypeList.player, { x:gate.x, y:gate.y }, null, startingLevel );
+		area.entityList.unshift( player );
+		return player;
 	}
 
-	function worldOverlayAdd(group,x,y,sticker) {
-		return animationAdd( new AniPaste({ group:group, x:x, y:y, sticker:sticker, duration: true }) );
-	}
-	function worldOverlayRemove(fn) {
-		return animationRemove(fn);
-	}
-	function onAreaChange(area) {
-		gui.viewMiniMap.setArea(area);
+	function onAreaChange(area,gateId) {
+		if( gui.viewMiniMap ) {
+			gui.viewMiniMap.setArea(area);
+		}
+
+		let gateFinder = area.map.findItem().isId(gateId);
+		let gate = gateFinder.first;
+		if( !gate ) debugger;
+		player.gateTo(area,gate.x,gate.y);
+		tell(mSubject,player,' ',mVerb,'are',' now on level '+area.id)
 	}
 
 	new DataConditioner();
 
+	let gui = new Gui(playerFind,areaFind);
+	let area;
+	let player;
 	let startingLevel = 10;
-	window.world = new World(startingLevel,onAreaChange);
-
-	let imageRepo = new ImageRepo(PIXI.loader);
-	let gui = {};
-	gui.viewMap = new ViewMap('guiMap',MaxSightDistance,imageRepo);
-	gui.viewMiniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',imageRepo);
-	gui.viewSpells = new ViewSpells('guiSpells');
-	gui.viewInfo = new ViewInfo('guiInfo')
-	gui.viewStatus = new ViewStatus('guiStatus');
-	gui.viewRange = new ViewRange(worldOverlayAdd,worldOverlayRemove);
-	gui.viewInventory = new ViewInventory('guiInventory',imageRepo);
-	gui.userCommandHandler = new UserCommandHandler(gui.viewInventory,gui.viewRange,gui.viewSpells);
-	let spectator;
-
-	let area = world.createArea(null,0,ThemeList[startingLevel<=1 ? 'gameStart' : 'cavern'],startingLevel>1 ? 'stairsUp' : false);
+	let testTheme = 'dwarfTown';
+	window.world = new World(startingLevel,playerFind,onAreaChange);
+	area = world.createArea(null,0,ThemeList[startingLevel<=1 ? 'gameStart' : testTheme],startingLevel>1 ? 'stairsUp' : false);
 	world.gateTo(area.id);
-	let map = area.map;
-	let entityList = area.entityList;
-	let player = playerFind(entityList);
-	if( !player ) {
-		let gate = area.getUnusedGateByTypeId('stairsUp');
-		if( !gate ) {
-			let pos = map.pickPosEmpty();
-			gate = map.itemCreateByTypeId(pos[0],pos[1],'stairsUp');
-		}
-		let x = gate.x;
-		let y = gate.y;
-		player = new Entity( map, entityList, MonsterTypeList.player, { x:x, y:y }, null, startingLevel );
-		entityList.unshift( player );
-	}
+	player = playerStartup(area);
 	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);
 
 	let handle = setInterval(function() {
-		if( !imageRepo.ready ) {
+		if( !gui.imageRepo.ready ) {
 			return;
 		}
 		clearInterval(handle);
 
-		$(document).keydown( onPlayerKey );
+		$(document).keydown( onUserEvent );
+		gui.create();
+		gui.viewMiniMap.setArea(area);
+		gui.render();
 
-//		console.log( new Sentence( mObject|mList,{name:'joe'},mObject|mList,{name:'frank'},mObject|mList,{name:'alice'} ).refine({name:'bob'}) );
-//		console.log( new Sentence( mObject|mList,{name:'joe'},mObject|mList,{name:'frank'}," say hello" ).refine({name:'bob'}) );
-
-
-		render(player);
 		tell([player,null,"Welcome to flogue! Use the arrow keys to move, and '.' to wait."]);
-		tell(mSubject,player,' ',mVerb,'step',' through the doorway...');
-		// The tick is called each time the player takes an action.
-
 
 	}, 20);
 }
@@ -266,7 +237,8 @@ function main(levelName) {
 			<td>
 				<div id="mapContainer">
 					<div id="guiMap"></div>
-					<div id="guiInventory"></div>
+					<div id="guiInventory" class="guiInventory"></div>
+					<div id="guiDynamic" class="guiInventory"></div>
 				</div>
 			</td><td>
 				<div id="guiStatus">

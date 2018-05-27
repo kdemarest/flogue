@@ -106,7 +106,7 @@ function createDrawList(observer,map,entityList,asType) {
 
 	let visId = {};
 	let mapMemoryLight = 2;
-	let revealLight = 7;
+	let revealLight = 7;		// Assumes max light is about 10.
 
 	// Now assign tile layers, and remember that [0] is the light level. Tiles
 	// that shine light will do so in this loop.
@@ -175,7 +175,7 @@ function createDrawList(observer,map,entityList,asType) {
 	return a;
 }
 
-let tileDim = 32;
+let TILE_DIM = 32;
 function DefaultImgGet(self) {
 	return self.img;
 }
@@ -215,6 +215,9 @@ class ImageRepo {
 			else {
 				add(type.img);
 			}
+			if( type.icon ) {
+				add( 'gui/icons/'+type.icon );
+			}
 		}
 
 		for( let sticker in StickerList ) {
@@ -243,13 +246,12 @@ class ViewMap {
 		this.divId = divId;
 		this.sd = sightDistance;
 		this.d = ((sightDistance*2)+1);
-		this.tileWidth  = tileDim * this.d;
-		this.tileHeight = tileDim * this.d;
+		this.tileWidth  = TILE_DIM * this.d;
+		this.tileHeight = TILE_DIM * this.d;
 		this.app = new PIXI.Application(this.tileWidth, this.tileHeight, {backgroundColor : 0x000000});
 		document.getElementById(this.divId).appendChild(this.app.view);
 
 		this.imageRepo = imageRepo;
-		this.imageRepo.load();
 
 		let self = this;
 		animationDeathCallback = function(sprite) {
@@ -263,15 +265,24 @@ class ViewMap {
 			// but only if real time is not stopped.
 			animationTick(delta/60);
 		});
+
+		$('#'+this.divId).mousemove( function(event) {
+			var offset = $(this).offset();
+			let x = (event.pageX - offset.left);
+			var y = (event.pageY - offset.top);
+			event.xMap = x;
+			event.yMap = y;
+		});
 	}
 	draw(drawList,observer) {
 		while(this.app.stage.children[0]) {
 			this.app.stage.removeChild(this.app.stage.children[0]);
 		}
-		let dHalf = this.sd;
 		let lightAlpha = [];
-		for( let i=0 ; i<this.sd+2 ; ++i ) {
-			lightAlpha[i] = Math.clamp(i/this.sd,0.0,1.0);
+		let maxLight = MaxSightDistance;
+		let glowLight = maxLight;
+		for( let i=0 ; i<maxLight+20 ; ++i ) {
+			lightAlpha[i] = Math.clamp(i/maxLight,0.0,1.0);
 		}
 
 		function make(x,y,entity,imgPath,light) {
@@ -293,17 +304,24 @@ class ViewMap {
 		for( let y=0 ; y<this.d ; ++y ) {
 			for( let x=0 ; x<this.d ; ++x ) {
 				let tile = drawList[y][x];
-				let light = observer.isSpectator ? 10 : tile[0];
+				let light = observer.isSpectator ? maxLight : tile[0];
 				for( let i=1 ; i<tile.length ; ++i ) {
 					let entity = tile[i];
 					if( !entity ) continue;
 					if( entity.isAnimation ) {
-						entity.sprite = make.call(this,entity.xGet()-(observer.x-this.sd),entity.yGet()-(observer.y-this.sd),entity,entity.imgGet(entity),light);
+						entity.sprite = make.call(
+							this,
+							entity.xGet()-(observer.x-this.sd),
+							entity.yGet()-(observer.y-this.sd),
+							entity,
+							entity.imgGet(entity),
+							entity.glow ? Math.max(light,glowLight) : light
+						);
 					}
 					else
 					if( this.imageRepo.imgGet[entity.typeId] ) {
 						let imgPath = this.imageRepo.imgGet[entity.typeId](entity);
-						make.call(this,x,y,entity,imgPath,entity.glow ? dHalf : light);
+						make.call(this,x,y,entity,imgPath,entity.glow ? Math.max(light,glowLight) : light);
 					}
 					else {
 						debugger;

@@ -103,6 +103,12 @@ class Finder {
 	farFromMe(rectDist=1) {
 		return this.far(this.me.x,this.me.y,rectDist);
 	}
+	canTargetPosition(x,y) {
+		return this.filter( e => this.me.canTargetPosition(x,y) );
+	}
+	canTargetEntity(x,y) {
+		return this.filter( e => this.me.canTargetEntity(e) );
+	}
 	canPeceivePosition(x,y) {
 		return this.filter( e => this.me.canPerceivePosition(x,y) );
 	}
@@ -114,6 +120,9 @@ class Finder {
 	}
 	isMyFriend() {
 		return this.filter( e => this.me.isMyFriend(e) );
+	}
+	isNotMyFriend() {
+		return this.filter( e => !this.me.isMyFriend(e) );
 	}
 	isMyNeutral() {
 		return this.filter( e => this.me.isMyNeutral(e) );

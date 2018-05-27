@@ -1,18 +1,20 @@
+function getCastableSpellList(entity) {
+	return new Finder(entity.inventory).filter( item=>item.isSpell && item.effect && item.effect.op && !item.effect.isBlank );
+}
+
+
 class ViewSpells {
 	constructor(spellDivId) {
 		this.MAX_SLOTS = 5;
 		this.spellDivId = spellDivId;
 	}
-	getCastableSpellList(entity) {
-		return new Finder(entity.inventory).filter( item=>item.isSpell && item.effect && item.effect.op && !item.effect.isBlank );
-	}
 	render(observer) {
 		$('#'+this.spellDivId).empty();
-		let spellList = this.getCastableSpellList(observer);
+		let spellList = getCastableSpellList(observer);
 		for( let i=0 ; i<spellList.all.length && i<this.MAX_SLOTS ; ++i ) {
 			let spell = spellList.all[i];
 			let text = 'F'+(i+1)+' '+spell.effect.name+'\n';
-			let lit = this.commandItem == spell && spell.isRecharged();
+			let lit = observer.commandItem == spell && spell.isRecharged();
 			let unlit = !spell.isRecharged();
 			$('#'+this.spellDivId).append('<div class="spell'+(unlit?' unlit':(lit?' lit':''))+'">'+text+'</div>');
 		}
@@ -184,11 +186,14 @@ class ViewInventory {
 	constructor(inventoryDivId,imageRepo) {
 		this.inventoryDivId = inventoryDivId;
 		this.imageRepo = imageRepo;
-		this.isOpen = false;
 		this.inventory = null;
 		this.inventoryFn = null;
 		this.inventorySelector = '123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		this.everSeen = {};
+		this.allowFilter = null;
+		this.filterId = '';
+		this.inventoryFn = null;
+		this.visibleFn = null;
 	}
 	getItemByKey(keyPressed) {
 		let n = this.inventorySelector.indexOf(keyPressed);
@@ -197,31 +202,39 @@ class ViewInventory {
 		}
 		return null;
 	}
-	show(inventoryFn) {
+	prime(inventoryFn,allowFilter,visibleFn) {
+		this.allowFilter = allowFilter;
 		this.inventoryFn = inventoryFn;
-		this.isOpen = true;
-		this.render();
+		this.visibleFn = visibleFn;
+		return this.div.is(":visible");
 	}
-	hide() {
-		if( !this.isOpen ) {
-			return;
-		}
-		for( let i=0 ; i<this.inventory.all.length ; ++i ) {
-			this.everSeen[this.inventory.all[i].id]=true;
-		}
-
-		$('#'+this.inventoryDivId).hide();
-		this.isOpen = false;
+	get div() {
+		return $('#'+this.inventoryDivId);
 	}
-	render() {
+	_hide() {
+		if( this.userSawInventory ) {
+			for( let i=0 ; i<this.inventory.all.length ; ++i ) {
+				this.everSeen[this.inventory.all[i].id]=true;
+			}
+			this.userSawInventory = false;
+		}
+		this.div.hide();
+	}
+	render(observer) {
 		function order(typeId) {
 			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
 		}
-		if( !this.isOpen ) {
+		if( !this.visibleFn || !this.visibleFn() ) {
+			this._hide();
 			return;
 		}
 
 		this.inventory = this.inventoryFn();
+		if( this.allowFilter && this.filterId ) {
+			let filterId = this.filterId;
+			this.inventory.filter( item => item.typeId==filterId );
+		}
+
 		let list = this.inventory.all.sort( function(a,b) { 
 			let as = order(a.typeId)+' '+a.name;
 			let bs = order(b.typeId)+' '+b.name;
@@ -230,23 +243,50 @@ class ViewInventory {
 			return 0;
 		});
 
-		let s = '';
-		s += '<table class="inv">';
-		s += '<thead>';
-		s += '<tr><td></td><td class="right"></td><td>Description</td><td>Slot</td><td class="right">Armor</td><td colspan="2" class="ctr">Damage</td><td class="right">Bonus</td><td class="right">Recharge</td></tr>';
-		s += '</thead>';
-		s += '<tbody>';
+		function icon(file) {
+			return '<img src="tiles/gui/icons/'+file+'">';
+		}
+
+		let self = this;
+		$(this.div).empty();
+
+		let cat = $('<div class="invCategories"></div>').appendTo(this.div);
+		if( this.allowFilter ) {
+			let ItemFilterOrder = [''].concat(ItemSortOrder);
+			ItemFilterOrder.map( typeId => {
+				let typeIcon =  $(icon( typeId=='' ? 'all.png' : ItemTypeList[typeId].icon ));
+				typeIcon.appendTo(this.div)
+				if( self.allowFilter && self.filterId == typeId ) {
+					typeIcon.addClass('iconLit');
+				}
+				typeIcon.click( function() {
+					$('.invCategories img').removeClass('iconLit');
+					self.filterId = typeId;
+					self.render(observer);
+				})
+				.appendTo(cat);
+			});
+		}
+
+		let table = $( '<table class="inv"></table>' ).appendTo(this.div);
+		let tHead = $('<thead><tr><td></td><td></td><td class="right"></td><td>Description</td><td>Armor</td><td colspan="2">Damage</td><td class="right">Bonus</td><td class="right">Chg</td></tr></thead>' ).appendTo(table);
+		let tBody = $('<tbody></tbody>').appendTo(table);
 		for( let i=0 ; i<list.length ; ++i ) {
 			let item = list[i];
+			let s = '';
 			s += '<tr>';
-			s += '<td>'+(item.inSlot ? '&nbsp;*&nbsp;' : (!this.everSeen[item.id]?'<span class="newItem">NEW</span>':'&nbsp;&nbsp;&nbsp;'))+'</td>';
-			s += '<td class="right">'+this.inventorySelector.charAt(i)+')'+'</td>';
+			s += '<td>'+(item.inSlot ? icon('marked.png') : 
+						(item.slot ? icon('unmarked.png') : 
+						(!this.everSeen[item.id]?'<span class="newItem">NEW</span>' : ''
+						)))+'</td>';
+			s += '<td class="right">'+this.inventorySelector.charAt(i)+'.'+'</td>';
+			s += '<td>'+icon(item.icon)+'</td>';
 			s += '<td>'+item.name+'</td>';
-			s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
-			s += '<td class="ctr">'+(item.isArmor?item.calcArmor():'&nbsp;')+'</td>';
-			let damage = item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : '&nbsp;');
+			//s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
+			s += '<td class="ctr">'+(item.isArmor?item.calcArmor():'')+'</td>';
+			let damage = item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : '');
 			s += '<td class="right">'+damage+'</td>';
-			let dtype = item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : '&nbsp;');
+			let dtype = item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : '');
 			s += '<td>'+dtype+'</td>';
 			let bonus = (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:'&nbsp;');
 			if( item.isArmor && item.effect ) {
@@ -255,13 +295,17 @@ class ViewInventory {
 			s += '<td class="right">'+bonus+'</td>';
 			s += '<td class="ctr">'+(item.rechargeTime?item.rechargeTime:'&nbsp;')+'</td>';
 			s += '</tr>';
+
+			$(s).appendTo(tBody).click( function(event) {
+				event.commandItem = item;
+				onUserEvent(event);
+			});;
 		}
-		s += '</tbody>';
-		s += '</table>';
-		if( !s ) {
-			s += "<tr><td colspan=4>Pick up some items by walking upon them.</td></tr>";
+		if( !list.length ) {
+			$("<tr><td colspan=4>Pick up some items by walking upon them.</td></tr>").appendTo(tBody);
 		}
-		$('#'+this.inventoryDivId).show().html(s);
+		this.userSawInventory = true;
+		this.div.show();
 	}
 }
 
@@ -272,7 +316,9 @@ class ViewRange {
 		this.xOfs = 0;
 		this.yOfs = 0;
 		this.crosshairAnim = null;
-		this.pickingTargetFn = null;
+		this.visibleFn = null;
+		this.rangeLimit = 0;
+		this.active = false;
 	}
 	clear() {
 		this.xOfs = 0;
@@ -280,9 +326,32 @@ class ViewRange {
 		this.worldOverlayRemoveFn( a => a.group=='guiCrosshair' );
 	}
 	move(xAdd,yAdd) {
-		this.xOfs += xAdd;
-		this.yOfs += yAdd;
+		let x = this.xOfs + xAdd;
+		let y = this.yOfs + yAdd;
+		if( Math.abs(x) > this.rangeLimit || Math.abs(y) > this.rangeLimit ) {
+			return false;
+		}
+		this.xOfs = x;
+		this.yOfs = y;
 
+	}
+	prime(entity,rangeLimit,visibleFn) {
+		this.visibleFn = visibleFn;
+		this.rangeLimit = rangeLimit;
+		if( !this.active ) {
+			let f = entity.findAliveOthers().canPerceiveEntity().canTargetEntity().isId(entity.lastAttackTargetId).nearMe(this.rangeLimit);
+			if( !f.first ) {
+				f = entity.findAliveOthers().isNotMyFriend().canPerceiveEntity().canTargetEntity().byDistanceFromMe().nearMe(this.rangeLimit);
+			}
+			if( f.first ) {
+				this.xOfs = f.first.x-entity.x;
+				this.yOfs = f.first.y-entity.y;
+			}
+			else {
+				this.xOfs = 0;
+				this.yOfs = 0;
+			}
+		}
 	}
 
 	drawRange(map,sx,sy,tx,ty) {
@@ -297,213 +366,263 @@ class ViewRange {
 	}
 
 	render(observer) {
-		if( this.pickingTargetFn() ) {
+		this.worldOverlayRemoveFn( a=>a.group=='guiCrosshair' );
+		this.active = this.visibleFn && this.visibleFn();
+		if( this.active ) {
 			//console.log("crosshair at "+(observer.x+this.xOfs)+','+(observer.y+this.yOfs));
-			this.worldOverlayRemoveFn( a=>a.group=='guiCrosshair' );
 			this.drawRange(observer.map,observer.x,observer.y,observer.x+this.xOfs,observer.y+this.yOfs);
 		}
 	}
 }
 
-class UserCommandHandler {
-	constructor(viewInventory,viewRange,viewSpells) {
-		this.command = Command.NONE;
-		this.commandItem = null;
-		this.commandTarget = null;
-		this.viewInventory = viewInventory;
-		this.viewRange = viewRange;
-		this.viewSpells = viewSpells;
-		let self = this;
-		this.viewRange.pickingTargetFn = function() { return self.pickingTarget(); }
-	}
-	commandClosesInventory(command) {
-		return !CommandLeavesInventoryOpen.includes(command);
-	}
-	commandPassesTime(command) {
-		return !CommandIsInstant.includes(command);
-	}
-	clearCommand(retain) {
-		this.command = retain || Command.NONE;
-		this.commandItem = null;
-		this.commandTarget = null;
-		this.viewRange.clear();
+function castConvert(observer,index) {
+	let spellList = getCastableSpellList(observer);
+	cmd.command = Command.CAST;
+	cmd.commandItem = spellList.all[index];
+}
+
+//command
+//- immediatelyConvertsToAnotherCommand (cast1 through 5)
+//- needsItem (determine inventory)
+//- converts based on what was picked [eg Inventory command]
+//- needsTarget (determine range)
+//- passesTimeOnExecution
+
+let CmdTable = {};
+CmdTable[Command.INVENTORY] = {
+	needsItem: true,
+	itemAllowFilter: true,
+	itemFilter: observer => () => new Finder(observer.inventory),
+	convertOnItemChosen: (cmd) => {
+		let command = cmd.command;
+		let item = cmd.commandItem;
+		if( item.isPotion ) {
+			return item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
+		}
+		if( item.isGem ) {
+			return Command.GAZE;
+		}
+		if( item.isSpell ) {
+			return Command.CAST;
+		}
+		if( item.isCorpse ) {
+			return Command.LOOT;
+		}
+		if( item.slot ) {
+			cmd.retain = command;
+			return Command.USE;
+		}
+		return command;
+	},
+	criteriaToExecute: (cmd,observer) => {
+		tell(mSubject,cmd.commandItem,' does nothing. Maybe it has another use?');
 		return false;
-	}
-	enactCommand(observer,retain) {
-		observer.command = this.command;
-		observer.commandItem = this.commandItem;;
-		observer.commandTarget = this.commandTarget;
-		if( this.commandClosesInventory(observer.command) ) {
-			this.viewInventory.hide();
-			this.clearCommand();
-		}
-		else {
-			this.clearCommand(retain);
-		}
-		return this.commandPassesTime(observer.command);
-	}
-	pickingTarget() {
-		if( this.command === Command.DEBUGKILL ) {
-			return true;
-		}
-		return (this.command == Command.CAST || this.command == Command.THROW ) && this.commandItem;
-	}
-	evalCommand(observer,event,command) {
-		let keyCode = event.keyCode;
-		let keyENTER = 13;
-		let keyESCAPE = 27;
-		let keyONE = 49;
-
-		let dir = commandToDirection(command);
-		if( observer.isDead() ) {
-			observer.command = command;
-			return true;
-		}
-
-		//
-		// PICK A TARGET
-		//
-
-		if( this.pickingTarget() ) {
-			observer.command = Command.NONE;
-			if( this.commandItem && !this.commandItem.isRecharged() ) {
-				tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,this.commandItem,' is still charging.');
-				this.clearCommand();
-				return false;
-			}
-			let cancel = false;
-			if( keyCode == keyESCAPE || this.command == command ) {
-				cancel = true;
-			}
-			else
-			if( dir !== false ) {
-				this.viewRange.move(DirectionAdd[dir].x,DirectionAdd[dir].y);
-				return false;
-			}
-			else
-			if( keyCode == keyENTER ) {
-				let target = new Finder(observer.entityList).at(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
-				if( !target.count && !this.mayTargetPositon && (!this.commandItem.effect || !this.commandItem.effect.mayTargetPosition)) {
-					cancel = true;
-				}
-				else {
-					let x = observer.x+this.viewRange.xOfs;
-					let y = observer.y+this.viewRange.yOfs;
-					this.commandTarget = target.first || {x:x,y:y,isPosition:true,name:observer.map.tileTypeGet(x,y).name};
-					return this.enactCommand(observer);
-				}
-			}
-			if( cancel ) {
-				return this.clearCommand();
-			}
-		}
-
-		//
-		// CHOOSE FROM INVENTORY
-		//
-
-		if( this.viewInventory.isOpen ) {
-			observer.command = Command.NONE;
-			if( keyCode == keyESCAPE || this.command == command ) {
-				this.viewInventory.hide();
-				return this.clearCommand();
-			}
-			let keyPressed = String.fromCharCode(keyCode);
-			if( !event.shiftKey ) {
-				keyPressed = keyPressed.toLowerCase();
-			}
-			let item = this.viewInventory.getItemByKey(keyPressed);
-			if( item ) {
-				this.commandItem = item;
-				if( this.command == Command.DROP ) {
-					return this.enactCommand(observer);
-				}
-				if( this.command == Command.INVENTORY && item.isPotion ) {
-					this.command = item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
-				}
-				if( this.command == Command.INVENTORY && item.isGem && item.effect ) {
-					this.command = Command.GAZE;
-					return this.enactCommand(observer);
-				}
-				if( this.command == Command.QUAFF ) {
-					return this.enactCommand(observer);
-				}
-				if( this.command == Command.CAST && !this.commandItem.isRecharged() ) {
-					tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,this.commandItem,' is still charging.');
-					this.clearCommand(Command.CAST);
-					return false;
-				}
-				if( this.command == Command.INVENTORY && item.isSpell ) {
-					this.command = Command.CAST;
-					this.viewInventory.hide();
-					return false;
-				}
-				if( this.command == Command.INVENTORY ) {
-					if( this.commandItem.autoCommand ) {
-						this.command = this.commandItem.autoCommand;
-						return this.enactCommand(observer,Command.INVENTORY);
-					}
-				}
-				// for throw and any other that picks items.
-				if( this.commandClosesInventory(this.command) ) {
-					this.viewInventory.hide();
-				}
-			}
-			return false;
-		}
-		if( command == Command.INVENTORY ) {
-			observer.command = Command.NONE;
-			this.command = Command.INVENTORY;
-			this.viewInventory.show( ()=>new Finder(observer.inventory) );
-			return false;
-		}
-		if( command == Command.QUAFF ) {
-			observer.command = Command.NONE;
-			this.command = Command.QUAFF;
-			this.viewInventory.show( ()=>new Finder(observer.inventory).isTypeId("potion") );
-			return false;
-		}
-		if( command == Command.THROW ) {
-			observer.command = Command.NONE;
-			this.command = Command.THROW;
-			this.viewInventory.show( ()=>new Finder(observer.inventory).filter( item => item.mayThrow ) );
-			return false;
-		}
-		if( command == Command.DEBUGKILL ) {
-			observer.command = Command.NONE;
-			this.command = Command.DEBUGKILL;
-			return false;
-		}
-		if( command == Command.DROP ) {
-			observer.command = Command.NONE;
-			this.command = Command.DROP;
-			this.viewInventory.show( ()=>new Finder(observer.inventory) );
-			return false;
-		}
-		if( command == Command.CAST ) {
-			observer.command = Command.NONE;
-			this.command = Command.CAST;
-			this.viewInventory.show( ()=>this.viewSpells.getCastableSpellList(observer) );
-			return false;
-		}
-		let castArray = [Command.CAST1,Command.CAST2,Command.CAST3,Command.CAST4,Command.CAST5];
-		if( castArray.includes(command) ) {
-			observer.command = Command.NONE;
-			let spellList = this.viewSpells.getCastableSpellList(observer);
-			let index = castArray.indexOf(command);
-			if( !spellList.all[index] ) {
-				return false;
-			}
-			this.command = Command.CAST;
-			this.commandItem = spellList.all[index];
-			if( !this.commandItem.isRecharged() ) {
-				tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,this.commandItem,' is still charging.');
-				this.clearCommand();
-				return false;
-			}
-
+	},
+	passesTimeOnExecution: false
+};
+CmdTable[Command.QUAFF] = {
+	needsItem: true,
+	itemFilter: observer => () => new Finder(observer.inventory).isTypeId("potion"),
+	criteriaToExecute: (cmd,observer) => cmd.commandItem.effect,
+	passesTimeOnExecution: true
+};
+CmdTable[Command.CAST] = {
+	needsItem: true,
+	itemFilter: observer => () => getCastableSpellList(observer),
+	needsTarget: true,
+	targetRange: (item) => item.range || 7,
+	criteriaToExecute: (cmd,observer) => {
+		if( !cmd.commandItem.isRecharged() ) {
+			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,cmd.commandItem,' is still charging.');
 			return false;
 		}
 		return true;
+	},
+	passesTimeOnExecution: true
+};
+CmdTable[Command.THROW] = {
+	needsItem: true,
+	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayThrow ),
+	needsTarget: true,
+	targetRange: (item) => item.range || 7,
+	passesTimeOnExecution: true
+};
+CmdTable[Command.DROP] = {
+	needsItem: true,
+	itemFilter: observer => () =>  new Finder(observer.inventory),
+	passesTimeOnExecution: true
+};
+CmdTable[Command.DEBUGKILL] = {
+	needsTarget: true,
+	targetRange: (item) => 11,
+	passesTimeOnExecution: true
+};
+CmdTable[Command.USE] = {
+	needsItem: true,
+	itemFilter: observer => () =>  new Finder(observer.inventory).filter( item => item.slot ),
+	passesTimeOnExecution: false
+};
+CmdTable[Command.GAZE] = {
+	needsItem: true,
+	itemFilter: observer => () =>  new Finder(observer.inventory).filter( item => item.isGem ),
+	criteriaToExecute: (cmd,observer) => cmd.commandItem.effect,
+	passesTimeOnExecution: false
+};
+CmdTable[Command.CAST1] = {
+	convertToCommand: (cmd,observer) => castConvert(cmd,observer,0)
+}
+CmdTable[Command.CAST2] = {
+	convertToCommand: (cmd,observer) => castConvert(cmd,observer,1)
+}
+CmdTable[Command.CAST3] = {
+	convertToCommand: (cmd,observer) => castConvert(cmd,observer,2)
+}
+CmdTable[Command.CAST4] = {
+	convertToCommand: (cmd,observer) => castConvert(cmd,observer,3)
+}
+CmdTable[Command.CAST5] = {
+	convertToCommand: (cmd,observer) => castConvert(cmd,observer,4)
+}
+
+class Cmd {
+	constructor(onCancel,onEnact) {
+		this.onCancel = onCancel;
+		this.onEnact = onEnact;
+		this.clear();
+	}
+	clear() {
+		this.command = Command.NONE;
+		this.commandItem = null;
+		this.commandTarget = null;
+		this.retain = null;
+	}
+	cancelItem() {
+		this.commandItem = null;
+		this.commandTarget = null;
+		return false;
+	}
+	cancel() {
+		this.onCancel();
+		this.clear();
+		return false;
+	}
+	enact() {
+		let passesTime = this.passesTimeOnExecution
+		let retain = this.retain;
+		this.onEnact(this);
+		this.clear();
+		if( retain ) { this.command = retain; }
+		return passesTime;
+	}
+	get ct() 					{ return CmdTable[this.command]; }
+	get convertToCommand() 		{ return this.ct && this.ct.convertToCommand; }
+	get needsItem()				{ return this.ct && this.ct.needsItem; }
+	get itemAllowFilter()		{ return this.ct && this.ct.itemAllowFilter; }
+	get itemFilter()			{ return this.ct && this.ct.itemFilter; }
+	get convertOnItemChosen()	{ return this.ct && this.ct.convertOnItemChosen; }
+	get needsTarget() 			{ return this.ct && this.ct.needsTarget; }
+	get targetRange() 			{ return this.ct && this.ct.targetRange; }
+	get criteriaToExecute()		{ return this.ct && this.ct.criteriaToExecute; }
+	get passesTimeOnExecution() { return this.ct ? this.ct.passesTimeOnExecution : true; }
+}
+
+let keyENTER = "Enter";
+let keyESCAPE = "Escape";
+
+class UserCommandHandler {
+	constructor(keyToCommand,viewInventory,viewRange) {
+		this.viewInventory = viewInventory;
+		this.viewRange = viewRange;
+		this.keyToCommand = keyToCommand;
+		this.cmd = new Cmd(
+			() => {
+			},
+			(c) => {
+				this.observer.command = c.command;
+				this.observer.commandItem = c.commandItem;;
+				this.observer.commandTarget = c.commandTarget;
+			}
+		);
+	}
+	pickTarget(dirCommand,observer) {
+		if( dirCommand == Command.CANCEL ) {
+			return this.cmd.cancel();
+		}
+		let dir = commandToDirection(dirCommand);
+		if( dir !== false ) {
+			this.viewRange.move(DirectionAdd[dir].x,DirectionAdd[dir].y);
+			return false;
+		}
+		if( dirCommand == Command.EXECUTE ) {
+			let target = new Finder(observer.entityList).at(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
+			if( !target.count && !this.cmd.commandItem.mayTargetPosition && (!this.cmd.commandItem.effect || !this.cmd.commandItem.effect.mayTargetPosition) ) {
+				return this.cmd.cancel();
+			}
+			let x = observer.x+this.viewRange.xOfs;
+			let y = observer.y+this.viewRange.yOfs;
+			this.cmd.commandTarget = target.first || adhoc(observer.map.tileTypeGet(x,y),observer.map,x,y);
+			return this.cmd.enact();
+		}
+	}
+
+	evalCommand(observer,event) {
+		this.observer = observer;		// hack!!
+		let cmd = this.cmd;
+
+		if( cmd.command == Command.NONE ) {
+			let command = this.keyToCommand[event.key] || Command.NONE;
+			if( !CmdTable[command] ) {
+				observer.command = command;
+				observer.commandItem = null;
+				observer.commandTarget = null;
+				return command !== Command.NONE;
+			}
+			cmd.command = command;
+			if( cmd.convertToCommand ) {
+				cmd.convertToCommand(cmd,observer);
+			}
+		}
+
+		if( cmd.needsItem && !cmd.commandItem ) {
+			let keyEval = this.viewInventory.prime( cmd.itemFilter(observer), cmd.itemAllowFilter, () => cmd.needsItem && !cmd.commandItem );
+			if( keyEval ) {
+				if( this.keyToCommand[event.key] == Command.CANCEL ) {
+					return cmd.cancel();
+				}
+				cmd.commandItem = this.viewInventory.getItemByKey(event.key);
+			}
+		}
+
+		if( cmd.needsItem && !cmd.commandItem && event.commandItem ) {
+			cmd.commandItem = event.commandItem;
+			delete event.commandItem;
+		}
+
+		if( cmd.commandItem && cmd.convertOnItemChosen ) {
+			cmd.command = cmd.convertOnItemChosen(cmd);
+		}
+
+		if( cmd.commandItem && cmd.criteriaToExecute ) {
+			if( !cmd.criteriaToExecute(cmd,observer) ) {
+				return cmd.cancelItem();
+			}
+		}
+
+		if( cmd.commandItem && !cmd.needsTarget ) {
+			return cmd.enact();
+		}
+
+		if( cmd.needsTarget && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) ) {
+			this.viewRange.prime(
+				observer,
+				cmd.targetRange(cmd.commandItem),
+				() => cmd.needsTarget && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) );
+			let result = this.pickTarget( this.keyToCommand[event.key], observer );
+			if( result !== undefined ) {
+				return result;
+			}
+		}
+
+		return false;
 	}
 }

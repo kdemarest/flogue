@@ -138,5 +138,6 @@ class Item {
 				this.destroy();
 			}
 		}
+		return true;
 	}
 }

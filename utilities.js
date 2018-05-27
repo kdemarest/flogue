@@ -46,10 +46,12 @@ function nop() {}
 	}
 	String.lootParse = function(lootString) {
 		let result = [];
-		lootString.replace( /\s*(\d+%)*\s*([\w]+[.]*[\w]+)\s*/g, function( match, chance, id ) {
-			if( chance===undefined ) { chance='100'; }
-			result.push( { chance: parseInt(chance)||0, id: id } );
-
+		lootString.replace( /\s*(\d+%)*\s*([\w]+[.]*[\w]+)\s*(x[\d]+)*/g, function( match, chance, id, count ) {
+			count = count ? (parseInt(count.substr(1)) || 1) : 1;
+			while( count-- ) {
+				if( chance===undefined ) { chance='100'; }
+				result.push( { chance: parseInt(chance)||0, id: id } );
+			}
 		});
 		return result;
 	}

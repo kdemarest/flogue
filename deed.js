@@ -166,27 +166,26 @@ let effectApply = function(origin,effect,target) {
 		tell(mSubject,origin,' has no effect on ',mObject,target);
 		return false;
 	}
-	if( target.isImmune(effect.typeId) ) {
+	if( target.isImmune && target.isImmune(effect.typeId) ) {
 		tell(mSubject,target,' is immune to ',mObject,effect);
 		return false;
 	}
-	if( effect.op=='set' && target.isImmune(effect.value) ) {
+	if( effect.op=='set' && target.isImmune && target.isImmune(effect.value) ) {
 		let subject = effect.value;
 		tell(mSubject|mPossessive,origin,' '+subject+' has no effect on ',mObject,target);
 		return false;
 	}
 
-	if( (target.isResistant(effect.typeId) || (effect.op=='set' && target.isResistant(effect.value)) ) && Math.chance(50) ) {
+	if( target.isResistant && (target.isResistant(effect.typeId) || (effect.op=='set' && target.isResistant(effect.value)) ) && Math.chance(50) ) {
 		tell(mSubject,target,' resists the effects of ',mObject,effect);
 		return false;
 	}
 
-	let map = target.map || origin.map || origin.ownerOfRecord.map;
 	if( target.isPosition ) {
 		if( !effect.onTargetPosition ) {
 			return false;
 		}
-		effect.onTargetPosition(map,target.x,target.y)
+		effect.onTargetPosition(target.map,target.x,target.y)
 		return true;
 	}
 	let duration = effect.isInstant ? 0 : (origin.inSlot ? true : DEFAULT_EFFECT_DURATION);
@@ -221,6 +220,6 @@ DeedManager.addHandler('heal',function(origin,entity,value) {
 DeedManager.addHandler('damage',function(origin,entity,value) {
 	entity.takeDamage(origin,value,origin.effect.damageType,origin.effect.onAttack);
 });
-DeedManager.addHandler('move',function(origin,entity,value) {
-	entity.takePush(origin,value);
+DeedManager.addHandler('shove',function(origin,entity,value) {
+	entity.takeShove(origin,value);
 });
