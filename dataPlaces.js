@@ -54,7 +54,6 @@ ScapeList.caveRandom = theme => ({
 	architecture: 		"cave",
 	floorDensity: 		Math.rand(0.10,0.70),
 	seedPercent: 		Math.rand(0.0001,0.90),
-	mustConnect: 		Math.chance(50),
 	wanderingPassage: 	Math.chance(50),
 });
 
@@ -63,7 +62,6 @@ ScapeList.caveWeblike = theme => ({
 	architecture: 		"cave",
 	floorDensity: 		0.12,
 	seedPercent: 		0.63,
-	mustConnect: 		false,
 	wanderingPassage: 	true,
 });
 
@@ -72,7 +70,6 @@ ScapeList.caveMazelike = theme => ({
 	architecture: 		"cave",
 	floorDensity: 		0.12,
 	seedPercent: 		0.63,
-	mustConnect: 		false,
 	wanderingPassage: 	false,
 });
 
@@ -81,7 +78,6 @@ ScapeList.caveSpacious = theme => ({
 	architecture: 		"cave",
 	floorDensity: 		0.68,
 	seedPercent: 		0.20,
-	mustConnect: 		false,
 	wanderingPassage: 	false,
 });
 
@@ -90,51 +86,80 @@ ScapeList.caveBroadWinding = theme => ({
 	architecture: 		"cave",
 	floorDensity: 		0.30,
 	seedPercent: 		0.60,
-	mustConnect: 		false,
 	wanderingPassage: 	true,
 });
 
+ScapeList.caveTownRural = theme => ({
+	dim: 				Math.randInt(60,80),
+	architecture: 		"cave",
+	floorDensity: 		0.04,
+	seedPercent: 		0.20,
+	wanderingPassage: 	false,
+});
+
+
 ScapeList.caveTown = theme => ({
+	dim: 				Math.randInt(50,60),
+	architecture: 		"cave",
+	floorDensity: 		Math.rand(0.40,0.50),
+	seedPercent: 		Math.rand(0.10,0.20),
+	wanderingPassage: 	false,
+	palette: {
+		passageFloorTypeId: 'tileStoneFloor'
+	}
+});
+
+ScapeList.caveVillage = theme => ({
 	dim: 				Math.randInt(30,40),
 	architecture: 		"cave",
-	floorDensity: 		Math.rand(0.60,0.70),
+	floorDensity: 		Math.rand(0.10,0.50),
 	seedPercent: 		Math.rand(0.10,0.20),
-	mustConnect: 		false,
-	wanderingPassage: 	false,
+	wanderingPassage: 	false
 });
 
 
 ThemeList.gameStart = {
 	isCore: 	true,
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['camp.human'],
+	rCOMMON: 	'camp.human',
 	monsters: 	['isPet']
 }
 
 ThemeList.cavern = {
 	isCore: 	true,
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['nest.bat','nest.blueScarab','nest.redScarab','nest.viper','camp.ogre','camp.goblin','den.kobold'],
-	rUNCOMMON: 	['camp.human','antHive','trollBridge','trollPit','shaft','collonade','fountain1','fountain4','patch','veil'],
-	rRARE: 		['den.dog','goblinGathering','demonNest','portal','circle','ruin','swamp','etherHive'],
-	rEPIC: 		['graveYard','lunarEmbassy'],
+	rREQUIRED: 	'gatewayToDwarves',
+	rCOMMON: 	'nest.bat, nest.blueScarab, nest.redScarab, nest.viper, camp.ogre, camp.goblin, den.kobold, floodPit, floodWater',
+	rUNCOMMON: 	'camp.human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 		'den.dog, goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit',
+	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
 }
 
 ThemeList.dwarfTown = {
-	scapes: 	['caveTown'],
-	rREQUIRED: 	['dwarfHouse','dwarfHouse','dwarfHouse','dwarfSmithy'],
-	rCOMMON: 	['dwarfTemple','dwarfHouse','dwarfPlaza'],
+	scapes: 	['caveTown'], //'caveTownRural','caveVillage'],
+	rREQUIRED: 	'3x floodOre, floodPit, gatewayFromDwarves, dwarfHouseSmall, dwarfHouse, 50% dwarfHouse, 90% dwarfSmithy, 70% dwarfTemple, 2x 60% dwarfPlaza, 30% den.dog, 10% camp.human',
+	rCOMMON: 	'floodOre',
+	//rCOMMON: 	'dwarfHouse, dwarfHouseSmall, dwarfHouseL, pitEncircle, nest.bat, patch, floodMist',
+	rRARE: 		'firePit, floodWater',
+	prefer: 	['pit'],
 	monsters: 	['isDwarf']
+}
+
+ThemeList.thePits = {
+	scapes: 	['caveBroadWinding'],
+	rCOMMON: 	'floodPit',
+	monsters: 	['isUndead'],
+	scape: 		{ placeDensity: 0.5 }
 }
 
 ThemeList.spooky = {
 	isCore: 	true,
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['graveYard','nest.bat'],
-	rUNCOMMON: 	['ruin','nest.viper'],
-	rRARE: 		['shaft','fountain1','camp.human','swamp'],
-	rEPIC: 		['portal'],
+	rCOMMON: 	'graveYard, nest.bat, floodMist',
+	rUNCOMMON: 	'ruin, nest.viper',
+	rRARE: 		'shaft, fountain1, camp.human, swamp',
+	rEPIC: 		'portal',
 	prefer: 	['mist'],
 	monsters: 	['isUndead'],
 }
@@ -142,18 +167,18 @@ ThemeList.spooky = {
 ThemeList.ruins = {
 	isCore: 	true,
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['camp.ogre','camp.goblin','nest.blueScarab','nest.redScarab'],
-	rUNCOMMON: 	['collonade','ruin','fountain1','camp.goblin','antHive'],
-	rRARE: 		['swamp','demonNest'],
-	rEPIC: 		['portal'],
+	rCOMMON: 	'camp.ogre, camp.goblin, nest.blueScarab, nest.redScarab',
+	rUNCOMMON: 	'collonade, ruin, fountain1, antHive, floodPit, pitEncircle',
+	rRARE: 		'floodWater, swamp, demonNest',
+	rEPIC: 		'portal',
 	monsters: 	['isEarthChild','isAnimal'],
 }
 
 ThemeList.hellscape = {
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['demonNest'],
-	rUNCOMMON: 	['nest.blueScarab','nest.redScarab','collonade','ruin','fountain1'],
-	rRARE: 		['etherHive','balgursChamber'],
+	rCOMMON: 	'demonNest, firePit',
+	rUNCOMMON: 	'nest.blueScarab, nest.redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
+	rRARE: 		'etherHive, balgursChamber',
 	prefer: 	['flames','mud'],
 	monsters: 	['isDemon','isPlanar'],
 	//items: 		['isGem'],
@@ -161,24 +186,71 @@ ThemeList.hellscape = {
 
 ThemeList.refugeeCamp = {
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['camp.human','den.dog'],
+	rCOMMON: 	'camp.human, den.dog',
+	rUNCOMMON: 	'floodPit, pitEncircle',
 	monsters: 	['isSunChild','isPet']
 }
 
 ThemeList.lunarColony = {
 	scapes: 	['caveRandom'],
-	rCOMMON: 	['lunarEmbassy'],
-	rRARE: 		['etherHive'],
-	rEPIC: 		['portal'],
+	rCOMMON: 	'lunarEmbassy',
+	rRARE: 		'etherHive',
+	rEPIC: 		'portal',
 	monsters: 	['isLunarChild','isPlanar'],
 }
 
 ThemeList.sunPlane = {
 	scapes: 	['caveRandom'],
-	rREQUIRED: 	['sunDiscipleTemple'],
-	rCOMMON: 	[],
-	rEPIC: 		['portal'],
+	rREQUIRED: 	'sunDiscipleTemple',
+	rEPIC: 		'portal',
 	monsters: 	['isSunChild','isPlanar'],
+}
+
+PlaceList.floodWater = {
+	floodId: 'water',
+	tileCount: 150, //() => Math.randInt(50,300),
+	sparkId: 'floor',
+	sparkLimit: 4,
+	sparkDensity: 0.02
+}
+
+PlaceList.floodMist = {
+	floodId: 'mist',
+	tileCount: 300, //() => Math.randInt(100,400)
+}
+
+PlaceList.floodOre = {
+	floodId: 'oreVein',
+	tileCount: 100, //() => Math.randInt(50,300),
+	sparkId: 'floor',
+	sparkLimit: 2,
+	sparkDensity: 0.005
+}
+
+PlaceList.floodPit = {
+	floodId: 'pit',
+	tileCount: 300, //() => Math.randInt(50,300),
+	sparkId: 'floor',
+	sparkLimit: 4,
+	sparkDensity: 0.02
+}
+
+PlaceList.firePit = {
+	floodId: 'pit',
+	tileCount:  150, //() => Math.randInt(45,100),
+	sparkId: 'flames',
+	sparkLimit: 3,
+	sparkDensity: 1.00
+
+}
+
+PlaceList.pitEncircle = {
+	floodId: 'floor',
+	tileCount: 250, //() => Math.randInt(50,200),
+	sparkId: 'pit',
+	sparkLimit: 1,
+	sparkDensity: 1.00
+
 }
 
 PlaceList.goblinGathering = {
@@ -666,10 +738,57 @@ xxxxxxxxxxx...........
 		F: "crystal"
 	},
 	tileTypes: {
-		"tileStoneFloor":      { mayWalk: true,  mayFly: true,  opacity: 0, name: "tile stone floor", img: "dc-dngn/floor/rect_gray1.png", isFloor: true },
-		"tileStoneWall":       { mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall", img: "dc-dngn/floor/pedestal_full.png", isWall: true },
-		"masterStatue":    { mayWalk: false, mayFly: true, opacity: 0, name: "master statue", img: "dc-mon/statues/silver_statue.png"},
-		"kingStatue":    { mayWalk: false, mayFly: true, opacity: 0, name: "king statue", img: "dc-mon/statues/wucad_mu_statue.png"},
+		tileStoneFloor:      { mayWalk: true,  mayFly: true,  opacity: 0, name: "tile stone floor", img: "dc-dngn/floor/rect_gray1.png", isFloor: true },
+		tileStoneWall:       { mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall", img: "dc-dngn/floor/pedestal_full.png", isWall: true, wantsDoor: true },
+		masterStatue:    { mayWalk: false, mayFly: true, opacity: 0, name: "master statue", img: "dc-mon/statues/silver_statue.png"},
+		kingStatue:    { mayWalk: false, mayFly: true, opacity: 0, name: "king statue", img: "dc-mon/statues/wucad_mu_statue.png"},
+	}
+}
+
+PlaceList.gatewayToDwarves = {
+	map:
+`
+xxxxxxx 
+xxxGxxx
+xb.d.bx
+x.....x
+x.....x
+x.....x
+xxx+xxx
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		G: "gateway",
+		b: "brazier",
+		d: "dwarf",
+	},
+	onEntityCreate: {
+		dwarf: { name: "dwarf herald", attitude: Attitude.WANDER, tether: 3 },
+		gateway: { themeId: 'dwarfTown' },
+	}
+}
+
+PlaceList.gatewayFromDwarves = {
+	map:
+`
+  xxx  
+ wxGxw 
+ w...w 
+ww...ww
+wb...bw
+ww...ww
+ ..... 
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		w: "wall",
+		G: "gateway",
+		b: "brazier",
+		d: "dwarf",
 	}
 }
 
@@ -679,7 +798,7 @@ PlaceList.dwarfTemple = {
  xxxxxxx 
  xf.A.fx 
 xx.....xx
-xb.....bx
+xb..d..bx
 x.......x
 xb.....bx
 x.......x
@@ -693,7 +812,11 @@ xxxx+xxxx
 		x: "tileStoneWall",
 		A: "altar",
 		b: "brazier",
-		f: "fountain"
+		f: "fountain",
+		d: "dwarf",
+	},
+	onEntityCreate: {
+		dwarf: { name: "dwarf cleric", attitude: Attitude.WANDER, tether: 5 }
 	}
 }
 
@@ -704,7 +827,7 @@ xxxxxxxxx
 x.......x
 x.......x
 x..d....x
-x.......+
+x.......x
 x.......x
 x.......x
 x....d..x
@@ -718,6 +841,55 @@ xxxx+xxxx
 		x: "tileStoneWall",
 		d: "dwarf",
 	},
+	onEntityCreate: {
+		dwarf: { attitude: Attitude.WANDER, tether: 10 }
+	}
+}
+
+PlaceList.dwarfHouseSmall = {
+	map:
+`
+xxxxxxx
+x.....x
+x..d..x
+x.....x
+x.....x
+x.....x
+x.....x
+xxxx+xx
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		d: "dwarf",
+	},
+	onEntityCreate: {
+		dwarf: { attitude: Attitude.WANDER, tether: 6 }
+	}
+}
+
+PlaceList.dwarfHouseL = {
+	map:
+`
+xxxxxxxxxxx
+x.........x
+x..d......x
+x.....xx+xx
+x.....x
+x.....x
+x.....x
+xxxx+xx
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		d: "dwarf",
+	},
+	onEntityCreate: {
+		dwarf: { attitude: Attitude.WANDER, tether: 6 }
+	}
 }
 
 PlaceList.dwarfSmithy = {

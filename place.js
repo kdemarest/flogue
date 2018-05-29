@@ -10,8 +10,12 @@ let Place = {
 		}
 	},
 	generateMap: function(place) {
+		if( !place.map && !place.floodId ) debugger;
+		if( !place.map ) {
+			return;
+		}
 		// Replace map symbols with allocated symbols
-		place.mapOriginal = place.map.trim();
+		place.mapOriginal = place.map;
 		let map = '';
 		for( let i=0 ; i<place.mapOriginal.length ; ++i ) {
 			let s = place.mapOriginal.charAt(i);
@@ -38,7 +42,7 @@ let Place = {
 		place.map = new SimpleMap(map);
 	},
 	rotateIfNeeded: function(place) {
-		if( place.flags && place.flags.rotate ) {
+		if( place.flags && place.flags.rotate && place.map ) {
 			place.map.rotate(Math.randInt(0,4));
 		}
 	}

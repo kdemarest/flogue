@@ -121,19 +121,6 @@ class SimpleMap {
 			return false;
 		}
 		let symbol = this.tileSymbolGet(x,y);
-		if( !SymbolToType[symbol].isTileType ) {
-			debugger;
-
-			if( SymbolToType[symbol].isItemType ) {
-				// WARNING! This only happens when you are processing the map to
-				// extract entities!!
-				let f = new Finder(this.itemList).at(x,y);
-				if( f.count ) {
-					return f.first;
-				}
-			}
-
-		}
 		return SymbolToType[symbol];
 	}
 	tileTypeGetDir(x,y,dir) {
@@ -148,8 +135,55 @@ class Map extends SimpleMap {
 	constructor(tile,itemList) {
 		super(tile);
 		this.actionCount = 0;
+		this.tileEntity = [];
 		this.itemList = itemList;
+		this.resetSprites();
 	}
+	resetSprites() {
+		this.tileSprite = [];
+		this.traverse( (x,y) => {
+			this.tileSprite[y] = this.tileSprite[y] || [];
+			this.tileSprite[y][x] = [];
+		});
+	}
+	toEntity(x,y,adhocEntity) {
+		if( !this.tileEntity[y] ) {
+			this.tileEntity[y] = this.tileEntity[y] || [];
+			if( !this.tileEntity[y][x] ) {
+				adhocEntity = adhocEntity || adhoc( SymbolToType[tileSymbolGet(x,y)], this, x, y );
+				this.tileEntity[y][x] = adhocEntity;
+				console.log('Tile entity ('+x+','+y+') '+adhocEntity.typeId);
+			}
+		}
+		return this.tileEntity[y][x];
+	}
+	tileTypeGet(x,y) {
+		if( !this.inBounds(x,y) ) {
+			return false;
+		}
+
+		if( this.tileEntity[y] && this.tileEntity[y][x] ) {
+			return this.tileEntity[y][x];
+		}
+		let symbol = this.tileSymbolGet(x,y);
+		return SymbolToType[symbol];
+	}
+	tileSymbolSet(x,y,symbol) {
+		super.tileSymbolSet(x,y,symbol);
+		if( this.tileEntity[y] && this.tileEntity[y][x] ) {
+			let e = this.tileEntity[y][x];
+			if( e.symbol !== symbol ) {
+				// If my type has changed, reflect that in the tileEntity. This is a COMPLEX problem, because
+				// some elements in the OLD type might not exist in the NEW type and vice-versa.
+				for( let key in SymbolToType[e.symbol] ) {
+					e[key] = null;
+				}
+				Object.assign(e,SymbolToType[symbol]);
+				e.spriteList = null;
+			}
+		}
+	}
+
 	pickPosEmpty() {
 		let pos = this.pickPosBy(0,0,0,0,(x,y,type)=>type.isFloor);
 		return pos;
@@ -168,17 +202,18 @@ class Map extends SimpleMap {
 		return new Finder(this.itemList,me);
 	}
 	itemCreateByType(x,y,type,presets,inject) {
+		if( x===undefined ) debugger;
 		if( type.isRandom ) debugger;
 		if( !this.tileTypeGet(x,y).mayWalk ) {
+			debugger;
 			let dir = this.pickDirWalkable(x,y);
 			if( dir !== false ) {
 				x += DirectionAdd[dir].x;
 				y += DirectionAdd[dir].y;
 			}
 		}
-		let item = new Item( this, type, { x:x, y:y }, presets, inject );
-
-		this.itemList.push(item);
+		let item = new Item( this.level, type, presets, inject );
+		item.giveTo(this,x,y);
 		return item;
 	}
 	itemCreateByTypeId(x,y,typeId,presets,inject) {
@@ -189,14 +224,17 @@ class Map extends SimpleMap {
 		if( !this.itemList.includes(item) ) {
 			debuger;
 		}
-		Array.filterInPlace( this.itemList, i => i.id!=item.id )
+		Array.filterInPlace( this.itemList, i => i.id!=item.id );
+		spriteDeathCallback( item.spriteList );
 		//this.tileSymbolSet(item.x,item.y,TileTypeList['floor'].symbol);
 	}
-	_itemTake(item) {
+	_itemTake(item,x,y) {
 		if( this.itemList.includes(item) ) {
 			debuger;
 		}
 		this.itemList.push(item);
+		item.x = x;
+		item.y = y;
 		//this.tileSymbolSet(item.x,item.y,item.symbol);
 	}
 }

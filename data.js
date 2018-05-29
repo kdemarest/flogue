@@ -4,7 +4,7 @@
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
 				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", LOSETURN: "lose turn", PRAY: "pray",
 				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop",
-				DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGVIEW: "debugview", DEBUGTEST: "debugtest",
+				DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGVIEW: "debugview", DEBUGMAP: "debugmap", DEBUGTEST: "debugtest",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit",
 				EXECUTE: "execute", CANCEL: "cancel"
 			};
@@ -239,8 +239,6 @@ let SayStatList = {
 
 
 
-const TileTypeDefaults = { mayWalk: false, mayFly: false, opacity: 0,
-							damage: '', damageType: DamageType.BASH, img: null };
 const TileTypeList = {
 	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", isFloor: true },
 	"grass":      { symbol: ',', mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
@@ -248,13 +246,14 @@ const TileTypeList = {
 	"glass":      { symbol: '▢', mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
 	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", img: "dc-dngn/pit.png" },
 	"shaft":      { symbol: ';', mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", img: "dc-dngn/dngn_trap_shaft.png" },
-	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", img: "dc-dngn/dngn_open_door.png" },
-	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", img: "dc-dngn/dngn_closed_door.png" },
+	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", isDoor: 1, img: "dc-dngn/dngn_open_door.png" },
+	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", isDoor: 1, img: "dc-dngn/dngn_closed_door.png" },
 	"flames":     { symbol: 'ᵮ', mayWalk: true,  mayFly: true,  opacity: 0, name: "fames", light: 5, glow:1, damage: '1d4', damageType: DamageType.BURN, img: "dc-mon/nonliving/fire_elemental.png" },
 	"water":      { symbol: '~', mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
 	"lava":    	  { symbol: '⍨', mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "lava", light: 5, glow:1, damage: '3d20', damageType: DamageType.BURN, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: '░', mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: '⋍', mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png" },
+	"oreVein":    { symbol: 'x', mayWalk: false, mayFly: false, opacity: 1, name: "ore vein", img: "dc-dngn/wall/lair0.png", isWall: true, mineSwings: 3, mineId: 'ore.ironOre' },
 	"ghoststone": { symbol: 'J', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
 	"obelisk":    { symbol: 'B', mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png" },
 	"crystal":    { symbol: 'C', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png" },
@@ -270,7 +269,7 @@ function resolve(memberName) {
 
 const ItemTypeDefaults = {
 	namePattern: 'nameless *',
-	mayWalk: true, mayFly: true, opacity: 0, triggerOnPickup: false,
+	mayWalk: true, mayFly: true, opacity: 0,
 	img: null
 }
 
@@ -320,19 +319,19 @@ const GemEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','luminar
 PotionEffects.healing.rarity = 10.00;
 
 const WeaponList = toFab({
-	"rock":     	{ level:  0, damageMultiplier: 0.50, damageType: DamageType.BASH, mayThrow: true, attackVerb: 'strike' },
-	"dart":     	{ level:  0, damageMultiplier: 0.20, damageType: DamageType.STAB, effectChance: 0.80, effects: DartEffects, mayThrow: true, attackVerb: 'strike' },
-	"dagger":   	{ level:  0, damageMultiplier: 0.60, damageType: DamageType.STAB, mayThrow: true, attackVerb: 'strike' },
+	"rock":     	{ level:  0, damageMultiplier: 0.50, damageType: DamageType.BASH, mayThrow: true, range: 7, attackVerb: 'strike' },
+	"dart":     	{ level:  0, damageMultiplier: 0.20, damageType: DamageType.STAB, effectChance: 0.80, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike' },
+	"dagger":   	{ level:  0, damageMultiplier: 0.70, damageType: DamageType.STAB, effectChance: 0.30, mayThrow: true, range: 4, attackVerb: 'strike' },
 	"solKnife":   	{ level:  0, damageMultiplier: 0.60, damageType: DamageType.CUT , attackVerb: 'carve', neverPick: true, isSoulCollector: true, name: "sol knife" },
 	"club":   		{ level:  0, damageMultiplier: 0.70, damageType: DamageType.BASH, attackVerb: 'smash' },
 	"sword": 		{ level:  0, damageMultiplier: 1.00, damageType: DamageType.CUT },
 	"greatsword": 	{ level:  0, damageMultiplier: 1.20, damageType: DamageType.CUT },
 	"mace": 		{ level:  0, damageMultiplier: 0.90, damageType: DamageType.BASH },
 	"hammer": 		{ level:  0, damageMultiplier: 1.40, damageType: DamageType.BASH },
-	"axe": 			{ level:  0, damageMultiplier: 1.00, damageType: DamageType.CUT, mayThrow: true, attackVerb: 'strike' },
-	"spear": 		{ level:  0, damageMultiplier: 0.70, damageType: DamageType.STAB, range: 2, mayThrow: true, attackVerb: 'strike' },
-	"pike": 		{ level:  0, damageMultiplier: 0.90, damageType: DamageType.STAB, range: 2 },
-	"pitchfork": 	{ level:  0, damageMultiplier: 1.20, damageType: DamageType.STAB, range: 2 },
+	"axe": 			{ level:  0, damageMultiplier: 1.00, damageType: DamageType.CUT, mayThrow: true, range: 5, attackVerb: 'strike' },
+	"spear": 		{ level:  0, damageMultiplier: 0.70, damageType: DamageType.STAB, reach: 2, mayThrow: true, range: 6, attackVerb: 'strike' },
+	"pike": 		{ level:  0, damageMultiplier: 0.90, damageType: DamageType.STAB, reach: 2 },
+	"pitchfork": 	{ level:  0, damageMultiplier: 1.20, damageType: DamageType.STAB, reach: 2, mayThrow: true, range: 4 },
 });
 
 const WeaponMaterialList = toFab({
@@ -471,7 +470,7 @@ const ItemTypeList = {
 // GATEWAYS
 	"stairsDown": { symbol: '>', name: "stairs down", gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, neverPick: true, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
 	"stairsUp":   { symbol: '<', name: "stairs up", gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, neverPick: true, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
-	"gateway":    { symbol: '𝞟', name: "gateway", gateDir: 0, gateInverse: 'gateway', mayPickup: false, neverPick: true, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
+	"gateway":    { symbol: 'y', name: "gateway", gateDir: 0, gateInverse: 'gateway', mayPickup: false, neverPick: true, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
 	"portal":     { symbol: 'Ώ', name: "portal", gateDir: 0, gateInverse: 'portal', mayPickup: false, neverPick: true, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
 // DECOR
 	"columnBroken": { symbol: 'O', mayWalk: false, mayFly: false, name: "broken column", neverPick: true, img: "dc-dngn/crumbled_column.png" },
@@ -496,7 +495,7 @@ const ItemTypeList = {
 				rarity:  0.50, isSpell: true,
 				img: "item/scroll/scroll.png", icon: 'spell.png' },
 	"ore": 		{ symbol: '"', isTreasure: 1, namePattern: '{variety}', varieties: OreList, isOre: true, neverPick: true,
-				rarity:  5.00,
+				rarity:  0.01,	// Has to be non-neverPick to be chosen from the picker. Hmm...
 				imgGet: (self,img) => "item/ring/"+(img || self.variety.img || "i-protection")+".png", imgChoices: OreList, icon: 'ore.png' },
 	"gem": 		{ symbol: "^", isTreasure: 1, namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
 				rarity: 2.00, effectChance: 0.20, mayThrow: 1, mayTargetPosition: 1, autoCommand: Command.USE,
@@ -588,6 +587,9 @@ let OozeImmunity = ['blind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,D
 let OozeResistance = [DamageType.CUT,Attitude.ENRAGED,Attitude.CONFUSED].join(',');
 let OozeVulnerability = [DamageType.BURN,DamageType.FREEZE].join(',');
 
+let DemonImmunity = [DamageType.BURN].join(',');
+let DemonResistance = [DamageType.POISON,DamageType.STAB].join(',');
+let DemonVulnerability = [DamageType.SMITE,DamageType.FREEZE].join(',');
 const MonsterTypeList = {
 
 // GOOD TEAM
@@ -622,7 +624,7 @@ const MonsterTypeList = {
 		brainFlee: true,
 		isSunChid: true,
 		isDwarf: true,
-		inventoryLoot: '100% stuff x30',
+		inventoryLoot: '30x 100% stuff',
 		properNoun: true,
 		packAnimal: true
 	},
@@ -653,20 +655,24 @@ const MonsterTypeList = {
 		core: [ 'a', 30, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
 		brainAlertFriends: true,
 		brainTalk: true,
-		immune: [DamageType.BURN,Attitude.PANIC].join(','),
+		immune: [DamageType.BURN,Attitude.PANICKED].join(','),
 		isDemon: true,
 		sayPrayer: 'I shall rule this planet!',
-		rarity: 0.000000001
+		rarity: 0.000000001,
+		resist: DemonResistance,
+		vuln: DemonVulnerability,
 	},
 	"demon": {
 		core: [ 'D', 5, '3:5', 'evil', 'burn', 'player/base/draconian_red_f.png', 'it' ],
 		brainAlertFriends: true,
 		brainTalk: true,
-		immune: DamageType.BURN,
+		immune: DemonImmunity,
 		isDemon: true,
 		loot: '30% coin, 50% potion.fire, 30% demonScale, 20% pitchfork, 30% demonEye',
 		packAnimal: true,
-		sayPrayer: 'Hail Balgur, ruler of the deep!'
+		resist: DemonResistance,
+		sayPrayer: 'Hail Balgur, ruler of the deep!',
+		vuln: DemonVulnerability,
 	},
 	"ethermite": {
 		core: [ 'e', 10, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
@@ -694,7 +700,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
-		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 30% pinchOfEarth',
+		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 20% any, 30% pinchOfEarth',
 		packAnimal: true,
 		sayPrayer: 'Oh mighty Thagzog...'
 	},
@@ -727,7 +733,7 @@ const MonsterTypeList = {
 		loot: '30% potion.fire, 30% impBrain',
 		senseInvisible: true,
 		travelMode: "fly",
-		vuln: DamageType.FREEZE
+		vuln: DemonVulnerability
 	},
 	"kobold": {
 		core: [ 'k', 1, '4:20', 'evil', 'cut', 'dc-mon/kobold.png', '*' ],
@@ -843,7 +849,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		immune: DamageType.FREEZE,
 		isLunarChild: true,
-		loot: '50% coin, 50% coin, 40% lunarEssence',
+		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
 		vuln: DamageType.BURN
 	},
@@ -853,7 +859,7 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
-		loot: '50% coin, 50% coin, 40% lunarEssence',
+		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
 		travelType: 'fly',
 		vuln: DamageType.BURN
@@ -882,7 +888,7 @@ const MonsterTypeList = {
 		core: [ 'r', 1, '1:20', 'neutral', 'bite', 'dc-mon/animals/sheep.png', 'it' ],
 		attitude: Attitude.FEARFUL,
 		isAnimal: true,
-		loot: '50% wool',
+		loot: '3x 50% wool',
 		packAnimal: true
 	}
 };
@@ -998,6 +1004,28 @@ TileTypeList.mud.onDepart = function(entity,self) {
 	}
 	entity.mudded = false;
 }
+
+TileTypeList.oreVein.onTouch = function(entity,self) {
+	if( !self.isPosition ) debugger;
+	entity.swings = (entity.swings||0)+1;
+	animationAdd( new AniPaste({
+		entity: 	entity, 
+		sticker: 	self.img,
+		duration: 	3.0,
+		onTick: 	function(delta) { this.yOfs -= delta*32; }
+	}));
+
+	if( entity.swings >= self.mineSwings ) {
+		entity.swings = 0;
+		let level     = self.map.level;
+		entity.map.tileSymbolSetFloor( self.x, self.y );
+		new Picker(self.map.level).pickLoot( self.mineId || "ore", loot=>{
+			loot.giveTo(self.map,self.x,self.y);
+		});
+	}
+}
+
+
 
 TileTypeList.forcefield.onEnterType = function(entity,self) {
 	if( entity.isImmune(self.typeId) || ( entity.isResistant(self.typeId) && Math.chance(50) ) ) {
@@ -1118,6 +1146,7 @@ function loadKeyMapping(name) {
 		X: Command.DEBUGKILL,
 		a: Command.DEBUGTHRIVE,
 		s: Command.DEBUGVIEW,
+		z: Command.DEBUGMAP,
 		i: Command.INVENTORY,
 		q: Command.QUAFF,
 		t: Command.THROW,

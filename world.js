@@ -26,12 +26,16 @@ class World {
 			}
 		}
 		let palette = {
-			floor: TileTypeList.floor.symbol,
-			wall: TileTypeList.wall.symbol,
-			unknown: TILE_UNKNOWN,
-			entrance: this.area===null ? ItemTypeList.stairsUp.symbol : entranceSymbol,
-			// (levelDelta>0 ? ItemTypeList.stairsUp : (levelDelta<0 ? ItemTypeList.stairsDown : ItemTypeList.gateway)),
-			exit: ItemTypeList.stairsDown.symbol
+			floor: 			TileTypeList.floor.symbol,
+			wall:  			TileTypeList.wall.symbol,
+			door:  			TileTypeList.door.symbol,
+			fillFloor:  	TileTypeList.floor.symbol,
+			fillWall:  		TileTypeList.wall.symbol,
+			outlineWall:  	TileTypeList.wall.symbol,
+			passageFloor: 	TileTypeList.floor.symbol,
+			unknown: 		TILE_UNKNOWN,
+			entrance: 		this.area===null ? ItemTypeList.stairsUp.symbol : entranceSymbol,
+			exit: 			ItemTypeList.stairsDown.symbol
 		};
 
 		let area = new Area(areaId,level,theme,isCore);
@@ -96,8 +100,9 @@ class World {
 
 		// WARNING! Someday we will need to push the DeedList that is NOT the player into the old area.
 		// and resurrect the new area's deed list.
+		let oldArea = this.area;
 		let newArea = this.gateTo(gate.toAreaId);
-		this.onAreaChange(newArea,gate.toGateId);
+		this.onAreaChange(oldArea,newArea,gate.toGateId);
 		return newArea;
 	}
 

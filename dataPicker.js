@@ -21,14 +21,9 @@ class Picker {
 		return PickerCache[this.cacheId+'.'+type];
 	}
 
-	get placesRequired() {
-		let table = [];
-		for( let placeId in PlaceList ) {
-			let place = PlaceList[placeId];
-			if( this.theme.rarityTable[placeId]=='required' ) {
-				table.push(place);
-			}
-		}
+	generatePlacesRequired() {
+		let chanceList = String.chanceParse( this.theme.rREQUIRED || '' );
+		let table = Array.chancePick(chanceList);
 		return table;
 	}
 
@@ -41,7 +36,7 @@ class Picker {
 				if( place.neverPick || (place.level != 'any' && place.level > this.level) ) {
 					continue;
 				}
-				if( !this.theme.rarityTable[placeId] || this.theme.rarityTable[placeId]=='required' ) {
+				if( !this.theme.rarityTable[placeId] ) {
 					continue;
 				}
 				let placeLevel = (place.level=='any' ? this.level : place.level);
@@ -104,12 +99,14 @@ class Picker {
 								if( level > this.level ) {
 									return;
 								}
-								if( item.neverPick || v.neverPick || m.neverPick || q.neverPick || e.neverPick ) {
-									return;
-								}
 								if( !this.level ) debugger;
 								let chance = Math.chanceToAppearSigmoid(level,this.level) * gScale;
 								chance *= (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
+								if( item.neverPick || v.neverPick || m.neverPick || q.neverPick || e.neverPick ) {
+									chance = 0;
+									// WARNING! This means it will never be RANDOMLY picked, but it also means that when
+									// specified it will be FOUND!
+								}
 
 								// Someday let the theme prefer items
 
@@ -224,18 +221,23 @@ class Picker {
 		return base;
 	}
 
-	pickLoot(_table,lootString) {
-		let lootList = String.lootParse(lootString);
-		let idList = new Finder( Array.lootPick(lootList) );
+	// picks it, but doesn't give it to anyone.
+	pickLoot(lootString,callback) {
+		let chanceList = String.chanceParse(lootString);
+		let idList = new Finder( Array.chancePick(chanceList) );
 		let list = [];
 		idList.process( id => {
-			let obj = this.pick(_table,id);
+			let obj = this.pick(this.itemTable,(''+id).toLowerCase()==='any' ? null : id);
 			if( obj ) {
-				list.push(obj);
+				let loot = new Item( this.level, obj.item, obj.presets, {isLoot:true} );
+				if( callback ) {
+					callback(loot);
+				}
 			}
 		});
 		return new Finder(list);
 	}
+
 	pick(_table,typeId) {
 
 		let table;
@@ -263,14 +265,19 @@ class Picker {
 			table = choices;
 		}
 
+		if( !total && table.length ) {
+			// It was all neverPicks, so just choose from among those. REMEMBER that the table is
+			// pairs of data, so we can't just call pick(). We should alter the table.
+			for( let i=0 ; i<table.length ; i += 2 ) {
+				table[i] = 1;	// just need some, even number
+				++total;
+			}
+		}
+
 		if( !total ) {
 			debugger;
 			return false;
 		}
-
-//		if( table.length == 2 ) {
-//			debugger;
-//		}
 
 		let n = Math.rand(0,total);
 		let i = -2;

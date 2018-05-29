@@ -1,7 +1,8 @@
 // ITEM
 class Item {
-	constructor(owner,itemType,position,presets,inject) {
-		let picker = new Picker(owner.level);
+	constructor(level,itemType,presets,inject) {
+
+		let picker = new Picker(level);
 		if( !presets && !itemType.neverPick ) {
 			let obj = picker.pick(picker.itemTable,itemType.typeId);
 			presets = obj.presets;
@@ -19,10 +20,7 @@ class Item {
 			return target;
 		}
 
-		let inits = { level: owner.level, owner: owner, id: GetUniqueEntityId(itemType.typeId,owner.level), x:position.x, y:position.y };
-		if( owner && owner.isMonsterType ) {
-			inits.ownerOfRecord = owner;
-		}
+		let inits = { level: level, id: GetUniqueEntityId(itemType.typeId,level), owner: null, x:null, y:null };
 		Object.assign( this, itemType, presets, inject||{}, inits );
 
 		merge(this,this.quality);
@@ -37,7 +35,8 @@ class Item {
 		}
 
 		if( this.effect !== undefined ) {
-			if( this.effect.isInert /* || (this.effectChance !== undefined && Math.chance((1-this.effectChance)*100) ) )*/ ) {
+			let effectChance = Math.clamp((this.effectChance||0) + (0.01*this.level),0.00,1.00);
+			if( this.effect.isInert || (this.effectChance !== undefined && Math.chance((1-effectChance)*100) ) )  {
 				delete this.effect;
 			}
 			else {
@@ -45,11 +44,9 @@ class Item {
 			}
 		}
 
-		if( this.x !== position.x || this.y !== position.y ) {
+		if( this.x !== null || this.y !== null || this.owner !== null ) {
 			debugger;
 		}
-
-		let self = this;
 		this.name = /*'L'+this.level+' '+*/(this.name || String.tokenReplace(this.namePattern,this));
 	}
 	get baseType() {
@@ -92,29 +89,27 @@ class Item {
 		}
 		return this.armor;
 	}
-
-	moveTo(entity,x,y) {
-		let ok = (!this.onPickup || this.onPickup(this,entity)!==false);
-		if( !ok ) {
-			return false;
+	giveTo(entity,x,y) {
+		if( this.owner ) {
+			this.owner._itemRemove(this);
 		}
-		this.owner._itemRemove(this);	
-
+		if( entity.isItemType && !entity.isPosition ) debugger;
+		if( x===undefined || y===undefined ) debugger;
 		this.x = x;
 		this.y = y;
 		this.owner = entity;
-		this.owner._itemTake(this);
+		this.owner._itemTake(this,x,y);
 		if( entity.isMonsterType ) {
 			// NOTICE! The ownerOfRecord is the last entity that operated or held the item. Never the map.
 			// That means we can hold the ownerOfRecord "responsible" for thing the item does, whether it
 			// was thrown, or left as a bomb, or whatever. That is, even if the MAP is the CURRENT owner.
 			this.ownerOfRecord = entity;
 		}
-		return true;
 	}
 	destroy() {
 		this.owner._itemRemove(this);
-		// Now the item should be simpky gone.	
+		// Now the item should be simply gone.
+		spriteDeathCallback(this.spriteList);
 	}
 
 	trigger(command,originEntity,target) {

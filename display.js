@@ -15,6 +15,7 @@ function createDrawList(observer,map,entityList,asType) {
 			let ry = py+y-d;
 			let rfx = px+fx-d;
 			let rfy = py+fy-d;
+		if( typeof fy==='undefined' || fy===undefined ) debugger;
 			if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
 				a[fy][fx][0] = displaySightDistance;
 			}
@@ -40,9 +41,9 @@ function createDrawList(observer,map,entityList,asType) {
 							a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
 						}
 					}
-					if( a[fy][fx][0] === undefined ) {
-						debugger;
-					}
+					//if( a[fy][fx][0] === undefined ) {
+					//	debugger;
+					//}
 				}
 			}
 		}
@@ -110,27 +111,41 @@ function createDrawList(observer,map,entityList,asType) {
 
 	// Now assign tile layers, and remember that [0] is the light level. Tiles
 	// that shine light will do so in this loop.
+	//let dChar = '';
+	//let debug = '';
 	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
 		let ty = y-(py-d);
 		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
 			let tx = x-(px-d);
 			let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
 			let visible = inBounds && vis[y][x];
-			let mapSymbol;
+			let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
+			let tile;
 			let item;
 			let entity;
+
 			if( inBounds ) {
-				mapSymbol = map.tile[y][x];
+				tile =		map.tileTypeGet(x,y);
 				item =      q[y*map.xLen+x];
 				entity =    p[y*map.xLen+x];
+				if( !tile.isTileType ) {
+					debugger;
+				}
+				spillLight(px,py,tx,ty,tile.light || 0);
+			}
 
-				if( SymbolToType[mapSymbol].isTileType ) {
-					spillLight(px,py,tx,ty,SymbolToType[mapSymbol].light || 0);
+			if( !inBounds ) {
+				//dChar = '-';
+				if( inPane ) {
+					//dChar = 'a';
+					a[ty][tx].length = 0;
 				}
 			}
-			if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
+
+			if( inPane && inBounds ) {
 				let aa = a[ty][tx];
 				if( !visible ) {
+					//dChar = 'i';
 					aa[0] = mapMemoryLight;
 					if( observer.mapMemory && observer.mapMemory[y] && observer.mapMemory[y][x] ) {
 						aa[1] = observer.mapMemory[y][x];
@@ -149,16 +164,19 @@ function createDrawList(observer,map,entityList,asType) {
 					}
 				}
 				else {
-					aa.push(SymbolToType[mapSymbol]);
-					if( item ) { aa.push(item); }
-					if( entity ) { aa.push(entity); }
-
-					if( item ) { visId[item.id] = item; }
-					if( entity ) { visId[entity.id] = entity; }
+					//dChar = 'T';
+					aa.push(tile);
+					if( item ) { aa.push(item); visId[item.id] = item;}
+					if( entity ) { aa.push(entity); visId[entity.id] = entity;}
 				}
 			}
+			//else
+			//	dChar = 'p';
+			//debug += dChar;
 		}
+		//debug += '<<\n';
 	}
+	//console.log(debug);
 
 	for( let anim of animationList ) {
 		if( anim.entity && !visId[anim.entity.id] ) {
@@ -203,6 +221,8 @@ class ImageRepo {
 			}
 		}
 
+		// Pre-load all of the images by running the real imagGets with the SECOND variable forced to each
+		// variation of imgChoices. It is the responsibilty of the type to implement this properly.
 		for( let symbol in SymbolToType ) {
 			let type = SymbolToType[symbol];
 			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
@@ -240,6 +260,7 @@ class ImageRepo {
 	}
 }
 
+let spriteDeathCallback;
 
 class ViewMap {
 	constructor(divId,sightDistance,imageRepo) {
@@ -248,17 +269,21 @@ class ViewMap {
 		this.d = ((sightDistance*2)+1);
 		this.tileWidth  = TILE_DIM * this.d;
 		this.tileHeight = TILE_DIM * this.d;
+		this.areaId = null;
 		this.app = new PIXI.Application(this.tileWidth, this.tileHeight, {backgroundColor : 0x000000});
 		document.getElementById(this.divId).appendChild(this.app.view);
 
 		this.imageRepo = imageRepo;
 
 		let self = this;
-		animationDeathCallback = function(sprite) {
-			if( !sprite ) {
-				return;
+		spriteDeathCallback = function(spriteList) {
+			if( spriteList ) {
+				for( let sprite of spriteList ) {
+					if( !sprite.keepAcrossAreas ) {
+						self.app.stage.removeChild(sprite);
+					}
+				}
 			}
-			self.app.stage.removeChild(sprite);
 		}
 
 		this.app.ticker.add(function(delta) {
@@ -274,60 +299,137 @@ class ViewMap {
 			event.yMap = y;
 		});
 	}
+
+	resetSprites() {
+		let kept = 0;
+		while( this.app.stage.children.length > kept ) {
+			let sprite = this.app.stage.children[kept];
+			if( sprite.keepAcrossAreas ) {
+				++kept;
+			}
+			else {
+				this.app.stage.children[kept].offStage = true;
+				this.app.stage.removeChild( this.app.stage.children[kept] );
+			}
+		}
+	}
+
 	draw(drawList,observer) {
-		while(this.app.stage.children[0]) {
-			this.app.stage.removeChild(this.app.stage.children[0]);
+		if( this.areaId != world.area.id ) {
+			this.resetSprites();
+			this.areaId = world.area.id;
 		}
 		let lightAlpha = [];
 		let maxLight = MaxSightDistance;
 		let glowLight = maxLight;
+		let staticTileEntity = { isStaticTile: true };
+		let staticContext = { x:0, y:0, light: 0 };
+
 		for( let i=0 ; i<maxLight+20 ; ++i ) {
 			lightAlpha[i] = Math.clamp(i/maxLight,0.0,1.0);
 		}
 
-		function make(x,y,entity,imgPath,light) {
-			let resource = this.imageRepo.get(imgPath);
-			if( !resource ) {
-				return;
-			}
-			let sprite = new PIXI.Sprite( resource.texture );
-			sprite.anchor.set(entity.xAnchor||0,entity.yAnchor||0);
-			sprite.x = x*32;
-			sprite.y = y*32;
-			sprite.scale._x = (entity.scale||1);
-			sprite.scale._y = (entity.scale||1);
-			sprite.alpha = (entity.alpha||1) * lightAlpha[light];
-			this.app.stage.addChild(sprite);
-			return sprite;
+		//let debug = '';
+
+		for( let child of this.app.stage.children ) {
+			child.visible = false;
 		}
+
+		function make(x,y,entity,imgGet,zOrder,light) {
+
+			entity.spriteList = entity.spriteList || [];
+
+			staticContext.x = x;
+			staticContext.y = y;
+			staticContext.light = light;
+			for( let i=0 ; i<(entity.spriteCount || 1) ; ++i ) {
+				if( !entity.spriteList[i] ) {
+					let imgPath = imgGet(entity,null,staticContext);
+					let resource = this.imageRepo.get(imgPath);
+					if( !resource ) {
+						continue;
+					}
+					entity.spriteList[i] = new PIXI.Sprite( resource.texture );
+					let sprite = entity.spriteList[i];
+					sprite.keepAcrossAreas = entity.isUser && entity.isUser();
+					sprite.anchor.set(entity.xAnchor||0,entity.yAnchor||0);
+					sprite.xOfs = (entity.xOfs||0);
+					sprite.yOfs = (entity.yOfs||0);
+					sprite.offStage = true;
+				}
+				let sprite = entity.spriteList[i];
+				if( sprite.offStage ) {
+					this.app.stage.addChild(sprite);
+					sprite.offStage = false;
+				}
+				sprite.zOrder 	= zOrder;
+				sprite.visible 	= true;
+				sprite.x 		= x + sprite.xOfs*32;
+				sprite.y 		= y + sprite.yOfs*32;
+				sprite.scale._x = (entity.scale||1) * (sprite.scale.amount||1);
+				sprite.scale._y = (entity.scale||1) * (sprite.scale.amount||1);
+				sprite.alpha 	= (entity.alpha||1) * lightAlpha[light];
+				//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
+			}
+		}
+
+		// These are the world coordinate offsets
+		let wx = (observer.x-this.sd);
+		let wy = (observer.y-this.sd);
 
 		for( let y=0 ; y<this.d ; ++y ) {
 			for( let x=0 ; x<this.d ; ++x ) {
+				if( !drawList[y] || !drawList[y][x] ) {
+					//debug += '-';
+					continue;
+				}
 				let tile = drawList[y][x];
 				let light = observer.isSpectator ? maxLight : tile[0];
 				for( let i=1 ; i<tile.length ; ++i ) {
 					let entity = tile[i];
 					if( !entity ) continue;
+					if( typeof entity !== 'object' ) debugger;
 					if( entity.isAnimation ) {
-						entity.sprite = make.call(
-							this,
-							entity.xGet()-(observer.x-this.sd),
-							entity.yGet()-(observer.y-this.sd),
-							entity,
-							entity.imgGet(entity),
-							entity.glow ? Math.max(light,glowLight) : light
+						let anim = entity;
+						let rx = (anim.xGet()-wx)*32;
+						let ry = (anim.yGet()-wy)*32;
+						make.call(
+							this, rx, ry,
+							anim,
+							anim.imgGet, 10,
+							anim.glow ? Math.max(light,glowLight) : light
 						);
 					}
 					else
-					if( this.imageRepo.imgGet[entity.typeId] ) {
-						let imgPath = this.imageRepo.imgGet[entity.typeId](entity);
-						make.call(this,x,y,entity,imgPath,entity.glow ? Math.max(light,glowLight) : light);
-					}
-					else {
-						debugger;
+					{
+						let imgGet = this.imageRepo.imgGet[entity.typeId];
+
+						if( imgGet ) {
+
+							if( entity.isTileType && !entity.isPosition ) {
+								entity.spriteList = observer.map.tileSprite[y+wy][x+wx];
+							}
+
+							let imgGet = this.imageRepo.imgGet[entity.typeId];
+							let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
+							make.call(this,x*32,y*32,entity,imgGet,i,lightAfterGlow);
+
+							if( entity.isTileType && !entity.isPosition ) {
+								observer.map.tileSprite[y+wy][x+wx] = staticTileEntity.spriteList;
+								delete entity.spriteList;
+							}
+
+						}
+						else {
+							debugger;
+						}
 					}
 				}
 			}
+			//debug += '\n';
 		}
+		//console.log(debug);
+
+		this.app.stage.children.sort( (a,b) => a.zOrder-b.zOrder );
 	}
 }

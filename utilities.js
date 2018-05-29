@@ -44,14 +44,13 @@ function nop() {}
 		}
 		return s;
 	}
-	String.lootParse = function(lootString) {
+	String.chanceParse = function(lootString) {
 		let result = [];
-		lootString.replace( /\s*(\d+%)*\s*([\w]+[.]*[\w]+)\s*(x[\d]+)*/g, function( match, chance, id, count ) {
-			count = count ? (parseInt(count.substr(1)) || 1) : 1;
-			while( count-- ) {
-				if( chance===undefined ) { chance='100'; }
-				result.push( { chance: parseInt(chance)||0, id: id } );
-			}
+		lootString.replace( /\s*([\d]+x)*\s*(\d+%)*\s*([\w]+[.]*[\w]+|[*])\s*/g, function( match, count, chance, id ) {
+			count = count ? (parseInt(count) || 1) : 1;
+			if( chance===undefined ) { chance='100'; }
+			chance = parseInt(chance)||100;
+			result.push( { count: count, chance: chance, id: id } );
 		});
 		return result;
 	}
@@ -73,12 +72,19 @@ function nop() {}
 		});
 
 		a.length = j;
-	return a;
+		return a;
 	}
 	Array.shuffle = function(array) {
 		for (let i = array.length - 1; i > 0; i--) {
 			let j = Math.floor(Math.random() * (i + 1));
 			[array[i], array[j]] = [array[j], array[i]];
+		}
+		return array;
+	}
+	Array.shufflePairs = function(array) {
+		for (let i = array.length/2 - 1; i > 0; i-=1) {
+			let j = Math.floor(Math.random() * (i + 1));
+			[array[2*i+0],array[2*i+1], array[2*j+0],array[2*j+1]] = [array[2*j+0],array[2*j+1], array[2*i+0],array[2*i+1]];
 		}
 		return array;
 	}
@@ -103,11 +109,13 @@ function nop() {}
 		}
 		return result;
 	}
-	Array.lootPick = function(lootArray) {
+	Array.chancePick = function(lootArray) {
 		let result = [];
 		for( let loot of lootArray ) {
-			if( Math.chance(loot.chance) ) {
-				result.push(loot.id);
+			for( let i=0 ; i<loot.count ; ++i ) {
+				if( Math.chance(loot.chance) ) {
+					result.push(loot.id);
+				}
 			}
 		}
 		return result;

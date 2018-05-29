@@ -40,9 +40,7 @@ class Entity {
 		this.name = /*'L'+this.level+' '+*/(this.name || String.tokenReplace(this.namePattern,this));
 
 		if( this.inventoryLoot ) {
-			this.lootGenerate(new Picker(this.level),this.inventoryLoot,this,loot => {
-				this._itemTake(loot);
-			});
+			this.lootTake( this.inventoryLoot, this.level, true );
 		}
 	}
 
@@ -93,6 +91,7 @@ class Entity {
 			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{},{ usedToBe: this, mannerOfDeath: mannerOfDeath, isCorpse: true } );
 		}
 		tell(mSubject,this,' ',mVerb,'die','!');
+		spriteDeathCallback(this.spriteList);
 		this.removed = true;
 	}
 
@@ -240,11 +239,16 @@ class Entity {
 		}
 		Array.filterInPlace(this.inventory, i => i.id!=item.id );
 	}
-	_itemTake(item) {
+	_itemTake(item,x,y) {
 		if( this.inventory.includes(item) ) {
 			debugger;
 		}
 		this.inventory.push(item);
+		item.x = this.x;
+		item.y = this.y;
+		if( x!==item.x || y!==item.y ) debugger;
+
+		item.ownerOfRecord = this;
 		if( item.isGold ) {
 			this.goldCount = (this.goldCount||0) + item.goldCount;
 			item.destroy();
@@ -729,53 +733,45 @@ class Entity {
 
 	itemCreateByType(type,presets,inject) {
 		if( type.isRandom ) debugger;
-		let item = new Item( this, type, { x:this.x, y:this.y }, presets, inject );
-		this._itemTake(item);
+		if( !this.level ) debugger;
+		let item = new Item( this.level, type, presets, inject );
+		item.giveTo(this,this.x,this.y);
 		return item;
 	}
-	lootGenerate(picker,lootString,target=this,callback) {
-		let objList = picker.pickLoot(picker.itemTable,lootString);
-		objList.process( obj => {
-			let loot = new Item( target, obj.item, { x:target.x, y:target.y }, obj.presets, {isLoot:true} );
-			callback(loot);
-		});
-	}
-	findLoot(item) {
-		let corpse = item.usedToBe;
-		if( !corpse ) {
-			tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
-			return;
-		}
+	lootTake( lootString, level, originatingEntity, quiet ) {
 		let found = [];
-		this.lootGenerate(new Picker(corpse.level),corpse.loot,this,loot=>{
-			this._itemTake(loot);
+		new Picker(level).pickLoot( lootString, loot=>{
+			loot.giveTo( this, this.x, this.y);
 			found.push(mObject|mA|mList|mBold,loot);
 		});
-		let description = [
-			mSubject,this,' ',mVerb,'find',' '
-		].concat( 
-			found.length ? found : ['<b>nothing</b>'],
-			[' on ',mObject,item]
-		);
-		tell(...description);
-		item.destroy();
-		return 
+		if( !quiet ) {
+			let description = [
+				mSubject,this,' ',mVerb,'find',' '
+			].concat( 
+				found.length ? found : ['<b>nothing</b>'],
+				originatingEntity ? [' on ',mObject,originatingEntity] : ['']
+			);
+			tell(...description);
+		}
 	}
 	pickup(item) {
 		if( !item ) debugger;
-		if( item.moveTo(this) !== false ) {
-			if( item.isArmor && !item.armor ) {
-				debugger;
-			}
-			if( item.isCorpse ) {
-				this.findLoot(item);
+
+		item.giveTo(this,this.x,this.y);
+		if( item.isArmor && !item.armor ) {
+			debugger;
+		}
+		if( item.isCorpse ) {
+			let corpse = item.usedToBe;
+			if( !corpse || !corpse.loot ) {
+				tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
 				return;
 			}
-			tell(mSubject,this,' ',mVerb,'pick',' up ',mObject|mBold,item,'.');
-			if( item.triggerOnPickup ) {
-				item.trigger(Command.PICKUP,this,this);
-			}
+			this.lootTake( corpse.loot, corpse.level, corpse );
+			item.destroy();
+			return;
 		}
+		tell(mSubject,this,' ',mVerb,'pick',' up ',mObject|mBold,item,'.');
 	}
 
 	setPosition(x,y) {
@@ -952,6 +948,13 @@ class Entity {
 			case Command.DEBUGVIEW: {
 				this.senseItems = true;
 				this.senseLife = true;
+				this.map.traverse( (x,y) => {
+					this.mapMemory[y] = this.mapMemory[y] || {};
+					this.mapMemory[y][x] = this.map.tileTypeGet(x,y);
+				});
+				break;
+			}
+			case Command.DEBUGMAP: {
 				break;
 			}
 			case Command.LOOT: {
@@ -965,7 +968,7 @@ class Entity {
 					tell(mSubject,this,' may not drop anything here.');
 				}
 				else {
-					item.moveTo(this.map,this.x,this.y);
+					item.giveTo(this.map,this.x,this.y);
 				}
 				break;
 			}
@@ -989,15 +992,19 @@ class Entity {
 			case Command.THROW: {
 				let item = this.commandItem;
 				let target = this.commandTarget;
-				this.lastAttackTargetId = target.id;
 				item.moveTo(this.map,target.x,target.y);
-				if( !this.commandTarget.isPosition ) {	// indicates it is not an (x,y) array
-					tell(mSubject,item,' ',mVerb,item.attackVerb||'hit',' ',mObject,target);
+				if( item.damage && !target.isPosition ) {
+					this.attack(target,true);
 				}
 				else {
-					tell(mSubject,item,' ',mVerb,item.attackVerb||'hit');
+					if( !target.isPosition ) {	// indicates it is not an (x,y) array
+						tell(mSubject,item,' ',mVerb,item.attackVerb||'hit',' ',mObject,target);
+					}
+					else {
+						tell(mSubject,item,' ',mVerb,item.attackVerb||'hit');
+					}
+					let result = item.trigger(this.command,this,target);
 				}
-				let result = item.trigger(this.command,this,target);
 				// the result tells whether an effect was applied to the target (entity or psition)
 				break;
 			}

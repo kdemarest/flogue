@@ -44,7 +44,7 @@ Resources:
 
 
 function adhoc(tileType,map,x,y) {
-	if( tileType.isItemType ) {
+	if( !tileType.isTileType || tileType.isPosition ) {
 		// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
 		// This also means no permanent data can exist in them. Meanwhile, items and
 		// persistent in the map item list.
@@ -184,9 +184,12 @@ function main(levelName) {
 		return player;
 	}
 
-	function onAreaChange(area,gateId) {
+	function onAreaChange(oldArea,area,gateId) {
 		if( gui.viewMiniMap ) {
 			gui.viewMiniMap.setArea(area);
+		}
+		if( gui.viewMap ) {
+			gui.viewMap.resetSprites();
 		}
 
 		let gateFinder = area.map.findItem().isId(gateId);
@@ -240,7 +243,7 @@ function main(levelName) {
 					<div id="guiInventory" class="guiInventory"></div>
 					<div id="guiDynamic" class="guiInventory"></div>
 				</div>
-			</td><td>
+			</td><td class="alignTop">
 				<div id="guiStatus">
 					<div id='health0' class="health-bar" data-total="1000" data-value="1000">
 						<div class="bar">

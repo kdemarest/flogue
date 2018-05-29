@@ -160,6 +160,9 @@ let effectApply = function(origin,effect,target) {
 		// This is an inert effect. Do nothing.
 		return false;
 	}
+	if( target.isTileType && !target.isPosition ) {
+		debugger;
+	}
 
 	//Some effects will NOT start unless their requirements are met. EG, no invis if you're already invis.
 	if( effect.requires && !effect.requires(target,effect) ) {
@@ -185,6 +188,7 @@ let effectApply = function(origin,effect,target) {
 		if( !effect.onTargetPosition ) {
 			return false;
 		}
+		target.toEntity();
 		effect.onTargetPosition(target.map,target.x,target.y)
 		return true;
 	}

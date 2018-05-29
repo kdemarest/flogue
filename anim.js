@@ -1,28 +1,30 @@
 class AniPaste {
 	constructor(data) {
-		Object.assign(this,data);
+		let init = {
+			alpha: data.sticker.alpha===undefined ? 1 : data.sticker.alpha,
+			scale: data.sticker.scale || 1,
+			xAnchor: data.sticker.xAnchor===undefined ? 0.5 : data.sticker.xAnchor,
+			yAnchor: data.sticker.yAnchor===undefined ? 0.5 : data.sticker.yAnchor
+		};
+		Object.assign(this,init,data);
 		this.isAnimation = true;
 		this.dead = false;
-		this.alpha = this.sticker.alpha===undefined ? 1 : this.sticker.alpha;
-		this.scale = this.sticker.scale || 1;
-		this.xAnchor = this.sticker.xAnchor===undefined ? 0.5 : this.sticker.xAnchor;
-		this.yAnchor = this.sticker.yAnchor===undefined ? 0.5 : this.sticker.yAnchor;
 	}
 	xGet() {
-		return (this.entity ? this.entity.x : this.x) + (this.xOfs||0);
+		return (this.entity ? this.entity.x : this.x);
 	}
 	yGet() {
-		return (this.entity ? this.entity.y : this.y) + (this.yOfs||0);
+		return (this.entity ? this.entity.y : this.y);
 	}
-	imgGet() {
-		if( this.dead ) {
+	imgGet(self) {
+		if( self.dead ) {
 			return null;
 		}
-		return this.sticker.img;
+		return self.sticker.img;
 	}
 	die() {
 		this.dead = true;
-		animationDeathCallback(this.sprite);
+		spriteDeathCallback(this.spriteList);
 	}
 	tick(delta) {
 		if( this.dead ) {
@@ -42,7 +44,6 @@ class AniPaste {
 
 
 let animationList = [];
-let animationDeathCallback;
 function animationAdd(anim) {
 	animationList.push(anim);
 	return anim;

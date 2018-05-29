@@ -3,8 +3,8 @@ class AreaBuilder {
 		this.picker = picker;
 	}
 
-	buildMap(picker,scape,palette,injectList) {
-		let masonMap = Mason.buildMap(picker,scape,palette,injectList);
+	buildMap(picker,scape,palette,injectList,siteList) {
+		let masonMap = Mason.buildMap(picker,scape,palette,injectList,siteList);
 		return masonMap.renderToString();
 	}
 
@@ -84,6 +84,7 @@ class Area {
 			return entity;
 		}
 		function makeItem(x,y,type,presets,inject) {
+			if( x===undefined || y===undefined ) debugger;
 			if( type && type.isRandom ) {
 				type = null;
 			}
@@ -97,6 +98,7 @@ class Area {
 			}
 
 			let item = self.map.itemCreateByType(x,y,type,presets,inject);
+			if( item.x===undefined ) debugger;
 			//console.log( item.name+' created at ('+x+','+y+') on '+self.map.tileTypeGet(x,y).typeId );
 			if( item.gateDir !== undefined ) {
 				self.gateList.push(item);
@@ -116,14 +118,17 @@ class Area {
 		this.builder = new AreaBuilder(picker);
 
 		let scapeId = pick(this.theme.scapes);
-		let scape = Object.assign(
+		let scape = ScapeList[scapeId]();
+		scape = Object.assign(
 			{
 				placeDensity: 0.40,
 				monsterDensity: 0.01,
 				itemDensity: 0.04
 			}, 
-			ScapeList[scapeId](),
+			scape,
+			this.theme.scape,
 			{
+				palette: Object.assign( {}, scape.palette, this.theme.palette ),
 				level: this.level,
 				entranceCount: 1,
 				exitCount: 1
@@ -132,7 +137,8 @@ class Area {
 		this.scape = scape;
 
 		let injectList = [];
-		let tileRaw = loadLevel(this.id) || this.builder.buildMap(picker,scape,palette,injectList);
+		this.siteList = [];
+		let tileRaw = loadLevel(this.id) || this.builder.buildMap(picker,scape,palette,injectList,this.siteList);
 
 		this.map = new Map(tileRaw,[]);
 		this.map.level = this.level;

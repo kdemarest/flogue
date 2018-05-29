@@ -10,9 +10,15 @@ class DataConditioner {
 			if( !list ) {
 				return;
 			}
-			list.map( placeId => {
-				theme.rarityTable[placeId] = rarity;
-				if( !PlaceList[placeId] ) {
+			list = String.chanceParse(list);
+			list.map( chance => {
+				if( theme.rarityTable[chance.id] ) {
+					// This placeId is duplicated in the same or another rarity table.
+					debugger;
+				}
+
+				theme.rarityTable[chance.id] = rarity;
+				if( !PlaceList[chance.id] ) {
 					debugger;
 				}
 			});
@@ -23,7 +29,6 @@ class DataConditioner {
 			let theme = ThemeList[themeId];
 			theme.id = themeId;
 			theme.rarityTable = {};
-			extractRarity(theme,'required',theme.rREQUIRED);
 			extractRarity(theme,rPROFUSE,theme.rPROFUSE);
 			extractRarity(theme,rCOMMON,theme.rCOMMON);
 			extractRarity(theme,rUNCOMMON,theme.rUNCOMMON);
@@ -101,16 +106,22 @@ class DataConditioner {
 			let NO_MONSTERS = -1;
 			let level = NO_MONSTERS;
 			let place = PlaceList[placeId];
-			place.tileCount = 0;
-			for( let i=0 ; i<place.map.length ; ++i ) {
-				let s = place.map.charAt(i);
-				if( s=='\t' || s=='\n' ) continue;
-				place.tileCount ++;
-				let monster = MonsterTypeList[place.symbols[s] || s2t[s]];
-				if( monster ) {
-					level = Math.max(level,monster.level||1);
+			if( !place.map && !place.floodId ) {
+				debugger;
+			}
+			if( place.map ) {
+				place.tileCount = 0;
+				for( let i=0 ; i<place.map.length ; ++i ) {
+					let s = place.map.charAt(i);
+					if( s=='\t' || s=='\n' ) continue;
+					place.tileCount ++;
+					let monster = MonsterTypeList[place.symbols[s] || s2t[s]];
+					if( monster ) {
+						level = Math.max(level,monster.level||1);
+					}
 				}
 			}
+			if( !place.tileCount ) debugger;
 			if( place.level && level > place.level+5 ) {
 				console.log("WARNING: Place "+placeId+" is level "+place.level+" but has level "+level+" monsters.");
 			}

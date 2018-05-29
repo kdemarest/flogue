@@ -39,6 +39,9 @@ body {
 #guiMessageBox b {
 	color: orange;
 }
+.alignTop {
+	vertical-align: top;
+}
 #guiStatus {
 	width: 140px;
 	height: 160px;
@@ -67,13 +70,14 @@ body {
 }
 #guiInfo {
 	width: 140px;
-	height: 90px;
+	height: 120px;
+	padding-top: 10px;
+	padding-bottom: 10px;
 	display: block;
 	white-space: pre;
 	border-top: 1px solid white;
 	font-family: 'Raleway', sans-serif;
 	font-size: 14px;
-	margin: 0px 0px;
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
