@@ -143,7 +143,12 @@ class ViewMiniMap {
 				let imgPath = imgGet(entity);
 				if( !entity ) debugger;
 				let resource = self.imageRepo.get(imgPath);
-				c.drawImage(resource.texture.baseTexture.source,x*self.scale,y*self.scale,scale,scale);
+				if( resource ) {
+					c.drawImage(resource.texture.baseTexture.source,x*self.scale,y*self.scale,scale,scale);
+				}
+				else {
+					console.log( "Unable to find image for "+entity.typeId+" img "+imgPath );
+				}
 			}
 		}
 
@@ -160,13 +165,15 @@ class ViewMiniMap {
 					continue;
 				}
 				let entity = mapMemory[y][x];
-				if( entity.isWall ) {
-					entity = StickerList.wallProxy;
-				}
 				if( x==observer.x && y==observer.y ) {
 					entity = StickerList.observerProxy;
 					drawLate.push({entity:entity,x:x,y:y,scale:this.scale*4});
 				}
+				else
+				if( entity.isWall && !entity.mineId ) {
+					entity = StickerList.wallProxy;
+				}
+				else
 				if( entity.gateDir !== undefined ) {
 					entity = StickerList[entity.gateDir>0 ? 'gateDownProxy' : 'gateProxy'];
 					drawLate.push({entity:entity,x:x,y:y,scale:this.scale*3});

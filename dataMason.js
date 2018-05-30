@@ -567,7 +567,7 @@
 						return deltasToDirPredictable(dx,dy);
 					}
 					this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,wanderLink?deltasToDirNaturalOrtho:deltasToDirStrict);
-					console.log("Linked "+pair);
+//					console.log("Linked "+pair);
 					link[pair] = true;
 				}
 			} while( reps-- );
@@ -794,8 +794,8 @@
 				let tile = map.getTile(x,y);
 				return isUnknown(tile) && map.count4(x,y,isWalkable) > 0;
 			});
-			console.log("Gathered "+list.length);
-			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
+//			console.log("Gathered "+list.length);
+//			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
 
 			while( list.length ) {
 				let y = list.pop();
@@ -806,11 +806,11 @@
 				}
 			}
 
-			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
-			console.log("floor-likes = floor="+Math.floor(map.countAll(isWalkable)/map.area()*100)+'%');
+//			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
+//			console.log("floor-likes = floor="+Math.floor(map.countAll(isWalkable)/map.area()*100)+'%');
 			let removeCount = 0;
 			zoneList = map.floodAll();
-			console.log( zoneList.length+' zones');
+//			console.log( zoneList.length+' zones');
 			while( zoneList.length && zoneList[zoneList.length-1].count < floorMade-floorToMake ) {
 				let zone = zoneList.pop();
 				let count = map.zoneFlood(zone.x,zone.y,zone.zoneId,false,NO_ZONE,T.Unknown);
@@ -820,10 +820,10 @@
 				floorMade -= count;
 				removeCount += 1;
 			}
-			if( removeCount ) {
-				console.log("Removed "+removeCount+'. now floor='+floorMade);
-				console.log( zoneList.length+' zones remain');
-			}
+//			if( removeCount ) {
+//				console.log("Removed "+removeCount+'. now floor='+floorMade);
+//				console.log( zoneList.length+' zones remain');
+//			}
 		}
 		// We no longer remove diagonal quads because it runs the risk of harming somebody's
 		// carefully crafted place...
@@ -867,7 +867,7 @@
 			// WARNING! Important for this to be a DEEP copy.
 			place = jQuery.extend(true, {}, place);
 
-			console.log("Trying to place "+place.id);
+//			console.log("Trying to place "+place.id);
 			Place.selectSymbols(place);
 			Place.generateMap(place);
 			Place.rotateIfNeeded(place);
@@ -899,7 +899,7 @@
 			else
 			{
 				let siteMarks = [];
-				console.log('Placed at ('+x+','+y+')');
+//				console.log('Placed at ('+x+','+y+')');
 				if( place.floodId ) {
 					let floodTile = TypeToSymbol[place.floodId];
 					let sparkTile = TypeToSymbol[place.sparkId];
@@ -960,7 +960,7 @@
 				[numPlaceTiles,siteMarks] = tryToFit(place,numPlaceTiles);
 				if( !siteMarks && placeRosterRequired.includes(place) ) {
 					// A so-called "required" place didn't get built.
-					debugger;
+					console.log( "Required place "+place.id+" did not fit." );
 				}
 				if( siteMarks ) {
 					let site = Object.assign({}, place.site, { id: GetUniqueEntityId(), marks: siteMarks, placeId: place.id });

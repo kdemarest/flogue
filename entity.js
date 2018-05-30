@@ -40,7 +40,7 @@ class Entity {
 		this.name = /*'L'+this.level+' '+*/(this.name || String.tokenReplace(this.namePattern,this));
 
 		if( this.inventoryLoot ) {
-			this.lootTake( this.inventoryLoot, this.level, true );
+			this.lootTake( this.inventoryLoot, this.level, null, true );
 		}
 	}
 
@@ -77,10 +77,10 @@ class Entity {
 		area.entityList[fnName](this);
 	}
 	die() {
-		if( this.removed && this.isUser() ) {
+		if( this.dead && this.isUser() ) {
 			return;
 		}
-		if( this.removed ) {
+		if( this.dead ) {
 			debugger;
 		}
 		if( this.corpse ) {
@@ -92,11 +92,11 @@ class Entity {
 		}
 		tell(mSubject,this,' ',mVerb,'die','!');
 		spriteDeathCallback(this.spriteList);
-		this.removed = true;
+		this.dead = true;
 	}
 
 	isDead() {
-		return this.removed || this.health <= 0;
+		return this.dead || this.health <= 0;
 	}
 	isAlive() {
 		return !this.isDead();
@@ -530,7 +530,7 @@ class Entity {
 				if( c ) {
 					return c;
 				}
-				return Math.random() < 0.50 ? Command.WAIT : this.thinkWander();
+				return Math.chance(50) ? Command.WAIT : this.thinkWander();
 
 			}).apply(this);			
 
@@ -624,13 +624,61 @@ class Entity {
 		this.personalEnemy = attacker.id;
 
 		if( amount > 0 ) {
-			animationAdd( new AniPaste({
-				entity: this, xOfs: 0.5, yOfs: 0.5,
-				sticker: StickerList.hit,
-				x: this.x,
-				y: this.y,
-				duration: 0.3
-			}));
+			let dx = this.x - attacker.x;
+			let dy = this.y - attacker.y;
+			// WARNING! For some whacky reason this call to deltaToDeg requires -dy. Who knows why?!
+			let deg = deltaToDeg(dx,dy);
+			let mag = Math.clamp( amount/this.healthMax, 0.05, 1.0 );
+			let delay = !attacker || !attacker.isUser || attacker.isUser() ? 0 : 0.2;
+			// Attacker lunges at you
+			let lunge = 0.2 + 0.5 * mag;
+			new Anim( {}, {
+				follow: 	attacker,
+				delay: 		delay,
+				duration: 	0.15,
+				onInit: 		a => { a.puppet(attacker.spriteList); },
+				onSpriteMake: 	s => { s.sPosDeg(deg,lunge); },
+				onSpriteDone: 	s => { s.sReset(); }
+			});
+			// blood flies away from the attacker
+			let piecesAnim = new Anim({},{
+				follow: 	this,
+				img: 		StickerList[this.bloodId || 'bloodRed'].img,
+				delay: 		delay,
+				scale: 		0.20+0.10*mag,
+				duration: 	0.2,
+				onInit: 		a => { a.create(4+Math.floor(7*mag)); },
+				onSpriteMake: 	s => { s.sVel(Math.rand(deg-45,deg+45),4+Math.rand(0,3+7*mag)); },
+				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+			});
+			// You also jump back and quiver
+			if( this.spriteList ) {
+				new Anim( {}, {
+					follow: 	this,
+					delay: 		delay,
+					duration: 	0.1,
+					onInit: 		a => { a.puppet(this.spriteList); },
+					onSpriteMake: 	s => { },
+					onSpriteTick: 	s => { s.sPosDeg(deg,lunge/2).sQuiver(0.05,0.1+mag*0.1); },
+					onSpriteDone: 	s => { s.sReset(); }
+				});
+			}
+			// And if you are killed then you shrink/fade
+			if( amount >= this.health ) {
+				if( this.spriteList ) {
+					new Anim( {}, {
+						follow: 	this,
+						delay: 		delay+0.1,
+						duration: 	0.1,
+						onInit: 		a => { a.puppet(this.spriteList); },
+						onSpriteMake: 	s => { },
+						onSpriteTick: 	s => {
+							if( s.elapsed === undefined || s.duration ===undefined ) { debugger; }
+							//s.sScaleSet( 0.3+2.7/(1-s.elapsed/s.duration) ); } //s.sScale(-1); } //.sAlpha(1-s.elapsed/s.duration);
+						}
+					});
+				}
+			}
 		}
 
 		this.health -= amount;
@@ -663,7 +711,7 @@ class Entity {
 		}
 
 		if( !noBacksies && attacker.isMonsterType && this.inventory ) {
-			let armorEffects = new Finder(this.inventory).filter( item => item.inSlot );
+			let armorEffects = new Finder(this.inventory).filter( item => item.inSlot && item.isArmor );
 			armorEffects.process( item => {
 				if( item.effect && item.effect.isHarm ) {
 					let fireArmorEffect = ARMOR_EFFECT_OP_ALWAYS.includes(item.effect.op) || Math.chance(ARMOR_EFFECT_CHANCE_TO_FIRE);
@@ -738,6 +786,7 @@ class Entity {
 		item.giveTo(this,this.x,this.y);
 		return item;
 	}
+
 	lootTake( lootString, level, originatingEntity, quiet ) {
 		let found = [];
 		new Picker(level).pickLoot( lootString, loot=>{
@@ -754,6 +803,7 @@ class Entity {
 			tell(...description);
 		}
 	}
+	
 	pickup(item) {
 		if( !item ) debugger;
 
@@ -954,7 +1004,17 @@ class Entity {
 				});
 				break;
 			}
-			case Command.DEBUGMAP: {
+			case Command.DEBUGANIM: {
+				let entity = this;
+				let anim = new Anim({},{
+					x: 			entity.x,
+					y: 			entity.y,
+					img: 		entity.img,
+					onInit: 		a => { a.create(1); },
+					onSpriteMake: 	s => { s.duration = 0.5; },
+					onSpriteTick: 	s => { s.sScale(1.0+s.sSine(1.0)); }
+				});
+
 				break;
 			}
 			case Command.LOOT: {

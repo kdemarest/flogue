@@ -2,12 +2,10 @@
 class Item {
 	constructor(level,itemType,presets,inject) {
 
-		let picker = new Picker(level);
-		if( !presets && !itemType.neverPick ) {
-			let obj = picker.pick(picker.itemTable,itemType.typeId);
-			presets = obj.presets;
+		if( !presets ) {
+			// ERROR: you should do your own item picking, and provide presets!
+			debugger;
 		}
-
 		let ignore = { level:1, rarity:1, name:1, namePattern:1, ingredientId:1, type:1, typeId:1 };
 		function merge(target,source) {
 			if( !source ) { return; }
@@ -40,7 +38,7 @@ class Item {
 				delete this.effect;
 			}
 			else {
-				this.effect = this.assignEffect(this.effect,picker,this.rechargeTime);
+				this.effect = this.assignEffect(this.effect,new Picker(level),this.rechargeTime);
 			}
 		}
 
@@ -70,12 +68,6 @@ class Item {
 		}
 		return effect;
 	}
-	xGet() {
-		return this.owner.isMap ? this.x : this.owner.x;
-	}
-	yGet() {
-		return this.owner.isMap ? this.y : this.owner.y;
-	}
 	isRecharged() {
 		return this.rechargeTime === undefined || !this.rechargeLeft;
 	}
@@ -90,6 +82,16 @@ class Item {
 		return this.armor;
 	}
 	giveTo(entity,x,y) {
+		if( this.owner && this.owner.isMap && entity.isUser() ) {
+			new Anim({},{
+				x: 			this.x,
+				y: 			this.y,
+				img: 		this.imgGet ? this.imgGet(this) : this.img,
+				duration: 	0.8,
+				onSpriteMake: 	s => { s.sVelTo(MaxSightDistance,0,0.8); },
+				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+			});
+		}
 		if( this.owner ) {
 			this.owner._itemRemove(this);
 		}
@@ -110,6 +112,7 @@ class Item {
 		this.owner._itemRemove(this);
 		// Now the item should be simply gone.
 		spriteDeathCallback(this.spriteList);
+		this.dead = true;
 	}
 
 	trigger(command,originEntity,target) {

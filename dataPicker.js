@@ -94,39 +94,40 @@ class Picker {
 					Object.each( item.materials || one, m => {
 						Object.each( item.qualities || one, q => {
 							Object.each( item.effects || one, e => {
-								let level;
-								level = (item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.level||0);
+								let chance = 0;
+								let level = (item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.level||0);
 								if( level > this.level ) {
-									return;
-								}
-								if( !this.level ) debugger;
-								let chance = Math.chanceToAppearSigmoid(level,this.level) * gScale;
-								chance *= (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
-								if( item.neverPick || v.neverPick || m.neverPick || q.neverPick || e.neverPick ) {
 									chance = 0;
-									// WARNING! This means it will never be RANDOMLY picked, but it also means that when
-									// specified it will be FOUND!
+								}
+								else {
+									if( !this.level ) debugger;
+									let chance = Math.chanceToAppearSigmoid(level,this.level) * gScale;
+									chance *= (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
+									if( item.neverPick || v.neverPick || m.neverPick || q.neverPick || e.neverPick ) {
+										chance = 0;
+										// WARNING! This means it will never be RANDOMLY picked, but it also means that when
+										// specified it will be FOUND!
+									}
 								}
 
 								// Someday let the theme prefer items
 
 								chanceTotal += chance;
-								let obj = {
+								item = Object.assign( {}, item, {
 									level: level,
 									keywords: '!'+item.typeId+'!',
-									item: item,
 									presets: {}
-								};
-								if( !v.skip ) { obj.presets.variety = v; obj.keywords += item.typeId+'.'+v.typeId+'!'+v.typeId+'!'; }
-								if( !m.skip ) { obj.presets.material = m; obj.keywords += item.typeId+'.'+m.typeId+'!'+m.typeId+'!'; }
-								if( !q.skip ) obj.presets.quality = q;
-								if( !e.skip ) { obj.presets.effect = e; obj.keywords += item.typeId+'.'+e.typeId+'!' }
-								if( item.rechargeTime ) obj.presets.rechargeTime = this.pickRechargeTime(item);
-								if( item.isArmor ) obj.presets.armor = this.pickArmor(item,m,v,q,e);
-								if( item.isWeapon ) obj.presets.damage = this.pickDamage(obj.presets.rechargeTime,item,m,v,q,e);
+								});
+								if( !v.skip ) { item.presets.variety = v; item.keywords += item.typeId+'.'+v.typeId+'!'+v.typeId+'!'; }
+								if( !m.skip ) { item.presets.material = m; item.keywords += item.typeId+'.'+m.typeId+'!'+m.typeId+'!'; }
+								if( !q.skip ) item.presets.quality = q;
+								if( !e.skip ) { item.presets.effect = e; item.keywords += item.typeId+'.'+e.typeId+'!' }
+								if( item.rechargeTime ) item.presets.rechargeTime = this.pickRechargeTime(item);
+								if( item.isArmor ) item.presets.armor = this.pickArmor(item,m,v,q,e);
+								if( item.isWeapon ) item.presets.damage = this.pickDamage(item.presets.rechargeTime,item,m,v,q,e);
 								// WARNING! This will skew the gold count improperly!
-								if( item.isGold ) obj.presets.goldCount = this.pickGoldCount(item);
-								table.push(chance,obj);
+								if( item.isGold ) item.presets.goldCount = this.pickGoldCount(item);
+								table.push(chance,item);
 							});
 						});
 					});
@@ -136,16 +137,16 @@ class Picker {
 			});
 
 			if( chanceGrandTotal ) {
-				Object.each(ItemTypeList, item => {
-					if( !itemTypeChance[item.typeId] ) {
+				Object.each(ItemTypeList, itemType => {
+					if( !itemTypeChance[itemType.typeId] ) {
 						return;
 					}
 					// Now rebalance because the number of varieties should not tilt the chance...
-					if( !item.rarity ) debugger;
-					let ratio = (gScale / itemTypeChance[item.typeId]) * item.rarity;
-					console.log(item.typeId+' balanced by '+ratio);
+					if( !itemType.rarity ) debugger;
+					let ratio = (gScale / itemTypeChance[itemType.typeId]) * itemType.rarity;
+					console.log(itemType.typeId+' balanced by '+ratio);
 					for( let i=0 ; i<table.length ; i+=2 ) {
-						if( table[i+1].item.typeId == item.typeId ) {
+						if( table[i+1].typeId == itemType.typeId ) {
 							table[i] = table[i]*ratio;
 						}
 					}
@@ -156,7 +157,8 @@ class Picker {
 			let count = {};
 			let actualTotal = 0;
 			for( let i=0 ; i<table.length ; i += 2 ) {
-				let t = table[i+1].item.typeId;
+				if( !table[i+1].isTreasure ) continue;
+				let t = table[i+1].typeId;
 				actual[t] = (actual[t] || 0)+table[i];
 				count[t] = (count[t] || 0)+1;
 				actualTotal += table[i];
@@ -170,7 +172,7 @@ class Picker {
 
 			let t = [];
 			for( let i=0 ; i<table.length ; i+=2 ) {
-				t.push([table[i],'L'+table[i+1].level+' '+table[i+1].item.typeId+' '+(table[i+1].presets.effect ? table[i+1].presets.effect.typeId : 'x')]);
+				t.push([table[i],'L'+table[i+1].level+' '+table[i+1].typeId+' '+(table[i+1].presets.effect ? table[i+1].presets.effect.typeId : 'x')]);
 			}
 			t.sort( function(a,b) { return b[0]-a[0]; } );
 			console.log("Top 20 items are: ");
@@ -227,9 +229,10 @@ class Picker {
 		let idList = new Finder( Array.chancePick(chanceList) );
 		let list = [];
 		idList.process( id => {
-			let obj = this.pick(this.itemTable,(''+id).toLowerCase()==='any' ? null : id);
-			if( obj ) {
-				let loot = new Item( this.level, obj.item, obj.presets, {isLoot:true} );
+			let any = (''+id).toLowerCase()==='any';
+			let type = this.pick( this.itemTable, any ? null : id, any ? 'isTreasure' : null );
+			if( type ) {
+				let loot = new Item( this.level, type, type.presets, {isLoot:true} );
 				if( callback ) {
 					callback(loot);
 				}
@@ -238,32 +241,33 @@ class Picker {
 		return new Finder(list);
 	}
 
-	pick(_table,typeId) {
+	pick(rawTable,typeId,filter) {
 
-		let table;
+		let table = [];
 		let total = 0;
 
-		if( !typeId ) {
-			table = _table;
-			for( let i=0 ; i<table.length ; i += 2 ) {
-				total += table[i];
+		// We are allowed to pass in any VARIETY or MATERIAL to this, and it will
+		let k = typeId ? '!'+typeId+'!' : null;
+		let filterBool = filter ? filter.match( /\s*(!)?\s*(\w+)/ )[1] !== '!' : true;
+		let filterKey  = filter ? filter.match( /\s*(!)?\s*(\w+)/ )[2] : null;
+
+		let debug = "Picking "+typeId+" "+filter+'\n';
+		for( let i=0 ; i<rawTable.length ; i += 2 ) {
+			let c = rawTable[i];
+			let t = rawTable[i+1];
+			let ok = ( !typeId || (t.typeId && t.typeId == typeId) ) || ( t.keywords && t.keywords.indexOf(k)>=0 );
+//			if( t.isCorpse && filterKey ) debugger;
+			ok = ok && (!filter || !!t[filterKey]==filterBool);	// like, isTreasure
+			if( ok ) {
+				table.push(c,t);
+				total += c;
+				debug += "YES  "+t.typeId+" = "+c+" "+t.keywords+'\n';
+			}
+			else {
+				debug += "NO   "+t.typeId+" = "+c+" "+t.keywords+'\n';
 			}
 		}
-		else {
-			// We are allowed to pass in any VARIETY or MATERIAL to this, and it will
-			let choices = [];
-			table = _table;
-			let k = '!'+typeId+'!';
-			for( let i=0 ; i<table.length ; i += 2 ) {
-				let t = table[i+1];
-				let ok = ( t.typeId && t.typeId == typeId ) || ( t.keywords && t.keywords.indexOf(k)>=0 );
-				if( ok ) {
-					choices.push(table[i],table[i+1]);
-					total += table[i];
-				}
-			}
-			table = choices;
-		}
+
 
 		if( !total && table.length ) {
 			// It was all neverPicks, so just choose from among those. REMEMBER that the table is
@@ -278,6 +282,8 @@ class Picker {
 			debugger;
 			return false;
 		}
+		debug += 'a';
+		debug = '';
 
 		let n = Math.rand(0,total);
 		let i = -2;

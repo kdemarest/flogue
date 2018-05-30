@@ -44,9 +44,10 @@ function nop() {}
 		}
 		return s;
 	}
+	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^\s,]+|[*])\s*[,]*/g;
 	String.chanceParse = function(lootString) {
 		let result = [];
-		lootString.replace( /\s*([\d]+x)*\s*(\d+%)*\s*([\w]+[.]*[\w]+|[*])\s*/g, function( match, count, chance, id ) {
+		lootString.replace( ChParser, function( match, count, chance, id ) {
 			count = count ? (parseInt(count) || 1) : 1;
 			if( chance===undefined ) { chance='100'; }
 			chance = parseInt(chance)||100;

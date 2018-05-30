@@ -18,7 +18,11 @@ class Gui {
 
 	create() {
 		function worldOverlayAdd(group,x,y,sticker) {
-			return animationAdd( new AniPaste({ group:group, x:x, y:y, sticker:sticker, duration: true }) );
+			new Anim( sticker, {
+				group: 		group,
+				x: 			x,
+				y: 			y
+			});
 		}
 		function worldOverlayRemove(fn) {
 			return animationRemove(fn);
@@ -46,6 +50,11 @@ class Gui {
 			this.viewDynamic = ViewList.none;
 		}
 		let v = {divId: 'guiDynamic', player: player, imageRepo: this.imageRepo, onClose: onClose};
+		if( !DynamicViewList[v.view] ) {
+			console.log( "Error: No such dynamic view "+v.view+" in "+v );
+			return false;
+		}
+
 		Object.assign(v,player.guiViewCreator);
 		this.viewDynamic = DynamicViewList[v.view](v);
 		delete player.guiViewCreator;
@@ -55,6 +64,9 @@ class Gui {
 	render() {
 		let area = this.getArea();
 		let observer = this.spectator;
+
+		area.map.cacheVis();
+
 		this.viewStatus.render(observer,area.entityList);
 		this.viewSpells.render(observer);
 		this.viewInfo.render(observer);

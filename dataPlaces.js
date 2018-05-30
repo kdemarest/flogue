@@ -294,20 +294,20 @@ PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityL
 			let amount = Math.floor((entity.healthMax/2) - entity.health);
 			entity.takeHealing(this,rollDice('1d4'),DamageType.ROT,true);
 			tell( mSubject,this,' ',mVerb,'imbue',' ',mObject,entity,' with dark power.');
-			animationAdd( new AniPaste({
-				entity: entity, xOfs: 0.5, yOfs: 0.5,
-				sticker: StickerList.darkPower,
-				x: this.x,
-				y: this.y,
-				duration: 0.8
-			}));
-			animationAdd( new AniPaste({
-				entity: entity, xOfs: 0.5, yOfs: 0.5,
-				sticker: StickerList.darkPower,
-				x: entity.x,
-				y: entity.y,
-				duration: 0.8
-			}));
+/*
+			let dx = this.x - entity.x;
+			let dy = this.y - entity.y;
+			let deg = deltaToDeg(dx,dy);
+
+			new Anim({
+				follow: 	this,
+				img: 		stickerList.darkPower.img,
+				duration: 	1,
+				onInit: 		a => { a.create(12); },
+				onSpriteMake: 	s => { s.sVel(Math.rand(deg-90,deg+90),Math.rand(5,10)); s.delay=Math.rand(0,0.5); },
+				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sVelTo(dx,dy); }
+			});
+*/
 			this.rechargeLeft = this.rechargeTime;
 		}
 	}
@@ -909,7 +909,7 @@ PlaceList.dwarfSmithy = {
 		f: "flames",
 	},
 	onEntityCreate: {
-		dwarf: { job: "smith", attitude: Attitude.AWAIT, tether: 2 }
+		dwarf: { job: "not a smith", attitude: Attitude.AWAIT, tether: 2 }
 	}
 }
 

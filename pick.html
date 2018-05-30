@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+
+<script src="jquery.3.3.1.js" charset="utf-8"></script>
+<script src="utilities.js" charset="utf-8"></script>
+<script src="data.js" charset="utf-8"></script>
+<script src="dataHumanNames.js" charset="utf-8"></script>
+<script src="dataPlaces.js" charset="utf-8"></script>
+<script src="dataConditioner.js" charset="utf-8"></script>
+<script src="dataPicker.js" charset="utf-8"></script>
+<script src="dataMason.js" charset="utf-8"></script>
+<script src="place.js" charset="utf-8"></script>
+<script src="map.js" charset="utf-8"></script>
+<!-- WARNING: This map function is ALMOST expendable. The places happen to use it for insertions... -->
+
+<style>
+pre {
+	font-family: "courier";
+	line-height: 0.8;
+	font-size:12px;
+}
+</style>
+<script>
+
+	let itemBag = {
+		// gen = the chance to generate the item. Themes can tweak this number
+		// eff = the change that the generated item has an effect of some kind. Rises by (map.level*0.30)
+		// price = how much you have to pay to buy this thing. Multiplied by the level of the variety/material/quality
+		// basis = how you calculate the value and rarity
+
+		// 		cGen 	cEff	price	basis
+		coin: 	50.0, 	  0.0,	  1.0,	[],
+		potion:  5.0, 	100.0,	 10.0,	['effect'],
+		spell: 	 0.5, 	100.0,   50.0,	['effect'],
+		ore: 	 2.0, 	  0.0,    1.0,	['variety'],
+		gem: 	 2.0,    20.0,   20.0,	['material','quality','effect'],
+		weapon: 15.0, 	  5.0,	 40.0,	['material','effect','variety'],
+		armor: 	10.0, 	  5.0,   30.0,	['variety','effect'],
+		ring: 	 0.5, 	 10.0,	 90.0,	['material','effect'],
+		stuff: 	15.0 	  0.0,    4.0,	['variety'],
+	};
+/*
+When a specific thing is requested, then the rarities of its basis are considered.
+isTreasure - generates as loot on monsters, and in random map loot generation
+isDecor    - objects that can be dropped directly on the map. Really, these should probably be reserved to Places.
+
+oreVein, as a map item, is special. It comes in 'clusterSize' in a sigmoid.
+*/
+
+
+/*
+The cGen for armor is as below. All other stats for the armor are IDENTICAL to keep things simple.
+armor: 		55% of armor value
+helm:  		20% of armor value
+bracers: 	15%
+boots: 		10%
+*/
+
+	
+
+
+
+
+
+	function main() {
+
+		new DataConditioner();
+
+		generateHistogram();
+
+		$(
+
+		let level = 10;
+		let theme = ThemeList.cavern;
+		// NOTICE that I am NOT passing the theme's scape, but instead overriding it
+		// so that you can tweak it.
+		let injectList = [];
+		let picker = new Picker(level,theme);
+		let map = Mason.buildMap( picker, scape, palette, injectList, map => document.getElementById('map').innerHTML = map );
+		if( map ) {
+			document.getElementById('map').innerHTML = map.renderToString();
+		}
+	}
+</script>
+</head>
+<body>
+	<div id="levels"></div>
+	<pre id='list'></pre>
+<script>main();</script>
+</body>
+</html>

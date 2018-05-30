@@ -137,9 +137,17 @@ class Map extends SimpleMap {
 		this.actionCount = 0;
 		this.tileEntity = [];
 		this.itemList = itemList;
-		this.resetSprites();
+		this.visCache = [];
+		this.cacheVis();
+		this.initSprites();
 	}
-	resetSprites() {
+	cacheVis() {
+		this.traverse( (x,y) => {
+			this.visSet(x,y,this.tileTypeGet(x,y).opacity||0);
+		});
+		this.itemList.forEach( item => this.visSet( item.x, item.y, Math.max( this.visGet(item.x,item.y), item.opacity||0 ) ) );
+	}
+	initSprites() {
 		this.tileSprite = [];
 		this.traverse( (x,y) => {
 			this.tileSprite[y] = this.tileSprite[y] || [];
@@ -157,6 +165,18 @@ class Map extends SimpleMap {
 		}
 		return this.tileEntity[y][x];
 	}
+	visGet(x,y) {
+		if( !this.inBounds(x,y) ) {
+			return false;
+		}
+		return this.visCache[y*this.xLen+x];
+	}
+	visSet(x,y,opacity) {
+		if( !this.inBounds(x,y) ) {
+			return false;
+		}
+		return this.visCache[y*this.xLen+x] = opacity;
+	}
 	tileTypeGet(x,y) {
 		if( !this.inBounds(x,y) ) {
 			return false;
@@ -170,6 +190,7 @@ class Map extends SimpleMap {
 	}
 	tileSymbolSet(x,y,symbol) {
 		super.tileSymbolSet(x,y,symbol);
+
 		if( this.tileEntity[y] && this.tileEntity[y][x] ) {
 			let e = this.tileEntity[y][x];
 			if( e.symbol !== symbol ) {
@@ -205,7 +226,6 @@ class Map extends SimpleMap {
 		if( x===undefined ) debugger;
 		if( type.isRandom ) debugger;
 		if( !this.tileTypeGet(x,y).mayWalk ) {
-			debugger;
 			let dir = this.pickDirWalkable(x,y);
 			if( dir !== false ) {
 				x += DirectionAdd[dir].x;
@@ -222,7 +242,7 @@ class Map extends SimpleMap {
 
 	_itemRemove(item) {
 		if( !this.itemList.includes(item) ) {
-			debuger;
+			debugger;
 		}
 		Array.filterInPlace( this.itemList, i => i.id!=item.id );
 		spriteDeathCallback( item.spriteList );
@@ -230,7 +250,7 @@ class Map extends SimpleMap {
 	}
 	_itemTake(item,x,y) {
 		if( this.itemList.includes(item) ) {
-			debuger;
+			debugger;
 		}
 		this.itemList.push(item);
 		item.x = x;
@@ -291,7 +311,7 @@ function shoot(map,px,py,sx,sy,tx,ty,blind) {
 		let yInt = Math.floor(y);
 		let atPlayer = (xInt==px && yInt==py);
 		if( !atPlayer ) {
-			wallAmount += map.tileTypeGet(xInt,yInt).opacity;
+			wallAmount += map.visGet(xInt,yInt); // map.tileTypeGet(xInt,yInt).opacity;
 			if( wallAmount >= 1 ) { return false; }
 		}
 		x += dx;

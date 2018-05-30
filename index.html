@@ -188,9 +188,6 @@ function main(levelName) {
 		if( gui.viewMiniMap ) {
 			gui.viewMiniMap.setArea(area);
 		}
-		if( gui.viewMap ) {
-			gui.viewMap.resetSprites();
-		}
 
 		let gateFinder = area.map.findItem().isId(gateId);
 		let gate = gateFinder.first;

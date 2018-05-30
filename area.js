@@ -77,7 +77,7 @@ class Area {
 		PickerSetTheme(this.theme);	// WARNING! Horrible hack. But it works for now.
 
 		function makeMonster(x,y,inject) {
-			let entityType = picker.pick(picker.monsterTable);
+			let entityType = picker.pick(picker.monsterTable,null,'!isUnique');
 			let entity = new Entity( self.map, self.entityList, entityType, { x:x, y:y }, inject );
 			console.log("Created "+entity.typeId+" with attitude "+entity.attitude );
 			self.entityList.push(entity);
@@ -88,13 +88,15 @@ class Area {
 			if( type && type.isRandom ) {
 				type = null;
 			}
-			if( !type ) {
-				let obj = picker.pick(picker.itemTable,type ? type.typeId : null);
-				if( obj === false ) {
+//			if( type && type.isCorpse ) debugger;
+			if( !type  || !presets ) {
+				let filterString = (!type || type.isTreasure ? 'isTreasure' : null);
+				type = picker.pick( picker.itemTable, type ? type.typeId : null, filterString );
+				if( type === false ) {
 					debugger;
 				}
-				type = obj.item;
-				presets = obj.presets;
+				presets = type.presets;
+//				if( type && type.isCorpse ) debugger;
 			}
 
 			let item = self.map.itemCreateByType(x,y,type,presets,inject);

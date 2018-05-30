@@ -4,7 +4,7 @@
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
 				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", LOSETURN: "lose turn", PRAY: "pray",
 				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop",
-				DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGVIEW: "debugview", DEBUGMAP: "debugmap", DEBUGTEST: "debugtest",
+				DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGVIEW: "debugview", DEBUGANIM: "debuganim", DEBUGTEST: "debugtest",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit",
 				EXECUTE: "execute", CANCEL: "cancel"
 			};
@@ -83,6 +83,12 @@ const StickerList = {
 	invUnmarked: { img: "gui/icons/unmarked.png" },
 	invMarked: { img: "gui/icons/marked.png" },
 	invAll: { img: "gui/icons/all.png", icon: 'all.png' },
+	oreChaff: { img: "ore/oreChaff.png", scale: 0.3, xAnchor: 0.5, yAnchor: 0.5 },
+	bloodRed: { img: "dc-misc/bloodRed.png" },
+	bloodGreen: { img: "dc-misc/bloodGreen.png" },
+	bloodBlue: { img: "dc-misc/bloodBlue.png" },
+	bloodYellow: { img: "dc-misc/bloodYellow.png" },
+	bloodBlack: { img: "dc-misc/bloodBlack.png" },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
 	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
@@ -253,7 +259,6 @@ const TileTypeList = {
 	"lava":    	  { symbol: '⍨', mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "lava", light: 5, glow:1, damage: '3d20', damageType: DamageType.BURN, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: '░', mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: '⋍', mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png" },
-	"oreVein":    { symbol: 'x', mayWalk: false, mayFly: false, opacity: 1, name: "ore vein", img: "dc-dngn/wall/lair0.png", isWall: true, mineSwings: 3, mineId: 'ore.ironOre' },
 	"ghoststone": { symbol: 'J', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
 	"obelisk":    { symbol: 'B', mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png" },
 	"crystal":    { symbol: 'C', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png" },
@@ -322,7 +327,7 @@ const WeaponList = toFab({
 	"rock":     	{ level:  0, damageMultiplier: 0.50, damageType: DamageType.BASH, mayThrow: true, range: 7, attackVerb: 'strike' },
 	"dart":     	{ level:  0, damageMultiplier: 0.20, damageType: DamageType.STAB, effectChance: 0.80, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike' },
 	"dagger":   	{ level:  0, damageMultiplier: 0.70, damageType: DamageType.STAB, effectChance: 0.30, mayThrow: true, range: 4, attackVerb: 'strike' },
-	"solKnife":   	{ level:  0, damageMultiplier: 0.60, damageType: DamageType.CUT , attackVerb: 'carve', neverPick: true, isSoulCollector: true, name: "sol knife" },
+	"solKnife":   	{ level:  0, damageMultiplier: 0.60, damageType: DamageType.CUT , attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife" },
 	"club":   		{ level:  0, damageMultiplier: 0.70, damageType: DamageType.BASH, attackVerb: 'smash' },
 	"sword": 		{ level:  0, damageMultiplier: 1.00, damageType: DamageType.CUT },
 	"greatsword": 	{ level:  0, damageMultiplier: 1.20, damageType: DamageType.CUT },
@@ -363,17 +368,38 @@ const ArmorList = toFab({
 	"deep": 		{ level: 65, armorMultiplier: 1.00, ingredientId: 'deepium ingot' },
 });
 
+const OreVeinList = toFab({
+	"oreNone": 			{ rarity: 1000.0, name: "ore vein", img: 'oreVein' },
+	"oreVeinCoal": 		{ rarity: 20.0, name: "coal vein", mineId: 'coal', img: 'oreLumpBlack' },
+	"oreVeinIron": 		{ rarity: 20.0, name: "iron ore vein", mineId: 'oreIron', img: 'oreMetalBlack' },
+	"oreVeinCopper": 	{ rarity: 10.0, name: "copper ore vein", mineId: 'oreCopper', img: 'oreMetalOrange' },
+	"oreVeinSilver": 	{ rarity:  5.0, name: "silver ore vein", mineId: 'oreSilver', img: 'oreMetalWhite' },
+	"oreVeinGold": 		{ rarity:  1.0, name: "gold ore vein", mineId: 'oreGold', img: 'oreMetalYellow' },
+	"oreVeinTin": 		{ rarity: 20.0, name: "tin ore vein", mineId: 'oreTin', img: 'oreMetalWhite' },
+	"oreVeinMalachite": { rarity: 10.0, name: "malachite ore vein", mineId: 'oreMalachite', img: 'oreMetalBlue' },
+	"oreVeinLunarium": 	{ rarity:  1.0, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'oreGemCyan' },
+	"oreVeinSolarium": 	{ rarity:  1.0, name: "solarium ore vein", mineId: 'oreSolarium', img: 'oreGemYellow' },
+	"oreVeinDeepium": 	{ rarity:  1.0, name: "deepium ore vein", mineId: "oreDeepium", img: 'oreGemBlack' },
+	"oreVeinGarnet": 	{ rarity:  3.0, name: "garnet ore vein", mineId: "garnet", img: 'oreGemPurple', isGemOre: true },
+	"oreVeinOpal": 		{ rarity:  2.0, name: "opal ore vein", mineId: "opal", img: 'oreGemWhite', isGemOre: true },
+	"oreVeinRuby": 		{ rarity:  1.0, name: "ruby ore vein", mineId: "ruby", img: 'oreGemRed', isGemOre: true },
+	"oreVeinEmerald": 	{ rarity:  1.0, name: "emerald ore vein", mineId: "emerald", img: 'oreGemGreen', isGemOre: true },
+	"oreVeinSapphire": 	{ rarity:  1.0, name: "sapphire ore vein", mineId: "sapphire", img: 'oreGemBlue', isGemOre: true },
+	"oreVeinDiamond": 	{ rarity:  0.5, name: "diamond ore vein", mineId: "diamond", img: 'oreGemWhite', isGemOre: true }
+});
+
+
 const OreList = toFab({
-	"ironOre": 		{ name: "iron ore", refinesTo: "iron ingot", img: 'i-protection' },
-	"copperOre": 	{ name: "copper ore", refinesTo: "copper ingot", img: 'i-protection' },
-	"silverOre": 	{ name: "silver ore", refinesTo: "silver ingot", img: 'i-protection' },
-	"goldOre": 		{ name: "gold ore", refinesTo: "gold ingot", img: 'i-protection' },
-	"tinOre": 		{ name: "tin ore", refinesTo: "tin ingot", img: 'i-protection' },
-	"malachiteOre": { name: "malachite ore", refinesTo: "malachite ingot", img: 'i-protection' },
-	"lunariumOre": 	{ name: "lunarium ore", refinesTo: "lunarium ingot", img: 'i-protection' },
-	"solariumOre": 	{ name: "solarium ore", refinesTo: "solarium ingot", img: 'i-protection' },
-	"deepiumOre": 	{ name: "deepium ore", refinesTo: "deepium ingot", img: 'i-protection' },
-	"moonsteelOre": { name: "moonsteel ore", refinesTo: "moonsteel ingot", img: 'i-protection' }
+	"coal": 		{ rarity: 20.0, name: "coal", img: 'oreLumpBlack', scale: 0.5, isFuel: true },
+	"oreIron": 		{ rarity: 20.0, name: "iron ore", refinesTo: "ingotIron", img: 'oreMetalBlack', scale: 0.5 },
+	"oreCopper": 	{ rarity: 10.0, name: "copper ore", refinesTo: "ingotCopper", img: 'oreMetalOrange', scale: 0.5 },
+	"oreSilver": 	{ rarity:  5.0, name: "silver ore", refinesTo: "ingotSilver", img: 'oreMetalWhite', scale: 0.5 },
+	"oreGold": 		{ rarity:  1.0, name: "gold ore", refinesTo: "ingotGold", img: 'oreMetalYellow', scale: 0.5 },
+	"oreTin": 		{ rarity: 20.0, name: "tin ore", refinesTo: "ingotTin", img: 'oreMetalWhite', scale: 0.5 },
+	"oreMalachite": { rarity: 10.0, name: "malachite ore", refinesTo: "ingotMalachite", img: 'oreMetalBlue', scale: 0.5 },
+	"oreLunarium": 	{ rarity:  1.0, name: "lunarium ore", refinesTo: "ingotLunarium", img: 'oreGemCyan', scale: 0.5 },
+	"oreSolarium": 	{ rarity:  1.0, name: "solarium ore", refinesTo: "ingotSolarium", img: 'oreGemYellow', scale: 0.5 },
+	"oreDeepium": 	{ rarity:  1.0, name: "deepium ore", refinesTo: "ingotDeepium", img: 'oreGemBlack', scale: 0.5 },
 });
 
 const GemQualityList = toFab({
@@ -415,6 +441,16 @@ const StuffList = toFab({
 	"batWing": 			{ },
 	"frogSpine": 		{ },
 	"wool": 			{ },
+	"ingotIron": 		{ },
+	"ingotCopper": 		{ },
+	"ingotSilver": 		{ },
+	"ingotGold": 		{ },
+	"ingotTin": 		{ },
+	"ingotMalachite": 	{ },
+	"ingotLunarium": 	{ },
+	"ingotSolarium": 	{ },
+	"ingotDeepium": 	{ },
+
 });
 
 
@@ -468,25 +504,29 @@ const WEAPON_EFFECT_DAMAGE_PERCENT = 10;
 const ItemTypeList = {
 	"random":	{ symbol: '*', isRandom: 1, mayPickup: false, neverPick: true },
 // GATEWAYS
-	"stairsDown": { symbol: '>', name: "stairs down", gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, neverPick: true, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
-	"stairsUp":   { symbol: '<', name: "stairs up", gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, neverPick: true, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
-	"gateway":    { symbol: 'y', name: "gateway", gateDir: 0, gateInverse: 'gateway', mayPickup: false, neverPick: true, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
-	"portal":     { symbol: 'Ώ', name: "portal", gateDir: 0, gateInverse: 'portal', mayPickup: false, neverPick: true, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
+	"stairsDown": { symbol: '>', name: "stairs down", rarity: 1, gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
+	"stairsUp":   { symbol: '<', name: "stairs up", rarity: 1, gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
+	"gateway":    { symbol: 'y', name: "gateway", rarity: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
+	"portal":     { symbol: 'Ώ', name: "portal", rarity: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
 // DECOR
-	"columnBroken": { symbol: 'O', mayWalk: false, mayFly: false, name: "broken column", neverPick: true, img: "dc-dngn/crumbled_column.png" },
-	"columnStump":  { symbol: 'o', mayWalk: false, mayFly: true, name: "column stump", neverPick: true, img: "dc-dngn/granite_stump.png" },
+	"columnBroken": { symbol: 'O', mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
+	"columnStump":  { symbol: 'o', mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
 
-	"altar":    { symbol: 'A', mayWalk: false, mayFly: false, name: "golden altar", mayPickup: false, light: 4, glow:true,
-				rechargeTime: 12, healMultiplier: 3.0, neverPick: true,
+	"altar":    { symbol: 'A', mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
+				isDecor: true, rechargeTime: 12, healMultiplier: 3.0,
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
-	"fountain": { symbol: 'F', mayWalk: false, mayFly: true, name: "fountain", mayPickup: false,
-				neverPick: true, img: "dc-dngn/dngn_blue_fountain.png" },
+	"fountain": { symbol: 'F', mayWalk: false, mayFly: true, rarity: 1, name: "fountain", mayPickup: false,
+				isDecor: true, img: "dc-dngn/dngn_blue_fountain.png" },
+// ORE VEINS
+	"oreVein":    { symbol: 'x', mayWalk: false, mayFly: false, rarity: 1, opacity: 1, name: "ore vein", isWall: true,
+				  imgGet: (self,img) => "ore/"+(img || self.variety.img || "oreVein")+".png", imgChoices: OreVeinList,
+				  varieties: OreVeinList, mineSwings: 3 },
 // CORPSE
-	"corpse":   { symbol: 'X', namePattern: "remains of a {mannerOfDeath} {usedToBe}", isCorpse: true, neverPick: true,
+	"corpse":   { symbol: 'X', namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1, isCorpse: true,
 				img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // TREASURE
-	"coin": { symbol: '$', isTreasure: 1, namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true,
-				rarity: /*50*/1.00, img: "item/misc/gold_pile.png", icon: 'coin.png' },
+	"coin": { symbol: '$', namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true,
+				rarity: /*50*/1.00, isTreasure: 1, img: "item/misc/gold_pile.png", icon: 'coin.png' },
 	"potion":   { symbol: '¡', isTreasure: 1, namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
 				rarity:  5.00, effectDuration: '1d4+4', isPotion: true,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
@@ -494,9 +534,9 @@ const ItemTypeList = {
 	"spell":    { symbol: 'ᵴ', isTreasure: 1, namePattern: 'spell{?effect}', rechargeTime: '3d4', effects: SpellEffects,
 				rarity:  0.50, isSpell: true,
 				img: "item/scroll/scroll.png", icon: 'spell.png' },
-	"ore": 		{ symbol: '"', isTreasure: 1, namePattern: '{variety}', varieties: OreList, isOre: true, neverPick: true,
-				rarity:  0.01,	// Has to be non-neverPick to be chosen from the picker. Hmm...
-				imgGet: (self,img) => "item/ring/"+(img || self.variety.img || "i-protection")+".png", imgChoices: OreList, icon: 'ore.png' },
+	"ore": 		{ symbol: '"', isTreasure: 1, namePattern: '{variety}', varieties: OreList, isOre: true,
+				rarity:  1.00,
+				imgGet: (self,img) => "ore/"+(img || self.variety.img || "ore")+".png", imgChoices: OreList, icon: 'ore.png' },
 	"gem": 		{ symbol: "^", isTreasure: 1, namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
 				rarity: 2.00, effectChance: 0.20, mayThrow: 1, mayTargetPosition: 1, autoCommand: Command.USE,
 				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5, icon: 'gem.png' },
@@ -570,6 +610,11 @@ const MonsterTypeDefaults = {
 				};
 
 let MaxSightDistance = 10;
+let LightAlpha = [];
+for( let i=0 ; i<MaxSightDistance+20 ; ++i ) {
+	LightAlpha[i] = Math.clamp(i/MaxSightDistance,0.0,1.0);
+}
+
 
 // Monster Events
 // onAttacked - fired when the monster gets attacked, even if damage nets to zero.
@@ -599,6 +644,7 @@ const MonsterTypeList = {
 		brain: Brain.USER,
 		brainOpensDoors: true,
 		brainTalk: true,
+		isSunChild: true,
 		light: 9,
 		neverPick: true,
 		picksup: true,
@@ -653,12 +699,12 @@ const MonsterTypeList = {
 // EVIL TEAM
 	"Avatar of Balgur": {
 		core: [ 'a', 30, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
+		isUnique: true, neverPick: true,
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: [DamageType.BURN,Attitude.PANICKED].join(','),
 		isDemon: true,
 		sayPrayer: 'I shall rule this planet!',
-		rarity: 0.000000001,
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
@@ -880,7 +926,7 @@ const MonsterTypeList = {
 		core: [ 'f', 4, '3:10', 'neutral', 'stab', 'dc-mon/animals/spiny_frog.png', 'it' ],
 		name: "spiny frog",
 		attitude: Attitude.WANDER,
-		immune: DamageType.POISON,
+		immune: [DamageType.POISON,'mud'].join(','),
 		isAnimal: true,
 		loot: '50% frogSpine',
 	},
@@ -905,6 +951,22 @@ const MonsterTypeList = {
 		m.img = m.core[5];
 		m.pronoun = m.core[6];
 		delete m.core;
+
+		let blood = {
+			isPlanar: 	'bloodYellow',
+			isDemon: 	'bloodBlack',
+			isEarthChild: 'bloodGreen',
+			isAnimal: 	'bloodRed',
+			isSunChild: 'bloodRed',
+			isLunarChild: 'bloodBlue'
+		};
+		for( let key in blood ) {
+			if( m[key] ) {
+				m.bloodId = m.bloodId || blood[key];
+				break;
+			}
+		}
+		m.bloodId = m.bloodId || 'bloodRed';
 	}
 })();
 
@@ -1005,23 +1067,46 @@ TileTypeList.mud.onDepart = function(entity,self) {
 	entity.mudded = false;
 }
 
-TileTypeList.oreVein.onTouch = function(entity,self) {
-	if( !self.isPosition ) debugger;
+ItemTypeList.oreVein.onTouch = function(entity,self) {
 	entity.swings = (entity.swings||0)+1;
-	animationAdd( new AniPaste({
-		entity: 	entity, 
-		sticker: 	self.img,
-		duration: 	3.0,
-		onTick: 	function(delta) { this.yOfs -= delta*32; }
-	}));
+	let dx = self.x - entity.x ;
+	let dy = self.y - entity.y;
+	let deg = deltaToDeg(dx,dy);
+	new Anim( {}, {
+		follow: 	entity,
+		duration: 	0.1,
+		onInit: 		a => { a.puppet(entity.spriteList); },
+		onSpriteMake: 	s => { s.sPosDeg(deg,0.2); },
+		onSpriteDone: 	s => { s.sReset(); }
+	});
+	let chunkAnim = new Anim({},{
+		x: 			self.x,
+		y: 			self.y,
+		img: 		StickerList.oreChaff.img, //self.imgGet(self),
+		scale: 		0.1,
+		duration: 	0.2,
+		onInit: 		a => { a.create(12); },
+		onSpriteMake: 	s => { s.sVel(Math.rand(-90,90),Math.rand(5,10)); },
+		onSpriteTick: 	s => { s.sScale(1.00).sMove(s.xVel,s.yVel).sGrav(40).sRot(360); }
+	});
+	new Anim( {}, {
+		x: 			self.x,
+		y: 			self.y,
+		img: 		self.imgGet(self),
+		duration: 	chunkAnim,
+		onSpriteMake: 	s => { },
+		onSpriteTick: 	s => { s.sQuiver(0.1,0.1); }
+	});
 
 	if( entity.swings >= self.mineSwings ) {
 		entity.swings = 0;
-		let level     = self.map.level;
 		entity.map.tileSymbolSetFloor( self.x, self.y );
-		new Picker(self.map.level).pickLoot( self.mineId || "ore", loot=>{
-			loot.giveTo(self.map,self.x,self.y);
-		});
+		if( self.mineId ) {
+			new Picker(entity.map.level).pickLoot( self.mineId, loot=>{
+				loot.giveTo(entity.map,self.x,self.y);
+			});
+		}
+		self.destroy();
 	}
 }
 
@@ -1116,14 +1201,15 @@ MonsterTypeList.redOoze.onMove = function(self,x,y) {
 		tell(mSubject,self,' ',mVerb,'absorb',' ',mObject,f.first,' and ',mVerb,'regain',' strength!');
 		let heal = Math.floor(self.healthMax * 0.25);
 		self.takeHealing(self,heal,DamageType.CORRODE,true);
-		animationAdd( new AniPaste({
-			entity: this, xOfs: 0.5, yOfs: 0.5,
-			sticker: self,
-			x: x,
-			y: y,
-			duration: 0.5,
-			onTick: function(delta) { this.scale *= delta*4; }
-		}));
+
+		let anim = new Anim({},{
+			x: 			entity.x,
+			y: 			entity.y,
+			img: 		self.img,
+			onInit: 		a => { a.puppet(entity.spriteList); },
+			onSpriteTick: 	s => { s.sScaleSet(1.0+s.sSine(1.0)); }
+		});
+
 		f.first.destroy();
 	}
 }
@@ -1146,7 +1232,7 @@ function loadKeyMapping(name) {
 		X: Command.DEBUGKILL,
 		a: Command.DEBUGTHRIVE,
 		s: Command.DEBUGVIEW,
-		z: Command.DEBUGMAP,
+		z: Command.DEBUGANIM,
 		i: Command.INVENTORY,
 		q: Command.QUAFF,
 		t: Command.THROW,

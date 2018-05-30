@@ -98,7 +98,7 @@ function createDrawList(observer,map,entityList,asType) {
 		testLight(item.x,item.y,item.light)
 	}
 	for( let anim of animationList ) {
-		testLight(anim.xGet(),anim.yGet(),anim.light)
+		testLight(anim.x,anim.y,anim.light)
 	}
 	for( let entity of entityList ) {
 		testLight(entity.x,entity.y,-(entity.dark||0));
@@ -182,8 +182,8 @@ function createDrawList(observer,map,entityList,asType) {
 		if( anim.entity && !visId[anim.entity.id] ) {
 			continue;
 		}
-		let tx = Math.floor(anim.xGet()-(px-d));
-		let ty = Math.floor(anim.yGet()-(py-d));
+		let tx = Math.floor(anim.x-(px-d));
+		let ty = Math.floor(anim.y-(py-d));
 		if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
 			a[ty][tx].push(anim);
 		}
@@ -226,6 +226,7 @@ class ImageRepo {
 		for( let symbol in SymbolToType ) {
 			let type = SymbolToType[symbol];
 			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
+			if( type.imgGet && !type.imgChoices ) debugger;
 			if( type.imgChoices ) {
 				let imgGet = this.imgGet[type.typeId];
 				for( let key in type.imgChoices ) {
@@ -256,11 +257,16 @@ class ImageRepo {
 
 	}
 	get(imgPath) {
-		return this.loader.resources['tiles/'+imgPath];
+		let resource = this.loader.resources['tiles/'+imgPath];
+		if( !resource ) debugger;
+		return resource;
 	}
 }
 
 let spriteDeathCallback;
+let spriteCreate;
+let spriteAttach;
+let spriteOnStage;
 
 class ViewMap {
 	constructor(divId,sightDistance,imageRepo) {
@@ -276,14 +282,46 @@ class ViewMap {
 		this.imageRepo = imageRepo;
 
 		let self = this;
+
 		spriteDeathCallback = function(spriteList) {
-			if( spriteList ) {
-				for( let sprite of spriteList ) {
-					if( !sprite.keepAcrossAreas ) {
-						self.app.stage.removeChild(sprite);
+			if( !spriteList ) return;
+			Array.filterInPlace( spriteList, sprite => {
+				sprite.refs--;
+				if( sprite.refs <= 0 ) {
+					if( sprite.keepAcrossAreas ) {
+						return true;
 					}
+					self.app.stage.removeChild(sprite);
 				}
+				return false;
+			});
+		};
+
+		spriteCreate = function(spriteList,imgPath) {
+			let resource = self.imageRepo.get(imgPath);
+			if( !resource ) {
+				debugger;
+				return;
 			}
+			let sprite = new PIXI.Sprite( resource.texture );
+			sprite.onStage = false;
+			sprite.refs = 1;
+			spriteList.push(sprite);
+			return sprite;
+		}
+
+		spriteAttach = function(spriteList,sprite) {
+			sprite.refs = (sprite.refs||0)+1;
+			spriteList.push(sprite);
+		}
+
+		spriteOnStage = function(sprite,value) {
+			if( value == sprite.onStage ) {
+				return;
+			}
+			self.app.stage[value?'addChild':'removeChild'](sprite);
+			sprite.onStage = value;
+			return sprite;
 		}
 
 		this.app.ticker.add(function(delta) {
@@ -300,34 +338,17 @@ class ViewMap {
 		});
 	}
 
-	resetSprites() {
-		let kept = 0;
-		while( this.app.stage.children.length > kept ) {
-			let sprite = this.app.stage.children[kept];
-			if( sprite.keepAcrossAreas ) {
-				++kept;
-			}
-			else {
-				this.app.stage.children[kept].offStage = true;
-				this.app.stage.removeChild( this.app.stage.children[kept] );
-			}
-		}
-	}
-
 	draw(drawList,observer) {
 		if( this.areaId != world.area.id ) {
-			this.resetSprites();
+			// In theory we would traverse all the entities, items, tiles and their inventories and
+			// destroy all their spriteLists... for now let them linger.
+			//this.resetSprites();
 			this.areaId = world.area.id;
 		}
-		let lightAlpha = [];
 		let maxLight = MaxSightDistance;
 		let glowLight = maxLight;
 		let staticTileEntity = { isStaticTile: true };
 		let staticContext = { x:0, y:0, light: 0 };
-
-		for( let i=0 ; i<maxLight+20 ; ++i ) {
-			lightAlpha[i] = Math.clamp(i/maxLight,0.0,1.0);
-		}
 
 		//let debug = '';
 
@@ -339,37 +360,24 @@ class ViewMap {
 
 			entity.spriteList = entity.spriteList || [];
 
-			staticContext.x = x;
-			staticContext.y = y;
-			staticContext.light = light;
 			for( let i=0 ; i<(entity.spriteCount || 1) ; ++i ) {
 				if( !entity.spriteList[i] ) {
-					let imgPath = imgGet(entity,null,staticContext);
-					let resource = this.imageRepo.get(imgPath);
-					if( !resource ) {
-						continue;
-					}
-					entity.spriteList[i] = new PIXI.Sprite( resource.texture );
-					let sprite = entity.spriteList[i];
+					let sprite = spriteCreate( entity.spriteList, imgGet(entity) );
 					sprite.keepAcrossAreas = entity.isUser && entity.isUser();
-					sprite.anchor.set(entity.xAnchor||0,entity.yAnchor||0);
-					sprite.xOfs = (entity.xOfs||0);
-					sprite.yOfs = (entity.yOfs||0);
-					sprite.offStage = true;
+					sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
 				}
 				let sprite = entity.spriteList[i];
-				if( sprite.offStage ) {
-					this.app.stage.addChild(sprite);
-					sprite.offStage = false;
+				spriteOnStage(sprite,true);
+				if( sprite.refs == 1 ) {	// I must be the only controller, so...
+					sprite.zOrder 	= zOrder;
+					sprite.visible 	= true;
+					sprite.x 		= x+(32/2);
+					sprite.y 		= y+(32/2);
+					sprite.scale._x = (entity.scale||1) * (sprite.scale.amount||1);
+					sprite.scale._y = (entity.scale||1) * (sprite.scale.amount||1);
+					sprite.alpha 	= (entity.alpha||1) * LightAlpha[light];
+					//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 				}
-				sprite.zOrder 	= zOrder;
-				sprite.visible 	= true;
-				sprite.x 		= x + sprite.xOfs*32;
-				sprite.y 		= y + sprite.yOfs*32;
-				sprite.scale._x = (entity.scale||1) * (sprite.scale.amount||1);
-				sprite.scale._y = (entity.scale||1) * (sprite.scale.amount||1);
-				sprite.alpha 	= (entity.alpha||1) * lightAlpha[light];
-				//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 			}
 		}
 
@@ -390,15 +398,7 @@ class ViewMap {
 					if( !entity ) continue;
 					if( typeof entity !== 'object' ) debugger;
 					if( entity.isAnimation ) {
-						let anim = entity;
-						let rx = (anim.xGet()-wx)*32;
-						let ry = (anim.yGet()-wy)*32;
-						make.call(
-							this, rx, ry,
-							anim,
-							anim.imgGet, 10,
-							anim.glow ? Math.max(light,glowLight) : light
-						);
+						entity.drawUpdate(observer.x-this.sd, observer.y-this.sd, light, this.app.stage.addChild);
 					}
 					else
 					{
