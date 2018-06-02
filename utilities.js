@@ -25,7 +25,10 @@ function nop() {}
 		return Math.rand(0,100) < percent;
 	}
 	Math.fixed = function(value,decimals) {
-		return Number.parseFloat(value).toFixed(decimals);
+		let p = Number.parseFloat(value).toString().split('.');
+		if( p[1] == undefined ) p[1] = '0';
+		while( p[1].length < decimals ) p[1]+='0';
+		return p[0]+'.'+p[1].substr(0,decimals);
 	}
 	Math.percent = function(value,decimals) {
 		let p = 100*Math.pow(10,decimals);
@@ -44,7 +47,7 @@ function nop() {}
 		}
 		return s;
 	}
-	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^\s,]+|[*])\s*[,]*/g;
+	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^,]+|[*])\s*[,]*/g;
 	String.chanceParse = function(lootString) {
 		let result = [];
 		lootString.replace( ChParser, function( match, count, chance, id ) {
@@ -101,6 +104,7 @@ function nop() {}
 			fn(obj[key]);
 		}
 	}
+	// Produces a new object composed of each key that the fn returned true for.
 	Object.filter = function(obj,fn) {
 		let result = {};
 		for( let key in obj ) {
@@ -110,17 +114,73 @@ function nop() {}
 		}
 		return result;
 	}
-	Array.chancePick = function(lootArray) {
+	// Converts an incoming object into another object. The fn should return an object that will be object assigned into the source object.
+	Object.convert = function(obj,fn) {
+		let result = {};
+		for( let key in obj ) {
+			Object.assign(result, fn.call(obj,obj[key],key));
+		}
+		return result;
+	}
+
+	Array.chancePick = function(lootArray,sandBag=1.0) {
 		let result = [];
 		for( let loot of lootArray ) {
 			for( let i=0 ; i<loot.count ; ++i ) {
-				if( Math.chance(loot.chance) ) {
+				if( Math.chance(loot.chance*sandBag) ) {
 					result.push(loot.id);
 				}
 			}
 		}
 		return result;
 	}
+
+		//**
+	// Takes a table of things, whatever you want, and uses the chanceFn to get values of likelihood.
+	// Then it traverses again picking a random one by poportions. If it fails (total=0) it tries the fallbackFn instead.
+	Array.pickFrom = function(table,chanceFn,fallbackFn) {
+		console.assert( table && table.length );
+		let chance = [];
+		let total = 0;
+		for( let i=0 ; i<table.length ; i++ ) {
+			if( !table[i] ) debugger;
+			let value = chanceFn(table[i]);
+			if( typeof value != 'number' ) debugger;
+			chance[i] = value;
+			total += chance[i];
+		}
+		if( !total ) {
+			debugger;
+			console.log( 'using fallback on table '+table[0].typeId );
+			for( let i=0 ; i<table.length ; i++ ) {
+				let value = fallbackFn(table[i]);
+				if( typeof value != 'number' ) debugger;
+				console.log( table[i]._id+' = '+chanceFn(table[i])+' / '+value );
+				chance[i] = value;
+				total += chance[i];
+			}
+			if( !total ) debugger;
+		}
+		let n = Math.rand(0,total);
+		for( let i=0 ; i<table.length ; ++i ) {
+			n -= chance[i];
+			if( n<=0 ) return table[i];
+		}
+		debugger;
+	}
+	Array.pickFromPaired = function(table) {
+		let total = 0;
+		for( let i=0 ; i<table.length ; i+=2 ) {
+			total += table[i];
+		}
+		let n = Math.rand(0,total);
+		for( let i=0 ; i<table.length ; i+=2 ) {
+			n -= table[i];
+			if( n<=0 ) return table[i+1];
+		}
+		debugger;
+	}
+
 
 	function betterSplit(s,delim) {
 		let temp = s.split(delim);
@@ -204,14 +264,16 @@ function nop() {}
 		return chance;
 	}
 
-	Math.chanceToAppearSigmoid = function(entityLevel,mapLevel) {
+	Math.chanceToAppearSigmoid = function(entityLevel,mapLevel,span=20) {
 		if( mapLevel < entityLevel ) {
 			return 0;
 		}
+		// it takes <span> levels for this thing to get from 0.0 frequency to 1.0 frequency.
 		let x = mapLevel - entityLevel;
 
 		// Increases chances from about 7% to near 100% ten levels away from starting level.
-		let chance = 1 - (1 / (1+Math.exp(x/2-2.5)));
+		//let chance = 1 - (1 / (1+Math.exp(x*(5/span)-(span*0.25))));
+		let chance = 1-(1/(1+Math.pow(100,x/(0.5*span)-1)));
 
 		return chance;
 	}

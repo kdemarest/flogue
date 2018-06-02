@@ -2,16 +2,16 @@
 // ENTITY (monsters, players etc)
 //
 class Entity {
-	constructor(map,entityList,monsterType,position,inject,levelOverride) {
-		let level = Math.max(1,Math.floor(levelOverride || Math.max(monsterType.level,monsterType.level+map.level/2)));
+	constructor(depth,monsterType,inject,levelOverride) {
+		let level = Math.max(1,Math.floor(levelOverride || Math.max(monsterType.level,monsterType.level+depth/2)));
 		let inits =    { inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
-		let values =   { id: GetUniqueEntityId(monsterType.typeId,level), x:position.x, y:position.y, map: map, entityList:entityList };
+		let values =   { id: GetUniqueEntityId(monsterType.typeId,level) };
 
 		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
 		// a deeper map level then they average their native level and the map's level.
 		let isPlayer = monsterType.brain==Brain.USER;
 		if( isPlayer ) {
-			level = map.level;
+			level = depth;
 			inits.healthMax = Rules.playerHealth(level);
 			inits.armor     = 0; //Rules.playerArmor(level);
 			let damageWhenJustStartingOut = 0.75;	// I found that 50% was getting me killed by single goblins. Not OK.
@@ -42,6 +42,14 @@ class Entity {
 		if( this.inventoryLoot ) {
 			this.lootTake( this.inventoryLoot, this.level, null, true );
 		}
+
+		console.assert( this.x===undefined && this.y===undefined && this.area===undefined);
+	}
+	get map() {
+		return this.area.map;
+	}
+	get entityList() {
+		return this.area.entityList;
 	}
 
 	record(s,pending) {
@@ -58,23 +66,24 @@ class Entity {
 	get baseType() {
 		return MonsterTypeList[this.typeId];
 	}
+	gateTo(area,x,y) {
+		console.assert( x!==undefined && y!==undefined );
+		// DANGER! Doing this while within a loop across the entityList will result in pain!
+		if( this.area ) {
+			Array.filterInPlace( this.area.entityList, entity => entity.id!=this.id );
+		}
+		this.x = x;
+		this.y = y;
+		this.area = area;
+		let fnName = this.isUser() ? 'unshift' : 'push';
+		this.area.entityList[fnName](this);
+	}
 
 	findAliveOthers(entityList = this.entityList) {
 		return new Finder(entityList,this).excludeMe().isAlive();
 	}
 	isUser() {
 		return this.brain == Brain.USER;
-	}
-	gateTo(area,x,y) {
-
-		// DANGER! Doing this while within a loop across the entityList will result in pain!
-		Array.filterInPlace( this.entityList, entity => entity.id!=this.id );
-		this.x = x;
-		this.y = y;
-		this.map = area.map;
-		this.entityList = area.entityList;
-		let fnName = this.isUser() ? 'unshift' : 'push';
-		area.entityList[fnName](this);
 	}
 	die() {
 		if( this.dead && this.isUser() ) {
@@ -153,7 +162,7 @@ class Entity {
 		let doVis = false;
 		if( this.brain == Brain.USER ) {
 			doVis = true;
-			this.mapMemory = world.area.mapMemory;
+			this.mapMemory = this.area.mapMemory;
 		}
 		else {
 			// Calc vis if I am near the user, that it, I might be interacting with him!
@@ -630,6 +639,10 @@ class Entity {
 			let deg = deltaToDeg(dx,dy);
 			let mag = Math.clamp( amount/this.healthMax, 0.05, 1.0 );
 			let delay = !attacker || !attacker.isUser || attacker.isUser() ? 0 : 0.2;
+			if( attacker.command == Command.THROW ) {
+				// This seems a little loose to me, but... maybe it will work.
+				delay += attacker.throwDuration;
+			}
 			// Attacker lunges at you
 			let lunge = 0.2 + 0.5 * mag;
 			new Anim( {}, {
@@ -797,7 +810,7 @@ class Entity {
 			let description = [
 				mSubject,this,' ',mVerb,'find',' '
 			].concat( 
-				found.length ? found : ['<b>nothing</b>'],
+				found.length ? found : ['nothing'],
 				originatingEntity ? [' on ',mObject,originatingEntity] : ['']
 			);
 			tell(...description);
@@ -1018,7 +1031,9 @@ class Entity {
 				break;
 			}
 			case Command.LOOT: {
-				findLoot(this.commandItem);
+				if( this.commandItem.usedToBe ) {
+					this.lootTake(this.commandItem.usedToBe.loot || '',this.commandItem.usedToBe.level,this.commandItem);
+				}
 				break;
 			}
 			case Command.DROP: {
@@ -1052,7 +1067,8 @@ class Entity {
 			case Command.THROW: {
 				let item = this.commandItem;
 				let target = this.commandTarget;
-				item.moveTo(this.map,target.x,target.y);
+
+				item.giveTo(this.map,target.x,target.y);
 				if( item.damage && !target.isPosition ) {
 					this.attack(target,true);
 				}
@@ -1087,7 +1103,7 @@ class Entity {
 				else
 				if( item.slot ) {
 					let itemToRemove = new Finder(this.inventory).filter( i => i.inSlot==item.slot);
-					if( itemToRemove.first ) {
+					if( itemToRemove.count >= HumanSlotLimit[item.slot] ) {
 						this.doff(itemToRemove.first);
 					}
 					this.don(item,item.slot);

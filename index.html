@@ -148,7 +148,7 @@ function main(levelName) {
 
 	function TickWorld(timePasses) {
 		tick( timePasses ? player.speed : false, area.map, area.entityList );
-		if( world.levelChange() ) {
+		if( world.areaChange() ) {
 			area = world.area;
 		}
 
@@ -179,8 +179,8 @@ function main(levelName) {
 			let pos = area.map.pickPosEmpty();
 			gate = area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp');
 		}
-		let player = new Entity( area.map, area.entityList, MonsterTypeList.player, { x:gate.x, y:gate.y }, null, startingLevel );
-		area.entityList.unshift( player );
+		let player = new Entity( area.depth, MonsterTypeList.player, null, startingDepth );
+		player.gateTo(area,gate.x,gate.y);
 		return player;
 	}
 
@@ -201,10 +201,10 @@ function main(levelName) {
 	let gui = new Gui(playerFind,areaFind);
 	let area;
 	let player;
-	let startingLevel = 10;
+	let startingDepth = 40;
 	let testTheme = 'dwarfTown';
-	window.world = new World(startingLevel,playerFind,onAreaChange);
-	area = world.createArea(null,0,ThemeList[startingLevel<=1 ? 'gameStart' : testTheme],startingLevel>1 ? 'stairsUp' : false);
+	window.world = new World(startingDepth,playerFind,onAreaChange);
+	area = world.createArea(null,0,ThemeList[startingDepth<=1 ? 'gameStart' : testTheme],startingDepth>1 ? 'stairsUp' : false);
 	world.gateTo(area.id);
 	player = playerStartup(area);
 	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);

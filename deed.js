@@ -156,6 +156,46 @@ let deedEnd = function(fn) {
 }
 
 let effectApply = function(origin,effect,target) {
+	let effectShape = effect.effectShape || EffectShape.SINGLE;
+	if( effectShape == EffectShape.SINGLE ) {
+		return effectApplyTo(origin,effect,target);
+	}
+	let dist = 0;
+	if( effectShape == EffectShape.SMALL ) {
+		dist = 1;
+	}
+	if( effectShape == EffectShape.MEDIUM ) {
+		dist = 2;
+	}
+	if( effectShape == EffectShape.LARGE ) {
+		dist = 3;
+	}
+	if( radius ) {
+		for( let y=-dist ; y<=dist ; ++y ) {
+			for( let x=-dist ; x<=dist ; ++x ) {
+				effectApplyTo(origin,effect,target);
+			}
+		}
+		return;
+	}
+}
+
+let effectApplyTo = function(origin,effect,target) {
+	function makeAnim(icon) {
+	if( effect.icon !== false ) {
+		new Anim( {}, {
+			follow: 	target,
+			img: 		effect.icon || StickerList.bloodBlue.img,
+			duration: 	0.4,
+			delay: 		effect.throwDuration || 0,
+			onInit: 		a => { a.create(1); },
+			onSpriteMake: 	s => { s.sVelTo(0,-1,0.4).sScaleSet(0.75); },
+			onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sAlpha(1-Math.max(0,(2*s.elapsed/s.duration-1))); }
+		});
+	}
+	}
+
+
 	if( !effect.op ) {
 		// This is an inert effect. Do nothing.
 		return false;
@@ -169,20 +209,58 @@ let effectApply = function(origin,effect,target) {
 		tell(mSubject,origin,' has no effect on ',mObject,target);
 		return false;
 	}
-	if( target.isImmune && target.isImmune(effect.typeId) ) {
+	let isImmune = false;
+	isImmune = isImmune || (target.isImmune && target.isImmune(effect.typeId));
+	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
+	if( isImmune ) {
 		tell(mSubject,target,' is immune to ',mObject,effect);
-		return false;
-	}
-	if( effect.op=='set' && target.isImmune && target.isImmune(effect.value) ) {
-		let subject = effect.value;
-		tell(mSubject|mPossessive,origin,' '+subject+' has no effect on ',mObject,target);
+		new Anim( {}, {
+			follow: 	target,
+			img: 		StickerList.showImmunity.img,
+			duration: 	0.2,
+			delay: 		effect.throwDuration || 0,
+			onInit: 		a => { a.create(1); },
+			onSpriteMake: 	s => { s.sScaleSet(0.75); },
+			onSpriteTick: 	s => { }
+		});
 		return false;
 	}
 
-	if( target.isResistant && (target.isResistant(effect.typeId) || (effect.op=='set' && target.isResistant(effect.value)) ) && Math.chance(50) ) {
+	// Note that spells with a duration must last at least 1 turn!
+	// This should almost certainly move the DEFAULT_EFFECT_DURATION usage into the Picker.
+	let duration = effect.isInstant ? 0 : (origin.inSlot ? true : Math.max(1,DEFAULT_EFFECT_DURATION * (effect.durationMod||1)));
+	let isResist = target.isResistant && (target.isResistant(effect.typeId) || (effect.op=='set' && target.isResistant(effect.value)) );
+
+	if( isResist && effect.isInstant && Math.chance(50) ) {
 		tell(mSubject,target,' resists the effects of ',mObject,effect);
+		new Anim( {}, {
+			follow: 	target,
+			img: 		StickerList.showResistance.img,
+			duration: 	0.2,
+			delay: 		effect.throwDuration || 0,
+			onInit: 		a => { a.create(1); },
+			onSpriteMake: 	s => { s.sScaleSet(0.75); },
+			onSpriteTick: 	s => { }
+		});
 		return false;
 	}
+
+	if( isResist && !effect.isInstant && duration !== true ) {
+		tell(mSubject,target,' seems partially afected by ',mObject,effect);
+		duration = duration * 0.50;
+		new Anim( {}, {
+			follow: 	target,
+			img: 		StickerList.showResistance.img,
+			duration: 	0.2,
+			delay: 		effect.throwDuration || 0,
+			onInit: 		a => { a.create(1); },
+			onSpriteMake: 	s => { s.sScaleSet(0.75); },
+			onSpriteTick: 	s => { }
+		});
+	}
+
+
+	makeAnim(effect.icon || StickerList.eGeneric.img);
 
 	if( target.isPosition ) {
 		if( !effect.onTargetPosition ) {
@@ -192,7 +270,6 @@ let effectApply = function(origin,effect,target) {
 		effect.onTargetPosition(target.map,target.x,target.y)
 		return true;
 	}
-	let duration = effect.isInstant ? 0 : (origin.inSlot ? true : DEFAULT_EFFECT_DURATION);
 	deedAdd(origin,target,duration,effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
 
 	if( origin && origin.isItemType && origin.rechargeTime !== undefined ) {

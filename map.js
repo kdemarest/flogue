@@ -26,7 +26,7 @@ class SimpleMap {
 		this.xLen = xLen;
 		this.yLen = yLen;
 	}
-	getArea() {
+	getSurfaceArea() {
 		return this.xLen*this.yLen;
 	}
 	inBounds(x,y) {
@@ -132,14 +132,18 @@ class SimpleMap {
 
 
 class Map extends SimpleMap {
-	constructor(tile,itemList) {
+	constructor(area,tile,itemList) {
 		super(tile);
+		this.area = area;
 		this.actionCount = 0;
 		this.tileEntity = [];
 		this.itemList = itemList;
 		this.visCache = [];
 		this.cacheVis();
 		this.initSprites();
+	}
+	get entityList() {
+		return this.area.entityList;
 	}
 	cacheVis() {
 		this.traverse( (x,y) => {
@@ -232,7 +236,7 @@ class Map extends SimpleMap {
 				y += DirectionAdd[dir].y;
 			}
 		}
-		let item = new Item( this.level, type, presets, inject );
+		let item = new Item( this.area.depth, type, presets, inject );
 		item.giveTo(this,x,y);
 		return item;
 	}

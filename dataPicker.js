@@ -1,195 +1,245 @@
 (function() {
 
-let PickerCache = {
-};
-
-function PickerSetTheme(theme) {
-	PickerCache.theme = theme;
-}
-
 class Picker {
-	constructor(level,theme) {
-		this.level = level;
-		this.theme = theme || PickerCache.theme;
-		this.cacheId = this.theme.id+'.'+this.level;
-	}
-
-	cache(type,table) {
-		if( table ) {
-			PickerCache[this.cacheId+'.'+type] = table;
-		}
-		return PickerCache[this.cacheId+'.'+type];
-	}
-
-	generatePlacesRequired() {
-		let chanceList = String.chanceParse( this.theme.rREQUIRED || '' );
-		let table = Array.chancePick(chanceList);
-		return table;
-	}
-
-	// Contains entries from PlaceList
-	get placeTable() {
-		if( !this.cache('place') ) {
-			let table = [];
-			for( let placeId in PlaceList ) {
-				let place = PlaceList[placeId];
-				if( place.neverPick || (place.level != 'any' && place.level > this.level) ) {
-					continue;
-				}
-				if( !this.theme.rarityTable[placeId] ) {
-					continue;
-				}
-				let placeLevel = (place.level=='any' ? this.level : place.level);
-				let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(placeLevel,this.level) * 100000, 1, 100000));
-				chance *= (this.theme.rarityTable[placeId] || 1);
-				table.push(chance,place);
-			}
-			this.cache('place',table);
-		}
-		return this.cache('place');
+	constructor(depth) {
+		console.assert(depth>=0);
+		this.depth = depth;
 	}
 
 	// Contains entries in MonsterTypeList
-	get monsterTable() {
-		if( !this.cache('monster') ) {
-			let table = [];
-			for( let typeId in MonsterTypeList ) {
-				let m = MonsterTypeList[typeId];
+	monsterTable(monsterConstraint) {
+		let table = [];
+		for( let typeId in MonsterTypeList ) {
+			let m = MonsterTypeList[typeId];
 
-				if( this.theme.monsters ) {
-					let ok = false;
-					for( let stat of this.theme.monsters ) {
-						ok = ok || m[stat];		// like 'isAnimal' or 'isUndead'
-					}
-					if( !ok ) {
-						continue;
-					}
+			if( monsterConstraint ) {
+				let ok = false;
+				for( let stat of monsterConstraint ) {
+					ok = ok || m[stat];		// like 'isAnimal' or 'isUndead'
 				}
-				if( m.level > this.level || m.neverPick ) {
+				if( !ok ) {
 					continue;
 				}
-				let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(m.level,this.level) * 100000, 1, 100000));
-				chance *= (m.rarity || 1);
-				table.push(chance,m);
 			}
-			this.cache('monster',table);
+			if( m.level > this.depth || m.neverPick ) {
+				continue;
+			}
+			let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(m.level,this.depth) * 100000, 1, 100000));
+			chance *= (m.rarity || 1);
+			table.push(chance,m);
 		}
-		return this.cache('monster');
+		return table;
 	}
 
-	// Contains { typeId, itemType, presets }
-	get itemTable() {
-		if( !this.cache('item') ) {
+	filterStringParse(filterString) {
+		let nopTrue = () => true;
+		let nop = () => {};
 
-			let table = [];
-			let gScale = 1000000;
-
-			let chanceGrandTotal = 0;
-			let itemTypeChance = {};
-			let one = { nothing: { skip:true, level:0 } };
-			Object.each(ItemTypeList, item => {
-				let startIndex = table.length;
-				let chanceTotal = 0;
-				Object.each( item.varieties || one, v => {
-					Object.each( item.materials || one, m => {
-						Object.each( item.qualities || one, q => {
-							Object.each( item.effects || one, e => {
-								let chance = 0;
-								let level = (item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.level||0);
-								if( level > this.level ) {
-									chance = 0;
-								}
-								else {
-									if( !this.level ) debugger;
-									let chance = Math.chanceToAppearSigmoid(level,this.level) * gScale;
-									chance *= (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
-									if( item.neverPick || v.neverPick || m.neverPick || q.neverPick || e.neverPick ) {
-										chance = 0;
-										// WARNING! This means it will never be RANDOMLY picked, but it also means that when
-										// specified it will be FOUND!
-									}
-								}
-
-								// Someday let the theme prefer items
-
-								chanceTotal += chance;
-								item = Object.assign( {}, item, {
-									level: level,
-									keywords: '!'+item.typeId+'!',
-									presets: {}
-								});
-								if( !v.skip ) { item.presets.variety = v; item.keywords += item.typeId+'.'+v.typeId+'!'+v.typeId+'!'; }
-								if( !m.skip ) { item.presets.material = m; item.keywords += item.typeId+'.'+m.typeId+'!'+m.typeId+'!'; }
-								if( !q.skip ) item.presets.quality = q;
-								if( !e.skip ) { item.presets.effect = e; item.keywords += item.typeId+'.'+e.typeId+'!' }
-								if( item.rechargeTime ) item.presets.rechargeTime = this.pickRechargeTime(item);
-								if( item.isArmor ) item.presets.armor = this.pickArmor(item,m,v,q,e);
-								if( item.isWeapon ) item.presets.damage = this.pickDamage(item.presets.rechargeTime,item,m,v,q,e);
-								// WARNING! This will skew the gold count improperly!
-								if( item.isGold ) item.presets.goldCount = this.pickGoldCount(item);
-								table.push(chance,item);
-							});
-						});
-					});
+		let self = {
+			killId: {},
+			testMembers: nopTrue,
+			testKeepId: nopTrue,
+			firstId: null,
+			specifiesId: false
+		};
+		if( typeof filterString != 'string' || !filterString ) {
+			return self;
+		}
+		let keepIs = [];
+		let killIs = [];
+		let keepId = {};
+		let killId = {};
+		filterString.replace( /\s*(!)*(is)*(\S+|\S+)/, function( whole, not, is, token ) {
+			if( is ) {
+				(not ? killIs.push(is+token) : keepIs.push(is+token));
+			}
+			else {
+				token.replace( /\s*([^\s.]*)[.]*/, function( whole, token ) {
+					self.specifiesId = true;
+					(not ? killId[token]=1 : keepId[token]=1);
+					self.firstId = self.firstId || (token.split('.')[0]);	// convert from potion.healing to just potion...
 				});
-				itemTypeChance[item.typeId] = chanceTotal;
-				chanceGrandTotal += chanceTotal;
+			}
+		});
+		if( killIs.length || keepIs.length ) {
+			self.testMembers = (item => {
+				for( let keep of keepIs ) if( !item[keep] ) return false;
+				for( let kill of killIs ) if( item[kill] ) return false;
+				return true;
 			});
+		}
+		self.killId = killId;
+		let keepIdCount = Object.keys(keepId).length || 0;
+		if( keepIdCount ) {
+			self.testKeepId = (...argList) => {
+				let count=0;
+				let arg;
+				while( arg=argList.shift() ) {
+					count += keepId[arg] ? 1 : 0;
+				}
+				return count >= keepIdCount;
+			}
+		}
+		return self;
+	}
 
-			if( chanceGrandTotal ) {
-				Object.each(ItemTypeList, itemType => {
-					if( !itemTypeChance[itemType.typeId] ) {
-						return;
-					}
-					// Now rebalance because the number of varieties should not tilt the chance...
-					if( !itemType.rarity ) debugger;
-					let ratio = (gScale / itemTypeChance[itemType.typeId]) * itemType.rarity;
-					console.log(itemType.typeId+' balanced by '+ratio);
-					for( let i=0 ; i<table.length ; i+=2 ) {
-						if( table[i+1].typeId == itemType.typeId ) {
-							table[i] = table[i]*ratio;
+	//**
+	// itemTypeId is allowed to be empty, although it will make the search take substantially longer.
+	// filter should be an instance of filterStringParam() above.
+	//**
+	itemTraverse(itemTypeId, filter,fn) {
+		let depth = this.depth;
+		let count = 0;
+		let one = { nothing: { skip:1, level: 0, rarity: 1 } };	// be sure effectChance is undefined in here!!
+		let l0 = { level: 0 };
+		let r1 = { rarity: 1 };
+		let done = {};
+		let itemTypeProxy = {};
+		if( itemTypeId ) {
+			console.assert( ItemTypeList[itemTypeId] );
+			itemTypeProxy[itemTypeId] = ItemTypeList[itemTypeId];
+		}
+		else {
+			itemTypeProxy = ItemTypeList;
+		}
+
+		for( let ii in itemTypeProxy ) {
+			let item = itemTypeProxy[ii];
+			if( !filter.testMembers(item) ) continue;
+			let effectArray = Object.values(item.effects || one);
+			if( item.effects ) {
+				Array.filterInPlace( effectArray, e=>e.typeId!='inert' );
+				effectArray.push( { typeId: 'inert', name: 'inert', level: 0, rarity: 0, isInert: 1 } );
+			}
+
+			for( let vi in item.varieties || one ) {
+				if( filter.killId[vi] ) continue;
+				let v = (item.varieties || one)[vi];
+				for( let mi in item.materials || one ) {
+					if( filter.killId[mi] ) continue;
+					let m = (item.materials || one)[mi];
+					for( let qi in item.qualities || one ) {
+						if( filter.killId[qi] ) continue;
+						let q = (item.qualities || one)[qi];
+						// Order here MUST be the same as in Item constructor.
+						let effectChance = v.effectChance!==undefined ? v.effectChance : (m.effectChance!==undefined ? m.effectChance : (q.varietyChance!==undefined ? q.varietyChance : item.effectChance || 0));
+						let appearTotal = 0;
+						let rarityTotal = 0;
+						//if( depth == 5 ) debugger;
+						for( let index=0 ; index<effectArray.length ; ++index ) {
+							let e = effectArray[index];
+							let ei = e.typeId;
+							let id = ii+(!v.skip?'.'+vi:'')+(!m.skip?'.'+mi:'')+(!q.skip?'.'+qi:'')+(!e.skip && !e.isInert?'.'+ei:'');
+							//if( done[id] ) { debugger; continue; }
+							//done[id] = 1;
+							let level = Math.max(0,(item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.isInert ? 0 : (e.level||0)));
+							let appear = Math.chanceToAppearSigmoid(level,depth);
+							let rarity = (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
+							if( rarity ) rarity = rarity + (1-Math.clamp(rarity,0,1)) * Math.min(depth*0.01,1.0);
+							if( ei == 'inert' ) {
+								rarity = effectChance<=0 ? 100000 : (rarityTotal / effectChance)-rarityTotal;	// if div by zero, fix the item type list!
+								// Use the .max here because, what if ALL other entities have a 'never appear' level problem?
+								appear = appearTotal / (effectArray.length-1);	// an average
+								if( !appear ) {
+									// None of the effects on this item were low enough level, probably
+									// so just use inert as level zero and re-calculate.
+									if( !e.level == 0 ) debugger;	// inet should ALWAYS be level zero.
+									appear = Math.chanceToAppearSigmoid(level,depth);
+									// Note that this might STILL result in a zero appear. And that is OK, we just have to
+									// trust that something else will appear!
+								}
+								//if( !appear && level < depth ) debugger;	// the sigmoid might be wrong!
+							}
+							if( isNaN(rarity) ) debugger;
+							if( isNaN(appear) ) debugger;
+							appearTotal += appear;
+							rarityTotal += rarity;
+
+							// Yes, these are LATE in the function. They have to be!
+							if( filter.killId[ei] ) continue;
+							if( !filter.testKeepId(ii,vi,mi,qi,ei) ) continue;
+
+							let thing = Object.assign( {}, item, {
+								presets: {},
+								level: level,
+								depth: depth,
+								appear: appear,
+								rarity: rarity,
+								_id: id
+							});
+							if( !v.skip ) { thing.presets.variety = v; }
+							if( !m.skip ) { thing.presets.material = m; }
+							if( !q.skip ) { thing.presets.quality = q; }
+							if( !e.skip ) { thing.presets.effect = e; }
+							fn(thing);
 						}
 					}
-				});
+				}
 			}
-
-			let actual = {};
-			let count = {};
-			let actualTotal = 0;
-			for( let i=0 ; i<table.length ; i += 2 ) {
-				if( !table[i+1].isTreasure ) continue;
-				let t = table[i+1].typeId;
-				actual[t] = (actual[t] || 0)+table[i];
-				count[t] = (count[t] || 0)+1;
-				actualTotal += table[i];
-			}
-			Object.each( ItemTypeList, item => {
-				let t = item.typeId;
-				if( !actual[t] ) return;
-				let pct = Math.percent(actual[t]/actualTotal,3);
-				console.log(pct+'% '+t+' in '+count[t]+' varieties');
-			});
-
-			let t = [];
-			for( let i=0 ; i<table.length ; i+=2 ) {
-				t.push([table[i],'L'+table[i+1].level+' '+table[i+1].typeId+' '+(table[i+1].presets.effect ? table[i+1].presets.effect.typeId : 'x')]);
-			}
-			t.sort( function(a,b) { return b[0]-a[0]; } );
-			console.log("Top 20 items are: ");
-			for( let i=0 ; i<20 ; ++i ) {
-				console.log( Math.percent(t[i][0]/actualTotal,3)+'  '+t[i][1]);
-			}
-
-			this.cache('item',table);
 		}
-		return this.cache('item');
+	}
+
+	
+	//**
+	// depth 		- the depth of the map you are on.
+	// itemTypeId	- potion, spell, armor, ring, etc. Leave blank and it will pick one.
+	// filterString - often empty, can contain both limits on what ids are getting picked, as well as requirements that the
+	// 		item have (or not have) certain flags. Here are examples:
+	// 		'isTreasure'		- only picks items marked with isTreasure
+	// 		'!isTreasure'		- makes sure the picked item is not treasure
+	// 		'dagger'			- only picks items that have 'dagger' as the typeId of the item, variety, material, quality or effect
+	//		'potion.healing'	- a healing potion will be selected
+	//		'!healing'			- an item that does NOT have the healing effect
+	//**
+
+	pickItem(filterString) {
+		let filter = this.filterStringParse(filterString);
+		let itemTypeId;
+		if( ItemTypeList[filter.firstId] ) {
+			itemTypeId = filter.firstId;
+		}
+		if( !itemTypeId && !filter.specifiesId ) {
+			itemTypeId = Array.pickFrom( Object.keys(ItemBag), typeId => {
+				console.log( typeId+' = '+ItemBag[typeId].cGen );
+				return ItemBag[typeId].cGen;
+			});
+		}
+		let table = [];
+		this.itemTraverse( itemTypeId, filter, thing => {
+			table.push(thing);
+		});
+		if( !table.length ) debugger;
+		let choice = Array.pickFrom(table,thing=> thing.appear*thing.rarity,thing=>thing.rarity);
+		return choice;
+	}
+
+	assignEffect(effectRaw,item,rechargeTime) {
+		if( effectRaw.isInert ) return;
+		let effect = Object.assign({},effectRaw);
+		effect.effectShape = effect.effectShape || EffectShape.SINGLE;
+
+		if( effect.valueDamage ) {
+			effect.value = Math.floor(this.pickDamage(rechargeTime) * effect.valueDamage);
+			if( item && (item.isWeapon || item.isArmor) && WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
+				effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+			}
+		}
+		if( effect.valuePick ) {
+			effect.value = effect.valuePick();
+		}
+		if( item && item.effectOverride ) {
+			Object.assign( effect, item.effectOverride );
+		}
+		// Always last so that all member vars are available to the effect.
+		effect.name = effect.name || String.tokenReplace(effect.namePattern || 'nameless effect',effect);
+		return effect;
 	}
 
 	pickRechargeTime(itemType) {
 		return rollDice(itemType.rechargeTime);
 	}
 
-	pickArmor(i,m,v,q,e) {
+	pickArmorRating(i,m,v,q,e) {
 		let am = 1;
 		if( i && i.armorMultiplier ) am *= i.armorMultiplier;
 		if( m && m.armorMultiplier ) am *= m.armorMultiplier;
@@ -201,7 +251,7 @@ class Picker {
 		let x = {level:0};
 		let itemLevel = (i.level||0)+((v||x).level||0)+((m||x).level||0)+((q||x).level||0);
 
-		let avgLevel = (itemLevel+this.level)/2;
+		let avgLevel = (itemLevel+this.depth)/2;
 		let baseArmor = Rules.playerArmor(avgLevel)*am;
 		if( isNaN(baseArmor) ) debugger;
 		return Math.floor(baseArmor*ARMOR_SCALE);
@@ -215,24 +265,24 @@ class Picker {
 		if( e && e.damageMultiplier ) dm *= e.damageMultiplier;
 
 		let mult = (rechargeTime||0)>1 ? 1+rechargeTime*DEFAULT_DAMAGE_BONUS_FOR_RECHARGE : 1;
-		let damage = Rules.playerDamage(this.level) * mult * dm;
+		let damage = Rules.playerDamage(this.depth) * mult * dm;
 		return Math.max(1,Math.floor(damage));
 	}
-	pickGoldCount(item) {
-		let base = this.level;
+	pickGoldCount() {
+		let base = this.depth;
 		return base;
 	}
 
 	// picks it, but doesn't give it to anyone.
 	pickLoot(lootString,callback) {
 		let chanceList = String.chanceParse(lootString);
-		let idList = new Finder( Array.chancePick(chanceList) );
+		let idList = new Finder( Array.chancePick(chanceList,LOOT_SANDBAG) );
 		let list = [];
 		idList.process( id => {
 			let any = (''+id).toLowerCase()==='any';
-			let type = this.pick( this.itemTable, any ? null : id, any ? 'isTreasure' : null );
+			let type = this.pickItem( [any ? '' : id,any ? 'isTreasure' : ''].join(' ') );
 			if( type ) {
-				let loot = new Item( this.level, type, type.presets, {isLoot:true} );
+				let loot = new Item( this.depth, type, type.presets, {isLoot:true} );
 				if( callback ) {
 					callback(loot);
 				}
@@ -300,5 +350,4 @@ class Picker {
 }
 
 window.Picker = Picker;
-window.PickerSetTheme = PickerSetTheme;
 })();

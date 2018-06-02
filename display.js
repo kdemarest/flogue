@@ -241,12 +241,26 @@ class ImageRepo {
 			}
 		}
 
-		for( let sticker in StickerList ) {
-			this.imgGet[sticker] = StickerList[sticker].imgGet || DefaultImgGet;
-			add(StickerList[sticker].img);
+		function scanIcon(typeList,member) {
+			for( let t in typeList ) {
+				if( typeList[t][member] ) {
+					add(typeList[t][member]);
+				}
+			}
 		}
-
+		function scan(typeList,member) {
+			for( let t in typeList ) {
+				if( typeList[t][member] ) {
+					self.imgGet[t] = typeList[t].imgGet || DefaultImgGet;
+					add(typeList[t][member]);
+				}
+			}
+		}
 		let self = this;
+		scan(StickerList,'img');
+		scan(WeaponList,'img');
+		scanIcon(EffectTypeList,'icon');
+
 		function setup() {
 			self.ready = true;
 		}
@@ -267,6 +281,7 @@ let spriteDeathCallback;
 let spriteCreate;
 let spriteAttach;
 let spriteOnStage;
+let spriteMakeInWorld;
 
 class ViewMap {
 	constructor(divId,sightDistance,imageRepo) {
@@ -324,6 +339,61 @@ class ViewMap {
 			return sprite;
 		}
 
+		spriteMakeInWorld = function(entity,xWorld,yWorld) {
+
+			function make(x,y,entity,imgGet,light) {
+
+				entity.spriteList = entity.spriteList || [];
+
+				for( let i=0 ; i<(entity.spriteCount || 1) ; ++i ) {
+					if( !entity.spriteList[i] ) {
+						let sprite = spriteCreate( entity.spriteList, imgGet(entity) );
+						sprite.keepAcrossAreas = entity.isUser && entity.isUser();
+						sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
+					}
+					let sprite = entity.spriteList[i];
+					spriteOnStage(sprite,true);
+					if( sprite.refs == 1 ) {	// I must be the only controller, so...
+						let zOrder = (entity.isTileType ? 1 : (entity.isItemType ? 2 : (entity.isMonsterType ? 3 : 4)));
+						sprite.zOrder 	= zOrder;
+						sprite.visible 	= true;
+						sprite.x 		= x+(32/2);
+						sprite.y 		= y+(32/2);
+						sprite.scale._x = (entity.scale||1) * (sprite.scale.amount||1);
+						sprite.scale._y = (entity.scale||1) * (sprite.scale.amount||1);
+						sprite.alpha 	= (entity.alpha||1) * LightAlpha[light];
+						//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
+					}
+				}
+				if( entity.puppetMe ) {
+					entity.puppetMe.puppet(entity.spriteList);
+					delete entity.puppetMe;
+				}
+			}
+			let glowLight = MaxSightDistance;
+			this.staticTileEntity = this.staticTileEntity || { isStaticTile: true };
+
+			// These are the world coordinate offsets
+			let wx = (this.observer.x-this.sd);
+			let wy = (this.observer.y-this.sd);
+			let x = xWorld - wx;
+			let y = yWorld - wy;
+			let light = x>=0 && y>=0 && x<this.d && y<this.d ? this.drawListCache[y][x][0] : 0;
+
+			if( entity.isTileType && !entity.isPosition ) {
+				entity.spriteList = this.observer.map.tileSprite[yWorld][xWorld];
+			}
+
+			let imgGet = this.imageRepo.imgGet[entity.typeId];
+			let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
+			make.call(this,x*32,y*32,entity,imgGet,lightAfterGlow);
+
+			if( entity.isTileType && !entity.isPosition ) {
+				this.observer.map.tileSprite[yWorld][xWorld] = this.staticTileEntity.spriteList;
+				delete entity.spriteList;
+			}
+		}.bind(this);
+
 		this.app.ticker.add(function(delta) {
 			// but only if real time is not stopped.
 			animationTick(delta/60);
@@ -346,9 +416,8 @@ class ViewMap {
 			this.areaId = world.area.id;
 		}
 		let maxLight = MaxSightDistance;
-		let glowLight = maxLight;
-		let staticTileEntity = { isStaticTile: true };
-		let staticContext = { x:0, y:0, light: 0 };
+		this.drawListCache = drawList;
+		this.observer = observer;
 
 		//let debug = '';
 
@@ -356,69 +425,28 @@ class ViewMap {
 			child.visible = false;
 		}
 
-		function make(x,y,entity,imgGet,zOrder,light) {
-
-			entity.spriteList = entity.spriteList || [];
-
-			for( let i=0 ; i<(entity.spriteCount || 1) ; ++i ) {
-				if( !entity.spriteList[i] ) {
-					let sprite = spriteCreate( entity.spriteList, imgGet(entity) );
-					sprite.keepAcrossAreas = entity.isUser && entity.isUser();
-					sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
-				}
-				let sprite = entity.spriteList[i];
-				spriteOnStage(sprite,true);
-				if( sprite.refs == 1 ) {	// I must be the only controller, so...
-					sprite.zOrder 	= zOrder;
-					sprite.visible 	= true;
-					sprite.x 		= x+(32/2);
-					sprite.y 		= y+(32/2);
-					sprite.scale._x = (entity.scale||1) * (sprite.scale.amount||1);
-					sprite.scale._y = (entity.scale||1) * (sprite.scale.amount||1);
-					sprite.alpha 	= (entity.alpha||1) * LightAlpha[light];
-					//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
-				}
-			}
-		}
-
-		// These are the world coordinate offsets
-		let wx = (observer.x-this.sd);
-		let wy = (observer.y-this.sd);
-
+		let wx = (this.observer.x-this.sd);
+		let wy = (this.observer.y-this.sd);
 		for( let y=0 ; y<this.d ; ++y ) {
 			for( let x=0 ; x<this.d ; ++x ) {
-				if( !drawList[y] || !drawList[y][x] ) {
+				if( !this.drawListCache[y] || !this.drawListCache[y][x] ) {
 					//debug += '-';
 					continue;
 				}
-				let tile = drawList[y][x];
-				let light = observer.isSpectator ? maxLight : tile[0];
+				let tile = this.drawListCache[y][x];
 				for( let i=1 ; i<tile.length ; ++i ) {
 					let entity = tile[i];
 					if( !entity ) continue;
 					if( typeof entity !== 'object' ) debugger;
 					if( entity.isAnimation ) {
+						let light = observer.isSpectator ? maxLight : tile[0];
 						entity.drawUpdate(observer.x-this.sd, observer.y-this.sd, light, this.app.stage.addChild);
 					}
 					else
 					{
 						let imgGet = this.imageRepo.imgGet[entity.typeId];
-
 						if( imgGet ) {
-
-							if( entity.isTileType && !entity.isPosition ) {
-								entity.spriteList = observer.map.tileSprite[y+wy][x+wx];
-							}
-
-							let imgGet = this.imageRepo.imgGet[entity.typeId];
-							let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
-							make.call(this,x*32,y*32,entity,imgGet,i,lightAfterGlow);
-
-							if( entity.isTileType && !entity.isPosition ) {
-								observer.map.tileSprite[y+wy][x+wx] = staticTileEntity.spriteList;
-								delete entity.spriteList;
-							}
-
+							spriteMakeInWorld(entity,wx+x,wy+y);
 						}
 						else {
 							debugger;

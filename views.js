@@ -382,7 +382,7 @@ class ViewRange {
 	}
 }
 
-function castConvert(observer,index) {
+function castConvert(cmd,observer,index) {
 	let spellList = getCastableSpellList(observer);
 	cmd.command = Command.CAST;
 	cmd.commandItem = spellList.all[index];

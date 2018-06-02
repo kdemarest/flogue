@@ -1,9 +1,9 @@
 class World {
-	constructor(startingLevel=1,getPlayer,onAreaChange) {
+	constructor(startingDepth=1,getPlayer,onAreaChange) {
 		this.getPlayer = getPlayer;
 		this.areaList = {};
 		this.area = null;
-		this.startingLevel = startingLevel;
+		this.startingDepth = startingDepth;
 		this.pending = {
 			gate: null
 		};
@@ -12,17 +12,18 @@ class World {
 	get player() {
 		return this.getPlayer();
 	}
-	createArea(areaId,levelDelta,theme,entranceSymbol) {
-		let level = this.area ? this.area.level+levelDelta : this.startingLevel;
+	createArea(areaId,depthDelta,theme,entranceSymbol) {
+		let depth = this.area ? this.area.depth+depthDelta : this.startingDepth;
+		console.assert(depth !== undefined && !isNaN(depth)); 
 		let isCore = false;
 		if( !areaId ) {
-			let coreAreaId = 'area.core.'+level;
+			let coreAreaId = 'area.core.'+depth;
 			if( !this.areaList[coreAreaId] ) {
 				areaId = coreAreaId;
 				isCore = true;
 			}
 			else {
-				areaId = GetUniqueEntityId('area',level);
+				areaId = GetUniqueEntityId('area',depth);
 			}
 		}
 		let palette = {
@@ -38,7 +39,7 @@ class World {
 			exit: 			ItemTypeList.stairsDown.symbol
 		};
 
-		let area = new Area(areaId,level,theme,isCore);
+		let area = new Area(areaId,depth,theme,isCore);
 		this.areaList[areaId] = area;	// critical that this happen BEFORE the .build() so that the theme is set for the picker.
 		area.build(palette)
 		return area;
@@ -68,7 +69,7 @@ class World {
 	}
 	detectPlayerOnGate(map,entityList) {
 		// checking the commandToDirection means the player just moved, and isn't just standing there.
-		if( !this.player || ( this.player.commandLast!=Command.WAIT && commandToDirection(this.player.commandLast)===false) ) {
+		if( !this.player || this.player.commandLast!=Command.WAIT ) {
 			return;
 		}
 		let gateHere = map.findItem().at(this.player.x,this.player.y).filter( item => item.gateDir!==undefined );
@@ -76,7 +77,7 @@ class World {
 			return;
 		}
 		let gate = gateHere.first;
-		if( map.level == 1 && gate.gateDir<0 ) {
+		if( map.area.depth == 0 && gate.gateDir<0 ) {
 			return;
 		}
 		this.setPending(gate)
@@ -87,7 +88,7 @@ class World {
 		this.area = area;
 		return area;
 	}
-	levelChange() {
+	areaChange() {
 		this.detectPlayerOnGate(this.area.map,this.area.entityList);
 
 		let gate = this.pending.gate;
