@@ -1,13 +1,36 @@
+<<<<<<< HEAD
+function loadConfig(){
+	ScapeList.willScape = theme => ({
+		dim: 				30,
+=======
 let ConfigList = {};
 
 ConfigList.ken = () => {
 	ScapeList.kenScape = theme => ({
 		dim: 				20,
+>>>>>>> aee6ef97babf1d5d0dfa5efa093c953eed18506d
 		architecture: 		"cave",
 		floorDensity: 		0.68,
 		seedPercent: 		0.20,
 		wanderingPassage: 	false,
 	});
+<<<<<<< HEAD
+	ThemeList.willTheme = {
+		scapes: 	['caveRandom'],
+		rCOMMON: 	'camp.refugee, den.dog',
+		rUNCOMMON: 	'handoutStand, floodPit, pitEncircle',
+		monsters: 	['isSunChild','isPet']
+	};
+	//MonsterTypeList.player.inventoryLoot = '36x viperVenom, 12x bones';
+
+	let config = {
+		startingLevel: 1,
+		themeId: 'willTheme'
+	};
+
+	return config;
+}
+=======
 	PlaceList.kenPlace = {
 		map:
 			`
@@ -67,3 +90,4 @@ class Config {
 		Object.assign(this,init,overlay);
 	}
 };
+>>>>>>> aee6ef97babf1d5d0dfa5efa093c953eed18506d
