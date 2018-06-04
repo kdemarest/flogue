@@ -186,8 +186,8 @@ ThemeList.hellscape = {
 
 ThemeList.refugeeCamp = {
 	scapes: 	['caveRandom'],
-	rCOMMON: 	'camp.human, den.dog',
-	rUNCOMMON: 	'floodPit, pitEncircle',
+	rCOMMON: 	'camp.refugee, den.dog',
+	rUNCOMMON: 	'handoutStand, floodPit, pitEncircle',
 	monsters: 	['isSunChild','isPet']
 }
 
@@ -470,7 +470,7 @@ xxxxxxx
 	}
 }
 
-PlaceMany( 'camp', ['ogre','human','goblin'], VARIETY => ({
+PlaceMany( 'camp', ['ogre','human','refugee','goblin'], VARIETY => ({
 	map:
 `
 .y.
@@ -605,6 +605,26 @@ PlaceList.antHive = {
 	flags: { rotate: true, hasWall: true },
 	symbols: {
 		a: "soldierAnt"
+	}
+}
+PlaceList.handoutStand = {
+	map:
+`
+     xxxxx
+.....,,,*x
+rrrrrp,,*x
+.....,,,*x
+.....x,,,x
+ ....xxpxx
+   ....... 
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		r: "refugee",
+		p: "philanthropist",		
+		',': "tileStoneFloor",
+		x: "tileStoneWall",
+
 	}
 }
 PlaceList.demonNest = {
@@ -818,7 +838,7 @@ xxxx+xxxx
 	onEntityCreate: {
 		dwarf: { name: "dwarf cleric", attitude: Attitude.WANDER, tether: 5 }
 	}
-}
+}=
 
 PlaceList.dwarfHouse = {
 	map:

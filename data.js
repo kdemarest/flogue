@@ -261,7 +261,8 @@ const TileTypeList = {
 	"mud":        { symbol: '⋍', mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png" },
 	"ghoststone": { symbol: 'J', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
 	"obelisk":    { symbol: 'B', mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png" },
-	"crystal":    { symbol: 'C', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png" },
+	"brewingStand":    { symbol: 'Y', mayWalk: false, mayFly: false, opacity: 0, name: "brewing stand", img: "dc-dngn/altars/dngn_altar_sif_muna.png" },
+	"crystal":    { symbol: 'C', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_elyvilon.png" },
 	"forcefield": { symbol: '|', mayWalk: true,  mayFly: true,  opacity: 1, name: "force field", light: 3, glow:1, img: "spells/air/static_discharge.png" },
 	"brazier":    { symbol: 'u', mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" }
 };
@@ -278,7 +279,7 @@ const ItemTypeDefaults = {
 	img: null
 }
 
-const ImgPotion = {
+const PotionList = {
 	water: 			{ img: "cyan" },
 	invisibility: 	{ img: "clear" },
 	haste: 			{ img: "cyan" },
@@ -286,7 +287,7 @@ const ImgPotion = {
 	regeneration: 	{ img: "orange" },
 	flight: 		{ img: "brilliant_blue" },
 	healing: 		{ img: "pink" },
-	poison: 		{ img: "emerald" },
+	poison: 		{ img: "emerald", recipe: "3x viperVenom, bones"},
 	fire: 			{ img: "ruby" }, 
 	cold: 			{ img: "brilliant_blue" }, 
 	panic: 			{ img: "magenta" },
@@ -422,7 +423,6 @@ const StuffList = toFab({
 	"bones": 			{ },
 	"antGrubMush": 		{ },
 	"viperVenom": 		{ },
-	"bones": 			{ },
 	"dogCollar": 		{ },
 	"skull": 			{ },
 	"mushroomBread": 	{ },
@@ -530,7 +530,7 @@ const ItemTypeList = {
 	"potion":   { symbol: '¡', isTreasure: 1, namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
 				rarity:  5.00, effectDuration: '1d4+4', isPotion: true,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
-				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: ImgPotion, icon: 'potion.png' },
+				imgGet: (self,img)=>"item/potion/"+(img || (PotionList[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: PotionList, icon: 'potion.png' },
 	"spell":    { symbol: 'ᵴ', isTreasure: 1, namePattern: 'spell{?effect}', rechargeTime: '3d4', effects: SpellEffects,
 				rarity:  0.50, isSpell: true,
 				img: "item/scroll/scroll.png", icon: 'spell.png' },
@@ -686,6 +686,7 @@ const MonsterTypeList = {
 		packAnimal: true,
 		regenerate: 0.03
 	},
+	
 	"human": {
 		core: [ 'H', 1, '3:10', 'good', 'cut', 'dc-mon/human.png', '*' ],
 		attitude: Attitude.CALM,
@@ -695,6 +696,27 @@ const MonsterTypeList = {
 		isSunChild: true,
 		loot: '30% mushroomBread, 30% coin, 10% potion.healing',
 	},
+	"philanthropist": {
+		core: [ 'P', 1, '3:10', 'good', 'cut', 'dc-mon/philanthropist.png', '*' ],
+		attitude: Attitude.CALM,
+		brainAlertFriends: true,
+		brainTalk: true,
+		brainOpensDoors: true,
+		isSunChild: true,
+		loot: '30% mushroomBread, 50% coin, 10% potion.healing',
+		sayPrayer: 'Get in line! Come to the left window for donations!'
+	},
+	"refugee": {
+		core: [ 'p', 1, '2:20', 'good', 'bash', 'dc-mon/refugee.png', '*' ],
+		attitude: Attitude.FEARFUL,
+		brainAlertFriends: true,
+		brainTalk: true,
+		brainOpensDoors: true,
+		isSunChild: true,
+		loot: '10% bones, 5% dogCollar, 3x 10% stuff',
+		sayPrayer: "Oh god... What I wouldn't give for a steak."
+	},
+
 
 // EVIL TEAM
 	"Avatar of Balgur": {
