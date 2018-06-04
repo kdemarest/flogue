@@ -865,7 +865,7 @@ class Entity {
 		let quick = weapon && weapon.quick>=0 ? weapon.quick : 1;
 		let dodge = target.dodge>=0 ? target.dodge : 0;
 		if( dodge > quick ) {
-			tell( mSubject,target,' '+(dodge==2 ? 'nimbly' : ''),mVerb,'dodge',' ',mObject|mPossessive|mCares,this,(quick==0 ? ' clumsy' : '')+' '+(weapon?weapon.name:'attack') );
+			tell( mSubject,target,' '+(dodge==2 ? 'nimbly ' : ''),mVerb,'dodge',' ',mObject|mPossessive|mCares,this,(quick==0 ? ' clumsy' : '')+' '+(weapon?weapon.name:'attack') );
 
 			let dx = target.x - this.x;
 			let dy = target.y - this.y;

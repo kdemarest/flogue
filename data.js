@@ -87,7 +87,7 @@ const StickerList = {
 	observerProxy: { img: "gems/Gem Type2 Yellow.png" },
 	gateProxy: { img: "gems/Gem Type2 Green.png" },
 	gateDownProxy: { img: "gems/Gem Type2 Purple.png" },
-	unvisitedMap: { img: "gui/grey.png" },
+	unvisitedMap: { img: "gui/mapUnvisited.png" },
 	invUnmarked: { img: "gui/icons/unmarked.png" },
 	invMarked: { img: "gui/icons/marked.png" },
 	invAll: { img: "gui/icons/all.png", icon: 'all.png' },
@@ -785,6 +785,26 @@ const MonsterTypeList = {
 		isSunChild: true,
 		loot: '30% mushroomBread, 30% coin, 10% potion.eHealing',
 	},
+	"philanthropist": {
+		core: [ 'P', 1, '3:10', 'good', 'cut', 'dc-mon/philanthropist.png', '*' ],
+		attitude: Attitude.CALM,
+		brainAlertFriends: true,
+		brainTalk: true,
+		brainOpensDoors: true,
+		isSunChild: true,
+		loot: '30% mushroomBread, 50% coin, 10% potion.eHealing',
+		sayPrayer: 'Get in line! Come to the left window for donations!'
+	},
+	"refugee": {
+		core: [ 'p', 1, '2:20', 'good', 'bash', 'dc-mon/refugee.png', '*' ],
+		attitude: Attitude.FEARFUL,
+		brainAlertFriends: true,
+		brainTalk: true,
+		brainOpensDoors: true,
+		isSunChild: true,
+		loot: '10% bones, 5% dogCollar, 3x 10% stuff',
+		sayPrayer: "Oh god... What I wouldn't give for a steak."
+	},
 
 // EVIL TEAM
 	"Avatar of Balgur": {
@@ -935,7 +955,7 @@ const MonsterTypeList = {
 	},
 	"shadow": {
 		core: [ 'w', 8, '1:12', 'evil', 'rot', 'dc-mon/undead/shadow.png', 'it' ],
-		dark: 6,
+		dark: 12,
 		immune: ShadowImmunity,
 		isUndead: true,
 		loot: '50% darkEssence, 20% potion.eBlindness',
@@ -1075,7 +1095,7 @@ TileTypeList['lockedDoor'].onTouch = function(entity,self) {
 }
 
 TileTypeList.obelisk.onTouch = function(toucher,self) {
-	if( !entity.senseBlind ) {
+	if( !toucher.senseBlind ) {
 		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,'.');
 		effectApply( self.effect, toucher, null, null );
 	}

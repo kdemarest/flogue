@@ -608,26 +608,6 @@ PlaceList.antHive = {
 		a: "soldierAnt"
 	}
 }
-PlaceList.handoutStand = {
-	map:
-`
-     xxxxx
-.....,,,*x
-rrrrrp,,*x
-.....,,,*x
-.....x,,,x
- ....xxpxx
-   ....... 
-`,
-	flags: { rotate: true, hasWall: true },
-	symbols: {
-		r: "refugee",
-		p: "philanthropist",		
-		',': "tileStoneFloor",
-		x: "tileStoneWall",
-
-	}
-}
 PlaceList.demonNest = {
 	map:
 `
@@ -766,6 +746,31 @@ xxxxxxxxxxx...........
 	}
 }
 
+PlaceList.handoutStand = {
+	map:
+		`
+		     xxxxx
+		.....,,,*x
+		rrrrrp,,*x
+		.....,,,*x
+		.....x,,,x
+		 ....xxpxx
+		   ....... 
+		`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		r: "refugee",
+		p: "philanthropist",
+		',': "tileStoneFloor",
+		x: "tileStoneWall",
+	},
+	onEntityCreate: {
+		philanthropist: { attitude: Attitude.AWAIT, tether: 0 },
+		refugee: { attitude: Attitude.AWAIT, tether: 2 },
+	}
+}
+
+
 PlaceList.gatewayToDwarves = {
 	map:
 `
@@ -839,7 +844,7 @@ xxxx+xxxx
 	onEntityCreate: {
 		dwarf: { name: "dwarf cleric", attitude: Attitude.WANDER, tether: 5 }
 	}
-}=
+}
 
 PlaceList.dwarfHouse = {
 	map:
