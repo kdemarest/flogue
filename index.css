@@ -43,7 +43,7 @@ body {
 	vertical-align: top;
 }
 #guiStatus {
-	width: 140px;
+	width: 180px;
 	height: 160px;
 	overflow-y: hidden;
 	font-family: 'Raleway', sans-serif;
@@ -58,7 +58,7 @@ body {
 	color: black;
 }
 #guiSpells {
-	width: 140px;
+	width: 180px;
 	height: 100px;
 	display: block;
 	white-space: pre;
@@ -69,7 +69,7 @@ body {
 	overflow-x: hidden;
 }
 #guiInfo {
-	width: 140px;
+	width: 180px;
 	height: 120px;
 	padding-top: 10px;
 	padding-bottom: 10px;

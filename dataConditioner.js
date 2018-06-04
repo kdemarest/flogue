@@ -83,7 +83,7 @@ class DataConditioner {
 			Object.assign(StickerList,		place.stickers);
 			Object.assign(DamageType,		place.damageType);
 			Object.assign(Attitude,			place.attitude);
-			Object.assign(PickImmune,		place.pickImmune);
+			Object.assign(PickIgnore,		place.pickIgnore);
 			Object.assign(PickVuln,			place.pickVuln);
 			Object.assign(PickResist,		place.pickResist);
 			Object.assign(EffectTypeList,	place.effectList);
@@ -134,12 +134,18 @@ class DataConditioner {
 	}
 
 	prepareStaticData() {
+		toFab( ScapeList );
+		toFab( ThemeList );
+		toFab( PlaceList );
 		for( let list of FabList ) {
 			for( let key in list ) {
 				list[key] = fab(list[key],key);
 			}
 		}
 
+		Object.entries(EffectTypeList).forEach( ([typeId,effect]) => {
+			fab(effect,typeId,'isEffect');
+		} );
 		Object.entries(StickerList).forEach( ([typeId,sticker]) => {
 			fab(sticker,typeId,'isSticker');
 		} );

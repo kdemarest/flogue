@@ -2,45 +2,47 @@
 
 class Deed {
 	// Set duration = true for perpetual
-	constructor(origin,entity,duration,stat,op,value,onTick,onEnd,data) {
-		if( entity[stat] === undefined ) {
+	//effect,target,source,item
+	constructor(_effect) {
+		if( _effect.stat && _effect.target[_effect.stat] === undefined ) {
 			debugger;
 		}
-		this.origin = origin;
-		this.entity = entity;
-		this.stat = stat;
-		this.op = op;
-		this.value = value;
-		this.duration = duration;
-		this.onTick = onTick;
-		this.onEnd = onEnd;
-		this.data = data;
-		this.timeLeft = duration;
+		Object.assign( this, _effect );
+		this.timeLeft = this.isInstant ? false : this.duration;
 		this.killMe = false;
 	}
 	expired() {
-		return this.killMe || (this.timeLeft!==true && this.timeLeft <= 0);
+		if( this.killMe ) return true;
+		let done = ( this.timeLeft!==true && this.timeLeft <= 0 );
+		if( done && this.additionalDoneTest ) {
+			done = this.additionalDoneTest(this);
+		}
+		return done;
 	}
 	applyEffect() {
+		if( this.handler ) {
+			this.handler();
+			return;
+		}
 		if( this.op == 'set' ) {
-			this.entity[this.stat] = this.value;
+			this.target[this.stat] = this.value;
 		}
 		if( this.op == 'add' ) {
-			if( typeof this.entity[this.stat] === 'string' ) {
-				if( !String.arIncludes(this.entity[this.stat],this.value) ) {
-					this.entity[this.stat] = String.arAdd(this.entity[this.stat],this.value);
+			if( typeof this.target[this.stat] === 'string' ) {
+				if( !String.arIncludes(this.target[this.stat],this.value) ) {
+					this.target[this.stat] = String.arAdd(this.target[this.stat],this.value);
 				}
 			}
 			else {
-				this.entity[this.stat] += this.value;
+				this.target[this.stat] += this.value;
 			}
 		}
 		if( this.op == 'sub' ) {
-			if( typeof this.entity[this.stat] === 'string' ) {
-				this.entity[this.stat] = String.arSub(this.entity[this.stat],this.value);
+			if( typeof this.target[this.stat] === 'string' ) {
+				this.target[this.stat] = String.arSub(this.target[this.stat],this.value);
 			}
 			else {
-				this.entity[this.stat] -= this.value;
+				this.target[this.stat] -= this.value;
 			}
 		}
 	}
@@ -49,12 +51,13 @@ class Deed {
 			return false;
 		}
 		if( this.onEnd ) {
-			this.onEnd(this.entity,this.data);
+			this.onEnd(this.target,this.data);
 		}
 		this.killMe = true;
 		return true;
 	}
 	tick(dt) {
+		console.assert( !this.isInstant );
 		if( this.killMe || !this.doTick ) {
 			return;
 		}
@@ -66,7 +69,10 @@ class Deed {
 		}
 		else
 		if( this.onTick ) {
-			this.onTick(this.entity,dt,this.data);
+			if( this.handler ) {
+				this.handler(dt);
+			}
+			this.onTick(this.target,dt,this.data);
 		}
 	}
 }
@@ -77,32 +83,36 @@ let DeedManager = (new class {
 		this.deedList = [];
 	}
 	// The origin should ALWAYS be an item, unless intrinsic to a monster.
-	add(origin,entity,duration,stat,op,value,onTick,onEnd,data) {
-		let handlerFn = this.handler[op];
-		if( handlerFn ) {
-			handlerFn(origin,entity,value);
+	add(effect) {
+		effect.handler = this.handler[effect.op];
+		let deed = new Deed(effect);
+		if( deed.isInstant ) {
+			deed.handler(false);
+			deed.end();
 		}
 		else {
-			this.deedList.push( new Deed(origin,entity,duration,stat,op,value,onTick,onEnd,data) );
+			this.deedList.push( deed );
 		}
 	}
 	addHandler(op,handlerFn) {
 		this.handler[op] = handlerFn;
 	}
-	calcStat(entity,stat) {
-		let oldValue = entity[stat];
-		if( entity.baseType[stat] === undefined ) {
+	// This recalculates all the stats of a target. Typically performed when a new
+	// effect starts, or one expires.
+	calcStat(target,stat) {
+		let oldValue = target[stat];
+		if( target.baseType[stat] === undefined ) {
 			debugger;
 		}
-		entity[stat] = entity.baseType[stat];
+		target[stat] = target.baseType[stat];
 		for( let deed of this.deedList ) {
-			if( !deed.killMe && deed.entity.id == entity.id && deed.stat == stat ) {
+			if( !deed.killMe && deed.target.id == target.id && deed.stat == stat ) {
 				deed.applyEffect();
 			}
 		}
-		deedTell(entity,stat,oldValue,entity[stat]);
+		deedTell(target,stat,oldValue,target[stat]);
 	}
-	calc(entity) {
+	calc(target) {
 		let statList = {};
 		// WEIRD!! If we just ended a deed, we must STILL calc the value, at least once, so that we can
 		// emit notice that it happened!
@@ -110,16 +120,19 @@ let DeedManager = (new class {
 			deed => { statList[deed.stat] = true; }
 		);
 		Object.entries(statList).forEach(
-			([stat,dummy]) => { this.calcStat(entity,stat); }
+			([stat,dummy]) => { this.calcStat(target,stat); }
 		);
 	}
-	forceSingle(entity,stat,value) {
-		this.end( deed => deed.entity.id==entity.id && deed.stat==stat );
-		this.calcStat(entity,stat);
-		if( entity[stat] !== value ) {
+	forceSingle(effect,target,source,item) {
+		effect = Object.assign( {}, effect, { target: target, source: source, item: item } );
+		this.end( deed => deed.target.id==effect.target.id && deed.stat==effect.stat );
+		this.calcStat(effect.target,effect.stat);
+		if( effect.target[effect.stat] !== effect.value ) {
 			// this is a little hacked for invisibility. We'll have to see whether it is the right way for everything...
-			this.add(entity,entity,true,stat,'set',value);
-			this.calcStat(entity,stat);
+			this.add(effect);
+			if( effect.stat ) {
+				this.calcStat(effect.target,effect.stat);
+			}
 		}
 	}
 	end(fn) {
@@ -136,26 +149,68 @@ let DeedManager = (new class {
 	cleanup() {
 		Array.filterInPlace(this.deedList, deed => !deed.killMe );
 	}
-	tick(entity,dt) {
+	tick(target,dt) {
 		// This makes sure that any deeds added while ticking do NOT actually tick this round.
 		this.deedList.map( deed => deed.doTick=true );
 		for( let deed of this.deedList ) {
-			if( deed.entity.id == entity.id ) {
+			if( deed.target.id == target.id ) {
 				deed.tick(dt);
 			}
 		}
 	}
 }());
 
-let deedAdd = function() {
-	return DeedManager.add(...arguments);
+let effectApply = function(effect,target,source,item) {
+	let effectShape = effect.effectShape || EffectShape.SINGLE;
+	if( effectShape == EffectShape.SINGLE ) {
+		return effectApplyTo(effect,target,source,item);
+	}
+	let dist = 0;
+	if( effectShape == EffectShape.SMALL ) {
+		dist = 1;
+	}
+	if( effectShape == EffectShape.MEDIUM ) {
+		dist = 2;
+	}
+	if( effectShape == EffectShape.LARGE ) {
+		dist = 3;
+	}
+	if( radius ) {
+		for( let y=-dist ; y<=dist ; ++y ) {
+			for( let x=-dist ; x<=dist ; ++x ) {
+				effectApplyTo(source,item,effect,target);
+			}
+		}
+		return;
+	}
 }
 
-let deedEnd = function(fn) {
-	return DeedManager.end(fn);
-}
+// Converts the effect from just itself to a Deed, essentially, which means adding or setting
+// effect.target
+// effect.source
+// effect.item
+// effect.value
+// effect.duration
+// effect.isResist
 
-let effectApply = function(origin,effect,target) {
+let effectApplyTo = function(effect,target,source,item) {
+	function makeAnim(icon) {
+		if( effect.icon !== false ) {
+			new Anim( {}, {
+				follow: 	target,
+				img: 		effect.icon || StickerList.bloodBlue.img,
+				duration: 	0.4,
+				delay: 		effect.throwDuration || 0,
+				onInit: 		a => { a.create(1); },
+				onSpriteMake: 	s => { s.sVelTo(0,-1,0.4).sScaleSet(0.75); },
+				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sAlpha(1-Math.max(0,(2*s.elapsed/s.duration-1))); }
+			});
+		}
+	}
+
+	// Now we can change the value inside it without metting up the origin effect.
+	effect = Object.assign( {}, effect, { target:target, source: source, item: item });
+
 	if( !effect.op ) {
 		// This is an inert effect. Do nothing.
 		return false;
@@ -166,23 +221,68 @@ let effectApply = function(origin,effect,target) {
 
 	//Some effects will NOT start unless their requirements are met. EG, no invis if you're already invis.
 	if( effect.requires && !effect.requires(target,effect) ) {
-		tell(mSubject,origin,' has no effect on ',mObject,target);
+		tell(mSubject,item || source || 'that',' has no effect on ',mObject,target);
 		return false;
 	}
-	if( target.isImmune && target.isImmune(effect.typeId) ) {
+	let isImmune = false;
+	isImmune = isImmune || (target.isImmune && target.isImmune(effect.typeId));
+	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
+	if( isImmune ) {
 		tell(mSubject,target,' is immune to ',mObject,effect);
-		return false;
-	}
-	if( effect.op=='set' && target.isImmune && target.isImmune(effect.value) ) {
-		let subject = effect.value;
-		tell(mSubject|mPossessive,origin,' '+subject+' has no effect on ',mObject,target);
+		new Anim( {}, {
+			follow: 	target,
+			img: 		StickerList.showImmunity.img,
+			duration: 	0.2,
+			delay: 		effect.throwDuration || 0,
+			onInit: 		a => { a.create(1); },
+			onSpriteMake: 	s => { s.sScaleSet(0.75); },
+			onSpriteTick: 	s => { }
+		});
 		return false;
 	}
 
-	if( target.isResistant && (target.isResistant(effect.typeId) || (effect.op=='set' && target.isResistant(effect.value)) ) && Math.chance(50) ) {
+	// Note that spells with a duration must last at least 1 turn!
+	// This should almost certainly move the DEFAULT_EFFECT_DURATION usage into the Picker.
+	effect.duration = (effect.isInstant || effect.duration===0 ? 0 :
+		((item && item.inSlot) || effect.duration==true ? true :
+		Math.max(1,(effect.duration || DEFAULT_EFFECT_DURATION) * (effect.durationMod||1))
+	));
+	let isResist = target.isResistant && (target.isResistant(effect.typeId) || (effect.op=='set' && target.isResistant(effect.value)) );
+	effect.isResist = isResist;
+
+	if( isResist && effect.isInstant && Math.chance(50) ) {
 		tell(mSubject,target,' resists the effects of ',mObject,effect);
+		new Anim( {}, {
+			follow: 	target,
+			img: 		StickerList.showResistance.img,
+			duration: 	0.2,
+			delay: 		effect.throwDuration || 0,
+			onInit: 		a => { a.create(1); },
+			onSpriteMake: 	s => { s.sScaleSet(0.75); },
+			onSpriteTick: 	s => { }
+		});
 		return false;
 	}
+
+	if( isResist && !effect.isInstant && effect.duration !== true ) {
+		tell(mSubject,target,' seems partially afected by ',mObject,effect);
+		effect.duration = effect.duration * 0.50;
+		new Anim( {}, {
+			follow: 	target,
+			img: 		StickerList.showResistance.img,
+			duration: 	0.2,
+			delay: 		effect.throwDuration || 0,
+			onInit: 		a => { a.create(1); },
+			onSpriteMake: 	s => { s.sScaleSet(0.75); },
+			onSpriteTick: 	s => { }
+		});
+	}
+
+	if( effect.icon !== false ) {
+		makeAnim(effect.icon || StickerList.eGeneric.img);
+	}
+
+	effect.value = rollDice(effect.value);
 
 	if( target.isPosition ) {
 		if( !effect.onTargetPosition ) {
@@ -192,17 +292,23 @@ let effectApply = function(origin,effect,target) {
 		effect.onTargetPosition(target.map,target.x,target.y)
 		return true;
 	}
-	let duration = effect.isInstant ? 0 : (origin.inSlot ? true : DEFAULT_EFFECT_DURATION);
-	deedAdd(origin,target,duration,effect.stat,effect.op,rollDice(effect.value),effect.onTick,effect.onEnd);
+	// Remember that by this point the effect has the target, source and item already inside it.
+	DeedManager.add(effect);
 
-	if( origin && origin.isItemType && origin.rechargeTime !== undefined ) {
-		origin.rechargeLeft = origin.rechargeTime;
+	// Note that rechargeTime CAN NOT be in the effect, because we're only dealing with a
+	// copy of the effect. There is no way for the change to rechargeTime to get back to the original effect instance.
+	if( item && item.rechargeTime !== undefined ) {
+		item.rechargeLeft = item.rechargeTime;
+	}
+	else
+	if( source && source.rechargeTime !== undefined ) {
+		source.rechargeLeft = source.rechargeTime;
 	}
 
 	return true;
 }
 
-let deedTell = function(entity,stat,oldValue,newValue ) {
+let deedTell = function(target,stat,oldValue,newValue ) {
 	if( typeof oldValue == 'string' ) {
 		// we have to do this before comparing, below, because we do NOT keep the elements sorted.
 		let ov = oldValue;
@@ -214,16 +320,16 @@ let deedTell = function(entity,stat,oldValue,newValue ) {
 		return;
 	}
 	let teller = SayStatList;
-	let content = (teller[stat] || teller._generic_)(entity,null,oldValue,newValue);
+	let content = (teller[stat] || teller._generic_)(target,null,oldValue,newValue);
 	tell(...content);
 }
 
-DeedManager.addHandler('heal',function(origin,entity,value) {
-	entity.takeHealing(origin,value,origin.effect.healingType);
+DeedManager.addHandler('heal',function() {
+	this.target.takeHealing(this.source,this.value,this.healingType);
 });
-DeedManager.addHandler('damage',function(origin,entity,value) {
-	entity.takeDamage(origin,value,origin.effect.damageType,origin.effect.onAttack);
+DeedManager.addHandler('damage',function() {
+	this.target.takeDamage(this.source,this.item,this.value,this.damageType,this.onAttack);
 });
-DeedManager.addHandler('shove',function(origin,entity,value) {
-	entity.takeShove(origin,value);
+DeedManager.addHandler('shove',function() {
+	this.target.takeShove(this.source,this.value);
 });

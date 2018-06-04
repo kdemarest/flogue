@@ -1,159 +1,120 @@
-class AreaBuilder {
-	constructor(picker) {
-		this.picker = picker;
+function areaBuild(area,requiredGates) {
+	let picker = new Picker(area.depth);
+
+	function makeMonster(type,x,y,inject) {
+		type = type || picker.pick(picker.monsterTable(area.theme.monsters),null,'!isUnique');
+		let entity = new Entity( area.depth, type, inject );
+		entity.gateTo(area,x,y);
+		return entity;
 	}
-
-	buildMap(picker,scape,palette,injectList,siteList) {
-		let masonMap = Mason.buildMap(picker,scape,palette,injectList,siteList);
-		return masonMap.renderToString();
-	}
-
-	populate(map,density,safeToMakeFn,makeFn) {
-		map.traverse( (x,y) => {
-			let type = map.tileTypeGet(x,y);
-			if( type.isFloor && Math.rand(0,1)<density && safeToMakeFn(x,y) ) {
-				makeFn(x,y);
-			}
-		});
-	}
-
-	extractEntitiesFromMap(map,entityList,gateList,injectList,itemMakeFn) {
-		let noEntity = {};
-		let itemCount = 0;
-		let entityCount = 0;
-
-		map.traverse( (x,y) => {
-			// Note that this code uses the SIMPLEST function that do NOT assume
-			// what is on the map...
-			let symbol = map.tileSymbolGet(x,y);
-
-			let entityType = SymbolToType[symbol];
-			if( !entityType ) {
-				debugger;
-			}
-			// CREATE MONSTERS
-			let inject = injectList[''+x+','+y] || noEntity;
-			if( entityType && entityType.isMonsterType ) {
-				let fnName = entityType.brain == 'user' ? 'unshift' : 'push';
-				// WARNING: Set the underlying tile symbol first so that the entity you're placing doesn't collide with it.
-				map.tileSymbolSetFloor(x,y)
-				let entity = new Entity( map, entityList, entityType, { x:x, y:y }, inject );
-				entityList[fnName]( entity );
-				++entityCount;
-				//console.log("Extracted "+entity.typeId+" with attitude "+entity.attitude,inject );
-			}
-			// CREATE ITEMS
-			if( entityType && entityType.isItemType ) {
-				// WARNING: Set the underlying tile symbol first so that the entity you're placing doesn't collide with it.
-				map.tileSymbolSetFloor(x,y);
-				let item = itemMakeFn(x,y,entityType,null,inject);	// the null means you have to generate presets for this item.
-				if( item.isTreasure ) { 
-					++itemCount;
-				}
-			}
-		});
-
-		// When there is only one monster, we are probably testing, so watch it.
-		if( entityList.length == 2 ) {
-			// zero will be the player
-			entityList[entityList.length-1].watch = true;
+	function makeItem(type,x,y,presets,inject) {
+		console.assert( x!==undefined && y!==undefined );
+		type = type && !type.isRandom ? type : null;
+		if( !type || !presets ) {
+			let filterString = [type ? type.typeId : '',!type || type.isTreasure ? 'isTreasure' : ''].join(' ');
+			type = picker.pickItem( filterString );
+			console.assert( type );
+			presets = type.presets;
 		}
-		return [entityCount,itemCount];
+
+		let item = area.map.itemCreateByType(x,y,type,presets,inject);
+		console.assert( item.x!==undefined );
+		return item;
 	}
-};
+	function safeToMake(map,x,y) {
+		let tile = map.tileTypeGet(x,y);
+		if( !tile.mayWalk ) return false;
+		let item = map.findItem().at(x,y);
+		if( item.count ) return false;
+		let entity = new Finder(area.entityList).at(x,y);
+		return !entity.count;
+	}
+
+	function extractEntitiesFromMap(map,injectList,makeMonsterFn,makeItemFn) {
+		let noEntity = {};
+		map.traverse( (x,y,type) => {
+			let inject = injectList[''+x+','+y] || noEntity;
+			if( type && type.isMonsterType ) {
+				map.tileSymbolSetFloor(x,y)
+				makeMonsterFn( type, x, y, inject ); 
+			}
+			if( type && type.isItemType ) {
+				map.tileSymbolSetFloor(x,y);
+				makeItemFn(type,x,y,null,inject);	// the null means you have to generate presets for this item.
+			}
+		});
+	}
+
+	function populate(map,density,safeToMakeFn,makeFn) {
+		map.traverse( (x,y,type) => {
+			if( type.isFloor && Math.rand(0,1)<density && safeToMakeFn(map,x,y) ) {
+				makeFn(null,x,y);
+			}
+		});
+	}
+
+	let scapeDefault = {
+		depth: area.depth,
+		placeDensity: 0.40,
+		monsterDensity: 0.01,
+		itemDensity: 0.04
+	};
+	let paletteDefault = {
+		floor: 			TileTypeList.floor.symbol,
+		wall:  			TileTypeList.wall.symbol,
+		door:  			TileTypeList.door.symbol,
+		fillFloor:  	TileTypeList.floor.symbol,
+		fillWall:  		TileTypeList.wall.symbol,
+		outlineWall:  	TileTypeList.wall.symbol,
+		passageFloor: 	TileTypeList.floor.symbol,
+		unknown: 		TILE_UNKNOWN,
+	};
+
+	let scapeId = pick(area.theme.scapes);
+	let scape = Object.assign( {}, scapeDefault, ScapeList[scapeId](), area.theme.scape );
+	let palette = Object.assign( {}, paletteDefault, scape.palette, area.theme.palette );
+
+	let injectList = [];
+	area.siteList = [];
+
+	let masonMap = Mason.masonConstruct(
+		scape,
+		palette,
+		area.theme.rREQUIRED,
+		area.theme.rarityTable,
+		requiredGates,
+		injectList,
+		area.siteList
+	);
+
+	area.map = new Map(area,masonMap.renderToString(),[]);
+	area.entityList = [];
+
+	extractEntitiesFromMap(area.map,injectList,makeMonster,makeItem);
+
+	let entityCount = area.map.count( (x,y,type) => type.isMonsterType ? 1 : 0 );
+	let treasureCount = area.map.count( (x,y,type) => type.isTreasure ? 1 : 0 );
+
+	let monsterDensity = scape.floorDensity * (scape.monsterDensity - entityCount/(area.map.getSurfaceArea()*scape.floorDensity));
+	populate( area.map, monsterDensity, safeToMake, makeMonster );
+
+	let itemDensity = scape.floorDensity * (scape.itemDensity - treasureCount/(area.map.getSurfaceArea()*scape.floorDensity));
+	populate( area.map, itemDensity, safeToMake, makeItem );
+
+	area.gateList = area.map.itemList.filter( item => item.gateDir !== undefined );
+
+	return area;
+}
 
 class Area {
-	constructor(areaId,level,theme,isCore) {
+	constructor(areaId,depth,theme) {
 		this.id = areaId;
-		this.level = level;
-		this.isCore = isCore;
+		this.depth = depth;
 		this.theme = theme;
 		this.mapMemory = [];
 	}
-
-	build(palette) {
-
-		let self = this;
-		PickerSetTheme(this.theme);	// WARNING! Horrible hack. But it works for now.
-
-		function makeMonster(x,y,inject) {
-			let entityType = picker.pick(picker.monsterTable,null,'!isUnique');
-			let entity = new Entity( self.map, self.entityList, entityType, { x:x, y:y }, inject );
-			console.log("Created "+entity.typeId+" with attitude "+entity.attitude );
-			self.entityList.push(entity);
-			return entity;
-		}
-		function makeItem(x,y,type,presets,inject) {
-			if( x===undefined || y===undefined ) debugger;
-			if( type && type.isRandom ) {
-				type = null;
-			}
-//			if( type && type.isCorpse ) debugger;
-			if( !type  || !presets ) {
-				let filterString = (!type || type.isTreasure ? 'isTreasure' : null);
-				type = picker.pick( picker.itemTable, type ? type.typeId : null, filterString );
-				if( type === false ) {
-					debugger;
-				}
-				presets = type.presets;
-//				if( type && type.isCorpse ) debugger;
-			}
-
-			let item = self.map.itemCreateByType(x,y,type,presets,inject);
-			if( item.x===undefined ) debugger;
-			//console.log( item.name+' created at ('+x+','+y+') on '+self.map.tileTypeGet(x,y).typeId );
-			if( item.gateDir !== undefined ) {
-				self.gateList.push(item);
-			}
-			return item;
-		}
-		function safeToMake(x,y) {
-			let tile = self.map.tileTypeGet(x,y);
-			if( !tile.mayWalk ) return false;
-			let item = self.map.findItem().at(x,y);
-			if( item.count ) return false;
-			let entity = new Finder(self.entityList).at(x,y);
-			return !entity.count;
-		}
-
-		let picker = new Picker(this.level,this.theme);
-		this.builder = new AreaBuilder(picker);
-
-		let scapeId = pick(this.theme.scapes);
-		let scape = ScapeList[scapeId]();
-		scape = Object.assign(
-			{
-				placeDensity: 0.40,
-				monsterDensity: 0.01,
-				itemDensity: 0.04
-			}, 
-			scape,
-			this.theme.scape,
-			{
-				palette: Object.assign( {}, scape.palette, this.theme.palette ),
-				level: this.level,
-				entranceCount: 1,
-				exitCount: 1
-			}
-		);
-		this.scape = scape;
-
-		let injectList = [];
-		this.siteList = [];
-		let tileRaw = loadLevel(this.id) || this.builder.buildMap(picker,scape,palette,injectList,this.siteList);
-
-		this.map = new Map(tileRaw,[]);
-		this.map.level = this.level;
-		this.entityList = [];
-		this.gateList = [];
-
-		let entityCount,itemCount;
-		[entityCount,itemCount] = this.builder.extractEntitiesFromMap(this.map,this.entityList,this.gateList,injectList,makeItem);
-		let monsterDensity = scape.floorDensity * (scape.monsterDensity - entityCount/(this.map.getArea()*scape.floorDensity));
-		this.builder.populate( this.map, monsterDensity, safeToMake, makeMonster );
-		let itemDensity = scape.floorDensity * (scape.itemDensity - itemCount/(this.map.getArea()*scape.floorDensity));
-		this.builder.populate( this.map, itemDensity, safeToMake, makeItem );
-		return this;
+	build(requiredGates) {
+		return areaBuild(this,requiredGates);
 	}
 	getGate(id) {
 		let g = this.gateList.filter( g => g.id==id );

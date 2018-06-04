@@ -1,9 +1,8 @@
 class World {
-	constructor(startingLevel=1,getPlayer,onAreaChange) {
+	constructor(getPlayer,onAreaChange) {
 		this.getPlayer = getPlayer;
 		this.areaList = {};
 		this.area = null;
-		this.startingLevel = startingLevel;
 		this.pending = {
 			gate: null
 		};
@@ -12,49 +11,39 @@ class World {
 	get player() {
 		return this.getPlayer();
 	}
-	createArea(areaId,levelDelta,theme,entranceSymbol) {
-		let level = this.area ? this.area.level+levelDelta : this.startingLevel;
-		let isCore = false;
-		if( !areaId ) {
-			let coreAreaId = 'area.core.'+level;
-			if( !this.areaList[coreAreaId] ) {
-				areaId = coreAreaId;
-				isCore = true;
-			}
-			else {
-				areaId = GetUniqueEntityId('area',level);
-			}
-		}
-		let palette = {
-			floor: 			TileTypeList.floor.symbol,
-			wall:  			TileTypeList.wall.symbol,
-			door:  			TileTypeList.door.symbol,
-			fillFloor:  	TileTypeList.floor.symbol,
-			fillWall:  		TileTypeList.wall.symbol,
-			outlineWall:  	TileTypeList.wall.symbol,
-			passageFloor: 	TileTypeList.floor.symbol,
-			unknown: 		TILE_UNKNOWN,
-			entrance: 		this.area===null ? ItemTypeList.stairsUp.symbol : entranceSymbol,
-			exit: 			ItemTypeList.stairsDown.symbol
-		};
+	createArea(depth,theme,isCore) {
+		console.assert(depth !== undefined && !isNaN(depth)); 
+		let coreAreaId = 'area.core.'+depth;
+		let areaId = !this.areaList[coreAreaId] ? coreAreaId : GetUniqueEntityId('area',depth);
 
-		let area = new Area(areaId,level,theme,isCore);
+		let requiredGates = {};
+		if( isCore ) {
+			requiredGates[ItemTypeList.stairsDown.symbol] = 1;
+			if( depth > 0 ) requiredGates[ItemTypeList.stairsUp.symbol] = 1;
+		}
+		let area = new Area(areaId,depth,theme);
+		area.isCore = isCore;
 		this.areaList[areaId] = area;	// critical that this happen BEFORE the .build() so that the theme is set for the picker.
-		area.build(palette)
+		area.build(requiredGates)
 		return area;
 	}
 	setPending(gate) {
 		let toArea = this.areaList[gate.toAreaId];
 		if( !toArea ) {
-			let theme = ThemeList[gate.themeId || 'cavern'];
-			let inverseGateSymbol = ItemTypeList[gate.gateInverse].symbol;
-			toArea = this.createArea(gate.toAreaId,gate.gateDir,theme,inverseGateSymbol);
+			let isCore = this.area.isCore && gate.gateDir!=0;
+			let depth = this.area.depth + gate.gateDir;
+			if( !gate.themeId ) {
+				let themePickList = Object.filter( ThemeList, theme => theme.allowInCore==isCore && !theme.isUnique);
+				gate.themeId = pick( themePickList ).typeId;
+			}
+			let theme = ThemeList[gate.themeId];
+			toArea = this.createArea(depth,theme,isCore);
 		}
 
 		let gate2 = gate.toGateId ? toArea.getGate(gate.toGateId) : toArea.getUnusedGateByTypeId(gate.gateInverse);
 		if( !gate2 ) {
 			let pos = toArea.map.pickPosEmpty();
-			gate2 = toArea.map.itemCreateByTypeId(pos[0],pos[1],gate.gateInverse);
+			gate2 = toArea.map.itemCreateByTypeId(pos[0],pos[1],gate.gateInverse,{});
 		}
 
 		gate.toAreaId = toArea.id;
@@ -68,7 +57,7 @@ class World {
 	}
 	detectPlayerOnGate(map,entityList) {
 		// checking the commandToDirection means the player just moved, and isn't just standing there.
-		if( !this.player || ( this.player.commandLast!=Command.WAIT && commandToDirection(this.player.commandLast)===false) ) {
+		if( !this.player || this.player.commandLast!=Command.WAIT ) {
 			return;
 		}
 		let gateHere = map.findItem().at(this.player.x,this.player.y).filter( item => item.gateDir!==undefined );
@@ -76,7 +65,7 @@ class World {
 			return;
 		}
 		let gate = gateHere.first;
-		if( map.level == 1 && gate.gateDir<0 ) {
+		if( map.area.depth == 0 && gate.gateDir<0 ) {
 			return;
 		}
 		this.setPending(gate)
@@ -87,7 +76,7 @@ class World {
 		this.area = area;
 		return area;
 	}
-	levelChange() {
+	areaChange() {
 		this.detectPlayerOnGate(this.area.map,this.area.entityList);
 
 		let gate = this.pending.gate;

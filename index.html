@@ -31,7 +31,10 @@
 <script src="area.js" charset="utf-8"></script>
 <script src="world.js" charset="utf-8"></script>
 <script src="config.js" charset="utf-8"></script>
+<<<<<<< HEAD
 <qscript src="levels.js" charset="utf-8"></qscript>
+=======
+>>>>>>> aee6ef97babf1d5d0dfa5efa093c953eed18506d
 <script>
 
 /*
@@ -149,7 +152,7 @@ function main(levelName) {
 
 	function TickWorld(timePasses) {
 		tick( timePasses ? player.speed : false, area.map, area.entityList );
-		if( world.levelChange() ) {
+		if( world.areaChange() ) {
 			area = world.area;
 		}
 
@@ -178,10 +181,15 @@ function main(levelName) {
 		let gate = area.getUnusedGateByTypeId('stairsUp');
 		if( !gate ) {
 			let pos = area.map.pickPosEmpty();
-			gate = area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp');
+			gate = area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp',{});
 		}
+<<<<<<< HEAD
 		let player = new Entity( area.map, area.entityList, MonsterTypeList.player, { x:gate.x, y:gate.y }, null, config.startingLevel );
 		area.entityList.unshift( player );
+=======
+		let player = new Entity( area.depth, MonsterTypeList.player, null );
+		player.gateTo(area,gate.x,gate.y);
+>>>>>>> aee6ef97babf1d5d0dfa5efa093c953eed18506d
 		return player;
 	}
 
@@ -197,18 +205,31 @@ function main(levelName) {
 		tell(mSubject,player,' ',mVerb,'are',' now on level '+area.id)
 	}
 
+<<<<<<< HEAD
 	let config = loadConfig();
 	
+=======
+
+>>>>>>> aee6ef97babf1d5d0dfa5efa093c953eed18506d
 	new DataConditioner();
+	let config = new Config('ken',{
+		startingDepth: 0,
+		themeId: 'surface',
+	});
 
 
 	let gui = new Gui(playerFind,areaFind);
+<<<<<<< HEAD
 	let area;
 	let player;
 	window.world = new World(config.startingLevel,playerFind,onAreaChange);
 	area = world.createArea(null,0,ThemeList[config.startingLevel<=1 ? 'gameStart' : config.theme],config.startingLevel>1 ? 'stairsUp' : false);
+=======
+	let world = new World(playerFind,onAreaChange);
+	let area = world.createArea(config.startingDepth,ThemeList[config.themeId],true);
+>>>>>>> aee6ef97babf1d5d0dfa5efa093c953eed18506d
 	world.gateTo(area.id);
-	player = playerStartup(area);
+	let player = playerStartup(area);
 	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);
 
 	let handle = setInterval(function() {

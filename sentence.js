@@ -117,6 +117,13 @@ class Sentence {
 				s += isYou ? a[0] : a[1];
 			}
 			else
+			if( (typeof m[i]=='number') && (m[i] == mCares) ) {
+				// If mCares is unaccompanied by mSubect or anything else, then this is not part of the sentence
+				// but rather just a signifier about caring.
+				i += 2;
+				continue;
+			}
+			else
 			if( (typeof m[i]=='number') && (m[i] & (mSubject|mObject|mPronoun|mPossessive)) ) {
 				let flags = m[i] & (mPronoun|mPossessive);
 				let useA = m[i] & mA;

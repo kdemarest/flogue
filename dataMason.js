@@ -272,6 +272,11 @@
 			this.traverse( (x,y) => c += (testFn(this.getTile(x,y)) ? 1 : 0) );
 			return c;
 		}
+		countTile(tile) {
+			let c = 0;
+			this.traverse( (x,y) => c += this.getTile(x,y)==tile ? 1 : 0 );
+			return c;
+		}
 		placeRandom(tile,onTile,amount=1) {
 			while( amount ) {
 				let pos = this.randPos();
@@ -573,6 +578,15 @@
 			} while( reps-- );
 		}
 
+		assureTileCount(tileList) {
+			for( let tile in tileList ) {
+				let count = tileList[tile]-this.countTile(tile);
+				while( count-- > 0 ) {
+					this.placeEntrance(tile);
+				}
+			}
+		}
+
 		fit(px,py,expand,placeMap) {
 			if( px<0 || py<0 || px+placeMap.xLen>this.xLen || py+placeMap.yLen>this.yLen ) {
 				return false;
@@ -850,14 +864,42 @@
 
 	}
 
-	function positionPlaces(map,picker,numPlaceTiles,injectList,siteList) {
 
-		function pickPlace() {
+
+	function positionPlaces(depth,map,numPlaceTiles,requiredPlaces,placeRarityTable,injectList,siteList) {
+
+		function generatePlacesRequired(requiredPlaces) {
+			let chanceList = String.chanceParse( requiredPlaces || '' );
+			let table = Array.chancePick(chanceList);
+			return table;
+		}
+
+		// Contains entries from PlaceList
+		function placeTable(rarityTable) {
+			let table = [];
+			for( let placeId in PlaceList ) {
+				let place = PlaceList[placeId];
+				if( place.neverPick || (place.level != 'any' && place.level > depth) ) {
+					continue;
+				}
+				if( !rarityTable[placeId] ) {
+					continue;
+				}
+				let placeLevel = (place.level=='any' ? depth : place.level);
+				let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(placeLevel,depth) * 100000, 1, 100000));
+				chance *= (rarityTable[placeId] || 1);
+				table.push(chance,place);
+			}
+			return table;
+		}
+
+		function pickPlace(placeRarityTable) {
 			// We try to resist picking the same place multiple times on a level.
+			let table = placeTable(placeRarityTable);
 			let reps = 5;
 			let place;
 			do {
-				place = picker.pick(picker.placeTable);
+				place = Array.pickFromPaired(table);
 			} while( reps-- && Math.chance((placeUsed[place.id]||0)*30) );
 			placeUsed[place.id] = (placeUsed[place.id]||0)+1;
 			return place;
@@ -929,13 +971,13 @@
 		}
 
 		let placeUsed = [];	// used to avoid duplicating places too much
-		let placeRosterRequired = picker.generatePlacesRequired().map( placeId => PlaceList[placeId] );
+		let placeRosterRequired = generatePlacesRequired(requiredPlaces).map( placeId => PlaceList[placeId] );
 		placeRosterRequired.map( place => { numPlaceTiles -= place.tileCount; } );
 
 		let placeRosterRandom = [];
 		let reps = 1000;
 		while( numPlaceTiles>0 && --reps) {
-			let place = pickPlace();
+			let place = pickPlace(placeRarityTable);
 			placeRosterRandom.push(place);
 			numPlaceTiles -= place.tileCount;
 		}
@@ -949,7 +991,7 @@
 		reps = 20;
 		do {
 			while( numPlaceTiles > 0 ) {
-				let place = pickPlace();
+				let place = pickPlace(placeRarityTable);
 				placeRoster.push(place);
 				numPlaceTiles -= place.tileCount;
 			}
@@ -1020,7 +1062,7 @@
 		}
 	}
 
-	function buildMap(picker,scape,palette,injectList,siteList,onStep) {
+	function masonConstruct(scape,palette,requiredPlaces,placeRarityTable,requiredTiles,injectList,siteList,onStep) {
 		let drawZones = false;
 		function render() {
 			let s = map.renderToString(drawZones);
@@ -1034,7 +1076,7 @@
 		map.setDimensions(scape.dim);
 
 		let numPlaceTiles = Math.floor(map.xLen()*map.yLen()*scape.floorDensity*scape.placeDensity);
-		positionPlaces(map,picker,numPlaceTiles,injectList,siteList);
+		positionPlaces(scape.depth,map,numPlaceTiles,requiredPlaces,placeRarityTable,injectList,siteList);
 
 		if( scape.architecture == 'cave' ) {
 			makeAmoeba(map,scape.floorDensity,scape.seedPercent,scape.mustConnect);
@@ -1070,17 +1112,13 @@
 		map.sizeToExtentsWithBorder(injectList,1);
 		map.convert(T.Unknown,T.FillWall);
 
-		for( let i=0; i<scape.entranceCount; ++i ) {
-			map.placeEntrance(T.Entrance);
-		}
-		for( let i=0; i<scape.exitCount; ++i ) {
-			map.placeEntrance(T.Exit);
-		}
+		map.assureTileCount(requiredTiles);
+
 		return map;
 	}
 
 
 	window.Mason = {
-		buildMap: buildMap
+		masonConstruct: masonConstruct
 	};
 })();

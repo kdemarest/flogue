@@ -58,10 +58,14 @@ let sVel = function(deg,vel) {
 	this.yVel = (this.yVel||0) + Math.sin(toRad(deg)) * vel;
 	return this;
 }
-let sVelTo = function(tx,ty,duration) {
-	let dist = Math.sqrt(tx*tx+ty*ty);
-	this.xVel = (this.xVel||0) + (tx / dist) / duration * 32;
-	this.yVel = (this.yVel||0) + (ty / dist) / duration * 32;
+
+//(10,5) in 4 seconds
+//(10/11.18) / 4
+//(5/11.18) / 4
+
+let sVelTo = function(dx,dy,duration) {
+	this.xVel = (this.xVel||0) + dx/duration;
+	this.yVel = (this.yVel||0) + dy/duration;
 	return this;
 }
 let sGrav = function(amt) {
@@ -92,6 +96,10 @@ class Anim {
 		this.dead = false;
 		this.delta = 0;
 		if( this.x === undefined && this.follow ) {
+			if( this.follow.inVoid ) {
+				// Don't try to animate on this thing. It is in the void.
+				return false;
+			}
 			this.x = this.follow.x;
 			this.y = this.follow.y;
 		}
@@ -116,6 +124,9 @@ class Anim {
 			let img = Array.chancePick(imgArray);
 			this.spriteAdd(img);
 		}
+	}
+	puppetOnExist(entity) {
+		entity.puppetMe = this;
 	}
 	puppet(spriteList) {
 		if( this.dead ) return;

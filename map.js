@@ -26,7 +26,7 @@ class SimpleMap {
 		this.xLen = xLen;
 		this.yLen = yLen;
 	}
-	getArea() {
+	getSurfaceArea() {
 		return this.xLen*this.yLen;
 	}
 	inBounds(x,y) {
@@ -75,13 +75,18 @@ class SimpleMap {
 	traverse(fn) {
 		for( let y=0 ; y<this.yLen ; ++ y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {
-				let go = fn.call(this,x,y);
+				let go = fn.call(this,x,y,this.tileTypeGet(x,y));
 				if( go === false ) {
 					return this;
 				}
 			}
 		}
 		return this;
+	}
+	count(fn) {
+		let c = 0;
+		this.traverse( (x,y,type) => c += fn(x,y,type) );
+		return c;
 	}
 
 	tileSymbolSet(x,y,symbol) {
@@ -121,7 +126,9 @@ class SimpleMap {
 			return false;
 		}
 		let symbol = this.tileSymbolGet(x,y);
-		return SymbolToType[symbol];
+		let type = SymbolToType[symbol];
+		console.assert(type);
+		return type;
 	}
 	tileTypeGetDir(x,y,dir) {
 		x += DirectionAdd[dir].x;
@@ -132,14 +139,18 @@ class SimpleMap {
 
 
 class Map extends SimpleMap {
-	constructor(tile,itemList) {
+	constructor(area,tile,itemList) {
 		super(tile);
+		this.area = area;
 		this.actionCount = 0;
 		this.tileEntity = [];
 		this.itemList = itemList;
 		this.visCache = [];
 		this.cacheVis();
 		this.initSprites();
+	}
+	get entityList() {
+		return this.area.entityList;
 	}
 	cacheVis() {
 		this.traverse( (x,y) => {
@@ -232,7 +243,7 @@ class Map extends SimpleMap {
 				y += DirectionAdd[dir].y;
 			}
 		}
-		let item = new Item( this.level, type, presets, inject );
+		let item = new Item( this.area.depth, type, presets, inject );
 		item.giveTo(this,x,y);
 		return item;
 	}
