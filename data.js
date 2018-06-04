@@ -142,7 +142,7 @@ Say.damagePast = {
 	"burn": "scorched",
 	"freeze": "frosty",
 	"corrode": "corroded",
-	"poison": "posoned",
+	"poison": "poisoned",
 	"smite": "smitten",
 	"rot": "rotted"
 };
@@ -152,27 +152,27 @@ Say.damagePast = {
 // onTargetPosition - if this effect is targeting a map tile, instead of a monster.
 
 let EffectTypeList = toFab({
-	inert: 			{ level:  0, isInert: 1 },	// this is special, used in the picker effect proxy! Do not change!
-	water: 			{ level:  0, rarity: 1.00, isWater: 1 },
-	blank: 			{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
+	eInert: 		{ level:  0, isInert: 1 },	// this is special, used in the picker effect proxy! Do not change!
+	eWater: 		{ level:  0, rarity: 1.00, isWater: 1 },
+	eBlank: 		{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
 // Tactical
-	luminari: 		{ isTac: 1, level:  null, rarity: 1.00, op: 'add', stat: 'light', value: 3, durationMod: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
+	eLuminari: 		{ isTac: 1, level:  null, rarity: 1.00, op: 'add', stat: 'light', value: 3, durationMod: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
 //	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },
-	greed: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseItems', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'greed', icon: 'gui/icons/eVision.png' },
+	eGreed: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseItems', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'greed', icon: 'gui/icons/eVision.png' },
 	echoloc: 		{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseLife', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'bat sense', icon: 'gui/icons/eVision.png' },
-	seeInvisible: 	{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, durationMod: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
-	xray: 			{ isTac: 1, level:  null, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'earth vision', icon: 'gui/icons/eVision.png' },
+	eSeeInvisible: 	{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, durationMod: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
+	eXray: 			{ isTac: 1, level:  null, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'earth vision', icon: 'gui/icons/eVision.png' },
 // Buff
-	flight: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode,
+	eFlight: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode,
 					additionalDoneTest: (self) => { return self.target.map.tileTypeGet(self.target.x,self.target.y).mayWalk; }, icon: 'gui/icons/eFly.png' },
 	eHaste: 		{ isBuf: 1, level: 10, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5, icon: 'gui/icons/eHaste.png' },
-	resistance: 	{ isBuf: 1, level: 20, rarity: 0.50, op: 'add', stat: 'resist',
+	eResistance: 	{ isBuf: 1, level: 20, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickResist), isHelp: 1, namePattern: 'resist {value}s', icon: 'gui/icons/eResist.png' },
 	eAbsorb: 		{ isBuf: 1, level:  1, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickAbsorb), isHelp: 1, namePattern: 'absorb {value}s', icon: 'gui/icons/eResist.png' },
 	eBlock: 		{ isBuf: 1, level:  1, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickAbsorb), isHelp: 1, namePattern: 'block {value}s', icon: 'gui/icons/eResist.png' },
-	invisibility: 	{ isBuf: 1, level: 10, rarity: 0.20, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible, durationMod: 3.0, icon: 'gui/icons/eInvisible.png' },
+	eInvisibility: 	{ isBuf: 1, level: 10, rarity: 0.20, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible, durationMod: 3.0, icon: 'gui/icons/eInvisible.png' },
 	eIgnore: 		{ isBuf: 1, level:  0, rarity: 1.00, op: 'add', stat: 'immune',
 					valuePick: () => pick(PickIgnore), isHelp: 1, namePattern: 'ignore {value}', icon: 'gui/icons/eImmune.png' },
 // Debuff/Control
@@ -180,30 +180,30 @@ let EffectTypeList = toFab({
 	eShove: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'shove', value: 3, isInstant: 1, icon: 'gui/icons/eShove.png' },
 	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.HESITANT, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 0.2, icon: 'gui/icons/eFear.png' },
-	vulnerability: 	{ isDeb: 1, level: 10, rarity: 1.00, op: 'add', stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
+	eVulnerability: { isDeb: 1, level: 10, rarity: 1.00, op: 'add', stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
 					valuePick: () => pick(PickVuln), isHarm: 1, durationMod: 2.0, namePattern: 'vulnerability to {value}', icon: 'gui/icons/eVuln.png' },
-	slow: 			{ isDeb: 1, level: 20, rarity: 1.00, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, durationMod: 0.3, requires: e=>e.speed>0.5 },
-	blindness: 		{ isDeb: 1, level: 30, rarity: 1.00, op: 'set', stat: 'senseBlind', value: true, isHarm: 1, durationMod: 0.25, requires: e=>!e.blind, icon: 'gui/icons/eBlind.png' },
-	confusion: 		{ isDeb: 1, level: 40, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
-	panic: 			{ isDeb: 1, level: 50, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 1.0, icon: 'gui/icons/eFear.png' },
-	rage: 			{ isDeb: 1, level: 60, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1, durationMod: 0.5, icon: 'gui/icons/eAttitude.png' },
+	eSlow: 			{ isDeb: 1, level: 20, rarity: 1.00, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, durationMod: 0.3, requires: e=>e.speed>0.5 },
+	eBlindness: 	{ isDeb: 1, level: 30, rarity: 1.00, op: 'set', stat: 'senseBlind', value: true, isHarm: 1, durationMod: 0.25, requires: e=>!e.blind, icon: 'gui/icons/eBlind.png' },
+	eConfusion: 	{ isDeb: 1, level: 40, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
+	ePanic: 		{ isDeb: 1, level: 50, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 1.0, icon: 'gui/icons/eFear.png' },
+	eRage: 			{ isDeb: 1, level: 60, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1, durationMod: 0.5, icon: 'gui/icons/eAttitude.png' },
 // Healing
-	healing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
-	regeneration: 	{ isHel: 1, level: 20, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, icon: 'gui/icons/eHeal.png' },
+	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
+	eRegeneration: 	{ isHel: 1, level: 20, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, icon: 'gui/icons/eHeal.png' },
 // Damage
-	fire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
-	poison: 		{ isDmg: 1, level:  5, rarity: 1.00, op: 'damage', valueDamage: 2.50, isHarm: 1, isInstant: 1, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
-	cold: 			{ isDmg: 1, level:  10, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
-	acid: 			{ isDmg: 1, level:  15, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
-	holy: 			{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	rot: 			{ isDmg: 1, level:  25, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
+	eFire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
+	ePoison: 		{ isDmg: 1, level:  5, rarity: 1.00, op: 'damage', valueDamage: 2.50, isHarm: 1, isInstant: 1, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
+	eCold: 			{ isDmg: 1, level:  10, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
+	eAcid: 			{ isDmg: 1, level:  15, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
+	eHoly: 			{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eRot: 			{ isDmg: 1, level:  25, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
 });
 
-EffectTypeList.fire.onTargetPosition = function(map,x,y) {
+EffectTypeList.eFire.onTargetPosition = function(map,x,y) {
 	map.tileSymbolSet(x,y,TileTypeList.flames.symbol);
 }
 
-EffectTypeList.cold.onTargetPosition = function(map,x,y) {
+EffectTypeList.eCold.onTargetPosition = function(map,x,y) {
 	map.tileSymbolSet(x,y,TileTypeList.water.symbol);
 }
 
@@ -304,42 +304,45 @@ const ItemTypeDefaults = {
 }
 
 const ImgPotion = {
-	water: 			{ img: "cyan" },
-	invisibility: 	{ img: "clear" },
+	eWater: 		{ img: "cyan" },
+	eInvisibility: 	{ img: "clear" },
 	eHaste: 		{ img: "cyan" },
-	slow: 			{ img: "silver" },
-	regeneration: 	{ img: "orange" },
-	flight: 		{ img: "brilliant_blue" },
-	healing: 		{ img: "pink" },
-	poison: 		{ img: "emerald" },
-	fire: 			{ img: "ruby" }, 
-	cold: 			{ img: "brilliant_blue" }, 
-	panic: 			{ img: "magenta" },
-	rage: 			{ img: "dark" },
-	confusion: 		{ img: "brown" },
+	eSlow: 			{ img: "silver" },
+	eRegeneration: 	{ img: "orange" },
+	eFlight: 		{ img: "brilliant_blue" },
+	eHealing: 		{ img: "pink" },
+	ePoison: 		{ img: "emerald" },
+	eFire: 			{ img: "ruby" }, 
+	eCold: 			{ img: "brilliant_blue" }, 
+	ePanic: 		{ img: "magenta" },
+	eRage: 			{ img: "dark" },
+	eConfusion: 	{ img: "brown" },
 	eIgnore: 		{ img: "white" },
-	blindness: 		{ img: "black" },
-	xray: 			{ img: "white" },
-	greed: 			{ img: "white" },
+	eBlindness: 	{ img: "black" },
+	eXray: 			{ img: "white" },
+	eGreed: 		{ img: "white" },
 	echoloc: 		{ img: "white" },
-	luminari: 		{ img: "white" },
-	vuln: 			{ img: "black" },
-	resistance: 	{ img: "yellow" },
+	eLuminari: 		{ img: "white" },
+	eVuln: 			{ img: "black" },
+	eResistance: 	{ img: "yellow" },
 	eShove: 		{ img: "black" }
 };
 
 
-const PotionEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['luminari','greed','echoloc','seeInvisible','xray','flight','eHaste','resistance','invisibility','eIgnore','vulnerability','slow','blindness','confusion','rage','healing','panic','regeneration','fire','poison','cold','acid','holy','rot'].includes(k) ) );
-const SpellEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['eStartle','eHesitate','blindness','luminari','xray','echoloc','greed','slow','healing','poison','fire','cold','holy','rage','panic','confusion','eShove','xray'].includes(k) ) );
-const RingEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration','resistance','greed'].includes(k) ) );
-const WeaponEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','poison','fire','cold','blindness','slow','panic','confusion','eShove'].includes(k) ) );
-const ShieldEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eShove','eAbsorb','resistance'].includes(k) ) );
-const HelmEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'resistance','luminari'].includes(k) ) );
-const ArmorEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'resistance'].includes(k) ) );
+const PotionEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['eLuminari','eGreed','echoloc','eSeeInvisible','eXray','eFlight',
+	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
+	'eRegeneration','eFire','ePoison','eCold','eAcid','eHoly','eRot'].includes(k) ) );
+const SpellEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['eStartle','eHesitate','eBlindness','eLuminari','eXray','echoloc',
+	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRage','ePanic','eConfusion','eShove'].includes(k) ) );
+const RingEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration','eResistance','eGreed'].includes(k) ) );
+const WeaponEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) ) );
+const ShieldEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eShove','eAbsorb','eResistance'].includes(k) ) );
+const HelmEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari'].includes(k) ) );
+const ArmorEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) ) );
 const BracersEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) ) );
-const BootsEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','regeneration', 'eIgnore', 'flight', 'resistance'].includes(k) ) );
-const DartEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','eHesitate','poison','fire','cold','blindness','slow','vuln'].includes(k) ) );
-const GemEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','luminari','greed','echoloc','seeInvisible'].includes(k) ) );
+const BootsEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) ) );
+const DartEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','eHesitate','ePoison','eFire','eCold','eBlindness','eSlow','eVuln'].includes(k) ) );
+const GemEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','echoloc','eSeeInvisible'].includes(k) ) );
 
 const WeaponList = toFab({
 	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: 7, attackVerb: 'strike', img: 'item/weapon/ranged/rock.png' },
@@ -450,12 +453,12 @@ const GemQualityList = toFab({
 });
 
 const GemList = toFab({
-	"garnet": 		{ level:  0, rarity:  0.3, intrinsicEffect: "healing", img: "Gem Type1 Red", xAnchor: -0.5, yAnchor: -0.5 },
-	"opal": 		{ level:  5, rarity:  0.3, intrinsicEffect: "flight", img: "Gem Type1 Yellow", xAnchor: -0.5, yAnchor: -0.5 },
-	"ruby": 		{ level: 10, rarity:  0.2, intrinsicEffect: "fire", img: "Gem Type2 Red", xAnchor: -0.5, yAnchor: -0.5 },
-	"emerald": 		{ level: 15, rarity:  0.2, intrinsicEffect: "poison", img: "Gem Type2 Green", xAnchor: -0.5, yAnchor: -0.5 },
-	"sapphire": 	{ level: 20, rarity:  0.2, intrinsicEffect: "cold", img: "Gem Type2 Blue", xAnchor: -0.5, yAnchor: -0.5 },
-	"diamond": 		{ level: 25, rarity:  0.1, intrinsicEffect: "invisibility", img: "Gem Type3 Black", xAnchor: -0.5, yAnchor: -0.5 },
+	"garnet": 		{ level:  0, rarity:  0.3, intrinsicEffect: "eHealing", img: "Gem Type1 Red", xAnchor: -0.5, yAnchor: -0.5 },
+	"opal": 		{ level:  5, rarity:  0.3, intrinsicEffect: "eFlight", img: "Gem Type1 Yellow", xAnchor: -0.5, yAnchor: -0.5 },
+	"ruby": 		{ level: 10, rarity:  0.2, intrinsicEffect: "eFire", img: "Gem Type2 Red", xAnchor: -0.5, yAnchor: -0.5 },
+	"emerald": 		{ level: 15, rarity:  0.2, intrinsicEffect: "ePoison", img: "Gem Type2 Green", xAnchor: -0.5, yAnchor: -0.5 },
+	"sapphire": 	{ level: 20, rarity:  0.2, intrinsicEffect: "eCold", img: "Gem Type2 Blue", xAnchor: -0.5, yAnchor: -0.5 },
+	"diamond": 		{ level: 25, rarity:  0.1, intrinsicEffect: "eInvisibility", img: "Gem Type3 Black", xAnchor: -0.5, yAnchor: -0.5 },
 });
 
 const StuffList = toFab({
@@ -545,8 +548,8 @@ const CommandLeavesInventoryOpen = [Command.USE,Command.LOOT];
 const CommandIsInstant = [Command.USE];
 
 let Tweak = {
-	lootFrequency: 0.80,
-	effectChance: 3.0
+	lootFrequency: 0.70,
+	effectChance: 1.0
 };
 
 const ARMOR_EFFECT_CHANCE_TO_FIRE = 10;
@@ -728,6 +731,7 @@ const MonsterTypeList = {
 		brainOpensDoors: true,
 		brainTalk: true,
 		inventoryLoot: '',
+		inventoryWear: '',
 		isSunChild: true,
 		light: 4,
 		neverPick: true,
@@ -779,7 +783,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		brainOpensDoors: true,
 		isSunChild: true,
-		loot: '30% mushroomBread, 30% coin, 10% potion.healing',
+		loot: '30% mushroomBread, 30% coin, 10% potion.eHealing',
 	},
 
 // EVIL TEAM
@@ -800,7 +804,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		immune: DemonImmunity,
 		isDemon: true,
-		loot: '30% coin, 50% potion.fire, 30% demonScale, 20% pitchfork, 30% demonEye',
+		loot: '30% coin, 50% potion.eFire, 30% demonScale, 20% pitchfork, 30% demonEye',
 		packAnimal: true,
 		resist: DemonResistance,
 		sayPrayer: 'Hail Balgur, ruler of the deep!',
@@ -813,7 +817,7 @@ const MonsterTypeList = {
 		invisible: true,
 		isPlanar: 1,
 		light: 6,
-		loot: '50% gem.seeInvisible, 30% gem, 20% gem',
+		loot: '50% gem.eSeeInvisible, 30% gem, 20% gem',
 		packAnimal: true,
 		sneakAttackMult: 3,
 		vuln: 'glass'
@@ -823,7 +827,7 @@ const MonsterTypeList = {
 		immune: UndeadImmunity,
 		dark: 2,
 		isUndead: true,
-		loot: '30% coin, 20% potion.rot, 50% ghoulFlesh',
+		loot: '30% coin, 20% potion.eRot, 50% ghoulFlesh',
 		senseLife: true,
 		resist: UndeadResistance,
 		vuln: UndeadVulnerability
@@ -865,7 +869,7 @@ const MonsterTypeList = {
 		glow: 1,
 		immune: DamageType.BURN,
 		isDemon: true,
-		loot: '30% potion.fire, 30% impBrain',
+		loot: '30% potion.eFire, 30% impBrain',
 		senseInvisible: true,
 		travelMode: "fly",
 		vuln: DemonVulnerability
@@ -903,7 +907,7 @@ const MonsterTypeList = {
 		glow: 4,
 		immune: OozeImmunity,
 		isPlanar: true,
-		loot: '90% potion.corrode, 40% redOozeSlime',
+		loot: '90% potion.eCorrode, 40% redOozeSlime',
 		regenerate: 0.15,
 		resist: OozeResistance,
 		speed: 0.75,
@@ -934,7 +938,7 @@ const MonsterTypeList = {
 		dark: 6,
 		immune: ShadowImmunity,
 		isUndead: true,
-		loot: '50% darkEssence, 20% potion.blindness',
+		loot: '50% darkEssence, 20% potion.eBlindness',
 		speed: 0.75,
 		vuln: ['silver',DamageType.SMITE].join(',')
 	},
@@ -1285,12 +1289,12 @@ MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
 }
 
 MonsterTypeList.blueScarab.onAttack = function(target) {
-	let effect = Object.assign({},EffectTypeList.vulnerability,{value: DamageType.FREEZE});
+	let effect = Object.assign({},EffectTypeList.eVulnerability,{value: DamageType.FREEZE});
 	effectApply(effect,target,this,null);
 }
 
 MonsterTypeList.redScarab.onAttack = function(target) {
-	let effect = Object.assign({},EffectTypeList.vulnerability,{value: DamageType.BURN});
+	let effect = Object.assign({},EffectTypeList.eVulnerability,{value: DamageType.BURN});
 	effectApply(effect,target,this,null);
 }
 

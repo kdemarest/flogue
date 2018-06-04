@@ -36,7 +36,7 @@ class ViewInfo {
 		s += "Health: "+entity.health+" / "+entity.healthMax+"\n";
 		s += "Armor: "+entity.calcArmor()+"%\n";
 		let weapon = entity.calcWeapon();
-		s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (slow)','',' (quick)'][weapon.quick]+"\n";
+		s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"\n";
 		let conditionList = [];
 		test(entity.invisible,'invis');
 		test(entity.speed<1,'slow');
@@ -44,7 +44,7 @@ class ViewInfo {
 		test(entity.travelMode!=='walk',entity.travelMode);
 		test(entity.senseBlind,'blind');
 		test(entity.senseXray,'xray');
-		test(entity.senseItems,'greed');
+		test(entity.senseItems,'treas');
 		test(entity.senseLife,'bat');
 		test(entity.regenerate>MonsterTypeList[entity.typeId].regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
 		test(entity.attitude==Attitude.ENRAGED,'enraged');

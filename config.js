@@ -1,4 +1,5 @@
 let ConfigList = {};
+
 ConfigList.ken = () => {
 	ScapeList.kenScape = theme => ({
 		dim: 				20,
@@ -43,8 +44,17 @@ ConfigList.ken = () => {
 		monsters: 	['isDwarf']
 
 	}
-	MonsterTypeList.player.inventoryLoot = 'weapon.hammer, potion.flight, spell.eShove';
-	MonsterTypeList.player.inventoryWear = 'stuff.lantern, weapon.sword';
+	Object.assign( MonsterTypeList.player, {
+		inventoryLoot: MonsterTypeList.player.inventoryLoot+', weapon.hammer, potion.eFlight, spell.eShove',
+		inventoryWear: MonsterTypeList.player.inventoryWear+', stuff.lantern, weapon.sword'
+	});
+
+	Object.assign( Tweak, {
+		lootFrequency: 0.80,
+		effectChance: 4.0
+	});
+
+
 	return {
 		startingDepth: 40,
 		themeId: 'kenTheme'
