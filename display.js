@@ -290,7 +290,6 @@ class ViewMap {
 		this.d = ((sightDistance*2)+1);
 		this.tileWidth  = TILE_DIM * this.d;
 		this.tileHeight = TILE_DIM * this.d;
-		this.areaId = null;
 		this.app = new PIXI.Application(this.tileWidth, this.tileHeight, {backgroundColor : 0x000000});
 		document.getElementById(this.divId).appendChild(this.app.view);
 
@@ -409,12 +408,6 @@ class ViewMap {
 	}
 
 	draw(drawList,observer) {
-		if( this.areaId != world.area.id ) {
-			// In theory we would traverse all the entities, items, tiles and their inventories and
-			// destroy all their spriteLists... for now let them linger.
-			//this.resetSprites();
-			this.areaId = world.area.id;
-		}
 		let maxLight = MaxSightDistance;
 		this.drawListCache = drawList;
 		this.observer = observer;

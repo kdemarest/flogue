@@ -49,15 +49,18 @@ class Picker {
 		let killIs = [];
 		let keepId = {};
 		let killId = {};
-		filterString.replace( /\s*(!)*(is)*(\S+|\S+)/, function( whole, not, is, token ) {
+		filterString.replace( /\s*(!)*(is)*(\S+|\S+)/g, function( whole, not, is, token ) {
 			if( is ) {
 				(not ? killIs.push(is+token) : keepIs.push(is+token));
 			}
 			else {
-				token.replace( /\s*([^\s.]*)[.]*/, function( whole, token ) {
+				// Split by the dot
+				console.log('processing '+token );
+				token.replace( /([^\s.]+)[\s.]*/g, function( whole, token ) {
+					console.log('adding '+token );
 					self.specifiesId = true;
 					(not ? killId[token]=1 : keepId[token]=1);
-					self.firstId = self.firstId || (token.split('.')[0]);	// convert from potion.healing to just potion...
+					self.firstId = self.firstId || token;
 				});
 			}
 		});
@@ -69,6 +72,9 @@ class Picker {
 			});
 		}
 		self.killId = killId;
+		self.keepId = keepId;
+		self.keepIs = keepIs;
+		self.killIs = killIs;
 		let keepIdCount = Object.keys(keepId).length || 0;
 		if( keepIdCount ) {
 			self.testKeepId = (...argList) => {
@@ -123,6 +129,7 @@ class Picker {
 						let q = (item.qualities || one)[qi];
 						// Order here MUST be the same as in Item constructor.
 						let effectChance = v.effectChance!==undefined ? v.effectChance : (m.effectChance!==undefined ? m.effectChance : (q.varietyChance!==undefined ? q.varietyChance : item.effectChance || 0));
+						effectChance = effectChance * Tweak.effectChance;
 						let appearTotal = 0;
 						let rarityTotal = 0;
 						//if( depth == 5 ) debugger;
@@ -200,7 +207,7 @@ class Picker {
 		}
 		if( !itemTypeId && !filter.specifiesId ) {
 			itemTypeId = Array.pickFrom( Object.keys(ItemBag), typeId => {
-				console.log( typeId+' = '+ItemBag[typeId].cGen );
+				//console.log( typeId+' = '+ItemBag[typeId].cGen );
 				return ItemBag[typeId].cGen;
 			});
 		}
@@ -239,19 +246,17 @@ class Picker {
 		return rollDice(itemType.rechargeTime);
 	}
 
-	pickArmorRating(i,m,v,q,e) {
+	pickArmorRating(level,i,m,v,q,e) {
 		let am = 1;
 		if( i && i.armorMultiplier ) am *= i.armorMultiplier;
 		if( m && m.armorMultiplier ) am *= m.armorMultiplier;
 		if( v && v.armorMultiplier ) am *= v.armorMultiplier;
 		if( q && q.armorMultiplier ) am *= q.armorMultiplier;
 		if( e && e.armorMultiplier ) am *= e.armorMultiplier;
+		console.assert(am>=0 && level>=0);
 
 		// Intentionally leave out the effect level, because that is due to the effect.
-		let x = {level:0};
-		let itemLevel = (i.level||0)+((v||x).level||0)+((m||x).level||0)+((q||x).level||0);
-
-		let avgLevel = (itemLevel+this.depth)/2;
+		let avgLevel = (level+this.depth)/2;
 		let baseArmor = Rules.playerArmor(avgLevel)*am;
 		if( isNaN(baseArmor) ) debugger;
 		return Math.floor(baseArmor*ARMOR_SCALE);
@@ -276,7 +281,7 @@ class Picker {
 	// picks it, but doesn't give it to anyone.
 	pickLoot(lootString,callback) {
 		let chanceList = String.chanceParse(lootString);
-		let idList = new Finder( Array.chancePick(chanceList,LOOT_SANDBAG) );
+		let idList = new Finder( Array.chancePick(chanceList,Tweak.lootFrequency) );
 		let list = [];
 		idList.process( id => {
 			let any = (''+id).toLowerCase()==='any';

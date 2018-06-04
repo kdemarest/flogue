@@ -1,9 +1,8 @@
 class World {
-	constructor(startingDepth=1,getPlayer,onAreaChange) {
+	constructor(getPlayer,onAreaChange) {
 		this.getPlayer = getPlayer;
 		this.areaList = {};
 		this.area = null;
-		this.startingDepth = startingDepth;
 		this.pending = {
 			gate: null
 		};
@@ -12,44 +11,33 @@ class World {
 	get player() {
 		return this.getPlayer();
 	}
-	createArea(areaId,depthDelta,theme,entranceSymbol) {
-		let depth = this.area ? this.area.depth+depthDelta : this.startingDepth;
+	createArea(depth,theme,isCore) {
 		console.assert(depth !== undefined && !isNaN(depth)); 
-		let isCore = false;
-		if( !areaId ) {
-			let coreAreaId = 'area.core.'+depth;
-			if( !this.areaList[coreAreaId] ) {
-				areaId = coreAreaId;
-				isCore = true;
-			}
-			else {
-				areaId = GetUniqueEntityId('area',depth);
-			}
-		}
-		let palette = {
-			floor: 			TileTypeList.floor.symbol,
-			wall:  			TileTypeList.wall.symbol,
-			door:  			TileTypeList.door.symbol,
-			fillFloor:  	TileTypeList.floor.symbol,
-			fillWall:  		TileTypeList.wall.symbol,
-			outlineWall:  	TileTypeList.wall.symbol,
-			passageFloor: 	TileTypeList.floor.symbol,
-			unknown: 		TILE_UNKNOWN,
-			entrance: 		this.area===null ? ItemTypeList.stairsUp.symbol : entranceSymbol,
-			exit: 			ItemTypeList.stairsDown.symbol
-		};
+		let coreAreaId = 'area.core.'+depth;
+		let areaId = !this.areaList[coreAreaId] ? coreAreaId : GetUniqueEntityId('area',depth);
 
-		let area = new Area(areaId,depth,theme,isCore);
+		let requiredGates = {};
+		if( isCore ) {
+			requiredGates[ItemTypeList.stairsDown.symbol] = 1;
+			if( depth > 0 ) requiredGates[ItemTypeList.stairsUp.symbol] = 1;
+		}
+		let area = new Area(areaId,depth,theme);
+		area.isCore = isCore;
 		this.areaList[areaId] = area;	// critical that this happen BEFORE the .build() so that the theme is set for the picker.
-		area.build(palette)
+		area.build(requiredGates)
 		return area;
 	}
 	setPending(gate) {
 		let toArea = this.areaList[gate.toAreaId];
 		if( !toArea ) {
-			let theme = ThemeList[gate.themeId || 'cavern'];
-			let inverseGateSymbol = ItemTypeList[gate.gateInverse].symbol;
-			toArea = this.createArea(gate.toAreaId,gate.gateDir,theme,inverseGateSymbol);
+			let isCore = this.area.isCore && gate.gateDir!=0;
+			let depth = this.area.depth + gate.gateDir;
+			if( !gate.themeId ) {
+				let themePickList = Object.filter( ThemeList, theme => theme.allowInCore==isCore && !theme.isUnique);
+				gate.themeId = pick( themePickList ).typeId;
+			}
+			let theme = ThemeList[gate.themeId];
+			toArea = this.createArea(depth,theme,isCore);
 		}
 
 		let gate2 = gate.toGateId ? toArea.getGate(gate.toGateId) : toArea.getUnusedGateByTypeId(gate.gateInverse);

@@ -30,7 +30,7 @@
 <script src="gui.js" charset="utf-8"></script>
 <script src="area.js" charset="utf-8"></script>
 <script src="world.js" charset="utf-8"></script>
-<qscript src="levels.js" charset="utf-8"></qscript>
+<script src="config.js" charset="utf-8"></script>
 <script>
 
 /*
@@ -179,7 +179,7 @@ function main(levelName) {
 			let pos = area.map.pickPosEmpty();
 			gate = area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp');
 		}
-		let player = new Entity( area.depth, MonsterTypeList.player, null, startingDepth );
+		let player = new Entity( area.depth, MonsterTypeList.player, null );
 		player.gateTo(area,gate.x,gate.y);
 		return player;
 	}
@@ -196,17 +196,18 @@ function main(levelName) {
 		tell(mSubject,player,' ',mVerb,'are',' now on level '+area.id)
 	}
 
+
 	new DataConditioner();
+	let config = new Config('ken',{
+		startingDepth: 0,
+		themeId: 'surface',
+	});
 
 	let gui = new Gui(playerFind,areaFind);
-	let area;
-	let player;
-	let startingDepth = 40;
-	let testTheme = 'dwarfTown';
-	window.world = new World(startingDepth,playerFind,onAreaChange);
-	area = world.createArea(null,0,ThemeList[startingDepth<=1 ? 'gameStart' : testTheme],startingDepth>1 ? 'stairsUp' : false);
+	let world = new World(playerFind,onAreaChange);
+	let area = world.createArea(config.startingDepth,ThemeList[config.themeId],true);
 	world.gateTo(area.id);
-	player = playerStartup(area);
+	let player = playerStartup(area);
 	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);
 
 	let handle = setInterval(function() {

@@ -272,6 +272,11 @@
 			this.traverse( (x,y) => c += (testFn(this.getTile(x,y)) ? 1 : 0) );
 			return c;
 		}
+		countTile(tile) {
+			let c = 0;
+			this.traverse( (x,y) => c += this.getTile(x,y)==tile ? 1 : 0 );
+			return c;
+		}
 		placeRandom(tile,onTile,amount=1) {
 			while( amount ) {
 				let pos = this.randPos();
@@ -571,6 +576,15 @@
 					link[pair] = true;
 				}
 			} while( reps-- );
+		}
+
+		assureTileCount(tileList) {
+			for( let tile in tileList ) {
+				let count = tileList[tile]-this.countTile(tile);
+				while( count-- > 0 ) {
+					this.placeEntrance(tile);
+				}
+			}
 		}
 
 		fit(px,py,expand,placeMap) {
@@ -1048,7 +1062,7 @@
 		}
 	}
 
-	function masonConstruct(scape,palette,requiredPlaces,placeRarityTable,injectList,siteList,onStep) {
+	function masonConstruct(scape,palette,requiredPlaces,placeRarityTable,requiredTiles,injectList,siteList,onStep) {
 		let drawZones = false;
 		function render() {
 			let s = map.renderToString(drawZones);
@@ -1098,12 +1112,8 @@
 		map.sizeToExtentsWithBorder(injectList,1);
 		map.convert(T.Unknown,T.FillWall);
 
-		for( let i=0; i<scape.entranceCount; ++i ) {
-			map.placeEntrance(T.Entrance);
-		}
-		for( let i=0; i<scape.exitCount; ++i ) {
-			map.placeEntrance(T.Exit);
-		}
+		map.assureTileCount(requiredTiles);
+
 		return map;
 	}
 

@@ -2,31 +2,34 @@
 // ENTITY (monsters, players etc)
 //
 class Entity {
-	constructor(depth,monsterType,inject,levelOverride) {
-		let level = Math.max(1,Math.floor(levelOverride || Math.max(monsterType.level,monsterType.level+depth/2)));
+	constructor(depth,monsterType,inject) {
+		let level = depth;
 		let inits =    { inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
 		let values =   { id: GetUniqueEntityId(monsterType.typeId,level) };
 
 		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
 		// a deeper map level then they average their native level and the map's level.
 		let isPlayer = monsterType.brain==Brain.USER;
+		let naturalWeapon = { isNatural: true, damage: 1, quick: 2, damageType: monsterType.damageType || DamageType.CUTS };
+
 		if( isPlayer ) {
-			level = depth;
-			inits.healthMax = Rules.playerHealth(level);
-			inits.armor     = 0; //Rules.playerArmor(level);
+			inits.healthMax 			= Rules.playerHealth(level);
+			inits.armor     			= 0; //Rules.playerArmor(level);
 			let damageWhenJustStartingOut = 0.75;	// I found that 50% was getting me killed by single goblins. Not OK.
-			inits.damage    = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
+			naturalWeapon.damage 		= Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
 		}
 		else {
 			let hits = monsterType.power.split(':');
-			let hitsToKillMonster = parseInt(hits[0]);
-			let hitsToKillPlayer = parseInt(hits[1]);
-			inits.healthMax = Rules.monsterHealth(level,hitsToKillMonster);
-			inits.armor     = (monsterType.armor || 0);
-			inits.damage    = Rules.monsterDamage(level,hitsToKillPlayer);
+			let hitsToKillMonster 	= parseInt(hits[0]);
+			let hitsToKillPlayer 	= parseInt(hits[1]);
+			inits.healthMax 		= Rules.monsterHealth(level,hitsToKillMonster);
+			inits.armor     		= (monsterType.armor || 0);
+			naturalWeapon.damage   	= Rules.monsterDamage(level,hitsToKillPlayer);
 		}
 		inits.level = level;
 		inits.health = inits.healthMax;
+		inits.naturalWeapon = naturalWeapon;
+
 		if( monsterType.pronoun == '*' ) {
 			inits.pronoun = Math.chance(70) ? 'he' : 'she';
 		}
@@ -37,12 +40,14 @@ class Entity {
 		if( this.name && this.name.indexOf('/')>0 ) {
 			this.name = this.name.split('/')[this.pronoun=='she' ? 1 : 0];
 		}
-		this.name = /*'L'+this.level+' '+*/(this.name || String.tokenReplace(this.namePattern,this));
 
 		if( this.inventoryLoot ) {
 			this.lootTake( this.inventoryLoot, this.level, null, true );
 		}
 
+		this.name = (this.name || String.tokenReplace(this.namePattern,this));
+
+		console.assert( typeof this.health === 'number' && !isNaN(this.health) );
 		console.assert( this.x===undefined && this.y===undefined && this.area===undefined);
 	}
 	get map() {
@@ -224,7 +229,7 @@ class Entity {
 			return;
 		}
 		tell(mSubject,this,' ',mVerb,'remove',' ',mObject,item);
-		DeedManager.end( deed => deed.origin.id==item.id );
+		DeedManager.end( deed => deed.item && deed.item.id==item.id );
 		item.inSlot = false;
 	}
 	don(item,slot) {
@@ -235,7 +240,7 @@ class Entity {
 		tell(mSubject,this,' ',mVerb,item.useVerb,' ',mObject,item);
 		item.inSlot = slot;
 		if( item.triggerOnUse || (item.triggerOnUseIfHelp && item.effect && (item.effect.isHelp || item.effect.isPlayerOnly)) ) {
-			item.trigger(Command.USE,this,this);
+			item.trigger(this,this,Command.USE);
 		}
 	}
 
@@ -580,12 +585,6 @@ class Entity {
 		return Math.floor(armor);
 	}
 
-	calcDamageReduction(damageType) {
-		let reduction = this.isResistant(damageType) ? 0.5 : 0.0;
-		reduction += this.calcArmor(damageType)/ARMOR_SCALE;
-		return Math.min(0.8,reduction);
-	}
-
 	changeAttitude(newAttitude) {
 		this.attitude = newAttitude;
 	}
@@ -606,29 +605,64 @@ class Entity {
 		return numAlerted;
 	}
 
-	takeDamagePassive(attacker,amount,damageType,callback) {
-		return this.takeDamage(attacker,amount,damageType,callback,true);
+	takeDamagePassive(attacker,item,amount,damageType,callback) {
+		return this.takeDamage(attacker,item,amount,damageType,callback,true);
 	}
 
-	takeDamage(attacker,amount,damageType,callback,noBacksies) {
+	takeDamage(attacker,item,amount,damageType,callback,noBacksies) {
+		let quiet = false;
+
 		if( attacker.ownerOfRecord ) {
 			attacker = attacker.ownerOfRecord;
 		}
 		if( attacker && attacker.invisible && !this.senseInvisible ) {
 			amount *= (attacker.sneakAttackMult || 2);
 		}
+
+		// Deal with armor first...
+		let reduction = this.calcArmor(damageType)/ARMOR_SCALE;
+		reduction = Math.min(0.8,reduction);
+		amount = Math.max(1,Math.floor(amount*(1.00-reduction)));
+
+		// Now resistance.
+
+		let isVuln = '';
+		let isImmune = '';
+		let isResist = '';
+
 		if( this.isVuln(damageType) ) {
 			amount *= 2;
+			isVuln = damageType;
 		}
+		else
+		if( item && item.material && this.isVuln(item.material.typeId) ) {
+			amount *= 2;
+			isVuln = item.material.name;
+		}
+		else
 		if( this.isImmune(damageType) ) {
 			amount = 0;
+			isImmune = damageType;
 		}
-		else {
-			let damageReduction = this.calcDamageReduction(damageType);
-			amount = Math.max(1,Math.floor(amount*(1.00-damageReduction)));
+		else
+		if( item && item.material && this.isImmune(item.material.typeId) ) {
+			amount = 0;
+			isImmune = item.material.name;
 		}
+		else
+		if( this.isResistant(damageType) ) {
+			amount = Math.max(1,Math.floor(amount*0.5));
+			isResist = damageType;
+		}
+		else
+		if( item && item.material && this.isResistant(item.material.typeId) ) {
+			amount = Math.max(1,Math.floor(amount*0.5));
+			isResist = item.material.name;
+		}
+
 		if( attacker && attacker.invisible ) {
-			DeedManager.forceSingle(attacker,"invisible",false);
+			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: 'false' };
+			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
 		}
 		this.personalEnemy = attacker.id;
 
@@ -694,6 +728,50 @@ class Entity {
 			}
 		}
 
+		if( isVuln ) {
+			quiet = true;
+			tell(mSubject,this,' ',mVerb,'is',' vulnerable to '+isVuln+', and ',mVerb,'take',' '+amount+' damage!');
+			new Anim( {}, {
+				follow: 	this,
+				img: 		StickerList.showVulnerability.img,
+				duration: 	0.2,
+				delay: 		item ? item.throwDuration || 0 : 0,
+				onInit: 		a => { a.create(1); },
+				onSpriteMake: 	s => { s.sScaleSet(0.75); },
+				onSpriteTick: 	s => { }
+			});
+		}
+		else
+		if( isImmune ) {
+			quiet = true;
+			tell(mCares,attacker,mSubject,this,' is immune to '+isImmune);
+			new Anim( {}, {
+				follow: 	this,
+				img: 		StickerList.showImmunity.img,
+				duration: 	0.2,
+				delay: 		item ? item.throwDuration || 0 : 0,
+				onInit: 		a => { a.create(1); },
+				onSpriteMake: 	s => { s.sScaleSet(0.75); },
+				onSpriteTick: 	s => { }
+			});
+		}
+		else
+		if( isResist ) {
+			quiet = true;
+			tell(mSubject,this,' ',mVerb,'resist',' '+isResist+', but takes '+amount+' damage.');
+			new Anim( {}, {
+				follow: 	this,
+				img: 		StickerList.showResistance.img,
+				duration: 	0.2,
+				delay: 		item ? item.throwDuration || 0 : 0,
+				onInit: 		a => { a.create(1); },
+				onSpriteMake: 	s => { s.sScaleSet(0.75); },
+				onSpriteTick: 	s => { }
+			});
+		}
+
+		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
+		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
 		this.health -= amount;
 		this.takenDamage = amount;
 		this.takenDamageType = damageType;
@@ -715,7 +793,6 @@ class Entity {
 			callback(attacker,this,amount,damageType);	
 		}
 
-		let quiet = false;
 		if( this.onAttacked && !noBacksies ) {
 			quiet = this.onAttacked.call(this,attacker,amount,damageType);
 		}
@@ -729,7 +806,7 @@ class Entity {
 				if( item.effect && item.effect.isHarm ) {
 					let fireArmorEffect = ARMOR_EFFECT_OP_ALWAYS.includes(item.effect.op) || Math.chance(ARMOR_EFFECT_CHANCE_TO_FIRE);
 					if( fireArmorEffect ) {
-						item.trigger( Command.NONE, this, attacker );
+						item.trigger( attacker, this, Command.NONE );
 					}
 				}
 			});
@@ -754,42 +831,73 @@ class Entity {
 		this.loseTurn = true;
 	}
 
-	doDamage(other,amount,damageType,callback) {
-		return other.takeDamage(this,amount,damageType,callback);
-	}
-
 	calcWeapon() {
-		let weapon = new Finder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || {};
-		let damage = weapon.damage || this.damage;
-		let damageType = weapon.damageType || this.damageType || DamageType.STAB;
-		return [weapon,damage,damageType];
+		let weapon = new Finder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || this.naturalWeapon;
+		weapon.effectOnAttack = weapon.effectOnAttack || {
+			op: 'damage',
+			isInstant: true,
+			value: weapon.damage,
+			damageType: weapon.damageType || DamageType.CUTS,
+			icon: false
+		};
+		return weapon;
 	}
 
-	attack(other,isRanged,onDamage) {
-		this.lastAttackTargetId = other.id;	// Set this early, despite blindness!
+	attack(target,isRanged,onDamage) {
+		this.lastAttackTargetId = target.id;	// Set this early, despite blindness!
 
-		if( (this.senseBlind && !this.baseType.senseBlind) || (other.invisible && !this.senseInvisible) ) {
+		if( (this.senseBlind && !this.baseType.senseBlind) || (target.invisible && !this.senseInvisible) ) {
 			if( Math.chance(50) ) {
-				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,other,' but in the wrong direction!');
+				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,target,' but in the wrong direction!');
 				return;
 			}
 		}
-		let weapon,damage,damageType;
-		[weapon,damage,damageType] = this.calcWeapon();
-		damage = this.rollDamage(damage);
-		let result = this.doDamage( other, damage, damageType, onDamage );
+
+		let weapon = this.calcWeapon();
+
+		let quick = weapon && weapon.quick>=0 ? weapon.quick : 1;
+		let dodge = target.dodge>=0 ? target.dodge : 0;
+		if( dodge > quick ) {
+			tell( mSubject,target,' '+(dodge==2 ? 'nimbly' : ''),mVerb,'dodge',' ',mObject|mPossessive|mCares,this,(quick==0 ? ' slow' : '')+' '+(weapon?weapon.name:'attack') );
+
+			let dx = target.x - this.x;
+			let dy = target.y - this.y;
+			let deg = deltaToDeg(dx,dy)+Math.rand(-45,45);
+			let delay = (this.isUser() ? 0 : 0.2) + ( this.command == Command.THROW ? this.throwDuration : 0 );
+			// Show a dodging icon on the entity
+			new Anim( {}, {
+				follow: 	target,
+				img: 		StickerList.showDodge.img,
+				duration: 	0.2,
+				delay: 		delay,
+				onInit: 		a => { a.create(1); },
+				onSpriteMake: 	s => { s.sScaleSet(0.75); },
+				onSpriteTick: 	s => { }
+			});
+			// Make the entity wiggle away a bit.
+			new Anim( {}, {
+				follow: 	target,
+				delay: 		delay,
+				duration: 	0.15,
+				onInit: 		a => { a.puppet(target.spriteList); },
+				onSpriteMake: 	s => { s.sPosDeg(deg,0.3); },
+				onSpriteDone: 	s => { s.sReset(); }
+			});
+			return;
+		}
+
+		effectApply( weapon.effectOnAttack, target, this, weapon );
 
 		// Trigger my weapon.
 		if( weapon && weapon.effect ) {
 			let fireWeaponEffect = WEAPON_EFFECT_OP_ALWAYS.includes(weapon.effect.op) || Math.chance(WEAPON_EFFECT_CHANCE_TO_FIRE);
 			if( fireWeaponEffect ) {
-				weapon.trigger( Command.ATTACK, this, other );
+				weapon.trigger( target, this, Command.ATTACK );
 			}
 		}
 		if( this.onAttack ) {
-			this.onAttack(other);
+			this.onAttack(target);
 		}
-		return result;
 	}
 
 	itemCreateByType(type,presets,inject) {
@@ -1052,7 +1160,7 @@ class Entity {
 				item.x = this.x;
 				item.y = this.y;
 				tell(mSubject,this,' ',mVerb,'quaff',' ',mObject,item);
-				item.trigger(this.command,this,this);
+				item.trigger(this,this,this.command);
 				break;
 			}
 			case Command.GAZE: {
@@ -1060,8 +1168,8 @@ class Entity {
 				item.x = this.x;
 				item.y = this.y;
 				tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'. It shatters!');
-				item.trigger(this.command,this,this);
-				item.destroy();
+				item.trigger(this,this,this.command);
+				if( Math.chance(50) ) { item.destroy(); }
 				break;
 			}
 			case Command.THROW: {
@@ -1079,7 +1187,7 @@ class Entity {
 					else {
 						tell(mSubject,item,' ',mVerb,item.attackVerb||'hit');
 					}
-					let result = item.trigger(this.command,this,target);
+					let result = item.trigger(target,this,this.command);
 				}
 				// the result tells whether an effect was applied to the target (entity or psition)
 				break;
@@ -1091,7 +1199,7 @@ class Entity {
 				item.x = this.x;
 				item.y = this.y;
 				tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');
-				item.trigger(this.command,this,target);
+				item.trigger(target,this,this.command);
 				break;
 			}
 			case Command.USE: {

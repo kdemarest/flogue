@@ -119,14 +119,14 @@ ScapeList.caveVillage = theme => ({
 
 
 ThemeList.gameStart = {
-	isCore: 	true,
+	isUnique: 	true,
 	scapes: 	['caveRandom'],
 	rCOMMON: 	'camp.human',
 	monsters: 	['isPet']
 }
 
 ThemeList.cavern = {
-	isCore: 	true,
+	allowInCore: true,
 	scapes: 	['caveRandom'],
 	rREQUIRED: 	'gatewayToDwarves',
 	rCOMMON: 	'nest.bat, nest.blueScarab, nest.redScarab, nest.viper, camp.ogre, camp.goblin, den.kobold, floodPit, floodWater',
@@ -147,6 +147,7 @@ ThemeList.dwarfTown = {
 }
 
 ThemeList.thePits = {
+	allowInCore: true,
 	scapes: 	['caveBroadWinding'],
 	rCOMMON: 	'floodPit',
 	monsters: 	['isUndead'],
@@ -154,7 +155,7 @@ ThemeList.thePits = {
 }
 
 ThemeList.spooky = {
-	isCore: 	true,
+	allowInCore: true,
 	scapes: 	['caveRandom'],
 	rCOMMON: 	'graveYard, nest.bat, floodMist',
 	rUNCOMMON: 	'ruin, nest.viper',
@@ -165,7 +166,7 @@ ThemeList.spooky = {
 }
 
 ThemeList.ruins = {
-	isCore: 	true,
+	allowInCore: true,
 	scapes: 	['caveRandom'],
 	rCOMMON: 	'camp.ogre, camp.goblin, nest.blueScarab, nest.redScarab',
 	rUNCOMMON: 	'collonade, ruin, fountain1, antHive, floodPit, pitEncircle',

@@ -127,7 +127,7 @@ function nop() {}
 		let result = [];
 		for( let loot of lootArray ) {
 			for( let i=0 ; i<loot.count ; ++i ) {
-				if( Math.chance(loot.chance*sandBag) ) {
+				if( Math.chance(loot.chance>= 100 ? 100 : loot.chance*sandBag) ) {
 					result.push(loot.id);
 				}
 			}

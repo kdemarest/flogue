@@ -134,6 +134,9 @@ class DataConditioner {
 	}
 
 	prepareStaticData() {
+		toFab( ScapeList );
+		toFab( ThemeList );
+		toFab( PlaceList );
 		for( let list of FabList ) {
 			for( let key in list ) {
 				list[key] = fab(list[key],key);

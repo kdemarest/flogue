@@ -54,8 +54,10 @@ function fab(type,typeId,isWhat) {
 		type[isWhat] = true;
 	}
 	if( !type.namePattern ) {
-		if( typeId=='immunity' ) debugger;
 		type.name = type.name || String.uncamel(typeId);
+		if( type.name.charAt(1) == ' ' ) {	// hack special case to fix effect names with ePrefix format.
+			type.name = type.name.substr(2);
+		}
 	}
 	type.typeId = typeId;
 	if( type.symbol ) {
@@ -67,6 +69,12 @@ function fab(type,typeId,isWhat) {
 		TypeToSymbol[typeId] = type.symbol;
 	}
 	return type;
+}
+
+let FabList = [];
+function toFab(t) {
+	FabList.push(t);
+	return t;
 }
 
 let Say = {};
@@ -91,6 +99,8 @@ const StickerList = {
 	bloodBlack: { img: "dc-misc/bloodBlack.png" },
 	showImmunity: { img: 'gui/icons/eImmune.png' },
 	showResistance: { img: 'gui/icons/eResist.png' },
+	showVulnerability: { img: 'gui/icons/eVuln.png' },
+	showDodge: { img: 'gui/icons/iDodge.png' },
 	eGeneric: { img: "gui/icons/eGeneric.png" },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
@@ -141,7 +151,7 @@ Say.damagePast = {
 // Effect Events
 // onTargetPosition - if this effect is targeting a map tile, instead of a monster.
 
-let EffectTypeList = {
+let EffectTypeList = toFab({
 	inert: 			{ level:  0, isInert: 1 },	// this is special, used in the picker effect proxy! Do not change!
 	water: 			{ level:  0, rarity: 1.00, isWater: 1 },
 	blank: 			{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
@@ -153,7 +163,8 @@ let EffectTypeList = {
 	seeInvisible: 	{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, durationMod: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
 	xray: 			{ isTac: 1, level:  null, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'earth vision', icon: 'gui/icons/eVision.png' },
 // Buff
-	flight: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode, icon: 'gui/icons/eFly.png' },
+	flight: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode,
+					additionalDoneTest: (self) => { return self.target.map.tileTypeGet(self.target.x,self.target.y).mayWalk; }, icon: 'gui/icons/eFly.png' },
 	eHaste: 		{ isBuf: 1, level: 10, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5, icon: 'gui/icons/eHaste.png' },
 	resistance: 	{ isBuf: 1, level: 20, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickResist), isHelp: 1, namePattern: 'resist {value}s', icon: 'gui/icons/eResist.png' },
@@ -186,7 +197,7 @@ let EffectTypeList = {
 	acid: 			{ isDmg: 1, level:  15, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
 	holy: 			{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
 	rot: 			{ isDmg: 1, level:  25, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
-};
+});
 
 EffectTypeList.fire.onTargetPosition = function(map,x,y) {
 	map.tileSymbolSet(x,y,TileTypeList.flames.symbol);
@@ -244,16 +255,6 @@ let SayStatList = {
 	}
 };
 
-
-(function() {
-	Object.entries(EffectTypeList).forEach( ([typeId,effectType]) =>  {
-		effectType.typeId = typeId;
-		if( !effectType.namePattern ) {
-			effectType.name = effectType.name || typeId;
-		}
-	});
-})();
-
 // Item Events
 // onTouch - fires each round a monster is standing on a tile, and ALSO when you bonk into a non-passable tile.
 //			 also fires when you WAIT or LOSE TURN upon a tile.
@@ -280,9 +281,12 @@ const TileTypeList = {
 	"lava":    	  { symbol: '⍨', mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "lava", light: 5, glow:1, damage: '3d20', damageType: DamageType.BURN, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: '░', mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: '⋍', mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png" },
-	"ghoststone": { symbol: 'J', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png" },
-	"obelisk":    { symbol: 'B', mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png" },
-	"crystal":    { symbol: 'C', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png" },
+	"ghoststone": { symbol: 'J', mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
+					effect: { op: 'set', stat: 'invisible', value: true } },
+	"obelisk":    { symbol: 'B', mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png",
+					effect: { op: 'set', stat: 'senseBlind', value: true } },
+	"crystal":    { symbol: 'C', mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png",
+					effect: { op: 'add', stat: 'speed', value: 3 } },
 	"forcefield": { symbol: '|', mayWalk: true,  mayFly: true,  opacity: 1, name: "force field", light: 3, glow:1, img: "spells/air/static_discharge.png" },
 	"brazier":    { symbol: 'u', mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" }
 };
@@ -324,12 +328,6 @@ const ImgPotion = {
 	eShove: 		{ img: "black" }
 };
 
-let FabList = [];
-function toFab(t) {
-	FabList.push(t);
-	return t;
-}
-
 
 const PotionEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['luminari','greed','echoloc','seeInvisible','xray','flight','eHaste','resistance','invisibility','eIgnore','vulnerability','slow','blindness','confusion','rage','healing','panic','regeneration','fire','poison','cold','acid','holy','rot'].includes(k) ) );
 const SpellEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['eStartle','eHesitate','blindness','luminari','xray','echoloc','greed','slow','healing','poison','fire','cold','holy','rage','panic','confusion','eShove','xray'].includes(k) ) );
@@ -344,19 +342,19 @@ const DartEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','eStart
 const GemEffects = toFab( Object.filter(EffectTypeList, (e,k)=>['inert','luminari','greed','echoloc','seeInvisible'].includes(k) ) );
 
 const WeaponList = toFab({
-	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, mayThrow: true, range: 7, attackVerb: 'strike', img: 'item/weapon/ranged/rock.png' },
-	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, effectChance: 0.80, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
-	"dagger":   	{ level:  3, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.STAB, effectChance: 0.30, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
-	"solKnife":   	{ level:100, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
-	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, attackVerb: 'smash', img: 'item/weapon/club.png' },
-	"sword": 		{ level:  1, rarity: 1.0, damageMultiplier: 1.00, damageType: DamageType.CUT, img: 'item/weapon/long_sword1.png' },
-	"greatsword": 	{ level:  5, rarity: 0.3, damageMultiplier: 1.20, damageType: DamageType.CUT, img: 'item/weapon/long_sword2.png' },
-	"mace": 		{ level:  3, rarity: 1.0, damageMultiplier: 0.90, damageType: DamageType.BASH, img: 'item/weapon/mace1.png' },
-	"hammer": 		{ level:  4, rarity: 0.4, damageMultiplier: 1.40, damageType: DamageType.BASH, img: 'item/weapon/hammer2.png' },
-	"axe": 			{ level:  2, rarity: 0.6, damageMultiplier: 1.00, damageType: DamageType.CUT, mayThrow: true, range: 5, attackVerb: 'strike', img: 'item/weapon/battle_axe1.png' },
-	"spear": 		{ level:  8, rarity: 0.9, damageMultiplier: 0.70, damageType: DamageType.STAB, reach: 2, mayThrow: true, range: 6, attackVerb: 'strike', img: 'item/weapon/spear2.png' },
-	"pike": 		{ level: 12, rarity: 0.7, damageMultiplier: 0.90, damageType: DamageType.STAB, reach: 2, img: 'item/weapon/bardiche1.png' },
-	"pitchfork": 	{ level: 20, rarity: 0.5, damageMultiplier: 1.20, damageType: DamageType.STAB, reach: 2, mayThrow: true, range: 4, img: 'item/weapon/trident1.png' },
+	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: 7, attackVerb: 'strike', img: 'item/weapon/ranged/rock.png' },
+	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
+	"dagger":   	{ level:  3, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
+	"solKnife":   	{ level:900, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
+	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
+	"sword": 		{ level:  1, rarity: 1.0, damageMultiplier: 1.00, damageType: DamageType.CUT, quick: 2, img: 'item/weapon/long_sword1.png' },
+	"greatsword": 	{ level:  5, rarity: 0.3, damageMultiplier: 1.20, damageType: DamageType.CUT, quick: 0, img: 'item/weapon/long_sword2.png' },
+	"mace": 		{ level:  3, rarity: 1.0, damageMultiplier: 0.90, damageType: DamageType.BASH, quick: 1, img: 'item/weapon/mace1.png' },
+	"hammer": 		{ level:  4, rarity: 0.4, damageMultiplier: 1.40, damageType: DamageType.BASH, quick: 0, img: 'item/weapon/hammer2.png' },
+	"axe": 			{ level:  2, rarity: 0.6, damageMultiplier: 1.00, damageType: DamageType.CUT, quick: 1, mayThrow: true, range: 5, attackVerb: 'strike', img: 'item/weapon/battle_axe1.png' },
+	"spear": 		{ level:  8, rarity: 0.9, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 1, reach: 2, mayThrow: true, range: 6, attackVerb: 'strike', img: 'item/weapon/spear2.png' },
+	"pike": 		{ level: 12, rarity: 0.7, damageMultiplier: 0.90, damageType: DamageType.STAB, quick: 0, reach: 2, img: 'item/weapon/bardiche1.png' },
+	"pitchfork": 	{ level: 20, rarity: 0.5, damageMultiplier: 1.20, damageType: DamageType.STAB, quick: 0, reach: 2, mayThrow: true, range: 4, img: 'item/weapon/trident1.png' },
 });
 
 const WeaponMaterialList = toFab({
@@ -461,6 +459,7 @@ const GemList = toFab({
 });
 
 const StuffList = toFab({
+	"lantern": 			{ slot: Slot.HIP, light: 14, triggerOnUse: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light' }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"trollHide": 		{ },
 	"bones": 			{ },
 	"antGrubMush": 		{ },
@@ -520,13 +519,20 @@ const StuffList = toFab({
 
 
 const RingMaterialList = toFab({
-	"brass": 	{ img: 'brass' },
-	"copper": 	{ img: 'bronze' },
-	"silver": 	{ img: 'silver' },
-	"gold": 	{ img: 'gold' }
+	"brass": 	{ level: 0, img: 'brass' },
+	"copper": 	{ level: 1, img: 'bronze' },
+	"silver": 	{ level: 3, img: 'silver' },
+	"gold": 	{ level: 7, img: 'gold' }
 });
 
-const RingList = GemList;
+const RingList = {
+	"garnetSetting": 	{ level:  0, rarity:  0.3, name: 'garnet' },
+	"opalSetting": 		{ level:  5, rarity:  0.3, name: 'opal' },
+	"rubySetting": 		{ level: 10, rarity:  0.2, name: 'ruby' },
+	"emeraldSetting": 	{ level: 15, rarity:  0.2, name: 'emerald' },
+	"sapphireSetting": 	{ level: 20, rarity:  0.2, name: 'sapphire' },
+	"diamondSetting": 	{ level: 25, rarity:  0.1, name: 'diamond' }
+};
 
 const NulImg = { img: '' };
 
@@ -536,7 +542,10 @@ const NulImg = { img: '' };
 const CommandLeavesInventoryOpen = [Command.USE,Command.LOOT];
 const CommandIsInstant = [Command.USE];
 
-const LOOT_SANDBAG = 0.80;
+let Tweak = {
+	lootFrequency: 0.80,
+	effectChance: 3.0
+};
 
 const ARMOR_EFFECT_CHANCE_TO_FIRE = 10;
 const ARMOR_EFFECT_OP_ALWAYS = ['damage'];
@@ -623,7 +632,7 @@ const ItemTypeList = {
 				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList, icon: 'ring.png' },
 // INGREDIENTS
 	"stuff": 	{ symbol: '%', isTreasure: 1, namePattern: "{variety}{?effect}", varieties: StuffList,
-				imgGet: (self,img) => "item/"+(img || (self?self.variety.img:'') || 'misc/misc_rune')+".png", imgChoices: StuffList, icon: 'stuff.png' },
+				imgGet: (self,img) => (img || (self?self.variety.img:'') || 'item/misc/misc_rune.png'), imgChoices: StuffList, icon: 'stuff.png' },
 
 };
 const ItemSortOrder = ['weapon','helm','armor','bracers','gloves','boots','ring','potion','gem','ore','spell','stuff'];
@@ -694,16 +703,19 @@ for( let i=0 ; i<MaxSightDistance+20 ; ++i ) {
 let UndeadImmunity = [DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'blind'].join(',');
 let SkeletonImmunity = UndeadImmunity+[DamageType.CUT,DamageType.STAB].join(',');
 let UndeadResistance = [DamageType.CUT,DamageType.STAB].join(',');
-let UndeadVulnerability = [DamageType.SMITE,DamageType.BURN].join(',');
+let UndeadVulnerability = ['silver',DamageType.SMITE,DamageType.BURN].join(',');
 let ShadowImmunity = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.CORRODE,DamageType.POISON,DamageType.ROT].join(',');
 
 let OozeImmunity = ['blind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
 let OozeResistance = [DamageType.CUT,Attitude.ENRAGED,Attitude.CONFUSED].join(',');
-let OozeVulnerability = [DamageType.BURN,DamageType.FREEZE].join(',');
+let OozeVulnerability = ['ice','glass',DamageType.BURN,DamageType.FREEZE].join(',');
+
+let LunarVulnerabilities = ['solarium',DamageType.BURN].join(',');
+
 
 let DemonImmunity = [DamageType.BURN].join(',');
-let DemonResistance = [DamageType.POISON,DamageType.STAB].join(',');
-let DemonVulnerability = [DamageType.SMITE,DamageType.FREEZE].join(',');
+let DemonResistance = ['deepium',DamageType.POISON,DamageType.STAB].join(',');
+let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE].join(',');
 const MonsterTypeList = {
 
 // GOOD TEAM
@@ -713,8 +725,9 @@ const MonsterTypeList = {
 		brain: Brain.USER,
 		brainOpensDoors: true,
 		brainTalk: true,
+		inventoryLoot: '',
 		isSunChild: true,
-		light: 9,
+		light: 4,
 		neverPick: true,
 		picksup: true,
 		regenerate: 0.01,
@@ -725,6 +738,7 @@ const MonsterTypeList = {
 		name: "Fido/Lucy",
 		brainFlee: true,
 		brainPet: true,
+		dodge: 1,
 		isAnimal: true,
 		isPet: true,
 		loot: '30% dogCollar',
@@ -739,13 +753,14 @@ const MonsterTypeList = {
 		brainFlee: true,
 		isSunChid: true,
 		isDwarf: true,
-		inventoryLoot: '30x 100% stuff',
+		inventoryLoot: '', //'30x 100% stuff',
 		properNoun: true,
 		packAnimal: true
 	},
 	"mastiff": {
 		core: [ 'm', 10, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
 		name: "Rover/Fluffy",
+		dodge: 1,
 		brainFlee: true,
 		brainPet: true,
 		isAnimal: true,
@@ -791,13 +806,15 @@ const MonsterTypeList = {
 	},
 	"ethermite": {
 		core: [ 'e', 10, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
+		dodge: 1,
 		glow: true,
 		invisible: true,
 		isPlanar: 1,
 		light: 6,
 		loot: '50% gem.seeInvisible, 30% gem, 20% gem',
 		packAnimal: true,
-		sneakAttackMult: 3
+		sneakAttackMult: 3,
+		vuln: 'glass'
 	},
 	"ghoul": {
 		core: [ 'G', 4, '1:2', 'evil', 'rot', 'dc-mon/undead/ghoul.png', 'it' ],
@@ -842,6 +859,7 @@ const MonsterTypeList = {
 	"imp": {
 		core: [ 'i', 7, '3:10', 'evil', 'claw', 'dc-mon/demons/imp.png', 'it' ],
 		attitude: Attitude.HESITANT,
+		dodge: 1,
 		glow: 1,
 		immune: DamageType.BURN,
 		isDemon: true,
@@ -855,6 +873,7 @@ const MonsterTypeList = {
 		attitude: Attitude.HESITANT,
 		brainAlertFriends: true,
 		brainTalk: true,
+		dodge: 1,
 		isEarthChild: true,
 		loot: '50% coin, 50% weapon.dart, 30% weapon.dagger, 30% dogCollar',
 		packAnimal: true
@@ -873,7 +892,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isEarthChild: true,
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
-		resist: DamageType.CUT+','+DamageType.STAB,
+		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speed: 0.5
 	},
 	"redOoze": {
@@ -889,24 +908,24 @@ const MonsterTypeList = {
 		vuln: OozeVulnerability
 	},
 	"blueScarab": {
-		core: [ 'q', 6, '3:30', 'evil', 'freeze', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		core: [ 'q', 6, '2:30', 'evil', 'freeze', 'dc-mon/animals/boulder_beetle.png', 'it' ],
 		namePattern: "blue scarab",
 		glow: 3,
 		immune: DamageType.FREEZE,
 		isPlanar: true,
 		loot: '30% gem, 50% scarabCarapace',
 		travelMode: "fly",
-		vuln: DamageType.BURN
+		vuln: 'glass,'+DamageType.BURN
 	},
 	"redScarab": {
-		core: [ 'h', 12, '3:30', 'evil', 'burn', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		core: [ 'h', 12, '2:30', 'evil', 'burn', 'dc-mon/animals/boulder_beetle.png', 'it' ],
 		namePattern: "red scarab",
 		glow: 3,
 		immune: DamageType.BURN,
 		isPlanar: true,
 		loot: '30% gem, 50% scarabCarapace',
 		travelMode: "fly",
-		vuln: DamageType.FREEZE
+		vuln: 'glass,'+DamageType.FREEZE
 	},
 	"shadow": {
 		core: [ 'w', 8, '1:12', 'evil', 'rot', 'dc-mon/undead/shadow.png', 'it' ],
@@ -915,14 +934,14 @@ const MonsterTypeList = {
 		isUndead: true,
 		loot: '50% darkEssence, 20% potion.blindness',
 		speed: 0.75,
-		vuln: DamageType.SMITE
+		vuln: ['silver',DamageType.SMITE].join(',')
 	},
 	"skeleton": {
 		core: [ 's', 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		immune: SkeletonImmunity,
 		isUndead: true,
 		loot: '50% bones, 50% skull',
-		vuln: DamageType.SMITE
+		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonLg": {
 		core: [ 'S', 13, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
@@ -930,7 +949,7 @@ const MonsterTypeList = {
 		immune: SkeletonImmunity,
 		isUndead: true,
 		loot: '50% bones, 50% skull',
-		vuln: DamageType.SMITE
+		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"soldierAnt": {
 		core: [ 'c', 1, '2:22', 'evil', 'bite', 'dc-mon/animals/soldier_ant.png', 'it' ],
@@ -939,7 +958,7 @@ const MonsterTypeList = {
 		loot: '10% potion, 20% facetedEye, 10% antGrubMush',
 		isAnimal: true,
 		speed: 1.5,
-		vuln: DamageType.FREEZE
+		vuln: 'glass'+','+DamageType.FREEZE
 	},
 	"troll": {
 		core: [ 'T', 8, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
@@ -951,6 +970,7 @@ const MonsterTypeList = {
 	"viper": {
 		core: [ 'v', 5, '3:16', 'evil', 'bite', 'dc-mon/animals/viper.png', 'it' ],
 		attitude: Attitude.HESITANT,
+		dodge: 2,
 		isAnimal: true,
 		loot: '40% viperVenom',
 		speed: 2.0
@@ -966,9 +986,9 @@ const MonsterTypeList = {
 		isLunarChild: true,
 		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
-		vuln: DamageType.BURN
+		vuln: LunarVulnerabilities
 	},
-"lunarReaper": {
+	"lunarReaper": {
 		core: [ 'l', 1, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
 		name: "lunar reaper",
 		brainAlertFriends: true,
@@ -977,13 +997,14 @@ const MonsterTypeList = {
 		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
 		travelType: 'fly',
-		vuln: DamageType.BURN
+		vuln: LunarVulnerabilities
 	},
 
 // NEUTRAL TEAM
 	"bat": {
 		core: [ 'ᵬ', 1, '2:20', 'neutral', 'bite', 'dc-mon/animals/giant_bat.png', 'it' ],
 		attitude: Attitude.WANDER,
+		dodge: 2,
 		isAnimal: true,
 		loot: '50% batWing',
 		packAnimal: true,
@@ -1047,20 +1068,20 @@ TileTypeList['lockedDoor'].onTouch = function(entity,self) {
 	}
 }
 
-TileTypeList.obelisk.onTouch = function(entity,self) {
+TileTypeList.obelisk.onTouch = function(toucher,self) {
 	if( !entity.senseBlind ) {
-		tell(mSubject,entity,' ',mVerb,'touch',' ',mObject,self,'.');
-		deedAdd(self,entity,10,'senseBlind','set',true);
+		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,'.');
+		effectApply( self.effect, toucher, null, null );
 	}
 	else {
-		tell(mSubject,entity,' ',mVerb,'touch',' ',mObject,self,' but ',mVerb,'are',' already blind.');
+		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,' but ',mVerb,'are',' already blind.');
 	}
 }
 
 TileTypeList.crystal.onTouch = function(entity,self) {
 	if( entity.speed <= 1 ) {
 		tell(mSubject,entity,' ',mVerb,'touch',' ',mObject,self,' and ',mSubject|mVerb,'blur',' with speed!');
-		deedAdd(self,entity,3,'speed','add',1);
+		effectApply( self.effect, toucher, null, null );
 	}
 	else {
 		tell( mSubject,entity,' ',mVerb,'touch',' ',mObject,self,', but ',mVerb,'are',' already moving fast.');
@@ -1087,7 +1108,7 @@ TileTypeList.flames.isProblem = function(entity,self) {
 
 TileTypeList.flames.onTouch = function(entity,self) {
 	// We could pass in an onDamage that would also catch you on fire...
-	entity.takeDamage( self, rollDice(self.damage), self.damageType );
+	entity.takeDamage( self, null, rollDice(self.damage), self.damageType );
 }
 
 TileTypeList.lava.onEnterType = function(entity,self) {
@@ -1104,7 +1125,7 @@ TileTypeList.lava.isProblem = function(entity,self) {
 
 TileTypeList.lava.onTouch = function(entity,self) {
 	// We could pass in an onDamage that would also catch you on fire...
-	entity.takeDamage( self, rollDice(self.damage), self.damageType );
+	entity.takeDamage( self, null, rollDice(self.damage), self.damageType );
 }
 
 TileTypeList.mud.isProblem = function(entity,self) {
@@ -1193,25 +1214,23 @@ TileTypeList.forcefield.onEnterType = function(entity,self) {
 	}
 }
 
-TileTypeList.ghoststone.onTouch = function(entity,self) {
-	if( !entity.invisible ) {
-		tell( mSubject,entity,' ',mVerb,['touch','touches'],' ',mObject,self,'.' );
-		deedAdd( self, entity, 10, 'invisible', 'set', true );
+TileTypeList.ghoststone.onTouch = function(toucher,self) {
+	if( !toucher.invisible ) {
+		tell( mSubject,toucher,' ',mVerb,['touch','touches'],' ',mObject,self,'.' );
+		effectApply( this.effect, toucher, null, self );
 	}
 	else {
-		tell( mSubject,entity,' ',mVerb,'touch',' ',mObject,self,', but ',mVerb,'are',' already invisible.');
+		tell( mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,', but ',mVerb,'are',' already invisible.');
 	}
 }
 
-ItemTypeList.altar.onTouch = function(entity,self) {
+ItemTypeList.altar.onTouch = function(toucher,self) {
 	if( !self.rechargeLeft) {
-		effectApply(self,self.effect,entity);
-//		entity.takeHealing(self,picker.pickDamage(self.rechargeTime)*self.healMultiplier,DamageType.SMITE);
-		self.rechargeLeft = self.rechargeTime;
+		effectApply(self.effect,toucher,null,self);
 		self.depleted = true;
 	}
 	else {
-		tell( mSubject,self,' ',mVerb,'is',' not glowing at the moment.');
+		tell( mSubject|mCares,self,' ',mVerb,'is',' not glowing at the moment.');
 	}
 }
 
@@ -1226,12 +1245,16 @@ ItemTypeList.altar.onTick = function(dt) {
 
 
 MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
+	if( attacker.command == Command.THROW || this.getDistance(attacker.x,attacker.y) > 1 ) {
+		return;
+	}
+
 	if( attacker.isImmune(StuffList.frogSpine.typeId) ) {
 		tell(mSubject,attacker,' ',mVerb,'is',' protected from the ',mObject|mPossessive,this,' spines.');
 		return;
 	}
-	let damage = this.rollDamage(this.damage);
-	attacker.takeDamagePassive( this, damage, DamageType.POISON, function(attacker,victim,amount,damageType) {
+	let damage = this.rollDamage(this.naturalWeapon.damage);
+	attacker.takeDamagePassive( this, null, damage, DamageType.POISON, function(attacker,victim,amount,damageType) {
 		if( amount<=0 ) {
 			tell(mSubject,victim,' ',mVerb,'ignore',' ',mObject|mPossessive,attacker,' spines.');
 		}
@@ -1261,12 +1284,12 @@ MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
 
 MonsterTypeList.blueScarab.onAttack = function(target) {
 	let effect = Object.assign({},EffectTypeList.vulnerability,{value: DamageType.FREEZE});
-	effectApply(this,effect,target);
+	effectApply(effect,target,this,null);
 }
 
 MonsterTypeList.redScarab.onAttack = function(target) {
 	let effect = Object.assign({},EffectTypeList.vulnerability,{value: DamageType.BURN});
-	effectApply(this,effect,target);
+	effectApply(effect,target,this,null);
 }
 
 MonsterTypeList.redOoze.onMove = function(self,x,y) {

@@ -35,9 +35,8 @@ class ViewInfo {
 		let s = "";
 		s += "Health: "+entity.health+" / "+entity.healthMax+"\n";
 		s += "Armor: "+entity.calcArmor()+"%\n";
-		let weapon,damage,damageType;
-		[weapon,damage,damageType] = entity.calcWeapon();
-		s += "Damage: "+Math.floor(damage)+" "+damageType+"\n";
+		let weapon = entity.calcWeapon();
+		s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (slow)','',' (quick)'][weapon.quick]+"\n";
 		let conditionList = [];
 		test(entity.invisible,'invis');
 		test(entity.speed<1,'slow');

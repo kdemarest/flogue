@@ -75,13 +75,18 @@ class SimpleMap {
 	traverse(fn) {
 		for( let y=0 ; y<this.yLen ; ++ y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {
-				let go = fn.call(this,x,y);
+				let go = fn.call(this,x,y,this.tileTypeGet(x,y));
 				if( go === false ) {
 					return this;
 				}
 			}
 		}
 		return this;
+	}
+	count(fn) {
+		let c = 0;
+		this.traverse( (x,y,type) => c += fn(x,y,type) );
+		return c;
 	}
 
 	tileSymbolSet(x,y,symbol) {
@@ -121,7 +126,9 @@ class SimpleMap {
 			return false;
 		}
 		let symbol = this.tileSymbolGet(x,y);
-		return SymbolToType[symbol];
+		let type = SymbolToType[symbol];
+		console.assert(type);
+		return type;
 	}
 	tileTypeGetDir(x,y,dir) {
 		x += DirectionAdd[dir].x;
