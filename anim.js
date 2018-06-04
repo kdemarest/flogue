@@ -96,6 +96,10 @@ class Anim {
 		this.dead = false;
 		this.delta = 0;
 		if( this.x === undefined && this.follow ) {
+			if( this.follow.inVoid ) {
+				// Don't try to animate on this thing. It is in the void.
+				return false;
+			}
 			this.x = this.follow.x;
 			this.y = this.follow.y;
 		}

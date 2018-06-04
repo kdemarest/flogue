@@ -52,6 +52,7 @@ class Gui {
 		let v = {divId: 'guiDynamic', player: player, imageRepo: this.imageRepo, onClose: onClose};
 		if( !DynamicViewList[v.view] ) {
 			console.log( "Error: No such dynamic view "+v.view+" in "+v );
+			delete player.guiViewCreator;
 			return false;
 		}
 

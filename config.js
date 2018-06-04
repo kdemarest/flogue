@@ -43,7 +43,8 @@ ConfigList.ken = () => {
 		monsters: 	['isDwarf']
 
 	}
-	MonsterTypeList.player.inventoryLoot = 'stuff.lantern, weapon.sword, weapon.hammer, potion.flight, spell.eShove';
+	MonsterTypeList.player.inventoryLoot = 'weapon.hammer, potion.flight, spell.eShove';
+	MonsterTypeList.player.inventoryWear = 'stuff.lantern, weapon.sword';
 	return {
 		startingDepth: 40,
 		themeId: 'kenTheme'

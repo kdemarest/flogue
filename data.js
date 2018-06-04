@@ -460,6 +460,8 @@ const GemList = toFab({
 
 const StuffList = toFab({
 	"lantern": 			{ slot: Slot.HIP, light: 14, triggerOnUse: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light' }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"oilLamp": 			{ slot: Slot.HIP, light: 10, triggerOnUse: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light' }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"candleLamp": 		{ slot: Slot.HIP, light:  6, triggerOnUse: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light' }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"trollHide": 		{ },
 	"bones": 			{ },
 	"antGrubMush": 		{ },

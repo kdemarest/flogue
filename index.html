@@ -177,7 +177,7 @@ function main(levelName) {
 		let gate = area.getUnusedGateByTypeId('stairsUp');
 		if( !gate ) {
 			let pos = area.map.pickPosEmpty();
-			gate = area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp');
+			gate = area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp',{});
 		}
 		let player = new Entity( area.depth, MonsterTypeList.player, null );
 		player.gateTo(area,gate.x,gate.y);

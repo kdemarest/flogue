@@ -4,7 +4,7 @@
 class Entity {
 	constructor(depth,monsterType,inject) {
 		let level = depth;
-		let inits =    { inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
+		let inits =    { inVoid: true, inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
 		let values =   { id: GetUniqueEntityId(monsterType.typeId,level) };
 
 		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
@@ -45,6 +45,12 @@ class Entity {
 			this.lootTake( this.inventoryLoot, this.level, null, true );
 		}
 
+		if( this.inventoryWear ) {
+			this.lootTake( this.inventoryWear, this.level, null, true, item => {
+				if( item.slot ) { this.don(item,item.slot); }
+			});
+		}
+
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
 
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) );
@@ -82,6 +88,7 @@ class Entity {
 		this.area = area;
 		let fnName = this.isUser() ? 'unshift' : 'push';
 		this.area.entityList[fnName](this);
+		this.inVoid = false;
 	}
 
 	findAliveOthers(entityList = this.entityList) {
@@ -661,7 +668,7 @@ class Entity {
 		}
 
 		if( attacker && attacker.invisible ) {
-			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: 'false' };
+			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: false };
 			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
 		}
 		this.personalEnemy = attacker.id;
@@ -908,13 +915,16 @@ class Entity {
 		return item;
 	}
 
-	lootTake( lootString, level, originatingEntity, quiet ) {
+	lootTake( lootString, level, originatingEntity, quiet, onEach ) {
+		let itemList = [];
 		let found = [];
 		new Picker(level).pickLoot( lootString, loot=>{
 			loot.giveTo( this, this.x, this.y);
+			itemList.push(loot);
+			if( onEach ) { onEach(loot); }
 			found.push(mObject|mA|mList|mBold,loot);
 		});
-		if( !quiet ) {
+		if( !quiet || this.inVoid ) {
 			let description = [
 				mSubject,this,' ',mVerb,'find',' '
 			].concat( 
@@ -923,6 +933,7 @@ class Entity {
 			);
 			tell(...description);
 		}
+		return itemList;
 	}
 	
 	pickup(item) {
