@@ -290,12 +290,15 @@
 		}
 		placeEntrance(tile) {
 			let amount = 1;
+			let reps = 100;
 			while( amount ) {
 				let x,y;
 				[x,y] = this.randPos();
-				if( isFloor(this.getTile(x,y)) && this.count8(x,y,isFloor)>=3 && this.count8(x,y,isWall)>=1 ) {
+				--reps;
+				if( reps<=0 && isFloor(this.getTile(x,y)) && this.count8(x,y,isFloor)>=3 && this.count8(x,y,isWall)>=1 ) {
 					this.setTile(x,y,tile);
 					--amount;
+					reps = 100;
 				}
 			}
 			return this;
@@ -578,9 +581,10 @@
 			} while( reps-- );
 		}
 
-		assureTileCount(tileList) {
-			for( let tile in tileList ) {
-				let count = tileList[tile]-this.countTile(tile);
+		assureTileCount(tileIdList) {
+			for( let tileId in tileIdList ) {
+				let tile = TypeIdToSymbol[tileId];
+				let count = tileIdList[tileId]-this.countTile(tile);
 				while( count-- > 0 ) {
 					this.placeEntrance(tile);
 				}
@@ -943,8 +947,8 @@
 				let siteMarks = [];
 //				console.log('Placed at ('+x+','+y+')');
 				if( place.floodId ) {
-					let floodTile = TypeToSymbol[place.floodId];
-					let sparkTile = TypeToSymbol[place.sparkId];
+					let floodTile = TypeIdToSymbol[place.floodId];
+					let sparkTile = TypeIdToSymbol[place.sparkId];
 					let sparkDensity = place.sparkDensity || 0;
 					let sparkLimit = place.sparkLimit;
 					let tilesMade = map.floodSpread( x, y, place.tileCount, sparkTile, sparkLimit, sparkDensity, false, 
@@ -1039,7 +1043,7 @@
 		scape.palette = scape.palette || {};
 		for( let tileType of tileTypes ) {
 			let t = scape.palette[tileType+'TypeId'];
-			if( t ) palette[tileType] = TypeToSymbol[t];
+			if( t ) palette[tileType] = TypeIdToSymbol[t];
 			let TileType = String.capitalize(tileType);	// Floor
 			T[TileType] = palette[tileType] || T[TileType];
 		}
@@ -1062,7 +1066,7 @@
 		}
 	}
 
-	function masonConstruct(scape,palette,requiredPlaces,placeRarityTable,requiredTiles,injectList,siteList,onStep) {
+	function masonConstruct(scape,palette,requiredPlaces,placeRarityTable,quota,injectList,siteList,onStep) {
 		let drawZones = false;
 		function render() {
 			let s = map.renderToString(drawZones);
@@ -1112,7 +1116,7 @@
 		map.sizeToExtentsWithBorder(injectList,1);
 		map.convert(T.Unknown,T.FillWall);
 
-		map.assureTileCount(requiredTiles);
+		map.assureTileCount(quota);
 
 		return map;
 	}

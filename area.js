@@ -1,4 +1,4 @@
-function areaBuild(area,requiredGates) {
+function areaBuild(area,tileQuota) {
 	let picker = new Picker(area.depth);
 
 	function makeMonster(type,x,y,inject) {
@@ -82,7 +82,7 @@ function areaBuild(area,requiredGates) {
 		palette,
 		area.theme.rREQUIRED,
 		area.theme.rarityTable,
-		requiredGates,
+		tileQuota,
 		injectList,
 		area.siteList
 	);
@@ -108,13 +108,16 @@ function areaBuild(area,requiredGates) {
 
 class Area {
 	constructor(areaId,depth,theme) {
+		console.assert( areaId );
+		console.assert( depth>=0 );
+		console.assert( typeof theme == 'object' );
 		this.id = areaId;
 		this.depth = depth;
 		this.theme = theme;
 		this.mapMemory = [];
 	}
-	build(requiredGates) {
-		return areaBuild(this,requiredGates);
+	build(tileQuota) {
+		return areaBuild(this,tileQuota);
 	}
 	getGate(id) {
 		let g = this.gateList.filter( g => g.id==id );

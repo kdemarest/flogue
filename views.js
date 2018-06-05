@@ -37,6 +37,7 @@ class ViewInfo {
 		s += "Armor: "+entity.calcArmor()+"%\n";
 		let weapon = entity.calcWeapon();
 		s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"\n";
+		s += (entity.travelMode !== 'walk' ? '<'+entity.travel+'ing>' : '');
 		let conditionList = [];
 		test(entity.invisible,'invis');
 		test(entity.speed<1,'slow');

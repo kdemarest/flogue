@@ -101,7 +101,7 @@ function nop() {}
 	}
 	Object.each = function(obj,fn) {
 		for( let key in obj ) {
-			fn(obj[key]);
+			fn(obj[key],key);
 		}
 	}
 	// Produces a new object composed of each key that the fn returned true for.

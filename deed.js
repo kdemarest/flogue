@@ -117,7 +117,7 @@ let DeedManager = (new class {
 		// WEIRD!! If we just ended a deed, we must STILL calc the value, at least once, so that we can
 		// emit notice that it happened!
 		this.deedList.map(
-			deed => { statList[deed.stat] = true; }
+			deed => { if( deed.stat ) { statList[deed.stat] = true; } }
 		);
 		Object.entries(statList).forEach(
 			([stat,dummy]) => { this.calcStat(target,stat); }

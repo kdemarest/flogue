@@ -11,20 +11,30 @@ class World {
 	get player() {
 		return this.getPlayer();
 	}
+	shapeWorld(depth,isCore) {
+		function add(typeId,amount) {
+			console.assert(amount!==undefined);
+			tileQuota[typeId] = (tileQuota[typeId]||0) + amount;
+		}
+
+		let tileQuota = {};
+		add( 'stairsDown',	isCore ? 1 : 0 );
+		add( 'stairsUp',	isCore && depth>0 ? 1 : 0 );
+		add( 'gateway',		isCore ? 1 : 0 );
+		add( 'portal',		isCore ? 1 : 0 );
+		add( 'deepFont',	isCore ? 1 : 0 );
+		add( 'solarFont', 	isCore ? 1 : 0 );
+		return tileQuota;
+	}
 	createArea(depth,theme,isCore) {
 		console.assert(depth !== undefined && !isNaN(depth)); 
 		let coreAreaId = 'area.core.'+depth;
 		let areaId = !this.areaList[coreAreaId] ? coreAreaId : GetUniqueEntityId('area',depth);
-
-		let requiredGates = {};
-		if( isCore ) {
-			requiredGates[ItemTypeList.stairsDown.symbol] = 1;
-			if( depth > 0 ) requiredGates[ItemTypeList.stairsUp.symbol] = 1;
-		}
+		let tileQuota = this.shapeWorld(depth,isCore);
 		let area = new Area(areaId,depth,theme);
 		area.isCore = isCore;
 		this.areaList[areaId] = area;	// critical that this happen BEFORE the .build() so that the theme is set for the picker.
-		area.build(requiredGates)
+		area.build(tileQuota)
 		return area;
 	}
 	setPending(gate) {
@@ -33,8 +43,10 @@ class World {
 			let isCore = this.area.isCore && gate.gateDir!=0;
 			let depth = this.area.depth + gate.gateDir;
 			if( !gate.themeId ) {
-				let themePickList = Object.filter( ThemeList, theme => theme.allowInCore==isCore && !theme.isUnique);
+				let themePickList = Object.filter( ThemeList, theme => !!theme.allowInCore==isCore && !theme.isUnique);
+				console.assert(!Object.isEmpty(themePickList));
 				gate.themeId = pick( themePickList ).typeId;
+				console.assert(gate.themeId);
 			}
 			let theme = ThemeList[gate.themeId];
 			toArea = this.createArea(depth,theme,isCore);
