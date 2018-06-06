@@ -100,6 +100,9 @@ class Anim {
 				// Don't try to animate on this thing. It is in the void.
 				return false;
 			}
+			if( this.follow.isTileType && !this.follow.isPosition ) {
+				debugger;
+			}
 			this.x = this.follow.x;
 			this.y = this.follow.y;
 		}

@@ -83,12 +83,19 @@ class Entity {
 		if( this.area ) {
 			Array.filterInPlace( this.area.entityList, entity => entity.id!=this.id );
 		}
-		this.x = x;
-		this.y = y;
 		this.area = area;
 		let fnName = this.isUser() ? 'unshift' : 'push';
 		this.area.entityList[fnName](this);
 		this.inVoid = false;
+		this.x = x;
+		this.y = y;
+		let c = this.findFirstCollider(this.travelMode,x,y,this);
+		if( c ) {
+			[x,y] = this.map.spiralFind( this.x, this.y, (x,y) => !this.findFirstCollider(this.travelMode,x,y,this) );
+			console.assert( x!==false );
+			this.x = x;
+			this.y = y;
+		}
 	}
 
 	findAliveOthers(entityList = this.entityList) {
@@ -294,38 +301,59 @@ class Entity {
 		return at(x + DirectionAdd[dir].x, y + DirectionAdd[dir].y);
 	}
 
-	findCollider(travelMode,x,y,ignoreEntity) {
+	// NOTE: This collides with monsters first, then items, then tiles. It could be a LOT
+	// more efficient if it checked the tile first, but that probably isn't best game-wise.
+	findFirstCollider(travelMode,x,y,ignoreEntity) {
+
+		function collide(entity) {
+			if( entity[mayTravel] ) {
+				return false;
+			}
+			if( travelMode=='walk' && entity.mayJump && self.jump < self.jumpMax ) {
+				return false;
+			}
+			return true;
+		}
+
+		let self = this;
 		let mayTravel = 'may'+String.capitalize(travelMode || "walk");
-		let f = this.findAliveOthers().at(x,y);
+
+		// Am I colliding with another entity?
+		let f = this.findAliveOthers().at(x,y).filter( collide );
 		if( ignoreEntity ) {
 			f.exclude(ignoreEntity);
 		}
-		if( f.first && !f.first[mayTravel] ) {
+		if( f.count ) {
 			return f.first;
 		}
-		let g = this.map.findItem().at(x,y);
-		if( g.first && !g.first[mayTravel] ) {
+
+		// Am I colliding with an item?
+		let g = this.map.findItem().at(x,y).filter( collide );
+		if( g.count ) {
 			return g.first;
 		}
+
+		// Am I colliding with a tile?
 		let tile = this.map.tileTypeGet(x,y);
-		if( !tile[mayTravel] ) {
+		if( collide(tile) ) {
 			return tile;
 		}
+
 		return null;
 	}
 	mayOccupy(travelMode,x,y,ignoreEntity) {
-		let type = this.findCollider(travelMode,x,y,ignoreEntity);
+		let type = this.findFirstCollider(travelMode,x,y,ignoreEntity);
 		return type===null;
 	}
 
 	mayEnter(x,y,avoidProblem) {
-		let entityType = this.at(x,y);
-		let mayTravel = 'may'+String.capitalize(this.travelMode || "walk");
-		if( !entityType[mayTravel] ) {
+		let type = this.findFirstCollider(this.travelMode,x,y);
+		if( type ) {
 			return false;
 		}
 		// If we are already in a problem, then we should probably just keep ignoring it. For example,
 		// once we've decided to enter fire, better just go for it!
+		let entityType = this.map.tileTypeGet(x,y);
 		if( avoidProblem && entityType.isProblem && entityType.isProblem(this,entityType) ) {
 			return false;
 		}
@@ -619,9 +647,6 @@ class Entity {
 	takeDamage(attacker,item,amount,damageType,callback,noBacksies) {
 		let quiet = false;
 
-		if( attacker.ownerOfRecord ) {
-			attacker = attacker.ownerOfRecord;
-		}
 		if( attacker && attacker.invisible && !this.senseInvisible ) {
 			amount *= (attacker.sneakAttackMult || 2);
 		}
@@ -671,29 +696,33 @@ class Entity {
 			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: false };
 			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
 		}
-		this.personalEnemy = attacker.id;
+		if( attacker && attacker.isMonsterType ) {
+			this.personalEnemy = attacker.id;
+		}
 
 		if( amount > 0 ) {
-			let dx = this.x - attacker.x;
-			let dy = this.y - attacker.y;
+			let dx = this.x - (attacker ? attacker.x : this.x);
+			let dy = this.y - (attacker ? attacker.y : this.y);
 			// WARNING! For some whacky reason this call to deltaToDeg requires -dy. Who knows why?!
-			let deg = deltaToDeg(dx,dy);
+			let deg = (dx===0 && dy===0 ? 0 : deltaToDeg(dx,dy));
 			let mag = Math.clamp( amount/this.healthMax, 0.05, 1.0 );
 			let delay = !attacker || !attacker.isUser || attacker.isUser() ? 0 : 0.2;
-			if( attacker.command == Command.THROW ) {
+			if( attacker && attacker.command == Command.THROW ) {
 				// This seems a little loose to me, but... maybe it will work.
 				delay += attacker.throwDuration;
 			}
 			// Attacker lunges at you
 			let lunge = 0.2 + 0.5 * mag;
-			new Anim( {}, {
-				follow: 	attacker,
-				delay: 		delay,
-				duration: 	0.15,
-				onInit: 		a => { a.puppet(attacker.spriteList); },
-				onSpriteMake: 	s => { s.sPosDeg(deg,lunge); },
-				onSpriteDone: 	s => { s.sReset(); }
-			});
+			if( attacker && attacker.isMonsterType ) {
+				new Anim( {}, {
+					follow: 	attacker,
+					delay: 		delay,
+					duration: 	0.15,
+					onInit: 		a => { a.puppet(attacker.spriteList); },
+					onSpriteMake: 	s => { s.sPosDeg(deg,lunge); },
+					onSpriteDone: 	s => { s.sReset(); }
+				});
+			}
 			// blood flies away from the attacker
 			let piecesAnim = new Anim({},{
 				follow: 	this,
@@ -782,7 +811,7 @@ class Entity {
 		this.health -= amount;
 		this.takenDamage = amount;
 		this.takenDamageType = damageType;
-		this.takenDamageFromId = attacker.Id;
+		this.takenDamageFromId = attacker ? attacker.id : 'nobody';
 
 		if( amount > 0 ) {
 			if( this.brainDisengageAttempt ) {
@@ -803,11 +832,11 @@ class Entity {
 		if( this.onAttacked && !noBacksies ) {
 			quiet = this.onAttacked.call(this,attacker,amount,damageType);
 		}
-		if( !quiet ) {
+		if( !quiet && attacker ) {
 			tell(mSubject|mCares,attacker,' ',mVerb,damageType,' ',mObject,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!' );
 		}
 
-		if( !noBacksies && attacker.isMonsterType && this.inventory ) {
+		if( !noBacksies && attacker && attacker.isMonsterType && this.inventory ) {
 			let armorEffects = new Finder(this.inventory).filter( item => item.inSlot && item.isArmor );
 			armorEffects.process( item => {
 				if( item.effect && item.effect.isHarm ) {
@@ -974,120 +1003,92 @@ class Entity {
 	}
 	// Returns false if the move fails. Very important for things like takeShove().
 	moveTo(x,y,attackAllowed=true) {
-		if( this.map.inBounds(x,y) ) {
-			let f = this.findAliveOthers().at(x,y);
-			let allyToSwap = false;
-
-			// Attack enemies or neutrals
-			if( f.count && attackAllowed && (this.isMyEnemy(f.first) || this.isMyNeutral(f.first)) ) {
-				this.attack(f.first);
-				return "attack";
-			}
-			else
-			// Switch with friends, else bonk!
-			if( f.count && !f.first.job && this.isMyFriend(f.first) && this.isUser() ) {
-				// swap places with allies
-				allyToSwap = f.first;
-			}
-			else
-			if( f.count && f.first.job ) {
-				this.guiViewCreator = { view: f.first.job, entity: f.first };
-				return false;
-			}
-			else
-			if( f.count ) {
-
-				(f.first.onTouch || bonk)(this,f.first);
-				return false;
-			}
-
-			let xOld = this.x;
-			let yOld = this.y;
-			let tileTypeHere = this.map.tileTypeGet(xOld,yOld);
-			let tileType = this.map.tileTypeGet(x,y);
-
-			// Does this tile type always do something to you when you depart any single instance of it?
-			if( tileTypeHere.onDepart ) {
-				if( tileTypeHere.onDepart(this,adhoc(tileTypeHere,this.map,xOld,yOld)) === false ) {
-					return false;
-				}
-			}
-
-			// Are we leaving this TYPE of tile entirely? Like leaving water, fire or mud?
-			if( tileType.name != tileTypeHere.name && tileTypeHere.onDepartType ) {
-				if( tileTypeHere.onDepartType(this,adhoc(tileTypeHere,this.map,xOld,yOld),adhoc(tileType,this.map,x,y)) === false ) {
-					return false;
-				}
-			}
-
-			// If we can not occupy the target tile, then touch it/bonk into it
-			let collider = this.findCollider(this.travelMode,x,y,allyToSwap);
-			if( collider ) {
-				(collider.onTouch || bonk)(this,adhoc(collider,this.map,x,y));
-				return false;
-			}
-
-			// Are we entering a new tile TYPE?
-			if( tileType.name != tileTypeHere.name && tileType.onEnterType ) {
-				if( tileType.onEnterType(this,adhoc(tileType,this.map,x,y),tileTypeHere,xOld,yOld) === false ) {
-					return false;
-				}
-			}
-
-			if( allyToSwap ) {
-				allyToSwap.setPosition(this.x,this.y);
-			}
-			this.setPosition(x,y);
-			if( this.findAliveOthers().at(x,y).count ) {
-				debugger;
-			}
-			if( this.onMove ) {
-				this.onMove(this,x,y);
-			}
-
-			// We must be touching the new tile, so act on that.
-			if( tileType.onTouch ) {
-				tileType.onTouch(this,adhoc(tileType,this.map,x,y));
-			}
-
-			if( this.picksup ) {
-				let f = this.map.findItem().at(x,y).filter( item => item.mayPickup!==false );
-				for( let item of f.all ) {
-					this.pickup(item);
-				}
-			}
-			return true;
+		if( !this.map.inBounds(x,y) ) {
+			return;
 		}
+
+		// Move into monsters
+		//-------------------
+		let f = this.findAliveOthers().at(x,y);
+		let allyToSwap = false;
+
+		// Attack enemies or neutrals
+		if( f.count && attackAllowed && (this.isMyEnemy(f.first) || this.isMyNeutral(f.first)) ) {
+			this.attack(f.first);
+			return "attack";
+		}
+		else
+		// Switch with friends, else bonk!
+		if( f.count && !f.first.job && this.isMyFriend(f.first) && this.isUser() ) {
+			// swap places with allies
+			allyToSwap = f.first;
+		}
+		else
+		if( f.count && f.first.job ) {
+			this.guiViewCreator = { view: f.first.job, entity: f.first };
+			return false;
+		}
+		else
+		if( f.count ) {
+			(f.first.onTouch || bonk)(this,f.first);
+			return false;
+		}
+
+		// If we can not occupy the target tile, then touch it/bonk into it
+		let collider = this.findFirstCollider(this.travelMode,x,y,allyToSwap);
+		if( collider ) {
+			(collider.onTouch || bonk)(this,adhoc(collider,this.map,x,y));
+			return false;
+		}
+
+		let xOld = this.x;
+		let yOld = this.y;
+		let tileTypeHere = this.map.tileTypeGet(xOld,yOld);
+		let tileType = this.map.tileTypeGet(x,y);
+
+		// Does this tile type always do something to you when you depart any single instance of it?
+		if( tileTypeHere.onDepart ) {
+			if( tileTypeHere.onDepart(this,adhoc(tileTypeHere,this.map,xOld,yOld)) === false ) {
+				return false;
+			}
+		}
+
+		// Are we leaving this TYPE of tile entirely? Like leaving water, fire or mud?
+		if( tileType.name != tileTypeHere.name && tileTypeHere.onDepartType ) {
+			if( tileTypeHere.onDepartType(this,adhoc(tileTypeHere,this.map,xOld,yOld),adhoc(tileType,this.map,x,y)) === false ) {
+				return false;
+			}
+		}
+
+		// Are we entering a new tile TYPE?
+		if( tileType.name != tileTypeHere.name && tileType.onEnterType ) {
+			if( tileType.onEnterType(this,adhoc(tileType,this.map,x,y),tileTypeHere,xOld,yOld) === false ) {
+				return false;
+			}
+		}
+
+		if( allyToSwap ) {
+			allyToSwap.setPosition(this.x,this.y);
+		}
+		this.setPosition(x,y);
+		if( this.findAliveOthers().at(x,y).count ) {
+			debugger;
+		}
+
+		if( this.onMove ) {
+			this.onMove(this,x,y);
+		}
+
+		if( this.picksup ) {
+			let f = this.map.findItem().at(x,y).filter( item => item.mayPickup!==false );
+			for( let item of f.all ) {
+				this.pickup(item);
+			}
+		}
+		return true;
 	}
 
-	act(timePasses=true) {
-		let dir = commandToDirection(this.command);
-		if( this.isDead() ) {
-			if( this.isSpectator && dir !== false ) {
-				let x = this.x + DirectionAdd[dir].x;
-				let y = this.y + DirectionAdd[dir].y;
-				if( this.map.inBounds(x,y) ) {
-					this.x = x;
-					this.y = y;
-				}
-			}
-			return true;
-		}
-
-		if( timePasses && this.regenerate ) {
-			this.health = Math.floor(Math.min(this.health+this.regenerate*this.healthMax,this.healthMax));
-		}
-
-		if( this.vocalize ) {
-			tell(...this.vocalize);
-			this.vocalize = false;
-		}
-
-
-		if( commandToDirection(this.command) !== false ) {
-			this.moveDir(dir);
-		}
-		else 
+	actOnCommand() {
 		switch( this.command ) {
 			case Command.LOSETURN: {
 				if( this.brain == 'user' ) {
@@ -1104,15 +1105,11 @@ class Entity {
 				if( this.brain == 'user' ) {
 					tell(mSubject,this,' ',mVerb,'wait','.');
 				}
-				let tileType = this.map.tileTypeGet(this.x,this.y);
-				if( tileType.onTouch ) {
-					tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
-				}
 				break;
 			}
 			case Command.DEBUGTEST: {
 				let gate = this.map.itemCreateByTypeId(this.x,this.y,'portal',{},{ toAreaId: "test" } );
-				world.setPending( gate );
+				this.area.world.setPending( gate );
 				break;
 			}
 			case Command.DEBUGKILL: {
@@ -1132,7 +1129,8 @@ class Entity {
 				this.senseLife = true;
 				this.map.traverse( (x,y) => {
 					this.mapMemory[y] = this.mapMemory[y] || {};
-					this.mapMemory[y][x] = this.map.tileTypeGet(x,y);
+					let type = this.map.findItem().at(x,y).filter( item=>!item.isTreasure ).first || this.map.tileTypeGet(x,y);
+					this.mapMemory[y][x] = type;
 				});
 				break;
 			}
@@ -1157,7 +1155,7 @@ class Entity {
 			}
 			case Command.DROP: {
 				let item = this.commandItem;
-				let type = this.findCollider('walk',this.x,this.y);
+				let type = this.findFirstCollider('walk',this.x,this.y);
 				if( type !== null ) {
 					tell(mSubject,this,' may not drop anything here.');
 				}
@@ -1235,6 +1233,73 @@ class Entity {
 				}
 			}
 		};
+	}
+
+	act(timePasses=true) {
+		let dir = commandToDirection(this.command);
+		if( this.isDead() ) {
+			if( this.isSpectator && dir !== false ) {
+				let x = this.x + DirectionAdd[dir].x;
+				let y = this.y + DirectionAdd[dir].y;
+				if( this.map.inBounds(x,y) ) {
+					this.x = x;
+					this.y = y;
+				}
+			}
+			return true;
+		}
+
+		if( timePasses && this.regenerate ) {
+			this.health = Math.floor(Math.min(this.health+this.regenerate*this.healthMax,this.healthMax));
+		}
+
+		if( this.vocalize ) {
+			tell(...this.vocalize);
+			this.vocalize = false;
+		}
+
+		if( commandToDirection(this.command) !== false ) {
+			this.moveDir(dir);
+		}
+		else {
+			this.actOnCommand();
+		}
+
+		if( timePasses ) {
+			let tileType = this.map.tileTypeGet(this.x,this.y);
+
+			if( this.travelMode == 'walk' && tileType.mayJump ) {
+				// This assumes you ALWAYS want to jump over anything that you CAN jump over. It might
+				// not always be the case... SO perhaps we should check if tileType.isProblem, or if !tileType.mayWalk.
+				this.jump = (this.jump||0)+1;
+			}
+			else {
+				this.jump = 0;
+			}
+			if( this.jump > this.jumpMax ) {
+				this.jump = 0;
+				if( tileType.isPit ) {
+					let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
+					if( this.area.isCore && ( !stairs || !stairs.toAreaId ) ) {
+						debugger;
+					}
+					if( stairs ) {
+						let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
+							toAreaId: stairs.toAreaId,
+							themeId: stairs.themeId,
+							killMeWhenDone: true
+						});
+	 					this.area.world.setPending( gate );
+	 				}
+	 			}
+			}
+
+			// Important for this to happen after we establish whether you are jumping at this moment.
+			if( tileType.onTouch ) {
+				tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
+			}
+
+		}
 	}
 }
 function isEntity(e) { return e instanceof Entity; }

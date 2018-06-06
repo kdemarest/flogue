@@ -221,6 +221,23 @@ class ImageRepo {
 			}
 		}
 
+		function scanIcon(typeList,member) {
+			for( let t in typeList ) {
+				if( typeList[t][member] ) {
+					add(typeList[t][member]);
+				}
+			}
+		}
+		function scan(typeList,member) {
+			for( let t in typeList ) {
+				if( typeList[t][member] ) {
+					self.imgGet[t] = typeList[t].imgGet || DefaultImgGet;
+					add(typeList[t][member]);
+				}
+			}
+		}
+
+
 		// Pre-load all of the images by running the real imagGets with the SECOND variable forced to each
 		// variation of imgChoices. It is the responsibilty of the type to implement this properly.
 		for( let symbol in SymbolToType ) {
@@ -241,21 +258,6 @@ class ImageRepo {
 			}
 		}
 
-		function scanIcon(typeList,member) {
-			for( let t in typeList ) {
-				if( typeList[t][member] ) {
-					add(typeList[t][member]);
-				}
-			}
-		}
-		function scan(typeList,member) {
-			for( let t in typeList ) {
-				if( typeList[t][member] ) {
-					self.imgGet[t] = typeList[t].imgGet || DefaultImgGet;
-					add(typeList[t][member]);
-				}
-			}
-		}
 		let self = this;
 		scan(StickerList,'img');
 		scan(WeaponList,'img');

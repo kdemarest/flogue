@@ -55,9 +55,9 @@ class Picker {
 			}
 			else {
 				// Split by the dot
-				console.log('processing '+token );
+				//console.log('processing '+token );
 				token.replace( /([^\s.]+)[\s.]*/g, function( whole, token ) {
-					console.log('adding '+token );
+					//console.log('adding '+token );
 					self.specifiesId = true;
 					(not ? killId[token]=1 : keepId[token]=1);
 					self.firstId = self.firstId || token;
@@ -226,7 +226,7 @@ class Picker {
 		effect.effectShape = effect.effectShape || EffectShape.SINGLE;
 
 		if( effect.valueDamage ) {
-			effect.value = Math.floor(this.pickDamage(rechargeTime) * effect.valueDamage);
+			effect.value = Math.max(1,Math.floor(this.pickDamage(rechargeTime) * effect.valueDamage));
 			if( item && (item.isWeapon || item.isArmor) && WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
 				effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
 			}

@@ -1,8 +1,9 @@
 class DataConditioner {
 	constructor() {
+		this.mergePlaceTypesToGlobals();
+		this.fabAllData();
+		this.determinePlaceLevels();
 		this.validateAndConditionThemeData();
-		this.integratePlaceData();
-		this.prepareStaticData();
 	}
 
 	validateAndConditionThemeData() {
@@ -38,68 +39,45 @@ class DataConditioner {
 		}
 	}
 
-	integratePlaceData() {
+	mergePlaceTypesToGlobals() {
 
-		let s2t = {};
-		let t2s = {};
-		function extract() {
-			for( let typeList of arguments ) {
-				for( let t in typeList ) {
-					let s = typeList[t].symbol;
-					s2t[s] = t;
-					t2s[t] = s;
-				}
-			}
-		}
-		extract(TileTypeList,ItemTypeList,MonsterTypeList);
-		if( s2t[TILE_UNKNOWN] ) {
-			// WARNING: I'm reserving the ' ' symbol to mean 'nothing here, replaceable' in a place map.
-			debugger;
-		}
-
-		let sIndex = 32+1;
-		function getUnusedSymbol() {
-			while( s2t[String.fromCharCode(sIndex)] ) {
-				++sIndex;
-			}
-			return String.fromCharCode(sIndex);
-		}
-
-		// Give symbols to anything that lacks a symbol.
 		for( let placeId in PlaceList ) {
-
 			let place = PlaceList[placeId];
 			place.id = placeId;
-			let roster = Object.assign({},place.monsterTypes,place.itemTypes,place.tileTypes);
-			for( let typeId in roster ) {
-				// If there is no symbol in the existing corpus...
-				if( !t2s[typeId] ) {
-					let s = getUnusedSymbol();
-					t2s[typeId] = s;
-					s2t[s] = typeId;
-				}
+
+			function mergeSimple(a,b) {
+				Object.assign(a,b);
 			}
 
-			Object.assign(StickerList,		place.stickers);
-			Object.assign(DamageType,		place.damageType);
-			Object.assign(Attitude,			place.attitude);
-			Object.assign(PickIgnore,		place.pickIgnore);
-			Object.assign(PickVuln,			place.pickVuln);
-			Object.assign(PickResist,		place.pickResist);
-			Object.assign(EffectTypeList,	place.effectList);
-
-			function processTypeList(targetList,typeList) {
+			function merge(targetList,typeList) {
 				for( let typeId in typeList ) {
+					console.assert( !targetList[typeId] );
 					let type = typeList[typeId];
-					let targetType = targetList[typeId];
-					let newType = Object.assign( {}, type.basis ? targetList[type.basis] || {} : {}, targetType || {}, type, {symbol:t2s[typeId]} );
-					targetList[typeId] = newType;
+
+					targetList[typeId] = Object.assign(
+						{},
+						type.basis ? targetList[type.basis] || typeList[type.basis] || {} : {},
+						type
+					);
+					typeList[typeId] = targetList[typeId];
 				}
 			}
-			processTypeList( TileTypeList, 		place.tileTypes );
-			processTypeList( ItemTypeList,		place.itemTypes );
-			processTypeList( MonsterTypeList,	place.monsterTypes );
+
+			mergeSimple( DamageType,	place.damageType);
+			mergeSimple( Attitude,		place.attitude);
+			mergeSimple( PickIgnore,	place.pickIgnore);
+			mergeSimple( PickVuln,		place.pickVuln);
+			mergeSimple( PickResist,	place.pickResist);
+
+			merge( StickerList,		place.stickers );
+			merge( EffectTypeList,	place.effectList );
+			merge( TileTypeList, 	place.tileTypes );
+			merge( ItemTypeList,	place.itemTypes );
+			merge( MonsterTypeList,	place.monsterTypes );
 		}
+	}
+
+	determinePlaceLevels() {
 
 		// Be sure to do this afterwards, just in case a place uses a monster from a place further down the list.
 		for( let placeId in PlaceList ) {
@@ -113,9 +91,9 @@ class DataConditioner {
 				place.tileCount = 0;
 				for( let i=0 ; i<place.map.length ; ++i ) {
 					let s = place.map.charAt(i);
-					if( s=='\t' || s=='\n' ) continue;
+					if( s=='\t' || s=='\n' || s==TILE_UNKNOWN ) continue;
 					place.tileCount ++;
-					let monster = MonsterTypeList[place.symbols[s] || s2t[s]];
+					let monster = MonsterTypeList[place.symbols[s]];
 					if( monster ) {
 						level = Math.max(level,monster.level||1);
 					}
@@ -133,33 +111,21 @@ class DataConditioner {
 		}
 	}
 
-	prepareStaticData() {
-		toFab( ScapeList );
-		toFab( ThemeList );
-		toFab( PlaceList );
-		for( let list of FabList ) {
-			for( let key in list ) {
-				list[key] = fab(list[key],key);
-			}
-		}
+	fabAllData() {
+		Fab.add( 'isScape',			ScapeList );
+		Fab.add( 'isTheme',			ThemeList );
+		Fab.add( 'isPlace',			PlaceList );
+		Fab.add( 'isSticker', 		StickerList );
+		Fab.add( 'isEffect',		EffectTypeList );
+		Fab.add( 'isTileType', 		TileTypeList, 	true, true );
+		Fab.add( 'isItemType',		ItemTypeList, 	true, true, ItemTypeDefaults );
+		Fab.add( 'isMonsterType',	MonsterTypeList, true, true, MonsterTypeDefaults );
 
-		Object.entries(EffectTypeList).forEach( ([typeId,effect]) => {
-			fab(effect,typeId,'isEffect');
-		} );
-		Object.entries(StickerList).forEach( ([typeId,sticker]) => {
-			fab(sticker,typeId,'isSticker');
-		} );
-		Object.entries(TileTypeList).forEach( ([typeId,tileType]) => {
-			fab(tileType,typeId,'isTileType');
-		} );
+		Fab.process();
+
 		Object.entries(ItemTypeList).forEach( ([typeId,itemType]) =>  {
-			itemType = Object.assign( {}, ItemTypeDefaults, itemType );
 			itemType.namePattern = itemType.namePattern || typeId;
-			ItemTypeList[typeId] = fab(itemType,typeId,'isItemType');
-		} );
-		Object.entries(MonsterTypeList).forEach( ([typeId,monsterType]) =>  {
-			monsterType = Object.assign( {}, MonsterTypeDefaults, MonsterTypeList[typeId] );
-			MonsterTypeList[typeId] = fab(monsterType,typeId,'isMonsterType');
+
 		} );
 	}
 };

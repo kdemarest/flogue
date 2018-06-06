@@ -581,13 +581,15 @@
 			} while( reps-- );
 		}
 
-		assureTileCount(tileList) {
-			for( let tile in tileList ) {
-				let count = tileList[tile]-this.countTile(tile);
+		assureTileCount(quota) {
+			let makeSymbol = {};
+			quota.forEach( q => { makeSymbol[q.symbol] = (makeSymbol[q.symbol] || 0) + 1; } );
+			Object.each( makeSymbol, (count,symbol) => {
+				count -= this.countTile(symbol);
 				while( count-- > 0 ) {
-					this.placeEntrance(tile);
+					this.placeEntrance(symbol);
 				}
-			}
+			});
 		}
 
 		fit(px,py,expand,placeMap) {
@@ -664,6 +666,25 @@
 				},0,0,1,1);
 			} while( any );
 			return this;
+		}
+		assembleSites(siteList) {
+			// Now finalize the sites.
+			let zoneList = this.floodAll(true,false);
+			this.traverse( (x,y) => {
+				let zoneId = this.getZoneId(x,y);
+				if( zoneId !== NO_ZONE ) {
+					let t = this.getAll(x,y);
+					if( t.siteId !== undefined ) {
+						zoneList[zoneId].siteCount = (zoneList[zoneId].siteCount||0)+1;
+					}
+				}
+			});
+			zoneList.forEach( zone => {
+				if( !zone.siteCount ) {
+					let site = Object.assign({}, { id: GetUniqueEntityId(), marks: zone.tile, isWilderness: true });
+					siteList.push(site);
+				}
+			});
 		}
 		majorityNear(x,y,testFn) {
 			let most = {};
@@ -869,7 +890,7 @@
 
 
 
-	function positionPlaces(depth,map,numPlaceTiles,requiredPlaces,placeRarityTable,injectList,siteList) {
+	function positionPlaces(depth,map,numPlaceTiles,quota,requiredPlaces,placeRarityTable,injectList,siteList) {
 
 		function generatePlacesRequired(requiredPlaces) {
 			let chanceList = String.chanceParse( requiredPlaces || '' );
@@ -946,8 +967,8 @@
 				let siteMarks = [];
 //				console.log('Placed at ('+x+','+y+')');
 				if( place.floodId ) {
-					let floodTile = TypeToSymbol[place.floodId];
-					let sparkTile = TypeToSymbol[place.sparkId];
+					let floodTile = TypeIdToSymbol[place.floodId];
+					let sparkTile = TypeIdToSymbol[place.sparkId];
 					let sparkDensity = place.sparkDensity || 0;
 					let sparkLimit = place.sparkLimit;
 					let tilesMade = map.floodSpread( x, y, place.tileCount, sparkTile, sparkLimit, sparkDensity, false, 
@@ -1042,7 +1063,7 @@
 		scape.palette = scape.palette || {};
 		for( let tileType of tileTypes ) {
 			let t = scape.palette[tileType+'TypeId'];
-			if( t ) palette[tileType] = TypeToSymbol[t];
+			if( t ) palette[tileType] = TypeIdToSymbol[t];
 			let TileType = String.capitalize(tileType);	// Floor
 			T[TileType] = palette[tileType] || T[TileType];
 		}
@@ -1065,7 +1086,7 @@
 		}
 	}
 
-	function masonConstruct(scape,palette,requiredPlaces,placeRarityTable,requiredTiles,injectList,siteList,onStep) {
+	function masonConstruct(scape,palette,requiredPlaces,placeRarityTable,quota,injectList,siteList,onStep) {
 		let drawZones = false;
 		function render() {
 			let s = map.renderToString(drawZones);
@@ -1075,47 +1096,32 @@
 		palette = paletteCommit( palette || {}, scape );
 
 
+		let mapOffset = { x: -1, y: -1 };	// this is merely a likely offset. The final sizeToExtent will really deal with it...
 		let map = new Mason();
 		map.setDimensions(scape.dim);
 
+		quota.forEach( q => {
+			if( !q.putAnywhere ) {
+				map.setTile(q.x+mapOffset.x,q.y+mapOffset.y,q.symbol);
+				injectList[''+(q.x+mapOffset.x)+','+(q.y+mapOffset.y)] = q.inject;
+			}
+		});
+
 		let numPlaceTiles = Math.floor(map.xLen()*map.yLen()*scape.floorDensity*scape.placeDensity);
-		positionPlaces(scape.depth,map,numPlaceTiles,requiredPlaces,placeRarityTable,injectList,siteList);
+		positionPlaces(scape.depth,map,numPlaceTiles,quota,requiredPlaces,placeRarityTable,injectList,siteList);
 
 		if( scape.architecture == 'cave' ) {
 			makeAmoeba(map,scape.floorDensity,scape.seedPercent,scape.mustConnect);
 		}
 
-		// Now finalize the sites.
-		let zoneList = map.floodAll(true,false);
-		map.traverse( (x,y) => {
-			let zoneId = map.getZoneId(x,y);
-			if( zoneId !== NO_ZONE ) {
-				let t = map.getAll(x,y);
-				if( t.siteId !== undefined ) {
-					zoneList[zoneId].siteCount = (zoneList[zoneId].siteCount||0)+1;
-				}
-			}
-		});
-		zoneList.map( zone => {
-			if( !zone.siteCount ) {
-				let site = Object.assign({}, { id: GetUniqueEntityId(), marks: zone.tile, isWilderness: true });
-				siteList.push(site);
-			}
-		});
-
-		// At this point we could probably flood a bit to figure out all the places in more detail...
-
-//		if( scape.architecture == 'rooms' ) {
-//			makeRooms(map,scape.floorDensity,scape.maxRoomScale);
-//		}
-
+		map.assembleSites(siteList);
 		map.connectAll(scape.wanderingPassage);
 		map.removePointlessDoors();
 		map.wallify(T.OutlineWall);
 		map.sizeToExtentsWithBorder(injectList,1);
 		map.convert(T.Unknown,T.FillWall);
 
-		map.assureTileCount(requiredTiles);
+		map.assureTileCount(quota);
 
 		return map;
 	}

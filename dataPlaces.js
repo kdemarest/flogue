@@ -265,6 +265,7 @@ PlaceList.goblinGathering = {
 `,
 	flags: { rotate: true },
 	symbols: {
+		g: 'goblin',
 		A: 'goblinAltar',
 		P: 'goblinPriest',
 		x: 'brazier'
@@ -335,7 +336,10 @@ M...B..M.....
 	symbols: {
 		x: "wall",
 		M: "mist",
-		F: "crystal"
+		F: "crystal",
+		B: "obelisk",
+		s: "skeleton",
+		S: "skeletonLg",
 	}
 }
 
@@ -457,17 +461,21 @@ mmmm
 PlaceList.lunarEmbassy = {
 	map:
 `
-xxxxxxx.
-x...**x.
-x^..l.xl
-xAl...+.
-x^....xl
-x..lᵴ.x.
-xxxxxxx
+#######.
+#...**#.
+#g..l.#l
+#Al...+.
+#g....#l
+#..ls.#.
+#######
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		x: "wall"
+		'#': 'tileStoneWall',
+		g: 'gem',
+		s: 'spell',
+		A: 'altar',
+		l: 'lunarOne',
 	}
 }
 
@@ -480,7 +488,8 @@ yuy
 `,
 	flags: { rotate: true },
 	symbols: {
-		y: VARIETY
+		y: VARIETY,
+		u: 'brazier',
 	},
 	onEntityCreate: {
 		ogre: { attitude: Attitude.AWAIT, tether: 8, tooClose: 2 },
@@ -493,15 +502,16 @@ yuy
 PlaceMany( 'nest', ['blueScarab','redScarab','viper'], VARIETY => ({
 	map:
 `
-.x⋍x.
-x⋍y⋍x
-⋍yyy⋍
-x⋍y⋍x
-.x⋍x.
+.x-x.
+x-y-x
+-yyy-
+x-y-x
+.x-x.
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		x: "wall",
+		x: 'wall',
+		'-': 'mud',
 		y: VARIETY
 	},
 	onEntityCreate: {
@@ -534,7 +544,7 @@ b:::b
 PlaceMany( 'den', ['dog','kobold'], VARIETY => ({
 	map:
 `
-xxxxxxx
+ xxxxxx
 xxy*.yx
 xy.....
 x.*yxxx
@@ -589,7 +599,8 @@ xx..x
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: "wall"
+		x: "wall",
+		e: 'ethermite',
 	}
 }
 PlaceList.antHive = {
@@ -621,7 +632,9 @@ fLffL
 	flags: { rotate: true },
 	symbols: {
 		L: "lava",
-		f: "flames"
+		f: "flames",
+		D: 'demon',
+		i: 'imp'
 	}
 }
 PlaceList.balgursChamber = {
@@ -637,32 +650,39 @@ PlaceList.balgursChamber = {
 #..f...f..#
 #L.i.f.i.L#
 #LL.....LL#
-#####|#####
+#####F#####
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
 		L: "lava",
-		f: "flames"
+		f: "flames",
+		F: 'forcefield',
+		D: 'demon',
+		i: 'imp',
+		a: 'avatarOfBalgur',
 	}
 }
 PlaceList.portal = {
 	map:
 `
-..MMMMM..
-.MM,,,MM.
+  MMMMM  
+ MM,,,MM 
 MM,,,,,MM
 M,,~*~,,M
 M,,*P*,,e
 M,,~*~,,M
 MM,,,,,MM
-.MM,,,MM.
-..MMMMM..
+ MM,,,MM 
+  MMMMM  
 `,
 	flags: { rotate: true },
 	symbols: {
 		x: "wall",
+		',': 'grass',
+		'~': 'water',
+		M: "mist",
 		P: "portal",
-		M: "mist"
+		e: 'ethermite'
 	},
 	onEntityCreate: {
 		portal: { themeId: 'hellscape' }
@@ -700,6 +720,8 @@ PlaceList.trollPit = {
 `,
 	flags: { rotate: true },
 	symbols: {
+		T: 'troll',
+		':': 'pit'
 	},
 	onEntityCreate: {
 		troll: { attitude: Attitude.AWAIT, tooClose: 2 }
@@ -712,31 +734,43 @@ PlaceList.sunDiscipleTemple = {
 `
 xxxxxxxxxxx...........
 x.....x...x...........
-x.ᵴ...x...x..F..B..G..
-xs=...+...x...........
-x.ᵴ...x...xxxxxxxxxxx.
+x.s...x...x..F..B..G..
+xSr...+...x...........
+x.s...x...xxxxxxxxxxx.
 x.....x...x.........x.
 xxxxxxx...x.........x.
 x.....x...x.........x.
-x.[...x...x...u$....x.
-xs&†..+.......kA^...+.
+x.h...x...x...u$....x.
+xSaw..+.......KAg...+.
 x.b...x...x...u$....x.
 x.....x...x.........x.
 xxxxxxx...x.........x.
 x.....x...x.........x.
-x.ii..x...xxxxxxxxxxx.
-xs$$..+...x...........
-x.ii..x...x..F..B..G..
+x.pp..x...xxxxxxxxxxx.
+xS$$..+...x...........
+x.pp..x...x..F..B..G..
 x.....x...x...........
 xxxxxxxxxxx...........
 `,
 	flags: { rotate: false, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
+		'.': 'tileStoneFloor',
 		x: "tileStoneWall",
-		s: "masterStatue",
-		k: "kingStatue",
-		F: "crystal"
+		u: 'brazier',
+		S: 'masterStatue',
+		K: 'kingStatue',
+		A: 'altar',
+		F: "crystal",
+		G: "ghostStone",
+		B: "obelisk",
+		'$': 'coin',
+		a: 'armor',
+		w: 'weapon',
+		h: 'helm',
+		g: 'gem',
+		b: 'boots',
+		r: 'ring',
+		p: 'potions',
 	},
 	tileTypes: {
 		tileStoneFloor:      { mayWalk: true,  mayFly: true,  opacity: 0, name: "tile stone floor", img: "dc-dngn/floor/rect_gray1.png", isFloor: true },

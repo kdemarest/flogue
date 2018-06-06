@@ -24,12 +24,12 @@ let Place = {
 			let mappedToTypeId = place.symbols[s];
 			// Check if the place chose to used ad-hoc symbology for something
 			if( mappedToTypeId ) {
-				if( !TypeToSymbol[mappedToTypeId] ) {
+				if( !TypeIdToSymbol[mappedToTypeId] ) {
 					console.log('ERROR: Place '+place.id+' uses unknown type '+mappedToTypeId);
 					map += TileTypeList.floor.symbol;
 					continue;
 				}
-				s = TypeToSymbol[mappedToTypeId];
+				s = TypeIdToSymbol[mappedToTypeId];
 			}
 			if( !SymbolToType[s] && s!==TILE_UNKNOWN ) {
 				console.log('ERROR: unknown symbol ['+s+']');

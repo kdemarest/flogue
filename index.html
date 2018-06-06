@@ -169,6 +169,7 @@ function main(levelName) {
 			history.shift();
 		}
 		let targetElement = document.getElementById('guiMessageBox');
+		targetElement.display = 'block';
 		targetElement.innerHTML = history.join('\n');
 		targetElement.scrollTop = targetElement.scrollHeight
 	}
@@ -184,16 +185,13 @@ function main(levelName) {
 		return player;
 	}
 
-	function onAreaChange(oldArea,area,gateId) {
+	function onAreaChange(oldArea,area,xPlayer,yPlayer) {
 		if( gui.viewMiniMap ) {
 			gui.viewMiniMap.setArea(area);
 		}
 
-		let gateFinder = area.map.findItem().isId(gateId);
-		let gate = gateFinder.first;
-		if( !gate ) debugger;
-		player.gateTo(area,gate.x,gate.y);
-		tell(mSubject,player,' ',mVerb,'are',' now on level '+area.id)
+		player.gateTo(area,xPlayer,yPlayer);
+		tell(mSubject|mCares,player,' ',mVerb,'are',' now on level '+area.id)
 	}
 
 	new DataConditioner();
@@ -204,7 +202,7 @@ function main(levelName) {
 
 	let gui = new Gui(playerFind,areaFind);
 	let world = new World(playerFind,onAreaChange);
-	let area = world.createArea(config.startingDepth,ThemeList[config.themeId],true);
+	let area = world.createArea(config.startingDepth,ThemeList[config.themeId],true,[]);
 	world.gateTo(area.id);
 	let player = playerStartup(area);
 	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);
@@ -220,7 +218,10 @@ function main(levelName) {
 		gui.viewMiniMap.setArea(area);
 		gui.render();
 
-		tell([player,null,"Welcome to flogue! Use the arrow keys to move, and '.' to wait."]);
+		tell([player,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
+		$('#guiLoading').hide();
+		$('#guiMain').show();
+
 
 	}, 20);
 }
@@ -229,7 +230,10 @@ function main(levelName) {
 </script>
 </head>
 <body>
-	<table>
+	<div id="guiLoading">
+		Flogue loading...
+	</div>
+	<table id="guiMain">
 		<tr><td colspan="2">
 			<div id="guiMessageBox"></div>
 		</td></tr>

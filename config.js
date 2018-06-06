@@ -12,14 +12,22 @@ ConfigList.ken = () => {
 		map:
 			`
 			.......
+			.LL.MM.
+			.......
+			..ppp..
 			.x...x.
 			.......
 			.x...x.
+			..fff..
 			.......
 			`,
 		flags: { rotate: true },
 		symbols: {
-			x: 'brazier'
+			x: 'brazier',
+			p: 'pit',
+			f: 'flames',
+			L: 'lava',
+			M: 'mud',
 		},
 		stickers: {
 		},

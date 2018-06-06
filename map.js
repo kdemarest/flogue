@@ -233,6 +233,27 @@ class Map extends SimpleMap {
 	findItem(me) {
 		return new Finder(this.itemList,me);
 	}
+	spiralFind(x,y,fn) {
+		let dir = 0;
+		let span = 0.5;
+		let remain = span;
+		let reps = 4*this.getSurfaceArea();	// mult by 4 because you might have started in a corner
+		do {
+			x += DirectionAdd[dir].x;
+			y += DirectionAdd[dir].y;
+			if( fn(x,y,this.tileTypeGet(x,y)) ) {
+				return [x,y];
+			}
+			remain -= 1;
+			if( remain <= 0 ) {
+				dir = (dir + 2) % 8;
+				span += 0.5;
+				remain = span;
+			}
+		} while( --reps > 0 );
+		return false;
+	}
+
 	itemCreateByType(x,y,type,presets,inject) {
 		if( x===undefined ) debugger;
 		if( type.isRandom ) debugger;
