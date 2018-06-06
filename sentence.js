@@ -89,7 +89,7 @@ class Sentence {
 				allCare = false;
 				++i;
 				let who = m[i];
-				if( typeof who=='object' && who.id == observerId ) {
+				if( who && typeof who=='object' && who.id == observerId ) {
 					return true;
 				}
 			}

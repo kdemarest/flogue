@@ -4,6 +4,12 @@ body {
 	color: white;
 	background-color: black;
 }
+#guiMain {
+	display: none;
+}
+#guiLoading {
+	display: block;
+}
 #mapContainer {
 	width: 672px;
 	height: 672px;
@@ -24,7 +30,6 @@ body {
 	height: 32px;
 }
 #guiMessageBox {
-	display: block;
 	white-space: pre;
 	font-family: 'Raleway', sans-serif;
 	font-size: 14px;
@@ -73,7 +78,6 @@ body {
 	height: 120px;
 	padding-top: 10px;
 	padding-bottom: 10px;
-	display: block;
 	white-space: pre;
 	border-top: 1px solid white;
 	font-family: 'Raleway', sans-serif;
@@ -84,7 +88,6 @@ body {
 #guiMiniMap {
 	width: 150px;
 	height: 150px;
-	display: block;
 	font-family: "Ariel", serif;
 	border: 1px solid white;
 	font-size: 10px;
@@ -109,6 +112,10 @@ body {
 }
 .unlit {
 	color: gray;
+}
+.jump {
+	color: black;
+	background-color: orange;
 }
 .guiInventory {
 	display: none;

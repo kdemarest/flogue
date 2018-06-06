@@ -325,17 +325,19 @@ let SayStatList = {
 const TileTypeList = {
 	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", isFloor: true },
 	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", isWall: true },
-	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", img: "dc-dngn/pit.png" },
+	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, img: "dc-dngn/pit.png" },
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", isDoor: 1, img: "dc-dngn/dngn_open_door.png" },
 	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", isDoor: 1, img: "dc-dngn/dngn_closed_door.png" },
-	"water":      { symbol: '~', mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
+	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, opacity: 0, mayJump: true, mayJumpFrom: false, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
 	"grass":      { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
 	"glass":      { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
-	"shaft":      { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", img: "dc-dngn/dngn_trap_shaft.png" },
-	"flames":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "fames", light: 5, glow:1, damage: '1d4', damageType: DamageType.BURN, img: "dc-mon/nonliving/fire_elemental.png" },
-	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, name: "lava", light: 5, glow:1, damage: '3d20', damageType: DamageType.BURN, img: "UNUSED/features/dngn_lava.png" },
+	"shaft":      { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", mayJump: true, img: "dc-dngn/dngn_trap_shaft.png" },
+	"flames":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "flames", mayJump: true, light: 9, glow:1,
+					effect: { op: 'damage', valueDamage: 1.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "dc-mon/nonliving/fire_elemental.png" },
+	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, mayJump: true, name: "lava", light: 5, glow:1, 
+					effect: { op: 'damage', valueDamage: 3.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
-	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "mud", img: "dc-dngn/floor/dirt0.png" },
+	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, mayJump: true, mayJumpFrom: false, name: "mud", img: "dc-dngn/floor/dirt0.png" },
 	"ghoststone": { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
 					effect: { op: 'set', stat: 'invisible', value: true } },
 	"obelisk":    { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png",
@@ -621,6 +623,7 @@ const ItemTypeList = {
 	"stairsUp":   { symbol: '<', name: "stairs up", rarity: 1, gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
 	"gateway":    { symbol: '=', name: "gateway", rarity: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
 	"portal":     { symbol: '0', name: "portal", rarity: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
+	"pitDrop": 	  { symbol: SYM, name: "pit drop", rarity: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
 // DECOR
 	"columnBroken": { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
 	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
@@ -702,7 +705,7 @@ const ItemSortOrder = ['weapon','helm','armor','bracers','gloves','boots','ring'
 
 // ItemBag is the top level item probability and price manager.
 // gen = the chance to generate the item. Themes can tweak this number
-// eff = the change that the generated item has an effect of some kind. Rises by (map.depth*0.30)
+// eff = the change that the generated item has an effect of some kind. Rises by (area.depth*0.30)
 // price = how much you have to pay to buy this thing. Multiplied by the level of the variety/material/quality
 // basis = how you calculate the value and rarity
 let ItemBag = (function() {
@@ -791,6 +794,7 @@ const MonsterTypeList = {
 		inventoryLoot: '',
 		inventoryWear: '',
 		isSunChild: true,
+		jumpMax: 1,
 		light: 4,
 		neverPick: true,
 		picksup: true,
@@ -1155,7 +1159,7 @@ TileTypeList['lockedDoor'].onTouch = function(entity,self) {
 TileTypeList.obelisk.onTouch = function(toucher,self) {
 	if( !toucher.senseBlind ) {
 		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,'.');
-		effectApply( self.effect, toucher, null, null );
+		effectApply( self.effect, toucher, null, self );
 	}
 	else {
 		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,' but ',mVerb,'are',' already blind.');
@@ -1165,7 +1169,7 @@ TileTypeList.obelisk.onTouch = function(toucher,self) {
 TileTypeList.crystal.onTouch = function(entity,self) {
 	if( entity.speed <= 1 ) {
 		tell(mSubject,entity,' ',mVerb,'touch',' ',mObject,self,' and ',mSubject|mVerb,'blur',' with speed!');
-		effectApply( self.effect, toucher, null, null );
+		effectApply( self.effect, toucher, null, self );
 	}
 	else {
 		tell( mSubject,entity,' ',mVerb,'touch',' ',mObject,self,', but ',mVerb,'are',' already moving fast.');
@@ -1173,7 +1177,7 @@ TileTypeList.crystal.onTouch = function(entity,self) {
 }
 
 TileTypeList.pit.onTouch = function(entity,self) {
-	if( entity.travelMode == "walk" ) {
+	if( entity.travelMode == "walk" && !entity.jump ) {
 		tell(mSubject|mCares,entity,' ',mVerb,'are',' at the edge of ',mObject,self);
 	}
 }
@@ -1190,9 +1194,12 @@ TileTypeList.flames.isProblem = function(entity,self) {
 	return !entity.isImmune(self.damageType);
 }
 
-TileTypeList.flames.onTouch = function(entity,self) {
+TileTypeList.flames.onTouch = function(toucher,self) {
 	// We could pass in an onDamage that would also catch you on fire...
-	entity.takeDamage( self, null, rollDice(self.damage), self.damageType );
+	let valueDamage = self.effect.valueDamage * (toucher.jump ||toucher.travelMode=='fly' ? 0.5 : 1.0);
+	let effect = Object.assign( {}, self.effect, { valueDamage: valueDamage } );
+	effect = new Picker(toucher.area.depth).assignEffect(effect);
+	effectApply( effect, toucher, null, self );
 }
 
 TileTypeList.lava.onEnterType = function(entity,self) {
@@ -1207,9 +1214,12 @@ TileTypeList.lava.isProblem = function(entity,self) {
 	return !entity.isImmune(self.damageType);
 }
 
-TileTypeList.lava.onTouch = function(entity,self) {
+TileTypeList.lava.onTouch = function(toucher,self) {
 	// We could pass in an onDamage that would also catch you on fire...
-	entity.takeDamage( self, null, rollDice(self.damage), self.damageType );
+	if( toucher.travelMode == "walk" && !toucher.jump ) {
+		let effect = new Picker(toucher.area.depth).assignEffect(self.effect);
+		effectApply( effect, toucher, null, self );
+	}
 }
 
 TileTypeList.mud.isProblem = function(entity,self) {
@@ -1217,18 +1227,22 @@ TileTypeList.mud.isProblem = function(entity,self) {
 }
 
 TileTypeList.mud.onEnterType = function(entity,self) {
-	if( entity.travelMode == "walk" ) {
+	if( entity.travelMode == "walk" && !entity.jump ) {
 		tell( mSubject|mCares,entity,' ',mVerb,'enter',' ',mObject,self,'.' );
 	}
 }
 
 TileTypeList.mud.onDepartType = function(entity,self) {
-	if( entity.travelMode == "walk" ) {
+	if( entity.travelMode == "walk" && !entity.jump ) {
 		tell( mSubject|mCares,entity,' ',mVerb,'escape',' ',mObject,self,'.' );
 	}
 }
 
 TileTypeList.mud.onDepart = function(entity,self) {
+	if( entity.travelMode == "walk" && entity.jump ) {
+		return;
+	}
+
 	if( entity.isImmune(self.typeId) || ( entity.isResistant(self.typeId) && Math.chance(50) ) ) {
 		return;
 	}

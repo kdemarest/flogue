@@ -37,7 +37,7 @@ class ViewInfo {
 		s += "Armor: "+entity.calcArmor()+"%\n";
 		let weapon = entity.calcWeapon();
 		s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"\n";
-		s += (entity.travelMode !== 'walk' ? '<'+entity.travel+'ing>' : '');
+		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travel+'ing</b>' : entity.travelMode+'ing'))+'\n';
 		let conditionList = [];
 		test(entity.invisible,'invis');
 		test(entity.speed<1,'slow');
@@ -56,7 +56,7 @@ class ViewInfo {
 		s += entity.immune ? "Immune: "+entity.immune+'\n' : '';
 		s += entity.vuln ? "Vulnerable: "+entity.vuln+'\n' : '';
 		s += "Gold: "+Math.floor(entity.goldCount||0)+"\n";
-		$('#'+this.infoDivId).append(s);
+		$('#'+this.infoDivId).show().append(s);
 		let healthRatio = entity.health/entity.healthMax;
 		if( healthRatio < 0.15 ) {
 			$('#'+this.infoDivId).addClass('healthCritical');
@@ -120,15 +120,16 @@ class ViewMiniMap {
 		$( '#'+this.divId)
 			.width(dim*this.scale)
 			.height(dim*this.scale)
-			.append('<canvas id="'+this.divId+'Canvas'+'" height="'+dim*this.scale+'" width="'+dim*this.scale+'"></canvas>');
+			.append('<canvas id="'+this.divId+'Canvas'+'" height="'+dim*this.scale+'" width="'+dim*this.scale+'"></canvas>')
+			.show();
 	}
 	setArea(area) {
-		this.caption = area.id;
+		this.caption = area.id+'('+(area.isCore ? 'core' : 'non-core')+')';
 		this.mapMemory = area.mapMemory;
 		this.create(area);
 	}
 	render(observer) { 
-		$('#'+this.captionDivId).html(this.caption);
+		$('#'+this.captionDivId).show().html(this.caption);
 
 		var canvas = document.getElementById(this.divId+'Canvas');
 		if( !canvas.getContext ) {

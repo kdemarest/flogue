@@ -123,6 +123,10 @@ class Area {
 		let g = this.gateList.filter( g => g.id==id );
 		return g[0];
 	}
+	getGateThatLeadsTo(id) {
+		let g = this.gateList.filter( g => g.toGateId==id );
+		return g[0];
+	}
 	getUnusedGateByTypeId(typeId) {
 		let g = this.gateList.filter( g => g.typeId==typeId && !g.toAreaId );
 		return !g.length ? null : g[0];

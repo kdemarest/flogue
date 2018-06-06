@@ -11,28 +11,50 @@ class World {
 	get player() {
 		return this.getPlayer();
 	}
-	shapeWorld(depth,isCore) {
-		function add(typeId,amount) {
-			console.assert(amount!==undefined);
-			tileQuota[typeId] = (tileQuota[typeId]||0) + amount;
+	shapeWorld(depth,isCore,gateList=[]) {
+
+		function assure(typeId,count) {
+			let reps = 100;
+			while( reps-- && tileQuota.reduce( (total,q) => total + (q.typeId==typeId ? 1 : 0), 0 ) < count ) {
+				tileQuota.push({ typeId: typeId, symbol: TypeIdToSymbol[typeId], putAnywhere: true });
+			}
 		}
 
-		let tileQuota = {};
-		add( 'stairsDown',	isCore ? 1 : 0 );
-		add( 'stairsUp',	isCore && depth>0 ? 1 : 0 );
-		add( 'gateway',		isCore ? 1 : 0 );
-		add( 'portal',		isCore ? 1 : 0 );
-		add( 'deepFont',	isCore ? 1 : 0 );
-		add( 'solarFont', 	isCore ? 1 : 0 );
+		let tileQuota = [];
+		gateList.forEach( gate => {
+			if( gate.gateInverse == false ) {
+				return;
+			}
+			// Vertical gates match locations. Horizontal don't.
+			tileQuota.push(
+				Object.assign({
+					typeId: gate.gateInverse,
+					symbol: TypeIdToSymbol[gate.gateInverse],
+					inject: { toAreaId: this.area.id, toGateId: gate.id }
+				},
+					gate.gateDir ? { x:gate.x, y:gate.y } : { putAnywhere: true }
+				)
+			);
+		});
+
+		if( isCore ) {
+			assure( 'stairsDown', 1 );
+			assure( 'stairsUp', depth>0 ? 1 : 0 );
+			assure( 'gateway', 1 );
+			assure( 'portal', 1 );
+			assure( 'deepFont', 1 );
+			assure( 'solarFont', 1 );
+		}
 		return tileQuota;
 	}
-	createArea(depth,theme,isCore) {
+	createArea(depth,theme,isCore,gateList) {
 		console.assert(depth !== undefined && !isNaN(depth)); 
 		let coreAreaId = 'area.core.'+depth;
 		let areaId = !this.areaList[coreAreaId] ? coreAreaId : GetUniqueEntityId('area',depth);
-		let tileQuota = this.shapeWorld(depth,isCore);
+		let tileQuota = this.shapeWorld(depth,isCore,gateList);
 		let area = new Area(areaId,depth,theme);
 		area.isCore = isCore;
+		area.world = this;
 		this.areaList[areaId] = area;	// critical that this happen BEFORE the .build() so that the theme is set for the picker.
 		area.build(tileQuota)
 		return area;
@@ -40,31 +62,53 @@ class World {
 	setPending(gate) {
 		let toArea = this.areaList[gate.toAreaId];
 		if( !toArea ) {
+			console.log( "Gate "+gate.id+" has no toAreaId" );
 			let isCore = this.area.isCore && gate.gateDir!=0;
 			let depth = this.area.depth + gate.gateDir;
 			if( !gate.themeId ) {
+				console.log( "Picking theme" );
 				let themePickList = Object.filter( ThemeList, theme => !!theme.allowInCore==isCore && !theme.isUnique);
 				console.assert(!Object.isEmpty(themePickList));
 				gate.themeId = pick( themePickList ).typeId;
 				console.assert(gate.themeId);
 			}
 			let theme = ThemeList[gate.themeId];
-			toArea = this.createArea(depth,theme,isCore);
-		}
+			let gateList = this.area.gateList.filter( g => {
+				return (g.id == gate.id) || (isCore && g.gateDir == gate.gateDir);
+			});
+			console.log( "gateList: "+gateList.length );
 
-		let gate2 = gate.toGateId ? toArea.getGate(gate.toGateId) : toArea.getUnusedGateByTypeId(gate.gateInverse);
-		if( !gate2 ) {
-			let pos = toArea.map.pickPosEmpty();
-			gate2 = toArea.map.itemCreateByTypeId(pos[0],pos[1],gate.gateInverse,{});
+//			if( gate.gateInverse === false ) {
+//				gateList.push( { gateInverse: 'floor', x: gate.x, y: gate.y } );
+//			}
+			toArea = this.createArea(depth,theme,isCore,gateList);
 		}
 
 		gate.toAreaId = toArea.id;
-		gate.toGateId = gate2.id;
-		gate2.toAreaId = this.area.id;
-		gate2.toGateId = gate.id;
-		if( !gate.toAreaId || !gate.toGateId || !gate2.toAreaId || !gate2.toGateId ) {
-			debugger;
+
+		if( gate.gateInverse !== false ) {
+			let gate2 = toArea.getGateThatLeadsTo(gate.id);	// createArea() causes this thing to exist...
+			if( !gate2 ) {
+				console.log( "No receiving gate. Creating one." );
+				let pos = toArea.map.pickPosEmpty();
+				gate2 = toArea.map.itemCreateByTypeId(pos[0],pos[1],gate.gateInverse,{});
+				gate2.toAreaId = this.area.id;
+				gate2.toGateId = gate.id;
+			}
+			gate2.toPos = { x: gate.x, y: gate.y };
+			console.assert( gate2.toAreaId && gate2.toGateId );
+			gate.toGateId = gate2.id;
+			gate.toPos = { x: gate2.x, y: gate2.y };
+			console.log( "Gates linked." );
 		}
+		else {
+			// need to adjust this by the level relative offset
+			console.log( "Gate has no inverse. Using toPos instead." );
+			gate.toPos = { x: gate.x, y: gate.y };
+		}
+
+		console.assert( gate.toAreaId );
+		console.assert( gate.toGateId || gate.toPos );
 		this.pending.gate = gate;
 	}
 	detectPlayerOnGate(map,entityList) {
@@ -103,7 +147,10 @@ class World {
 		// and resurrect the new area's deed list.
 		let oldArea = this.area;
 		let newArea = this.gateTo(gate.toAreaId);
-		this.onAreaChange(oldArea,newArea,gate.toGateId);
+		this.onAreaChange(oldArea,newArea,gate.toPos.x,gate.toPos.y);
+		if( gate.killMeWhenDone ) {
+			gate.destroy();
+		}
 		return newArea;
 	}
 

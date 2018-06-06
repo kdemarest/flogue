@@ -53,15 +53,13 @@ class DataConditioner {
 				for( let typeId in typeList ) {
 					console.assert( !targetList[typeId] );
 					let type = typeList[typeId];
-					let targetType = targetList[typeId];
-					let original = Object.assign( {}, type);
 
-					Object.assign(
-						type,
-						type.basis ? targetList[type.basis] || {} : {},
-						targetType || {},
-						original
+					targetList[typeId] = Object.assign(
+						{},
+						type.basis ? targetList[type.basis] || typeList[type.basis] || {} : {},
+						type
 					);
+					typeList[typeId] = targetList[typeId];
 				}
 			}
 
