@@ -290,12 +290,15 @@
 		}
 		placeEntrance(tile) {
 			let amount = 1;
+			let reps = 100;
 			while( amount ) {
 				let x,y;
 				[x,y] = this.randPos();
-				if( isFloor(this.getTile(x,y)) && this.count8(x,y,isFloor)>=3 && this.count8(x,y,isWall)>=1 ) {
+				--reps;
+				if( reps<=0 && isFloor(this.getTile(x,y)) && this.count8(x,y,isFloor)>=3 && this.count8(x,y,isWall)>=1 ) {
 					this.setTile(x,y,tile);
 					--amount;
+					reps = 100;
 				}
 			}
 			return this;
@@ -1055,10 +1058,10 @@
 			debugger;	// illegal. any fill floor must be marked isFloor and be walkable
 		}
 		if( SymbolToType[T.FillWall].mayWalk || !SymbolToType[T.FillWall].isWall ) {
-			debugger;	// illegal. any fill wall must be marked isWall and be not walkable
+		//	debugger;	// illegal. any fill wall must be marked isWall and be not walkable
 		}
 		if( SymbolToType[T.OutlineWall].mayWalk || !SymbolToType[T.OutlineWall].isWall ) {
-			debugger;	// illegal. any fill wall must be marked isWall and be not walkable
+		//	debugger;	// illegal. any fill wall must be marked isWall and be not walkable
 		}
 	}
 
