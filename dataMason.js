@@ -1094,10 +1094,10 @@
 			debugger;	// illegal. any fill floor must be marked isFloor and be walkable
 		}
 		if( SymbolToType[T.FillWall].mayWalk || !SymbolToType[T.FillWall].isWall ) {
-			debugger;	// illegal. any fill wall must be marked isWall and be not walkable
+		//	debugger;	// illegal. any fill wall must be marked isWall and be not walkable
 		}
 		if( SymbolToType[T.OutlineWall].mayWalk || !SymbolToType[T.OutlineWall].isWall ) {
-			debugger;	// illegal. any fill wall must be marked isWall and be not walkable
+		//	debugger;	// illegal. any fill wall must be marked isWall and be not walkable
 		}
 	}
 
