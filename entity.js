@@ -20,8 +20,8 @@ class Entity {
 		}
 		else {
 			let hits = monsterType.power.split(':');
-			let hitsToKillMonster 	= parseInt(hits[0]);
-			let hitsToKillPlayer 	= parseInt(hits[1]);
+			let hitsToKillMonster 	= parseFloat(hits[0]);
+			let hitsToKillPlayer 	= parseFloat(hits[1]);
 			inits.healthMax 		= Rules.monsterHealth(level,hitsToKillMonster);
 			inits.armor     		= (monsterType.armor || 0);
 			naturalWeapon.damage   	= Rules.monsterDamage(level,hitsToKillPlayer);
@@ -309,13 +309,15 @@ class Entity {
 			if( entity[mayTravel] ) {
 				return false;
 			}
-			if( travelMode=='walk' && entity.mayJump && self.jump < self.jumpMax ) {
+			if( travelMode=='walk' && entity.mayJump && self.jump < self.jumpMax && (self.jump || !curTile.mayJump)) {
 				return false;
 			}
 			return true;
 		}
 
 		let self = this;
+		let curTile = this.map.tileTypeGet(this.x,this.y);
+
 		let mayTravel = 'may'+String.capitalize(travelMode || "walk");
 
 		// Am I colliding with another entity?
@@ -1258,6 +1260,10 @@ class Entity {
 			this.vocalize = false;
 		}
 
+
+		let priorTileType = this.map.tileTypeGet(this.x,this.y);
+
+
 		if( commandToDirection(this.command) !== false ) {
 			this.moveDir(dir);
 		}
@@ -1268,7 +1274,7 @@ class Entity {
 		if( timePasses ) {
 			let tileType = this.map.tileTypeGet(this.x,this.y);
 
-			if( this.travelMode == 'walk' && tileType.mayJump ) {
+			if( this.travelMode == 'walk' && tileType.mayJump && (this.jump || !priorTileType.mayJump) ) {
 				// This assumes you ALWAYS want to jump over anything that you CAN jump over. It might
 				// not always be the case... SO perhaps we should check if tileType.isProblem, or if !tileType.mayWalk.
 				this.jump = (this.jump||0)+1;

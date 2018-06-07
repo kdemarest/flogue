@@ -102,6 +102,7 @@ function tick(speed,map,entityList) {
 	if( speed === false ) {
 		let player = entityList.find( entity => entity.isUser() );
 		player.act(false);
+		DeedManager.calc(player);
 		clearCommands(entityList);
 		return;
 	}
@@ -175,13 +176,16 @@ function main(levelName) {
 	}
 
 	function playerStartup(area) {
-		let gate = area.getUnusedGateByTypeId('stairsUp');
-		if( !gate ) {
-			let pos = area.map.pickPosEmpty();
-			gate = area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp',{});
+		let f = new Finder(area.map.itemList).filter( item => item.playerStartHere );
+		if( !f.count ) {
+			f = new Finder(area.map.itemList).filter( item => item.typeId=='stairsUp' );
+			if( !f.count ) {
+				let pos = area.map.pickPosEmpty();
+				f.prepend( area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp',{}) );
+			}
 		}
 		let player = new Entity( area.depth, MonsterTypeList.player, null );
-		player.gateTo(area,gate.x,gate.y);
+		player.gateTo(area,f.first.x,f.first.y);
 		return player;
 	}
 

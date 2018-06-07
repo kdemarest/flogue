@@ -26,7 +26,7 @@ PlaceList.uniqueIdentity = {
 	},
 	monsterTypes: {
 	},
-	onEntityCreate: {
+	inject: {
 	}
 };
 */
@@ -49,6 +49,16 @@ function PlaceMany(prefix,list,templateFn) {
 
 // Theme caps are for a 40x40 area. These will be ratiod to the size of the actual map.
 // prefer - means that, when a pick choice needs to happen, that theme strongly (maybe 100%) prefers to chose that.
+ScapeList.plainScape = theme => ({
+	dim: 				60,
+	architecture: 		"plain",
+	floorDensity: 		95,
+	seedPercent: 		0.001,
+	monsterDensity: 	0.0,
+	itemDensity: 		0.0
+});
+
+
 ScapeList.caveRandom = theme => ({
 	dim: 				Math.randInt(40,80),
 	architecture: 		"cave",
@@ -122,6 +132,14 @@ ThemeList.gameStart = {
 	isUnique: 	true,
 	scapes: 	['caveRandom'],
 	rCOMMON: 	'camp.human',
+	monsters: 	['isPet']
+}
+
+ThemeList.surface = {
+	isUnique: 	true,
+	inControl: 	true,
+	scapes: 	['plainScape'],
+	rREQUIRED: 	'surfaceSunTemple',
 	monsters: 	['isPet']
 }
 
@@ -209,7 +227,7 @@ ThemeList.sunPlane = {
 
 PlaceList.floodWater = {
 	floodId: 'water',
-	tileCount: 150, //() => Math.randInt(50,300),
+	tilePercent: 0.20,
 	sparkId: 'floor',
 	sparkLimit: 4,
 	sparkDensity: 0.02
@@ -217,12 +235,12 @@ PlaceList.floodWater = {
 
 PlaceList.floodMist = {
 	floodId: 'mist',
-	tileCount: 300, //() => Math.randInt(100,400)
+	tilePercent: 0.20,
 }
 
 PlaceList.floodOre = {
 	floodId: 'oreVein',
-	tileCount: 100, //() => Math.randInt(50,300),
+	tilePercent: 0.20,
 	sparkId: 'floor',
 	sparkLimit: 2,
 	sparkDensity: 0.005
@@ -230,7 +248,7 @@ PlaceList.floodOre = {
 
 PlaceList.floodPit = {
 	floodId: 'pit',
-	tileCount: 300, //() => Math.randInt(50,300),
+	tilePercent: 0.20,
 	sparkId: 'floor',
 	sparkLimit: 4,
 	sparkDensity: 0.02
@@ -238,7 +256,7 @@ PlaceList.floodPit = {
 
 PlaceList.firePit = {
 	floodId: 'pit',
-	tileCount:  150, //() => Math.randInt(45,100),
+	tilePercent: 0.20,
 	sparkId: 'flames',
 	sparkLimit: 3,
 	sparkDensity: 1.00
@@ -247,7 +265,7 @@ PlaceList.firePit = {
 
 PlaceList.pitEncircle = {
 	floodId: 'floor',
-	tileCount: 250, //() => Math.randInt(50,200),
+	tilePercent: 0.20,
 	sparkId: 'pit',
 	sparkLimit: 1,
 	sparkDensity: 1.00
@@ -283,7 +301,7 @@ PlaceList.goblinGathering = {
 						attitude: Attitude.WORSHIP, shout: 'Death to all heretic overworld invaders!',
 						img: "dc-mon/gnoll.png" }
 	},
-	onEntityCreate: {
+	inject: {
 		goblin: { attitude: Attitude.WORSHIP }
 	}
 };
@@ -315,6 +333,48 @@ PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityL
 	}
 	this.glow = !this.rechargeLeft;
 	this.light = this.rechargeLeft ? 0 : 4;
+}
+
+PlaceList.surfaceSunTemple = {
+	map:
+`
+       #########
+     ###.......###
+   ###...........###
+  ##...............##
+  #........b........#
+ ##.................##
+ #...................#
+##...................##
+#.....................#
+#.....................########
+#.....................+......#
+#...b......F..X..1A...#.pwasS#
+#.....................+......#
+#.....................########
+#.....................#
+##...................##
+ #...................#
+ ##.................##
+  #........b........#
+  ##...............##
+   ###...........###
+     ###.......###
+       #########
+`,
+	flags: { rotate: false },
+	symbols: {
+		1: 'stuff.oilLamp',
+		X: { type: 'marker', playerStartHere: true },
+		F: "solarFont",
+		A: "altar",
+		b: "brazier",
+		S: "stairsDown",
+		w: "weapon.dagger",
+		a: "armor",
+		s: "spell.eFire",
+		p: "potion.eHealing",
+	},
 }
 
 PlaceList.graveYard = {
@@ -491,7 +551,7 @@ yuy
 		y: VARIETY,
 		u: 'brazier',
 	},
-	onEntityCreate: {
+	inject: {
 		ogre: { attitude: Attitude.AWAIT, tether: 8, tooClose: 2 },
 		human: { attitude: Attitude.WANDER, tether: 1 },
 		goblin: { attitude: Attitude.AWAIT, tether: 8, tooClose: 4 }
@@ -514,7 +574,7 @@ x-y-x
 		'-': 'mud',
 		y: VARIETY
 	},
-	onEntityCreate: {
+	inject: {
 		viper: { attitude: Attitude.WANDER, tether: 2, tooClose: 2 },
 		redScarab: { attitude: Attitude.AGGRESSIVE, tether: 2 },
 		blueScarab: { attitude: Attitude.AGGRESSIVE, tether: 2 }
@@ -535,7 +595,7 @@ b:::b
 		':': 'pit',
 		b: VARIETY
 	},
-	onEntityCreate: {
+	inject: {
 		bat: { attitude: Attitude.WANDER, tether: 7 },
 	}
 }));
@@ -555,7 +615,7 @@ xxxxx
 		x: "wall",
 		y: VARIETY
 	},
-	onEntityCreate: {
+	inject: {
 		dog: { attitude: Attitude.WANDER, tether: 4, tooClose: 1 },
 		kobold: { tether: 2 }
 	}
@@ -584,7 +644,7 @@ mmwmwwmmwwwwm
 		w: "water",
 		f: "spinyFrog"
 	},
-	onEntityCreate: {
+	inject: {
 		spinyFrog: { attitude: Attitude.WANDER, tether: 3, tooClose: 3 },
 	}
 }
@@ -684,7 +744,7 @@ MM,,,,,MM
 		P: "portal",
 		e: 'ethermite'
 	},
-	onEntityCreate: {
+	inject: {
 		portal: { themeId: 'hellscape' }
 	}
 }
@@ -704,7 +764,7 @@ xxxxx
 		T: 'troll',
 		':': 'pit'
 	},
-	onEntityCreate: {
+	inject: {
 		troll: { attitude: Attitude.AWAIT, tooClose: 2 }
 	}
 }
@@ -723,7 +783,7 @@ PlaceList.trollPit = {
 		T: 'troll',
 		':': 'pit'
 	},
-	onEntityCreate: {
+	inject: {
 		troll: { attitude: Attitude.AWAIT, tooClose: 2 }
 	}
 }
@@ -798,7 +858,7 @@ PlaceList.handoutStand = {
 		',': "tileStoneFloor",
 		x: "tileStoneWall",
 	},
-	onEntityCreate: {
+	inject: {
 		philanthropist: { attitude: Attitude.AWAIT, tether: 0 },
 		refugee: { attitude: Attitude.AWAIT, tether: 2 },
 	}
@@ -824,7 +884,7 @@ xxx+xxx
 		b: "brazier",
 		d: "dwarf",
 	},
-	onEntityCreate: {
+	inject: {
 		dwarf: { name: "dwarf herald", attitude: Attitude.WANDER, tether: 3 },
 		gateway: { themeId: 'dwarfTown' },
 	}
@@ -875,7 +935,7 @@ xxxx+xxxx
 		f: "fountain",
 		d: "dwarf",
 	},
-	onEntityCreate: {
+	inject: {
 		dwarf: { name: "dwarf cleric", attitude: Attitude.WANDER, tether: 5 }
 	}
 }
@@ -901,7 +961,7 @@ xxxx+xxxx
 		x: "tileStoneWall",
 		d: "dwarf",
 	},
-	onEntityCreate: {
+	inject: {
 		dwarf: { attitude: Attitude.WANDER, tether: 10 }
 	}
 }
@@ -924,7 +984,7 @@ xxxx+xx
 		x: "tileStoneWall",
 		d: "dwarf",
 	},
-	onEntityCreate: {
+	inject: {
 		dwarf: { attitude: Attitude.WANDER, tether: 6 }
 	}
 }
@@ -947,7 +1007,7 @@ xxxx+xx
 		x: "tileStoneWall",
 		d: "dwarf",
 	},
-	onEntityCreate: {
+	inject: {
 		dwarf: { attitude: Attitude.WANDER, tether: 6 }
 	}
 }
@@ -968,7 +1028,7 @@ PlaceList.dwarfSmithy = {
 		d: "dwarf",
 		f: "flames",
 	},
-	onEntityCreate: {
+	inject: {
 		dwarf: { job: "not a smith", attitude: Attitude.AWAIT, tether: 2 }
 	}
 }

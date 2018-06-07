@@ -37,7 +37,7 @@ ConfigList.ken = () => {
 		},
 		monsterTypes: {
 		},
-		onEntityCreate: {
+		inject: {
 		}
 	};
 
@@ -52,9 +52,10 @@ ConfigList.ken = () => {
 		monsters: 	['isDwarf']
 
 	}
+
 	Object.assign( MonsterTypeList.player, {
-		inventoryLoot: MonsterTypeList.player.inventoryLoot+', weapon.hammer, potion.eFlight, spell.eShove',
-		inventoryWear: MonsterTypeList.player.inventoryWear+', stuff.lantern, weapon.sword'
+//		inventoryLoot: MonsterTypeList.player.inventoryLoot+', weapon.hammer, potion.eFlight, spell.eShove',
+//		inventoryWear: MonsterTypeList.player.inventoryWear+', stuff.lantern, weapon.sword'
 	});
 
 	Object.assign( Tweak, {
@@ -64,8 +65,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 40,
-		themeId: 'kenTheme'
+		startingDepth: 0,
+		themeId: 'surface'
 	}
 }
 

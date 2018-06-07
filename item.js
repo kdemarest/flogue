@@ -46,8 +46,11 @@ class Item {
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
 	}
 	get area() {
-		if( !owner ) debugger;
-		return owner.area;
+		if( !this.owner ) debugger;
+		return this.owner.area;
+	}
+	get map() {
+		return this.area.map;
 	}
 	get baseType() {
 		return ItemTypeList[this.typeId];

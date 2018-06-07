@@ -11,13 +11,20 @@ function areaBuild(area,tileQuota) {
 		console.assert( x!==undefined && y!==undefined );
 		type = type && !type.isRandom ? type : null;
 		if( !type || !presets ) {
-			let filterString = [type ? type.typeId : '',!type || type.isTreasure ? 'isTreasure' : ''].join(' ');
+			let filterString = inject && inject.type ? inject.type : (type ? type.typeId : '');
+			if( !type || type.isTreasure ) {
+				filterString += ' isTreasure';
+			}
 			type = picker.pickItem( filterString );
 			console.assert( type );
 			presets = type.presets;
 		}
 
 		let item = area.map.itemCreateByType(x,y,type,presets,inject);
+		if( type.gateDir !== undefined ) {
+			console.log( "Gate "+type.typeId+" at ("+x+","+y+") leads to "+(!inject ? 'TBD' : inject.toAreaId+' / '+inject.toGateId) );
+			console.log( "The item says "+item.toAreaId+' / '+item.toGateId );
+		}
 		console.assert( item.x!==undefined );
 		return item;
 	}
@@ -33,14 +40,17 @@ function areaBuild(area,tileQuota) {
 	function extractEntitiesFromMap(map,injectList,makeMonsterFn,makeItemFn) {
 		let noEntity = {};
 		map.traverse( (x,y,type) => {
-			let inject = injectList[''+x+','+y] || noEntity;
+			let pos = ''+x+','+y;
+			let inject = injectList[pos];
 			if( type && type.isMonsterType ) {
 				map.tileSymbolSetFloor(x,y)
-				makeMonsterFn( type, x, y, inject ); 
+				makeMonsterFn( type, x, y, inject ? inject[type.typeId] : null ); 
+				if( inject ) inject[type.typeId].injected = true;
 			}
 			if( type && type.isItemType ) {
 				map.tileSymbolSetFloor(x,y);
-				makeItemFn(type,x,y,null,inject);	// the null means you have to generate presets for this item.
+				makeItemFn(type,x,y,null,inject ? inject[type.typeId]: null);	// the null means you have to generate presets for this item.
+				if( inject ) inject[type.typeId].injected = true;
 			}
 		});
 	}
@@ -91,6 +101,14 @@ function areaBuild(area,tileQuota) {
 	area.entityList = [];
 
 	extractEntitiesFromMap(area.map,injectList,makeMonster,makeItem);
+	Object.each( injectList, (inject,pos) => {
+		Object.each( inject, (type,typeId) => {
+			if( !type.injected ) {
+				console.log("ERROR: Failed inject of "+typeId+" at "+pos+" payload "+JSON.stringify(type));
+			}
+		});
+	});
+
 
 	let entityCount = area.map.count( (x,y,type) => type.isMonsterType ? 1 : 0 );
 	let treasureCount = area.map.count( (x,y,type) => type.isTreasure ? 1 : 0 );
@@ -115,6 +133,7 @@ class Area {
 		this.depth = depth;
 		this.theme = theme;
 		this.mapMemory = [];
+		this.picker = new Picker(depth);
 	}
 	build(tileQuota) {
 		return areaBuild(this,tileQuota);

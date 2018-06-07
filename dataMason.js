@@ -617,7 +617,7 @@
 					if( mSym !== TILE_UNKNOWN ) {
 						debugger;
 					}
-					fn(px+x,py+y,pSym);
+					fn(x,y,px+x,py+y,pSym);
 					this.setTile(px+x,py+y,pSym);
 				}
 			}
@@ -917,6 +917,15 @@
 			return table;
 		}
 
+		function tileCount(place) {
+			if( place.tileCount )
+				return place.tileCount;
+			if( place.tilePercent )
+				return Math.clamp( Math.floor(numPlaceTiles * place.tilePercent), 1, numPlaceTiles );
+			debugger;
+			return 0;
+		}
+
 		function pickPlace(placeRarityTable) {
 			// We try to resist picking the same place multiple times on a level.
 			let table = placeTable(placeRarityTable);
@@ -960,7 +969,7 @@
 			let fits = findTheFit();
 
 			if( !fits ) {
-				numPlaceTiles += place.tileCount;
+				numPlaceTiles += tileCount(place);
 			}
 			else
 			{
@@ -971,21 +980,26 @@
 					let sparkTile = TypeIdToSymbol[place.sparkId];
 					let sparkDensity = place.sparkDensity || 0;
 					let sparkLimit = place.sparkLimit;
-					let tilesMade = map.floodSpread( x, y, place.tileCount, sparkTile, sparkLimit, sparkDensity, false, 
+					let tilesMade = map.floodSpread( x, y, tileCount(place), sparkTile, sparkLimit, sparkDensity, false, 
 						(x,y,t) => { siteMarks.push(x,y); t.tile=floodTile; } );
-					numPlaceTiles += (place.tileCount-tilesMade);
-					//if( tilesMade < place.tileCount ) {
-					//	debugger;
-					//}
+					numPlaceTiles += (tileCount(place)-tilesMade);
 				}
 				else {
-					map.inject( x, y, place.map, function(x,y,symbol) {
+					map.inject( x, y, place.map, function(px,py,x,y,symbol) {
 						siteMarks.push(x,y);
 						let type = SymbolToType[symbol];
 						if( !type ) debugger;
-						if( place.onEntityCreate && place.onEntityCreate[type.typeId] ) {
-							//console.log(type.typeId+' at '+x+','+y+' will get ',place.onEntityCreate[type.typeId]);
-							injectList[''+x+','+y] = place.onEntityCreate[type.typeId];
+						let iPos = ''+x+','+y;
+						if( place.inject && place.inject[type.typeId] ) {
+							//console.log(type.typeId+' at '+x+','+y+' will get ',place.inject[type.typeId]);
+							injectList[iPos] = injectList[iPos] || {};
+							injectList[iPos][type.typeId] = Object.assign( injectList[iPos][type.typeId] || {}, place.inject[type.typeId] );
+						}
+						// Order is important. The specifically positioned one overridesany generic tweaks on the type.
+						let pPos = ''+px+','+py;
+						if( place.inject && place.inject[pPos] ) {
+							injectList[iPos] = injectList[iPos] || {};
+							injectList[iPos][type.typeId] = Object.assign( injectList[iPos][type.typeId] || {}, place.inject[pPos][type.typeId] );
 						}
 					});
 				}
@@ -996,28 +1010,29 @@
 
 		let placeUsed = [];	// used to avoid duplicating places too much
 		let placeRosterRequired = generatePlacesRequired(requiredPlaces).map( placeId => PlaceList[placeId] );
-		placeRosterRequired.map( place => { numPlaceTiles -= place.tileCount; } );
+		placeRosterRequired.map( place => { numPlaceTiles -= tileCount(place); } );
 
+		// We are allowed to have an empty placeRarityTable. It is OK to specify only required places, or none.
 		let placeRosterRandom = [];
 		let reps = 1000;
-		while( numPlaceTiles>0 && --reps) {
+		while( placeRarityTable.length && numPlaceTiles>0 && --reps) {
 			let place = pickPlace(placeRarityTable);
 			placeRosterRandom.push(place);
-			numPlaceTiles -= place.tileCount;
+			numPlaceTiles -= tileCount(place);
 		}
 		if( !reps ) debugger;
 
 		// SUBTLE: Notice that the required places do NOT get sorted. The user has control over which
 		// places get generated first.
-		placeRosterRandom.sort( (a,b) => b.tileCount-a.tileCount );
+		placeRosterRandom.sort( (a,b) => tileCount(b)-tileCount(a) );
 		let placeRoster = placeRosterRequired.concat(placeRosterRandom);
 
 		reps = 20;
 		do {
-			while( numPlaceTiles > 0 ) {
+			while( placeRarityTable.length && numPlaceTiles > 0 ) {
 				let place = pickPlace(placeRarityTable);
 				placeRoster.push(place);
-				numPlaceTiles -= place.tileCount;
+				numPlaceTiles -= tileCount(place);
 			}
 
 			while( placeRoster.length ) {
@@ -1036,7 +1051,7 @@
 					}
 				}
 			}
-		} while( numPlaceTiles > 0 && --reps );
+		} while( placeRarityTable.length && numPlaceTiles > 0 && --reps );
 		if( !reps ) debugger;
 	}
 
@@ -1103,7 +1118,10 @@
 		quota.forEach( q => {
 			if( !q.putAnywhere ) {
 				map.setTile(q.x+mapOffset.x,q.y+mapOffset.y,q.symbol);
-				injectList[''+(q.x+mapOffset.x)+','+(q.y+mapOffset.y)] = q.inject;
+				let qPos = ''+(q.x+mapOffset.x)+','+(q.y+mapOffset.y);
+				injectList[qPos] = injectList[qPos] || {};
+				console.log( "Quota adding at "+qPos+" type "+q.typeId );
+				injectList[qPos][q.typeId] = q.inject;
 			}
 		});
 

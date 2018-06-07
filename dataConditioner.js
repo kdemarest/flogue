@@ -95,11 +95,11 @@ class DataConditioner {
 					place.tileCount ++;
 					let monster = MonsterTypeList[place.symbols[s]];
 					if( monster ) {
-						level = Math.max(level,monster.level||1);
+						level = Math.max(level,monster.level||MIN_DEPTH);
 					}
 				}
 			}
-			if( !place.tileCount ) debugger;
+			if( !place.tileCount && !place.tilePercent ) debugger;
 			if( place.level && level > place.level+5 ) {
 				console.log("WARNING: Place "+placeId+" is level "+place.level+" but has level "+level+" monsters.");
 			}

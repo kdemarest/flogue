@@ -9,9 +9,9 @@ class Picker {
 	// Contains entries in MonsterTypeList
 	monsterTable(monsterConstraint) {
 		let table = [];
+		let closest = [];
 		for( let typeId in MonsterTypeList ) {
 			let m = MonsterTypeList[typeId];
-
 			if( monsterConstraint ) {
 				let ok = false;
 				for( let stat of monsterConstraint ) {
@@ -21,6 +21,13 @@ class Picker {
 					continue;
 				}
 			}
+			let deltaMe = Math.abs(m.level-this.depth);
+			let deltaC  = !closest.length ? 9999 : Math.abs(closest[1].level-this.depth);
+			if( deltaMe <= deltaC ) {
+				if( deltaMe < deltaC ) { closest = []; }	// if I'm closer, restart the table. But any equal get added to the table.
+				closest.push(1,m);
+			}
+
 			if( m.level > this.depth || m.neverPick ) {
 				continue;
 			}
@@ -28,7 +35,7 @@ class Picker {
 			chance *= (m.rarity || 1);
 			table.push(chance,m);
 		}
-		return table;
+		return table.length ? table : closest;
 	}
 
 	filterStringParse(filterString) {
@@ -205,18 +212,34 @@ class Picker {
 		if( ItemTypeList[filter.firstId] ) {
 			itemTypeId = filter.firstId;
 		}
+		// No item type was specified, so use the master chance table to pick one.
 		if( !itemTypeId && !filter.specifiesId ) {
-			itemTypeId = Array.pickFrom( Object.keys(ItemBag), typeId => {
+			let p = Array.makePickTable( Object.keys(ItemBag), typeId => {
 				//console.log( typeId+' = '+ItemBag[typeId].cGen );
 				return ItemBag[typeId].cGen;
 			});
+			itemTypeId = Array.pickFrom( p.table, p.chance, p.total );
 		}
+		// Make a table of all items that meet the criteria
 		let table = [];
 		this.itemTraverse( itemTypeId, filter, thing => {
 			table.push(thing);
 		});
-		if( !table.length ) debugger;
-		let choice = Array.pickFrom(table,thing=> thing.appear*thing.rarity,thing=>thing.rarity);
+		// If no items meet the criteria, we shoud return a fallback item, like gold.
+		if( !table.length ) {
+			debugger;
+			return ItemTypeList.gold;
+		}
+		// Make a table with all the chances to appear figured out.
+		let p = Array.makePickTable( table, thing=> thing.appear*thing.rarity );
+		// Pick an item, based on chance to appear.
+		let depth = this.depth;
+		let choice = p.total ? Array.pickFrom( p.table, p.chance, p.total ) : function() {
+			// If all the items have zero chance to appear, then choose an item
+			// closest in level to the current depth, with the most common rarity.
+			table.sort( (a,b) => a.level == b.level ? b.rarity-a.rarity : Math.abs(a.level-depth)-Math.abs(b.level-depth) );
+			return table[0];
+		}();
 		return choice;
 	}
 

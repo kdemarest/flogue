@@ -17,19 +17,37 @@ let Place = {
 		// Replace map symbols with allocated symbols
 		place.mapOriginal = place.map;
 		let map = '';
+		let y=0;
+		let x=-1;
 		for( let i=0 ; i<place.mapOriginal.length ; ++i ) {
 			let s = place.mapOriginal.charAt(i);
 			if( s=='\t' ) { continue; }
-			if( s=='\n' ) { map+=s; continue; }
-			let mappedToTypeId = place.symbols[s];
+			if( s=='\n' ) { map+=s; ++y; x=-1; continue; }
+			++x;
+			let typeId;
+			let option = place.symbols[s];
+			if( typeof option == 'string' ) {
+				typeId = option.split('.')[0];
+				if( option.indexOf('.')>=0 ) {
+					option = { type: option };
+				}
+			}
+			if( option !== undefined && typeof option == 'object' ) {
+				console.assert( option.type );
+				let pPos = ''+x+','+y;
+				typeId = option.type.split('.')[0];
+				place.inject = (place.inject||{});
+				place.inject[pPos] = place.inject[pPos] || {};
+				place.inject[pPos][typeId] = option;
+			}
 			// Check if the place chose to used ad-hoc symbology for something
-			if( mappedToTypeId ) {
-				if( !TypeIdToSymbol[mappedToTypeId] ) {
-					console.log('ERROR: Place '+place.id+' uses unknown type '+mappedToTypeId);
+			if( typeId ) {
+				if( !TypeIdToSymbol[typeId] ) {
+					console.log('ERROR: Place '+place.id+' uses unknown type '+typeId);
 					map += TileTypeList.floor.symbol;
 					continue;
 				}
-				s = TypeIdToSymbol[mappedToTypeId];
+				s = TypeIdToSymbol[typeId];
 			}
 			if( !SymbolToType[s] && s!==TILE_UNKNOWN ) {
 				console.log('ERROR: unknown symbol ['+s+']');

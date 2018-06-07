@@ -45,6 +45,8 @@ function deltasToDirNatural(dx,dy) {
 	return deltasToDirPredictable(dx,dy);
 }
 
+let MIN_DEPTH = 0;
+let MAX_DEPTH = 100;
 let TILE_UNKNOWN = ' ';		// reserved so that map creation can look sane.
 let SymbolToType = {};
 let TypeIdToSymbol = {};
@@ -303,7 +305,7 @@ let SayStatList = {
 		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' creatures!'];
 	},
 	light: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'glow','.'];
+		return ['The area around ',mSubject,subj,' '+(newValue>oldValue?' brightens':'grows darker')+'.'];
 	},
 	_generic_: function(subj,obj,oldValue,newValue) {
 		return [mSubject,subj,' ',mVerb,'is',' less enchanted.'];
@@ -328,7 +330,7 @@ const TileTypeList = {
 	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, img: "dc-dngn/pit.png" },
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", isDoor: 1, img: "dc-dngn/dngn_open_door.png" },
 	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", isDoor: 1, img: "dc-dngn/dngn_closed_door.png" },
-	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, opacity: 0, mayJump: true, mayJumpFrom: false, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
+	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, opacity: 0, mayJump: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
 	"grass":      { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
 	"glass":      { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
 	"shaft":      { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", mayJump: true, img: "dc-dngn/dngn_trap_shaft.png" },
@@ -337,7 +339,7 @@ const TileTypeList = {
 	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, mayJump: true, name: "lava", light: 5, glow:1, 
 					effect: { op: 'damage', valueDamage: 3.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
-	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, mayJump: true, mayJumpFrom: false, name: "mud", img: "dc-dngn/floor/dirt0.png" },
+	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, mayJump: true, name: "mud", img: "dc-dngn/floor/dirt0.png" },
 	"ghoststone": { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
 					effect: { op: 'set', stat: 'invisible', value: true } },
 	"obelisk":    { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png",
@@ -519,9 +521,9 @@ const GemList = Fab.add( '', {
 });
 
 const StuffList = Fab.add( '', {
-	"lantern": 			{ slot: Slot.HIP, light: 14, triggerOnUse: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light' }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"oilLamp": 			{ slot: Slot.HIP, light: 10, triggerOnUse: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light' }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"candleLamp": 		{ slot: Slot.HIP, light:  6, triggerOnUse: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light' }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"lantern": 			{ slot: Slot.HIP, light: 14, triggerOnUse: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"oilLamp": 			{ slot: Slot.HIP, light: 10, triggerOnUse: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"candleLamp": 		{ slot: Slot.HIP, light:  6, triggerOnUse: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"trollHide": 		{ },
 	"bones": 			{ },
 	"antGrubMush": 		{ },
@@ -624,6 +626,8 @@ const ItemTypeList = {
 	"gateway":    { symbol: '=', name: "gateway", rarity: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
 	"portal":     { symbol: '0', name: "portal", rarity: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
 	"pitDrop": 	  { symbol: SYM, name: "pit drop", rarity: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
+// GATEWAYS
+	"marker": 	  { symbol: SYM, name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
 // DECOR
 	"columnBroken": { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
 	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
@@ -729,6 +733,7 @@ let ItemBag = (function() {
 })();
 
 const Brain = { AI: "ai", USER: "user" };
+let MaxSightDistance = 10;
 
 const MonsterTypeDefaults = {
 					level: 0, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
@@ -753,7 +758,6 @@ const MonsterTypeDefaults = {
 					observeDistantEvents: false
 				};
 
-let MaxSightDistance = 10;
 let LightAlpha = [];
 for( let i=0 ; i<MaxSightDistance+20 ; ++i ) {
 	LightAlpha[i] = Math.clamp(i/MaxSightDistance,0.0,1.0);
@@ -1324,11 +1328,16 @@ TileTypeList.ghoststone.onTouch = function(toucher,self) {
 
 ItemTypeList.altar.onTouch = function(toucher,self) {
 	if( !self.rechargeLeft) {
-		effectApply(self.effect,toucher,null,self);
-		self.depleted = true;
+		if( toucher.health >= toucher.healthMax ) {
+			tell( mSubject|mCares,toucher,' ',mVerb,'is',' already at full health.');
+		}
+		else {
+			effectApply(self.effect,toucher,null,self);
+			self.depleted = true;
+		}
 	}
 	else {
-		tell( mSubject|mCares,self,' ',mVerb,'is',' not glowing at the moment.');
+		tell( mCares,toucher,mSubject,self,' ',mVerb,'is',' not glowing at the moment.');
 	}
 }
 
@@ -1340,6 +1349,28 @@ ItemTypeList.altar.onTick = function(dt) {
 	this.glow = !this.rechargeLeft;
 	this.light = this.rechargeLeft ? 0 : ItemTypeList.altar.light;
 }
+
+ItemTypeList.solarFont.onTick = function(dt) {
+	let nearby = new Finder(this.area.entityList,this).nearMe(1);
+	let self = this;
+	nearby.process( entity => {
+		let deed = DeedManager.findFirst( d=>d.isSolarRegen );
+		if( deed ) {
+			deed.timeLeft = 4;
+		}
+		else {
+			let effect = self.area.picker.assignEffect({ isSolarRegen: true, op: 'add', stat: 'regenerate', value: 0.05, duration: 4, icon: EffectTypeList.eRegeneration.icon });
+			effectApply(effect,entity,null,self);
+		}
+		let f = new Finder(entity.inventory).filter( item => item.rechargeTime && item.rechargeLeft > 0 );
+		if( f.count ) {
+			let item = pick(f.all);
+			item.rechargeLeft = 0;
+			tell( mSubject|mPossessive|mCares,entity,' ',mObject,item,' suddenly recharges.' );
+		}
+	});
+}
+
 
 
 MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {

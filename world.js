@@ -8,13 +8,16 @@ class World {
 		};
 		this.onAreaChange = onAreaChange;
 	}
+
 	get player() {
 		return this.getPlayer();
 	}
-	shapeWorld(depth,isCore,gateList=[]) {
+
+	shapeWorld(depth,theme,isCore,gateList=[]) {
 
 		function assure(typeId,count) {
 			let reps = 100;
+			// The reduce below coulds how many of the typeId already exist in the quota
 			while( reps-- && tileQuota.reduce( (total,q) => total + (q.typeId==typeId ? 1 : 0), 0 ) < count ) {
 				tileQuota.push({ typeId: typeId, symbol: TypeIdToSymbol[typeId], putAnywhere: true });
 			}
@@ -35,11 +38,12 @@ class World {
 					gate.gateDir ? { x:gate.x, y:gate.y } : { putAnywhere: true }
 				)
 			);
+			console.log( "Added "+gate.gateInverse+" at ("+gate.x+","+gate.y+") leading to "+this.area.id+" / "+gate.id );
 		});
 
-		if( isCore ) {
-			assure( 'stairsDown', 1 );
-			assure( 'stairsUp', depth>0 ? 1 : 0 );
+		if( isCore && !theme.inControl ) {
+			assure( 'stairsDown', depth<MAX_DEPTH ? 1 : 0 );
+			assure( 'stairsUp', depth>MIN_DEPTH ? 1 : 0 );
 			assure( 'gateway', 1 );
 			assure( 'portal', 1 );
 			assure( 'deepFont', 1 );
@@ -51,7 +55,7 @@ class World {
 		console.assert(depth !== undefined && !isNaN(depth)); 
 		let coreAreaId = 'area.core.'+depth;
 		let areaId = !this.areaList[coreAreaId] ? coreAreaId : GetUniqueEntityId('area',depth);
-		let tileQuota = this.shapeWorld(depth,isCore,gateList);
+		let tileQuota = this.shapeWorld(depth,theme,isCore,gateList);
 		let area = new Area(areaId,depth,theme);
 		area.isCore = isCore;
 		area.world = this;

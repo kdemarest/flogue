@@ -135,6 +135,13 @@ let DeedManager = (new class {
 			}
 		}
 	}
+	findFirst(fn) {
+		for( let deed of this.deedList ) {
+			if( !deed.killMe && fn(deed) ) {
+				return deed;
+			}
+		}
+	}
 	end(fn) {
 		let count = 0;
 		for( let deed of this.deedList ) {

@@ -1,3 +1,15 @@
+let DepthOutline = {
+	d0_surface: {
+		themeId: 'surface',
+		tiles: {
+			solarFont: 1
+		}
+	},
+	d1_ 
+
+}
+
+
 class Outline {
 	constructor() {
 		this.areaList = {};

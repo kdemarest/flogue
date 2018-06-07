@@ -135,10 +135,7 @@ function nop() {}
 		return result;
 	}
 
-		//**
-	// Takes a table of things, whatever you want, and uses the chanceFn to get values of likelihood.
-	// Then it traverses again picking a random one by poportions. If it fails (total=0) it tries the fallbackFn instead.
-	Array.pickFrom = function(table,chanceFn,fallbackFn) {
+	Array.makePickTable = function(table,chanceFn) {
 		console.assert( table && table.length );
 		let chance = [];
 		let total = 0;
@@ -149,18 +146,13 @@ function nop() {}
 			chance[i] = value;
 			total += chance[i];
 		}
-		if( !total ) {
-			debugger;
-			console.log( 'using fallback on table '+table[0].typeId );
-			for( let i=0 ; i<table.length ; i++ ) {
-				let value = fallbackFn(table[i]);
-				if( typeof value != 'number' ) debugger;
-				console.log( table[i]._id+' = '+chanceFn(table[i])+' / '+value );
-				chance[i] = value;
-				total += chance[i];
-			}
-			if( !total ) debugger;
-		}
+		return { table:table, chance:chance, total:total };
+	}
+
+	//**
+	// Takes a table of things, whatever you want, and uses the chanceFn to get values of likelihood.
+	// Then it traverses again picking a random one by poportions. If it fails (total=0) it tries the fallbackFn instead.
+	Array.pickFrom = function(table,chance,total) {
 		let n = Math.rand(0,total);
 		for( let i=0 ; i<table.length ; ++i ) {
 			n -= chance[i];
