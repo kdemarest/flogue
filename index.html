@@ -178,10 +178,11 @@ function main(levelName) {
 	function playerStartup(area) {
 		let f = new Finder(area.map.itemList).filter( item => item.playerStartHere );
 		if( !f.count ) {
+			console.log( "No player start marker found. Searching for stairsUp." );
 			f = new Finder(area.map.itemList).filter( item => item.typeId=='stairsUp' );
-			if( !f.count ) {
-				let pos = area.map.pickPosEmpty();
-				f.prepend( area.map.itemCreateByTypeId(pos[0],pos[1],'stairsUp',{}) );
+			if( !f.first ) {
+				f = new Finder(area.map.itemList).filter( item => item.typeId=='stairsDown' );
+				console.assert(f.first);
 			}
 		}
 		let player = new Entity( area.depth, MonsterTypeList.player, null );
@@ -198,15 +199,16 @@ function main(levelName) {
 		tell(mSubject|mCares,player,' ',mVerb,'are',' now on level '+area.id)
 	}
 
-	new DataConditioner();
 	let config = new Config('ken',{
-		startingDepth: 0,
-		themeId: 'surface',
+		startingDepth: 0
 	});
+
+	new DataConditioner();
 
 	let gui = new Gui(playerFind,areaFind);
 	let world = new World(playerFind,onAreaChange);
-	let area = world.createArea(config.startingDepth,ThemeList[config.themeId],true,[]);
+	let themeId = config.themeId || world.determineTheme(config.startingDepth,true);
+	let area = world.createArea(config.startingDepth,ThemeList[themeId],true,[]);
 	world.gateTo(area.id);
 	let player = playerStartup(area);
 	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);

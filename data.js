@@ -46,7 +46,7 @@ function deltasToDirNatural(dx,dy) {
 }
 
 let MIN_DEPTH = 0;
-let MAX_DEPTH = 100;
+let MAX_DEPTH = 99;
 let TILE_UNKNOWN = ' ';		// reserved so that map creation can look sane.
 let SymbolToType = {};
 let TypeIdToSymbol = {};
@@ -327,10 +327,10 @@ let SayStatList = {
 const TileTypeList = {
 	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", isFloor: true },
 	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", isWall: true },
-	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, img: "dc-dngn/pit.png" },
+	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, wantsBridge: true, img: "dc-dngn/pit.png" },
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", isDoor: 1, img: "dc-dngn/dngn_open_door.png" },
 	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", isDoor: 1, img: "dc-dngn/dngn_closed_door.png" },
-	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, opacity: 0, mayJump: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
+	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, opacity: 0, mayJump: true, wantsBridge: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
 	"grass":      { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
 	"glass":      { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
 	"shaft":      { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", mayJump: true, img: "dc-dngn/dngn_trap_shaft.png" },
@@ -340,7 +340,7 @@ const TileTypeList = {
 					effect: { op: 'damage', valueDamage: 3.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, mayJump: true, name: "mud", img: "dc-dngn/floor/dirt0.png" },
-	"ghoststone": { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
+	"ghostStone": { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
 					effect: { op: 'set', stat: 'invisible', value: true } },
 	"obelisk":    { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png",
 					effect: { op: 'set', stat: 'senseBlind', value: true } },
@@ -438,23 +438,83 @@ const ShieldList = Fab.add( '', {
 });
 
 const ArmorList = Fab.add( '', {
-	"fur": 			{ level:  0, rarity: 1.0, armorMultiplier: 0.50, ingredientId: 'leather' },
-	"hide": 		{ level:  1, rarity: 1.0, armorMultiplier: 0.80, ingredientId: 'leather' },
-	"leather": 		{ level:  2, rarity: 1.0, armorMultiplier: 0.85, ingredientId: 'leather' },
-	"studded": 		{ level:  3, rarity: 1.0, armorMultiplier: 0.90, ingredientId: 'iron ingot' },
-	"scale": 		{ level:  4, rarity: 1.0, armorMultiplier: 0.95, ingredientId: 'iron ingot' },
-	"chain": 		{ level: 10, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'iron ingot' },
-	"steelPlate": 	{ level: 15, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'iron ingot' },
-	"trollHideArmor": 	{ level: 20, rarity: 1.0, armorMultiplier: 1.20, ingredientId: 'troll hide' },
-	"chitin": 		{ level: 25, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'chitin' },
-	"elven": 		{ level: 30, rarity: 1.0, armorMultiplier: 1.30, ingredientId: 'chitin' },
-	"dwarven": 		{ level: 35, rarity: 1.0, armorMultiplier: 1.10, ingredientId: 'chitin' },
-	"ice": 			{ level: 40, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'ice block' },
-	"glass": 		{ level: 45, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'malachite' },
-	"demon": 		{ level: 50, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'malachite' },
-	"lunar": 		{ level: 55, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'lunarium ingot' },
-	"solar": 		{ level: 60, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'solarium ingot' },
-	"deep": 		{ level: 65, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'deepium ingot' },
+	"fur": 			{ level:  0, rarity: 1.0, armorMultiplier: 0.50, ingredientId: 'leather', img: 'item/armour/animal_skin1.png' },
+	"hide": 		{ level:  1, rarity: 1.0, armorMultiplier: 0.80, ingredientId: 'leather', img: 'item/armour/animal_skin2.png' },
+	"leather": 		{ level:  2, rarity: 1.0, armorMultiplier: 0.85, ingredientId: 'leather', img: 'item/armour/leather_armour1.png' },
+	"studded": 		{ level:  3, rarity: 1.0, armorMultiplier: 0.90, ingredientId: 'iron ingot', img: 'item/armour/banded_mail2.png' },
+	"scale": 		{ level:  4, rarity: 1.0, armorMultiplier: 0.95, ingredientId: 'iron ingot', img: 'item/armour/scale_mail1.png' },
+	"chain": 		{ level: 10, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'iron ingot', img: 'item/armour/chain_mail1.png' },
+	"steelPlate": 	{ level: 15, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'iron ingot', img: 'item/armour/plate_mail1.png' },
+	"trollHideArmor": 	{ level: 20, rarity: 1.0, armorMultiplier: 1.20, ingredientId: 'troll hide', img: 'item/armour/troll_leather_armour.png' },
+	"chitin": 		{ level: 25, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'chitin', img: 'item/armour/elven_leather_armor.png' },
+	"elven": 		{ level: 30, rarity: 1.0, armorMultiplier: 1.30, ingredientId: 'chitin', img: 'item/armour/chain_mail2.png' },
+	"dwarven": 		{ level: 35, rarity: 1.0, armorMultiplier: 1.10, ingredientId: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
+	"ice": 			{ level: 40, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'ice block', img: 'item/armour/elven_ringmail.png' },
+	"glass": 		{ level: 45, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'malachite', img: 'item/armour/crystal_plate_mail.png' },
+	"demon": 		{ level: 50, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'malachite', img: 'item/armour/orcish_platemail.png' },
+	"lunar": 		{ level: 55, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'lunarium ingot', img: 'item/armour/blue_dragon_scale_mail.png' },
+	"solar": 		{ level: 60, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'solarium ingot', img: 'item/armour/crystal_plate_mail.png' },
+	"deep": 		{ level: 65, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'deepium ingot', img: 'item/armour/gold_dragon_armour.png' },
+});
+
+const HelmList = Fab.add( '', {
+	"fur": 			{ level:  0, rarity: 1.0, armorMultiplier: 0.50 },
+	"hide": 		{ level:  1, rarity: 1.0, armorMultiplier: 0.80 },
+	"leather": 		{ level:  2, rarity: 1.0, armorMultiplier: 0.85 },
+	"studded": 		{ level:  3, rarity: 1.0, armorMultiplier: 0.90 },
+	"scale": 		{ level:  4, rarity: 1.0, armorMultiplier: 0.95 },
+	"chain": 		{ level: 10, rarity: 1.0, armorMultiplier: 1.00 },
+	"steelPlate": 	{ level: 15, rarity: 1.0, armorMultiplier: 1.00 },
+	"trollHideArmor": 	{ level: 20, rarity: 1.0, armorMultiplier: 1.20 },
+	"chitin": 		{ level: 25, rarity: 1.0, armorMultiplier: 1.00 },
+	"elven": 		{ level: 30, rarity: 1.0, armorMultiplier: 1.30 },
+	"dwarven": 		{ level: 35, rarity: 1.0, armorMultiplier: 1.10 },
+	"ice": 			{ level: 40, rarity: 1.0, armorMultiplier: 1.00 },
+	"glass": 		{ level: 45, rarity: 1.0, armorMultiplier: 1.00 },
+	"demon": 		{ level: 50, rarity: 1.0, armorMultiplier: 1.00 },
+	"lunar": 		{ level: 55, rarity: 1.0, armorMultiplier: 1.00 },
+	"solar": 		{ level: 60, rarity: 1.0, armorMultiplier: 1.00 },
+	"deep": 		{ level: 65, rarity: 1.0, armorMultiplier: 1.00 },
+});
+
+const BracerList = Fab.add( '', {
+	"fur": 			{ level:  0, rarity: 1.0, armorMultiplier: 0.50 },
+	"hide": 		{ level:  1, rarity: 1.0, armorMultiplier: 0.80 },
+	"leather": 		{ level:  2, rarity: 1.0, armorMultiplier: 0.85 },
+	"studded": 		{ level:  3, rarity: 1.0, armorMultiplier: 0.90 },
+	"scale": 		{ level:  4, rarity: 1.0, armorMultiplier: 0.95 },
+	"chain": 		{ level: 10, rarity: 1.0, armorMultiplier: 1.00 },
+	"steelPlate": 	{ level: 15, rarity: 1.0, armorMultiplier: 1.00 },
+	"trollHideArmor": 	{ level: 20, rarity: 1.0, armorMultiplier: 1.20 },
+	"chitin": 		{ level: 25, rarity: 1.0, armorMultiplier: 1.00 },
+	"elven": 		{ level: 30, rarity: 1.0, armorMultiplier: 1.30 },
+	"dwarven": 		{ level: 35, rarity: 1.0, armorMultiplier: 1.10 },
+	"ice": 			{ level: 40, rarity: 1.0, armorMultiplier: 1.00 },
+	"glass": 		{ level: 45, rarity: 1.0, armorMultiplier: 1.00 },
+	"demon": 		{ level: 50, rarity: 1.0, armorMultiplier: 1.00 },
+	"lunar": 		{ level: 55, rarity: 1.0, armorMultiplier: 1.00 },
+	"solar": 		{ level: 60, rarity: 1.0, armorMultiplier: 1.00 },
+	"deep": 		{ level: 65, rarity: 1.0, armorMultiplier: 1.00 },
+});
+
+const BootList = Fab.add( '', {
+	"fur": 			{ level:  0, rarity: 1.0, armorMultiplier: 0.50 },
+	"hide": 		{ level:  1, rarity: 1.0, armorMultiplier: 0.80 },
+	"leather": 		{ level:  2, rarity: 1.0, armorMultiplier: 0.85 },
+	"studded": 		{ level:  3, rarity: 1.0, armorMultiplier: 0.90 },
+	"scale": 		{ level:  4, rarity: 1.0, armorMultiplier: 0.95 },
+	"chain": 		{ level: 10, rarity: 1.0, armorMultiplier: 1.00 },
+	"steelPlate": 	{ level: 15, rarity: 1.0, armorMultiplier: 1.00 },
+	"trollHideArmor": 	{ level: 20, rarity: 1.0, armorMultiplier: 1.20 },
+	"chitin": 		{ level: 25, rarity: 1.0, armorMultiplier: 1.00 },
+	"elven": 		{ level: 30, rarity: 1.0, armorMultiplier: 1.30 },
+	"dwarven": 		{ level: 35, rarity: 1.0, armorMultiplier: 1.10 },
+	"ice": 			{ level: 40, rarity: 1.0, armorMultiplier: 1.00 },
+	"glass": 		{ level: 45, rarity: 1.0, armorMultiplier: 1.00 },
+	"demon": 		{ level: 50, rarity: 1.0, armorMultiplier: 1.00 },
+	"lunar": 		{ level: 55, rarity: 1.0, armorMultiplier: 1.00 },
+	"solar": 		{ level: 60, rarity: 1.0, armorMultiplier: 1.00 },
+	"deep": 		{ level: 65, rarity: 1.0, armorMultiplier: 1.00 },
 });
 
 const GloveList = Fab.add( '', {
@@ -521,9 +581,9 @@ const GemList = Fab.add( '', {
 });
 
 const StuffList = Fab.add( '', {
-	"lantern": 			{ slot: Slot.HIP, light: 14, triggerOnUse: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"oilLamp": 			{ slot: Slot.HIP, light: 10, triggerOnUse: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"candleLamp": 		{ slot: Slot.HIP, light:  6, triggerOnUse: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"lantern": 			{ slot: Slot.HIP, light: 14, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"oilLamp": 			{ slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"candleLamp": 		{ slot: Slot.HIP, light:  6, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"trollHide": 		{ },
 	"bones": 			{ },
 	"antGrubMush": 		{ },
@@ -626,9 +686,11 @@ const ItemTypeList = {
 	"gateway":    { symbol: '=', name: "gateway", rarity: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
 	"portal":     { symbol: '0', name: "portal", rarity: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
 	"pitDrop": 	  { symbol: SYM, name: "pit drop", rarity: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
-// GATEWAYS
+// MARKERS
 	"marker": 	  { symbol: SYM, name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
 // DECOR
+	"bridgeNS": { symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, img: "dc-dngn/bridgeNS.png" },
+	"bridgeEW": { symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, img: "dc-dngn/bridgeEW.png" },
 	"columnBroken": { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
 	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
 
@@ -638,10 +700,10 @@ const ItemTypeList = {
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
 	"fountain": { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, mayPickup: false,
 				isDecor: true, img: "dc-dngn/dngn_blue_fountain.png" },
-	"solarFont":{ symbol: 'S', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false,
-				isDecor: true, img: "dc-dngn/crack.png" },
-	"deepFont": { symbol: 'D', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false,
-				isDecor: true, img: "dc-dngn/crack.png" },
+	"fontSolar":{ symbol: 'S', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "solar font",
+				light: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontSolar.png" },
+	"fontDeep": { symbol: 'D', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "deep font",
+				dark: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontDeep.png" },
 // ORE VEINS
 	"oreVein":    { symbol: 'v', mayWalk: false, mayFly: false, rarity: 1, opacity: 1, isWall: true,
 				  imgGet: (self,img) => "ore/"+(img || self.variety.img || "oreVein")+".png", imgChoices: OreVeinList,
@@ -664,7 +726,7 @@ const ItemTypeList = {
 	"gem": 		{ symbol: "g", isTreasure: 1, namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
 				effectChance: 0.20, mayThrow: 1, mayTargetPosition: 1, autoCommand: Command.USE,
 				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5, icon: 'gem.png' },
-	"weapon": 	{ symbol: 'w', isTreasure: 1, namePattern: '{material} {variety} {?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
+	"weapon": 	{ symbol: 'w', isTreasure: 1, namePattern: '{material} {variety}{?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
 				useVerb: 'weild', mayTargetPosition: true,
 				effectChance: 0.05,
 				img: "item/weapon/dagger.png", icon: 'weapon.png' },
@@ -672,7 +734,7 @@ const ItemTypeList = {
 				effectChance: 0.10,
 				useVerb: 'hold', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/shields/shield3_round.png", icon: 'shield.png' },
-	"helm": 	{ symbol: 'h', isTreasure: 1, namePattern: "{variety} helm{?effect}", varieties: ArmorList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
+	"helm": 	{ symbol: 'h', isTreasure: 1, namePattern: "{variety} helm{?effect}", varieties: HelmList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
 				effectChance: 0.05,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
@@ -681,20 +743,20 @@ const ItemTypeList = {
 				effectChance: 0.05,
 				armorMultiplier: 0.60,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				img: "player/body/armor_mummy.png", icon: 'armor.png' },
-	"bracers": 	{ symbol: 'b', isTreasure: 1, namePattern: "{variety} bracers{?effect}", varieties: ArmorList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
+				imgGet: (self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"), imgChoices: ArmorList, icon: 'armor.png' },
+	"bracers": 	{ symbol: 'b', isTreasure: 1, namePattern: "{variety} bracers{?effect}", varieties: BracerList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
 				effectChance: 0.05,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				img: "UNUSED/armour/gauntlet1.png", icon: 'gauntlets.png' },
-	"boots": 	{ symbol: 'c', isTreasure: 1, namePattern: "{variety} boots{?effect}", varieties: ArmorList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
+				img: "UNUSED/armour/gauntlet1.png", icon: 'bracers.png' },
+	"boots": 	{ symbol: 'c', isTreasure: 1, namePattern: "{variety} boots{?effect}", varieties: BootList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
 				effectChance: 0.05,
 				armorMultiplier: 0.10,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/boots2_jackboots.png", icon: 'boots.png' },
 	"gloves": 	{ symbol: 'l', isTreasure: 1, namePattern: "{variety}", varieties: GloveList, slot: Slot.HANDS, isGloves: true,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				img: "UNUSED/armour/glove4.png", icon: 'gauntlets.png' },
+				img: "UNUSED/armour/glove4.png", icon: 'gloves.png' },
 	"ring": 	{ symbol: 'r', isTreasure: 1, namePattern: "{material} {variety} ring{?effect}", materials: RingMaterialList, varieties: RingList,
 				effects: RingEffects, slot: Slot.FINGERS, isRing: true,
 				effectChance: 0.10,
@@ -734,13 +796,16 @@ let ItemBag = (function() {
 
 const Brain = { AI: "ai", USER: "user" };
 let MaxSightDistance = 10;
+let STANDARD_MONSTER_SIGHT_DISTANCE = 6;
+let MaxLightValue = 15;
+let LightFullBrightDistance = 7;
 
 const MonsterTypeDefaults = {
 					level: 0, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
 					attitude: Attitude.AGGRESSIVE,
 					light: 0,
 					senseBlind: false, senseXray: false, senseItems: false, senseLife: false,
-					invisible: false, senseInvisible: false, sightDistance: 6,
+					invisible: false, senseInvisible: false, sightDistance: STANDARD_MONSTER_SIGHT_DISTANCE,
 					brain: Brain.AI, brainFlee: false, brainOpensDoors: false, brainTalk: false,
 					corpse: 'corpse',
 					immune: '', resist: '', vuln: '',
@@ -759,8 +824,9 @@ const MonsterTypeDefaults = {
 				};
 
 let LightAlpha = [];
-for( let i=0 ; i<MaxSightDistance+20 ; ++i ) {
-	LightAlpha[i] = Math.clamp(i/MaxSightDistance,0.0,1.0);
+// This makes the assumption that a 
+for( let i=-MaxLightValue-20 ; i<MaxLightValue+20 ; ++i ) {
+	LightAlpha[i] = Math.clamp(i/LightFullBrightDistance,0.0,1.0);
 }
 
 
@@ -993,9 +1059,12 @@ const MonsterTypeList = {
 		glow: 4,
 		immune: OozeImmunity,
 		isPlanar: true,
-		loot: '90% potion.eCorrode, 40% redOozeSlime',
-		regenerate: 0.15,
+		isOoze: true,
+		loot: '90% potion.eAcid, 40% redOozeSlime',
+		regenerate: 0.05,
 		resist: OozeResistance,
+		scale: 0.50,
+		growLimit: 3.0,
 		speed: 0.75,
 		vuln: OozeVulnerability
 	},
@@ -1275,11 +1344,10 @@ ItemTypeList.oreVein.onTouch = function(entity,self) {
 		x: 			self.x,
 		y: 			self.y,
 		img: 		StickerList.oreChaff.img, //self.imgGet(self),
-		scale: 		0.1,
 		duration: 	0.2,
-		onInit: 		a => { a.create(12); },
-		onSpriteMake: 	s => { s.sVel(Math.rand(-90,90),Math.rand(5,10)); },
-		onSpriteTick: 	s => { s.sScale(1.00).sMove(s.xVel,s.yVel).sGrav(40).sRot(360); }
+		onInit: 		a => { a.create(6); },
+		onSpriteMake: 	s => { s.sScaleSet(0.3).sVel(Math.rand(-90,90),Math.rand(2,5)); s.zOrder=11; },
+		onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sGrav(40).sRot(360); }
 	});
 	new Anim( {}, {
 		x: 			self.x,
@@ -1316,7 +1384,7 @@ TileTypeList.forcefield.onEnterType = function(entity,self) {
 	}
 }
 
-TileTypeList.ghoststone.onTouch = function(toucher,self) {
+TileTypeList.ghostStone.onTouch = function(toucher,self) {
 	if( !toucher.invisible ) {
 		tell( mSubject,toucher,' ',mVerb,['touch','touches'],' ',mObject,self,'.' );
 		effectApply( this.effect, toucher, null, self );
@@ -1350,7 +1418,7 @@ ItemTypeList.altar.onTick = function(dt) {
 	this.light = this.rechargeLeft ? 0 : ItemTypeList.altar.light;
 }
 
-ItemTypeList.solarFont.onTick = function(dt) {
+ItemTypeList.fontSolar.onTick = function(dt) {
 	let nearby = new Finder(this.area.entityList,this).nearMe(1);
 	let self = this;
 	nearby.process( entity => {
@@ -1421,19 +1489,41 @@ MonsterTypeList.redScarab.onAttack = function(target) {
 	effectApply(effect,target,this,null);
 }
 
-MonsterTypeList.redOoze.onMove = function(self,x,y) {
-	let f = self.map.findItem().at(x,y).filter( i=>i.isCorpse );
-	if( f.first && self.health < self.healthMax ) {
-		tell(mSubject,self,' ',mVerb,'absorb',' ',mObject,f.first,' and ',mVerb,'regain',' strength!');
-		let heal = Math.floor(self.healthMax * 0.25);
-		self.takeHealing(self,heal,DamageType.CORRODE,true);
+MonsterTypeList.redOoze.rescale = function() {
+	let healthScale = ((Math.max(this.health,this.healthMax) / this.healthMax) - 1) / (this.growLimit-1);
+	this.scale = 0.50 + 1.00*healthScale;	// should make the ooze grow when health is beyond max.
+	if( this.spriteList ) {
+		for( let i=0 ; i<this.spriteList.length ; ++i ) {
+			this.spriteList[i].baseScale = this.scale;
+		}
+	}
+	console.log( "Scale is now "+this.scale );
+}
 
+MonsterTypeList.redOoze.onAttacked = function() {
+	this.rescale.call(this);
+}
+
+MonsterTypeList.redOoze.onMove = function(x,y) {
+	let f = this.map.findItem().at(x,y).filter( i=>i.isCorpse );
+	if( f.first && this.health < this.healthMax*this.growLimit ) {
+		tell(mSubject,this,' ',mVerb,'absorb',' ',mObject,f.first,' and ',mVerb,'regain',' strength!');
+		let heal = Math.floor(this.healthMax * 0.25);
+		this.takeHealing(this,heal,DamageType.CORRODE,true,true);
+		this.rescale.call(this)
+
+		let self = this;
 		let anim = new Anim({},{
-			x: 			entity.x,
-			y: 			entity.y,
-			img: 		self.img,
-			onInit: 		a => { a.puppet(entity.spriteList); },
-			onSpriteTick: 	s => { s.sScaleSet(1.0+s.sSine(1.0)); }
+			follow: 	this,
+			img: 		this.img,
+			duration: 	0.3,
+			onInit: 		a => { a.puppet(self.spriteList); },
+			onSpriteTick: 	s => {
+				let scale = 1.0+s.sSine(s.sPct(),1.5);
+				console.log( "Scale="+scale );
+				s.sScaleSet(scale);
+			},
+			onSpriteDone: 	s => { s.sReset(); }
 		});
 
 		f.first.destroy();

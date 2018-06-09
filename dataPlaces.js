@@ -1,6 +1,6 @@
 let ScapeList = { };
 let ThemeList = { };
-let PlaceList = { };
+let PlaceTypeList = { };
 
 /*
 
@@ -8,7 +8,7 @@ THe level of a place can be specified, BUT if not the place will be scanned and 
 equal to the highest level monster appearing
 
 
-PlaceList.uniqueIdentity = {
+PlaceTypeList.uniqueIdentity = {
 	// The map can use any symbols yu want. Just re-map them in the 'symbols' area below.
 	// However, . and # are generally floor and wall, just to avoid confusion.
 	map:
@@ -42,24 +42,22 @@ function PlaceMany(prefix,list,templateFn) {
 	while( list.length ) {
 		let VARIETY = list.pop();
 		let placeId = prefix+'.'+VARIETY;
-		PlaceList[placeId] = templateFn(VARIETY);
-		PlaceList[placeId].rarity /= count;
+		PlaceTypeList[placeId] = templateFn(VARIETY);
+		PlaceTypeList[placeId].rarity /= count;
 	}
 }
 
 // Theme caps are for a 40x40 area. These will be ratiod to the size of the actual map.
 // prefer - means that, when a pick choice needs to happen, that theme strongly (maybe 100%) prefers to chose that.
-ScapeList.plainScape = theme => ({
+ScapeList.plainScape = () => ({
 	dim: 				60,
 	architecture: 		"plain",
 	floorDensity: 		95,
 	seedPercent: 		0.001,
-	monsterDensity: 	0.0,
-	itemDensity: 		0.0
 });
 
 
-ScapeList.caveRandom = theme => ({
+ScapeList.caveRandom = () => ({
 	dim: 				Math.randInt(40,80),
 	architecture: 		"cave",
 	floorDensity: 		Math.rand(0.10,0.70),
@@ -67,7 +65,7 @@ ScapeList.caveRandom = theme => ({
 	wanderingPassage: 	Math.chance(50),
 });
 
-ScapeList.caveWeblike = theme => ({
+ScapeList.caveWeblike = () => ({
 	dim: 				Math.randInt(30,60),
 	architecture: 		"cave",
 	floorDensity: 		0.12,
@@ -75,15 +73,15 @@ ScapeList.caveWeblike = theme => ({
 	wanderingPassage: 	true,
 });
 
-ScapeList.caveMazelike = theme => ({
-	dim: 				Math.randInt(30,60),
+ScapeList.caveMazeLike = () => ({
+	dim: 				Math.randInt(30,50),
 	architecture: 		"cave",
 	floorDensity: 		0.12,
 	seedPercent: 		0.63,
 	wanderingPassage: 	false,
 });
 
-ScapeList.caveSpacious = theme => ({
+ScapeList.caveSpacious = () => ({
 	dim: 				Math.randInt(40,80),
 	architecture: 		"cave",
 	floorDensity: 		0.68,
@@ -91,15 +89,39 @@ ScapeList.caveSpacious = theme => ({
 	wanderingPassage: 	false,
 });
 
-ScapeList.caveBroadWinding = theme => ({
-	dim: 				Math.randInt(40,80),
+ScapeList.caveBroadWinding = () => ({
+	dim: 				Math.randInt(40,50),
 	architecture: 		"cave",
-	floorDensity: 		0.30,
-	seedPercent: 		0.60,
+	floorDensity: 		0.35,
+	seedPercent: 		0.50,
 	wanderingPassage: 	true,
 });
 
-ScapeList.caveTownRural = theme => ({
+ScapeList.caveRoomsWellConnected = () => ({
+	dim: 				Math.randInt(40,50),
+	architecture: 		"cave",
+	floorDensity: 		0.30,
+	seedPercent: 		0.20,
+	wanderingPassage: 	true,
+});
+
+ScapeList.caveRoomsNarrowlyConnected = () => ({
+	dim: 				Math.randInt(30,40),
+	architecture: 		"cave",
+	floorDensity: 		0.25,
+	seedPercent: 		0.15,
+	wanderingPassage: 	true,
+});
+
+ScapeList.caveTendrils = () => ({
+	dim: 				Math.randInt(40,50),
+	architecture: 		"cave",
+	floorDensity: 		0.20,
+	seedPercent: 		0.20,
+	wanderingPassage: 	true,
+});
+
+ScapeList.caveTownRural = () => ({
 	dim: 				Math.randInt(60,80),
 	architecture: 		"cave",
 	floorDensity: 		0.04,
@@ -108,18 +130,15 @@ ScapeList.caveTownRural = theme => ({
 });
 
 
-ScapeList.caveTown = theme => ({
+ScapeList.caveTown = () => ({
 	dim: 				Math.randInt(50,60),
 	architecture: 		"cave",
 	floorDensity: 		Math.rand(0.40,0.50),
 	seedPercent: 		Math.rand(0.10,0.20),
 	wanderingPassage: 	false,
-	palette: {
-		passageFloorTypeId: 'tileStoneFloor'
-	}
 });
 
-ScapeList.caveVillage = theme => ({
+ScapeList.caveVillage = () => ({
 	dim: 				Math.randInt(30,40),
 	architecture: 		"cave",
 	floorDensity: 		Math.rand(0.10,0.50),
@@ -127,35 +146,76 @@ ScapeList.caveVillage = theme => ({
 	wanderingPassage: 	false
 });
 
+ScapeList.snowyPlains = () => ({
+	dim: 				40,
+	architecture: 		"plains",
+	monsterDensity: 	0.0,
+});
 
-ThemeList.gameStart = {
-	isUnique: 	true,
-	scapes: 	['caveRandom'],
-	rCOMMON: 	'camp.human',
-	monsters: 	['isPet']
-}
+let ThemeDefault = () => ({
+	isUnique: 		false,
+
+	floor: 			TileTypeList.floor.symbol,
+	wall:  			TileTypeList.wall.symbol,
+	door:  			TileTypeList.door.symbol,
+	fillFloor:  	TileTypeList.floor.symbol,
+	fillWall:  		TileTypeList.wall.symbol,
+	outlineWall:  	TileTypeList.wall.symbol,
+	passageFloor: 	TileTypeList.floor.symbol,
+	bridgeNS: 		ItemTypeList.bridgeNS.symbol,
+	bridgeEW: 		ItemTypeList.bridgeEW.symbol,
+	unknown: 		TILE_UNKNOWN,
+
+	architecture: 	"cave",
+	floorDensity: 	0.68,
+	placeDensity: 	0.40,
+	seedPercent: 	0.10,
+
+	monsterDensity: 0.03,
+	itemDensity: 	0.03,
+});
 
 ThemeList.surface = {
-	isUnique: 	true,
-	inControl: 	true,
-	scapes: 	['plainScape'],
-	rREQUIRED: 	'surfaceSunTemple',
-	monsters: 	['isPet']
+	isUnique: 		true,
+	inControl: 		true,
+	scapeId: 		'snowyPlains',
+	rREQUIRED: 		'surfaceSunTemple',
+	monsters: 		['isPet'],
+	monsterDensity: 0.0,
+	itemDensity: 	0.0,
 }
 
-ThemeList.cavern = {
-	allowInCore: true,
-	scapes: 	['caveRandom'],
-	rREQUIRED: 	'gatewayToDwarves',
-	rCOMMON: 	'nest.bat, nest.blueScarab, nest.redScarab, nest.viper, camp.ogre, camp.goblin, den.kobold, floodPit, floodWater',
-	rUNCOMMON: 	'camp.human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 		'den.dog, goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit',
-	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+ThemeList.coreCavernRooms = {
+	scapeId: 		'caveRoomsNarrowlyConnected', //'caveRoomsWellConnected',
+	placeDensity: 	0.70,
+	rCOMMON: 		'nest.bat, nest.blueScarab, nest.redScarab, nest.viper, camp.ogre, camp.goblin, den.kobold, floodPit, floodWater',
+	rUNCOMMON: 		'antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 			'graveYard',
+	monsters: 		m => (m.isUndead || m.isEarthChild || m.isPlanar || m.isAnimal) && m.team !='good'
+}
+
+ThemeList.refugeeCamp = {
+	scapeId: 	'caveBroadWinding',
+	rCOMMON: 	'camp.refugee',
+	rUNCOMMON: 	'handoutStand, floodPit, pitEncircle',
+	rRARE: 		'den.dog, camp.goblin',
+	monsters: 	['isSunChild','isPet']
+}
+
+ThemeList.refugeeCampSlaughter = {
+	scapeId: 	'caveSpacious',
+	placeDensity: 	0.70,
+	rREQUIRED: 	'camp.refugee, camp.refugee, camp.goblin, camp.ogre, floodOre',
+	rCOMMON: 	'camp.refugee, camp.goblin',
+	rUNCOMMON: 	'floodPit, pitEncircle, veil, ruin, den.kobold, camp.ogre',
+	rRARE: 		'den.dog',
+	monsters: 	['isSunChild','isPet','isEarthChild']
 }
 
 ThemeList.dwarfTown = {
-	scapes: 	['caveTown'], //'caveTownRural','caveVillage'],
+	passageFloor: 'tileStoneFloor',
+	scapeId: 	'caveTown',
 	rREQUIRED: 	'3x floodOre, floodPit, gatewayFromDwarves, dwarfHouseSmall, dwarfHouse, 50% dwarfHouse, 90% dwarfSmithy, 70% dwarfTemple, 2x 60% dwarfPlaza, 30% den.dog, 10% camp.human',
 	rCOMMON: 	'floodOre',
 	//rCOMMON: 	'dwarfHouse, dwarfHouseSmall, dwarfHouseL, pitEncircle, nest.bat, patch, floodMist',
@@ -164,17 +224,108 @@ ThemeList.dwarfTown = {
 	monsters: 	['isDwarf']
 }
 
+ThemeList.corePits = {
+	scapeId: 	'caveBroadWinding',
+	rREQUIRED: 	'floodPitLarge, 4x floodPit',
+	rCOMMON: 	'floodPit, nest.bat, nest.blueScarab, nest.redScarab, nest.viper, camp.ogre, camp.goblin, den.kobold, floodWater',
+	rUNCOMMON: 	'camp.human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 		'graveYard, lunarEmbassy',
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+}
+
+ThemeList.coreBridges = {
+	outlineWall:'pit',
+	fillWall: 	'pit',
+	scapeId: 	'caveMazeLike',
+	rCOMMON: 	'floodPit, nest.bat, nest.blueScarab, nest.redScarab, nest.viper, camp.ogre, camp.goblin, den.kobold, floodWater',
+	rUNCOMMON: 	'camp.human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 		'graveYard, lunarEmbassy',
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+}
+
+ThemeList.coreMaze = {
+	scapeId: 	'caveMazeLike',
+	rCOMMON: 	'demonNest, nest.blueScarab, trollBridge, nest.viper, camp.ogre, etherHive',
+	rUNCOMMON: 	'floodPit, camp.goblin, den.kobold, nest.bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 		'camp.human, goblinGathering, portal, circle, ruin, swamp, firePit, floodOre, floodWater',
+	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+}
+
+ThemeList.dwarfGoblinBattle = {
+	dim: 				30,
+	architecture: 		"cave",
+	floorDensity: 		0.88,
+	seedPercent: 		0.20,
+	placeDensity: 		0.70,
+	wanderingPassage: 	true,
+	rREQUIRED: 	'troops.dwarf, troops.goblin',
+	rCOMMON: 	'floodPit, nest.bat, nest.viper',
+	rUNCOMMON: 	'antHive, ruin, patch, veil, pitEncircle, floodOre',
+	monsters: 	['isEarthChild','isSunChild','isPlanar','isAnimal']
+}
+
+ThemeList.coreCavernSomewhatOpen = {
+	scapeId: 	'caveBroadWinding',
+	rCOMMON: 	'nest.bat, nest.blueScarab, nest.redScarab, nest.viper, camp.ogre, camp.goblin, den.kobold, floodPit, floodWater',
+	rUNCOMMON: 	'camp.human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 		'graveYard, lunarEmbassy',
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+}
+
+ThemeList.coreSea = {
+	dim: 				90,
+	architecture: 		"cave",
+	floorDensity: 		0.88,
+	seedPercent: 		0.40,
+	placeDensity: 		0.70,
+	wanderingPassage: 	true,
+	outlineWall: 'water',
+	fillWall: 	'floor',
+	rREQUIRED: 	'floodWater',
+	rCOMMON: 	'floodWaterSmall',
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+}
+
+ThemeList.coreSwamp = {
+	dim: 				30,
+	architecture: 		"cave",
+	floorDensity: 		0.28,
+	seedPercent: 		0.40,
+	placeDensity: 		0.70,
+	wanderingPassage: 	true,
+	outlineWall: 'mud',
+	fillWall: 	'mud',
+	rCOMMON: 	'floodMud',
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+}
+
+//=========================
+
+ThemeList.cavern = {
+	rREQUIRED: 	'gatewayToDwarves',
+	rCOMMON: 	'nest.bat, nest.blueScarab, nest.redScarab, nest.viper, camp.ogre, camp.goblin, den.kobold, floodPit, floodWater',
+	rUNCOMMON: 	'camp.human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 		'den.dog, goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit',
+	rEPIC: 		'graveYard, lunarEmbassy',
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+}
+
 ThemeList.thePits = {
-	allowInCore: true,
-	scapes: 	['caveBroadWinding'],
+	rCOMMON: 	'floodPit',
+	monsters: 	['isUndead'],
+	scape: 		{ placeDensity: 0.5 }
+}
+
+ThemeList.spookyPits = {
 	rCOMMON: 	'floodPit',
 	monsters: 	['isUndead'],
 	scape: 		{ placeDensity: 0.5 }
 }
 
 ThemeList.spooky = {
-	allowInCore: true,
-	scapes: 	['caveRandom'],
 	rCOMMON: 	'graveYard, nest.bat, floodMist',
 	rUNCOMMON: 	'ruin, nest.viper',
 	rRARE: 		'shaft, fountain1, camp.human, swamp',
@@ -184,7 +335,6 @@ ThemeList.spooky = {
 }
 
 ThemeList.ruins = {
-	allowInCore: true,
 	scapes: 	['caveRandom'],
 	rCOMMON: 	'camp.ogre, camp.goblin, nest.blueScarab, nest.redScarab',
 	rUNCOMMON: 	'collonade, ruin, fountain1, antHive, floodPit, pitEncircle',
@@ -203,13 +353,6 @@ ThemeList.hellscape = {
 	//items: 		['isGem'],
 }
 
-ThemeList.refugeeCamp = {
-	scapes: 	['caveRandom'],
-	rCOMMON: 	'camp.refugee, den.dog',
-	rUNCOMMON: 	'handoutStand, floodPit, pitEncircle',
-	monsters: 	['isSunChild','isPet']
-}
-
 ThemeList.lunarColony = {
 	scapes: 	['caveRandom'],
 	rCOMMON: 	'lunarEmbassy',
@@ -225,7 +368,146 @@ ThemeList.sunPlane = {
 	monsters: 	['isSunChild','isPlanar'],
 }
 
-PlaceList.floodWater = {
+PlaceTypeList.gateUpMinimal = {
+	map:
+`
+b.b
+.U.
+b.b
+`,
+	rarity: rUNCOMMON,
+	isUtility: true,
+	flags: { rotate: false },
+	symbols: {
+		U: 'stairsUp',
+		b: 'brazier',
+	}
+}
+
+PlaceTypeList.gateUpChamber = {
+	map:
+`
+ #####
+##...#
+#U...+
+##...#
+ #####
+`,
+	rarity: rUNCOMMON,
+	isUtility: true,
+	flags: { rotate: false },
+	symbols: {
+		U: 'stairsUp',
+	}
+}
+
+PlaceTypeList.gateDown = {
+	map:
+`
+ . 
+.D.
+ . 
+`,
+	rarity: rUNCOMMON,
+	isUtility: true,
+	flags: { rotate: false },
+	symbols: {
+		D: 'stairsDown',
+	}
+}
+
+PlaceTypeList.gateDownChamber = {
+	map:
+`
+ #####
+##pfp##
+#ppppp#
+#D....+
+#ppppp#
+##pfp##
+ #####
+`,
+	rarity: rUNCOMMON,
+	isUtility: true,
+	flags: { rotate: false },
+	symbols: {
+		D: 'stairsDown',
+		p: 'pit',
+		f: 'fountain'
+	}
+}
+
+PlaceTypeList.gateSide = {
+	map:
+`
+ppp
+.Gp
+ppp
+`,
+	rarity: rUNCOMMON,
+	isUtility: true,
+	flags: { rotate: false },
+	symbols: {
+		G: 'gateway',
+		p: 'pit',
+	}
+}
+
+PlaceTypeList.gatePortal = {
+	map:
+`
+...
+.P.
+...
+`,
+	rarity: rUNCOMMON,
+	isUtility: true,
+	flags: { rotate: false },
+	symbols: {
+		P: 'portal',
+	}
+}
+
+PlaceTypeList.fontSolar = {
+	map:
+`
+g..
+.S.
+..g
+`,
+	rarity: rUNCOMMON,
+	isUtility: true,
+	flags: { rotate: true },
+	symbols: {
+		S: 'fontSolar',
+		g: 'gem'
+	}
+}
+
+PlaceTypeList.fontDeep = {
+	map:
+`
+...
+.D.
+...
+`,
+	rarity: rUNCOMMON,
+	isUtility: true,
+	flags: { rotate: false },
+	symbols: {
+		D: 'fontDeep',
+	}
+}
+
+PlaceTypeList.floodMud = {
+	floodId: 'mud',
+	tilePercent: 0.01,
+	sparkId: 'water',
+	sparkLimit: 4000,
+	sparkDensity: 0.30
+}
+
+PlaceTypeList.floodWater = {
 	floodId: 'water',
 	tilePercent: 0.20,
 	sparkId: 'floor',
@@ -233,12 +515,38 @@ PlaceList.floodWater = {
 	sparkDensity: 0.02
 }
 
-PlaceList.floodMist = {
+PlaceTypeList.floodWaterSmall = {
+	floodId: 'water',
+	tilePercent: 0.10,
+	sparkId: 'floor',
+	sparkLimit: 4,
+	sparkDensity: 0.02
+}
+
+PlaceTypeList.floodWaterHuge = {
+	floodId: 'water',
+	tilePercent: 0.60,
+	sparkId: 'floor',
+	sparkLimit: 4,
+	sparkDensity: 0.02
+}
+
+PlaceTypeList.floodIsland = {
+	floodId: 'floor',
+	tilePercent: 0.20,
+	sparkId: 'water',
+	sparkLimit: 1,
+	sparkDensity: 1.00
+
+}
+
+
+PlaceTypeList.floodMist = {
 	floodId: 'mist',
 	tilePercent: 0.20,
 }
 
-PlaceList.floodOre = {
+PlaceTypeList.floodOre = {
 	floodId: 'oreVein',
 	tilePercent: 0.20,
 	sparkId: 'floor',
@@ -246,15 +554,22 @@ PlaceList.floodOre = {
 	sparkDensity: 0.005
 }
 
-PlaceList.floodPit = {
+PlaceTypeList.floodPit = {
 	floodId: 'pit',
 	tilePercent: 0.20,
 	sparkId: 'floor',
 	sparkLimit: 4,
 	sparkDensity: 0.02
 }
+PlaceTypeList.floodPitLarge = {
+	floodId: 'pit',
+	tilePercent: 0.40,
+	sparkId: 'floor',
+	sparkLimit: 4,
+	sparkDensity: 0.01
+}
 
-PlaceList.firePit = {
+PlaceTypeList.firePit = {
 	floodId: 'pit',
 	tilePercent: 0.20,
 	sparkId: 'flames',
@@ -263,7 +578,7 @@ PlaceList.firePit = {
 
 }
 
-PlaceList.pitEncircle = {
+PlaceTypeList.pitEncircle = {
 	floodId: 'floor',
 	tilePercent: 0.20,
 	sparkId: 'pit',
@@ -272,7 +587,7 @@ PlaceList.pitEncircle = {
 
 }
 
-PlaceList.goblinGathering = {
+PlaceTypeList.goblinGathering = {
 	map:
 `
 .......
@@ -306,7 +621,7 @@ PlaceList.goblinGathering = {
 	}
 };
 
-PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityList) {
+PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityList) {
 	if( !this.rechargeLeft ) {
 		let f = new Finder(entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).near(this.x,this.y,6);
 		if( f.count ) {
@@ -335,7 +650,7 @@ PlaceList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityL
 	this.light = this.rechargeLeft ? 0 : 4;
 }
 
-PlaceList.surfaceSunTemple = {
+PlaceTypeList.surfaceSunTemple = {
 	map:
 `
        #########
@@ -362,11 +677,11 @@ PlaceList.surfaceSunTemple = {
      ###.......###
        #########
 `,
-	flags: { rotate: false },
+	flags: { rotate: true, hasWall: true, isUnique: true },
 	symbols: {
 		1: 'stuff.oilLamp',
-		X: { type: 'marker', playerStartHere: true },
-		F: "solarFont",
+		X: { typeId: 'marker', playerStartHere: true },
+		F: "fontSolar",
 		A: "altar",
 		b: "brazier",
 		S: "stairsDown",
@@ -377,7 +692,7 @@ PlaceList.surfaceSunTemple = {
 	},
 }
 
-PlaceList.graveYard = {
+PlaceTypeList.graveYard = {
 	map:
 `
 ..M.M...B.MMM
@@ -403,7 +718,7 @@ M...B..M.....
 	}
 }
 
-PlaceList.circle = {
+PlaceTypeList.circle = {
 	map:
 `
 .........
@@ -417,11 +732,11 @@ PlaceList.circle = {
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: function() { return pick(['pit','flames','lava','water','mist','mud','forcefield']); }
+		x: ['pit','flames','lava','water','mist','mud','forcefield']
 	}
 }
 
-PlaceList.ruin = {
+PlaceTypeList.ruin = {
 	map:
 `
 .o...
@@ -438,7 +753,7 @@ a.o..
 	}
 }
 
-PlaceList.shaft = {
+PlaceTypeList.shaft = {
 	map:
 `
 ...
@@ -451,7 +766,7 @@ PlaceList.shaft = {
 	}
 }
 
-PlaceList.collonade = {
+PlaceTypeList.collonade = {
 	map:
 `
 .............
@@ -463,11 +778,11 @@ PlaceList.collonade = {
 `,
 	flags: { rotate: true },
 	symbols: {
-		o: function() { return pick(['columnBroken','columnStump']); }
+		o: ['columnBroken','columnStump']
 	}
 }
 
-PlaceList.fountain1 = {
+PlaceTypeList.fountain1 = {
 	map:
 `
 ...
@@ -481,7 +796,7 @@ PlaceList.fountain1 = {
 	}
 }
 
-PlaceList.fountain4 = {
+PlaceTypeList.fountain4 = {
 	map:
 `
 F.F
@@ -494,7 +809,7 @@ F.F
 	}
 }
 
-PlaceList.patch = {
+PlaceTypeList.patch = {
 	map:
 `
 ..mm..
@@ -503,22 +818,22 @@ PlaceList.patch = {
 `,
 	flags: { rotate: true },
 	symbols: {
-		m: function() { return pick(['mud','grass','pit','flames','water','mist']); }
+		m: ['mud','grass','pit','flames','water','mist']
 	}
 };
 
-PlaceList.veil = {
+PlaceTypeList.veil = {
 	map:
 `
 mmmm
 `,
 	flags: { rotate: true },
 	symbols: {
-		m: function() { return pick(['flames','mist','mud']); }
+		m: ['flames','mist','mud']
 	}
 };
 
-PlaceList.lunarEmbassy = {
+PlaceTypeList.lunarEmbassy = {
 	map:
 `
 #######.
@@ -621,7 +936,7 @@ xxxxx
 	}
 }));
 
-PlaceList.swamp = {
+PlaceTypeList.swamp = {
 	map:
 `
 .mmmmmmmmmmm.
@@ -648,7 +963,7 @@ mmwmwwmmwwwwm
 		spinyFrog: { attitude: Attitude.WANDER, tether: 3, tooClose: 3 },
 	}
 }
-PlaceList.etherHive = {
+PlaceTypeList.etherHive = {
 	map:
 `
 x..xx
@@ -663,7 +978,7 @@ xx..x
 		e: 'ethermite',
 	}
 }
-PlaceList.antHive = {
+PlaceTypeList.antHive = {
 	map:
 `
 #.#####
@@ -679,7 +994,7 @@ PlaceList.antHive = {
 		a: "soldierAnt"
 	}
 }
-PlaceList.demonNest = {
+PlaceTypeList.demonNest = {
 	map:
 `
 
@@ -697,7 +1012,7 @@ fLffL
 		i: 'imp'
 	}
 }
-PlaceList.balgursChamber = {
+PlaceTypeList.balgursChamber = {
 	map:
 `
 ###########
@@ -722,7 +1037,7 @@ PlaceList.balgursChamber = {
 		a: 'avatarOfBalgur',
 	}
 }
-PlaceList.portal = {
+PlaceTypeList.portal = {
 	map:
 `
   MMMMM  
@@ -749,7 +1064,7 @@ MM,,,,,MM
 	}
 }
 
-PlaceList.trollBridge = {
+PlaceTypeList.trollBridge = {
 	map:
 `
 xxxxx
@@ -769,7 +1084,7 @@ xxxxx
 	}
 }
 
-PlaceList.trollPit = {
+PlaceTypeList.trollPit = {
 	map:
 `
   ::::::
@@ -789,7 +1104,7 @@ PlaceList.trollPit = {
 }
 
 
-PlaceList.sunDiscipleTemple = {
+PlaceTypeList.sunDiscipleTemple = {
 	map:
 `
 xxxxxxxxxxx...........
@@ -830,7 +1145,7 @@ xxxxxxxxxxx...........
 		g: 'gem',
 		b: 'boots',
 		r: 'ring',
-		p: 'potions',
+		p: 'potion',
 	},
 	tileTypes: {
 		tileStoneFloor:      { mayWalk: true,  mayFly: true,  opacity: 0, name: "tile stone floor", img: "dc-dngn/floor/rect_gray1.png", isFloor: true },
@@ -840,7 +1155,7 @@ xxxxxxxxxxx...........
 	}
 }
 
-PlaceList.handoutStand = {
+PlaceTypeList.handoutStand = {
 	map:
 		`
 		     xxxxx
@@ -865,7 +1180,7 @@ PlaceList.handoutStand = {
 }
 
 
-PlaceList.gatewayToDwarves = {
+PlaceTypeList.gatewayToDwarves = {
 	map:
 `
 xxxxxxx 
@@ -890,7 +1205,7 @@ xxx+xxx
 	}
 }
 
-PlaceList.gatewayFromDwarves = {
+PlaceTypeList.gatewayFromDwarves = {
 	map:
 `
   xxx  
@@ -912,7 +1227,7 @@ ww...ww
 	}
 }
 
-PlaceList.dwarfTemple = {
+PlaceTypeList.dwarfTemple = {
 	map:
 `
  xxxxxxx 
@@ -940,7 +1255,7 @@ xxxx+xxxx
 	}
 }
 
-PlaceList.dwarfHouse = {
+PlaceTypeList.dwarfHouse = {
 	map:
 `
 xxxxxxxxx
@@ -966,7 +1281,7 @@ xxxx+xxxx
 	}
 }
 
-PlaceList.dwarfHouseSmall = {
+PlaceTypeList.dwarfHouseSmall = {
 	map:
 `
 xxxxxxx
@@ -989,7 +1304,7 @@ xxxx+xx
 	}
 }
 
-PlaceList.dwarfHouseL = {
+PlaceTypeList.dwarfHouseL = {
 	map:
 `
 xxxxxxxxxxx
@@ -1012,7 +1327,7 @@ xxxx+xx
 	}
 }
 
-PlaceList.dwarfSmithy = {
+PlaceTypeList.dwarfSmithy = {
 	map:
 `
  xxxxx
@@ -1033,7 +1348,7 @@ PlaceList.dwarfSmithy = {
 	}
 }
 
-PlaceList.dwarfPlaza = {
+PlaceTypeList.dwarfPlaza = {
 	map:
 `
  ....
@@ -1050,3 +1365,44 @@ PlaceList.dwarfPlaza = {
 	}
 }
 
+PlaceMany( 'troops', ['human','dwarf','goblin','demon'], VARIETY => ({
+	map:
+`
+.tttt.
+ttddtt
+ttddtt
+tttttt
+.tttt.
+`,
+	flags: { rotate: true, hasWall: false },
+	symbols: {
+		t: VARIETY,
+		d: ({
+			human: 'dog',
+			dwarf: 'dog',
+			goblin: 'ogre',
+			demon: 'imp'
+		})[VARIETY]
+	}
+}));
+
+
+PlaceMany( 'camp', ['ogre','human','refugee','goblin'], VARIETY => ({
+	map:
+`
+.y.
+yuy
+.y.
+`,
+	flags: { rotate: true },
+	symbols: {
+		y: VARIETY,
+		u: 'brazier',
+	},
+	inject: {
+		ogre: { attitude: Attitude.AWAIT, tether: 8, tooClose: 2 },
+		human: { attitude: Attitude.WANDER, tether: 1 },
+		goblin: { attitude: Attitude.AWAIT, tether: 8, tooClose: 4 }
+	}
+
+}));

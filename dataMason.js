@@ -46,6 +46,9 @@
 	function isDoor(tile) {
 		return tile !== T.Unknown && SymbolToType[tile].isDoor;
 	}
+	function isBridge(tile) {
+		return tile !== T.Unknown && SymbolToType[tile].isBridge;
+	}
 	function isBlocking(tile) {
 		return tile !== T.Unknown && !(SymbolToType[tile].mayWalk || SymbolToType[tile].isMonsterType);
 	}
@@ -57,6 +60,16 @@
 	}
 	function wantsDoor(tile) {
 		return tile !== T.Unknown && SymbolToType[tile].wantsDoor;
+	}
+	function wantsBridge(tile) {
+		return tile !== T.Unknown && SymbolToType[tile].wantsBridge;
+	}
+
+	function injectMake(injectList,x,y,typeId,inject) {
+		let pos = ''+x+','+y;
+		injectList[pos] = injectList[pos] || {};
+		injectList[pos][typeId] = Object.assign( {}, injectList[pos][typeId], inject );
+
 	}
 
 
@@ -72,6 +85,7 @@
 		xLen() { return this.xMax-this.xMin+1; }
 		yLen() { return this.yMax-this.yMin+1; }
 		setDimensions(xLen,yLen) {
+			console.assert( typeof xLen == 'number' && !isNaN(xLen) );
 			if( yLen === undefined ) {
 				yLen = xLen;
 			}
@@ -141,9 +155,9 @@
 		getAll(x,y) {
 			x = Math.floor(x);
 			y = Math.floor(y);
-			if( !this.tile[y] ) {
-				return;
-			}
+			this.ext(x,y);
+			this.tile[y] = this.tile[y] || [];
+			this.tile[y][x] = this.tile[y][x] || {};
 			return this.tile[y][x];
 		}
 		setTile(x,y,tileType,zoneId=NO_ZONE) {
@@ -171,8 +185,14 @@
 		traverse(fn,xsInset=0,ysInset=0,xeInset=0,yeInset=0) {
 			if( xsInset+xeInset >= this.xLen() ) { debugger; }
 			if( ysInset+yeInset >= this.yLen() ) { debugger; }
-			for( let y=this.yMin+ysInset ; y<=this.yMax-yeInset ; ++ y ) {
-				for( let x=this.xMin+xsInset ; x<=this.xMax-xeInset ; ++x ) {
+			// WARNING: Keep these intermediate variables here because otherwise you might endless loop
+			// if an operation expands the xMin and xMax.
+			let sy = this.yMin+ysInset;
+			let ey = this.yMax-yeInset;
+			let sx = this.xMin+xsInset;
+			let ex = this.xMax-xeInset;
+			for( let y=sy ; y<=ey ; ++ y ) {
+				for( let x=sx ; x<=ex ; ++x ) {
 					let go = fn.call(this,x,y);
 					if( go === false ) {
 						return this;
@@ -277,6 +297,42 @@
 			this.traverse( (x,y) => c += this.getTile(x,y)==tile ? 1 : 0 );
 			return c;
 		}
+		count8(x,y,testFn) {
+			x = Math.floor(x);
+			y = Math.floor(y);
+			let count = 0;
+			for( let dir=0 ; dir<DirAdd.length ; ++dir ) {
+				let tile = this.getTile(x+DirAdd[dir].x,y+DirAdd[dir].y);
+				if( testFn(tile) ) {
+					++count;
+				}
+			}
+			return count;
+		}
+		count4(x,y,testFn) {
+			x = Math.floor(x);
+			y = Math.floor(y);
+			let count = 0;
+			for( let dir=0 ; dir<DirAdd.length ; dir += 2 ) {
+				let tile = this.getTile(x+DirAdd[dir].x,y+DirAdd[dir].y);
+				if( testFn(tile) ) {
+					++count;
+				}
+			}
+			return count;
+		}
+		count4zone(x,y,testFn) {
+			x = Math.floor(x);
+			y = Math.floor(y);
+			let count = 0;
+			for( let dir=0 ; dir<DirAdd.length ; dir += 2 ) {
+				let zoneId = this.getZoneId(x+DirAdd[dir].x,y+DirAdd[dir].y);
+				if( testFn(zoneId) ) {
+					++count;
+				}
+			}
+			return count;
+		}
 		placeRandom(tile,onTile,amount=1) {
 			while( amount ) {
 				let pos = this.randPos();
@@ -313,48 +369,24 @@
 			});
 			return list;
 		}
-		count8(x,y,testFn) {
-			x = Math.floor(x);
-			y = Math.floor(y);
-			let count = 0;
-			for( let dir=0 ; dir<DirAdd.length ; ++dir ) {
-				let tile = this.getTile(x+DirAdd[dir].x,y+DirAdd[dir].y);
-				if( testFn(tile) ) {
-					++count;
-				}
-			}
-			return count;
-		}
-		count4(x,y,testFn) {
-			x = Math.floor(x);
-			y = Math.floor(y);
-			let count = 0;
-			for( let dir=0 ; dir<DirAdd.length ; dir += 2 ) {
-				let tile = this.getTile(x+DirAdd[dir].x,y+DirAdd[dir].y);
-				if( testFn(tile) ) {
-					++count;
-				}
-			}
-			return count;
-		}
 		zoneFlood(x,y,zoneId,ortho,toZoneId=NO_ZONE) {
 			function zap(x,y) {
 				for( let dir=0; dir<DirAdd.length ; dir += step ) {
 					let nx = x + DirAdd[dir].x;
 					let ny = y + DirAdd[dir].y;
 					if( nx<self.xMin || ny<self.yMin || nx>self.xMax || ny>self.yMax ) continue;
-					let t = self.getAll(nx,ny);
-					if( t.zoneId !== zoneId) { continue; }
-					t.zoneId = toZoneId;
+					let tZoneId = self.getZoneId(nx,ny);
+					if( tZoneId !== zoneId) { continue; }
+					self.setZoneId(nx,ny,toZoneId);
 					++count;
 					hotTiles.push(nx,ny);
 				}
 			}
 			let self = this;
 			let step = ortho ? 2 : 1;
-			let t = self.getAll(x,y);
-			if( t.zoneId !== zoneId ) debugger;
-			t.zoneId = toZoneId;
+			let tZoneId = self.getZoneId(x,y);
+			if( tZoneId !== zoneId ) debugger;
+			self.setZoneId( x, y, toZoneId );
 			let count = 1;
 			let hotTiles = [x,y];
 			do {
@@ -371,7 +403,7 @@
 					let ny = y + DirAdd[dir].y;
 					if( nx<self.xMin || ny<self.yMin || nx>self.xMax || ny>self.yMax ) continue;
 					let t = self.getAll(nx,ny);
-					if( !testFn(nx,ny,t.tile,t.zoneId) ) { continue; }
+					if( !testFn(nx,ny,t.tile || T.Unknown,t.zoneId) ) { continue; }
 					assignFn(nx,ny,t);
 					++count;
 					hotTiles.push(nx,ny);
@@ -440,7 +472,7 @@
 			this.clearZones();
 
 			this.traverse( (x,y) => {
-				if( this.getZoneId(x,y) == NO_ZONE && isFloor(this.getTile(x,y)) ) {
+				if( this.getZoneId(x,y) == NO_ZONE && isWalkable(this.getTile(x,y)) ) {
 					let z = this.flood( x, y, ortho, keepTiles,
 						(x,y,tile,z) => isWalkable(tile) && (z===undefined || z != zoneId),
 						(x,y,t) => t.zoneId = zoneId
@@ -501,7 +533,7 @@
 			return false;
 		}
 
-		zoneLink(x,y,tx,ty,zoneId,linkFn) {
+		zoneLink(x,y,tx,ty,zoneId,tZoneId,linkFn) {
 			// to - from
 			let reps = 9999;
 			while( reps-- ) {
@@ -517,12 +549,19 @@
 					this.setTile(x,y,T.Door);
 				}
 				else 
+				if( wantsBridge(tile) && this.count4(x,y,isWall)==0 && this.count4(x,y,isFloor)<=1 ) {
+					this.setTile(x,y,dir==0 || dir==4 ? T.BridgeNS : T.BridgeEW);
+				}
+				else 
 				if( !isWalkable(tile) ) {
 					// Only mar the area if it is NOT already walkable.
 					this.setTile(x,y,T.PassageFloor);
 				}
 
 				this.setZoneId(x,y,zoneId);
+				if( this.count4zone(x,y, z => z==tZoneId)>0 ) {
+					break;
+				}
 			}
 		}
 
@@ -574,24 +613,45 @@
 						}
 						return deltasToDirPredictable(dx,dy);
 					}
-					this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,wanderLink?deltasToDirNaturalOrtho:deltasToDirStrict);
+					this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,wanderLink?deltasToDirNaturalOrtho:deltasToDirStrict);
 //					console.log("Linked "+pair);
 					link[pair] = true;
 				}
 			} while( reps-- );
 		}
 
-		assureTileCount(quota) {
-			let makeSymbol = {};
-			quota.forEach( q => { makeSymbol[q.symbol] = (makeSymbol[q.symbol] || 0) + 1; } );
-			Object.each( makeSymbol, (count,symbol) => {
-				count -= this.countTile(symbol);
-				while( count-- > 0 ) {
-					this.placeEntrance(symbol);
+		quotaMakePositioned(quota,injectList,mapOffset) {
+			quota.forEach( q => {
+				if( q.putAnywhere ) {
+					return;
 				}
+				this.setTile(q.x+mapOffset.x,q.y+mapOffset.y,q.symbol);
+				injectMake( injectList, q.x+mapOffset.x, q.y+mapOffset.y, q.typeId, q.inject );
+				q.done = true;
 			});
 		}
+/*
 
+		quotaLinkOthers(quota,injectList) {
+			quota.forEach( q => {
+				if( !q.putAnywhere ) {
+					return;
+				}
+				// Gather all the map symbols that match this, and that are not already from quota.
+				let inMap = this.gather( (x,y) => {
+					if( this.getTile(x,y)!=q.symbol ) {
+						return false;
+					}
+					let pos = ''+x+','+y;
+					return !injectList[pos] || !injectList[pos].fromQuota;
+				});
+				console.assert( inMap.length > 0 );
+				let index = Math.randInt(0,inMap.length/2) * 2;
+				console.log( "Linking 
+				injectMake(injectList,inMap[index+0],inMap[index+1],q.typeId,q.inject);
+			});
+		}
+*/
 		fit(px,py,expand,placeMap) {
 			if( px<0 || py<0 || px+placeMap.xLen>this.xLen || py+placeMap.yLen>this.yLen ) {
 				return false;
@@ -714,11 +774,11 @@
 			return this;
 		}
 		wallify(wallTile) {
-			this.traverse( (x,y)=> {
-				if( isUnknown(this.getTile(x,y)) && this.count8(x,y,isWalkable)>0 ) {
-					this.setTile(x,y,wallTile);
-				}
-			},-1,-1,-1,-1);
+			let edges = this.gather( (x,y) => isUnknown(this.getTile(x,y)) && this.count8(x,y,isWalkable)>0 );
+			// This is made just right so that, if your wallTile is walkable, it still works!!
+			for( let i=0 ; i<edges.length ; i+=2 ) {
+				this.setTile(edges[i+0],edges[i+1],wallTile);
+			}
 			return this;
 		}
 		clearZones(zoneId=NO_ZONE) {
@@ -890,169 +950,302 @@
 
 
 
-	function positionPlaces(depth,map,numPlaceTiles,quota,requiredPlaces,placeRarityTable,injectList,siteList) {
+	function positionPlaces(depth,map,numPlaceTilesOriginal,quota,requiredPlaces,rarityHash,injectList,siteList) {
 
-		function generatePlacesRequired(requiredPlaces) {
-			let chanceList = String.chanceParse( requiredPlaces || '' );
-			let table = Array.chancePick(chanceList);
-			return table;
-		}
-
-		// Contains entries from PlaceList
-		function placeTable(rarityTable) {
-			let table = [];
-			for( let placeId in PlaceList ) {
-				let place = PlaceList[placeId];
-				if( place.neverPick || (place.level != 'any' && place.level > depth) ) {
-					continue;
-				}
-				if( !rarityTable[placeId] ) {
-					continue;
-				}
-				let placeLevel = (place.level=='any' ? depth : place.level);
-				let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(placeLevel,depth) * 100000, 1, 100000));
-				chance *= (rarityTable[placeId] || 1);
-				table.push(chance,place);
+		class PlacePicker extends PickTable {
+			constructor() {
+				super();
+				this.placeUsed = {};
 			}
-			return table;
+			pickResistingDuplicates() {
+				// We try to resist picking the same place multiple times on a level.
+				let reps = 5;
+				let place;
+				do {
+					place = this.pick();
+					console.assert( place.typeId );
+				} while( reps-- && Math.chance( (this.placeUsed[place.typeId]||0)*30 ) );
+
+				this.placeUsed[place.typeId] = (this.placeUsed[place.typeId]||0)+1;
+				return place;
+			}
 		}
 
 		function tileCount(place) {
 			if( place.tileCount )
 				return place.tileCount;
 			if( place.tilePercent )
-				return Math.clamp( Math.floor(numPlaceTiles * place.tilePercent), 1, numPlaceTiles );
+				return Math.clamp( Math.floor(numPlaceTilesOriginal * place.tilePercent), 1, numPlaceTilesOriginal );
 			debugger;
 			return 0;
 		}
 
-		function pickPlace(placeRarityTable) {
-			// We try to resist picking the same place multiple times on a level.
-			let table = placeTable(placeRarityTable);
-			let reps = 5;
-			let place;
-			do {
-				place = Array.pickFromPaired(table);
-			} while( reps-- && Math.chance((placeUsed[place.id]||0)*30) );
-			placeUsed[place.id] = (placeUsed[place.id]||0)+1;
+		function placePrepare(place,rotation) {
+			if( !place.isPrepared ) {
+				// WARNING! Important for this to be a DEEP copy.
+				place = jQuery.extend(true, new Place(), place, {isPrepared: true});
+
+//				console.log("Trying to place "+place.typeId);
+				place.selectSymbols();
+				place.generateMap();
+				place.rotateIfNeeded(rotation);
+			}
 			return place;
 		}
 
-		function tryToFit(place,numPlaceTiles) {
-			// WARNING! Important for this to be a DEEP copy.
-			place = jQuery.extend(true, {}, place);
-
-//			console.log("Trying to place "+place.id);
-			Place.selectSymbols(place);
-			Place.generateMap(place);
-			Place.rotateIfNeeded(place);
-
-			let x,y;
-			function findTheFit() {
-				let fitReps = 300;
-				let fits;
-				//
-				// Find a place the 
-				//
-				do {
-					[x,y] = map.randPos4( 0, 0, place.map ? -place.map.xLen : 0, place.map ? -place.map.yLen : 0);
-					if( place.floodId ) {
-						fits = isUnknown(map.getTile(x,y)) && map.count8(x,y,isUnknown)==8;
-					}
-					else {
-						let expand = place.hasWall ? 0 : 1;
-						fits = map.fit( x, y, expand, place.map );
-					}
-				} while( !fits && --fitReps );
-				return fits;
+		class Fitter {
+			constructor(map) {
+				this.map = map;
 			}
-			let fits = findTheFit();
 
-			if( !fits ) {
-				numPlaceTiles += tileCount(place);
-			}
-			else
-			{
-				let siteMarks = [];
-//				console.log('Placed at ('+x+','+y+')');
+			testFit(x,y,place) {
 				if( place.floodId ) {
-					let floodTile = TypeIdToSymbol[place.floodId];
-					let sparkTile = TypeIdToSymbol[place.sparkId];
-					let sparkDensity = place.sparkDensity || 0;
-					let sparkLimit = place.sparkLimit;
-					let tilesMade = map.floodSpread( x, y, tileCount(place), sparkTile, sparkLimit, sparkDensity, false, 
-						(x,y,t) => { siteMarks.push(x,y); t.tile=floodTile; } );
-					numPlaceTiles += (tileCount(place)-tilesMade);
+					return isUnknown(this.map.getTile(x,y)) && this.map.count8(x,y,isUnknown)==8;
 				}
-				else {
-					map.inject( x, y, place.map, function(px,py,x,y,symbol) {
-						siteMarks.push(x,y);
-						let type = SymbolToType[symbol];
-						if( !type ) debugger;
-						let iPos = ''+x+','+y;
-						if( place.inject && place.inject[type.typeId] ) {
-							//console.log(type.typeId+' at '+x+','+y+' will get ',place.inject[type.typeId]);
-							injectList[iPos] = injectList[iPos] || {};
-							injectList[iPos][type.typeId] = Object.assign( injectList[iPos][type.typeId] || {}, place.inject[type.typeId] );
-						}
-						// Order is important. The specifically positioned one overridesany generic tweaks on the type.
-						let pPos = ''+px+','+py;
-						if( place.inject && place.inject[pPos] ) {
-							injectList[iPos] = injectList[iPos] || {};
-							injectList[iPos][type.typeId] = Object.assign( injectList[iPos][type.typeId] || {}, place.inject[pPos][type.typeId] );
-						}
-					});
-				}
-				return [numPlaceTiles,siteMarks];
+				let expand = place.hasWall ? 0 : 1;
+				return this.map.fit( x, y, expand, place.map );
 			}
-			return [numPlaceTiles];
+
+			findRandomFit(place,fitReps=300) {
+				let x,y,fits;
+				do {
+					[x,y] = this.map.randPos4( 0, 0, place.map ? -place.map.xLen : 0, place.map ? -place.map.yLen : 0);
+					fits = this.testFit(x,y,place);
+				} while( !fits && --fitReps );
+				return { x:x, y:y, fits:fits };
+			}
 		}
 
-		let placeUsed = [];	// used to avoid duplicating places too much
-		let placeRosterRequired = generatePlacesRequired(requiredPlaces).map( placeId => PlaceList[placeId] );
-		placeRosterRequired.map( place => { numPlaceTiles -= tileCount(place); } );
-
-		// We are allowed to have an empty placeRarityTable. It is OK to specify only required places, or none.
-		let placeRosterRandom = [];
-		let reps = 1000;
-		while( placeRarityTable.length && numPlaceTiles>0 && --reps) {
-			let place = pickPlace(placeRarityTable);
-			placeRosterRandom.push(place);
-			numPlaceTiles -= tileCount(place);
+		function placeMake(x,y,place) {
+			console.assert( typeof x === 'number' && !isNaN(x) );
+			console.assert( typeof y === 'number' && !isNaN(y) );
+			console.assert( place );
+			let siteMarks = [];
+//				console.log('Placed at ('+x+','+y+')');
+			if( place.floodId ) {
+				let floodTile = TypeIdToSymbol[place.floodId];
+				let sparkTile = TypeIdToSymbol[place.sparkId];
+				let sparkDensity = place.sparkDensity || 0;
+				let sparkLimit = place.sparkLimit;
+				let tilesMade = map.floodSpread( x, y, tileCount(place), sparkTile, sparkLimit, sparkDensity, false, 
+					(x,y,t) => { siteMarks.push(x,y); t.tile=floodTile; } );
+				numPlaceTiles += (tileCount(place)-tilesMade);
+				console.log( "Made flood place "+place.typeId+" at ("+x+","+y+")" );
+			}
+			else {
+				map.inject( x, y, place.map, function(px,py,x,y,symbol) {
+					siteMarks.push(x,y);
+					let type = SymbolToType[symbol];
+					if( !type ) debugger;
+					let typeId = type.typeId;
+					if( place.inject && place.inject[typeId] ) {
+						//console.log(type.typeId+' at '+x+','+y+' will get ',place.inject[type.typeId]);
+						injectMake( injectList, x, y, typeId, place.inject[typeId] );
+					}
+					// Order is important. The specifically positioned one overrides any generic tweaks on the type.
+					let pPos = ''+px+','+py;
+					if( place.inject && place.inject[pPos] ) {
+						injectMake( injectList, x, y, typeId, place.inject[pPos][typeId] );
+					}
+				});
+				console.log( "Made mapped place "+place.typeId+" at ("+x+","+y+")" );
+			}
+			return siteMarks;
 		}
-		if( !reps ) debugger;
 
-		// SUBTLE: Notice that the required places do NOT get sorted. The user has control over which
-		// places get generated first.
-		placeRosterRandom.sort( (a,b) => tileCount(b)-tileCount(a) );
-		let placeRoster = placeRosterRequired.concat(placeRosterRandom);
+		function addSite( place, siteMarks ) {
+			let site = Object.assign({}, {
+				id: GetUniqueEntityId(),
+				marks: siteMarks,
+				placeId: place.typeId,
+				place: place
+			});
+			siteList.push(site);
+			// mark on the map which site belongs to whom.
+			for( let i=0 ; i<site.marks.length ; i+=2 ) {
+				let x = site.marks[i];
+				let y = site.marks[i+1];
+				map.getAll(x,y).siteId = siteList.length-1;
+			}
+		}
 
-		reps = 20;
-		do {
-			while( placeRarityTable.length && numPlaceTiles > 0 ) {
-				let place = pickPlace(placeRarityTable);
-				placeRoster.push(place);
+		function makeAtRandomPosition(placeRaw,rotation) {
+			let place = placePrepare(placeRaw,rotation);
+			let pos = new Fitter(map).findRandomFit( place );
+			if( !pos.fits ) {
+				numPlaceTiles += tileCount(place);
+				return;
+			}
+			let siteMarks = placeMake(pos.x,pos.y,place);
+			if( siteMarks ) {
+				addSite( place, siteMarks );
+			}
+			return siteMarks;
+		}
+
+		function addRandomPlacesUntilFull(roster,placePicker) {
+			// IMPORTANT: This falls through if rarityTable is empty. This is permitted, that is, an area can have zero random places.
+			let reps = 1000;
+			while( !placePicker.isEmpty() && numPlaceTiles>0 && --reps) {
+				let place = placePicker.pickResistingDuplicates();
+				roster.push(place);
 				numPlaceTiles -= tileCount(place);
 			}
+			if( !reps ) debugger;
+		}
 
-			while( placeRoster.length ) {
-				let place = placeRoster.shift();
-				let siteMarks;
-				[numPlaceTiles,siteMarks] = tryToFit(place,numPlaceTiles);
-				if( !siteMarks && placeRosterRequired.includes(place) ) {
-					// A so-called "required" place didn't get built.
-					console.log( "Required place "+place.id+" did not fit." );
-				}
-				if( siteMarks ) {
-					let site = Object.assign({}, place.site, { id: GetUniqueEntityId(), marks: siteMarks, placeId: place.id });
-					siteList.push(site);
-					for( let i=0 ; i<site.marks.length ; i+=2 ) {
-						map.getAll(site.marks[i],site.marks[i+1]).siteId = siteList.length-1;
+		function makeRoster(roster) {
+			let made = 0;
+			while( roster.length ) {
+				let place = roster.shift();
+				made += makeAtRandomPosition(place,null) ? 1 : 0;
+			}
+			return made;
+		}
+
+		function makeQuotaPlaces(placeSource, quota, reqRoster, rarityHash, forbiddenSymbols) {
+
+			function attemptToPlace(qPicker,description) {
+				let siteMarks = false;
+				while( !siteMarks && qPicker.total > 0 ) {
+					let place = qPicker.pick();
+					qPicker.forbidLast();
+					let rotation = Math.randInt(0,4);
+					siteMarks = makeAtRandomPosition( place, rotation );
+					if( siteMarks ) {
+						numPlaceTiles -= tileCount(place);
+						if( siteMarks ) console.log( "Quota placed "+place.typeId+" "+description );
 					}
 				}
+				return siteMarks;
 			}
-		} while( placeRarityTable.length && numPlaceTiles > 0 && --reps );
-		if( !reps ) debugger;
+
+			function injectAndForbid(x,y,q) {
+				injectMake( injectList, x, y, q.typeId, q.inject );
+				forbiddenSymbols.push(q.symbol);
+				q.done = true;
+			}
+
+			function scanForAndUseExisting(q) {
+				// It is possible that an already-made place contains this symbol. Check for it.
+				let typeId = SymbolToType[q.symbol].typeId;
+				let list = map.gather( (x,y) => {
+					if( map.getTile(x,y)!=q.symbol ) {
+						return false;
+					}
+					let pos = ''+x+','+y;
+					if( injectList[pos] && injectList[pos][typeId] && injectList[pos][typeId].fromQuota ) {
+						return false;
+					}
+					return true;
+				});
+				if( list.length ) {
+					// We'll just take the first one we found, since shuffling a list of pairs is hard.
+					console.log( "Quota found "+q.typeId+" already placed. Using it." );
+					injectAndForbid( list[0], list[1], q );
+					return true;
+				}
+			}
+
+			function injectFromQuota(siteMarks,q) {
+				let found = false;
+				for( let i=0 ; i<siteMarks.length && !found ; i+=2 ) {
+					let x = siteMarks[i+0];
+					let y = siteMarks[i+1];
+					let tile = map.getTile(x,y);
+					if( tile == q.symbol ) {
+						injectAndForbid(x,y,q);
+						return true;
+					}
+				}
+				console.assert(q.done);
+			}
+
+			quota.forEach( q => {
+				if( q.done ) {
+					return;
+				}
+				if( scanForAndUseExisting(q) ) {
+					return;
+				}
+
+				let siteMarks;
+				if( reqRoster.length ) {
+					let qPickerReq = new PlacePicker().scanArray( reqRoster, (place) => {
+						if( place.containsAny([q.symbol]) ) {
+							return 1;
+						}
+					});
+					if( !qPickerReq.isEmpty() ) {
+						siteMarks = attemptToPlace(qPickerReq,q.symbol,'required');
+					}
+				}
+				if( !siteMarks ) {
+					let qPickerRarity = new PlacePicker().scanHash( placeSource, (place,placeId) => {
+						if( place.containsAny([q.symbol]) && (rarityHash[placeId] || place.isUtility) ) {
+							return place.calcChance( depth, rarityHash[placeId] || place.rarity || rUNCOMMON );
+						}
+					});
+					console.assert( !qPickerRarity.isEmpty() );
+					siteMarks = attemptToPlace(qPickerRarity,q.symbol, 'random');
+				}
+
+				// We really need a way to make sure these things appear properly...
+				console.assert(siteMarks);
+				if( injectFromQuota(siteMarks,q) ) {
+				}
+
+			});
+		}
+
+		function assembleRequiredPlaces(placeSource,requiredPlaces) {
+			let chanceList = String.chanceParse( requiredPlaces || '' );
+			let placeIdArray = Array.chancePick(chanceList);
+			return placeIdArray.map( placeId => placeSource[placeId] );
+		}
+
+		function makeRequiredPlaces(roster) {
+			roster.forEach( place => { numPlaceTiles -= tileCount(place); } );
+			let toMake = roster.length;
+			let made   = makeRoster( roster );
+			if( made != toMake ) {
+			}
+		}
+
+		function makeRandomPlaces(placePicker) {
+			let roster = [];
+			reps = 20;
+			do {
+				addRandomPlacesUntilFull(roster,placePicker);
+				roster.sort( (a,b) => tileCount(b)-tileCount(a) );	// make biggest first - that is your best chance.
+				makeRoster(roster);
+			} while( !placePicker.isEmpty() && numPlaceTiles > 0 && --reps );
+			if( !reps ) debugger;
+		}
+
+		let placeSource = {};
+		Object.each( PlaceTypeList, (place,placeId) => {
+			placeSource[placeId] = new Place( place );
+		});
+
+		let numPlaceTiles = numPlaceTilesOriginal;
+		let forbiddenSymbols = [];
+		let reqRoster = assembleRequiredPlaces(placeSource,requiredPlaces);
+
+		// Try to fill your quota of tiles, drawing from the requiredPlaces first, and then allowing randoms.
+		makeQuotaPlaces(placeSource,quota,reqRoster,rarityHash,forbiddenSymbols);
+
+		// Trim out any required place that is now forbidden due to quotas.
+		reqRoster = reqRoster.filter( place => !place.containsAny(forbiddenSymbols) );
+
+		// Make whatever remains
+		makeRequiredPlaces(reqRoster);
+
+		// Now fill the rest of the level according to the raritys set by user.
+		let placePicker = new PlacePicker().scanHash( placeSource, (place,placeId) => {
+			return !place.containsAny(forbiddenSymbols) && place.mayPick(depth) && rarityHash[placeId] ? place.calcChance(depth,rarityHash[placeId]) : false;
+		});
+		makeRandomPlaces(placePicker);
 	}
 
 
@@ -1073,13 +1266,13 @@
 		makeMore();
 	}
 
-	function paletteCommit(palette,scape) {
-		let tileTypes = ['floor','wall','door','fillFloor','fillWall','outlineWall','passageFloor','entrance','exit','unknown'];
-		scape.palette = scape.palette || {};
+	function paletteCommit(palette) {
+		let tileTypes = ['floor','wall','door','fillFloor','fillWall','outlineWall','passageFloor','bridgeNS','bridgeEW','entrance','exit','unknown'];
 		for( let tileType of tileTypes ) {
-			let t = scape.palette[tileType+'TypeId'];
-			if( t ) palette[tileType] = TypeIdToSymbol[t];
 			let TileType = String.capitalize(tileType);	// Floor
+			if( palette[tileType] && palette[tileType].length > 1 ) {
+				palette[tileType] = TypeIdToSymbol[palette[tileType]];
+			}
 			T[TileType] = palette[tileType] || T[TileType];
 		}
 
@@ -1101,45 +1294,36 @@
 		}
 	}
 
-	function masonConstruct(scape,palette,requiredPlaces,placeRarityTable,quota,injectList,siteList,onStep) {
+	function masonConstruct(theme,quota,injectList,siteList,onStep) {
 		let drawZones = false;
 		function render() {
 			let s = map.renderToString(drawZones);
 			onStep(s);
 		}
 
-		palette = paletteCommit( palette || {}, scape );
-
+		paletteCommit( theme );
 
 		let mapOffset = { x: -1, y: -1 };	// this is merely a likely offset. The final sizeToExtent will really deal with it...
 		let map = new Mason();
-		map.setDimensions(scape.dim);
+		map.setDimensions(theme.dim);
 
-		quota.forEach( q => {
-			if( !q.putAnywhere ) {
-				map.setTile(q.x+mapOffset.x,q.y+mapOffset.y,q.symbol);
-				let qPos = ''+(q.x+mapOffset.x)+','+(q.y+mapOffset.y);
-				injectList[qPos] = injectList[qPos] || {};
-				console.log( "Quota adding at "+qPos+" type "+q.typeId );
-				injectList[qPos][q.typeId] = q.inject;
-			}
-		});
+		map.quotaMakePositioned(quota,injectList,mapOffset);
 
-		let numPlaceTiles = Math.floor(map.xLen()*map.yLen()*scape.floorDensity*scape.placeDensity);
-		positionPlaces(scape.depth,map,numPlaceTiles,quota,requiredPlaces,placeRarityTable,injectList,siteList);
+		let numPlaceTiles = Math.floor(map.xLen()*map.yLen()*theme.floorDensity*theme.placeDensity);
+		positionPlaces(theme.depth,map,numPlaceTiles,quota,theme.rREQUIRED,theme.rarityHash,injectList,siteList);
 
-		if( scape.architecture == 'cave' ) {
-			makeAmoeba(map,scape.floorDensity,scape.seedPercent,scape.mustConnect);
+		if( theme.architecture == 'cave' ) {
+			makeAmoeba(map,theme.floorDensity,theme.seedPercent,theme.mustConnect);
 		}
 
 		map.assembleSites(siteList);
-		map.connectAll(scape.wanderingPassage);
+		map.connectAll(theme.wanderingPassage);
 		map.removePointlessDoors();
 		map.wallify(T.OutlineWall);
 		map.sizeToExtentsWithBorder(injectList,1);
 		map.convert(T.Unknown,T.FillWall);
 
-		map.assureTileCount(quota);
+		//map.quotaMakeOthers(quota,injectList);
 
 		return map;
 	}

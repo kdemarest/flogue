@@ -135,45 +135,6 @@ function nop() {}
 		return result;
 	}
 
-	Array.makePickTable = function(table,chanceFn) {
-		console.assert( table && table.length );
-		let chance = [];
-		let total = 0;
-		for( let i=0 ; i<table.length ; i++ ) {
-			if( !table[i] ) debugger;
-			let value = chanceFn(table[i]);
-			if( typeof value != 'number' ) debugger;
-			chance[i] = value;
-			total += chance[i];
-		}
-		return { table:table, chance:chance, total:total };
-	}
-
-	//**
-	// Takes a table of things, whatever you want, and uses the chanceFn to get values of likelihood.
-	// Then it traverses again picking a random one by poportions. If it fails (total=0) it tries the fallbackFn instead.
-	Array.pickFrom = function(table,chance,total) {
-		let n = Math.rand(0,total);
-		for( let i=0 ; i<table.length ; ++i ) {
-			n -= chance[i];
-			if( n<=0 ) return table[i];
-		}
-		debugger;
-	}
-	Array.pickFromPaired = function(table) {
-		let total = 0;
-		for( let i=0 ; i<table.length ; i+=2 ) {
-			total += table[i];
-		}
-		let n = Math.rand(0,total);
-		for( let i=0 ; i<table.length ; i+=2 ) {
-			n -= table[i];
-			if( n<=0 ) return table[i+1];
-		}
-		debugger;
-	}
-
-
 	function betterSplit(s,delim) {
 		let temp = s.split(delim);
 		if( temp.length==1 && temp[0]=='' ) {
@@ -363,6 +324,84 @@ function rollDice(diceString) {
 	while( numDice-- ) { result += Math.randInt(1,dieFaces+1); }
 	return result;
 }
+
+//**
+// Takes a table of things, whatever you want, and uses the chanceFn to get values of likelihood.
+// Then it traverses again picking a random one by poportions. If it fails (total=0) it tries the fallbackFn instead.
+//**
+class PickTable {
+	constructor() {
+		this.table = null;
+		this.chance = null;
+		this.total = 0;
+		this.indexPicked = -1;
+		this.valuePicked = null;
+	}
+	isEmpty() {
+		return !this.table || this.table.length == 0;
+	}
+	makeBlank() {
+		this.table = [];
+		this.chance = [];
+		this.total = 0;
+		this.indexPicked = -1;
+		this.valuePicked = null;
+	}
+	scanArray(table,chanceFn) {
+		console.assert( table && table.length );
+		this.makeBlank();
+		for( let i=0 ; i<table.length ; i++ ) {
+			if( !table[i] ) debugger;
+			let value = chanceFn(table[i]);
+			if( value !== undefined && value !== null && value !== false) {
+				if( typeof value != 'number' ) debugger;
+				this.table.push( table[i] );
+				this.chance.push( value );
+				this.total += value;
+			}
+		}
+		return this;
+	}
+	scanHash(hash,fn) {
+		this.makeBlank();
+		for( let key in hash ) {
+			let value = fn( hash[key], key );
+			if( value !== undefined && value !== null && value !== false) {
+				this.table.push( hash[key] )
+				this.chance.push( value );
+				this.total += value;
+			}
+		}
+		return this;
+	}
+	pick() {
+		let n = Math.rand(0,this.total);
+		for( let i=0 ; i<this.table.length ; ++i ) {
+			n -= this.chance[i];
+			if( n<=0 ) {
+				this.indexPicked = i;
+				this.valuePicked = this.table[i];
+				return this.valuePicked;
+			}
+		}
+		debugger;
+	}
+	forbidLast() {
+		console.assert( !this.isEmpty() );
+		this.total -= this.chance[this.indexPicked];
+		this.chance[this.indexPicked] = 0;
+	}
+	forbid(fn) {
+		console.assert( !this.isEmpty() );
+		for( let i=0 ; i<this.table.length ; ++i ) {
+			if( fn(this.table[i]) ) {
+				this.total -= this.chance[i];
+				this.chance[i] = 0;
+			}
+		}
+	} 
+}
+
 
 function showHealthBar(id,newValue,lastValue,total,label) {
 	let hBar = $(id);

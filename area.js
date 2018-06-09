@@ -1,4 +1,4 @@
-function areaBuild(area,tileQuota) {
+function areaBuild(area,theme,tileQuota) {
 	let picker = new Picker(area.depth);
 
 	function makeMonster(type,x,y,inject) {
@@ -11,7 +11,9 @@ function areaBuild(area,tileQuota) {
 		console.assert( x!==undefined && y!==undefined );
 		type = type && !type.isRandom ? type : null;
 		if( !type || !presets ) {
-			let filterString = inject && inject.type ? inject.type : (type ? type.typeId : '');
+			// Note that even thought the type might be set here the inject.typeId is allowed to override it.
+			// In practice they won't be different, but the inject.typeId might be a specifier like "weapon.sword"
+			let filterString = inject && inject.typeId ? inject.typeId : (type ? type.typeId : '');
 			if( !type || type.isTreasure ) {
 				filterString += ' isTreasure';
 			}
@@ -55,43 +57,37 @@ function areaBuild(area,tileQuota) {
 		});
 	}
 
-	function populate(map,density,safeToMakeFn,makeFn) {
+	function populate(map,count,safeToMakeFn,makeFn) {
+		let floorList = [];
 		map.traverse( (x,y,type) => {
-			if( type.isFloor && Math.rand(0,1)<density && safeToMakeFn(map,x,y) ) {
-				makeFn(null,x,y);
+			if( type.isFloor && safeToMakeFn(map,x,y) ) {
+				floorList.push(x,y);
 			}
 		});
+		console.assert( floorList.length );
+		while( floorList.length && count>0 ) {
+			let index = Math.randInt(0,floorList.length/2)*2;
+			makeFn(null,floorList[index+0],floorList[index+1]);
+			floorList.splice(index,2);
+			--count;
+		}
 	}
 
-	let scapeDefault = {
-		depth: area.depth,
-		placeDensity: 0.40,
-		monsterDensity: 0.01,
-		itemDensity: 0.04
-	};
-	let paletteDefault = {
-		floor: 			TileTypeList.floor.symbol,
-		wall:  			TileTypeList.wall.symbol,
-		door:  			TileTypeList.door.symbol,
-		fillFloor:  	TileTypeList.floor.symbol,
-		fillWall:  		TileTypeList.wall.symbol,
-		outlineWall:  	TileTypeList.wall.symbol,
-		passageFloor: 	TileTypeList.floor.symbol,
-		unknown: 		TILE_UNKNOWN,
-	};
-
-	let scapeId = pick(area.theme.scapes);
-	let scape = Object.assign( {}, scapeDefault, ScapeList[scapeId](), area.theme.scape );
-	let palette = Object.assign( {}, paletteDefault, scape.palette, area.theme.palette );
+	function validateInjectList(injectList) {
+		Object.each( injectList, (inject,pos) => {
+			Object.each( inject, (type,typeId) => {
+				if( !type.injected ) {
+					console.log("ERROR: Failed inject of "+typeId+" at "+pos+" payload "+JSON.stringify(type));
+				}
+			});
+		});
+	}
 
 	let injectList = [];
 	area.siteList = [];
 
 	let masonMap = Mason.masonConstruct(
-		scape,
-		palette,
-		area.theme.rREQUIRED,
-		area.theme.rarityTable,
+		area.theme,
 		tileQuota,
 		injectList,
 		area.siteList
@@ -101,23 +97,18 @@ function areaBuild(area,tileQuota) {
 	area.entityList = [];
 
 	extractEntitiesFromMap(area.map,injectList,makeMonster,makeItem);
-	Object.each( injectList, (inject,pos) => {
-		Object.each( inject, (type,typeId) => {
-			if( !type.injected ) {
-				console.log("ERROR: Failed inject of "+typeId+" at "+pos+" payload "+JSON.stringify(type));
-			}
-		});
-	});
+	validateInjectList(injectList);
 
+	let totalFloor = area.map.count( (x,y,type) => type.isFloor && safeToMake(area.map,x,y) ? 1 : 0);
+	let totalMons  = area.entityList.length;
+	let totalItems = area.map.itemList.filter( item => item.isTreasure ).length;
 
-	let entityCount = area.map.count( (x,y,type) => type.isMonsterType ? 1 : 0 );
-	let treasureCount = area.map.count( (x,y,type) => type.isTreasure ? 1 : 0 );
+	let owedMons   = Math.round( (totalFloor*theme.monsterDensity) - totalMons );
+	let owedItems  = Math.round( (totalFloor*theme.itemDensity) - totalItems );
 
-	let monsterDensity = scape.floorDensity * (scape.monsterDensity - entityCount/(area.map.getSurfaceArea()*scape.floorDensity));
-	populate( area.map, monsterDensity, safeToMake, makeMonster );
-
-	let itemDensity = scape.floorDensity * (scape.itemDensity - treasureCount/(area.map.getSurfaceArea()*scape.floorDensity));
-	populate( area.map, itemDensity, safeToMake, makeItem );
+	console.log( "Map has "+totalFloor+" floor. It is owed "+owedMons+"+"+totalMons+" monsters, and "+owedItems+"+"+totalItems+" items." );
+	populate( area.map, owedMons, safeToMake, makeMonster );
+	populate( area.map, owedItems, safeToMake, makeItem );
 
 	area.gateList = area.map.itemList.filter( item => item.gateDir !== undefined );
 
@@ -136,7 +127,7 @@ class Area {
 		this.picker = new Picker(depth);
 	}
 	build(tileQuota) {
-		return areaBuild(this,tileQuota);
+		return areaBuild(this,this.theme,tileQuota);
 	}
 	getGate(id) {
 		let g = this.gateList.filter( g => g.id==id );

@@ -47,7 +47,7 @@ class Entity {
 
 		if( this.inventoryWear ) {
 			this.lootTake( this.inventoryWear, this.level, null, true, item => {
-				if( item.slot ) { this.don(item,item.slot); }
+				if( item.slot && !item.inSlot ) { this.don(item,item.slot); }
 			});
 		}
 
@@ -210,8 +210,12 @@ class Entity {
 	}
 
 	canPerceiveEntity(entity) {
-		if( !this.vis || (entity.isMonsterType && this.senseLife) || (entity.isItemType && this.senseItems) ) {
+		if( (entity.isMonsterType && this.senseLife) || (entity.isItemType && this.senseItems) ) {
 			return true;
+		}
+		if( !this.vis ) {
+			let d = this.getDistance(entity.x,entity.y);
+			return d <= (this.sightDistance || STADARD_MONSTER_SIGHT_DISTANCE);
 		}
 		// This gets us up to whoever actually owns this item. But on the map, you just use the item.
 		// This means that items can NOT be invisible independent of their owners.
@@ -281,6 +285,12 @@ class Entity {
 			this.goldCount = (this.goldCount||0) + item.goldCount;
 			item.destroy();
 			return;
+		}
+		if( item.autoEquip && item.slot ) {
+			let itemsInSlot = this.getItemsInSlot(item.slot);
+			if( itemsInSlot.count < HumanSlotLimit[item.slot] ) {
+				this.don(item,item.slot);
+			}
 		}
 	}
 
@@ -603,8 +613,11 @@ class Entity {
 		return String.arIncludes(this.resist,damageType);
 	}
 
-	takeHealing(healer,amount,healingType,quiet=false) {
-		amount = Math.min( amount, this.healthMax-this.health );
+	takeHealing(healer,amount,healingType,quiet=false,allowOverage=false) {
+		// This allows prior health bonuses that might have cause health to exceed helthMax to exist.
+		if( !allowOverage ) {
+			amount = Math.max(0,Math.min( amount, this.healthMax-this.health ));
+		}
 		this.health += amount;
 		if( this.onHeal ) {
 			quiet = this.onHeal(healer,this,amount,healingType);
@@ -730,10 +743,9 @@ class Entity {
 				follow: 	this,
 				img: 		StickerList[this.bloodId || 'bloodRed'].img,
 				delay: 		delay,
-				scale: 		0.20+0.10*mag,
 				duration: 	0.2,
 				onInit: 		a => { a.create(4+Math.floor(7*mag)); },
-				onSpriteMake: 	s => { s.sVel(Math.rand(deg-45,deg+45),4+Math.rand(0,3+7*mag)); },
+				onSpriteMake: 	s => { s.sScaleSet(0.20+0.10*mag).sVel(Math.rand(deg-45,deg+45),4+Math.rand(0,3+7*mag)); },
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
 			});
 			// You also jump back and quiver
@@ -759,7 +771,7 @@ class Entity {
 						onSpriteMake: 	s => { },
 						onSpriteTick: 	s => {
 							if( s.elapsed === undefined || s.duration ===undefined ) { debugger; }
-							//s.sScaleSet( 0.3+2.7/(1-s.elapsed/s.duration) ); } //s.sScale(-1); } //.sAlpha(1-s.elapsed/s.duration);
+							//s.sScaleSet( 0.3+2.7/(1-s.elapsed/s.duration) ); }
 						}
 					});
 				}
@@ -1078,7 +1090,7 @@ class Entity {
 		}
 
 		if( this.onMove ) {
-			this.onMove(this,x,y);
+			this.onMove.call(this,x,y);
 		}
 
 		if( this.picksup ) {
@@ -1221,7 +1233,7 @@ class Entity {
 				}
 				else
 				if( item.slot ) {
-					let itemToRemove = new Finder(this.inventory).filter( i => i.inSlot==item.slot);
+					let itemToRemove = this.getItemsInSlot(item.slot);
 					if( itemToRemove.count >= HumanSlotLimit[item.slot] ) {
 						this.doff(itemToRemove.first);
 					}
@@ -1235,6 +1247,9 @@ class Entity {
 				}
 			}
 		};
+	}
+	getItemsInSlot(slot) {
+		return new Finder(this.inventory).filter( i => i.inSlot==slot);
 	}
 
 	act(timePasses=true) {
@@ -1252,7 +1267,9 @@ class Entity {
 		}
 
 		if( timePasses && this.regenerate ) {
-			this.health = Math.floor(Math.min(this.health+this.regenerate*this.healthMax,this.healthMax));
+			if( this.health < this.healthMax ) {
+				this.health = Math.floor(Math.clamp(this.health+this.regenerate*this.healthMax,0.0,this.healthMax));
+			}
 		}
 
 		if( this.vocalize ) {
@@ -1284,20 +1301,17 @@ class Entity {
 			}
 			if( this.jump > this.jumpMax ) {
 				this.jump = 0;
-				if( tileType.isPit ) {
-					let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
-					if( this.area.isCore && ( !stairs || !stairs.toAreaId ) ) {
-						debugger;
-					}
-					if( stairs ) {
-						let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
-							toAreaId: stairs.toAreaId,
-							themeId: stairs.themeId,
-							killMeWhenDone: true
-						});
-	 					this.area.world.setPending( gate );
-	 				}
-	 			}
+			}
+			if( this.jump == 0 && tileType.isPit && this.travelMode == 'walk') {
+				let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
+				if( stairs ) {
+					let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
+						toAreaId: stairs.toAreaId,
+						themeId: stairs.themeId,
+						killMeWhenDone: true
+					});
+ 					this.area.world.setPending( gate );
+ 				}
 			}
 
 			// Important for this to happen after we establish whether you are jumping at this moment.

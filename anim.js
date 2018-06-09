@@ -1,22 +1,50 @@
+let _test = function(a,b) {
+	console.assert( Math.abs(a-b) < 0.0001 );
+}
+
+let toDeg = function(rad) {
+	let d = (rad/(2*Math.PI)) * 360 + 90;
+	if( d >= 360 ) d -= 360;
+	return d;
+}
+let toRad = function(deg) {
+	let r = (3*Math.PI/2)+(deg/360)*2*Math.PI;
+	if( r >= 2*Math.PI ) r -= 2*Math.PI;
+	return r;
+}
+
+_test( toRad(0), 3*Math.PI/2 );
+_test( toRad(90), 0 );
+_test( toRad(180), Math.PI/2 );
+_test( toRad(270), Math.PI );
+
+_test( toDeg(toRad(0)), 0 );
+_test( toDeg(toRad(90)), 90 );
+_test( toDeg(toRad(180)), 180 );
+_test( toDeg(toRad(240)), 240 );
+_test( toDeg(toRad(37)), 37 );
+
+_test( Math.cos(toRad(0)), 0 );
+_test( Math.cos(toRad(90)), 1 );
+_test( Math.sin(toRad(0)), -1 );
+_test( Math.sin(toRad(90)), 0 );
+
+
 let deltaToDeg = function(dx,dy) {
 	// WARNING!!! This should really be -dy. BUT since the world itself is already upside down, we flip dy AGAIN.
 	let rad = Math.atan2(dy,dx);	// yes, y param first.
 	return toDeg(rad);
 }
-let toDeg = function(rad) {
-	return -rad/(2*Math.PI)*360+90;
-}
-let toRad = function(deg) {
-	return -deg/360*2*Math.PI+(Math.PI/2);
-}
+_test( deltaToDeg(1,-1), 45 );
+_test( deltaToDeg(0,-1), 0 );
+_test( deltaToDeg(0,1), 180 );
+
 let sScale = function(a) {
-	this.scale._x += this.delta*a;
-	this.scale._y += this.delta*a;
+	this.transform.scale.set(this.transform.scale.get()+this.delta*a);
 	return this;
 }
 let sScaleSet = function(absScale) {
-	this.scale._x = absScale;
-	this.scale._y = absScale;
+	this.transform.scale.set(this.baseScale*absScale);
 	return this;
 }
 let sReset = function() {
@@ -24,6 +52,7 @@ let sReset = function() {
 	this.ry = 0;
 	this.qx = 0;
 	this.qy = 0;
+	this.transform.scale.set(this.baseScale);
 }
 let sPos = function(x,y) {
 	this.rx = x;
@@ -76,14 +105,19 @@ let sAlpha = function(amt) {
 	this.alphaChanged = true;
 	this.alpha = amt * this.light;
 }
-
+let sPct = function() {
+	if( typeof this.duration == 'number' ) {
+		return this.elapsed/this.duration;
+	}
+	return 0;
+}	
 
 let sRot = function(deg) {
 	this.rotation += (deg/360*2*Math.PI)*this.delta;
 	return this;
 }
-let sSine = function(scale) {
-	return (1+Math.sin( (270/360*2*Math.PI) + (this.elapsed/this.duration)*2*Math.PI ))/2*scale;
+let sSine = function(pct,scale) {
+	return (1+Math.sin( (270/360*2*Math.PI) + pct*2*Math.PI ))/2*scale;
 }
 //let sBell = function(scale) {
 //	return (1+Math.sin( (270/360*2*Math.PI) + (this.elapsed/this.duration)*2*Math.PI ))/2*scale;
@@ -106,6 +140,7 @@ class Anim {
 			this.x = this.follow.x;
 			this.y = this.follow.y;
 		}
+		console.assert( this.duration !== undefined );
 		if( this.x === undefined ) debugger;
 		if( this.y === undefined ) debugger;
 		this.spriteList = [];
@@ -162,12 +197,15 @@ class Anim {
 	}
 	spriteInit(sprite) {
 		if( this.dead ) return;
+		console.assert( this.duration !== undefined );
+		console.assert( typeof this.duration !== 'number' || !isNaN(this.duration) );
+		sprite.baseScale = sprite.baseScale || 1;
 		sprite.rx = sprite.rx || 0;
 		sprite.ry = sprite.ry || 0;
 		sprite.qx = sprite.qx || 0;
 		sprite.qy = sprite.qy || 0;
 		sprite.elapsed = 0;
-		sprite.duration = this.duration;
+		sprite.duration = typeof this.duration === 'number' ? this.duration : true;
 	}
 	spriteBind(sprite) {
 		if( this.dead ) return;
@@ -183,6 +221,7 @@ class Anim {
 		sprite.sVelTo 	= sVelTo.bind(sprite);
 		sprite.sGrav 	= sGrav.bind(sprite);
 		sprite.sRot 	= sRot.bind(sprite);
+		sprite.sPct 	= sPct.bind(sprite);
 		sprite.sSine 	= sSine.bind(sprite);
 		sprite.sAlpha 	= sAlpha.bind(sprite);
 	}
@@ -192,8 +231,6 @@ class Anim {
 		this.spriteInit(sprite);
 		this.spriteBind(sprite);
 		sprite.anchor.set(0.5,0.5);
-		sprite.scale._x = this.scale || 1;
-		sprite.scale._y = this.scale || 1;
 		sprite.zOrder = 10;
 		sprite.visible = false;
 		if( this.onSpriteMake ) { this.onSpriteMake(sprite,this); }
@@ -217,8 +254,8 @@ class Anim {
 	}
 	spriteCalc(s) {
 		let e = this.delay<=0;
-		s.x = (this.x-this.xBase+(e?s.rx+s.qx:0)+0.5)*32;
-		s.y = (this.y-this.yBase+(e?s.ry+s.qy:0)+0.5)*32;
+		s.x = (this.x-this.xBase+((e?s.rx+s.qx:0)+0.5)*this.scale)*32;
+		s.y = (this.y-this.yBase+((e?s.ry+s.qy:0)+0.5)*this.scale)*32;
 	}
 	tick(delta) {
 		if( this.dead ) {

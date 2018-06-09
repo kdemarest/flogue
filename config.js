@@ -6,9 +6,10 @@ ConfigList.ken = () => {
 		architecture: 		"cave",
 		floorDensity: 		0.68,
 		seedPercent: 		0.20,
+		monsterDensity: 	0.03,
 		wanderingPassage: 	false,
 	});
-	PlaceList.kenPlace = {
+	PlaceTypeList.kenPlace = {
 		map:
 			`
 			.......
@@ -28,6 +29,7 @@ ConfigList.ken = () => {
 			f: 'flames',
 			L: 'lava',
 			M: 'mud',
+			o: 'redOoze',
 		},
 		stickers: {
 		},
@@ -42,8 +44,8 @@ ConfigList.ken = () => {
 	};
 
 	ThemeList.kenTheme = {
-		scapes: 	['kenScape'],
-		rREQUIRED: 	'kenPlace, handoutStand',
+		scapeId: 	'kenScape',
+		rREQUIRED: 	'kenPlace, floodOre',
 		rCOMMON: 	null, //'floodOre',
 		rUNCOMMON: 	null, //'floodOre',
 		rRARE: 		null, //'firePit, floodWater',
@@ -54,19 +56,19 @@ ConfigList.ken = () => {
 	}
 
 	Object.assign( MonsterTypeList.player, {
-//		inventoryLoot: MonsterTypeList.player.inventoryLoot+', weapon.hammer, potion.eFlight, spell.eShove',
+//		inventoryLoot: MonsterTypeList.player.inventoryLoot+', weapon.hammer, potion.eFlight, spell.eCold',
 //		inventoryWear: MonsterTypeList.player.inventoryWear+', stuff.lantern, weapon.sword'
 	});
 
 	Object.assign( Tweak, {
-		lootFrequency: 0.80,
-		effectChance: 4.0
+//		lootFrequency: 0.80,
+//		effectChance: 4.0
 	});
 
 
 	return {
-		startingDepth: 0,
-		themeId: 'surface'
+//		startingDepth: 1,
+//		themeId: 'coreSwamp'
 	}
 }
 

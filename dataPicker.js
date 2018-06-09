@@ -14,8 +14,13 @@ class Picker {
 			let m = MonsterTypeList[typeId];
 			if( monsterConstraint ) {
 				let ok = false;
-				for( let stat of monsterConstraint ) {
-					ok = ok || m[stat];		// like 'isAnimal' or 'isUndead'
+				if( typeof monsterConstraint == 'function' ) {
+					ok = monsterConstraint(m);
+				}
+				else {
+					for( let stat of monsterConstraint ) {
+						ok = ok || m[stat];		// like 'isAnimal' or 'isUndead'
+					}
 				}
 				if( !ok ) {
 					continue;
@@ -214,11 +219,11 @@ class Picker {
 		}
 		// No item type was specified, so use the master chance table to pick one.
 		if( !itemTypeId && !filter.specifiesId ) {
-			let p = Array.makePickTable( Object.keys(ItemBag), typeId => {
+			let p = new PickTable().scanArray( Object.keys(ItemBag), typeId => {
 				//console.log( typeId+' = '+ItemBag[typeId].cGen );
 				return ItemBag[typeId].cGen;
 			});
-			itemTypeId = Array.pickFrom( p.table, p.chance, p.total );
+			itemTypeId = p.pick();
 		}
 		// Make a table of all items that meet the criteria
 		let table = [];
@@ -231,10 +236,10 @@ class Picker {
 			return ItemTypeList.gold;
 		}
 		// Make a table with all the chances to appear figured out.
-		let p = Array.makePickTable( table, thing=> thing.appear*thing.rarity );
+		let p = new PickTable().scanArray( table, thing=> thing.appear*thing.rarity );
 		// Pick an item, based on chance to appear.
 		let depth = this.depth;
-		let choice = p.total ? Array.pickFrom( p.table, p.chance, p.total ) : function() {
+		let choice = p.total ? p.pick() : function() {
 			// If all the items have zero chance to appear, then choose an item
 			// closest in level to the current depth, with the most common rarity.
 			table.sort( (a,b) => a.level == b.level ? b.rarity-a.rarity : Math.abs(a.level-depth)-Math.abs(b.level-depth) );
@@ -297,7 +302,7 @@ class Picker {
 		return Math.max(1,Math.floor(damage));
 	}
 	pickGoldCount() {
-		let base = this.depth;
+		let base = Math.max(1,this.depth);
 		return base;
 	}
 

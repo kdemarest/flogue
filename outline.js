@@ -2,7 +2,7 @@ let DepthOutline = {
 	d0_surface: {
 		themeId: 'surface',
 		tiles: {
-			solarFont: 1
+			fontSolar: 1
 		}
 	},
 	d1_ 
@@ -87,8 +87,8 @@ class Outline {
 			});
 			assure( 'gateway', 1, () => { toAreaId: makeLimbAreaId(depth), toGateId: null, themeId: makeThemeId(false) });
 			assure( 'portal', 1, () => { toAreaId: makeLimbAreaId(depth), toGateId: null, themeId: 'hellscape' });
-			assure( 'deepFont', 1 );
-			assure( 'solarFont', 1 );
+			assure( 'fontDeep', 1 );
+			assure( 'fontSolar', 1 );
 
 
 	}

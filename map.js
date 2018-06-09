@@ -46,18 +46,26 @@ class SimpleMap {
 	}
 
 	// Rotate in 90 degree increments clockwise. 0=none, 1=90, 2=180, 3=270
-	rotate(cw) {
+	rotate(cw,inject) {
+		let injectOld = Object.assign( {}, inject );
+		Object.each( inject, (val,key) => delete inject[key] );
 		cw = cw % 4;
 		let m = [];
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {
 				let c = this.tile[y][x];
+				let tx,ty;
 				if( cw & 1 ) { m[x] = m[x] || []; } else { m[y] = m[y] || []; }
 				switch(cw) {
-					case 0: m[y] = m[y] || []; m[y][x] = c; break;
-					case 1: m[x] = m[x] || []; m[x][this.yLen-1-y] = c; break;
-					case 2: m[this.yLen-1-y] = m[this.yLen-1-y] || []; m[this.yLen-1-y][this.xLen-1-x] = c; break;
-					case 3: m[this.xLen-1-x] = m[this.xLen-1-x] || []; m[this.xLen-1-x][y] = c; break;
+					case 0: tx=x; 				ty=y; 					break;
+					case 1: tx=this.yLen-1-y; 	ty=x; 					break;
+					case 2: tx = this.xLen-1-x; ty = this.yLen-1-y;		break;
+					case 3: tx = y; 			ty = this.xLen-1-x;		break;
+				}
+				m[ty] = m[ty] || [];
+				m[ty][tx] = c;
+				if( injectOld[''+x+','+y] ) {
+					inject[''+tx+','+ty] = injectOld[''+x+','+y];
 				}
 			}
 		}

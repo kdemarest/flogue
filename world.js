@@ -13,20 +13,107 @@ class World {
 		return this.getPlayer();
 	}
 
+	getPlan(key,depth) {
+		let plan = {
+			core: {
+				0: {
+					themeId: 'surface',
+					make: [
+					]
+				},
+				1: {
+					themeId: 'coreCavernRooms',
+					make: [
+						{ typeId: 'gateway', themeId: 'dwarfTown' },
+						{ typeId: 'gateway', themeId: 'refugeeCamp' },
+						{ typeId: 'fontSolar' },
+					]
+				},
+				2: {
+					themeId: 'corePits',
+					make: [
+						{ typeId: 'gateway', themeId: 'dwarfTown' },
+						{ typeId: 'gateway', themeId: 'refugeeCampSlaughter' },
+						{ typeId: 'fontSolar' },
+					]
+				},
+				3: {
+					themeId: 'coreCavernRooms',
+					make: [
+						{ typeId: 'gateway', themeId: 'spooky' },
+						{ typeId: 'gateway', themeId: 'refugeeCampSlaughter' },
+						{ typeId: 'fontDeep' },
+					]
+				},
+				4: {
+					themeId: 'coreMaze',
+					make: [
+						{ typeId: 'gateway', themeId: 'dwarfTown' },
+						{ typeId: 'gateway', themeId: 'hellscape' },
+						{ typeId: 'fontSolar' },
+					]
+				},
+				5: {
+					themeId: 'coreBridges',
+					make: [
+						{ typeId: 'gateway', themeId: 'dwarfGoblinBattle' },
+						{ typeId: 'fontDeep' },
+					]
+				},
+				6: {
+					themeId: 'coreSea',
+					make: [
+						{ typeId: 'gateway', themeId: 'dwarfTown' },
+						{ typeId: 'fontSolar' },
+						{ typeId: 'fontDeep' },
+					]
+				},
+				default: {
+					themeId: 'coreCavernMedium',
+					make: [
+						{ typeId: 'gateway' },
+						{ typeId: 'fontDeep' },
+					]
+				}
+			},
+			limb: {
+				default: {
+					themeId: null,
+					make: [
+						{ typeId: 'gateway' },
+					]
+				}
+			}
+		};
+		let p = plan[key][depth] || plan[key].default;
+		if( p.make && key=='core' ) {
+			if( depth > 0 ) p.make.push( { typeId: 'stairsUp' } );
+			if( depth < MAX_DEPTH ) p.make.push( { typeId: 'stairsDown' } );
+		}
+		return p;
+	}
+
 	shapeWorld(depth,theme,isCore,gateList=[]) {
 
-		function assure(typeId,count) {
-			let reps = 100;
-			// The reduce below coulds how many of the typeId already exist in the quota
-			while( reps-- && tileQuota.reduce( (total,q) => total + (q.typeId==typeId ? 1 : 0), 0 ) < count ) {
-				tileQuota.push({ typeId: typeId, symbol: TypeIdToSymbol[typeId], putAnywhere: true });
-			}
-		}
+		let plan = this.getPlan(isCore?'core':'limb',depth) || {};
 
 		let tileQuota = [];
+
+		// Create gates that link to this gate
 		gateList.forEach( gate => {
 			if( gate.gateInverse == false ) {
 				return;
+			}
+			// Prune this gate from the plan because we're making the required type.
+			if( plan.make ) {
+				let found = false;
+				Array.filterInPlace( plan.make, schematic => {
+					if( !found && schematic.typeId == gate.gateInverse ) {
+						found = true;
+						return false;
+					}
+					return true;
+				});
 			}
 			// Vertical gates match locations. Horizontal don't.
 			tileQuota.push(
@@ -35,24 +122,57 @@ class World {
 					symbol: TypeIdToSymbol[gate.gateInverse],
 					inject: { toAreaId: this.area.id, toGateId: gate.id }
 				},
-					gate.gateDir ? { x:gate.x, y:gate.y } : { putAnywhere: true }
+					gate.gateDir && !theme.inControl ? { x:gate.x, y:gate.y } : { putAnywhere: true }
 				)
 			);
-			console.log( "Added "+gate.gateInverse+" at ("+gate.x+","+gate.y+") leading to "+this.area.id+" / "+gate.id );
+			console.log( "Quota: "+gate.gateInverse+" leading to "+this.area.id+" / "+gate.id );
 		});
 
-		if( isCore && !theme.inControl ) {
-			assure( 'stairsDown', depth<MAX_DEPTH ? 1 : 0 );
-			assure( 'stairsUp', depth>MIN_DEPTH ? 1 : 0 );
-			assure( 'gateway', 1 );
-			assure( 'portal', 1 );
-			assure( 'deepFont', 1 );
-			assure( 'solarFont', 1 );
+		// The theme may choose to control what happens there. Typically the surface does this,
+		// but not others. In general the PLAN should control.
+		if( isCore && !theme.inControl && plan.make ) {
+			plan.make.forEach( schematic => {
+				let typeId = schematic.typeId.split('.')[0];
+				tileQuota.push({
+					typeId: typeId,
+					symbol: TypeIdToSymbol[typeId],
+					putAnywhere: true,
+					inject: schematic
+				});
+			});
 		}
+
+		tileQuota.forEach( q => q.fromQuota=true );
 		return tileQuota;
 	}
+	determineTheme(depth,isCore) {
+		let plan = this.getPlan(isCore?'core':'limb',depth);
+		let themeId;
+		if( plan && plan.themeId ) {
+			themeId = plan.themeId;
+			console.log( "Theme from plan is "+themeId );
+		}
+		else {
+			let themePickList = Object.filter( ThemeList, theme => !theme.isUnique);
+			console.assert(!Object.isEmpty(themePickList));
+			themeId = pick( themePickList ).typeId;
+			console.assert(themeId);
+			console.log( "Picked random theme "+themeId );
+		}
+		return themeId;
+	}
 	createArea(depth,theme,isCore,gateList) {
-		console.assert(depth !== undefined && !isNaN(depth)); 
+		console.assert(depth !== undefined && !isNaN(depth));
+
+		theme = Object.assign(
+			{},
+			ThemeDefault(),
+			theme,
+			{ depth: depth },
+			theme.scapeId ? ScapeList[theme.scapeId]() : {}
+		);
+
+		console.log( "\nCreating area "+theme.typeId+" at depth "+depth+" core="+isCore );
 		let coreAreaId = 'area.core.'+depth;
 		let areaId = !this.areaList[coreAreaId] ? coreAreaId : GetUniqueEntityId('area',depth);
 		let tileQuota = this.shapeWorld(depth,theme,isCore,gateList);
@@ -69,12 +189,9 @@ class World {
 			console.log( "Gate "+gate.id+" has no toAreaId" );
 			let isCore = this.area.isCore && gate.gateDir!=0;
 			let depth = this.area.depth + gate.gateDir;
+
 			if( !gate.themeId ) {
-				console.log( "Picking theme" );
-				let themePickList = Object.filter( ThemeList, theme => !!theme.allowInCore==isCore && !theme.isUnique);
-				console.assert(!Object.isEmpty(themePickList));
-				gate.themeId = pick( themePickList ).typeId;
-				console.assert(gate.themeId);
+				gate.themeId = this.determineTheme(depth,isCore);
 			}
 			let theme = ThemeList[gate.themeId];
 			let gateList = this.area.gateList.filter( g => {
@@ -82,23 +199,26 @@ class World {
 			});
 			console.log( "gateList: "+gateList.length );
 
-//			if( gate.gateInverse === false ) {
-//				gateList.push( { gateInverse: 'floor', x: gate.x, y: gate.y } );
-//			}
 			toArea = this.createArea(depth,theme,isCore,gateList);
 		}
 
 		gate.toAreaId = toArea.id;
 
 		if( gate.gateInverse !== false ) {
-			let gate2 = toArea.getGateThatLeadsTo(gate.id);	// createArea() causes this thing to exist...
+			let g = toArea.gateList.filter( foreignGate => foreignGate.toGateId==gate.id );
+			if( !g[0] ) {
+				g = toArea.gateList.filter( foreignGate => foreignGate.typeId == gate.gateInverse && (!foreignGate.toAreaId || foreignGate.toAreaId==this.area.areaId) );
+			}
+			let gate2 = g[0];
 			if( !gate2 ) {
 				console.log( "No receiving gate. Creating one." );
 				let pos = toArea.map.pickPosEmpty();
 				gate2 = toArea.map.itemCreateByTypeId(pos[0],pos[1],gate.gateInverse,{});
-				gate2.toAreaId = this.area.id;
-				gate2.toGateId = gate.id;
+				toArea.gateList.push(gate2);
 			}
+			// Always set these, since even if it was a found gate it should still properly link...
+			gate2.toAreaId = this.area.id;
+			gate2.toGateId = gate.id;
 			gate2.toPos = { x: gate.x, y: gate.y };
 			console.assert( gate2.toAreaId && gate2.toGateId );
 			gate.toGateId = gate2.id;

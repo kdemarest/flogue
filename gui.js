@@ -21,7 +21,8 @@ class Gui {
 			new Anim( sticker, {
 				group: 		group,
 				x: 			x,
-				y: 			y
+				y: 			y,
+				duration: 	true
 			});
 		}
 		function worldOverlayRemove(fn) {

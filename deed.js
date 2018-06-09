@@ -295,7 +295,7 @@ let effectApplyTo = function(effect,target,source,item) {
 		if( !effect.onTargetPosition ) {
 			return false;
 		}
-		target.toEntity();
+		target.map.toEntity(target.x,target.y,target);
 		effect.onTargetPosition(target.map,target.x,target.y)
 		return true;
 	}

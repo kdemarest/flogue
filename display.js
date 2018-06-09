@@ -9,17 +9,19 @@ function createDrawList(observer,map,entityList,asType) {
 	function spillLight(px,py,x,y,light) {
 		let d2 = (displaySightDistance*2)+1;
 		if( light == 'glow' ) {
+			// I don't think I do glow like this anymore...
+			debugger;
+/*
 			let fx = x+0;
 			let fy = y+0;
 			let rx = px+x-d;
 			let ry = py+y-d;
 			let rfx = px+fx-d;
 			let rfy = py+fy-d;
-		if( typeof fy==='undefined' || fy===undefined ) debugger;
 			if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
 				a[fy][fx][0] = displaySightDistance;
 			}
-			return;
+*/			return;
 		}
 		let range = Math.abs(light);
 		for( let ly=-range ; ly<=range ; ++ly ) {
@@ -35,7 +37,7 @@ function createDrawList(observer,map,entityList,asType) {
 					if( lightReaches ) {
 						if( light < 0 ) {
 							let b = Math.max(Math.abs(lx),Math.abs(ly));
-							a[fy][fx][0] = Math.max(0,a[fy][fx][0]+light+b);
+							a[fy][fx][0] = Math.max(light,a[fy][fx][0]+(light+b));
 						}
 						else {
 							a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
@@ -76,7 +78,10 @@ function createDrawList(observer,map,entityList,asType) {
 		if( inBounds ) {
 			let ty = y-(py-d);
 			let tx = x-(px-d);
-			if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
+			// We need to let pretty much anything that makes light spill light
+			// this assumes that a value of 'light' also spills that same distance
+			let range = Math.abs(light);
+			if( tx>=-range && tx<d2+range && ty>=-range && ty<d2+range ) {
 				spillLight(px,py,tx,ty,light);
 			}
 		}
@@ -99,9 +104,6 @@ function createDrawList(observer,map,entityList,asType) {
 	}
 	for( let anim of animationList ) {
 		testLight(anim.x,anim.y,anim.light)
-	}
-	for( let entity of entityList ) {
-		testLight(entity.x,entity.y,-(entity.dark||0));
 	}
 
 
@@ -131,7 +133,9 @@ function createDrawList(observer,map,entityList,asType) {
 				if( !tile.isTileType ) {
 					debugger;
 				}
-				spillLight(px,py,tx,ty,tile.light || 0);
+				if( tile.light ) {
+					spillLight(px,py,tx,ty,tile.light || 0);
+				}
 			}
 
 			if( !inBounds ) {
@@ -177,6 +181,14 @@ function createDrawList(observer,map,entityList,asType) {
 		//debug += '<<\n';
 	}
 	//console.log(debug);
+
+	for( let entity of entityList ) {
+		testLight(entity.x,entity.y,-(entity.dark||0));
+	}
+
+	for( let item of map.itemList ) {
+		testLight(item.x,item.y,-(item.dark||0));
+	}
 
 	for( let anim of animationList ) {
 		if( anim.entity && !visId[anim.entity.id] ) {
@@ -360,8 +372,8 @@ class ViewMap {
 						sprite.visible 	= true;
 						sprite.x 		= x+(32/2);
 						sprite.y 		= y+(32/2);
-						sprite.scale._x = (entity.scale||1) * (sprite.scale.amount||1);
-						sprite.scale._y = (entity.scale||1) * (sprite.scale.amount||1);
+						sprite.baseScale= entity.scale||1;
+						sprite.transform.scale.set( sprite.baseScale );
 						sprite.alpha 	= (entity.alpha||1) * LightAlpha[light];
 						//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 					}

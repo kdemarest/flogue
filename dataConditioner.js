@@ -3,23 +3,24 @@ class DataConditioner {
 		this.mergePlaceTypesToGlobals();
 		this.fabAllData();
 		this.determinePlaceLevels();
+		this.determinePlaceSymbolHash();
 		this.validateAndConditionThemeData();
 	}
 
 	validateAndConditionThemeData() {
-		function extractRarity(theme,rarity,list) {
+		function extractRarityHash(theme,rarity,list) {
 			if( !list ) {
 				return;
 			}
 			list = String.chanceParse(list);
 			list.map( chance => {
-				if( theme.rarityTable[chance.id] ) {
+				if( theme.rarityHash[chance.id] ) {
 					// This placeId is duplicated in the same or another rarity table.
 					debugger;
 				}
 
-				theme.rarityTable[chance.id] = rarity;
-				if( !PlaceList[chance.id] ) {
+				theme.rarityHash[chance.id] = rarity;
+				if( !PlaceTypeList[chance.id] ) {
 					debugger;
 				}
 			});
@@ -29,20 +30,20 @@ class DataConditioner {
 		for( let themeId in ThemeList ) {
 			let theme = ThemeList[themeId];
 			theme.id = themeId;
-			theme.rarityTable = {};
-			extractRarity(theme,rPROFUSE,theme.rPROFUSE);
-			extractRarity(theme,rCOMMON,theme.rCOMMON);
-			extractRarity(theme,rUNCOMMON,theme.rUNCOMMON);
-			extractRarity(theme,rRARE,theme.rRARE);
-			extractRarity(theme,rEPIC,theme.rEPIC);
-			extractRarity(theme,rLEGENDARY,theme.rLEGENDARY);
+			theme.rarityHash = {};
+			extractRarityHash(theme,rPROFUSE,theme.rPROFUSE);
+			extractRarityHash(theme,rCOMMON,theme.rCOMMON);
+			extractRarityHash(theme,rUNCOMMON,theme.rUNCOMMON);
+			extractRarityHash(theme,rRARE,theme.rRARE);
+			extractRarityHash(theme,rEPIC,theme.rEPIC);
+			extractRarityHash(theme,rLEGENDARY,theme.rLEGENDARY);
 		}
 	}
 
 	mergePlaceTypesToGlobals() {
 
-		for( let placeId in PlaceList ) {
-			let place = PlaceList[placeId];
+		for( let placeId in PlaceTypeList ) {
+			let place = PlaceTypeList[placeId];
 			place.id = placeId;
 
 			function mergeSimple(a,b) {
@@ -80,10 +81,10 @@ class DataConditioner {
 	determinePlaceLevels() {
 
 		// Be sure to do this afterwards, just in case a place uses a monster from a place further down the list.
-		for( let placeId in PlaceList ) {
+		for( let placeId in PlaceTypeList ) {
 			let NO_MONSTERS = -1;
 			let level = NO_MONSTERS;
-			let place = PlaceList[placeId];
+			let place = PlaceTypeList[placeId];
 			if( !place.map && !place.floodId ) {
 				debugger;
 			}
@@ -111,10 +112,44 @@ class DataConditioner {
 		}
 	}
 
+	determinePlaceSymbolHash() {
+		Object.each( PlaceTypeList, place => {
+			let symbolHash = {};
+			function add(typeId) {
+				console.assert( typeId );
+				let symbol = TypeIdToSymbol[typeId];
+				console.assert(symbol);
+				symbolHash[symbol] = true;
+			}
+
+			Object.each( place.symbols, option => {
+				// When you specify symbol.w: 'weapon.dagger' this triggers
+				if( typeof option == 'string' ) {
+					add( option.split('.')[0] )
+					return;
+				}
+				// Specify an array to pick among.
+				if( Array.isArray(option) ) {
+					option.forEach( typeId => add(typeId.split('.')[0]) );
+					return;
+				}
+				// When you specify symbol.w: { typeId: 'weapon.dagger', isWonderful: true } this triggers
+				if( option !== undefined && typeof option == 'object' ) {
+					console.assert( option.typeId );
+					add( option.typeId.split('.')[0] );
+					return;
+				}
+				console.assert(false);	// unhandled type in place list.
+			});
+			place.symbolHash = symbolHash;
+		});
+	}
+
+
 	fabAllData() {
 		Fab.add( 'isScape',			ScapeList );
 		Fab.add( 'isTheme',			ThemeList );
-		Fab.add( 'isPlace',			PlaceList );
+		Fab.add( 'isPlace',			PlaceTypeList );
 		Fab.add( 'isSticker', 		StickerList );
 		Fab.add( 'isEffect',		EffectTypeList );
 		Fab.add( 'isTileType', 		TileTypeList, 	true, true );

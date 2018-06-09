@@ -20,7 +20,9 @@ class Item {
 			return target;
 		}
 
-		let inits = { level: level, id: GetUniqueEntityId(itemType.typeId,level), owner: null, x:null, y:null };
+		// Notice that the init overrides the typeId. This is to make sure that the inject doesn't do so with a dot 
+		// phrase, like weapon.dagger (which it definitely might!)
+		let inits = { level: level, typeId: itemType.typeId, id: GetUniqueEntityId(itemType.typeId,level), owner: null, x:null, y:null };
 		Object.assign( this, itemType, presets, inject||{}, inits );
 
 		// order is VERY important here! Variety rules, then material, then quality.
