@@ -134,7 +134,8 @@ let Fab = (function() {
 })();
 
 
-let Say = {};
+Gab = {
+};
 DynamicViewList = {
 	none: { tick: ()=>{}, render: ()=>{} }
 };
@@ -190,21 +191,6 @@ const PickBlock  = [DamageType.CUT,DamageType.STAB,DamageType.BASH];
 // Note that you can be immune to almost anything that is a string. That is, you can be immune to a DamageType,
 // or an Attitude, an Effect, or even immune to the effects of 'mud' or 'forcefield' as long as their event handlers check it.
 
-Say.damagePast = {
-	"cut": "chopped",
-	"stab": "pierced",
-	"bite": "chewed",
-	"claw": "mauled",
-	"bash": "bashed up",
-	"burn": "scorched",
-	"freeze": "frosty",
-	"corrode": "corroded",
-	"poison": "poisoned",
-	"smite": "smitten",
-	"rot": "rotted"
-};
-
-
 // Effect Events
 // onTargetPosition - if this effect is targeting a map tile, instead of a monster.
 
@@ -222,6 +208,7 @@ let EffectTypeList = {
 // Buff
 	eFlight: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode,
 					additionalDoneTest: (self) => { return self.target.map.tileTypeGet(self.target.x,self.target.y).mayWalk; }, icon: 'gui/icons/eFly.png' },
+	eJump2: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'set', stat: 'jumpMax', value: 2, isHelp: 1, icon: 'gui/icons/eHaste.png' },
 	eHaste: 		{ isBuf: 1, level: 10, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5, icon: 'gui/icons/eHaste.png' },
 	eResistance: 	{ isBuf: 1, level: 20, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickResist), isHelp: 1, namePattern: 'resist {value}s', icon: 'gui/icons/eResist.png' },
@@ -264,53 +251,6 @@ EffectTypeList.eCold.onTargetPosition = function(map,x,y) {
 	map.tileSymbolSet(x,y,TileTypeList.water.symbol);
 }
 
-let SayStatList = {
-	invisible: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' suddenly ',mVerb,newValue?'wink':'appear',newValue?' out of sight':' from thin air','!'];
-	},
-	senseInvisible: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' can see invisible things!'];
-	},
-	speed: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' ',mVerb,(newValue<oldValue?'slow':'speed'),' ',(newValue<oldValue?'down':'up'),'.'];
-	},
-	regenerate: function(subj,obj,oldValue,newValue) {
-		return [mSubject|mPossessive,subj,' body ',newValue==0 ? 'stops regenerating.' : (newValue<oldValue ? 'regenerates a bit less.' : 'begins to knit itself back together.')];
-	},
-	immune: function(subj,obj,oldValue,newValue) {
-		return [mSubject|mPossessive,subj,' ',mVerb,'is',' ',!oldValue ? 'now immune to '+newValue : 'no longer immune to '+oldValue,'s.'];
-	},
-	vuln: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' ',mVerb,'is',' ',!oldValue ? 'now vulnerable to '+newValue : 'no longer vulnerable to '+oldValue,'s.'];
-	},
-	resist: function(subj,obj,oldValue,newValue) {
-		return [mSubject|mPossessive,subj,' ',mVerb,'is',' ',!oldValue ? 'now resistant to '+newValue+'s.' : 'no longer resistant to '+oldValue+'s.'];
-	},
-	travelMode: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' ',mSubject|mVerb,'begin',' to ',newValue,'.'];
-	},
-	attitude: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' ',mSubject|mVerb,'become',' ',newValue,'.'];
-	},
-	senseBlind: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' ',mSubject|mVerb,newValue?'lose':'regain',' ',mSubject|mPronoun|mPossessive,subj,' sight!'];
-	},
-	senseXray: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' can '+(newValue?'':'no longer')+' see through walls!'];
-	},
-	senseItems: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' treasure!'];
-	},
-	senseLife: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' creatures!'];
-	},
-	light: function(subj,obj,oldValue,newValue) {
-		return ['The area around ',mSubject,subj,' '+(newValue>oldValue?' brightens':'grows darker')+'.'];
-	},
-	_generic_: function(subj,obj,oldValue,newValue) {
-		return [mSubject,subj,' ',mVerb,'is',' less enchanted.'];
-	}
-};
 
 // Item Events
 // onTouch - fires each round a monster is standing on a tile, and ALSO when you bonk into a non-passable tile.
@@ -695,7 +635,7 @@ const ItemTypeList = {
 	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
 
 	"altar":    { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
-				isDecor: true, rechargeTime: 12, healMultiplier: 3.0,
+				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.",
 				effect: { op: 'heal', valueDamage: 6.00, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
 	"fountain": { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, mayPickup: false,
@@ -864,6 +804,7 @@ const MonsterTypeList = {
 		inventoryLoot: '',
 		inventoryWear: '',
 		isSunChild: true,
+		isNamed: true,
 		jumpMax: 1,
 		light: 4,
 		neverPick: true,
@@ -879,6 +820,7 @@ const MonsterTypeList = {
 		dodge: 1,
 		isAnimal: true,
 		isPet: true,
+		isNamed: true,
 		loot: '30% dogCollar',
 		properNoun: true,
 		packAnimal: true,
@@ -889,8 +831,9 @@ const MonsterTypeList = {
 		name: "Fili",
 		job: Job.SMITH,
 		brainFlee: true,
-		isSunChid: true,
+		isSunChild: true,
 		isDwarf: true,
+		isNamed: true,
 		inventoryLoot: '', //'30x 100% stuff',
 		properNoun: true,
 		packAnimal: true
@@ -903,6 +846,7 @@ const MonsterTypeList = {
 		brainPet: true,
 		isAnimal: true,
 		isPet: true,
+		isNamed: true,
 		loot: '30% dogCollar',
 		properNoun: true,
 		packAnimal: true,
@@ -915,6 +859,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		brainOpensDoors: true,
 		isSunChild: true,
+		isNamed: true,
 		loot: '30% mushroomBread, 30% coin, 10% potion.eHealing',
 	},
 	"philanthropist": {
@@ -924,6 +869,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		brainOpensDoors: true,
 		isSunChild: true,
+		isNamed: true,
 		loot: '30% mushroomBread, 50% coin, 10% potion.eHealing',
 		sayPrayer: 'Get in line! Come to the left window for donations!'
 	},
@@ -934,6 +880,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		brainOpensDoors: true,
 		isSunChild: true,
+		isNamed: true,
 		loot: '10% bones, 5% dogCollar, 3x 10% stuff',
 		sayPrayer: "Oh god... What I wouldn't give for a steak."
 	},
@@ -1528,6 +1475,13 @@ MonsterTypeList.redOoze.onMove = function(x,y) {
 
 		f.first.destroy();
 	}
+}
+
+function commandToKey(command) {
+	let keyMap = loadKeyMapping();
+	let key;
+	Object.each( keyMap, (c,k) => { if( c==command ) key=k; });
+	return key;
 }
 
 function loadKeyMapping(name) {

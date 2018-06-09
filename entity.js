@@ -52,7 +52,6 @@ class Entity {
 		}
 
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
-
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) );
 		console.assert( this.x===undefined && this.y===undefined && this.area===undefined);
 	}
@@ -78,6 +77,10 @@ class Entity {
 		return MonsterTypeList[this.typeId];
 	}
 	gateTo(area,x,y) {
+		if( this.area && this.area.id == area.id ) {
+			return;
+		}
+		let hadNoArea = !this.area;
 		console.assert( x!==undefined && y!==undefined );
 		// DANGER! Doing this while within a loop across the entityList will result in pain!
 		if( this.area ) {
@@ -96,6 +99,9 @@ class Entity {
 			this.x = x;
 			this.y = y;
 		}
+		if( Gab && hadNoArea ) {
+			Gab.entityPostProcess(this);
+		}
 	}
 
 	findAliveOthers(entityList = this.entityList) {
@@ -112,7 +118,7 @@ class Entity {
 			debugger;
 		}
 		if( this.corpse ) {
-			let mannerOfDeath = Say.damagePast[this.takenDamageType||DamageType.BITE];
+			let mannerOfDeath = Gab.damagePast[this.takenDamageType||DamageType.BITE];
 			if( !mannerOfDeath ) {
 				debugger;
 			}
@@ -1291,18 +1297,24 @@ class Entity {
 		if( timePasses ) {
 			let tileType = this.map.tileTypeGet(this.x,this.y);
 
-			if( this.travelMode == 'walk' && tileType.mayJump && (this.jump || !priorTileType.mayJump) ) {
-				// This assumes you ALWAYS want to jump over anything that you CAN jump over. It might
-				// not always be the case... SO perhaps we should check if tileType.isProblem, or if !tileType.mayWalk.
-				this.jump = (this.jump||0)+1;
+			if( this.jumpMax ) {
+				if( this.travelMode == 'walk' && tileType.mayJump && (this.jump || !priorTileType.mayJump) ) {
+					// This assumes you ALWAYS want to jump over anything that you CAN jump over. It might
+					// not always be the case... SO perhaps we should check if tileType.isProblem, or if !tileType.mayWalk.
+					this.jump = (this.jump||0)+1;
+				}
+				else {
+					this.jump = 0;
+				}
+				if( this.jump > this.jumpMax ) {
+					this.jump = 0;
+				}
 			}
-			else {
-				this.jump = 0;
-			}
-			if( this.jump > this.jumpMax ) {
-				this.jump = 0;
-			}
-			if( this.jump == 0 && tileType.isPit && this.travelMode == 'walk') {
+			else
+			if( this.jump )	// What if they just took off boots or something?
+				delete this.jump;
+
+			if( !this.jump && tileType.isPit && this.travelMode == 'walk') {
 				let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
 				if( stairs ) {
 					let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
@@ -1318,7 +1330,6 @@ class Entity {
 			if( tileType.onTouch ) {
 				tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
 			}
-
 		}
 	}
 }

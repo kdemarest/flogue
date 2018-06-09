@@ -15,6 +15,7 @@
 <script src="dataMason.js" charset="utf-8"></script>
 <script src="jquery.3.3.1.js" charset="utf-8"></script>
 <script src="pixi.min.js" charset="utf-8"></script>
+<script src="gab.js" charset="utf-8"></script>
 <script src="deed.js" charset="utf-8"></script>
 <script src="map.js" charset="utf-8"></script>
 <script src="item.js" charset="utf-8"></script>
@@ -158,24 +159,18 @@ function main(levelName) {
 	}
 	window.TickWorld = TickWorld;
 
-	function messageCanPerceiveEntity(observer,entity) {
+	function narrativeCanPerceiveEntity(observer,entity) {
 		if( !observer ) {
 			return true;
 		}
 		return observer.canPerceiveEntity(entity);
 	}
 
-	function messageReceive(message,history) {
-		while( history.length > 50 ) {
-			history.shift();
-		}
-		let targetElement = document.getElementById('guiMessageBox');
-		targetElement.display = 'block';
-		targetElement.innerHTML = history.join('\n');
-		targetElement.scrollTop = targetElement.scrollHeight
+	function narrativeReceive(message,history) {
+		guiMessage('narrative','receive',history);
 	}
 
-	function playerStartup(area) {
+	function getPlayerStartPos(area) {
 		let f = new Finder(area.map.itemList).filter( item => item.playerStartHere );
 		if( !f.count ) {
 			console.log( "No player start marker found. Searching for stairsUp." );
@@ -185,18 +180,17 @@ function main(levelName) {
 				console.assert(f.first);
 			}
 		}
-		let player = new Entity( area.depth, MonsterTypeList.player, null );
-		player.gateTo(area,f.first.x,f.first.y);
-		return player;
+		return [f.first.x,f.first.y];
 	}
 
 	function onAreaChange(oldArea,area,xPlayer,yPlayer) {
-		if( gui.viewMiniMap ) {
-			gui.viewMiniMap.setArea(area);
-		}
-
+		guiMessage(null,'setArea',area);
 		player.gateTo(area,xPlayer,yPlayer);
 		tell(mSubject|mCares,player,' ',mVerb,'are',' now on level '+area.id)
+	}
+
+	window.guiMessage = function(target,message,payload) {
+		gui.message(target,message,payload);
 	}
 
 	let config = new Config('ken',{
@@ -206,12 +200,14 @@ function main(levelName) {
 	new DataConditioner();
 
 	let gui = new Gui(playerFind,areaFind);
+	gui.create();
+	//gui.view.miniMap.setArea(area);
 	let world = new World(playerFind,onAreaChange);
 	let themeId = config.themeId || world.determineTheme(config.startingDepth,true);
 	let area = world.createArea(config.startingDepth,ThemeList[themeId],true,[]);
-	world.gateTo(area.id);
-	let player = playerStartup(area);
-	MessageManager.addRecipient(player,messageCanPerceiveEntity,messageReceive);
+	let player = new Entity( area.depth, MonsterTypeList.player, null );
+	world.gateTo(area.id,...getPlayerStartPos(area));
+	Narrative.addRecipient(player,narrativeCanPerceiveEntity,narrativeReceive);
 
 	let handle = setInterval(function() {
 		if( !gui.imageRepo.ready ) {
@@ -220,8 +216,6 @@ function main(levelName) {
 		clearInterval(handle);
 
 		$(document).keydown( onUserEvent );
-		gui.create();
-		gui.viewMiniMap.setArea(area);
 		gui.render();
 
 		tell([player,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
@@ -241,13 +235,14 @@ function main(levelName) {
 	</div>
 	<table id="guiMain">
 		<tr><td colspan="2">
-			<div id="guiMessageBox"></div>
+			<div id="guiNarrative"></div>
 		</td></tr>
 		<tr>
 			<td>
 				<div id="mapContainer">
 					<div id="guiMap"></div>
 					<div id="guiInventory" class="guiInventory"></div>
+					<pre id="guiSign" class="guiSign"></pre>
 					<div id="guiDynamic" class="guiInventory"></div>
 				</div>
 			</td><td class="alignTop">

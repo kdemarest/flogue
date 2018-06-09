@@ -214,6 +214,8 @@ ThemeList.refugeeCampSlaughter = {
 }
 
 ThemeList.dwarfTown = {
+	isDwarfish: true,
+	isTown: 	true,
 	passageFloor: 'tileStoneFloor',
 	scapeId: 	'caveTown',
 	rREQUIRED: 	'3x floodOre, floodPit, gatewayFromDwarves, dwarfHouseSmall, dwarfHouse, 50% dwarfHouse, 90% dwarfSmithy, 70% dwarfTemple, 2x 60% dwarfPlaza, 30% den.dog, 10% camp.human',

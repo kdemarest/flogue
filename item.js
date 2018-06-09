@@ -72,6 +72,7 @@ class Item {
 		return this.armor;
 	}
 	giveTo(entity,x,y) {
+		let hadNoOwner = !this.owner;
 		if( this.owner && this.owner.isMap && entity.isUser() ) {
 			// Item flies to your gui sidebar...
 			new Anim({},{
@@ -112,6 +113,9 @@ class Item {
 		this.x = x;
 		this.y = y;
 		this.owner = entity;
+		if( Gab && hadNoOwner ) {
+			Gab.entityPostProcess(this);
+		}
 		this.owner._itemTake(this,x,y);
 		if( entity.isMonsterType ) {
 			// NOTICE! The ownerOfRecord is the last entity that operated or held the item. Never the map.

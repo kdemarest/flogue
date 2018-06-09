@@ -326,7 +326,7 @@ let deedTell = function(target,stat,oldValue,newValue ) {
 	if( oldValue == newValue ) {
 		return;
 	}
-	let teller = SayStatList;
+	let teller = Gab.describeStatChange;
 	let content = (teller[stat] || teller._generic_)(target,null,oldValue,newValue);
 	tell(...content);
 }

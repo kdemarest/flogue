@@ -2,6 +2,43 @@ function getCastableSpellList(entity) {
 	return new Finder(entity.inventory).filter( item=>item.isSpell && item.effect && item.effect.op && !item.effect.isBlank );
 }
 
+class ViewNarrative {
+	constructor(divId) {
+		this.divId = divId;
+	}
+	message(msg,payload) {
+		if( msg=='receive' ) {
+			let history = payload;
+			while( history.length > 50 ) {
+				history.shift();
+			}
+			let targetElement = document.getElementById(this.divId);
+			targetElement.display = 'block';
+			targetElement.innerHTML = history.join('\n');
+			targetElement.scrollTop = targetElement.scrollHeight;
+		}
+	}
+	render() {
+	}
+}
+
+class ViewSign {
+	constructor(divId) {
+		this.divId = divId;
+	}
+	render(observer) {
+		let sign = new Finder(observer.entityList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
+		if( !sign.count ) {
+			sign = new Finder(observer.map.itemList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
+		}
+		if( !sign.first ) {
+			$('#'+this.divId).hide();
+		}
+		else {
+			$('#'+this.divId).show().html(sign.first.sign);
+		}
+	}
+}
 
 class ViewSpells {
 	constructor(spellDivId) {
@@ -124,9 +161,14 @@ class ViewMiniMap {
 			.show();
 	}
 	setArea(area) {
-		this.caption = area.id+'('+(area.isCore ? 'core' : 'non-core')+')';
+		this.caption = area.name;
 		this.mapMemory = area.mapMemory;
 		this.create(area);
+	}
+	message(msg,payload) {
+		if( msg == 'setArea' ) {
+			this.setArea(payload);
+		}
 	}
 	render(observer) { 
 		$('#'+this.captionDivId).show().html(this.caption);

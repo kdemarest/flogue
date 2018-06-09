@@ -4,6 +4,7 @@ class Gui {
 		this.getArea = getArea;
 		this.imageRepo = new ImageRepo(PIXI.loader);
 		this.imageRepo.load();
+		this.view = {};
 	}
 
 	get spectator() {
@@ -29,17 +30,19 @@ class Gui {
 			return animationRemove(fn);
 		}
 
-		this.viewDynamic = DynamicViewList.none;
-		this.viewMap = new ViewMap('guiMap',MaxSightDistance,this.imageRepo);
-		this.viewMiniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',this.imageRepo);
-		this.viewSpells = new ViewSpells('guiSpells');
-		this.viewInfo = new ViewInfo('guiInfo')
-		this.viewStatus = new ViewStatus('guiStatus');
-		this.viewRange = new ViewRange(worldOverlayAdd,worldOverlayRemove);
-		this.viewInventory = new ViewInventory('guiInventory',this.imageRepo);
+		this.view.dynamic = DynamicViewList.none;
+		this.view.narrative = new ViewNarrative('guiNarrative');
+		this.view.map = new ViewMap('guiMap',MaxSightDistance,this.imageRepo);
+		this.view.sign = new ViewSign('guiSign');
+		this.view.miniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',this.imageRepo);
+		this.view.spells = new ViewSpells('guiSpells');
+		this.view.info = new ViewInfo('guiInfo')
+		this.view.status = new ViewStatus('guiStatus');
+		this.view.range = new ViewRange(worldOverlayAdd,worldOverlayRemove);
+		this.view.inventory = new ViewInventory('guiInventory',this.imageRepo);
 
 		let keyMap = loadKeyMapping("default");
-		this.userCommandHandler = new UserCommandHandler(keyMap,this.viewInventory,this.viewRange);
+		this.userCommandHandler = new UserCommandHandler(keyMap,this.view.inventory,this.view.range);
 	}
 
 	makeDynamicGui() {
@@ -48,7 +51,7 @@ class Gui {
 			return false;
 		}
 		let onClose = () => {
-			this.viewDynamic = ViewList.none;
+			this.view.dynamic = ViewList.none;
 		}
 		let v = {divId: 'guiDynamic', player: player, imageRepo: this.imageRepo, onClose: onClose};
 		if( !DynamicViewList[v.view] ) {
@@ -58,10 +61,22 @@ class Gui {
 		}
 
 		Object.assign(v,player.guiViewCreator);
-		this.viewDynamic = DynamicViewList[v.view](v);
+		this.view.dynamic = DynamicViewList[v.view](v);
 		delete player.guiViewCreator;
 		return true;
 	}
+	message(target,message,payload) {
+		if( target && !this.view[target] ) {
+			console.log( "Error: Message target "+target+" does not exist." );
+			return;
+		}
+		Object.each( this.view, (view,viewId) => {
+			if( view.message && (!target || target==viewId) ) {
+				view.message(message,payload);
+			}
+		});
+	}
+
 
 	render() {
 		let area = this.getArea();
@@ -69,19 +84,21 @@ class Gui {
 
 		area.map.cacheVis();
 
-		this.viewStatus.render(observer,area.entityList);
-		this.viewSpells.render(observer);
-		this.viewInfo.render(observer);
-		this.viewInventory.render(observer);
-		this.viewRange.render(observer);
+		this.view.narrative.render();
+		this.view.status.render(observer,area.entityList);
+		this.view.sign.render(observer);
+		this.view.spells.render(observer);
+		this.view.info.render(observer);
+		this.view.inventory.render(observer);
+		this.view.range.render(observer);
 		let drawList = createDrawList(observer,area.map,area.entityList);
-		this.viewMap.draw(drawList,observer);
-		this.viewMiniMap.render(observer);	// must be after viewMap so the visibility
-		this.viewDynamic.render(observer);
+		this.view.map.draw(drawList,observer);
+		this.view.miniMap.render(observer);	// must be after viewMap so the visibility
+		this.view.dynamic.render(observer);
 	}
 
 	tick() {
 		this.makeDynamicGui();
-		this.viewDynamic.tick();
+		this.view.dynamic.tick();
 	}
 }

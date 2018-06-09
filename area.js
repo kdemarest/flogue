@@ -112,6 +112,10 @@ function areaBuild(area,theme,tileQuota) {
 
 	area.gateList = area.map.itemList.filter( item => item.gateDir !== undefined );
 
+	if( Gab ) {
+		Gab.entityPostProcess(area);
+	}
+
 	return area;
 }
 
@@ -121,6 +125,7 @@ class Area {
 		console.assert( depth>=0 );
 		console.assert( typeof theme == 'object' );
 		this.id = areaId;
+		this.isArea = true;
 		this.depth = depth;
 		this.theme = theme;
 		this.mapMemory = [];

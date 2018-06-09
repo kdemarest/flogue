@@ -32,7 +32,7 @@ class World {
 				2: {
 					themeId: 'corePits',
 					make: [
-						{ typeId: 'gateway', themeId: 'dwarfTown' },
+						{ typeId: 'gateway', themeId: 'dwarfTown', sign: 'To Thurmulna' },
 						{ typeId: 'gateway', themeId: 'refugeeCampSlaughter' },
 						{ typeId: 'fontSolar' },
 					]
@@ -40,30 +40,30 @@ class World {
 				3: {
 					themeId: 'coreCavernRooms',
 					make: [
-						{ typeId: 'gateway', themeId: 'spooky' },
-						{ typeId: 'gateway', themeId: 'refugeeCampSlaughter' },
+						{ typeId: 'gateway', themeId: 'spooky', sign: 'Warning: Undead Area. Keep Out.' },
+						{ typeId: 'gateway', themeId: 'refugeeCampSlaughter', sign: 'Refugee Camp "Prosperous Tranquility" Ahead' },
 						{ typeId: 'fontDeep' },
 					]
 				},
 				4: {
 					themeId: 'coreMaze',
 					make: [
-						{ typeId: 'gateway', themeId: 'dwarfTown' },
-						{ typeId: 'gateway', themeId: 'hellscape' },
+						{ typeId: 'gateway', themeId: 'dwarfTown', sign: 'To Kurstifal' },
+						{ typeId: 'portal', themeId: 'hellscape', sign: 'This rift in space pulses with menace.'  },
 						{ typeId: 'fontSolar' },
 					]
 				},
 				5: {
 					themeId: 'coreBridges',
 					make: [
-						{ typeId: 'gateway', themeId: 'dwarfGoblinBattle' },
+						{ typeId: 'gateway', themeId: 'dwarfGoblinBattle', sign: 'Send reinforcements!' },
 						{ typeId: 'fontDeep' },
 					]
 				},
 				6: {
 					themeId: 'coreSea',
 					make: [
-						{ typeId: 'gateway', themeId: 'dwarfTown' },
+						{ typeId: 'gateway', themeId: 'dwarfTown', sign: 'To Unkruzia' },
 						{ typeId: 'fontSolar' },
 						{ typeId: 'fontDeep' },
 					]
@@ -90,6 +90,7 @@ class World {
 			if( depth > 0 ) p.make.push( { typeId: 'stairsUp' } );
 			if( depth < MAX_DEPTH ) p.make.push( { typeId: 'stairsDown' } );
 		}
+
 		return p;
 	}
 
@@ -207,7 +208,7 @@ class World {
 		if( gate.gateInverse !== false ) {
 			let g = toArea.gateList.filter( foreignGate => foreignGate.toGateId==gate.id );
 			if( !g[0] ) {
-				g = toArea.gateList.filter( foreignGate => foreignGate.typeId == gate.gateInverse && (!foreignGate.toAreaId || foreignGate.toAreaId==this.area.areaId) );
+				g = toArea.gateList.filter( foreignGate => foreignGate.typeId == gate.gateInverse && (!foreignGate.toAreaId || foreignGate.toAreaId==this.area.id) );
 			}
 			let gate2 = g[0];
 			if( !gate2 ) {
@@ -250,10 +251,12 @@ class World {
 		}
 		this.setPending(gate)
 	}
-	gateTo(areaId) {
+	gateTo(areaId,x,y) {
 		let area = this.areaList[areaId];
 		if( !area ) debugger;
+		let oldArea = this.area;
 		this.area = area;
+		this.onAreaChange(oldArea,area,x,y);
 		return area;
 	}
 	areaChange() {
@@ -270,8 +273,7 @@ class World {
 		// WARNING! Someday we will need to push the DeedList that is NOT the player into the old area.
 		// and resurrect the new area's deed list.
 		let oldArea = this.area;
-		let newArea = this.gateTo(gate.toAreaId);
-		this.onAreaChange(oldArea,newArea,gate.toPos.x,gate.toPos.y);
+		let newArea = this.gateTo(gate.toAreaId,gate.toPos.x,gate.toPos.y);
 		if( gate.killMeWhenDone ) {
 			gate.destroy();
 		}

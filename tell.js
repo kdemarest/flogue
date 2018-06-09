@@ -1,4 +1,4 @@
-let MessageManager = (new class {
+let Narrative = (new class {
 	constructor() {
 		this.recipientList = [];
 		this.accumulate = 0;
@@ -52,5 +52,5 @@ function bonk(entity,target) {
 }
 
 function tell() {
-	MessageManager.tell(...arguments);
+	Narrative.tell(...arguments);
 }

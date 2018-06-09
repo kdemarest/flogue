@@ -120,7 +120,7 @@ function createDrawList(observer,map,entityList,asType) {
 		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
 			let tx = x-(px-d);
 			let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
-			let visible = inBounds && vis[y][x];
+			let visible = inBounds && vis[y] && vis[y][x];
 			let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
 			let tile;
 			let item;
