@@ -31,6 +31,7 @@
 <script src="gui.js" charset="utf-8"></script>
 <script src="area.js" charset="utf-8"></script>
 <script src="world.js" charset="utf-8"></script>
+<script src="plan.js" charset="utf-8"></script>
 <script src="config.js" charset="utf-8"></script>
 <script>
 
@@ -203,7 +204,7 @@ function main(levelName) {
 	gui.create();
 	//gui.view.miniMap.setArea(area);
 	let world = new World(playerFind,onAreaChange);
-	let themeId = config.themeId || world.determineTheme(config.startingDepth,true);
+	let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
 	let area = world.createArea(config.startingDepth,ThemeList[themeId],true,[]);
 	let player = new Entity( area.depth, MonsterTypeList.player, null );
 	world.gateTo(area.id,...getPlayerStartPos(area));

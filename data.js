@@ -814,7 +814,6 @@ const MonsterTypeList = {
 	},
 	"dog": {
 		core: [ 'd', 1, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
-		name: "Fido/Lucy",
 		brainFlee: true,
 		brainPet: true,
 		dodge: 1,

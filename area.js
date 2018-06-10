@@ -146,4 +146,17 @@ class Area {
 		let g = this.gateList.filter( g => g.typeId==typeId && !g.toAreaId );
 		return !g.length ? null : g[0];
 	}
+	siteFind(x,y) {
+		let found;
+		this.siteList.forEach( site => {
+			if( !site.marks ) return;
+			for( let i=0 ; i<site.marks.length ; i+=2 ) {
+				if( site.marks[i+0]==x && site.marks[i+1]==y ) {
+					found = site;
+					return false;
+				}
+			}
+		});
+		return found;
+	}
 }

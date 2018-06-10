@@ -116,6 +116,9 @@ class Item {
 		if( Gab && hadNoOwner ) {
 			Gab.entityPostProcess(this);
 		}
+		if( this.gateDir !== undefined && !this.themeId ) {
+			this.themeId = Plan.determineTheme(this.area.depth+this.gateDir,this.gateDir ? this.area.isCore : false);
+		}
 		this.owner._itemTake(this,x,y);
 		if( entity.isMonsterType ) {
 			// NOTICE! The ownerOfRecord is the last entity that operated or held the item. Never the map.

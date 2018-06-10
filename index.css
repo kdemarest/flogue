@@ -51,7 +51,7 @@ body {
 	display: none;
 	z-index: 5;
 	width: 474px;
-	height: 88px;
+	height: 90px; /* any smaller and a scroll bar appears when there are three lines. */
 	margin-top: 16;
 	border-radius: 16px;
 	padding: 10px;
@@ -64,7 +64,9 @@ body {
 	position: absolute;
 	top:0;
 	left:100px;
-	overflow-y: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    white-space: pre-wrap;
 }
 #guiStatus {
 	width: 180px;

@@ -1,6 +1,7 @@
 Gab = (new function(priorGab) {
 	console.assert(this!==window);
 	Object.assign(this,priorGab);
+	let self = this;
 	let cityNameList = Array.shuffle(['Gunderhite','Thurmulna','Kurstifal','Unkruzia']);
 	let areaId2CityName = {};
 
@@ -15,12 +16,25 @@ Gab = (new function(priorGab) {
 		return String.capitalize(id.split('.')[0]);
 	}
 
-	let sign4Type = {
-		stairsUp: (e)=>'These stairs ascend to Depth '+(e.area.depth-1)+'\nHit "'+commandToKey(Command.WAIT)+'" to ascend."',
-		stairsDown: (e)=>'These stairs descend to Depth '+(e.area.depth+1)+'\nHit "'+commandToKey(Command.WAIT)+'" to descend."',
-		gateway: (e)=> {
-			return 'To '+getCityName(e.toAreaId);
+	function getAreaName(themeId,areaId) {
+		if( areaId && self.world.areaList[areaId] ) {
+			return  self.world.areaList[areaId].name;
 		}
+		let theme = ThemeList[themeId];
+		if( theme.name ) return theme.name;
+		return themeId;
+	}
+
+//	function gateMakeName() {
+//		let sentence = new Sentence(...arguments);
+//		return sentence.refine(null);
+//	}
+
+	let sign4Type = {
+		stairsUp: 	(e)=> () => 'These stairs ascend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.WAIT)+'" to ascend.',
+		stairsDown: (e)=> () => 'These stairs descend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.WAIT)+'" to descend.',
+		gateway: 	(e)=> () => 'To '+getAreaName(e.themeId,e.toAreaId)+'\nHit "'+commandToKey(Command.WAIT)+'" to enter.',
+		portal: 	(e) => 'This portal pulses with an aura of menace.'
 	}
 	function signFor(e) {
 		if( sign4Type[e.typeId] ) {
@@ -33,7 +47,19 @@ Gab = (new function(priorGab) {
 
 	function entityPostProcess(entity) {
 		if( entity.isArea ) {
-			entity.name = entity.isCore ? "Depth "+entity.depth : getCityName(entity.areaId);
+			let area = entity;
+			if( area.theme.name ) {
+				area.name = area.theme.name;
+			}
+			else {
+				if( area.theme.isTown ) {
+					area.name = getCityName(area.id);
+					entity.properNoun = true;
+				}
+				else {
+					entity.name = area.theme.typeId+' area';
+				}
+			}
 			return;
 		}
 
@@ -110,8 +136,6 @@ Gab = (new function(priorGab) {
 			return [mSubject,subj,' ',mVerb,'is',' less enchanted.'];
 		}
 	};
-
-
 
 	return this;
 }(Gab));

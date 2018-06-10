@@ -27,15 +27,16 @@ class ViewSign {
 		this.divId = divId;
 	}
 	render(observer) {
-		let sign = new Finder(observer.entityList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
-		if( !sign.count ) {
-			sign = new Finder(observer.map.itemList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
+		let signList = new Finder(observer.entityList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
+		if( !signList.count ) {
+			signList = new Finder(observer.map.itemList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
 		}
-		if( !sign.first ) {
+		if( !signList.first ) {
 			$('#'+this.divId).hide();
 		}
 		else {
-			$('#'+this.divId).show().html(sign.first.sign);
+			let sign = typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
+			$('#'+this.divId).show().html(sign);
 		}
 	}
 }
@@ -171,7 +172,8 @@ class ViewMiniMap {
 		}
 	}
 	render(observer) { 
-		$('#'+this.captionDivId).show().html(this.caption);
+		let site = observer.area.siteFind(observer.x,observer.y);
+		$('#'+this.captionDivId).show().html(this.caption+(site ? '<br>'+site.id : ''));
 
 		var canvas = document.getElementById(this.divId+'Canvas');
 		if( !canvas.getContext ) {

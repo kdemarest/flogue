@@ -176,6 +176,7 @@ let ThemeDefault = () => ({
 });
 
 ThemeList.surface = {
+	name: 			'the solar temple on the surface',
 	isUnique: 		true,
 	inControl: 		true,
 	scapeId: 		'snowyPlains',
@@ -183,6 +184,7 @@ ThemeList.surface = {
 	monsters: 		['isPet'],
 	monsterDensity: 0.0,
 	itemDensity: 	0.0,
+
 }
 
 ThemeList.coreCavernRooms = {
@@ -200,7 +202,8 @@ ThemeList.refugeeCamp = {
 	rCOMMON: 	'camp.refugee',
 	rUNCOMMON: 	'handoutStand, floodPit, pitEncircle',
 	rRARE: 		'den.dog, camp.goblin',
-	monsters: 	['isSunChild','isPet']
+	monsters: 	['isSunChild','isPet'],
+	sign: 		'Bring your own supplies. We won\'t feed you.'
 }
 
 ThemeList.refugeeCampSlaughter = {
@@ -210,7 +213,8 @@ ThemeList.refugeeCampSlaughter = {
 	rCOMMON: 	'camp.refugee, camp.goblin',
 	rUNCOMMON: 	'floodPit, pitEncircle, veil, ruin, den.kobold, camp.ogre',
 	rRARE: 		'den.dog',
-	monsters: 	['isSunChild','isPet','isEarthChild']
+	monsters: 	['isSunChild','isPet','isEarthChild'],
+	sign: 		'Refugee Camp "Prosperous Tranquility" Ahead'
 }
 
 ThemeList.dwarfTown = {
@@ -265,7 +269,8 @@ ThemeList.dwarfGoblinBattle = {
 	rREQUIRED: 	'troops.dwarf, troops.goblin',
 	rCOMMON: 	'floodPit, nest.bat, nest.viper',
 	rUNCOMMON: 	'antHive, ruin, patch, veil, pitEncircle, floodOre',
-	monsters: 	['isEarthChild','isSunChild','isPlanar','isAnimal']
+	monsters: 	['isEarthChild','isSunChild','isPlanar','isAnimal'],
+	sign: 		'Send reinforcements!'
 }
 
 ThemeList.coreCavernSomewhatOpen = {

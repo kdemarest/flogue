@@ -33,6 +33,20 @@
 		if( Math.rand(0,ax+ay) < ay ) { dx=0; } else { dy=0; }
 		return deltasToDirPredictable(dx,dy);
 	}
+	function deltasToDirFarthestOrtho(dx,dy,alwaysReturnDirection) {
+		let ax = Math.abs(dx);
+		let ay = Math.abs(dy);
+		if( ax > ay ) {
+			return dx < 0 ? Dir.W : Dir.E;
+		}
+		if( ay > ax || alwaysReturnDirection ) {
+			return dy < 0 ? Dir.N : Dir.S;
+		}
+		return false;
+	}
+	function getTrueDistance(dx,dy) {
+		return Math.sqrt(dx*dx+dy*dy);
+	}
 
 	function isUnknown(tile) {
 		return tile == T.Unknown;
@@ -130,6 +144,8 @@
 			return this.tile[y][x].zoneId;
 		}
 		ext(x,y) {
+			console.assert( x !== undefined && typeof x === 'number' && !isNaN(x) );
+			console.assert( y !== undefined && typeof y === 'number' && !isNaN(y) );
 			this.xMin = Math.min(x,this.xMin);
 			this.yMin = Math.min(y,this.yMin);
 			this.xMax = Math.max(x,this.xMax);
@@ -264,7 +280,15 @@
 			}
 			Object.assign(injectList,newInjectList);
 		}
-		sizeToExtentsWithBorder(injectList,border) {
+		moveSiteList(siteList,dx,dy) {
+			siteList.forEach( site => {
+				for( let i=0 ; i<site.marks.length ; i+=2 ) {
+					site.marks[i+0] += dx;
+					site.marks[i+1] += dy;
+				}
+			});
+		}
+		sizeToExtentsWithBorder(injectList,siteList,border) {
 			let xMin,yMin,xMax,yMax;
 			[xMin,yMin,xMax,yMax] = this.getExtents();
 			let area = new Mason();
@@ -275,6 +299,7 @@
 			Object.assign(this,area);
 
 			this.moveInjectList(injectList,border-xMin,border-yMin);
+			this.moveSiteList(siteList,border-xMin,border-yMin);
 		}
 		randPos(expand=0) {
 			let xExpand = expand;
@@ -296,6 +321,15 @@
 			let c = 0;
 			this.traverse( (x,y) => c += this.getTile(x,y)==tile ? 1 : 0 );
 			return c;
+		}
+		traverse8(x,y,fn) {
+			for( let dir=0 ; dir<8 ; ++dir ) {
+				let dx = x+DirAdd[dir].x;
+				let dy = y+DirAdd[dir].y;
+				if( fn(dx,dy,this.getAll(dx,dy)) === false ) {
+					return;
+				}
+			}
 		}
 		count8(x,y,testFn) {
 			x = Math.floor(x);
@@ -473,12 +507,12 @@
 
 			this.traverse( (x,y) => {
 				if( this.getZoneId(x,y) == NO_ZONE && isWalkable(this.getTile(x,y)) ) {
-					let z = this.flood( x, y, ortho, keepTiles,
+					let tiles = this.flood( x, y, ortho, keepTiles,
 						(x,y,tile,z) => isWalkable(tile) && (z===undefined || z != zoneId),
 						(x,y,t) => t.zoneId = zoneId
 					);
 					
-					zoneList[zoneId] = { x:x, y:y, zoneId: zoneId, tiles: z, count: z.length/2 };
+					zoneList[zoneId] = { x:x, y:y, zoneId: zoneId, tiles: tiles, count: tiles.length/2 };
 					++zoneId;
 				}
 			});
@@ -486,106 +520,126 @@
 			let zoneBySizeDescending = zoneList.sort( (a,b) => b.count-a.count );
 			return zoneBySizeDescending;
 		}
-		findCenter(zone) {
-			let x = 0;
-			let y = 0;
-			zone.tiles.map( t => { x+=t.x; y+=t.y; } );
-			return { x: x/zone.tiles.length, y:y/zone.tiles.length };
-		}
 
-		spiralFindOther(x,y,avoidZoneId,haltAtLength) {
-			let dir = 0;
-			let span = 0.5;
-			let remain = span;
+		findClosest(sx,sy,avoidZoneId,haltAtDist) {
+			if( !this.proList ) {
+				this.proList = [];
+				for( let y=-this.yLen() ; y<this.yLen() ; ++y ) {
+					for( let x=-this.xLen() ; x<this.xLen() ; ++x ) {
+						if( x==0 && y==0 ) continue;
+						let dist = getTrueDistance(x,y);
+						this.proList.push({x:x,y:y,dist:dist});
+					}
+				}
+				Array.shuffle(this.proList);	// This is so that the sort is less predictable for equal distances.
+				this.proList.sort( (a,b) => a.dist-b.dist );
+			}
+
 			let sameZoneCount = 0;
-			let count = 0;
-			let countLimit = 4*this.xLen()*this.yLen();	// mult by 4 because you might have started in a corner
-			let sx = x;
-			let sy = y;
-			do {
-				count += 1;
-				if( count >= haltAtLength ) {
+			for( let i=0 ; i<this.proList.length ; ++i ) {
+				let p = this.proList[i];
+				if( p.dist > haltAtDist ) {
+					// Only use greater-than. This way, all the equal distances will have a chance.
 					return false;
 				}
-				x += DirAdd[dir].x;
-				y += DirAdd[dir].y;
+				let x = sx+p.x;
+				let y = sy+p.y;
 				let zoneId = this.getZoneId(x,y);
-				if( count <= 8 ) {
-					if( zoneId == avoidZoneId ) {
-						sameZoneCount++;
-						if( sameZoneCount==8 ) {
-							// Halt early because the first eight tiles were all my zone, that is,
-							// I am an interior tile!
-							return false;
-						}
+				if( zoneId == avoidZoneId ) {
+					sameZoneCount++;
+					if( i==7 && sameZoneCount==7 ) {
+						// Halt early because the first eight tiles were all my zone, that is,
+						// I am an interior tile!
+						return false;
 					}
 				}
 				if( zoneId != NO_ZONE && zoneId != avoidZoneId) {
-					return {x:sx,y:sy,zoneId:avoidZoneId,tx:x,ty:y,tZoneId:zoneId,count:count};
+					return {
+						x:sx, y:sy, zoneId:avoidZoneId,
+						tx:x, ty:y, tZoneId:zoneId,
+						dist: p.dist
+					}
 				}
-				remain -= 1;
-				if( remain <= 0 ) {
-					dir = (dir + 2) % 8;
-					span += 0.5;
-					remain = span;
-				}
-			} while( count < countLimit );
+			}
 			return false;
 		}
+		setPassageTile(x,y,dir,zoneId) {
+			let tile = this.getTile(x,y);
+			if( wantsDoor(tile) && this.count8(x,y,isDoor)<=0 ) {
+				// If this is a tile marked for doors, then make a door.
+				this.setTile(x,y,T.Door);
+			}
+			else 
+			if( wantsBridge(tile) && this.count4(x,y,isWall)==0 && this.count4(x,y,isFloor)<=1 ) {
+				this.setTile(x,y,dir==0 || dir==4 ? T.BridgeNS : T.BridgeEW);
+			}
+			else 
+			if( !isWalkable(tile) ) {
+				// Only mar the area if it is NOT already walkable.
+				this.setTile(x,y,T.PassageFloor);
+			}
 
-		zoneLink(x,y,tx,ty,zoneId,tZoneId,linkFn) {
+			this.setZoneId(x,y,zoneId);
+		}
+
+		zoneLink(x,y,tx,ty,zoneId,tZoneId,linkFn,marks) {
 			// to - from
+			let t = [];
 			let reps = 9999;
 			while( reps-- ) {
 				let dir = linkFn(tx-x,ty-y);
+				console.assert(dir!==false);
 				x += DirAdd[dir].x;
 				y += DirAdd[dir].y;
 				if( x==tx && y==ty ) {
 					return;
 				}
-				let tile = this.getTile(x,y);
-				if( wantsDoor(tile) && this.count8(x,y,isDoor)<=0 ) {
-					// If this is a tile marked for doors, then make a door.
-					this.setTile(x,y,T.Door);
-				}
-				else 
-				if( wantsBridge(tile) && this.count4(x,y,isWall)==0 && this.count4(x,y,isFloor)<=1 ) {
-					this.setTile(x,y,dir==0 || dir==4 ? T.BridgeNS : T.BridgeEW);
-				}
-				else 
-				if( !isWalkable(tile) ) {
-					// Only mar the area if it is NOT already walkable.
-					this.setTile(x,y,T.PassageFloor);
-				}
-
-				this.setZoneId(x,y,zoneId);
-				if( this.count4zone(x,y, z => z==tZoneId)>0 ) {
-					break;
+				this.setPassageTile(x,y,dir,zoneId);
+				if( marks ) {
+					// This intentionally misses the start and end points, which should already have sites.
+					marks.push(x,y);
 				}
 			}
+			return false;
 		}
-
 		findProximity(zoneList) {
 			// Find the closest tile for every single tile in every zone, that is on the edge.
 			let proximity = [];
 			for( let zone of zoneList) {
-				let maxLength = 4*this.xLen()*this.yLen();
-				for( let tileIndex=0 ; tileIndex<zone.tiles.length ; tileIndex += 2 ) {
-					let x = zone.tiles[tileIndex];
-					let y = zone.tiles[tileIndex+1];
-					let result = this.spiralFindOther(x,y,zone.zoneId,maxLength);
+				let bestDist = 4*this.xLen()*this.yLen();
+				Array.traversePairs( zone.tiles, (x,y) => {
+					let result = this.findClosest(x,y,zone.zoneId,bestDist);
 					if( result !== false ) {
 						proximity.push(result);
+						bestDist = result.dist;
 					}
-				}
+				});
 			}
 
+			// Randomize them so that those of equal distance will have an equal chance of getting picked.
+			Array.shuffle(proximity);
 			// Sort them so that the closest are first.
-			proximity.sort( (a,b) => a.count-b.count );
+			proximity.sort( (a,b) => a.dist-b.dist );
 			return proximity;
 		}
 
-		connectAll(wanderLink) {
+		jut(x,y,tx,ty,zoneId,marks) {
+			let ax = Math.abs(tx-x);
+			let ay = Math.abs(ty-y);
+			let dist = Math.max(ax,ay);
+			if( dist > 2 ) {
+				let dir = deltasToDirFarthestOrtho(tx-x,ty-y,true);
+				if( isUnknown(this.getTile(x+DirAdd[dir].x,y+DirAdd[dir].y)) ) {
+					x += DirAdd[dir].x;
+					y += DirAdd[dir].y;
+					this.setPassageTile(x,y,dir,zoneId);
+					marks.push(x,y);
+				}
+			}
+			return [x,y];
+		}
+
+		connectAll(siteList,wanderLink) {
 			let i = 0;
 			let reps = 100;
 			do {
@@ -606,6 +660,16 @@
 						//console.log('skipping '+pair);
 						continue;
 					}
+
+					let site0 = this.getAll(p.x,p.y).siteId;	// allowed to be undefined
+					let site1 = this.getAll(p.tx,p.ty).siteId;	// allowed to be undefined
+
+					// We don't really want to intrude into whatever space we're connecting to. That often looks
+					// pretty bad. So jut out from either end.
+					let marks = [];
+					[p.x,p.y]   = this.jut( p.x,  p.y,  p.tx, p.ty, p.zoneId, marks );
+					[p.tx,p.ty] = this.jut( p.tx, p.ty, p.x,  p.y,  p.tZoneId, marks );
+
 					let lean = Math.chance(50);
 					function deltasToDirStrict(dx,dy) {
 						if( dx && dy ) {
@@ -613,7 +677,20 @@
 						}
 						return deltasToDirPredictable(dx,dy);
 					}
-					this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,wanderLink?deltasToDirNaturalOrtho:deltasToDirStrict);
+					if( p.x!=p.tx || p.y!=p.ty ) {
+						let linkFn = wanderLink ? deltasToDirNaturalOrtho : deltasToDirStrict;
+						this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks);
+						siteList.push({
+							id: 'passage.'+GetTimeBasedUid(),
+							marks: marks,
+							isPassage: true,
+							site0: site0,
+							site1: site1
+						});
+					}
+					else {
+						debugger;
+					}
 //					console.log("Linked "+pair);
 					link[pair] = true;
 				}
@@ -630,28 +707,6 @@
 				q.done = true;
 			});
 		}
-/*
-
-		quotaLinkOthers(quota,injectList) {
-			quota.forEach( q => {
-				if( !q.putAnywhere ) {
-					return;
-				}
-				// Gather all the map symbols that match this, and that are not already from quota.
-				let inMap = this.gather( (x,y) => {
-					if( this.getTile(x,y)!=q.symbol ) {
-						return false;
-					}
-					let pos = ''+x+','+y;
-					return !injectList[pos] || !injectList[pos].fromQuota;
-				});
-				console.assert( inMap.length > 0 );
-				let index = Math.randInt(0,inMap.length/2) * 2;
-				console.log( "Linking 
-				injectMake(injectList,inMap[index+0],inMap[index+1],q.typeId,q.inject);
-			});
-		}
-*/
 		fit(px,py,expand,placeMap) {
 			if( px<0 || py<0 || px+placeMap.xLen>this.xLen || py+placeMap.yLen>this.yLen ) {
 				return false;
@@ -727,23 +782,93 @@
 			} while( any );
 			return this;
 		}
+
 		assembleSites(siteList) {
+
+			function addSite(site) {
+				siteList.push(site);
+				Array.traversePairs( site.marks, (x,y) => {
+					self.getAll(x,y).siteId = site.id;
+				});
+			}
+
+			let self = this;
 			// Now finalize the sites.
-			let zoneList = this.floodAll(true,false);
-			this.traverse( (x,y) => {
-				let zoneId = this.getZoneId(x,y);
-				if( zoneId !== NO_ZONE ) {
-					let t = this.getAll(x,y);
-					if( t.siteId !== undefined ) {
-						zoneList[zoneId].siteCount = (zoneList[zoneId].siteCount||0)+1;
-					}
-				}
-			});
+			let zoneList = this.floodAll(true,true);
 			zoneList.forEach( zone => {
-				if( !zone.siteCount ) {
-					let site = Object.assign({}, { id: GetUniqueEntityId(), marks: zone.tile, isWilderness: true });
-					siteList.push(site);
+				//if( zone.count < 4 ) return;	// Zone is too small to bother noting. Consider it passage.
+				let found = {};
+				Array.traversePairs( zone.tiles, (x,y) => {
+					let a = this.getAll(x,y);
+					if( a && a.siteId!==undefined ) {
+						found[a.siteId] = (found[a.siteId] || []);
+					}
+				});
+
+				// No site exists within this zone, so just make a wilderness room out of it.
+				if( Object.isEmpty(found) ) {
+					addSite({
+						id: 'room.'+GetTimeBasedUid(),
+						marks: zone.tiles,
+						isRoom: true
+					});
+					return;
 				}
+
+				// We found only one site, so all the non-overlapping spots are considered adjacent
+				if( Object.keys(found).length == 1 ) {
+					let marks = [];
+					Array.traversePairs( zone.tiles, (x,y) => {
+						let a = this.getAll(x,y);
+						if( a.siteId===undefined ) {
+							marks.push(x,y);
+						}
+					});
+					let siteId = Object.keys(found)[0];
+					addSite({
+						id: 'near.'+siteId,
+						marks: marks,
+						isNear: siteId,
+					});
+					return;
+				}
+
+				// Drat, multiple sites exist in this zone. Outline them all until nothing is left.
+				let nearHash = {};
+				let anyFound;
+				let reps = 4*this.xLen()*this.yLen();
+				do {
+					anyFound = false;
+					let markHash = {};
+					Array.traversePairs( zone.tiles, (x,y) => {
+						let a = this.getAll(x,y);
+						if( a.siteId ) return;
+						this.traverse8( x, y, (nx,ny,all) => {
+							if( all.siteId!==undefined ) {
+								markHash[all.siteId] = markHash[all.siteId] || [];
+								markHash[all.siteId].push(x,y);
+								anyFound = true;
+								return false;
+							}
+						});
+					});
+					Object.each( markHash, (marks,siteId) => {
+						nearHash[siteId] = nearHash[siteId] || []
+						Array.traversePairs( marks, (x,y) => {
+							this.getAll(x,y).siteId = siteId;
+							nearHash[siteId].push(x,y);
+						});
+					});
+				} while( anyFound && --reps > 0 );
+				if( reps <=0 ) debugger;
+
+				Object.each( nearHash, (marks,siteId) => {
+					addSite({
+						id: 'near.'+siteId,
+						marks: marks,
+						isNear: siteId,
+					});
+				});
 			});
 		}
 		majorityNear(x,y,testFn) {
@@ -804,20 +929,6 @@
 				}
 			});
 		}
-/*
-		paste(area,xPos,yPos,zoneId) {
-			xPos = Math.floor(xPos);
-			yPos = Math.floor(yPos);
-			this.traverse( (x,y) => {
-				let tile = this.getTile(x,y);
-				if( tile !== T.Unknown ) {
-					area.setTile(xPos+x,yPos+y,tile);
-					area.setZoneId(xPos+x,yPos+y,zoneId==NO_ZONE ? this.getZoneId(x,y) : zoneId);
-				}
-			});
-			return area;
-		}
-*/
 		renderToString(drawZones) {
 			let s = '';
 			let yLast = this.yMin;
@@ -833,7 +944,7 @@
 					s += c;
 				}
 				else {
-					s += this.getTile(x,y);
+					s += this.getTile(x,y) || '?';
 				}
 				yLast = y;
 			});
@@ -1054,18 +1165,19 @@
 		}
 
 		function addSite( place, siteMarks ) {
-			let site = Object.assign({}, {
-				id: GetUniqueEntityId(),
+			let site = {
+				id: place.typeId+'.'+GetTimeBasedUid(),
 				marks: siteMarks,
+				isPlace: true,
 				placeId: place.typeId,
 				place: place
-			});
+			};
 			siteList.push(site);
 			// mark on the map which site belongs to whom.
 			for( let i=0 ; i<site.marks.length ; i+=2 ) {
 				let x = site.marks[i];
 				let y = site.marks[i+1];
-				map.getAll(x,y).siteId = siteList.length-1;
+				map.getAll(x,y).siteId = site.id;
 			}
 		}
 
@@ -1317,10 +1429,10 @@
 		}
 
 		map.assembleSites(siteList);
-		map.connectAll(theme.wanderingPassage);
+		map.connectAll(siteList,theme.wanderingPassage);
 		map.removePointlessDoors();
 		map.wallify(T.OutlineWall);
-		map.sizeToExtentsWithBorder(injectList,1);
+		map.sizeToExtentsWithBorder(injectList,siteList,1);
 		map.convert(T.Unknown,T.FillWall);
 
 		//map.quotaMakeOthers(quota,injectList);

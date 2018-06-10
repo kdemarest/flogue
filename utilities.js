@@ -92,6 +92,13 @@ function nop() {}
 		}
 		return array;
 	}
+	Array.traversePairs = function(array,fn) {
+		for( let i=0 ; i<array.length ; i+=2 ) {
+			if( fn(array[i+0],array[i+1]) === false ) {
+				return;
+			}
+		}
+	}
 	Object.isEmpty= function(obj) {
 		for(var key in obj) {
 			if(obj.hasOwnProperty(key))
@@ -261,13 +268,11 @@ function nop() {}
 	};
 })();
 
-let GetUniqueEntityId = (function() {
-	let humanNameList = null;
-	let shuffled = false;
+let GetTimeBasedUid = (function() {
 	let codes = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	let counter = 0;
 
-	function timeBasedUid() {
+	return function() {
 		counter = (counter+1)%10000;	// assumes we won't make more than 10,000 items in the same millisecond
 		let n = (new Date().getTime())*10000 + counter;
 		let uid = '';
@@ -277,8 +282,12 @@ let GetUniqueEntityId = (function() {
 			uid += codes.charAt(q);
 		}
 		return uid;
-
 	}
+})();
+
+let GetUniqueEntityId = (function() {
+	let humanNameList = null;
+	let shuffled = false;
 
 	return function(typeId,level) {
 		if( !shuffled && getHumanNameList ) {
@@ -286,7 +295,7 @@ let GetUniqueEntityId = (function() {
 			shuffled = true;
 		}
 
-		let id = (humanNameList?pick(humanNameList)+'.':'')+typeId+(level?'.'+level:'')+'.'+timeBasedUid();
+		let id = (humanNameList?pick(humanNameList)+'.':'')+typeId+(level?'.'+level:'')+'.'+GetTimeBasedUid();
 		return id;
 	}
 
