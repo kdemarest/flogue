@@ -1046,7 +1046,7 @@ class Entity {
 		let self = this;
 		let weaponList = new Finder(this.inventory).filter( item => {
 			if( item.isWeapon ) return true;
-			if( (item.isSpell || item.isPotion) && item.effect.isHarm ) return true;
+			if( (item.isSpell || item.isPotion) && item.effect && item.effect.isHarm ) return true;
 			return false;
 		});
 		weaponList.prepend(this.naturalWeapon);
@@ -1059,7 +1059,7 @@ class Entity {
 		weaponList.filter( item => {
 			// WARNING! This does not check all possible immunities, like mental attack! Check the effectApply() function for details.
 			let isVuln,isImmune,isResist;
-			[isVuln,isImmune,isResist] = self.assessVIR(item,item.damageType || item.effect.damageType);
+			[isVuln,isImmune,isResist] = target.assessVIR(item,item.damageType || item.effect.damageType);
 			return !isImmune;
 		});
 		// remove any ranged weapon or reach weapon with an obstructed shot
@@ -1085,6 +1085,7 @@ class Entity {
 	}
 
 	attack(target,weapon,isRanged) {
+		console.assert(weapon);
 		this.lastAttackTargetId = target.id;	// Set this early, despite blindness!
 
 		if( (this.senseBlind && !this.baseType.senseBlind) || (target.invisible && !this.senseInvisible) ) {
@@ -1093,9 +1094,6 @@ class Entity {
 				return;
 			}
 		}
-
-		weapon = weapon || this.calcDefaultWeapon();
-
 		let quick = weapon && weapon.quick>=0 ? weapon.quick : 1;
 		let dodge = target.dodge>=0 ? target.dodge : 0;
 		if( dodge > quick ) {
@@ -1148,17 +1146,14 @@ class Entity {
 		item.giveTo(this,this.x,this.y);
 		return item;
 	}
-
-	lootTake( lootString, level, originatingEntity, quiet, onEach ) {
-		let itemList = [];
+	inventoryTake(inventory, originatingEntity, quiet, onEach) {
 		let found = [];
-		new Picker(level).pickLoot( lootString, loot=>{
-			loot.giveTo( this, this.x, this.y);
-			itemList.push(loot);
-			if( onEach ) { onEach(loot); }
-			found.push(mObject|mA|mList|mBold,loot);
+		Object.each( inventory, item => {
+			item.giveTo( this, this.x, this.y);
+			if( onEach ) { onEach(item); }
+			found.push(mObject|mA|mList|mBold,item);
 		});
-		if( !quiet || this.inVoid ) {
+		if( !quiet && !this.inVoid ) {
 			let description = [
 				mSubject,this,' ',mVerb,'find',' '
 			].concat( 
@@ -1167,6 +1162,19 @@ class Entity {
 			);
 			tell(...description);
 		}
+	}
+
+	lootGenerate( lootString, level ) {
+		let itemList = [];
+		new Picker(level).pickLoot( lootString, item=>{
+			itemList.push(item);
+		});
+		return itemList;
+	}
+
+	lootTake( lootString, level, originatingEntity, quiet, onEach ) {
+		let itemList = this.lootGenerate( lootString, level );
+		this.inventoryTake(itemList, originatingEntity, quiet, onEach);
 		return itemList;
 	}
 	
@@ -1183,7 +1191,9 @@ class Entity {
 				tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
 				return;
 			}
-			this.lootTake( corpse.loot, corpse.level, corpse );
+			let inventory = corpse.inventory || [];
+			inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
+			this.inventoryTake( inventory, corpse, false );
 			item.destroy();
 			return;
 		}
@@ -1202,7 +1212,7 @@ class Entity {
 					return false;
 				}
 				// In theory we could generate a certain ammot type, if this weapon isn't specifying a particular item type.
-				let ammoList = this.lootTake( weapon.ammoType, this.level, this, true );
+				let ammoList = this.lootTake( 'weapon '+weapon.ammoType, this.level, this, true );
 				console.assert(ammoList[0]);
 				ammoList[0].breakChance = 100;	// avoid generating heaps of whatever is being used for ammo!
 				return ammoList[0];
@@ -1315,8 +1325,11 @@ class Entity {
 
 		// Attack enemies or neutrals
 		if( f.count && attackAllowed && (this.isMyEnemy(f.first) || this.isMyNeutral(f.first)) ) {
-			this.attack(f.first,weapon);
-			return "attack";
+			weapon = weapon || this.calcDefaultWeapon();
+			if( weapon.mayShoot ) {
+				return this.shoot(weapon,f.first) ? 'shoot' : 'miss';
+			}
+			return this.attack(f.first,weapon,false) ? 'attack' : 'miss';
 		}
 		else
 		// Switch with friends, else bonk!
@@ -1382,7 +1395,7 @@ class Entity {
 			this.onMove.call(this,x,y);
 		}
 
-		if( this.picksup ) {
+		if( this.brainPicksup ) {
 			let f = this.map.findItem().at(x,y).filter( item => item.mayPickup!==false );
 			for( let item of f.all ) {
 				this.pickup(item);

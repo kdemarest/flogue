@@ -175,6 +175,7 @@ const StickerList = {
 
 // Probably should do this at some point.
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
+const RANGED_WEAPON_DEFAULT_RANGE = 7;
 let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.10;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
 let DEFAULT_EFFECT_DURATION = 10;
 let ARMOR_SCALE = 100;
@@ -299,12 +300,6 @@ const TileTypeList = {
 	"forcefield": { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 1, name: "force field", light: 3, glow:1, img: "spells/air/static_discharge.png" },
 };
 
-function resolve(memberName) {
-	if( typeof this[memberName] == 'function' ) {
-		this[memberName] = this[memberName].apply(this,memberName);
-	}
-}
-
 const ItemTypeDefaults = {
 	namePattern: 'nameless *',
 	mayWalk: true, mayFly: true, opacity: 0,
@@ -339,9 +334,9 @@ const ImgPotion = {
 
 const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
-	'eRegeneration','eFire','ePoison','eCold','eAcid','eHoly','eRot'].includes(k) );
+	'eRegeneration','eFire','ePoison','eCold','eAcid'].includes(k) );
 const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStun','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
-	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRage','ePanic','eConfusion','eShove'].includes(k) );
+	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRot','eRage','ePanic','eConfusion','eShove'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration','eResistance','eGreed'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
 const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eResistance'].includes(k) );
@@ -353,12 +348,12 @@ const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStar
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponList = Fab.add( '', {
-	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: 7, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },
+	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },
 	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80,
 					effectAlwaysFires: true, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
 	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
 	"bow": 	    	{ level:  0, rarity: 1.0, damageMultiplier: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
-					mayShoot: true, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
+					mayShoot: true, range: RANGED_WEAPON_DEFAULT_RANGE, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
 	"dagger":   	{ level:  3, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
 	"solKnife":   	{ level:900, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
 	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
@@ -624,8 +619,6 @@ let Tweak = {
 	effectChance: 1.0
 };
 
-const RANGED_WEAPON_DEFAULT_RANGE = 7;
-
 const ARMOR_EFFECT_CHANCE_TO_FIRE = 10;
 const ARMOR_EFFECT_OP_ALWAYS = ['damage'];
 const ARMOR_EFFECT_DAMAGE_PERCENT = 10;
@@ -672,16 +665,16 @@ const ItemTypeList = {
 	"coin": 	{ symbol: '$', namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true,
 				isTreasure: 1, img: "item/misc/gold_pile.png", icon: 'coin.png' },
 	"potion":   { symbol: 'p', isTreasure: 1, namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
-				effectChance: 1.0, isPotion: true,
+				effectChance: 1.0, isPotion: true, range: RANGED_WEAPON_DEFAULT_RANGE,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
 				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: ImgPotion, icon: 'potion.png' },
 	"spell":    { symbol: 's', isTreasure: 1, namePattern: 'spell{?effect}', rechargeTime: 10, effects: SpellEffects,
-				effectChance: 1.0, isSpell: true,
+				effectChance: 1.0, isSpell: true, range: RANGED_WEAPON_DEFAULT_RANGE,
 				img: "item/scroll/scroll.png", icon: 'spell.png' },
 	"ore": 		{ symbol: 'o', isTreasure: 1, namePattern: '{variety}', varieties: OreList, isOre: true,
 				imgGet: (self,img) => "ore/"+(img || self.variety.img || "ore")+".png", imgChoices: OreList, icon: 'ore.png' },
 	"gem": 		{ symbol: "g", isTreasure: 1, namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
-				effectChance: 0.20, mayThrow: 1, mayTargetPosition: 1, autoCommand: Command.USE,
+				effectChance: 0.20, mayThrow: 1, range: RANGED_WEAPON_DEFAULT_RANGE, mayTargetPosition: 1, autoCommand: Command.USE,
 				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5, icon: 'gem.png' },
 	"weapon": 	{ symbol: 'w', isTreasure: 1, namePattern: '{material} {variety}{?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
 				useVerb: 'weild', mayTargetPosition: true,
@@ -816,6 +809,7 @@ const MonsterTypeList = {
 		attitude: Attitude.CALM,
 		brain: Brain.USER,
 		brainOpensDoors: true,
+		brainPicksup: true,
 		brainTalk: true,
 		inventoryLoot: '',
 		inventoryWear: '',
@@ -824,7 +818,6 @@ const MonsterTypeList = {
 		jumpMax: 1,
 		light: 4,
 		neverPick: true,
-		picksup: true,
 		regenerate: 0.01,
 		sightDistance: MaxSightDistance,
 		strictAmmo: true
@@ -850,7 +843,7 @@ const MonsterTypeList = {
 		isSunChild: true,
 		isDwarf: true,
 		isNamed: true,
-		inventoryLoot: '', //'30x 100% stuff',
+		inventoryLoot: '10x 100% stuff, potion.healing, 20% potion.eFire',
 		properNoun: true,
 		packAnimal: true
 	},
@@ -908,6 +901,7 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: ['eShove',DamageType.BURN,Attitude.PANICKED].join(','),
+		inventoryLoot: 'spell.eFire, spell.eRot, spell.ePoison',
 		isDemon: true,
 		isLarge: true,
 		sayPrayer: 'I shall rule this planet!',
@@ -920,6 +914,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		immune: DemonImmunity,
 		isDemon: true,
+		lootInventory: 'weapon.dart.eFire',
 		loot: '30% coin, 50% potion.eFire, 30% demonScale, 20% pitchfork, 30% demonEye',
 		packAnimal: true,
 		resist: DemonResistance,
@@ -954,6 +949,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
+		inventoryLoot: '3x potion.eFire',
 		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 20% any, 30% pinchOfEarth',
 		packAnimal: true,
 		sayPrayer: 'Oh mighty Thagzog...'
@@ -965,6 +961,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
+		lootInventory: 'weapon.axe',
 		loot: '50% coin, 80% weapon.sword, 20% weapon.club, 30% pinchOfEarth',
 		sayPrayer: 'Oh warrior Thagzog...'
 	},
@@ -975,6 +972,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
+		lootInventory: 'weapon.axe',
 		loot: '50% coin, 80% weapon.mace, 30% pinchOfEarth',
 		sayPrayer: 'Oh mutant Thagzog...'
 	},
@@ -985,6 +983,7 @@ const MonsterTypeList = {
 		glow: 1,
 		immune: DamageType.BURN,
 		isDemon: true,
+		lootInventory: '3x weapon.dart.eFire',
 		loot: '30% potion.eFire, 30% impBrain',
 		senseInvisible: true,
 		travelMode: "fly",
@@ -996,6 +995,7 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		dodge: 1,
+		inventoryLoot: '3x potion.eFire',
 		isEarthChild: true,
 		loot: '50% coin, 50% weapon.dart, 30% weapon.dagger, 30% dogCollar',
 		packAnimal: true
@@ -1005,6 +1005,7 @@ const MonsterTypeList = {
 		name: "ogre child",
 		brainTalk: true, 
 		isEarthChild: true,
+		lootInventory: 'weapon.rock',
 		loot: '50% weapon.club, 20% ogreDrool',
 		resist: DamageType.CUT,
 		speed: 0.75
@@ -1060,6 +1061,7 @@ const MonsterTypeList = {
 		dark: 12,
 		immune: ShadowImmunity,
 		isUndead: true,
+		isSkeleton: true,
 		loot: '50% darkEssence, 20% potion.eBlindness',
 		speed: 0.75,
 		vuln: ['silver',DamageType.SMITE].join(',')
@@ -1068,6 +1070,16 @@ const MonsterTypeList = {
 		core: [ SYM, 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		immune: SkeletonImmunity,
 		isUndead: true,
+		isSkeleton: true,
+		loot: '50% bones, 50% skull',
+		vuln: 'silver'+','+DamageType.SMITE
+	},
+	"skeletonArcher": {
+		core: [ SYM, 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		immune: SkeletonImmunity,
+		inventoryLoot: 'weapon.bow',
+		isUndead: true,
+		isSkeleton: true,
 		loot: '50% bones, 50% skull',
 		vuln: 'silver'+','+DamageType.SMITE
 	},
@@ -1075,6 +1087,7 @@ const MonsterTypeList = {
 		core: [ SYM, 13, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
 		name: 'ogre skeleton',
 		immune: SkeletonImmunity,
+		inventoryLoot: '50% spell.eRot',
 		isUndead: true,
 		isLarge: true,
 		loot: '50% bones, 50% skull',
@@ -1113,6 +1126,7 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
+		inventoryLoot: '3x 50% potion.eCold',
 		isLunarChild: true,
 		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
@@ -1124,6 +1138,7 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
+		inventoryLoot: 'spell.eCold',
 		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
 		travelType: 'fly',

@@ -621,6 +621,7 @@ PlaceTypeList.goblinGathering = {
 	monsterTypes: {
 		goblinPriest: { basis: 'goblin', name: "goblin priest", damage: '2d6+2', damageType: DamageType.ROT, isGoblin: true,
 						attitude: Attitude.WORSHIP, shout: 'Death to all heretic overworld invaders!',
+						inventoryLoot: 'spell.eRot',
 						img: "dc-mon/gnoll.png" }
 	},
 	inject: {

@@ -51,7 +51,7 @@ ConfigList.ken = () => {
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
-		monsters: 	['isOgre','isGoblin']
+		monsters: 	['isSkeleton']
 
 	}
 
@@ -67,7 +67,7 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 1,
+		startingDepth: 4,
 		themeId: 'kenTheme'
 	}
 }
