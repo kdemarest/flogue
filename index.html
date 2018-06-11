@@ -91,6 +91,15 @@ function tick(speed,map,entityList) {
 		}
 	}
 
+	function tickNaturalWeapons(entity,dt) {
+		if( entity.naturalWeapon && entity.naturalWeapon.rechargeLeft > 0 ) {
+			entity.naturalWeapon.rechargeLeft = Math.max(0,entity.naturalWeapon.rechargeLeft-1);
+		}
+		if( entity.rangedWeapon && entity.rangedWeapon.rechargeLeft > 0 ) {
+			entity.rangedWeapon.rechargeLeft = Math.max(0,entity.rangedWeapon.rechargeLeft-1);
+		}
+	}
+
 	function checkDeaths(entityList) {
 		Array.filterInPlace( entityList, entity => {
 			if( entity.isDead() ) {
@@ -119,6 +128,7 @@ function tick(speed,map,entityList) {
 			entity.think();
 			entity.act();
 			tickItemList(entity.inventory,dt,map,entityList);
+			tickNaturalWeapons(entity,dt);
 			DeedManager.calc(entity);
 			entity.actionCount -= 1;
 		}

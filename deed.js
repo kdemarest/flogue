@@ -306,6 +306,14 @@ let effectApplyTo = function(effect,target,source,item) {
 
 	// Note that rechargeTime CAN NOT be in the effect, because we're only dealing with a
 	// copy of the effect. There is no way for the change to rechargeTime to get back to the original effect instance.
+	if( item && item.ammoOf ) {
+		let weapon = item.ammoOf;
+		if( weapon && weapon.rechargeTime !== undefined ) {
+			weapon.rechargeLeft = weapon.rechargeTime;
+		}
+		item.ammoOf = null;
+	}
+
 	if( item && item.rechargeTime !== undefined ) {
 		item.rechargeLeft = item.rechargeTime;
 	}
@@ -340,5 +348,5 @@ DeedManager.addHandler('damage',function() {
 	this.target.takeDamage(this.source,this.item,this.value,this.damageType,this.onAttack);
 });
 DeedManager.addHandler('shove',function() {
-	this.target.takeShove(this.source,this.value);
+	this.target.takeShove(this.source,this.item,this.value);
 });

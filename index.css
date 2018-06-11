@@ -141,6 +141,10 @@ body {
 	color: black;
 	background-color: orange;
 }
+.shieldBonus {
+	color: black;
+	background-color: orange;
+}
 .guiInventory {
 	display: none;
 	z-index: 10;

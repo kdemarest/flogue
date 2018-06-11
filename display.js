@@ -110,6 +110,7 @@ function createDrawList(observer,map,entityList,asType) {
 
 			if( inBounds ) {
 				tile =		map.tileTypeGet(x,y);
+				console.assert(tile);
 				item =      q[y*map.xLen+x];
 				entity =    p[y*map.xLen+x];
 				if( !tile.isTileType ) {

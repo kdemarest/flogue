@@ -146,6 +146,8 @@ class ViewInfo {
 		let s = "";
 		s += "Health: "+entity.health+" of "+entity.healthMax+"\n";
 		s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R\n";
+		let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
+		s += "Shield: "+(entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block\n";
 		let weapon = entity.calcDefaultWeapon();
 		s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"\n";
 		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travel+'ing</b>' : entity.travelMode+'ing'))+'\n';

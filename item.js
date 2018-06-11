@@ -8,7 +8,7 @@ class Item {
 			// ERROR: you should do your own item picking, and provide presets!
 			debugger;
 		}
-		let ignore = { level:1, rarity:1, armorMultiplier:1, missChance: 1, damageMultiplier:1, name:1, namePattern:1, ingredientId:1, type:1, typeId:1 };
+		let ignore = { level:1, rarity:1, armorMultiplier:1, blockChance: 1, damageMultiplier:1, name:1, namePattern:1, ingredientId:1, type:1, typeId:1 };
 		function merge(target,source) {
 			if( !source ) { return; }
 			for( let key in source ) {
@@ -34,7 +34,7 @@ class Item {
 		if( this.rechargeTime ) this.rechargeTime 	= picker.pickRechargeTime(this);
 		if( this.isArmor )		this.armor 			= picker.pickArmorRating(this.level,this,this.material,this.variety,this.quality,this.effect);
 		if( this.isShield )		this.armor 			= picker.pickArmorRating(this.level,this,this.material,this.variety,this.quality,this.effect);
-		if( this.isShield )		this.missChance		= picker.pickMissChance(this.level,this,this.material,this.variety,this.quality,this.effect);
+		if( this.isShield )		this.blockChance	= picker.pickBlockChance(this.level,this,this.material,this.variety,this.quality,this.effect);
 		if( this.isWeapon )		this.damage 		= picker.pickDamage(this.rechargeTime,this,this.material,this.variety,this.quality,this.effect);
 		if( this.isGold )		this.goldCount  	= picker.pickGoldCount();
 		if( this.effect ) 		this.effect 		= picker.assignEffect(this.effect,this,this.rechargeTime);

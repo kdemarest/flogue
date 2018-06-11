@@ -225,7 +225,7 @@ class Map extends SimpleMap {
 	}
 
 	pickPosEmpty() {
-		let pos = this.pickPosBy(0,0,0,0,(x,y,type)=>type.isFloor);
+		let pos = this.pickPosBy(0,0,0,0,(x,y,type)=>type && type.isFloor);
 		return pos;
 	}
 	pickDirWalkable(x,y) {
@@ -249,7 +249,8 @@ class Map extends SimpleMap {
 		do {
 			x += DirectionAdd[dir].x;
 			y += DirectionAdd[dir].y;
-			if( fn(x,y,this.tileTypeGet(x,y)) ) {
+			let tile = this.tileTypeGet(x,y);
+			if( tile && fn(x,y,tile) ) {
 				return [x,y];
 			}
 			remain -= 1;
@@ -265,7 +266,8 @@ class Map extends SimpleMap {
 	itemCreateByType(x,y,type,presets,inject) {
 		if( x===undefined ) debugger;
 		if( type.isRandom ) debugger;
-		if( !this.tileTypeGet(x,y).mayWalk ) {
+		let tile = this.tileTypeGet(x,y);
+		if( !tile || !tile.mayWalk ) {
 			let dir = this.pickDirWalkable(x,y);
 			if( dir !== false ) {
 				x += DirectionAdd[dir].x;

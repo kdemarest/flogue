@@ -19,6 +19,7 @@ class Entity {
 		}
 		let rangedWeapon = monsterType.rangedWeapon;
 		if( rangedWeapon ) {
+			rangedWeapon = Object.assign( {}, rangedWeapon );
 			rangedWeapon.isNatural = true;
 			rangedWeapon.range = rangedWeapon.range || RANGED_WEAPON_DEFAULT_RANGE;
 			rangedWeapon.mayShoot = true;
@@ -355,6 +356,7 @@ class Entity {
 
 		let self = this;
 		let curTile = this.map.tileTypeGet(this.x,this.y);
+		console.assert(curTile);
 
 		let mayTravel = 'may'+String.capitalize(travelMode || "walk");
 
@@ -375,7 +377,7 @@ class Entity {
 
 		// Am I colliding with a tile?
 		let tile = this.map.tileTypeGet(x,y);
-		if( collide(tile) ) {
+		if( tile && collide(tile) ) {
 			return tile;
 		}
 
@@ -387,6 +389,9 @@ class Entity {
 	}
 
 	mayEnter(x,y,avoidProblem) {
+		if( !this.map.inBounds(x,y) ) {
+			return false;
+		}
 		let type = this.findFirstCollider(this.travelMode,x,y);
 		if( type ) {
 			return false;
@@ -686,6 +691,14 @@ class Entity {
 		}
 	}
 
+	calcShieldBlockChance(damageType,isRanged,shieldBonus) {
+		if( !isRanged ) return 0;
+		let shield = this.getFirstItemInSlot(Slot.SHIELD);
+		if( !shield ) return 0;
+		let blockChance = shield.blockChance + (shieldBonus=='stand' ? 0.50 : 0);
+		return blockChance;
+	}
+
 	calcReduction(damageType,isRanged) {
 		let is = (isRanged ? 'isShield' : 'isArmor');
 		let f = new Finder(this.inventory).filter( item=>item.inSlot && item[is] );
@@ -766,10 +779,10 @@ class Entity {
 
 		let shield = this.getFirstItemInSlot(Slot.SHIELD);
 		let isShielded = false;
-		if( shield && shield.missChance && Math.chance(shield.missChance*100) ) {
+		let blockChance = this.calcShieldBlockChance(damageType,isRanged,this.shieldBonus);
+		if( Math.chance(blockChance*100) ) {
 			amount = 0;
-			isShielded = true;
-			
+			isShielded = true;			
 		}
 
 		// Now resistance.
@@ -788,7 +801,7 @@ class Entity {
 				amount = Math.max(1,Math.floor(amount*0.5));
 			}
 		}
-		
+
 		if( attacker && attacker.invisible ) {
 			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: false };
 			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
@@ -961,12 +974,10 @@ class Entity {
 		}
 	}
 
-	takeShove(attacker,distance) {
-		if( attacker.isItemType ) {
-			attacker = attacker.ownerOfRecord || attacker;
-		}
-		let dx = Math.sign(this.x-attacker.x);
-		let dy = Math.sign(this.y-attacker.y);
+	takeShove(attacker,item,distance) {
+		let source = attacker || item.ownerOfRecord;
+		let dx = Math.sign(this.x-source.x);
+		let dy = Math.sign(this.y-source.y);
 		if( dx==0 && dy==0 ) {
 			debugger;
 			return;
@@ -1030,7 +1041,7 @@ class Entity {
 			weaponList.prepend(this.rangedWeapon);
 		}
 		// We now have a roster of all possible weapons. Eliminate those that are not charged.
-		weaponList.filter( item => !item.rechargeTime || item.rechargeLeft<=0 );
+		weaponList.filter( item => !item.rechargeLeft );
 		// Any finally, do not bother using weapons that can not harm the target.
 		weaponList.filter( item => {
 			// WARNING! This does not check all possible immunities, like mental attack! Check the effectApply() function for details.
@@ -1218,7 +1229,8 @@ class Entity {
 	shotClear(sx,sy,tx,ty) {
 		let self = this;
 		function test(x,y) {
-			return self.map.tileTypeGet(x,y).mayFly;
+			let tile = self.map.tileTypeGet(x,y);
+			return tile && tile.mayFly;
 		}
 		return shootRange(sx,sy,tx,ty,test);
 	}
@@ -1237,6 +1249,7 @@ class Entity {
 			ammo = item;
 		}
 		else {
+			ammo.ammoOf = item;
 			this.generateEffectOnAttack(ammo,item);
 			ammo.giveTo(this.map,target.x,target.y);
 		}
@@ -1260,6 +1273,7 @@ class Entity {
 			return;
 		}
 		this.tileTypeLast = this.map.tileTypeGet(this.x,this.y);
+		console.assert(this.tileTypeLast);
 		this.x = x;
 		this.y = y;
 		// This just makes sure that items have coordinates, for when they're the root of things.
@@ -1314,7 +1328,9 @@ class Entity {
 		let xOld = this.x;
 		let yOld = this.y;
 		let tileTypeHere = this.map.tileTypeGet(xOld,yOld);
+		console.assert(tileTypeHere);
 		let tileType = this.map.tileTypeGet(x,y);
+		console.assert(tileType);
 
 		// Does this tile type always do something to you when you depart any single instance of it?
 		if( tileTypeHere.onDepart ) {
@@ -1366,12 +1382,13 @@ class Entity {
 				}
 				this.loseTurn = false;
 				let tileType = this.map.tileTypeGet(this.x,this.y);
-				if( tileType.onTouch ) {
+				if( tileType && tileType.onTouch ) {
 					tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
 				}
 				break;
 			}
 			case Command.WAIT: {
+				this.shieldBonus = 'stand';
 				if( this.brain == 'user' ) {
 					tell(mSubject,this,' ',mVerb,'wait','.');
 				}
@@ -1424,6 +1441,7 @@ class Entity {
 				break;
 			}
 			case Command.DROP: {
+				this.shieldBonus = 'stand';
 				let item = this.commandItem;
 				let type = this.findFirstCollider('walk',this.x,this.y);
 				if( type !== null ) {
@@ -1435,6 +1453,7 @@ class Entity {
 				break;
 			}
 			case Command.QUAFF: {
+				this.shieldBonus = 'stand';
 				let item = this.commandItem;
 				item.x = this.x;
 				item.y = this.y;
@@ -1443,6 +1462,7 @@ class Entity {
 				break;
 			}
 			case Command.GAZE: {
+				this.shieldBonus = 'stand';
 				let item = this.commandItem;
 				item.x = this.x;
 				item.y = this.y;
@@ -1523,7 +1543,11 @@ class Entity {
 
 
 		let priorTileType = this.map.tileTypeGet(this.x,this.y);
+		console.assert(priorTileType);
 
+		if( timePasses ) {
+			this.shieldBonus = '';
+		}
 
 		if( commandToDirection(this.command) !== false ) {
 			this.moveDir(dir,this.commandItem);
@@ -1534,6 +1558,7 @@ class Entity {
 
 		if( timePasses ) {
 			let tileType = this.map.tileTypeGet(this.x,this.y);
+			console.assert(tileType);
 
 			if( this.jumpMax ) {
 				if( this.travelMode == 'walk' && tileType.mayJump && (this.jump || !priorTileType.mayJump) ) {

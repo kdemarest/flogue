@@ -126,8 +126,8 @@ class Picker {
 			if( !filter.testMembers(item) ) continue;
 			let effectArray = Object.values(item.effects || one);
 			if( item.effects ) {
-				Array.filterInPlace( effectArray, e=>e.typeId!='inert' );
-				effectArray.push( { typeId: 'inert', name: 'inert', level: 0, rarity: 0, isInert: 1 } );
+				Array.filterInPlace( effectArray, e=>e.typeId!='eInert' );
+				effectArray.push( { typeId: 'eInert', name: 'inert', level: 0, rarity: 0, isInert: 1 } );
 			}
 
 			for( let vi in item.varieties || one ) {
@@ -155,7 +155,7 @@ class Picker {
 							let appear = Math.chanceToAppearSigmoid(level,depth);
 							let rarity = (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
 							if( rarity ) rarity = rarity + (1-Math.clamp(rarity,0,1)) * Math.min(depth*0.01,1.0);
-							if( ei == 'inert' ) {
+							if( ei == 'eInert' ) {
 								rarity = effectChance<=0 ? 100000 : (rarityTotal / effectChance)-rarityTotal;	// if div by zero, fix the item type list!
 								// Use the .max here because, what if ALL other entities have a 'never appear' level problem?
 								appear = appearTotal / (effectArray.length-1);	// an average
@@ -289,13 +289,13 @@ class Picker {
 		if( isNaN(baseArmor) ) debugger;
 		return Math.floor(baseArmor*ARMOR_SCALE);
 	}
-	pickMissChance(level,i,m,v,q,e) {
+	pickBlockChance(level,i,m,v,q,e) {
 		let mc = 1;
-		if( i && i.missChance ) mc *= 1+i.missChance;
-		if( m && m.missChance ) mc *= 1+m.missChance;
-		if( v && v.missChance ) mc *= 1+v.missChance;
-		if( q && q.missChance ) mc *= 1+q.missChance;
-		if( e && e.missChance ) mc *= 1+e.missChance;
+		if( i && i.blockChance ) mc *= 1+i.blockChance;
+		if( m && m.blockChance ) mc *= 1+m.blockChance;
+		if( v && v.blockChance ) mc *= 1+v.blockChance;
+		if( q && q.blockChance ) mc *= 1+q.blockChance;
+		if( e && e.blockChance ) mc *= 1+e.blockChance;
 		mc = Math.clamp(mc,0,0.5);	// I'm arbitrarily capping miss chance at 50%
 		console.assert(mc>=0 && level>=0);
 		return mc;

@@ -184,6 +184,7 @@ const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH:
 const EffectShape = { SINGLE: "single", SMALL: "small", MEDIUM: "medium", LARGE: "large" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
 const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
+const ShieldBlocks = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP,DamageType.BURN,DamageType.FREEZE,DamageType.CORRODE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
 const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", AWAIT: "await", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm", WORSHIP: "worshipping" };
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
 const Job = { SMITH: "smith" };
@@ -383,11 +384,11 @@ const WeaponMaterialList = Fab.add( '', {
 const ShieldList = Fab.add( '', {
 	// We should consider making shields not just useful at range, but also maybe they have a chance to intercept incoming
 	// damage and simply halt it. A miss chance.
-	"buckler":     	{ level:  0, rarity: 1.0, armorMultiplier: 0.70, missChance: 0.10 },
-	"targe":     	{ level:  5, rarity: 1.0, armorMultiplier: 0.80, missChance: 0.15 },
-	"heater":     	{ level: 10, rarity: 1.0, armorMultiplier: 0.90, missChance: 0.20 },
-	"kite":     	{ level: 15, rarity: 1.0, armorMultiplier: 1.00, missChance: 0.25 },
-	"pavise":     	{ level: 20, rarity: 1.0, armorMultiplier: 1.20, missChance: 0.30 },
+	"buckler":     	{ level:  0, rarity: 1.0, armorMultiplier: 0.70, blockChance: 0.10 },
+	"targe":     	{ level:  5, rarity: 1.0, armorMultiplier: 0.80, blockChance: 0.15 },
+	"heater":     	{ level: 10, rarity: 1.0, armorMultiplier: 0.90, blockChance: 0.20 },
+	"kite":     	{ level: 15, rarity: 1.0, armorMultiplier: 1.00, blockChance: 0.25 },
+	"pavise":     	{ level: 20, rarity: 1.0, armorMultiplier: 1.20, blockChance: 0.30 },
 });
 
 const ArmorList = Fab.add( '', {
@@ -1014,7 +1015,7 @@ const MonsterTypeList = {
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speed: 0.5,
-		rangedWeapon: { hitsToKillPlayer: 3, ammoType: 'weapon.rock', damageType: DamageType.BASH }
+		rangedWeapon: { rechargeTime: 2, hitsToKillPlayer: 3, ammoType: 'weapon.rock.eInert', damageType: DamageType.BASH }
 	},
 	"redOoze": {
 		core: [ SYM, 1, '2:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
