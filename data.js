@@ -211,7 +211,7 @@ let EffectTypeList = {
 	eLuminari: 		{ isTac: 1, level:  null, rarity: 1.00, op: 'add', stat: 'light', value: 3, durationMod: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
 //	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },
 	eGreed: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseItems', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'greed', icon: 'gui/icons/eVision.png' },
-	echoloc: 		{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseLife', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'bat sense', icon: 'gui/icons/eVision.png' },
+	eEcholoc: 		{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseLife', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'bat sense', icon: 'gui/icons/eVision.png' },
 	eSeeInvisible: 	{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, durationMod: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
 	eXray: 			{ isTac: 1, level:  null, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'earth vision', icon: 'gui/icons/eVision.png' },
 // Buff
@@ -329,7 +329,7 @@ const ImgPotion = {
 	eBlindness: 	{ img: "black" },
 	eXray: 			{ img: "white" },
 	eGreed: 		{ img: "white" },
-	echoloc: 		{ img: "white" },
+	eEcholoc: 		{ img: "white" },
 	eLuminari: 		{ img: "white" },
 	eVuln: 			{ img: "black" },
 	eResistance: 	{ img: "yellow" },
@@ -337,10 +337,10 @@ const ImgPotion = {
 };
 
 
-const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eLuminari','eGreed','echoloc','eSeeInvisible','eXray','eFlight',
+const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
 	'eRegeneration','eFire','ePoison','eCold','eAcid','eHoly','eRot'].includes(k) );
-const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStartle','eHesitate','eBlindness','eLuminari','eXray','echoloc',
+const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
 	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRage','ePanic','eConfusion','eShove'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration','eResistance','eGreed'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
@@ -350,7 +350,7 @@ const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneratio
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
 const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','eHesitate','ePoison','eFire','eCold','eBlindness','eSlow','eVuln'].includes(k) );
-const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','echoloc','eSeeInvisible'].includes(k) );
+const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponList = Fab.add( '', {
 	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: 7, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },

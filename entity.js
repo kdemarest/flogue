@@ -3,7 +3,8 @@
 //
 class Entity {
 	constructor(depth,monsterType,inject) {
-		let level = depth;
+		// Use the average!
+		let level = (depth+monsterType.level) / 2;
 		let inits =    { inVoid: true, inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
 		let values =   { id: GetUniqueEntityId(monsterType.typeId,level) };
 
