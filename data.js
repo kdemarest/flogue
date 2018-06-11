@@ -2,7 +2,8 @@
 
 // WARNING: The strings for directions MUST remain the same for commandToDirection() to work.
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
-				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", LOSETURN: "lose turn", PRAY: "pray",
+				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", SHOOT: "shoot",
+				LOSETURN: "lose turn", PRAY: "pray",
 				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop",
 				DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGVIEW: "debugview", DEBUGANIM: "debuganim", DEBUGTEST: "debugtest",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit",
@@ -47,6 +48,11 @@ function deltasToDirNatural(dx,dy) {
 
 let MIN_DEPTH = 0;
 let MAX_DEPTH = 99;
+// If you change this, you must also chance the .css class .tile
+let TILE_DIM = 48;
+let MaxSightDistance = 8;
+
+let STANDARD_MONSTER_SIGHT_DISTANCE = 6;
 let TILE_UNKNOWN = ' ';		// reserved so that map creation can look sane.
 let SymbolToType = {};
 let TypeIdToSymbol = {};
@@ -170,16 +176,18 @@ const StickerList = {
 // Probably should do this at some point.
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
 let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.10;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
+let DEFAULT_CHANCE_AMMO_BREAKS = 50;
 let DEFAULT_EFFECT_DURATION = 10;
 let ARMOR_SCALE = 100;
 
 const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
 const EffectShape = { SINGLE: "single", SMALL: "small", MEDIUM: "medium", LARGE: "large" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
+const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
 const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", AWAIT: "await", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm", WORSHIP: "worshipping" };
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
 const Job = { SMITH: "smith" };
-const Slot = { HEAD: "head", NECK: "neck", ARMS: "arms", HANDS: "hands", FINGERS: "fingers", WAIST: "waist", HIP: "hip", FEET: "feet", ARMOR: "armor", WEAPON: "weapon", SHEILD: "shield" };
+const Slot = { HEAD: "head", NECK: "neck", ARMS: "arms", HANDS: "hands", FINGERS: "fingers", WAIST: "waist", HIP: "hip", FEET: "feet", ARMOR: "armor", WEAPON: "weapon", AMMO: "ammo", SHIELD: "shield" };
 const HumanSlotLimit = { head: 1, neck: 1, arms: 1, hands: 1, fingers: 2, waist: 1, hip: 1, feet: 1, armor: 1, weapon: 1, shield: 1 };
 const PickIgnore = ['mud','forceField'];
 const PickVuln   = [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
@@ -209,6 +217,7 @@ let EffectTypeList = {
 	eFlight: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode,
 					additionalDoneTest: (self) => { return self.target.map.tileTypeGet(self.target.x,self.target.y).mayWalk; }, icon: 'gui/icons/eFly.png' },
 	eJump2: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'set', stat: 'jumpMax', value: 2, isHelp: 1, icon: 'gui/icons/eHaste.png' },
+	eJump3: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'set', stat: 'jumpMax', value: 3, isHelp: 1, icon: 'gui/icons/eHaste.png' },
 	eHaste: 		{ isBuf: 1, level: 10, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5, icon: 'gui/icons/eHaste.png' },
 	eResistance: 	{ isBuf: 1, level: 20, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickResist), isHelp: 1, namePattern: 'resist {value}s', icon: 'gui/icons/eResist.png' },
@@ -267,7 +276,7 @@ EffectTypeList.eCold.onTargetPosition = function(map,x,y) {
 const TileTypeList = {
 	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", isFloor: true },
 	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", isWall: true },
-	"pit":        { symbol: ':', mayWalk: false, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, wantsBridge: true, img: "dc-dngn/pit.png" },
+	"pit":        { symbol: ':', mayWalk: true, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, wantsBridge: true, img: "dc-dngn/pit.png" },
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", isDoor: 1, img: "dc-dngn/dngn_open_door.png" },
 	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", isDoor: 1, img: "dc-dngn/dngn_closed_door.png" },
 	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, opacity: 0, mayJump: true, wantsBridge: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
@@ -278,7 +287,7 @@ const TileTypeList = {
 					effect: { op: 'damage', valueDamage: 1.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "dc-mon/nonliving/fire_elemental.png" },
 	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, mayJump: true, name: "lava", light: 5, glow:1, 
 					effect: { op: 'damage', valueDamage: 3.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
-	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", img: "effect/cloud_grey_smoke.png", layer: 3 },
+	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.3, name: "mist", zOrder: 20, img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, mayJump: true, name: "mud", img: "dc-dngn/floor/dirt0.png" },
 	"ghostStone": { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
 					effect: { op: 'set', stat: 'invisible', value: true } },
@@ -287,7 +296,6 @@ const TileTypeList = {
 	"crystal":    { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png",
 					effect: { op: 'add', stat: 'speed', value: 3 } },
 	"forcefield": { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 1, name: "force field", light: 3, glow:1, img: "spells/air/static_discharge.png" },
-	"brazier":    { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" }
 };
 
 function resolve(memberName) {
@@ -339,13 +347,16 @@ const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eShove','eA
 const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari'].includes(k) );
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
-const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
+const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
 const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','eHesitate','ePoison','eFire','eCold','eBlindness','eSlow','eVuln'].includes(k) );
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','echoloc','eSeeInvisible'].includes(k) );
 
 const WeaponList = Fab.add( '', {
-	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: 7, attackVerb: 'strike', img: 'item/weapon/ranged/rock.png' },
-	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
+	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: 7, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },
+	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
+	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
+	"bow": 	    	{ level:  0, rarity: 1.0, damageMultiplier: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
+					mayShoot: true, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
 	"dagger":   	{ level:  3, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
 	"solKnife":   	{ level:900, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
 	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
@@ -370,11 +381,13 @@ const WeaponMaterialList = Fab.add( '', {
 });
 
 const ShieldList = Fab.add( '', {
-	"buckler":     	{ level:  0, rarity: 1.0 },
-	"targe":     	{ level:  5, rarity: 1.0 },
-	"heater":     	{ level: 10, rarity: 1.0 },
-	"kite":     	{ level: 15, rarity: 1.0 },
-	"pavise":     	{ level: 20, rarity: 1.0 },
+	// We should consider making shields not just useful at range, but also maybe they have a chance to intercept incoming
+	// damage and simply halt it. A miss chance.
+	"buckler":     	{ level:  0, rarity: 1.0, armorMultiplier: 0.70, missChance: 0.10 },
+	"targe":     	{ level:  5, rarity: 1.0, armorMultiplier: 0.80, missChance: 0.15 },
+	"heater":     	{ level: 10, rarity: 1.0, armorMultiplier: 0.90, missChance: 0.20 },
+	"kite":     	{ level: 15, rarity: 1.0, armorMultiplier: 1.00, missChance: 0.25 },
+	"pavise":     	{ level: 20, rarity: 1.0, armorMultiplier: 1.20, missChance: 0.30 },
 });
 
 const ArmorList = Fab.add( '', {
@@ -609,6 +622,7 @@ let Tweak = {
 	effectChance: 1.0
 };
 
+const RANGED_WEAPON_DEFAULT_RANGE = 7;
 
 const ARMOR_EFFECT_CHANCE_TO_FIRE = 10;
 const ARMOR_EFFECT_OP_ALWAYS = ['damage'];
@@ -633,6 +647,7 @@ const ItemTypeList = {
 	"bridgeEW": { symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, img: "dc-dngn/bridgeEW.png" },
 	"columnBroken": { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
 	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
+	"brazier":    { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" },
 
 	"altar":    { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
 				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.",
@@ -671,7 +686,8 @@ const ItemTypeList = {
 				effectChance: 0.05,
 				img: "item/weapon/dagger.png", icon: 'weapon.png' },
 	"shield": 	{ symbol: 'x', isTreasure: 1, namePattern: "{variety} shield{?effect}", varieties: ShieldList, effects: ShieldEffects, slot: Slot.SHIELD, isShield: true,
-				effectChance: 0.10,
+				effectChance: 0.20,
+				armorMultiplier: 0.50,
 				useVerb: 'hold', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/shields/shield3_round.png", icon: 'shield.png' },
 	"helm": 	{ symbol: 'h', isTreasure: 1, namePattern: "{variety} helm{?effect}", varieties: HelmList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
@@ -707,7 +723,7 @@ const ItemTypeList = {
 				imgGet: (self,img) => (img || (self?self.variety.img:'') || 'item/misc/misc_rune.png'), imgChoices: StuffList, icon: 'stuff.png' },
 
 };
-const ItemSortOrder = ['weapon','helm','armor','bracers','gloves','boots','ring','potion','gem','ore','spell','stuff'];
+const ItemSortOrder = ['weapon','helm','armor','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff'];
 
 // ItemBag is the top level item probability and price manager.
 // gen = the chance to generate the item. Themes can tweak this number
@@ -735,8 +751,6 @@ let ItemBag = (function() {
 })();
 
 const Brain = { AI: "ai", USER: "user" };
-let MaxSightDistance = 10;
-let STANDARD_MONSTER_SIGHT_DISTANCE = 6;
 let MaxLightValue = 15;
 let LightFullBrightDistance = 7;
 
@@ -804,13 +818,14 @@ const MonsterTypeList = {
 		inventoryLoot: '',
 		inventoryWear: '',
 		isSunChild: true,
-		isNamed: true,
+		isNamed: false,
 		jumpMax: 1,
 		light: 4,
 		neverPick: true,
 		picksup: true,
 		regenerate: 0.01,
-		sightDistance: MaxSightDistance
+		sightDistance: MaxSightDistance,
+		strictAmmo: true
 	},
 	"dog": {
 		core: [ 'd', 1, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
@@ -995,9 +1010,11 @@ const MonsterTypeList = {
 		core: [ SYM, 10, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
 		brainTalk: true,
 		isEarthChild: true,
+		isOgre: true,
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
-		speed: 0.5
+		speed: 0.5,
+		rangedWeapon: { hitsToKillPlayer: 3, ammoType: 'weapon.rock', damageType: DamageType.BASH }
 	},
 	"redOoze": {
 		core: [ SYM, 1, '2:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
@@ -1131,6 +1148,7 @@ const MonsterTypeList = {
 		core: [ SYM, 1, '1:20', 'neutral', 'bite', 'dc-mon/animals/sheep.png', 'it' ],
 		attitude: Attitude.FEARFUL,
 		isAnimal: true,
+		isSheep: true,
 		loot: '3x 50% wool',
 		packAnimal: true
 	}
@@ -1194,6 +1212,14 @@ TileTypeList.crystal.onTouch = function(entity,self) {
 		tell( mSubject,entity,' ',mVerb,'touch',' ',mObject,self,', but ',mVerb,'are',' already moving fast.');
 	}
 }
+
+TileTypeList.pit.isProblem = function(entity,self) {
+	if( entity.travelMode == 'walk' ) {
+		return 'death';
+	}
+	return 'none';
+}
+
 
 TileTypeList.pit.onTouch = function(entity,self) {
 	if( entity.travelMode == "walk" && !entity.jump ) {
@@ -1500,11 +1526,12 @@ function loadKeyMapping(name) {
 		T: Command.DEBUGTEST,
 		X: Command.DEBUGKILL,
 		a: Command.DEBUGTHRIVE,
-		s: Command.DEBUGVIEW,
+		v: Command.DEBUGVIEW,
 		z: Command.DEBUGANIM,
 		i: Command.INVENTORY,
 		q: Command.QUAFF,
 		t: Command.THROW,
+		s: Command.SHOOT,
 		d: Command.DROP,
 		c: Command.CAST,
 		F1: Command.CAST1,

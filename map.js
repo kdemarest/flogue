@@ -309,7 +309,7 @@ function shootRange(x1,y1,x2,y2,testFn,onStep) {
 	var err = dx - dy;
 
 	let ok = true;
-	onStep(x1,y1,ok);
+	if( onStep ) onStep(x1,y1,ok);
 	while (!((x1 == x2) && (y1 == y2))) {
 		var e2 = err << 1;
 		if (e2 > -dy) {
@@ -321,7 +321,7 @@ function shootRange(x1,y1,x2,y2,testFn,onStep) {
 			y1 += sy;
 		}
 		ok = ok && testFn(x1,y1);
-		onStep(x1,y1,ok);
+		if( onStep ) onStep(x1,y1,ok);
 	}
 	return ok;
 }

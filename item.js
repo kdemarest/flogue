@@ -8,7 +8,7 @@ class Item {
 			// ERROR: you should do your own item picking, and provide presets!
 			debugger;
 		}
-		let ignore = { level:1, rarity:1, armorMultiplier:1, damageMultiplier:1, name:1, namePattern:1, ingredientId:1, type:1, typeId:1 };
+		let ignore = { level:1, rarity:1, armorMultiplier:1, missChance: 1, damageMultiplier:1, name:1, namePattern:1, ingredientId:1, type:1, typeId:1 };
 		function merge(target,source) {
 			if( !source ) { return; }
 			for( let key in source ) {
@@ -33,11 +33,14 @@ class Item {
 		let picker = new Picker(this.level);
 		if( this.rechargeTime ) this.rechargeTime 	= picker.pickRechargeTime(this);
 		if( this.isArmor )		this.armor 			= picker.pickArmorRating(this.level,this,this.material,this.variety,this.quality,this.effect);
+		if( this.isShield )		this.armor 			= picker.pickArmorRating(this.level,this,this.material,this.variety,this.quality,this.effect);
+		if( this.isShield )		this.missChance		= picker.pickMissChance(this.level,this,this.material,this.variety,this.quality,this.effect);
 		if( this.isWeapon )		this.damage 		= picker.pickDamage(this.rechargeTime,this,this.material,this.variety,this.quality,this.effect);
 		if( this.isGold )		this.goldCount  	= picker.pickGoldCount();
 		if( this.effect ) 		this.effect 		= picker.assignEffect(this.effect,this,this.rechargeTime);
 
 		console.assert( !this.isArmor || this.armor >= 0 );
+		console.assert( !this.isShield || this.armor >= 0 );
 		console.assert( !this.isWeapon || this.damage >= 0 );
 		console.assert( !this.isGold || this.goldCount >= 0 );
 
@@ -61,12 +64,15 @@ class Item {
 	isRecharged() {
 		return this.rechargeTime === undefined || !this.rechargeLeft;
 	}
-	calcArmor(damageType) {
-		if( !this.isArmor ) {
+	calcReduction(damageType) {
+		if( !this.isArmor && !this.isShield ) {
 			debugger;
 			return 0;
 		}
-		if( !ArmorDefendsAgainst.includes(damageType) ) {
+		if( this.isArmor && !ArmorDefendsAgainst.includes(damageType) ) {
+			return 0;
+		}
+		if( this.isShield && !ShieldDefendsAgainst.includes(damageType) ) {
 			return 0;
 		}
 		return this.armor;
@@ -84,23 +90,24 @@ class Item {
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
 			});
 		}
+		this.rangeDuration = 0;
 		if( this.owner && !this.owner.isMap && (x!=this.owner.x || y!=this.owner.y)  ) {
 			// Show item flying to the target location
 			let dx = x-this.owner.x;
 			let dy = y-this.owner.y;
-			let throwDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / 10);
-			this.throwDuration = throwDuration;
-			this.owner.throwDuration = throwDuration;
+			let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / 10);
+			this.rangeDuration = rangeDuration;
+			this.owner.rangeDuration = rangeDuration;
 			if( this.effect ) {
-				this.effect.throwDuration = throwDuration;
+				this.effect.rangeDuration = rangeDuration;
 			}
 			spriteMakeInWorld(this,this.owner.x,this.owner.y);
 			new Anim({
 				x: 			this.owner.x,
 				y: 			this.owner.y,
-				duration: 	throwDuration,
+				duration: 	rangeDuration,
 				onInit: 		a => { a.puppet(this.spriteList); },
-				onSpriteMake: 	s => { s.sVelTo(dx,dy,throwDuration); },
+				onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
 			});
 

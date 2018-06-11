@@ -207,7 +207,7 @@ let effectApplyTo = function(effect,target,source,item) {
 				follow: 	target,
 				img: 		effect.icon || StickerList.bloodBlue.img,
 				duration: 	0.4,
-				delay: 		effect.throwDuration || 0,
+				delay: 		effect.rangeDuration || 0,
 				onInit: 		a => { a.create(1); },
 				onSpriteMake: 	s => { s.sVelTo(0,-1,0.4).sScaleSet(0.75); },
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sAlpha(1-Math.max(0,(2*s.elapsed/s.duration-1))); }
@@ -231,6 +231,7 @@ let effectApplyTo = function(effect,target,source,item) {
 		tell(mSubject,item || source || 'that',' has no effect on ',mObject,target);
 		return false;
 	}
+	// DUPLCATE CODE to the calcBestWeapon...
 	let isImmune = false;
 	isImmune = isImmune || (target.isImmune && target.isImmune(effect.typeId));
 	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
@@ -240,7 +241,7 @@ let effectApplyTo = function(effect,target,source,item) {
 			follow: 	target,
 			img: 		StickerList.showImmunity.img,
 			duration: 	0.2,
-			delay: 		effect.throwDuration || 0,
+			delay: 		effect.rangeDuration || 0,
 			onInit: 		a => { a.create(1); },
 			onSpriteMake: 	s => { s.sScaleSet(0.75); },
 			onSpriteTick: 	s => { }
@@ -263,7 +264,7 @@ let effectApplyTo = function(effect,target,source,item) {
 			follow: 	target,
 			img: 		StickerList.showResistance.img,
 			duration: 	0.2,
-			delay: 		effect.throwDuration || 0,
+			delay: 		effect.rangeDuration || 0,
 			onInit: 		a => { a.create(1); },
 			onSpriteMake: 	s => { s.sScaleSet(0.75); },
 			onSpriteTick: 	s => { }
@@ -278,7 +279,7 @@ let effectApplyTo = function(effect,target,source,item) {
 			follow: 	target,
 			img: 		StickerList.showResistance.img,
 			duration: 	0.2,
-			delay: 		effect.throwDuration || 0,
+			delay: 		effect.rangeDuration || 0,
 			onInit: 		a => { a.create(1); },
 			onSpriteMake: 	s => { s.sScaleSet(0.75); },
 			onSpriteTick: 	s => { }
@@ -297,10 +298,11 @@ let effectApplyTo = function(effect,target,source,item) {
 		}
 		target.map.toEntity(target.x,target.y,target);
 		effect.onTargetPosition(target.map,target.x,target.y)
-		return true;
 	}
-	// Remember that by this point the effect has the target, source and item already inside it.
-	DeedManager.add(effect);
+	else {
+		// Remember that by this point the effect has the target, source and item already inside it.
+		DeedManager.add(effect);
+	}
 
 	// Note that rechargeTime CAN NOT be in the effect, because we're only dealing with a
 	// copy of the effect. There is no way for the change to rechargeTime to get back to the original effect instance.

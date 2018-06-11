@@ -29,7 +29,7 @@ ConfigList.ken = () => {
 			f: 'flames',
 			L: 'lava',
 			M: 'mud',
-			o: 'redOoze',
+			o: 'ogre',
 		},
 		stickers: {
 		},
@@ -45,30 +45,30 @@ ConfigList.ken = () => {
 
 	ThemeList.kenTheme = {
 		scapeId: 	'kenScape',
-		rREQUIRED: 	'kenPlace, floodOre',
+		rREQUIRED: 	'kenPlace',
 		rCOMMON: 	null, //'floodOre',
 		rUNCOMMON: 	null, //'floodOre',
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
-		monsters: 	['isDwarf']
+		monsters: 	['isOgre']
 
 	}
 
 	Object.assign( MonsterTypeList.player, {
-//		inventoryLoot: MonsterTypeList.player.inventoryLoot+', weapon.hammer, potion.eFlight, spell.eCold',
-		inventoryWear: MonsterTypeList.player.inventoryWear+', stuff.lantern, weapon.sword'
+		inventoryLoot: MonsterTypeList.player.inventoryLoot+', 5x weapon.arrow, weapon.hammer, potion.eFlight, spell.eCold',
+		inventoryWear: MonsterTypeList.player.inventoryWear+', stuff.lantern, weapon.bow.eFire, shield.eAbsorb'
 	});
 
 	Object.assign( Tweak, {
-//		lootFrequency: 0.80,
-//		effectChance: 4.0
+		lootFrequency: 0.80,
+		effectChance: 4.0
 	});
 
 
 	return {
-//		startingDepth: 1,
-//		themeId: 'coreSwamp'
+		startingDepth: 1,
+		themeId: 'kenTheme'
 	}
 }
 

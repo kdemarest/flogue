@@ -59,6 +59,79 @@ class ViewSpells {
 	}
 }
 
+class ViewZoom {
+	constructor(divId) {
+		let myDiv = $('<img class="guiButton" src="tiles/gui/icons/magnify.png">').appendTo($(divId));
+		myDiv.click( function() {
+			guiMessage('map','zoom',null);
+		});
+	}
+}
+
+class ViewFull {
+	constructor(divId,divToExpand) {
+		this.divToExpand = divToExpand;
+		this.isFull = false;
+		this.image = ['tiles/gui/icons/screenExpand.png','tiles/gui/icons/screenContract.png']
+		let self = this;
+		let myDiv = $('<img class="guiButton" src="'+this.image[0]+'">').appendTo($(divId));
+		myDiv
+		.show()
+		.click( function(e) {
+			if( !self.isFull ) {
+				self.enter();
+			}
+			else {
+				self.exit();
+			}
+			self.isFull = !self.isFull;
+			$(myDiv).attr("src",self.image[self.isFull?1:0]);
+		});
+		$(document).keydown( function(e) {
+			if( e.key == 'Enter' && (e.metaKey || e.altKey) ) {
+				$(myDiv).trigger('click');
+			}
+		});
+
+	}
+
+	enabled() {
+		return 
+			document.fullscreenEnabled || 
+			document.webkitFullscreenEnabled || 
+			document.mozFullScreenEnabled ||
+			document.msFullscreenEnabled
+	}
+
+	enter() {
+		var i = $(this.divToExpand).get(0);
+
+		// go full-screen
+		if (i.requestFullscreen) {
+			i.requestFullscreen();
+		} else if (i.webkitRequestFullscreen) {
+			i.webkitRequestFullscreen();
+		} else if (i.mozRequestFullScreen) {
+			i.mozRequestFullScreen();
+		} else if (i.msRequestFullscreen) {
+			i.msRequestFullscreen();
+		}
+	}
+
+	exit() {
+		// exit full-screen
+		if (document.exitFullscreen) {
+			document.exitFullscreen();
+		} else if (document.webkitExitFullscreen) {
+			document.webkitExitFullscreen();
+		} else if (document.mozCancelFullScreen) {
+			document.mozCancelFullScreen();
+		} else if (document.msExitFullscreen) {
+			document.msExitFullscreen();
+		}
+	}
+}
+
 class ViewInfo {
 	constructor(infoDivId) {
 		this.infoDivId = infoDivId;
@@ -71,9 +144,9 @@ class ViewInfo {
 		}
 		$('#'+this.infoDivId).empty().removeClass('healthWarn healthCritical');
 		let s = "";
-		s += "Health: "+entity.health+" / "+entity.healthMax+"\n";
-		s += "Armor: "+entity.calcArmor()+"%\n";
-		let weapon = entity.calcWeapon();
+		s += "Health: "+entity.health+" of "+entity.healthMax+"\n";
+		s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R\n";
+		let weapon = entity.calcDefaultWeapon();
 		s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"\n";
 		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travel+'ing</b>' : entity.travelMode+'ing'))+'\n';
 		let conditionList = [];
@@ -109,35 +182,53 @@ class ViewInfo {
 }
 
 class ViewStatus {
-	constructor(statusDivId) {
-		this.statusDivId = statusDivId;
+	constructor(divId,) {
+		this.divId = divId;
 		this.slotList = [];
-		this.lastHealth = [];
+		this.slotMax = 10;
 	}
 
 	render(observer,entityList) {
-		let SLOT_COUNT = 10;
 
-		let f = new Finder(entityList,observer).isAlive().exclude(observer).prepend(observer).canPerceiveEntity().byDistanceFromMe().keepTop(SLOT_COUNT);
-		Array.filterInPlace( this.slotList, slot => f.getId(slot) );
+		let f = new Finder(entityList,observer).isAlive().exclude(observer).prepend(observer)
+				.canPerceiveEntity().filter(e=>e.id==observer.id || e.inCombat).byDistanceFromMe().keepTop(this.slotMax);
+
+		// Remove unused slots.
+		Array.filterInPlace( this.slotList, slot => {
+			if( !f.includesId( slot.entityId ) ) {
+				$(slot).remove();
+				return false;
+			}
+			return true;
+		});
+
+		// Add new slots
+		let self = this;
 		f.process( entity => {
-			if( !this.slotList.includes(entity.id) ) {
-				this.slotList.push(entity.id);
+			if( !self.slotList.find( div => div.entityId==entity.id ) ) {
+				let div = $(
+					'<div class="health-bar" data-total="1000" data-value="1000">'+
+					'<div class="bar"><div class="hit"></div></div>'+
+					'</div>'
+				);
+				div
+				.appendTo('#'+self.divId)
+				.show()
+				.mouseover( function() {
+					guiMessage('info','show',entity);
+				});
+				div.entityId = entity.id;
+				div.entityLastHealth = entity.health;
+				self.slotList.push(div);
 			}
 		});
 
-		for( let i=0 ; i<SLOT_COUNT ; ++i ) {
-			if( i >= this.slotList.length ) {
-				$('#health'+i).hide();
-				continue;
-			}
-			let entity = f.getId(this.slotList[i]);
-			let newValue = entity.health;
-			let lastValue = this.lastHealth[entity.id]!==undefined ? this.lastHealth[entity.id] : newValue;
-			$('#health'+i).show();
-			showHealthBar('#health'+i,newValue,lastValue,entity.healthMax,entity.name);
-			this.lastHealth[entity.id] = newValue;
-		}
+		// Update all slots.
+		this.slotList.forEach( slot => {
+			let entity = f.getId( slot.entityId );
+			showHealthBar( slot, entity.health, slot.entityLastHealth, entity.healthMax, entity.name );
+			slot.entityLastHealth = entity.health;
+		});
 	}
 }
 
@@ -189,7 +280,7 @@ class ViewMiniMap {
 				if( !entity ) debugger;
 				let resource = self.imageRepo.get(imgPath);
 				if( resource ) {
-					c.drawImage(resource.texture.baseTexture.source,x*self.scale,y*self.scale,scale,scale);
+					c.drawImage( resource.texture.baseTexture.source, x*self.scale, y*self.scale, scale,scale );
 				}
 				else {
 					console.log( "Unable to find image for "+entity.typeId+" img "+imgPath );
@@ -335,7 +426,7 @@ class ViewInventory {
 			s += '<td>'+icon(item.icon)+'</td>';
 			s += '<td>'+item.name+'</td>';
 			//s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
-			s += '<td class="ctr">'+(item.isArmor?item.calcArmor():'')+'</td>';
+			s += '<td class="ctr">'+(item.isArmor||item.isShield?item.calcReduction(DamageType.CUTS,item.isShield):'')+'</td>';
 			let damage = item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : '');
 			s += '<td class="right">'+damage+'</td>';
 			let dtype = item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : '');
@@ -482,7 +573,7 @@ CmdTable[Command.CAST] = {
 	needsItem: true,
 	itemFilter: observer => () => getCastableSpellList(observer),
 	needsTarget: true,
-	targetRange: (item) => item.range || 7,
+	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
 	criteriaToExecute: (cmd,observer) => {
 		if( !cmd.commandItem.isRecharged() ) {
 			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,cmd.commandItem,' is still charging.');
@@ -496,7 +587,35 @@ CmdTable[Command.THROW] = {
 	needsItem: true,
 	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayThrow ),
 	needsTarget: true,
-	targetRange: (item) => item.range || 7,
+	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
+	passesTimeOnExecution: true
+};
+CmdTable[Command.SHOOT] = {
+	needsItem: true,
+	pickItem: observer => {
+		let weaponList = observer.getItemsInSlot(Slot.WEAPON);
+		if( !weaponList.count || !weaponList.first.mayShoot ) {
+			tell(mSubject|mCares,observer,' must select or equip a ranged weapon first.');
+			return null;
+		}
+		return weaponList.first;
+	},
+	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayShoot ),
+	needsTarget: true,
+	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
+	criteriaToExecute: (cmd,observer) => {
+		if( !cmd.commandItem.isRecharged() ) {
+			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,cmd.commandItem,' is still charging.');
+			return false;
+		}
+		let weapon = cmd.commandItem;
+		let ammo   = observer.pickAmmo(weapon);
+		if( !ammo ) {
+			tell(mSubject|mPronoun|mPossessive,observer,' ',mVerb,'has',' no suitable ammunition.');
+			return false;
+		}
+		return true;
+	},
 	passesTimeOnExecution: true
 };
 CmdTable[Command.DROP] = {
@@ -569,6 +688,7 @@ class Cmd {
 	get ct() 					{ return CmdTable[this.command]; }
 	get convertToCommand() 		{ return this.ct && this.ct.convertToCommand; }
 	get needsItem()				{ return this.ct && this.ct.needsItem; }
+	get pickItem()				{ return this.ct && this.ct.pickItem; }
 	get itemAllowFilter()		{ return this.ct && this.ct.itemAllowFilter; }
 	get itemFilter()			{ return this.ct && this.ct.itemFilter; }
 	get convertOnItemChosen()	{ return this.ct && this.ct.convertOnItemChosen; }
@@ -635,13 +755,19 @@ class UserCommandHandler {
 			}
 		}
 
+		if( cmd.needsItem && !cmd.commandItem && cmd.pickItem ) {
+			cmd.commandItem = cmd.pickItem(observer);
+		}
+
 		if( cmd.needsItem && !cmd.commandItem ) {
-			let keyEval = this.viewInventory.prime( cmd.itemFilter(observer), cmd.itemAllowFilter, () => cmd.needsItem && !cmd.commandItem );
-			if( keyEval ) {
-				if( this.keyToCommand[event.key] == Command.CANCEL ) {
-					return cmd.cancel();
+			if( !cmd.commandItem ) {
+				let keyEval = this.viewInventory.prime( cmd.itemFilter(observer), cmd.itemAllowFilter, () => cmd.needsItem && !cmd.commandItem );
+				if( keyEval ) {
+					if( this.keyToCommand[event.key] == Command.CANCEL ) {
+						return cmd.cancel();
+					}
+					cmd.commandItem = this.viewInventory.getItemByKey(event.key);
 				}
-				cmd.commandItem = this.viewInventory.getItemByKey(event.key);
 			}
 		}
 
@@ -650,13 +776,19 @@ class UserCommandHandler {
 			delete event.commandItem;
 		}
 
+		let preConvert = null;
 		if( cmd.commandItem && cmd.convertOnItemChosen ) {
+			preConvert = cmd.command;
 			cmd.command = cmd.convertOnItemChosen(cmd);
 		}
 
 		if( cmd.commandItem && cmd.criteriaToExecute ) {
 			if( !cmd.criteriaToExecute(cmd,observer) ) {
-				return cmd.cancelItem();
+				if (preConvert ) {
+					cmd.command = preConvert;
+					return cmd.cancelItem();
+				}
+				return cmd.cancel();
 			}
 		}
 

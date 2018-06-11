@@ -6,28 +6,30 @@ body {
 }
 #guiMain {
 	display: none;
+	background-color: black;
 }
 #guiLoading {
 	display: block;
 }
+.guiButton {
+    border-radius: 8px;
+    border: 2px solid #d2d2d2;
+    margin: 4px;
+}
+.guiButton:hover {
+	border-width: 3px;
+    margin: 3px;
+	cursor: pointer;
+	background-color: #222222;
+}
 #mapContainer {
-	width: 672px;
-	height: 672px;
+	width: 832px;
+	height: 832px;
+	text-align: center;
 	position: relative;
 }
 #guiMap {
-	display: block;
-	white-space: pre;
-	font-family: "Courier New", Courier, sans-serif;
-	font-size: 18px;
-	line-height: 18px;
-	position: absolute;
-	top:0;
-	left:0;
-}
-.tile {
-	width: 32px;
-	height: 32px;
+	display: inline-block;
 }
 #guiNarrative {
 	white-space: pre;

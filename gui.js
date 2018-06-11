@@ -31,8 +31,10 @@ class Gui {
 		}
 
 		this.view.dynamic = DynamicViewList.none;
+		this.view.full = new ViewFull('#guiControls','#guiMain');
+		this.view.zoom = new ViewZoom('#guiControls');
 		this.view.narrative = new ViewNarrative('guiNarrative');
-		this.view.map = new ViewMap('guiMap',MaxSightDistance,this.imageRepo);
+		this.view.map = new ViewMap('guiMap',this.imageRepo);
 		this.view.sign = new ViewSign('guiSign');
 		this.view.miniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',this.imageRepo);
 		this.view.spells = new ViewSpells('guiSpells');
@@ -91,8 +93,7 @@ class Gui {
 		this.view.info.render(observer);
 		this.view.inventory.render(observer);
 		this.view.range.render(observer);
-		let drawList = createDrawList(observer,area.map,area.entityList);
-		this.view.map.draw(drawList,observer);
+		this.view.map.render(observer);
 		this.view.miniMap.render(observer);	// must be after viewMap so the visibility
 		this.view.dynamic.render(observer);
 	}

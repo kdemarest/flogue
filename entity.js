@@ -10,13 +10,30 @@ class Entity {
 		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
 		// a deeper map level then they average their native level and the map's level.
 		let isPlayer = monsterType.brain==Brain.USER;
-		let naturalWeapon = { isNatural: true, damage: 1, quick: 2, damageType: monsterType.damageType || DamageType.CUTS };
+		let naturalWeapon = { isNatural: true, quick: 2, damageType: monsterType.damageType || DamageType.CUTS, name: 'natural weapon' };
+		if( monsterType.reach ) {
+			naturalWeapon.reach = monsterType.reach;
+		}
+		if( monsterType.range ) {
+			naturalWeapon.range = monsterType.range;
+		}
+		let rangedWeapon = monsterType.rangedWeapon;
+		if( rangedWeapon ) {
+			rangedWeapon.isNatural = true;
+			rangedWeapon.range = rangedWeapon.range || RANGED_WEAPON_DEFAULT_RANGE;
+			rangedWeapon.mayShoot = true;
+			rangedWeapon.name = 'natural ranged weapon';
+		}
 
 		if( isPlayer ) {
 			inits.healthMax 			= Rules.playerHealth(level);
 			inits.armor     			= 0; //Rules.playerArmor(level);
 			let damageWhenJustStartingOut = 0.75;	// I found that 50% was getting me killed by single goblins. Not OK.
 			naturalWeapon.damage 		= Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
+			if( rangedWeapon ) {
+				console.assert( rangedWeapon.range );
+				rangedWeapon.damage 		= Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
+			}
 		}
 		else {
 			let hits = monsterType.power.split(':');
@@ -25,10 +42,15 @@ class Entity {
 			inits.healthMax 		= Rules.monsterHealth(level,hitsToKillMonster);
 			inits.armor     		= (monsterType.armor || 0);
 			naturalWeapon.damage   	= Rules.monsterDamage(level,hitsToKillPlayer);
+			if( rangedWeapon ) {
+				console.assert( rangedWeapon.range );
+				rangedWeapon.damage = Rules.monsterDamage(level,rangedWeapon.hitsToKillPlayer || hitsToKillPlayer);
+			}
 		}
 		inits.level = level;
 		inits.health = inits.healthMax;
 		inits.naturalWeapon = naturalWeapon;
+		inits.rangedWeapon = rangedWeapon;
 
 		if( monsterType.pronoun == '*' ) {
 			inits.pronoun = Math.chance(70) ? 'he' : 'she';
@@ -369,10 +391,31 @@ class Entity {
 		if( type ) {
 			return false;
 		}
-		// If we are already in a problem, then we should probably just keep ignoring it. For example,
-		// once we've decided to enter fire, better just go for it!
+
+		// Maybe we're not colliding, but perhaps there is an item present that is a problem.
+		let g = this.map.findItem().at(x,y);
+		if( g.count ) {
+			let abort = false;
+			g.process( item => {
+				if( !item.isProblem ) return;
+				let problem = item.isProblem(entity);
+				if( problem == 'death' || avoidProblem ) {
+					abort = true;
+				}
+			});
+			if( abort ) {
+				return false;
+			}
+		}
+
+		// The AI should consider whether it is STARTING in a problem, and try to get out!
 		let entityType = this.map.tileTypeGet(x,y);
-		if( avoidProblem && entityType.isProblem && entityType.isProblem(this,entityType) ) {
+		if( !entityType.isProblem ) {
+			return true;
+		}
+
+		let problem = entityType.isProblem(this,entityType);
+		if( problem == 'death' || avoidProblem ) {
 			return false;
 		}
 		return true;
@@ -479,7 +522,7 @@ class Entity {
 					if( distanceToNearestEnemy===false || distanceToNearestEnemy > (this.tooClose||3) ) {
 						return Command.PRAY;
 					}
-					this.attitude == Attitude.AGGRESSIVE;
+					this.attitude = Attitude.AGGRESSIVE;
 					if( this.brainTalk ) {
 						tell(mSubject,this,' ',mVerb,'shout',': INTERLOPER!');
 					}
@@ -573,15 +616,24 @@ class Entity {
 
 				// AGGRESSIVE
 				// Attack if I am within reach, and aggressive or sometimes if hesitant
-				let adjacent = this.findAliveOthers(enemyList.all).nearMe(this.reach);
-				if( adjacent.count ) {
-					let attack = this.attitude != Attitude.FEARFUL;
-					if( this.attitude == Attitude.HESITANT && !vendetta && Math.chance(50) ) {
-						attack = false;
-					}
-					if( attack ) {
-						this.record('attack '+adjacent.first.name,true);
-						return directionToCommand(this.dirToEntityPredictable(adjacent.first));
+				let doAttack = this.attitude != Attitude.FEARFUL;
+				if( this.attitude == Attitude.HESITANT && !vendetta && Math.chance(50) ) {
+					doAttack = false;
+				}
+				if( doAttack ) {
+					let weapon = this.calcBestWeapon(enemyList.first);
+					let distLimit = weapon.reach || weapon.range || 1;
+					let inRange = this.findAliveOthers(enemyList.all).nearMe(distLimit);
+					if( inRange.count ) {
+						let target = vendetta && inRange.includesId(vendetta.id) ? vendetta : inRange.first;	// For now, always just attack closest.
+						this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
+						this.commandItem = weapon;
+						this.commandTarget = target;
+						let d = this.getDistance(target.x,target.y);
+						if( d > 1 ) {
+							return this.itemToAttackCommand(weapon);
+						}
+						return directionToCommand(this.dirToEntityPredictable(target));
 					}
 				}
 
@@ -634,10 +686,11 @@ class Entity {
 		}
 	}
 
-	calcArmor(damageType) {
-		let f = new Finder(this.inventory).filter( item=>item.inSlot && item.isArmor );
+	calcReduction(damageType,isRanged) {
+		let is = (isRanged ? 'isShield' : 'isArmor');
+		let f = new Finder(this.inventory).filter( item=>item.inSlot && item[is] );
 		let armor = 0;
-		f.process( item => { armor += item.calcArmor(damageType); });
+		f.process( item => { armor += item.calcReduction(damageType); });
 		return Math.floor(armor);
 	}
 
@@ -665,6 +718,38 @@ class Entity {
 		return this.takeDamage(attacker,item,amount,damageType,callback,true);
 	}
 
+	assessVIR(item,damageType) {
+		let isVuln = '';
+		let isImmune = '';
+		let isResist = '';
+
+		if( this.isVuln(damageType) ) {
+			isVuln = damageType;
+		}
+		else
+		if( item && item.material && this.isVuln(item.material.typeId) ) {
+			isVuln = item.material.name;
+		}
+		else
+		if( this.isImmune(damageType) ) {
+			isImmune = damageType;
+		}
+		else
+		if( item && item.material && this.isImmune(item.material.typeId) ) {
+			isImmune = item.material.name;
+		}
+		else
+		if( this.isResistant(damageType) ) {
+			isResist = damageType;
+		}
+		else
+		if( item && item.material && this.isResistant(item.material.typeId) ) {
+			isResist = item.material.name;
+		}
+		return [isVuln,isImmune,isResist];
+	}
+
+
 	takeDamage(attacker,item,amount,damageType,callback,noBacksies) {
 		let quiet = false;
 
@@ -673,46 +758,37 @@ class Entity {
 		}
 
 		// Deal with armor first...
-		let reduction = this.calcArmor(damageType)/ARMOR_SCALE;
+		let isRanged = (attacker && this.getDistance(attacker.x,attacker.y) > 1) || (item && item.rangeDuration);
+		let reduction = this.calcReduction(damageType,isRanged)/ARMOR_SCALE;
+
 		reduction = Math.min(0.8,reduction);
 		amount = Math.max(1,Math.floor(amount*(1.00-reduction)));
 
+		let shield = this.getFirstItemInSlot(Slot.SHIELD);
+		let isShielded = false;
+		if( shield && shield.missChance && Math.chance(shield.missChance*100) ) {
+			amount = 0;
+			isShielded = true;
+			
+		}
+
 		// Now resistance.
-
-		let isVuln = '';
-		let isImmune = '';
-		let isResist = '';
-
-		if( this.isVuln(damageType) ) {
-			amount *= 2;
-			isVuln = damageType;
+		let isVuln='',isImmune='',isResist='';
+		if( !isShielded ) {
+			[isVuln,isImmune,isResist] = this.assessVIR(item,damageType);
+			if( isVuln ) {
+				amount *= 2;
+			}
+			else
+			if( isImmune ) {
+				amount = 0;
+			}
+			else
+			if( isResist ) {
+				amount = Math.max(1,Math.floor(amount*0.5));
+			}
 		}
-		else
-		if( item && item.material && this.isVuln(item.material.typeId) ) {
-			amount *= 2;
-			isVuln = item.material.name;
-		}
-		else
-		if( this.isImmune(damageType) ) {
-			amount = 0;
-			isImmune = damageType;
-		}
-		else
-		if( item && item.material && this.isImmune(item.material.typeId) ) {
-			amount = 0;
-			isImmune = item.material.name;
-		}
-		else
-		if( this.isResistant(damageType) ) {
-			amount = Math.max(1,Math.floor(amount*0.5));
-			isResist = damageType;
-		}
-		else
-		if( item && item.material && this.isResistant(item.material.typeId) ) {
-			amount = Math.max(1,Math.floor(amount*0.5));
-			isResist = item.material.name;
-		}
-
+		
 		if( attacker && attacker.invisible ) {
 			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: false };
 			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
@@ -730,7 +806,7 @@ class Entity {
 			let delay = !attacker || !attacker.isUser || attacker.isUser() ? 0 : 0.2;
 			if( attacker && attacker.command == Command.THROW ) {
 				// This seems a little loose to me, but... maybe it will work.
-				delay += attacker.throwDuration;
+				delay += attacker.rangeDuration;
 			}
 			// Attacker lunges at you
 			let lunge = 0.2 + 0.5 * mag;
@@ -784,6 +860,20 @@ class Entity {
 			}
 		}
 
+		if( isShielded ) {
+			quiet = true;
+			tell(mSubject,this,' ',mVerb,'catch',' that blow with ',mSubject|mPossessive,this,' ',mObject,shield);
+			new Anim( {}, {
+				follow: 	this,
+				img: 		StickerList.showResistance.img,
+				duration: 	0.2,
+				delay: 		item ? item.rangeDuration || 0 : 0,
+				onInit: 		a => { a.create(1); },
+				onSpriteMake: 	s => { s.sScaleSet(0.75); },
+				onSpriteTick: 	s => { }
+			});
+		}
+
 		if( isVuln ) {
 			quiet = true;
 			tell(mSubject,this,' ',mVerb,'is',' vulnerable to '+isVuln+', and ',mVerb,'take',' '+amount+' damage!');
@@ -791,7 +881,7 @@ class Entity {
 				follow: 	this,
 				img: 		StickerList.showVulnerability.img,
 				duration: 	0.2,
-				delay: 		item ? item.throwDuration || 0 : 0,
+				delay: 		item ? item.rangeDuration || 0 : 0,
 				onInit: 		a => { a.create(1); },
 				onSpriteMake: 	s => { s.sScaleSet(0.75); },
 				onSpriteTick: 	s => { }
@@ -805,7 +895,7 @@ class Entity {
 				follow: 	this,
 				img: 		StickerList.showImmunity.img,
 				duration: 	0.2,
-				delay: 		item ? item.throwDuration || 0 : 0,
+				delay: 		item ? item.rangeDuration || 0 : 0,
 				onInit: 		a => { a.create(1); },
 				onSpriteMake: 	s => { s.sScaleSet(0.75); },
 				onSpriteTick: 	s => { }
@@ -819,7 +909,7 @@ class Entity {
 				follow: 	this,
 				img: 		StickerList.showResistance.img,
 				duration: 	0.2,
-				delay: 		item ? item.throwDuration || 0 : 0,
+				delay: 		item ? item.rangeDuration || 0 : 0,
 				onInit: 		a => { a.create(1); },
 				onSpriteMake: 	s => { s.sScaleSet(0.75); },
 				onSpriteTick: 	s => { }
@@ -832,6 +922,7 @@ class Entity {
 		this.takenDamage = amount;
 		this.takenDamageType = damageType;
 		this.takenDamageFromId = attacker ? attacker.id : 'nobody';
+		this.inCombat = true;
 
 		if( amount > 0 ) {
 			if( this.brainDisengageAttempt ) {
@@ -857,11 +948,12 @@ class Entity {
 		}
 
 		if( !noBacksies && attacker && attacker.isMonsterType && this.inventory ) {
-			let armorEffects = new Finder(this.inventory).filter( item => item.inSlot && item.isArmor );
-			armorEffects.process( item => {
+			let is = isRanged ? 'isShield' : 'isArmor';
+			let retaliationEffects = new Finder(this.inventory).filter( item => item.inSlot && item[is] );
+			retaliationEffects.process( item => {
 				if( item.effect && item.effect.isHarm ) {
-					let fireArmorEffect = ARMOR_EFFECT_OP_ALWAYS.includes(item.effect.op) || Math.chance(ARMOR_EFFECT_CHANCE_TO_FIRE);
-					if( fireArmorEffect ) {
+					let fireEffect = ARMOR_EFFECT_OP_ALWAYS.includes(item.effect.op) || Math.chance(ARMOR_EFFECT_CHANCE_TO_FIRE);
+					if( fireEffect ) {
 						item.trigger( attacker, this, Command.NONE );
 					}
 				}
@@ -881,25 +973,94 @@ class Entity {
 		}
 		tell(mSubject,this,' is shoved!');
 		let success = true;
+		this.beingShoved = true;
 		while( success && distance-- ) {
-			success = this.moveTo(this.x+dx,this.y+dy,false);
+			success = this.moveTo(this.x+dx,this.y+dy,false,null);
 		}
+		delete this.beingShoved;
 		this.loseTurn = true;
 	}
 
-	calcWeapon() {
-		let weapon = new Finder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || this.naturalWeapon;
+	itemToAttackCommand(weapon) {
+		if( !weapon.range ) {
+			return Command.ATTACK;
+		}
+		if( weapon.mayThrow ) {
+			return Command.THROW;
+		}
+		if( weapon.isSpell ) {
+			return Command.CAST;
+		}
+		if( weapon.mayShoot || weapon.isNatural ) {
+			return Command.SHOOT;
+		}
+		debugger;
+		return Command.SHOOT;
+	}
+
+	generateEffectOnAttack(weapon,src) {
 		weapon.effectOnAttack = weapon.effectOnAttack || {
-			op: 'damage',
-			isInstant: true,
-			value: weapon.damage,
-			damageType: weapon.damageType || DamageType.CUTS,
-			icon: false
+			op: 		'damage',
+			isInstant: 	true,
+			value: 		src && src.conveyDamageToAmmo ? src.damage : weapon.damage,
+			damageType: src && src.conveyDamageTypeToAmmo ? src.damageType : (weapon.damageType || DamageType.CUTS),
+			icon: 		false,
+			name: 		weapon.name
 		};
+		if( src && src.effect && src.conveyEffectToAmmo ) {
+			weapon.effect = weapon.effect || Object.assign({},src.effect);
+		}
+	}
+
+	calcDefaultWeapon() {
+		let weapon = new Finder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || this.naturalWeapon;
+		this.generateEffectOnAttack(weapon);
 		return weapon;
 	}
 
-	attack(target,isRanged,onDamage) {
+	calcBestWeapon(target) {
+		let self = this;
+		let weaponList = new Finder(this.inventory).filter( item => {
+			if( item.isWeapon ) return true;
+			if( (item.isSpell || item.isPotion) && item.effect.isHarm ) return true;
+			return false;
+		});
+		weaponList.prepend(this.naturalWeapon);
+		if( this.rangedWeapon ) {
+			weaponList.prepend(this.rangedWeapon);
+		}
+		// We now have a roster of all possible weapons. Eliminate those that are not charged.
+		weaponList.filter( item => !item.rechargeTime || item.rechargeLeft<=0 );
+		// Any finally, do not bother using weapons that can not harm the target.
+		weaponList.filter( item => {
+			// WARNING! This does not check all possible immunities, like mental attack! Check the effectApply() function for details.
+			let isVuln,isImmune,isResist;
+			[isVuln,isImmune,isResist] = self.assessVIR(item,item.damageType || item.effect.damageType);
+			return !isImmune;
+		});
+		// remove any ranged weapon or reach weapon with an obstructed shot
+		weaponList.filter( item => {
+			let r = ( item.range || item.reach || 1 );
+			return self.shotClear(self.x,self.y,target.x,target.y);
+		});
+		// Now let which weapon we choose be random, assuming we have lots of them :-)
+		weaponList.shuffle();
+		let dist = this.getDistance(target.x,target.y);
+		// Always choose a melee weapon if you have the reach.
+		let weapon = weaponList.find( item => !item.range && dist <= (item.reach||1) );
+		if( !weapon ) {
+			// If no melee weapon with appropriate reach, choose a ranged weapon with right range
+			weapon = weaponList.find( item => item.range && dist <= item.range );
+		}
+		if( !weapon ) {
+			weapon = this.naturalWeapon;
+		}
+
+		this.generateEffectOnAttack(weapon);
+		return weapon;
+	}
+
+	attack(target,weapon,isRanged) {
 		this.lastAttackTargetId = target.id;	// Set this early, despite blindness!
 
 		if( (this.senseBlind && !this.baseType.senseBlind) || (target.invisible && !this.senseInvisible) ) {
@@ -909,7 +1070,7 @@ class Entity {
 			}
 		}
 
-		let weapon = this.calcWeapon();
+		weapon = weapon || this.calcDefaultWeapon();
 
 		let quick = weapon && weapon.quick>=0 ? weapon.quick : 1;
 		let dodge = target.dodge>=0 ? target.dodge : 0;
@@ -919,7 +1080,7 @@ class Entity {
 			let dx = target.x - this.x;
 			let dy = target.y - this.y;
 			let deg = deltaToDeg(dx,dy)+Math.rand(-45,45);
-			let delay = (this.isUser() ? 0 : 0.2) + ( this.command == Command.THROW ? this.throwDuration : 0 );
+			let delay = (this.isUser() ? 0 : 0.2) + ( this.command == Command.THROW || this.command == Command.SHOOT ? this.rangeDuration : 0 );
 			// Show a dodging icon on the entity
 			new Anim( {}, {
 				follow: 	target,
@@ -989,7 +1150,7 @@ class Entity {
 		if( !item ) debugger;
 
 		item.giveTo(this,this.x,this.y);
-		if( item.isArmor && !item.armor ) {
+		if( (item.isArmor || item.isShield) && !item.armor ) {
 			debugger;
 		}
 		if( item.isCorpse ) {
@@ -1005,6 +1166,95 @@ class Entity {
 		tell(mSubject,this,' ',mVerb,'pick',' up ',mObject|mBold,item,'.');
 	}
 
+	pickAmmo(weapon) {
+		if( !weapon.ammoType ) {
+			return true;
+		}
+		let f = new Finder(this.inventory).filter(i=>(i[weapon.ammoType] || i.typeId==weapon.ammoType.split('.')[0]) && i.inSlot==Slot.AMMO);
+		if( !f.count ) {
+			f = new Finder(this.inventory).filter(i=>(i[weapon.ammoType] || i.typeId==weapon.ammoType.split('.')[0]) );
+			if( !f.count ) {
+				if( this.strictAmmo ) {
+					return false;
+				}
+				// In theory we could generate a certain ammot type, if this weapon isn't specifying a particular item type.
+				let ammoList = this.lootTake( weapon.ammoType, this.level, this, true );
+				console.assert(ammoList[0]);
+				ammoList[0].breakChance = 100;	// avoid generating heaps of whatever is being used for ammo!
+				return ammoList[0];
+			}
+		}
+		return f.first;
+	}
+
+	throwItem(item,target) {
+		item.giveTo(this.map,target.x,target.y);
+		if( item.damage && !target.isPosition ) {
+			this.attack(target,this.commandItem,true);
+		}
+		else {
+			if( !target.isPosition ) {	// indicates it is not an (x,y) array
+				tell(mSubject,item,' ',mVerb,item.attackVerb||'hit',' ',mObject,target);
+			}
+			else {
+				tell(mSubject,item,' ',mVerb,item.attackVerb||'hit');
+			}
+			let result = item.trigger(target,this,this.command);
+		}
+		let breakChance = item.breakChance || DEFAULT_CHANCE_AMMO_BREAKS;
+		if( Math.chance(breakChance) ) {
+			item.destroy();
+		}
+	}
+
+	cast(item,target) {
+		this.lastAttackTargetId = target.id;
+		item.x = this.x;
+		item.y = this.y;
+		tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');
+		item.trigger(target,this,this.command);
+	}
+
+	shotClear(sx,sy,tx,ty) {
+		let self = this;
+		function test(x,y) {
+			return self.map.tileTypeGet(x,y).mayFly;
+		}
+		return shootRange(sx,sy,tx,ty,test);
+	}
+
+
+	shoot(item,target) {
+		console.assert(item.ammoType);
+
+		let ammo = this.pickAmmo(item);
+		if( ammo == false ) {
+			tell(mSubject,this,' ',mVerb,'lack',' any '+item.ammoId+' to shoot!');
+			return false;
+		}
+		if( ammo == true ) {
+			// This weapon uses no ammunition. It simply takes effect.
+			ammo = item;
+		}
+		else {
+			this.generateEffectOnAttack(ammo,item);
+			ammo.giveTo(this.map,target.x,target.y);
+		}
+
+		tell(mSubject,this,' ',mVerb,ammo.attackVerb || 'shoot',' ',mObject,item,' at ',mObject,target,'.');
+		if( ammo.damage && !target.isPosition ) {
+			this.lastAttackTargetId = target.id;
+			this.attack(target,ammo,true);
+		}
+		else {
+			ammo.trigger(target,this,this.command);
+		}
+		if( ammo.id !== item.id && Math.chance( ammo.breakChance || DEFAULT_CHANCE_AMMO_BREAKS ) ) {
+			ammo.destroy();
+		}
+		return true;
+	}
+
 	setPosition(x,y) {
 		if( this.x == x && this.y == y ) {
 			return;
@@ -1016,13 +1266,13 @@ class Entity {
 		this.inventory.map( item => { item.x=x; item.y=y; } );
 	}
 
-	moveDir(dir) {
+	moveDir(dir,weapon) {
 		let x = this.x + DirectionAdd[dir].x;
 		let y = this.y + DirectionAdd[dir].y;
-		return this.moveTo(x,y);
+		return this.moveTo(x,y,true,weapon);
 	}
 	// Returns false if the move fails. Very important for things like takeShove().
-	moveTo(x,y,attackAllowed=true) {
+	moveTo(x,y,attackAllowed=true,weapon=null) {
 		if( !this.map.inBounds(x,y) ) {
 			return;
 		}
@@ -1034,7 +1284,7 @@ class Entity {
 
 		// Attack enemies or neutrals
 		if( f.count && attackAllowed && (this.isMyEnemy(f.first) || this.isMyNeutral(f.first)) ) {
-			this.attack(f.first);
+			this.attack(f.first,weapon);
 			return "attack";
 		}
 		else
@@ -1196,39 +1446,23 @@ class Entity {
 				let item = this.commandItem;
 				item.x = this.x;
 				item.y = this.y;
-				tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'. It shatters!');
+				let shatter = Math.chance(33);
+				tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'.'+(shatter ? ' It shatters!' : ''));
 				item.trigger(this,this,this.command);
-				if( Math.chance(50) ) { item.destroy(); }
+				if( shatter ) { item.destroy(); }
 				break;
 			}
 			case Command.THROW: {
-				let item = this.commandItem;
-				let target = this.commandTarget;
-
-				item.giveTo(this.map,target.x,target.y);
-				if( item.damage && !target.isPosition ) {
-					this.attack(target,true);
-				}
-				else {
-					if( !target.isPosition ) {	// indicates it is not an (x,y) array
-						tell(mSubject,item,' ',mVerb,item.attackVerb||'hit',' ',mObject,target);
-					}
-					else {
-						tell(mSubject,item,' ',mVerb,item.attackVerb||'hit');
-					}
-					let result = item.trigger(target,this,this.command);
-				}
+				this.throwItem(this.commandItem,this.commandTarget);
 				// the result tells whether an effect was applied to the target (entity or psition)
 				break;
 			}
 			case Command.CAST: {
-				let item = this.commandItem;
-				let target = this.commandTarget;
-				this.lastAttackTargetId = target.id;
-				item.x = this.x;
-				item.y = this.y;
-				tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');
-				item.trigger(target,this,this.command);
+				this.cast(this.commandItem,this.commandTarget);
+				break;
+			}
+			case Command.SHOOT: {
+				this.shoot(this.commandItem,this.commandTarget);
 				break;
 			}
 			case Command.USE: {
@@ -1256,6 +1490,10 @@ class Entity {
 	}
 	getItemsInSlot(slot) {
 		return new Finder(this.inventory).filter( i => i.inSlot==slot);
+	}
+	getFirstItemInSlot(slot) {
+		let f = this.getItemsInSlot(slot);
+		return f.first;
 	}
 
 	act(timePasses=true) {
@@ -1288,7 +1526,7 @@ class Entity {
 
 
 		if( commandToDirection(this.command) !== false ) {
-			this.moveDir(dir);
+			this.moveDir(dir,this.commandItem);
 		}
 		else {
 			this.actOnCommand();

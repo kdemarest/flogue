@@ -39,6 +39,13 @@ class Finder {
 	includesId(id) {
 		return this.result.find( e => e.id==id );
 	}
+	find(fn) {
+		return this.result.find( fn );
+	}
+	shuffle() {
+		Array.shuffle(this.result);
+		return this;
+	}
 	at(x,y) {
 		return this.filter( e => e.x==x && e.y==y );
 	}
@@ -83,6 +90,10 @@ class Finder {
 	}
 	byHealth() {
 		this.result.sort( (a,b) => a.health-b.health );
+		return this;
+	}
+	byRange() {
+		this.result.sort( (a,b) => (a.range || a.reach) - (b.range || b.reach) );
 		return this;
 	}
 

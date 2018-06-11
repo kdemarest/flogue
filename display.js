@@ -8,21 +8,6 @@ function createDrawList(observer,map,entityList,asType) {
 
 	function spillLight(px,py,x,y,light) {
 		let d2 = (displaySightDistance*2)+1;
-		if( light == 'glow' ) {
-			// I don't think I do glow like this anymore...
-			debugger;
-/*
-			let fx = x+0;
-			let fy = y+0;
-			let rx = px+x-d;
-			let ry = py+y-d;
-			let rfx = px+fx-d;
-			let rfy = py+fy-d;
-			if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
-				a[fy][fx][0] = displaySightDistance;
-			}
-*/			return;
-		}
 		let range = Math.abs(light);
 		for( let ly=-range ; ly<=range ; ++ly ) {
 			for( let lx=-range ; lx<=range ; ++lx ) {
@@ -43,9 +28,6 @@ function createDrawList(observer,map,entityList,asType) {
 							a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
 						}
 					}
-					//if( a[fy][fx][0] === undefined ) {
-					//	debugger;
-					//}
 				}
 			}
 		}
@@ -205,7 +187,6 @@ function createDrawList(observer,map,entityList,asType) {
 	return a;
 }
 
-let TILE_DIM = 32;
 function DefaultImgGet(self) {
 	return self.img;
 }
@@ -298,16 +279,13 @@ let spriteOnStage;
 let spriteMakeInWorld;
 
 class ViewMap {
-	constructor(divId,sightDistance,imageRepo) {
+	constructor(divId,imageRepo) {
 		this.divId = divId;
-		this.sd = sightDistance;
-		this.d = ((sightDistance*2)+1);
-		this.tileWidth  = TILE_DIM * this.d;
-		this.tileHeight = TILE_DIM * this.d;
-		this.app = new PIXI.Application(this.tileWidth, this.tileHeight, {backgroundColor : 0x000000});
-		document.getElementById(this.divId).appendChild(this.app.view);
-
 		this.imageRepo = imageRepo;
+		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
+		document.getElementById(this.divId).appendChild(this.app.view);
+		this.setDimensions();
+
 
 		let self = this;
 
@@ -370,10 +348,10 @@ class ViewMap {
 						let zOrder = (entity.isTileType ? 1 : (entity.isItemType ? 2 : (entity.isMonsterType ? 3 : 4)));
 						sprite.zOrder 	= zOrder;
 						sprite.visible 	= true;
-						sprite.x 		= x+(32/2);
-						sprite.y 		= y+(32/2);
+						sprite.x 		= x+(TILE_DIM/2);
+						sprite.y 		= y+(TILE_DIM/2);
 						sprite.baseScale= entity.scale||1;
-						sprite.transform.scale.set( sprite.baseScale );
+						sprite.transform.scale.set( sprite.baseScale * (TILE_DIM/32) );
 						sprite.alpha 	= (entity.alpha||1) * LightAlpha[light];
 						//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 					}
@@ -399,7 +377,7 @@ class ViewMap {
 
 			let imgGet = this.imageRepo.imgGet[entity.typeId];
 			let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
-			make.call(this,x*32,y*32,entity,imgGet,lightAfterGlow);
+			make.call(this,x*TILE_DIM,y*TILE_DIM,entity,imgGet,lightAfterGlow);
 
 			if( entity.isTileType && !entity.isPosition ) {
 				this.observer.map.tileSprite[yWorld][xWorld] = this.staticTileEntity.spriteList;
@@ -421,10 +399,49 @@ class ViewMap {
 		});
 	}
 
+	setDimensions() {
+		this.sd = MaxSightDistance;
+		this.d = ((this.sd*2)+1);
+		let tileWidth  = TILE_DIM * this.d;
+		let tileHeight = TILE_DIM * this.d;
+
+		this.app.renderer.view.style.width = tileWidth + "px";
+		this.app.renderer.view.style.height = tileHeight + "px";
+		this.app.renderer.resize(tileWidth,tileHeight);
+	}
+	setZoom(_zoom) {
+		this.zoom = _zoom % 3;
+		let oldDim = TILE_DIM;
+		if( this.zoom == 0 ) { TILE_DIM=32 ; MaxSightDistance=11; }
+		if( this.zoom == 1 ) { TILE_DIM=48 ; MaxSightDistance=8; }
+		if( this.zoom == 2 ) { TILE_DIM=64 ; MaxSightDistance=6; }
+		//document.documentElement.style.setProperty('--TILE_DIM', TILE_DIM);
+		//document.documentElement.style.setProperty('--TILE_SPAN', MaxSightDistance*2+1);
+		this.setDimensions();
+		for( let child of this.app.stage.children ) {
+			child.x = ((child.x-(oldDim/2)) / oldDim) * TILE_DIM + TILE_DIM/2;
+			child.y = ((child.y-(oldDim/2)) / oldDim) * TILE_DIM + TILE_DIM/2;
+			child.transform.scale.set( child.baseScale * (TILE_DIM/32) );
+		}
+		this.observer.sightDistance = MaxSightDistance;
+	}
+
+	message(msg,payload) {
+		if( msg=='zoom' ) {
+			this.setZoom(this.zoom+1);
+			this.render(this.observer);
+		}
+	}
+
 	draw(drawList,observer) {
+
 		let maxLight = MaxSightDistance;
 		this.drawListCache = drawList;
 		this.observer = observer;
+
+		if( this.zoom === undefined ) {
+			this.setZoom(1);
+		}
 
 		//let debug = '';
 
@@ -466,5 +483,10 @@ class ViewMap {
 		//console.log(debug);
 
 		this.app.stage.children.sort( (a,b) => a.zOrder-b.zOrder );
+	}
+	render(observer) {
+		let area = observer.area;
+		let drawList = createDrawList(observer,area.map,area.entityList);
+		this.draw(drawList,observer);
 	}
 }

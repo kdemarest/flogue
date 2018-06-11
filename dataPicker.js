@@ -255,7 +255,7 @@ class Picker {
 
 		if( effect.valueDamage ) {
 			effect.value = Math.max(1,Math.floor(this.pickDamage(rechargeTime) * effect.valueDamage));
-			if( item && (item.isWeapon || item.isArmor) && WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
+			if( item && (item.isWeapon || item.isArmor || item.isShield) && WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
 				effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
 			}
 		}
@@ -288,6 +288,17 @@ class Picker {
 		let baseArmor = Rules.playerArmor(avgLevel)*am;
 		if( isNaN(baseArmor) ) debugger;
 		return Math.floor(baseArmor*ARMOR_SCALE);
+	}
+	pickMissChance(level,i,m,v,q,e) {
+		let mc = 1;
+		if( i && i.missChance ) mc *= 1+i.missChance;
+		if( m && m.missChance ) mc *= 1+m.missChance;
+		if( v && v.missChance ) mc *= 1+v.missChance;
+		if( q && q.missChance ) mc *= 1+q.missChance;
+		if( e && e.missChance ) mc *= 1+e.missChance;
+		mc = Math.clamp(mc,0,0.5);	// I'm arbitrarily capping miss chance at 50%
+		console.assert(mc>=0 && level>=0);
+		return mc;
 	}
 	pickDamage(rechargeTime,i,m,v,q,e) {
 		let dm = 1;

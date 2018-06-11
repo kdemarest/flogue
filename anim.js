@@ -44,7 +44,7 @@ let sScale = function(a) {
 	return this;
 }
 let sScaleSet = function(absScale) {
-	this.transform.scale.set(this.baseScale*absScale);
+	this.transform.scale.set(this.baseScale*absScale*(TILE_DIM/32));
 	return this;
 }
 let sReset = function() {
@@ -52,7 +52,7 @@ let sReset = function() {
 	this.ry = 0;
 	this.qx = 0;
 	this.qy = 0;
-	this.transform.scale.set(this.baseScale);
+	this.sScaleSet(1.0);
 }
 let sPos = function(x,y) {
 	this.rx = x;
@@ -82,7 +82,7 @@ let sQuiver = function(rate,range=0.5) {
 }
 let sVel = function(deg,vel) {
 	this.deg = deg;
-	this.vel = vel * 32;
+	this.vel = vel * TILE_DIM;
 	this.xVel = (this.xVel||0) + Math.cos(toRad(deg)) * vel;
 	this.yVel = (this.yVel||0) + Math.sin(toRad(deg)) * vel;
 	return this;
@@ -254,8 +254,8 @@ class Anim {
 	}
 	spriteCalc(s) {
 		let e = this.delay<=0;
-		s.x = (this.x-this.xBase+((e?s.rx+s.qx:0)+0.5)*this.scale)*32;
-		s.y = (this.y-this.yBase+((e?s.ry+s.qy:0)+0.5)*this.scale)*32;
+		s.x = (this.x-this.xBase+((e?s.rx+s.qx:0)+0.5)*this.scale)*TILE_DIM;
+		s.y = (this.y-this.yBase+((e?s.ry+s.qy:0)+0.5)*this.scale)*TILE_DIM;
 	}
 	tick(delta) {
 		if( this.dead ) {
