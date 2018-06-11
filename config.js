@@ -51,13 +51,13 @@ ConfigList.ken = () => {
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
-		monsters: 	['isOgre']
+		monsters: 	['isOgre','isGoblin']
 
 	}
 
 	Object.assign( MonsterTypeList.player, {
-		inventoryLoot: MonsterTypeList.player.inventoryLoot+', 5x weapon.arrow, weapon.hammer, potion.eFlight, spell.eCold',
-		inventoryWear: MonsterTypeList.player.inventoryWear+', stuff.lantern, weapon.bow.eFire, shield.eAbsorb'
+		inventoryLoot: MonsterTypeList.player.inventoryLoot+', 5x weapon.arrow, weapon.hammer, potion.eFlight, spell.eCold, spell.eShove',
+		inventoryWear: MonsterTypeList.player.inventoryWear+', stuff.lantern, weapon.bow.eFire, shield.eAbsorb, dart.eStun'
 	});
 
 	Object.assign( Tweak, {

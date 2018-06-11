@@ -132,6 +132,9 @@ Gab = (new function(priorGab) {
 		light: function(subj,obj,oldValue,newValue) {
 			return ['The area around ',mSubject,subj,' '+(newValue>oldValue?' brightens':'grows darker')+'.'];
 		},
+		loseTurn: function(subj,obj,oldValue,newValue) {
+			return [mSubject,subj,' ',mVerb,'is',(!newValue?' no longer':''),' stunned.'];
+		},
 		_generic_: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' ',mVerb,'is',' less enchanted.'];
 		}

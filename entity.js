@@ -141,20 +141,25 @@ class Entity {
 		if( this.dead ) {
 			debugger;
 		}
-		if( this.corpse ) {
+		if( this.corpse && !this.vanish ) {
 			let mannerOfDeath = Gab.damagePast[this.takenDamageType||DamageType.BITE];
 			if( !mannerOfDeath ) {
 				debugger;
 			}
 			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{},{ usedToBe: this, mannerOfDeath: mannerOfDeath, isCorpse: true } );
 		}
-		tell(mSubject,this,' ',mVerb,'die','!');
+		if( this.deathPhrase ) {
+			tell(...this.deathPhrase);
+		}
+		else {
+			tell(mSubject,this,' ',mVerb,this.vanish?'vanish':'die','!');
+		}
 		spriteDeathCallback(this.spriteList);
 		this.dead = true;
 	}
 
 	isDead() {
-		return this.dead || this.health <= 0;
+		return this.dead || this.health <= 0 || this.vanish;
 	}
 	isAlive() {
 		return !this.isDead();
@@ -673,7 +678,7 @@ class Entity {
 	isVuln(damageType) {
 		return String.arIncludes(this.vuln,damageType);
 	}
-	isResistant(damageType) {
+	isResist(damageType) {
 		return String.arIncludes(this.resist,damageType);
 	}
 
@@ -753,11 +758,11 @@ class Entity {
 			isImmune = item.material.name;
 		}
 		else
-		if( this.isResistant(damageType) ) {
+		if( this.isResist(damageType) ) {
 			isResist = damageType;
 		}
 		else
-		if( item && item.material && this.isResistant(item.material.typeId) ) {
+		if( item && item.material && this.isResist(item.material.typeId) ) {
 			isResist = item.material.name;
 		}
 		return [isVuln,isImmune,isResist];
@@ -983,13 +988,20 @@ class Entity {
 			debugger;
 			return;
 		}
-		tell(mSubject,this,' is shoved!');
+		// Special case - all large things resist shove.
+		let resisting = false;
+		if( this.isLarge ) {
+			distance = Math.max(0,distance-1);
+			resisting = true;
+		}
+
 		let success = true;
-		this.beingShoved = true;
+		let bonked = false;
 		while( success && distance-- ) {
 			success = this.moveTo(this.x+dx,this.y+dy,false,null);
+			if( !success ) bonked = true;
 		}
-		delete this.beingShoved;
+		tell(mSubject,this,' ',mVerb,'is',' ',bonked ? 'shoved but blocked.' : (resisting ? 'heavy but moves.' : 'shoved.'));
 		this.loseTurn = true;
 	}
 
@@ -1119,7 +1131,7 @@ class Entity {
 
 		// Trigger my weapon.
 		if( weapon && weapon.effect ) {
-			let fireWeaponEffect = WEAPON_EFFECT_OP_ALWAYS.includes(weapon.effect.op) || Math.chance(WEAPON_EFFECT_CHANCE_TO_FIRE);
+			let fireWeaponEffect = weapon.effectAlwaysFires || WEAPON_EFFECT_OP_ALWAYS.includes(weapon.effect.op) || Math.chance(WEAPON_EFFECT_CHANCE_TO_FIRE);
 			if( fireWeaponEffect ) {
 				weapon.trigger( target, this, Command.ATTACK );
 			}
@@ -1200,9 +1212,10 @@ class Entity {
 	}
 
 	throwItem(item,target) {
+		this.generateEffectOnAttack(item);
 		item.giveTo(this.map,target.x,target.y);
 		if( item.damage && !target.isPosition ) {
-			this.attack(target,this.commandItem,true);
+			this.attack(target,item,true);
 		}
 		else {
 			if( !target.isPosition ) {	// indicates it is not an (x,y) array
@@ -1213,9 +1226,10 @@ class Entity {
 			}
 			let result = item.trigger(target,this,this.command);
 		}
-		let breakChance = item.breakChance || DEFAULT_CHANCE_AMMO_BREAKS;
-		if( Math.chance(breakChance) ) {
-			item.destroy();
+		if( item.breakChance ) {
+			if( Math.chance(item.breakChance) ) {
+				item.destroy();
+			}
 		}
 	}
 
@@ -1240,6 +1254,8 @@ class Entity {
 	shoot(item,target) {
 		console.assert(item.ammoType);
 
+		this.generateEffectOnAttack(item);
+
 		let ammo = this.pickAmmo(item);
 		if( ammo == false ) {
 			tell(mSubject,this,' ',mVerb,'lack',' any '+item.ammoId+' to shoot!');
@@ -1263,7 +1279,7 @@ class Entity {
 		else {
 			ammo.trigger(target,this,this.command);
 		}
-		if( ammo.id !== item.id && Math.chance( ammo.breakChance || DEFAULT_CHANCE_AMMO_BREAKS ) ) {
+		if( ammo.id !== item.id && Math.chance(ammo.breakChance) ) {
 			ammo.destroy();
 		}
 		return true;
@@ -1579,14 +1595,21 @@ class Entity {
 				delete this.jump;
 
 			if( !this.jump && tileType.isPit && this.travelMode == 'walk') {
-				let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
-				if( stairs ) {
-					let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
-						toAreaId: stairs.toAreaId,
-						themeId: stairs.themeId,
-						killMeWhenDone: true
-					});
- 					this.area.world.setPending( gate );
+				if( this.isUser() ) {
+					let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
+					if( stairs ) {
+						let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
+							toAreaId: stairs.toAreaId,
+							themeId: stairs.themeId,
+							killMeWhenDone: true
+						});
+	 					this.area.world.setPending( gate );
+	 				}
+ 				}
+ 				else {
+ 					this.deathPhrase = [mSubject,this,' ',mVerb,'vanish',' into the pit.'];
+ 					this.vanish = true;
+
  				}
 			}
 

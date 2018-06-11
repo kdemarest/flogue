@@ -176,7 +176,6 @@ const StickerList = {
 // Probably should do this at some point.
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
 let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.10;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
-let DEFAULT_CHANCE_AMMO_BREAKS = 50;
 let DEFAULT_EFFECT_DURATION = 10;
 let ARMOR_SCALE = 100;
 
@@ -231,6 +230,7 @@ let EffectTypeList = {
 					valuePick: () => pick(PickIgnore), isHelp: 1, namePattern: 'ignore {value}', icon: 'gui/icons/eImmune.png' },
 // Debuff/Control
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
+	eStun: 			{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'loseTurn', value: true, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eShove.png' },
 	eShove: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'shove', value: 3, isInstant: 1, icon: 'gui/icons/eShove.png' },
 	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.HESITANT, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 0.2, icon: 'gui/icons/eFear.png' },
@@ -340,21 +340,22 @@ const ImgPotion = {
 const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
 	'eRegeneration','eFire','ePoison','eCold','eAcid','eHoly','eRot'].includes(k) );
-const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
+const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStun','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
 	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRage','ePanic','eConfusion','eShove'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration','eResistance','eGreed'].includes(k) );
-const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
-const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eShove','eAbsorb','eResistance'].includes(k) );
+const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
+const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eResistance'].includes(k) );
 const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari'].includes(k) );
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
-const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','eHesitate','ePoison','eFire','eCold','eBlindness','eSlow','eVuln'].includes(k) );
+const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','eHesitate','ePoison','eFire','eCold','eBlindness','eSlow','eVuln'].includes(k) );
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponList = Fab.add( '', {
 	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: 7, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },
-	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
+	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80,
+					effectAlwaysFires: true, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
 	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
 	"bow": 	    	{ level:  0, rarity: 1.0, damageMultiplier: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
 					mayShoot: true, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
@@ -797,7 +798,7 @@ let UndeadResistance = [DamageType.CUT,DamageType.STAB].join(',');
 let UndeadVulnerability = ['silver',DamageType.SMITE,DamageType.BURN].join(',');
 let ShadowImmunity = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.CORRODE,DamageType.POISON,DamageType.ROT].join(',');
 
-let OozeImmunity = ['blind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
+let OozeImmunity = ['eShove','eBlind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
 let OozeResistance = [DamageType.CUT,Attitude.ENRAGED,Attitude.CONFUSED].join(',');
 let OozeVulnerability = ['ice','glass',DamageType.BURN,DamageType.FREEZE].join(',');
 
@@ -906,8 +907,9 @@ const MonsterTypeList = {
 		isUnique: true, neverPick: true,
 		brainAlertFriends: true,
 		brainTalk: true,
-		immune: [DamageType.BURN,Attitude.PANICKED].join(','),
+		immune: ['eShove',DamageType.BURN,Attitude.PANICKED].join(','),
 		isDemon: true,
+		isLarge: true,
 		sayPrayer: 'I shall rule this planet!',
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
@@ -1012,10 +1014,11 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isEarthChild: true,
 		isOgre: true,
+		isLarge: true,
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speed: 0.5,
-		rangedWeapon: { rechargeTime: 2, hitsToKillPlayer: 3, ammoType: 'weapon.rock.eInert', damageType: DamageType.BASH }
+		rangedWeapon: { name: "rock", rechargeTime: 2, hitsToKillPlayer: 3, ammoType: 'weapon.rock.eInert', damageType: DamageType.BASH }
 	},
 	"redOoze": {
 		core: [ SYM, 1, '2:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
@@ -1073,6 +1076,7 @@ const MonsterTypeList = {
 		name: 'ogre skeleton',
 		immune: SkeletonImmunity,
 		isUndead: true,
+		isLarge: true,
 		loot: '50% bones, 50% skull',
 		vuln: 'silver'+','+DamageType.SMITE
 	},
@@ -1089,6 +1093,7 @@ const MonsterTypeList = {
 		core: [ SYM, 8, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
 		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
+		isLarge: true,
 		regenerate: 0.15,
 		vuln: DamageType.BURN
 	},
@@ -1289,7 +1294,7 @@ TileTypeList.mud.onDepart = function(entity,self) {
 		return;
 	}
 
-	if( entity.isImmune(self.typeId) || ( entity.isResistant(self.typeId) && Math.chance(50) ) ) {
+	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Math.chance(50) ) ) {
 		return;
 	}
 
@@ -1347,7 +1352,7 @@ ItemTypeList.oreVein.onTouch = function(entity,self) {
 
 
 TileTypeList.forcefield.onEnterType = function(entity,self) {
-	if( entity.isImmune(self.typeId) || ( entity.isResistant(self.typeId) && Math.chance(50) ) ) {
+	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Math.chance(50) ) ) {
 		return;
 	}
 
