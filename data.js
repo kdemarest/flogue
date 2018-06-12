@@ -1141,11 +1141,12 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
-		inventoryLoot: 'spell.eCold',
+		isLunarChild: true,
 		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
 		travelType: 'fly',
-		vuln: LunarVulnerabilities
+		vuln: LunarVulnerabilities,
+		rangedWeapon: { basis: 'eCold', rechargeTime: 1, hitsToKillPlayer: 3}
 	},
 
 // NEUTRAL TEAM
