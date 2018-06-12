@@ -8,6 +8,8 @@ let mList = 64;
 let mBold = 128;
 let mVerb = 256;
 
+let IrregularVerbs = [['are','is'],['have','has'],['go','goes']];
+
 let SentenceReusableArray = [];
 class Sentence {
 	constructor() {
@@ -98,6 +100,12 @@ class Sentence {
 		return allCare;
 	}
 	refine(you) {
+		function irregular(verb) {
+			let found;
+			IrregularVerbs.forEach( pair => { if( verb==pair[0] || verb==pair[1] ) { found=pair; } } );
+			return found;
+		}
+
 		let vowels = 'aeiou';
 		let numbers = '0123456789';
 
@@ -112,7 +120,7 @@ class Sentence {
 				let verb = m[++i];
 				let lastTwo = typeof verb=='string' ? verb.substr(verb.length-2) : '';
 				let affix = (lastTwo=='sh' || lastTwo=='ch' ? 'es' : 's');
-				let a = Array.isArray(verb) ? verb : (verb=='is' || verb=='are' ? ['are','is'] : [verb,verb+affix]);
+				let a = Array.isArray(verb) ? verb : ( irregular(verb) || [verb,verb+affix] );
 				let isYou = (flags&mSubject ? this.subject.id==you.id : (flags&mObject ? this.object.id==you.id : lastNounWasYou));
 				s += isYou ? a[0] : a[1];
 			}
