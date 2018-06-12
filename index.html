@@ -17,6 +17,7 @@
 <script src="pixi.min.js" charset="utf-8"></script>
 <script src="gab.js" charset="utf-8"></script>
 <script src="deed.js" charset="utf-8"></script>
+<script src="vis.js" charset="utf-8"></script>
 <script src="map.js" charset="utf-8"></script>
 <script src="item.js" charset="utf-8"></script>
 <script src="entity.js" charset="utf-8"></script>
@@ -29,6 +30,7 @@
 <script src="sentence.js" charset="utf-8"></script>
 <script src="finder.js" charset="utf-8"></script>
 <script src="gui.js" charset="utf-8"></script>
+<script src="command.js" charset="utf-8"></script>
 <script src="area.js" charset="utf-8"></script>
 <script src="world.js" charset="utf-8"></script>
 <script src="plan.js" charset="utf-8"></script>
@@ -68,173 +70,77 @@ function clearCommands(entityList) {
 }
 
 
-function tick(speed,map,entityList) {
-
-	function orderByTurn() {
-		let list = [[],[],[]];	// players, pets, others
-		entityList.map( entity => {
-			let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
-			list[group].push(entity);
-		});
-		list[2].sort( (a,b) => a.speed-b.speed );
-		return [].concat(list[0],list[1],list[2]);
-	}
-
-	function tickItemList(itemList,dt) {
-		for( let item of itemList ) {
-			if( item.rechargeLeft > 0 ) {
-				item.rechargeLeft = Math.max(0,item.rechargeLeft-1);
-			}
-			if( item.onTick ) {
-				item.onTick.call(item,dt,map,entityList);
-			}
-		}
-	}
-
-	function tickNaturalWeapons(entity,dt) {
-		if( entity.naturalWeapon && entity.naturalWeapon.rechargeLeft > 0 ) {
-			entity.naturalWeapon.rechargeLeft = Math.max(0,entity.naturalWeapon.rechargeLeft-1);
-		}
-		if( entity.rangedWeapon && entity.rangedWeapon.rechargeLeft > 0 ) {
-			entity.rangedWeapon.rechargeLeft = Math.max(0,entity.rangedWeapon.rechargeLeft-1);
-		}
-	}
-
-	function checkDeaths(entityList) {
-		Array.filterInPlace( entityList, entity => {
-			if( entity.isDead() ) {
-				entity.die();
-				return false;
-			}
-			return true;
-		});
-	}
-
-	if( speed === false ) {
-		let player = entityList.find( entity => entity.isUser() );
-		player.act(false);
-		DeedManager.calc(player);
-		clearCommands(entityList);
-		return;
-	}
-
-	let entityListByTurnOrder = orderByTurn(entityList);
-	let dt = 1 / speed;
-	for( let entity of entityListByTurnOrder ) {
-		DeedManager.tick(entity,dt);
-		entity.actionCount += entity.speed / speed;
-		while( entity.actionCount >= 1 ) {
-			entity.calcVis();
-			entity.think();
-			entity.act();
-			tickItemList(entity.inventory,dt,map,entityList);
-			tickNaturalWeapons(entity,dt);
-			DeedManager.calc(entity);
-			entity.actionCount -= 1;
-		}
-	}
-	map.actionCount += 1 / speed;
-	while( map.actionCount >= 1 ) {
-		tickItemList(map.itemList,dt,map,entityList);
-		map.actionCount -= 1;
-	}
-	DeedManager.cleanup();
-	checkDeaths(entityList);
-	clearCommands(entityList);
-}
 
 function main(levelName) {
 
-	function playerFind() {
-		return player;
-	}
-
-	function areaFind() {
-		return world.area;
-	}
-
-	function onUserEvent(event) {
-		let timePasses = gui.userCommandHandler.evalCommand(player,event);
-		TickWorld(timePasses);
-	}
-	window.onUserEvent = onUserEvent;
+	let User = {
+		entity: null,
+		commandHandler: null
+	};
 
 	function TickWorld(timePasses) {
-		tick( timePasses ? player.speed : false, area.map, area.entityList );
-		if( world.areaChange() ) {
-			area = world.area;
-		}
-
+		User.entity.area.tick( timePasses ? User.entity.speed : false );
+		world.areaChange();
 		gui.tick();
 		gui.render();
 	}
-	window.TickWorld = TickWorld;
 
-	function narrativeCanPerceiveEntity(observer,entity) {
-		if( !observer ) {
-			return true;
-		}
-		return observer.canPerceiveEntity(entity);
-	}
-
-	function narrativeReceive(message,history) {
-		guiMessage('narrative','receive',history);
-	}
-
-	function getPlayerStartPos(area) {
-		let f = new Finder(area.map.itemList).filter( item => item.playerStartHere );
-		if( !f.count ) {
-			console.log( "No player start marker found. Searching for stairsUp." );
-			f = new Finder(area.map.itemList).filter( item => item.typeId=='stairsUp' );
-			if( !f.first ) {
-				f = new Finder(area.map.itemList).filter( item => item.typeId=='stairsDown' );
-				console.assert(f.first);
-			}
-		}
-		return [f.first.x,f.first.y];
+	function onUserEvent(event) {
+		let timePasses = User.commandHandler.evalCommand(User.entity,event);
+		TickWorld(timePasses);
 	}
 
 	function onAreaChange(oldArea,area,xPlayer,yPlayer) {
 		guiMessage(null,'setArea',area);
-		player.gateTo(area,xPlayer,yPlayer);
-		tell(mSubject|mCares,player,' ',mVerb,'are',' now on level '+area.id)
+		User.entity.gateTo(area,xPlayer,yPlayer);
 	}
 
-	window.guiMessage = function(target,message,payload) {
-		gui.message(target,message,payload);
+	function startGame(user,onAssetsReady) {
+
+		let config = new Config('ken',{
+			startingDepth: 0
+		});
+
+		new DataConditioner();
+
+		let gui = new Gui(
+			()=>user.entity,
+		);
+		gui.create(
+			(event,item) => { event.commandItem = item; onUserEvent(event); }
+		);
+		let keyMap = loadKeyMapping("default");
+		user.commandHandler = new UserCommandHandler(keyMap,gui.view.inventory,gui.view.range);
+
+		let world = new World( ()=>user.entity, onAreaChange );
+		let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
+		let area = world.createArea(config.startingDepth,ThemeList[themeId],true,[]);
+		user.entity = new Entity( area.depth, MonsterTypeList.player, null );
+		world.gateTo(area.id,...area.map.pickPosToStartGame());
+		Narrative.addRecipient(
+			user.entity,
+			(observer,entity) => !observer ? true : observer.canPerceiveEntity(entity),
+			(message,history) => guiMessage('narrative','receive',history)
+		);
+
+		let handle = setInterval(function() {
+			if( !gui.imageRepo.ready ) {
+				return;
+			}
+			clearInterval(handle);
+			onAssetsReady();
+		}, 20);
+		return [world,gui];
 	}
 
-	let config = new Config('ken',{
-		startingDepth: 0
-	});
-
-	new DataConditioner();
-
-	let gui = new Gui(playerFind,areaFind);
-	gui.create();
-	//gui.view.miniMap.setArea(area);
-	let world = new World(playerFind,onAreaChange);
-	let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
-	let area = world.createArea(config.startingDepth,ThemeList[themeId],true,[]);
-	let player = new Entity( area.depth, MonsterTypeList.player, null );
-	world.gateTo(area.id,...getPlayerStartPos(area));
-	Narrative.addRecipient(player,narrativeCanPerceiveEntity,narrativeReceive);
-
-	let handle = setInterval(function() {
-		if( !gui.imageRepo.ready ) {
-			return;
-		}
-		clearInterval(handle);
-
-		$(document).keydown( onUserEvent );
+	let world,gui;
+	[world,gui] = startGame( User, () => {
 		gui.render();
-
-		tell([player,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
+		tell([User.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
 		$('#guiLoading').hide();
 		$('#guiMain').show();
-
-
-	}, 20);
+		$(document).keydown( onUserEvent );
+	});
 }
 
 

@@ -11,31 +11,10 @@ class Entity {
 		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
 		// a deeper map level then they average their native level and the map's level.
 		let isPlayer = monsterType.brain==Brain.USER;
-		let naturalWeapon = { isNatural: true, quick: 2, damageType: monsterType.damageType || DamageType.CUTS, name: 'natural weapon' };
-		if( monsterType.reach ) {
-			naturalWeapon.reach = monsterType.reach;
-		}
-		if( monsterType.range ) {
-			naturalWeapon.range = monsterType.range;
-		}
-		let rangedWeapon = monsterType.rangedWeapon;
-		if( rangedWeapon ) {
-			rangedWeapon = Object.assign( {}, rangedWeapon );
-			rangedWeapon.isNatural = true;
-			rangedWeapon.range = rangedWeapon.range || RANGED_WEAPON_DEFAULT_RANGE;
-			rangedWeapon.mayShoot = true;
-			rangedWeapon.name = 'natural ranged weapon';
-		}
 
 		if( isPlayer ) {
 			inits.healthMax 			= Rules.playerHealth(level);
 			inits.armor     			= 0; //Rules.playerArmor(level);
-			let damageWhenJustStartingOut = 0.75;	// I found that 50% was getting me killed by single goblins. Not OK.
-			naturalWeapon.damage 		= Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
-			if( rangedWeapon ) {
-				console.assert( rangedWeapon.range );
-				rangedWeapon.damage 		= Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
-			}
 		}
 		else {
 			let hits = monsterType.power.split(':');
@@ -43,16 +22,9 @@ class Entity {
 			let hitsToKillPlayer 	= parseFloat(hits[1]);
 			inits.healthMax 		= Rules.monsterHealth(level,hitsToKillMonster);
 			inits.armor     		= (monsterType.armor || 0);
-			naturalWeapon.damage   	= Rules.monsterDamage(level,hitsToKillPlayer);
-			if( rangedWeapon ) {
-				console.assert( rangedWeapon.range );
-				rangedWeapon.damage = Rules.monsterDamage(level,rangedWeapon.hitsToKillPlayer || hitsToKillPlayer);
-			}
 		}
 		inits.level = level;
 		inits.health = inits.healthMax;
-		inits.naturalWeapon = naturalWeapon;
-		inits.rangedWeapon = rangedWeapon;
 
 		if( monsterType.pronoun == '*' ) {
 			inits.pronoun = Math.chance(70) ? 'he' : 'she';
@@ -68,11 +40,32 @@ class Entity {
 		if( this.inventoryLoot ) {
 			this.lootTake( this.inventoryLoot, this.level, null, true );
 		}
+		console.assert( this.inventory.length >= 1 );
 
 		if( this.inventoryWear ) {
 			this.lootTake( this.inventoryWear, this.level, null, true, item => {
 				if( item.slot && !item.inSlot ) { this.don(item,item.slot); }
 			});
+		}
+
+		let naturalMeleeWeapon  = this.naturalMeleeWeapon;
+		let naturalRangedWeapon = this.naturalRangedWeapon;
+		console.assert( naturalMeleeWeapon );
+		if( isPlayer ) {
+			let damageWhenJustStartingOut = 0.75;	// I found that 50% was getting me killed by single goblins. Not OK.
+			naturalMeleeWeapon.damage = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
+			if( naturalRangedWeapon ) {
+				console.assert( naturalRangedWeapon.range );
+				naturalRangedWeapon.damage = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
+			}
+		}
+		else {
+			let hitsToKillPlayer = monsterType.power.split(':')[1];
+			naturalMeleeWeapon.damage = Rules.monsterDamage(level,hitsToKillPlayer);
+			if( naturalRangedWeapon ) {
+				console.assert( naturalRangedWeapon.range );
+				naturalRangedWeapon.damage = Rules.monsterDamage(level,naturalRangedWeapon.hitsToKillPlayer || hitsToKillPlayer);
+			}
 		}
 
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
@@ -126,6 +119,7 @@ class Entity {
 		if( Gab && hadNoArea ) {
 			Gab.entityPostProcess(this);
 		}
+		tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
 	}
 
 	findAliveOthers(entityList = this.entityList) {
@@ -216,7 +210,9 @@ class Entity {
 		let doVis = false;
 		if( this.brain == Brain.USER ) {
 			doVis = true;
-			this.mapMemory = this.area.mapMemory;
+			// technically the user should have a has of all mapMemories, except this memory will persist across
+			// whatever form you have taken, for example, even if you magic jar something.
+			this.mapMemory = this.area.mapMemory;	
 		}
 		else {
 			// Calc vis if I am near the user, that it, I might be interacting with him!
@@ -225,7 +221,7 @@ class Entity {
 		}
 
 		if( doVis ) {
-			this.vis = calcVis(this.map,this.x,this.y,this.sightDistance,this.senseBlind,this.senseXray,this.vis,this.mapMemory);
+			this.vis = this.area.vis.calcVis(this.x,this.y,this.sightDistance,this.senseBlind,this.senseXray,this.vis,this.mapMemory);
 		}
 		else {
 			this.vis = null;
@@ -275,6 +271,18 @@ class Entity {
 	canTargetEntity(entity) {
 		return this.canTargetPosition(entity.x,entity.y);
 	}
+
+	get naturalMeleeWeapon() {
+		let weapon = new Finder(this.inventory).filter(item=>item.isNatural && item.isMelee).first;
+		console.assert(weapon);
+		return weapon;
+	}
+
+	get naturalRangedWeapon() {
+		let weapon = new Finder(this.inventory).filter(item=>item.isNatural && item.isRanged).first;
+		return weapon;
+	}
+
 
 	doff(item) {
 		if( !item.inSlot || !item.slot ) {
@@ -1037,7 +1045,7 @@ class Entity {
 	}
 
 	calcDefaultWeapon() {
-		let weapon = new Finder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || this.naturalWeapon;
+		let weapon = new Finder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || this.naturalMeleeWeapon;
 		this.generateEffectOnAttack(weapon);
 		return weapon;
 	}
@@ -1049,10 +1057,6 @@ class Entity {
 			if( (item.isSpell || item.isPotion) && item.effect && item.effect.isHarm ) return true;
 			return false;
 		});
-		weaponList.prepend(this.naturalWeapon);
-		if( this.rangedWeapon ) {
-			weaponList.prepend(this.rangedWeapon);
-		}
 		// We now have a roster of all possible weapons. Eliminate those that are not charged.
 		weaponList.filter( item => !item.rechargeLeft );
 		// Any finally, do not bother using weapons that can not harm the target.
@@ -1077,8 +1081,10 @@ class Entity {
 			weapon = weaponList.find( item => item.range && dist <= item.range );
 		}
 		if( !weapon ) {
-			weapon = this.naturalWeapon;
+			weapon = this.naturalMeleeWeapon;
 		}
+		console.assert( !weapon.rechargeLeft );
+		console.log( this.typeId+' picked '+(weapon.typeId || weapon.name)+' with recharge '+weapon.rechargeLeft );
 
 		this.generateEffectOnAttack(weapon);
 		return weapon;
@@ -1164,16 +1170,16 @@ class Entity {
 		}
 	}
 
-	lootGenerate( lootString, level ) {
+	lootGenerate( lootSpec, level ) {
 		let itemList = [];
-		new Picker(level).pickLoot( lootString, item=>{
+		new Picker(level).pickLoot( lootSpec, item=>{
 			itemList.push(item);
 		});
 		return itemList;
 	}
 
-	lootTake( lootString, level, originatingEntity, quiet, onEach ) {
-		let itemList = this.lootGenerate( lootString, level );
+	lootTake( lootSpec, level, originatingEntity, quiet, onEach ) {
+		let itemList = this.lootGenerate( lootSpec, level );
 		this.inventoryTake(itemList, originatingEntity, quiet, onEach);
 		return itemList;
 	}
@@ -1191,7 +1197,8 @@ class Entity {
 				tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
 				return;
 			}
-			let inventory = corpse.inventory || [];
+			// Prune out any fake items like natural weapons.
+			let inventory = new Finder(corpse.inventory).isReal().all || [];
 			inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
 			this.inventoryTake( inventory, corpse, false );
 			item.destroy();
@@ -1212,7 +1219,7 @@ class Entity {
 					return false;
 				}
 				// In theory we could generate a certain ammot type, if this weapon isn't specifying a particular item type.
-				let ammoList = this.lootTake( 'weapon '+weapon.ammoType, this.level, this, true );
+				let ammoList = this.lootTake( 'weapon.eInert '+weapon.ammoType, this.level, this, true );
 				console.assert(ammoList[0]);
 				ammoList[0].breakChance = 100;	// avoid generating heaps of whatever is being used for ammo!
 				return ammoList[0];
@@ -1285,6 +1292,10 @@ class Entity {
 		if( ammo.damage && !target.isPosition ) {
 			this.lastAttackTargetId = target.id;
 			this.attack(target,ammo,true);
+			if( item.rechargeTime ) {
+				// HACK! All attacks should REALLY go through .trigger... but they don't yet.
+				item.rechargeLeft = item.rechargeTime;
+			}
 		}
 		else {
 			ammo.trigger(target,this,this.command);

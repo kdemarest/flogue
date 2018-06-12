@@ -135,7 +135,7 @@ function nop() {}
 		for( let loot of lootArray ) {
 			for( let i=0 ; i<loot.count ; ++i ) {
 				if( Math.chance(loot.chance>= 100 ? 100 : loot.chance*sandBag) ) {
-					result.push(loot.id);
+					result.push(loot);
 				}
 			}
 		}
@@ -432,3 +432,30 @@ function showHealthBar(id,newValue,lastValue,total,label) {
 		bar.css('width', barWidth + "%");
 	}, 500);
 }
+
+function shootRange(x1,y1,x2,y2,testFn,onStep) {
+	// Define differences and error check
+	var dx = Math.abs(x2 - x1);
+	var dy = Math.abs(y2 - y1);
+	var sx = (x1 < x2) ? 1 : -1;
+	var sy = (y1 < y2) ? 1 : -1;
+	var err = dx - dy;
+
+	let ok = true;
+	if( onStep ) onStep(x1,y1,ok);
+	while (!((x1 == x2) && (y1 == y2))) {
+		var e2 = err << 1;
+		if (e2 > -dy) {
+			err -= dy;
+			x1 += sx;
+		}
+		if (e2 < dx) {
+			err += dx;
+			y1 += sy;
+		}
+		ok = ok && testFn(x1,y1);
+		if( onStep ) onStep(x1,y1,ok);
+	}
+	return ok;
+}
+

@@ -122,9 +122,9 @@ class Picker {
 			itemTypeProxy = ItemTypeList;
 		}
 		let logging = false;
-		if( filter.keepIs.includes('isArrow') ) {
-			logging = true;
-		}
+//		if( filter.keepIs.includes('isArrow') ) {
+//			logging = true;
+//		}
 
 		for( let ii in itemTypeProxy ) {
 			let item = itemTypeProxy[ii];
@@ -344,18 +344,34 @@ class Picker {
 	}
 
 	// picks it, but doesn't give it to anyone.
-	pickLoot(lootString,callback) {
-		let chanceList = String.chanceParse(lootString);
-		let idList = new Finder( Array.chancePick(chanceList,Tweak.lootFrequency) );
+	// A lootSpec can be a string of the form 3x 40% weapon.dagger, or
+	// { count: n, chance: 60, id: 'weapon.dagger', inject: { anyvar: value, ... }
+	pickLoot(lootSpec,callback) {
+		let chanceList = []
+		lootSpec = Array.isArray(lootSpec) ? lootSpec : [lootSpec];
+		for( let spec of lootSpec ) {
+			if( typeof spec == 'string' ) chanceList.push(...String.chanceParse(spec));
+			if( typeof spec == 'object' ) chanceList.push(Object.assign({},{count:1, chance:100},spec));
+		}
+		
+		let makeList = new Finder( Array.chancePick(chanceList,Tweak.lootFrequency) );
 		let list = [];
-		idList.process( id => {
-			let any = (''+id).toLowerCase()==='any';
-			let type = this.pickItem( [any ? '' : id,any ? 'isTreasure' : ''].join(' ') );
-			if( type ) {
-				let loot = new Item( this.depth, type, type.presets, {isLoot:true} );
-				if( callback ) {
-					callback(loot);
-				}
+		makeList.process( make => {
+			let any = (''+make.id).toLowerCase()==='any';
+			let type = this.pickItem( [any ? '' : make.id,any ? 'isTreasure' : ''].join(' ') );
+			if( !type ) {
+				debugger;
+				return;
+			}
+
+			let inject = Object.assign( {}, make );
+			delete inject.count;
+			delete inject.chance;
+			delete inject.id;
+			inject.isLoot = true;
+			let loot = new Item( this.depth, type, type.presets, inject );
+			if( callback ) {
+				callback(loot);
 			}
 		});
 		return new Finder(list);

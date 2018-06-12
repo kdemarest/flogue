@@ -161,6 +161,7 @@ const StickerList = {
 	bloodBlue: { img: "dc-misc/bloodBlue.png" },
 	bloodYellow: { img: "dc-misc/bloodYellow.png" },
 	bloodBlack: { img: "dc-misc/bloodBlack.png" },
+	bloodWhite: { img: "dc-misc/bloodYellow.png" },
 	showImmunity: { img: 'gui/icons/eImmune.png' },
 	showResistance: { img: 'gui/icons/eResist.png' },
 	showVulnerability: { img: 'gui/icons/eVuln.png' },
@@ -658,6 +659,8 @@ const ItemTypeList = {
 	"oreVein":    { symbol: 'v', mayWalk: false, mayFly: false, rarity: 1, opacity: 1, isWall: true,
 				  imgGet: (self,img) => "ore/"+(img || self.variety.img || "oreVein")+".png", imgChoices: OreVeinList,
 				  varieties: OreVeinList, mineSwings: 3 },
+// FAKE
+	"fake":   	{ symbol: SYM, namePattern: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // CORPSE
 	"corpse":   { symbol: SYM, namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1, isCorpse: true,
 				img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
@@ -1077,7 +1080,7 @@ const MonsterTypeList = {
 	"skeletonArcher": {
 		core: [ SYM, 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		immune: SkeletonImmunity,
-		inventoryLoot: 'weapon.bow',
+		rangedWeapon: { id:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow' },
 		isUndead: true,
 		isSkeleton: true,
 		loot: '50% bones, 50% skull',
@@ -1175,10 +1178,8 @@ const MonsterTypeList = {
 	}
 };
 
-(function() {
-	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
-	for( let typeId in MonsterTypeList ) {
-		let m = MonsterTypeList[typeId];
+function monsterPreProcess(typeId,m) {
+	if( m.core ) {
 		m.symbol = m.core[0];
 		m.level = m.core[1];
 		m.power = m.core[2];
@@ -1187,22 +1188,60 @@ const MonsterTypeList = {
 		m.img = m.core[5];
 		m.pronoun = m.core[6];
 		delete m.core;
+	}
 
-		let blood = {
-			isPlanar: 	'bloodYellow',
-			isDemon: 	'bloodBlack',
-			isEarthChild: 'bloodGreen',
-			isAnimal: 	'bloodRed',
-			isSunChild: 'bloodRed',
-			isLunarChild: 'bloodBlue'
-		};
-		for( let key in blood ) {
-			if( m[key] ) {
-				m.bloodId = m.bloodId || blood[key];
-				break;
-			}
+	let blood = {
+		isPlanar: 	'bloodYellow',
+		isUndead: 	'bloodWhite',
+		isDemon: 	'bloodBlack',
+		isEarthChild: 'bloodGreen',
+		isAnimal: 	'bloodRed',
+		isSunChild: 'bloodRed',
+		isLunarChild: 'bloodBlue'
+	};
+	for( let key in blood ) {
+		if( m[key] ) {
+			m.bloodId = m.bloodId || blood[key];
+			break;
 		}
-		m.bloodId = m.bloodId || 'bloodRed';
+	}
+	m.bloodId = m.bloodId || 'bloodRed';
+
+	m.inventoryLoot = m.inventoryLoot || [];
+	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];
+	m.inventoryLoot.push( Object.assign({
+		id: 'fake',
+		isNatural: true,
+		isMelee: true,
+		isWeapon: true,
+		fake: true,
+		quick: 2,
+		reach: m.reach || 1,
+		damageType: m.damageType || DamageType.CUTS,
+		name: m.damageType
+	}, m.meleeWeapon ));
+	delete m.meleeWeapon;
+
+	if( m.rangedWeapon ) {
+		m.inventoryLoot.push( Object.assign({
+			id: 'fake',
+			isNatural: true,
+			isRanged: true,
+			isWeapon: true,
+			fake: true,
+			range: RANGED_WEAPON_DEFAULT_RANGE,
+			mayShoot: true,
+			damageType: m.damageType || DamageType.STAB,
+			name: 'natural ranged weapon'
+		}, m.rangedWeapon ));
+		delete m.rangedWeapon;
+	}
+}
+
+(function() {
+	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
+	for( let typeId in MonsterTypeList ) {
+		monsterPreProcess(typeId,MonsterTypeList[typeId]);
 	}
 })();
 
@@ -1412,7 +1451,7 @@ ItemTypeList.altar.onTick = function(dt) {
 }
 
 ItemTypeList.fontSolar.onTick = function(dt) {
-	let nearby = new Finder(this.area.entityList,this).nearMe(1);
+	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).nearMe(1);
 	let self = this;
 	nearby.process( entity => {
 		let deed = DeedManager.findFirst( d=>d.isSolarRegen );
@@ -1443,7 +1482,7 @@ MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 		tell(mSubject,attacker,' ',mVerb,'is',' protected from the ',mObject|mPossessive,this,' spines.');
 		return;
 	}
-	let damage = this.rollDamage(this.naturalWeapon.damage);
+	let damage = this.rollDamage(this.naturalMeleeWeapon.damage);
 	attacker.takeDamagePassive( this, null, damage, DamageType.POISON, function(attacker,victim,amount,damageType) {
 		if( amount<=0 ) {
 			tell(mSubject,victim,' ',mVerb,'ignore',' ',mObject|mPossessive,attacker,' spines.');
