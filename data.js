@@ -161,6 +161,7 @@ const StickerList = {
 	bloodBlue: { img: "dc-misc/bloodBlue.png" },
 	bloodYellow: { img: "dc-misc/bloodYellow.png" },
 	bloodBlack: { img: "dc-misc/bloodBlack.png" },
+	bloodWhite: { img: "dc-misc/bloodYellow.png" },
 	showImmunity: { img: 'gui/icons/eImmune.png' },
 	showResistance: { img: 'gui/icons/eResist.png' },
 	showVulnerability: { img: 'gui/icons/eVuln.png' },
@@ -175,8 +176,8 @@ const StickerList = {
 
 // Probably should do this at some point.
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
+const RANGED_WEAPON_DEFAULT_RANGE = 7;
 let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.10;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
-let DEFAULT_CHANCE_AMMO_BREAKS = 50;
 let DEFAULT_EFFECT_DURATION = 10;
 let ARMOR_SCALE = 100;
 
@@ -231,6 +232,7 @@ let EffectTypeList = {
 					valuePick: () => pick(PickIgnore), isHelp: 1, namePattern: 'ignore {value}', icon: 'gui/icons/eImmune.png' },
 // Debuff/Control
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
+	eStun: 			{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'loseTurn', value: true, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eShove.png' },
 	eShove: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'shove', value: 3, isInstant: 1, icon: 'gui/icons/eShove.png' },
 	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.HESITANT, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 0.2, icon: 'gui/icons/eFear.png' },
@@ -299,12 +301,6 @@ const TileTypeList = {
 	"forcefield": { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 1, name: "force field", light: 3, glow:1, img: "spells/air/static_discharge.png" },
 };
 
-function resolve(memberName) {
-	if( typeof this[memberName] == 'function' ) {
-		this[memberName] = this[memberName].apply(this,memberName);
-	}
-}
-
 const ItemTypeDefaults = {
 	namePattern: 'nameless *',
 	mayWalk: true, mayFly: true, opacity: 0,
@@ -339,25 +335,26 @@ const ImgPotion = {
 
 const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
-	'eRegeneration','eFire','ePoison','eCold','eAcid','eHoly','eRot'].includes(k) );
-const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
-	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRage','ePanic','eConfusion','eShove'].includes(k) );
+	'eRegeneration','eFire','ePoison','eCold','eAcid'].includes(k) );
+const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStun','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
+	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRot','eRage','ePanic','eConfusion','eShove'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration','eResistance','eGreed'].includes(k) );
-const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
-const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eShove','eAbsorb','eResistance'].includes(k) );
+const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
+const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eResistance'].includes(k) );
 const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari'].includes(k) );
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
-const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStartle','eHesitate','ePoison','eFire','eCold','eBlindness','eSlow','eVuln'].includes(k) );
+const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','eHesitate','ePoison','eFire','eCold','eBlindness','eSlow','eVuln'].includes(k) );
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponList = Fab.add( '', {
-	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: 7, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },
-	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
+	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },
+	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80,
+					effectAlwaysFires: true, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
 	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
 	"bow": 	    	{ level:  0, rarity: 1.0, damageMultiplier: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
-					mayShoot: true, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
+					mayShoot: true, range: RANGED_WEAPON_DEFAULT_RANGE, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
 	"dagger":   	{ level:  3, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
 	"solKnife":   	{ level:900, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
 	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
@@ -623,8 +620,6 @@ let Tweak = {
 	effectChance: 1.0
 };
 
-const RANGED_WEAPON_DEFAULT_RANGE = 7;
-
 const ARMOR_EFFECT_CHANCE_TO_FIRE = 10;
 const ARMOR_EFFECT_OP_ALWAYS = ['damage'];
 const ARMOR_EFFECT_DAMAGE_PERCENT = 10;
@@ -664,6 +659,8 @@ const ItemTypeList = {
 	"oreVein":    { symbol: 'v', mayWalk: false, mayFly: false, rarity: 1, opacity: 1, isWall: true,
 				  imgGet: (self,img) => "ore/"+(img || self.variety.img || "oreVein")+".png", imgChoices: OreVeinList,
 				  varieties: OreVeinList, mineSwings: 3 },
+// FAKE
+	"fake":   	{ symbol: SYM, namePattern: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // CORPSE
 	"corpse":   { symbol: SYM, namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1, isCorpse: true,
 				img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
@@ -671,16 +668,16 @@ const ItemTypeList = {
 	"coin": 	{ symbol: '$', namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true,
 				isTreasure: 1, img: "item/misc/gold_pile.png", icon: 'coin.png' },
 	"potion":   { symbol: 'p', isTreasure: 1, namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
-				effectChance: 1.0, isPotion: true,
+				effectChance: 1.0, isPotion: true, range: RANGED_WEAPON_DEFAULT_RANGE,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
 				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: ImgPotion, icon: 'potion.png' },
 	"spell":    { symbol: 's', isTreasure: 1, namePattern: 'spell{?effect}', rechargeTime: 10, effects: SpellEffects,
-				effectChance: 1.0, isSpell: true,
+				effectChance: 1.0, isSpell: true, range: RANGED_WEAPON_DEFAULT_RANGE,
 				img: "item/scroll/scroll.png", icon: 'spell.png' },
 	"ore": 		{ symbol: 'o', isTreasure: 1, namePattern: '{variety}', varieties: OreList, isOre: true,
 				imgGet: (self,img) => "ore/"+(img || self.variety.img || "ore")+".png", imgChoices: OreList, icon: 'ore.png' },
 	"gem": 		{ symbol: "g", isTreasure: 1, namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
-				effectChance: 0.20, mayThrow: 1, mayTargetPosition: 1, autoCommand: Command.USE,
+				effectChance: 0.20, mayThrow: 1, range: RANGED_WEAPON_DEFAULT_RANGE, mayTargetPosition: 1, autoCommand: Command.USE,
 				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5, icon: 'gem.png' },
 	"weapon": 	{ symbol: 'w', isTreasure: 1, namePattern: '{material} {variety}{?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
 				useVerb: 'weild', mayTargetPosition: true,
@@ -797,7 +794,7 @@ let UndeadResistance = [DamageType.CUT,DamageType.STAB].join(',');
 let UndeadVulnerability = ['silver',DamageType.SMITE,DamageType.BURN].join(',');
 let ShadowImmunity = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.CORRODE,DamageType.POISON,DamageType.ROT].join(',');
 
-let OozeImmunity = ['blind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
+let OozeImmunity = ['eShove','eBlind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
 let OozeResistance = [DamageType.CUT,Attitude.ENRAGED,Attitude.CONFUSED].join(',');
 let OozeVulnerability = ['ice','glass',DamageType.BURN,DamageType.FREEZE].join(',');
 
@@ -815,6 +812,7 @@ const MonsterTypeList = {
 		attitude: Attitude.CALM,
 		brain: Brain.USER,
 		brainOpensDoors: true,
+		brainPicksup: true,
 		brainTalk: true,
 		inventoryLoot: '',
 		inventoryWear: '',
@@ -823,7 +821,6 @@ const MonsterTypeList = {
 		jumpMax: 1,
 		light: 4,
 		neverPick: true,
-		picksup: true,
 		regenerate: 0.01,
 		sightDistance: MaxSightDistance,
 		strictAmmo: true
@@ -849,7 +846,7 @@ const MonsterTypeList = {
 		isSunChild: true,
 		isDwarf: true,
 		isNamed: true,
-		inventoryLoot: '', //'30x 100% stuff',
+		inventoryLoot: '10x 100% stuff, potion.healing, 20% potion.eFire',
 		properNoun: true,
 		packAnimal: true
 	},
@@ -906,8 +903,10 @@ const MonsterTypeList = {
 		isUnique: true, neverPick: true,
 		brainAlertFriends: true,
 		brainTalk: true,
-		immune: [DamageType.BURN,Attitude.PANICKED].join(','),
+		immune: ['eShove',DamageType.BURN,Attitude.PANICKED].join(','),
+		inventoryLoot: 'spell.eFire, spell.eRot, spell.ePoison',
 		isDemon: true,
+		isLarge: true,
 		sayPrayer: 'I shall rule this planet!',
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
@@ -918,6 +917,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		immune: DemonImmunity,
 		isDemon: true,
+		lootInventory: 'weapon.dart.eFire',
 		loot: '30% coin, 50% potion.eFire, 30% demonScale, 20% pitchfork, 30% demonEye',
 		packAnimal: true,
 		resist: DemonResistance,
@@ -952,6 +952,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
+		inventoryLoot: '3x potion.eFire',
 		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 20% any, 30% pinchOfEarth',
 		packAnimal: true,
 		sayPrayer: 'Oh mighty Thagzog...'
@@ -963,6 +964,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
+		lootInventory: 'weapon.axe',
 		loot: '50% coin, 80% weapon.sword, 20% weapon.club, 30% pinchOfEarth',
 		sayPrayer: 'Oh warrior Thagzog...'
 	},
@@ -973,6 +975,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
+		lootInventory: 'weapon.axe',
 		loot: '50% coin, 80% weapon.mace, 30% pinchOfEarth',
 		sayPrayer: 'Oh mutant Thagzog...'
 	},
@@ -983,6 +986,7 @@ const MonsterTypeList = {
 		glow: 1,
 		immune: DamageType.BURN,
 		isDemon: true,
+		lootInventory: '3x weapon.dart.eFire',
 		loot: '30% potion.eFire, 30% impBrain',
 		senseInvisible: true,
 		travelMode: "fly",
@@ -994,6 +998,7 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		dodge: 1,
+		inventoryLoot: '3x potion.eFire',
 		isEarthChild: true,
 		loot: '50% coin, 50% weapon.dart, 30% weapon.dagger, 30% dogCollar',
 		packAnimal: true
@@ -1003,6 +1008,7 @@ const MonsterTypeList = {
 		name: "ogre child",
 		brainTalk: true, 
 		isEarthChild: true,
+		lootInventory: 'weapon.rock',
 		loot: '50% weapon.club, 20% ogreDrool',
 		resist: DamageType.CUT,
 		speed: 0.75
@@ -1012,10 +1018,11 @@ const MonsterTypeList = {
 		brainTalk: true,
 		isEarthChild: true,
 		isOgre: true,
+		isLarge: true,
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speed: 0.5,
-		rangedWeapon: { rechargeTime: 2, hitsToKillPlayer: 3, ammoType: 'weapon.rock.eInert', damageType: DamageType.BASH }
+		rangedWeapon: { name: "rock", rechargeTime: 2, hitsToKillPlayer: 3, ammoType: 'weapon.rock.eInert', damageType: DamageType.BASH }
 	},
 	"redOoze": {
 		core: [ SYM, 1, '2:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
@@ -1057,6 +1064,7 @@ const MonsterTypeList = {
 		dark: 12,
 		immune: ShadowImmunity,
 		isUndead: true,
+		isSkeleton: true,
 		loot: '50% darkEssence, 20% potion.eBlindness',
 		speed: 0.75,
 		vuln: ['silver',DamageType.SMITE].join(',')
@@ -1065,6 +1073,16 @@ const MonsterTypeList = {
 		core: [ SYM, 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		immune: SkeletonImmunity,
 		isUndead: true,
+		isSkeleton: true,
+		loot: '50% bones, 50% skull',
+		vuln: 'silver'+','+DamageType.SMITE
+	},
+	"skeletonArcher": {
+		core: [ SYM, 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		immune: SkeletonImmunity,
+		rangedWeapon: { id:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow' },
+		isUndead: true,
+		isSkeleton: true,
 		loot: '50% bones, 50% skull',
 		vuln: 'silver'+','+DamageType.SMITE
 	},
@@ -1072,7 +1090,9 @@ const MonsterTypeList = {
 		core: [ SYM, 13, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
 		name: 'ogre skeleton',
 		immune: SkeletonImmunity,
+		inventoryLoot: '50% spell.eRot',
 		isUndead: true,
+		isLarge: true,
 		loot: '50% bones, 50% skull',
 		vuln: 'silver'+','+DamageType.SMITE
 	},
@@ -1089,6 +1109,7 @@ const MonsterTypeList = {
 		core: [ SYM, 8, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
 		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
+		isLarge: true,
 		regenerate: 0.15,
 		vuln: DamageType.BURN
 	},
@@ -1108,6 +1129,7 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DamageType.FREEZE,
+		inventoryLoot: '3x 50% potion.eCold',
 		isLunarChild: true,
 		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
@@ -1123,7 +1145,7 @@ const MonsterTypeList = {
 		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
 		travelType: 'fly',
-		vuln: LunarVulnerabilities
+		vuln: LunarVulnerabilities,
 		rangedWeapon: { basis: 'eCold', rechargeTime: 1, hitsToKillPlayer: 3}
 	},
 
@@ -1157,10 +1179,8 @@ const MonsterTypeList = {
 	}
 };
 
-(function() {
-	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
-	for( let typeId in MonsterTypeList ) {
-		let m = MonsterTypeList[typeId];
+function monsterPreProcess(typeId,m) {
+	if( m.core ) {
 		m.symbol = m.core[0];
 		m.level = m.core[1];
 		m.power = m.core[2];
@@ -1169,22 +1189,60 @@ const MonsterTypeList = {
 		m.img = m.core[5];
 		m.pronoun = m.core[6];
 		delete m.core;
+	}
 
-		let blood = {
-			isPlanar: 	'bloodYellow',
-			isDemon: 	'bloodBlack',
-			isEarthChild: 'bloodGreen',
-			isAnimal: 	'bloodRed',
-			isSunChild: 'bloodRed',
-			isLunarChild: 'bloodBlue'
-		};
-		for( let key in blood ) {
-			if( m[key] ) {
-				m.bloodId = m.bloodId || blood[key];
-				break;
-			}
+	let blood = {
+		isPlanar: 	'bloodYellow',
+		isUndead: 	'bloodWhite',
+		isDemon: 	'bloodBlack',
+		isEarthChild: 'bloodGreen',
+		isAnimal: 	'bloodRed',
+		isSunChild: 'bloodRed',
+		isLunarChild: 'bloodBlue'
+	};
+	for( let key in blood ) {
+		if( m[key] ) {
+			m.bloodId = m.bloodId || blood[key];
+			break;
 		}
-		m.bloodId = m.bloodId || 'bloodRed';
+	}
+	m.bloodId = m.bloodId || 'bloodRed';
+
+	m.inventoryLoot = m.inventoryLoot || [];
+	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];
+	m.inventoryLoot.push( Object.assign({
+		id: 'fake',
+		isNatural: true,
+		isMelee: true,
+		isWeapon: true,
+		fake: true,
+		quick: 2,
+		reach: m.reach || 1,
+		damageType: m.damageType || DamageType.CUTS,
+		name: m.damageType
+	}, m.meleeWeapon ));
+	delete m.meleeWeapon;
+
+	if( m.rangedWeapon ) {
+		m.inventoryLoot.push( Object.assign({
+			id: 'fake',
+			isNatural: true,
+			isRanged: true,
+			isWeapon: true,
+			fake: true,
+			range: RANGED_WEAPON_DEFAULT_RANGE,
+			mayShoot: true,
+			damageType: m.damageType || DamageType.STAB,
+			name: 'natural ranged weapon'
+		}, m.rangedWeapon ));
+		delete m.rangedWeapon;
+	}
+}
+
+(function() {
+	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
+	for( let typeId in MonsterTypeList ) {
+		monsterPreProcess(typeId,MonsterTypeList[typeId]);
 	}
 })();
 
@@ -1291,7 +1349,7 @@ TileTypeList.mud.onDepart = function(entity,self) {
 		return;
 	}
 
-	if( entity.isImmune(self.typeId) || ( entity.isResistant(self.typeId) && Math.chance(50) ) ) {
+	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Math.chance(50) ) ) {
 		return;
 	}
 
@@ -1349,7 +1407,7 @@ ItemTypeList.oreVein.onTouch = function(entity,self) {
 
 
 TileTypeList.forcefield.onEnterType = function(entity,self) {
-	if( entity.isImmune(self.typeId) || ( entity.isResistant(self.typeId) && Math.chance(50) ) ) {
+	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Math.chance(50) ) ) {
 		return;
 	}
 
@@ -1394,7 +1452,7 @@ ItemTypeList.altar.onTick = function(dt) {
 }
 
 ItemTypeList.fontSolar.onTick = function(dt) {
-	let nearby = new Finder(this.area.entityList,this).nearMe(1);
+	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).nearMe(1);
 	let self = this;
 	nearby.process( entity => {
 		let deed = DeedManager.findFirst( d=>d.isSolarRegen );
@@ -1425,7 +1483,7 @@ MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 		tell(mSubject,attacker,' ',mVerb,'is',' protected from the ',mObject|mPossessive,this,' spines.');
 		return;
 	}
-	let damage = this.rollDamage(this.naturalWeapon.damage);
+	let damage = this.rollDamage(this.naturalMeleeWeapon.damage);
 	attacker.takeDamagePassive( this, null, damage, DamageType.POISON, function(attacker,victim,amount,damageType) {
 		if( amount<=0 ) {
 			tell(mSubject,victim,' ',mVerb,'ignore',' ',mObject|mPossessive,attacker,' spines.');

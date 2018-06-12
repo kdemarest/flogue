@@ -64,6 +64,10 @@ class DataConditioner {
 				}
 			}
 
+			for( let typeId in place.monsterTypes ) {
+				monsterPreProcess(typeId,place.monsterTypes[typeId]);
+			}
+
 			mergeSimple( DamageType,	place.damageType);
 			mergeSimple( Attitude,		place.attitude);
 			mergeSimple( PickIgnore,	place.pickIgnore);

@@ -1,10 +1,13 @@
 class Gui {
-	constructor(getPlayer,getArea) {
+	constructor(getPlayer) {
 		this.getPlayer = getPlayer;
-		this.getArea = getArea;
 		this.imageRepo = new ImageRepo(PIXI.loader);
 		this.imageRepo.load();
 		this.view = {};
+		let self = this;
+		window.guiMessage = function(target,message,payload) {
+			self.message(target,message,payload);
+		}
 	}
 
 	get spectator() {
@@ -17,7 +20,7 @@ class Gui {
 		return p;
 	}
 
-	create() {
+	create(onItemChoose) {
 		function worldOverlayAdd(group,x,y,sticker) {
 			new Anim( sticker, {
 				group: 		group,
@@ -41,10 +44,7 @@ class Gui {
 		this.view.info = new ViewInfo('guiInfo')
 		this.view.status = new ViewStatus('guiStatus');
 		this.view.range = new ViewRange(worldOverlayAdd,worldOverlayRemove);
-		this.view.inventory = new ViewInventory('guiInventory',this.imageRepo);
-
-		let keyMap = loadKeyMapping("default");
-		this.userCommandHandler = new UserCommandHandler(keyMap,this.view.inventory,this.view.range);
+		this.view.inventory = new ViewInventory('guiInventory',this.imageRepo,onItemChoose);
 	}
 
 	makeDynamicGui() {
@@ -81,10 +81,10 @@ class Gui {
 
 
 	render() {
-		let area = this.getArea();
+		let area = this.getPlayer().area;
 		let observer = this.spectator;
 
-		area.map.cacheVis();
+		area.vis.cacheVis();
 
 		this.view.narrative.render();
 		this.view.status.render(observer,area.entityList);

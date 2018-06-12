@@ -1312,8 +1312,8 @@
 
 		function assembleRequiredPlaces(placeSource,requiredPlaces) {
 			let chanceList = String.chanceParse( requiredPlaces || '' );
-			let placeIdArray = Array.chancePick(chanceList);
-			return placeIdArray.map( placeId => placeSource[placeId] );
+			let makeArray = Array.chancePick(chanceList);
+			return makeArray.map( make => placeSource[make.id] );
 		}
 
 		function makeRequiredPlaces(roster) {

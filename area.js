@@ -116,8 +116,78 @@ function areaBuild(area,theme,tileQuota) {
 		Gab.entityPostProcess(area);
 	}
 
+	if( Vis ) {
+		area.vis = new Vis(()=>area.map);
+	}
+
 	return area;
 }
+
+function tick(speed,map,entityList) {
+
+	function orderByTurn() {
+		let list = [[],[],[]];	// players, pets, others
+		entityList.map( entity => {
+			let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
+			list[group].push(entity);
+		});
+		list[2].sort( (a,b) => a.speed-b.speed );
+		return [].concat(list[0],list[1],list[2]);
+	}
+
+	function tickItemList(itemList,dt) {
+		for( let item of itemList ) {
+			if( item.rechargeLeft > 0 ) {
+				item.rechargeLeft = Math.max(0,item.rechargeLeft-1);
+			}
+			if( item.onTick ) {
+				item.onTick.call(item,dt,map,entityList);
+			}
+		}
+	}
+
+	function checkDeaths(entityList) {
+		Array.filterInPlace( entityList, entity => {
+			if( entity.isDead() ) {
+				entity.die();
+				return false;
+			}
+			return true;
+		});
+	}
+
+	if( speed === false ) {
+		let player = entityList.find( entity => entity.isUser() );
+		player.act(false);
+		DeedManager.calc(player);
+		clearCommands(entityList);
+		return;
+	}
+
+	let entityListByTurnOrder = orderByTurn(entityList);
+	let dt = 1 / speed;
+	for( let entity of entityListByTurnOrder ) {
+		DeedManager.tick(entity,dt);
+		entity.actionCount += entity.speed / speed;
+		while( entity.actionCount >= 1 ) {
+			entity.calcVis();
+			entity.think();
+			entity.act();
+			tickItemList(entity.inventory,dt,map,entityList);
+			DeedManager.calc(entity);
+			entity.actionCount -= 1;
+		}
+	}
+	map.actionCount += 1 / speed;
+	while( map.actionCount >= 1 ) {
+		tickItemList(map.itemList,dt,map,entityList);
+		map.actionCount -= 1;
+	}
+	DeedManager.cleanup();
+	checkDeaths(entityList);
+	clearCommands(entityList);
+}
+
 
 class Area {
 	constructor(areaId,depth,theme) {
@@ -128,6 +198,9 @@ class Area {
 		this.isArea = true;
 		this.depth = depth;
 		this.theme = theme;
+		this.map = null;
+		this.entityList = null;
+		this.siteList = null;
 		this.mapMemory = [];
 		this.picker = new Picker(depth);
 	}
@@ -145,6 +218,9 @@ class Area {
 	getUnusedGateByTypeId(typeId) {
 		let g = this.gateList.filter( g => g.typeId==typeId && !g.toAreaId );
 		return !g.length ? null : g[0];
+	}
+	tick(speed) {
+		tick( speed, this.map, this.entityList );
 	}
 	siteFind(x,y) {
 		let found;

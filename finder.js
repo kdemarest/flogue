@@ -62,6 +62,9 @@ class Finder {
 		this.result.sort( (a,b) => ((a.x-x)*(a.x-x)+(a.y-y)*(a.y-y)) - ((b.x-x)*(b.x-x)+(b.y-y)*(b.y-y))  );
 		return this;
 	}
+	isReal() {
+		return this.filter( e=>!e.fake );
+	}
 	keepTop(n) {
 		this.result.length = Math.min(this.result.length,n);
 		return this;

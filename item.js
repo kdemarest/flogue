@@ -20,6 +20,8 @@ class Item {
 			return target;
 		}
 
+		if( itemType.typeId == 'fake' && (itemType.isRanged || inject.isRanged) ) debugger;
+
 		// Notice that the init overrides the typeId. This is to make sure that the inject doesn't do so with a dot 
 		// phrase, like weapon.dagger (which it definitely might!)
 		let inits = { level: level, typeId: itemType.typeId, id: GetUniqueEntityId(itemType.typeId,level), owner: null, x:null, y:null };

@@ -234,6 +234,7 @@ let effectApplyTo = function(effect,target,source,item) {
 	// DUPLCATE CODE to the calcBestWeapon...
 	let isImmune = false;
 	isImmune = isImmune || (target.isImmune && target.isImmune(effect.typeId));
+	isImmune = isImmune || (target.isImmune && target.isImmune(effect.op));
 	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
 	if( isImmune ) {
 		tell(mSubject,target,' is immune to ',mObject,effect);
@@ -255,7 +256,13 @@ let effectApplyTo = function(effect,target,source,item) {
 		((item && item.inSlot) || effect.duration==true ? true :
 		Math.max(1,(effect.duration || DEFAULT_EFFECT_DURATION) * (effect.durationMod||1))
 	));
-	let isResist = target.isResistant && (target.isResistant(effect.typeId) || (effect.op=='set' && target.isResistant(effect.value)) );
+	let isResist = false;
+	// I can resist a specific effect type, like "eFire"
+	isResist = isResist || (target.isResist && target.isResist(effect.typeId));
+	// I can resist an effect operation, like "shove"
+	isResist = isResist || (target.isResist && target.isResist(effect.op));
+	// I can resist a value that is being set, like "panicked"
+	isResist = isResist || (effect.op=='set' && target.isResist && target.isResist(effect.value));
 	effect.isResist = isResist;
 
 	if( isResist && effect.isInstant && Math.chance(50) ) {

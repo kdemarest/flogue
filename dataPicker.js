@@ -44,6 +44,7 @@ class Picker {
 	}
 
 	filterStringParse(filterString) {
+		filterString = filterString.trim();
 		let nopTrue = () => true;
 		let nop = () => {};
 
@@ -120,10 +121,13 @@ class Picker {
 		else {
 			itemTypeProxy = ItemTypeList;
 		}
+		let logging = false;
+//		if( filter.keepIs.includes('isArrow') ) {
+//			logging = true;
+//		}
 
 		for( let ii in itemTypeProxy ) {
 			let item = itemTypeProxy[ii];
-			if( !filter.testMembers(item) ) continue;
 			let effectArray = Object.values(item.effects || one);
 			if( item.effects ) {
 				Array.filterInPlace( effectArray, e=>e.typeId!='eInert' );
@@ -131,14 +135,29 @@ class Picker {
 			}
 
 			for( let vi in item.varieties || one ) {
-				if( filter.killId[vi] ) continue;
+				if( filter.killId[vi] ) {
+					if( logging ) console.log( item.typeId+' killed for being '+vi );
+					continue;
+				}
 				let v = (item.varieties || one)[vi];
 				for( let mi in item.materials || one ) {
-					if( filter.killId[mi] ) continue;
+					if( filter.killId[mi] ) {
+						if( logging ) console.log( item.typeId+' killed for being '+mi );
+						continue;
+					}
 					let m = (item.materials || one)[mi];
 					for( let qi in item.qualities || one ) {
-						if( filter.killId[qi] ) continue;
+						if( filter.killId[qi] ) {
+							if( logging ) console.log( item.typeId+' killed for being '+qi );
+							continue;
+						}
 						let q = (item.qualities || one)[qi];
+
+						if( !filter.testMembers(item) && !filter.testMembers(v) && !filter.testMembers(m) && !filter.testMembers(q) ) {
+							if( logging ) console.log( item.typeId+' lacks member' );
+							continue;
+						}
+
 						// Order here MUST be the same as in Item constructor.
 						let effectChance = v.effectChance!==undefined ? v.effectChance : (m.effectChance!==undefined ? m.effectChance : (q.varietyChance!==undefined ? q.varietyChance : item.effectChance || 0));
 						effectChance = effectChance * Tweak.effectChance;
@@ -175,9 +194,14 @@ class Picker {
 							rarityTotal += rarity;
 
 							// Yes, these are LATE in the function. They have to be!
-							if( filter.killId[ei] ) continue;
-							if( !filter.testKeepId(ii,vi,mi,qi,ei) ) continue;
-
+							if( filter.killId[ei] ) {
+								if( logging ) console.log( id+' killed for being '+ei );
+								continue;
+							}
+							if( !filter.testKeepId(ii,vi,mi,qi,ei) ) {
+								if( logging ) console.log( id+' lacked id '+filter.keepId );
+								continue;
+							}
 							let thing = Object.assign( {}, item, {
 								presets: {},
 								level: level,
@@ -250,7 +274,9 @@ class Picker {
 
 	assignEffect(effectRaw,item,rechargeTime) {
 		if( effectRaw.isInert ) return;
-		let effect = Object.assign({},effectRaw);
+		if( effectRaw.basis ) console.assert(EffectTypeList[effectRaw.basis]);
+		let basis = effectRaw.basis ? EffectTypeList[effectRaw.basis] : null;
+		let effect = Object.assign({},basis,effectRaw);
 		effect.effectShape = effect.effectShape || EffectShape.SINGLE;
 
 		if( effect.valueDamage ) {
@@ -318,18 +344,34 @@ class Picker {
 	}
 
 	// picks it, but doesn't give it to anyone.
-	pickLoot(lootString,callback) {
-		let chanceList = String.chanceParse(lootString);
-		let idList = new Finder( Array.chancePick(chanceList,Tweak.lootFrequency) );
+	// A lootSpec can be a string of the form 3x 40% weapon.dagger, or
+	// { count: n, chance: 60, id: 'weapon.dagger', inject: { anyvar: value, ... }
+	pickLoot(lootSpec,callback) {
+		let chanceList = []
+		lootSpec = Array.isArray(lootSpec) ? lootSpec : [lootSpec];
+		for( let spec of lootSpec ) {
+			if( typeof spec == 'string' ) chanceList.push(...String.chanceParse(spec));
+			if( typeof spec == 'object' ) chanceList.push(Object.assign({},{count:1, chance:100},spec));
+		}
+		
+		let makeList = new Finder( Array.chancePick(chanceList,Tweak.lootFrequency) );
 		let list = [];
-		idList.process( id => {
-			let any = (''+id).toLowerCase()==='any';
-			let type = this.pickItem( [any ? '' : id,any ? 'isTreasure' : ''].join(' ') );
-			if( type ) {
-				let loot = new Item( this.depth, type, type.presets, {isLoot:true} );
-				if( callback ) {
-					callback(loot);
-				}
+		makeList.process( make => {
+			let any = (''+make.id).toLowerCase()==='any';
+			let type = this.pickItem( [any ? '' : make.id,any ? 'isTreasure' : ''].join(' ') );
+			if( !type ) {
+				debugger;
+				return;
+			}
+
+			let inject = Object.assign( {}, make );
+			delete inject.count;
+			delete inject.chance;
+			delete inject.id;
+			inject.isLoot = true;
+			let loot = new Item( this.depth, type, type.presets, inject );
+			if( callback ) {
+				callback(loot);
 			}
 		});
 		return new Finder(list);

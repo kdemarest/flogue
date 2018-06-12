@@ -155,12 +155,10 @@ class Anim {
 	sprites(fn) {
 		return this.spriteList.forEach( fn );
 	}
-	create(numSprites,imgChance) {
+	create(numSprites) {
 		if( this.dead ) return;
-		let imgArray = String.chanceParse( imgChance || this.img );
 		while( numSprites-- ) {
-			let img = Array.chancePick(imgArray);
-			this.spriteAdd(img);
+			this.spriteAdd(this.img);
 		}
 	}
 	puppetOnExist(entity) {

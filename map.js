@@ -146,6 +146,7 @@ class SimpleMap {
 }
 
 
+
 class Map extends SimpleMap {
 	constructor(area,tile,itemList) {
 		super(tile);
@@ -153,18 +154,10 @@ class Map extends SimpleMap {
 		this.actionCount = 0;
 		this.tileEntity = [];
 		this.itemList = itemList;
-		this.visCache = [];
-		this.cacheVis();
 		this.initSprites();
 	}
 	get entityList() {
 		return this.area.entityList;
-	}
-	cacheVis() {
-		this.traverse( (x,y) => {
-			this.visSet(x,y,this.tileTypeGet(x,y).opacity||0);
-		});
-		this.itemList.forEach( item => this.visSet( item.x, item.y, Math.max( this.visGet(item.x,item.y), item.opacity||0 ) ) );
 	}
 	initSprites() {
 		this.tileSprite = [];
@@ -183,18 +176,6 @@ class Map extends SimpleMap {
 			}
 		}
 		return this.tileEntity[y][x];
-	}
-	visGet(x,y) {
-		if( !this.inBounds(x,y) ) {
-			return false;
-		}
-		return this.visCache[y*this.xLen+x];
-	}
-	visSet(x,y,opacity) {
-		if( !this.inBounds(x,y) ) {
-			return false;
-		}
-		return this.visCache[y*this.xLen+x] = opacity;
 	}
 	tileTypeGet(x,y) {
 		if( !this.inBounds(x,y) ) {
@@ -222,6 +203,18 @@ class Map extends SimpleMap {
 				e.spriteList = null;
 			}
 		}
+	}
+	pickPosToStartGame() {
+		let f = new Finder(this.itemList).filter( item => item.playerStartHere );
+		if( !f.count ) {
+			console.log( "No player start marker found. Searching for stairsUp." );
+			f = new Finder(this.itemList).filter( item => item.typeId=='stairsUp' );
+			if( !f.first ) {
+				f = new Finder(this.itemList).filter( item => item.typeId=='stairsDown' );
+				console.assert(f.first);
+			}
+		}
+		return [f.first.x,f.first.y];
 	}
 
 	pickPosEmpty() {
@@ -299,106 +292,4 @@ class Map extends SimpleMap {
 		item.y = y;
 		//this.tileSymbolSet(item.x,item.y,item.symbol);
 	}
-}
-
-
-function shootRange(x1,y1,x2,y2,testFn,onStep) {
-	// Define differences and error check
-	var dx = Math.abs(x2 - x1);
-	var dy = Math.abs(y2 - y1);
-	var sx = (x1 < x2) ? 1 : -1;
-	var sy = (y1 < y2) ? 1 : -1;
-	var err = dx - dy;
-
-	let ok = true;
-	if( onStep ) onStep(x1,y1,ok);
-	while (!((x1 == x2) && (y1 == y2))) {
-		var e2 = err << 1;
-		if (e2 > -dy) {
-			err -= dy;
-			x1 += sx;
-		}
-		if (e2 < dx) {
-			err += dx;
-			y1 += sy;
-		}
-		ok = ok && testFn(x1,y1);
-		if( onStep ) onStep(x1,y1,ok);
-	}
-	return ok;
-}
-
-function shoot(map,px,py,sx,sy,tx,ty,blind) {
-	if( sx==tx && sy==ty ) {
-		return true;
-	}
-	if( blind ) {
-		return false;
-	}
-	let sxInt = Math.floor(sx);
-	let syInt = Math.floor(sy);
-	let dx = tx-sx;
-	let dy = ty-sy;
-	let dist = Math.sqrt(dx*dx+dy*dy);
-	let x = sx;
-	let y = sy;
-	let step = 0.25;
-	dx = dx / (dist/step);
-	dy = dy / (dist/step);
-	// Always allowed to see itself.
-	dist -= 0.5;
-	let wallAmount = 0;
-	while( dist > 0 ) {
-		let xInt = Math.floor(x);
-		let yInt = Math.floor(y);
-		let atPlayer = (xInt==px && yInt==py);
-		if( !atPlayer ) {
-			wallAmount += map.visGet(xInt,yInt); // map.tileTypeGet(xInt,yInt).opacity;
-			if( wallAmount >= 1 ) { return false; }
-		}
-		x += dx;
-		y += dy;
-		dist -= step;
-	}
-	return true;
-}
-
-function shoot4(map,px,py,x,y,blind) {
-	let tl = shoot(map,px,py,px,py,x,y,blind);
-	let tr = shoot(map,px,py,px+0.95,py+0.00,x+0.95,y+0.00,blind);
-	let bl = shoot(map,px,py,px+0.00,py+0.95,x+0.00,y+0.95,blind);
-	let br = shoot(map,px,py,px+0.95,py+0.95,x+0.95,y+0.95,blind);
-	let isVisible = tl || tr || bl || br;
-	return isVisible;
-}
-
-
-function calcVis(map,px,py,sightDistance,blind,xray,cachedVis,mapMemory) {
-
-	let a = cachedVis || [];
-	let q = [];
-
-	if( mapMemory ) {
-		for( let item of map.itemList ) {
-			q[item.y*map.xLen+item.x] = item;
-		}
-	}
-
-	for( let y=0 ; y<map.yLen ; ++y ) {
-		a[y] = a[y] || [];
-		for( let x=0 ; x<map.xLen ; ++x ) {
-			if( Math.abs(y-py)>sightDistance || Math.abs(x-px)>sightDistance ) {
-				a[y][x] = false;
-				continue;
-			}
-			a[y][x] = xray ? true : shoot4(map,px,py,x,y,blind);
-			if( mapMemory && a[y][x] ) {
-				let item = q[y*map.xLen+x];
-				mapMemory[y] = mapMemory[y] || [];
-				mapMemory[y][x] = item ? item : map.tileTypeGet(x,y);
-			}
-		}
-	}
-	a[py][px] = true;
-	return a;
 }

@@ -239,7 +239,7 @@ class ViewMiniMap {
 		this.divId = divId;
 		this.captionDivId = captionDivId;
 		this.caption = '';
-		this.mapMemory = null;
+		this.mapMemoryFn = null;
 		this.imageRepo = imageRepo;
 	}
 	create(area) {
@@ -256,7 +256,7 @@ class ViewMiniMap {
 	}
 	setArea(area) {
 		this.caption = area.name;
-		this.mapMemory = area.mapMemory;
+		this.mapMemoryFn = ()=>area.mapMemory;
 		this.create(area);
 	}
 	message(msg,payload) {
@@ -294,7 +294,7 @@ class ViewMiniMap {
 		let c = canvas.getContext("2d");
 		draw(unvisitedMap,0,0,200);
 
-		let mapMemory = this.mapMemory;
+		let mapMemory = this.mapMemoryFn();
 		let drawLate = [];
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {
@@ -328,9 +328,10 @@ class ViewMiniMap {
 
 
 class ViewInventory {
-	constructor(inventoryDivId,imageRepo) {
+	constructor(inventoryDivId,imageRepo,onItemChoose) {
 		this.inventoryDivId = inventoryDivId;
 		this.imageRepo = imageRepo;
+		this.onItemChoose = onItemChoose;
 		this.inventory = null;
 		this.inventoryFn = null;
 		this.inventorySelector = '123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -374,19 +375,35 @@ class ViewInventory {
 			return;
 		}
 
-		this.inventory = this.inventoryFn();
+		this.inventoryRaw = this.inventoryFn().isReal();
 		if( this.allowFilter && this.filterId ) {
 			let filterId = this.filterId;
 			this.inventory.filter( item => item.typeId==filterId );
 		}
 
-		let list = this.inventory.all.sort( function(a,b) { 
+		this.inventoryRaw.all.sort( function(a,b) { 
 			let as = order(a.typeId)+' '+a.name;
 			let bs = order(b.typeId)+' '+b.name;
 			if( as < bs ) return -1;
 			if( as > bs ) return 1;
 			return 0;
 		});
+
+		this.inventory = new Finder([]);
+		this.inventoryRaw.process( item => {
+			let sid = item.name+'&'+item.inSlot;
+			if( !item.inSlot ) {
+				let other = this.inventory.find( item => item._sid==sid );
+				if( other ) {
+					other._count++;
+					return;
+				}
+			}
+			item._sid = sid;
+			item._count = 1;
+			this.inventory.all.push(item);
+		});
+
 
 		function icon(file) {
 			return '<img src="tiles/gui/icons/'+file+'">';
@@ -416,8 +433,8 @@ class ViewInventory {
 		let table = $( '<table class="inv"></table>' ).appendTo(this.div);
 		let tHead = $('<thead><tr><td></td><td></td><td class="right"></td><td>Description</td><td>Armor</td><td colspan="2">Damage</td><td class="right">Bonus</td><td class="right">Chg</td></tr></thead>' ).appendTo(table);
 		let tBody = $('<tbody></tbody>').appendTo(table);
-		for( let i=0 ; i<list.length ; ++i ) {
-			let item = list[i];
+		for( let i=0 ; i<this.inventory.count ; ++i ) {
+			let item = this.inventory.all[i];
 			let s = '';
 			s += '<tr>';
 			s += '<td>'+(item.inSlot ? icon('marked.png') : 
@@ -426,7 +443,7 @@ class ViewInventory {
 						)))+'</td>';
 			s += '<td class="right">'+this.inventorySelector.charAt(i)+'.'+'</td>';
 			s += '<td>'+icon(item.icon)+'</td>';
-			s += '<td>'+item.name+'</td>';
+			s += '<td>'+(item._count>1 ? item._count+'x ' : '')+item.name+'</td>';
 			//s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
 			s += '<td class="ctr">'+(item.isArmor||item.isShield?item.calcReduction(DamageType.CUTS,item.isShield):'')+'</td>';
 			let damage = item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : '');
@@ -441,12 +458,9 @@ class ViewInventory {
 			s += '<td class="ctr">'+(item.rechargeTime?item.rechargeTime:'&nbsp;')+'</td>';
 			s += '</tr>';
 
-			$(s).appendTo(tBody).click( function(event) {
-				event.commandItem = item;
-				onUserEvent(event);
-			});;
+			$(s).appendTo(tBody).click( event => onItemChoose(event,item) );
 		}
-		if( !list.length ) {
+		if( !this.inventory.count ) {
 			$("<tr><td colspan=4>Pick up some items by walking upon them.</td></tr>").appendTo(tBody);
 		}
 		this.userSawInventory = true;
@@ -517,298 +531,5 @@ class ViewRange {
 			//console.log("crosshair at "+(observer.x+this.xOfs)+','+(observer.y+this.yOfs));
 			this.drawRange(observer.map,observer.x,observer.y,observer.x+this.xOfs,observer.y+this.yOfs);
 		}
-	}
-}
-
-function castConvert(cmd,observer,index) {
-	let spellList = getCastableSpellList(observer);
-	cmd.command = Command.CAST;
-	cmd.commandItem = spellList.all[index];
-}
-
-//command
-//- immediatelyConvertsToAnotherCommand (cast1 through 5)
-//- needsItem (determine inventory)
-//- converts based on what was picked [eg Inventory command]
-//- needsTarget (determine range)
-//- passesTimeOnExecution
-
-let CmdTable = {};
-CmdTable[Command.INVENTORY] = {
-	needsItem: true,
-	itemAllowFilter: true,
-	itemFilter: observer => () => new Finder(observer.inventory),
-	convertOnItemChosen: (cmd) => {
-		let command = cmd.command;
-		let item = cmd.commandItem;
-		if( item.isPotion ) {
-			return item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
-		}
-		if( item.isGem ) {
-			return Command.GAZE;
-		}
-		if( item.isSpell ) {
-			return Command.CAST;
-		}
-		if( item.isCorpse ) {
-			return Command.LOOT;
-		}
-		if( item.slot ) {
-			cmd.retain = command;
-			return Command.USE;
-		}
-		return command;
-	},
-	criteriaToExecute: (cmd,observer) => {
-		tell(mSubject,cmd.commandItem,' does nothing. Maybe it has another use?');
-		return false;
-	},
-	passesTimeOnExecution: false
-};
-CmdTable[Command.QUAFF] = {
-	needsItem: true,
-	itemFilter: observer => () => new Finder(observer.inventory).isTypeId("potion"),
-	criteriaToExecute: (cmd,observer) => cmd.commandItem.effect,
-	passesTimeOnExecution: true
-};
-CmdTable[Command.CAST] = {
-	needsItem: true,
-	itemFilter: observer => () => getCastableSpellList(observer),
-	needsTarget: true,
-	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
-	criteriaToExecute: (cmd,observer) => {
-		if( !cmd.commandItem.isRecharged() ) {
-			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,cmd.commandItem,' is still charging.');
-			return false;
-		}
-		return true;
-	},
-	passesTimeOnExecution: true
-};
-CmdTable[Command.THROW] = {
-	needsItem: true,
-	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayThrow ),
-	needsTarget: true,
-	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
-	passesTimeOnExecution: true
-};
-CmdTable[Command.SHOOT] = {
-	needsItem: true,
-	pickItem: observer => {
-		let weaponList = observer.getItemsInSlot(Slot.WEAPON);
-		if( !weaponList.count || !weaponList.first.mayShoot ) {
-			tell(mSubject|mCares,observer,' must select or equip a ranged weapon first.');
-			return null;
-		}
-		return weaponList.first;
-	},
-	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayShoot ),
-	needsTarget: true,
-	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
-	criteriaToExecute: (cmd,observer) => {
-		if( !cmd.commandItem.isRecharged() ) {
-			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,cmd.commandItem,' is still charging.');
-			return false;
-		}
-		let weapon = cmd.commandItem;
-		let ammo   = observer.pickAmmo(weapon);
-		if( !ammo ) {
-			tell(mSubject|mPronoun|mPossessive,observer,' ',mVerb,'has',' no suitable ammunition.');
-			return false;
-		}
-		return true;
-	},
-	passesTimeOnExecution: true
-};
-CmdTable[Command.DROP] = {
-	needsItem: true,
-	itemFilter: observer => () =>  new Finder(observer.inventory),
-	passesTimeOnExecution: true
-};
-CmdTable[Command.DEBUGKILL] = {
-	needsTarget: true,
-	targetRange: (item) => 11,
-	passesTimeOnExecution: true
-};
-CmdTable[Command.USE] = {
-	needsItem: true,
-	itemFilter: observer => () =>  new Finder(observer.inventory).filter( item => item.slot ),
-	passesTimeOnExecution: false
-};
-CmdTable[Command.GAZE] = {
-	needsItem: true,
-	itemFilter: observer => () =>  new Finder(observer.inventory).filter( item => item.isGem ),
-	criteriaToExecute: (cmd,observer) => cmd.commandItem.effect,
-	passesTimeOnExecution: false
-};
-CmdTable[Command.CAST1] = {
-	convertToCommand: (cmd,observer) => castConvert(cmd,observer,0)
-}
-CmdTable[Command.CAST2] = {
-	convertToCommand: (cmd,observer) => castConvert(cmd,observer,1)
-}
-CmdTable[Command.CAST3] = {
-	convertToCommand: (cmd,observer) => castConvert(cmd,observer,2)
-}
-CmdTable[Command.CAST4] = {
-	convertToCommand: (cmd,observer) => castConvert(cmd,observer,3)
-}
-CmdTable[Command.CAST5] = {
-	convertToCommand: (cmd,observer) => castConvert(cmd,observer,4)
-}
-
-class Cmd {
-	constructor(onCancel,onEnact) {
-		this.onCancel = onCancel;
-		this.onEnact = onEnact;
-		this.clear();
-	}
-	clear() {
-		this.command = Command.NONE;
-		this.commandItem = null;
-		this.commandTarget = null;
-		this.retain = null;
-	}
-	cancelItem() {
-		this.commandItem = null;
-		this.commandTarget = null;
-		return false;
-	}
-	cancel() {
-		this.onCancel();
-		this.clear();
-		return false;
-	}
-	enact() {
-		let passesTime = this.passesTimeOnExecution
-		let retain = this.retain;
-		this.onEnact(this);
-		this.clear();
-		if( retain ) { this.command = retain; }
-		return passesTime;
-	}
-	get ct() 					{ return CmdTable[this.command]; }
-	get convertToCommand() 		{ return this.ct && this.ct.convertToCommand; }
-	get needsItem()				{ return this.ct && this.ct.needsItem; }
-	get pickItem()				{ return this.ct && this.ct.pickItem; }
-	get itemAllowFilter()		{ return this.ct && this.ct.itemAllowFilter; }
-	get itemFilter()			{ return this.ct && this.ct.itemFilter; }
-	get convertOnItemChosen()	{ return this.ct && this.ct.convertOnItemChosen; }
-	get needsTarget() 			{ return this.ct && this.ct.needsTarget; }
-	get targetRange() 			{ return this.ct && this.ct.targetRange; }
-	get criteriaToExecute()		{ return this.ct && this.ct.criteriaToExecute; }
-	get passesTimeOnExecution() { return this.ct ? this.ct.passesTimeOnExecution : true; }
-}
-
-let keyENTER = "Enter";
-let keyESCAPE = "Escape";
-
-class UserCommandHandler {
-	constructor(keyToCommand,viewInventory,viewRange) {
-		this.viewInventory = viewInventory;
-		this.viewRange = viewRange;
-		this.keyToCommand = keyToCommand;
-		this.cmd = new Cmd(
-			() => {
-			},
-			(c) => {
-				this.observer.command = c.command;
-				this.observer.commandItem = c.commandItem;;
-				this.observer.commandTarget = c.commandTarget;
-			}
-		);
-	}
-	pickTarget(dirCommand,observer) {
-		if( dirCommand == Command.CANCEL ) {
-			return this.cmd.cancel();
-		}
-		let dir = commandToDirection(dirCommand);
-		if( dir !== false ) {
-			this.viewRange.move(DirectionAdd[dir].x,DirectionAdd[dir].y);
-			return false;
-		}
-		if( dirCommand == Command.EXECUTE ) {
-			let target = new Finder(observer.entityList).at(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
-			if( !target.count && !this.cmd.commandItem.mayTargetPosition && (!this.cmd.commandItem.effect || !this.cmd.commandItem.effect.mayTargetPosition) ) {
-				return this.cmd.cancel();
-			}
-			let x = observer.x+this.viewRange.xOfs;
-			let y = observer.y+this.viewRange.yOfs;
-			this.cmd.commandTarget = target.first || adhoc(observer.map.tileTypeGet(x,y),observer.map,x,y);
-			return this.cmd.enact();
-		}
-	}
-
-	evalCommand(observer,event) {
-		this.observer = observer;		// hack!!
-		let cmd = this.cmd;
-
-		if( cmd.command == Command.NONE ) {
-			let command = this.keyToCommand[event.key] || Command.NONE;
-			if( !CmdTable[command] ) {
-				observer.command = command;
-				observer.commandItem = null;
-				observer.commandTarget = null;
-				return command !== Command.NONE;
-			}
-			cmd.command = command;
-			if( cmd.convertToCommand ) {
-				cmd.convertToCommand(cmd,observer);
-			}
-		}
-
-		if( cmd.needsItem && !cmd.commandItem && cmd.pickItem ) {
-			cmd.commandItem = cmd.pickItem(observer);
-		}
-
-		if( cmd.needsItem && !cmd.commandItem ) {
-			if( !cmd.commandItem ) {
-				let keyEval = this.viewInventory.prime( cmd.itemFilter(observer), cmd.itemAllowFilter, () => cmd.needsItem && !cmd.commandItem );
-				if( keyEval ) {
-					if( this.keyToCommand[event.key] == Command.CANCEL ) {
-						return cmd.cancel();
-					}
-					cmd.commandItem = this.viewInventory.getItemByKey(event.key);
-				}
-			}
-		}
-
-		if( cmd.needsItem && !cmd.commandItem && event.commandItem ) {
-			cmd.commandItem = event.commandItem;
-			delete event.commandItem;
-		}
-
-		let preConvert = null;
-		if( cmd.commandItem && cmd.convertOnItemChosen ) {
-			preConvert = cmd.command;
-			cmd.command = cmd.convertOnItemChosen(cmd);
-		}
-
-		if( cmd.commandItem && cmd.criteriaToExecute ) {
-			if( !cmd.criteriaToExecute(cmd,observer) ) {
-				if (preConvert ) {
-					cmd.command = preConvert;
-					return cmd.cancelItem();
-				}
-				return cmd.cancel();
-			}
-		}
-
-		if( cmd.commandItem && !cmd.needsTarget ) {
-			return cmd.enact();
-		}
-
-		if( cmd.needsTarget && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) ) {
-			this.viewRange.prime(
-				observer,
-				cmd.targetRange(cmd.commandItem),
-				() => cmd.needsTarget && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) );
-			let result = this.pickTarget( this.keyToCommand[event.key], observer );
-			if( result !== undefined ) {
-				return result;
-			}
-		}
-
-		return false;
 	}
 }

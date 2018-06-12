@@ -65,7 +65,7 @@ body {
 	background-color: #00000085;
 	position: absolute;
 	top:0;
-	left:100px;
+	left:165px;
     overflow-y: auto;
     overflow-x: hidden;
     white-space: pre-wrap;
@@ -98,7 +98,7 @@ body {
 }
 #guiInfo {
 	width: 180px;
-	height: 120px;
+	height: 160px;
 	padding-top: 10px;
 	padding-bottom: 10px;
 	white-space: pre;
@@ -314,6 +314,9 @@ table .inv tbody tr .ctr {
 	height: 16px;
 	position: relative;
 	white-space: nowrap;
+	padding-left: 4px;
+	padding-right: 4px;
+	overflow-x: hidden;
 
 	transition: width .5s linear;
 }
