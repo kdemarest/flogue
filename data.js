@@ -1154,6 +1154,7 @@ const MonsterTypeList = {
 		attitude: Attitude.WANDER,
 		dodge: 2,
 		isAnimal: true,
+		isBat: true,
 		loot: '50% batWing',
 		packAnimal: true,
 		senseInvisible: true,
@@ -1277,7 +1278,7 @@ TileTypeList.pit.isProblem = function(entity,self) {
 	if( entity.travelMode == 'walk' ) {
 		return 'death';
 	}
-	return 'none';
+	return false;
 }
 
 

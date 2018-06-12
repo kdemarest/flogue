@@ -51,7 +51,7 @@ ConfigList.ken = () => {
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
-		monsters: 	['isSkeleton']
+		monsters: 	['isSkeleton','isBat']
 
 	}
 

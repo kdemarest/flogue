@@ -418,7 +418,7 @@ class Entity {
 			g.process( item => {
 				if( !item.isProblem ) return;
 				let problem = item.isProblem(entity);
-				if( problem == 'death' || avoidProblem ) {
+				if( problem == 'death' || (problem && avoidProblem) ) {
 					abort = true;
 				}
 			});
@@ -434,7 +434,7 @@ class Entity {
 		}
 
 		let problem = entityType.isProblem(this,entityType);
-		if( problem == 'death' || avoidProblem ) {
+		if( problem == 'death' || (problem && avoidProblem) ) {
 			return false;
 		}
 		return true;
@@ -1164,7 +1164,8 @@ class Entity {
 				mSubject,this,' ',mVerb,'find',' '
 			].concat( 
 				found.length ? found : ['nothing'],
-				originatingEntity ? [' on ',mObject,originatingEntity] : ['']
+				originatingEntity ? [' on ',mObject,originatingEntity] : [''],
+				'.'
 			);
 			tell(...description);
 		}
@@ -1205,6 +1206,12 @@ class Entity {
 			return;
 		}
 		tell(mSubject,this,' ',mVerb,'pick',' up ',mObject|mBold,item,'.');
+	}
+
+	getAmmoName(ammoType) {
+		return ammoType.replace( /\s*is(\S*)\s*/, function(whole,name) {
+			return name;
+		});
 	}
 
 	pickAmmo(weapon) {
@@ -1275,7 +1282,7 @@ class Entity {
 
 		let ammo = this.pickAmmo(item);
 		if( ammo == false ) {
-			tell(mSubject,this,' ',mVerb,'lack',' any '+item.ammoId+' to shoot!');
+			tell(mSubject,this,' ',mVerb,'lack',' any '+this.getAmmoName(item.ammoType)+'s to shoot!');
 			return false;
 		}
 		if( ammo == true ) {
