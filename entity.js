@@ -49,23 +49,14 @@ class Entity {
 		}
 
 		let naturalMeleeWeapon  = this.naturalMeleeWeapon;
-		let naturalRangedWeapon = this.naturalRangedWeapon;
 		console.assert( naturalMeleeWeapon );
 		if( isPlayer ) {
 			let damageWhenJustStartingOut = 0.75;	// I found that 50% was getting me killed by single goblins. Not OK.
 			naturalMeleeWeapon.damage = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
-			if( naturalRangedWeapon ) {
-				console.assert( naturalRangedWeapon.range );
-				naturalRangedWeapon.damage = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
-			}
 		}
 		else {
 			let hitsToKillPlayer = monsterType.power.split(':')[1];
 			naturalMeleeWeapon.damage = Rules.monsterDamage(level,hitsToKillPlayer);
-			if( naturalRangedWeapon ) {
-				console.assert( naturalRangedWeapon.range );
-				naturalRangedWeapon.damage = Rules.monsterDamage(level,naturalRangedWeapon.hitsToKillPlayer || hitsToKillPlayer);
-			}
 		}
 
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
@@ -277,12 +268,6 @@ class Entity {
 		console.assert(weapon);
 		return weapon;
 	}
-
-	get naturalRangedWeapon() {
-		let weapon = new Finder(this.inventory).filter(item=>item.isNatural && item.isRanged).first;
-		return weapon;
-	}
-
 
 	doff(item) {
 		if( !item.inSlot || !item.slot ) {
@@ -1211,16 +1196,16 @@ class Entity {
 	getAmmoName(ammoType) {
 		return ammoType.replace( /\s*is(\S*)\s*/, function(whole,name) {
 			return name;
-		});
+		}).toLowerCase();
 	}
 
 	pickAmmo(weapon) {
 		if( !weapon.ammoType ) {
 			return true;
 		}
-		let f = new Finder(this.inventory).filter(i=>(i[weapon.ammoType] || i.typeId==weapon.ammoType.split('.')[0]) && i.inSlot==Slot.AMMO);
+		let f = new Finder(this.inventory).filter(i=>i[weapon.ammoType] && i.inSlot==Slot.AMMO);
 		if( !f.count ) {
-			f = new Finder(this.inventory).filter(i=>(i[weapon.ammoType] || i.typeId==weapon.ammoType.split('.')[0]) );
+			f = new Finder(this.inventory).filter(i=>i[weapon.ammoType] );
 			if( !f.count ) {
 				if( this.strictAmmo ) {
 					return false;

@@ -17,7 +17,7 @@ ConfigList.ken = () => {
 			.......
 			..ppp..
 			.x...x.
-			.......
+			..oo...
 			.x...x.
 			..fff..
 			.......
@@ -51,7 +51,7 @@ ConfigList.ken = () => {
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
-		monsters: 	['isSkeleton','isBat']
+		monsters: 	['isOgre']
 
 	}
 

@@ -349,13 +349,14 @@ const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStar
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponList = Fab.add( '', {
-	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, quick: 2, mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },
+	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, isRock: true, quick: 2, mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },
 	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80,
 					effectAlwaysFires: true, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
 	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
 	"bow": 	    	{ level:  0, rarity: 1.0, damageMultiplier: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
 					mayShoot: true, range: RANGED_WEAPON_DEFAULT_RANGE, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
 	"dagger":   	{ level:  3, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
+	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
 	"solKnife":   	{ level:900, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
 	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
 	"sword": 		{ level:  1, rarity: 1.0, damageMultiplier: 1.00, damageType: DamageType.CUT, quick: 2, img: 'item/weapon/long_sword1.png' },
@@ -800,10 +801,22 @@ let OozeVulnerability = ['ice','glass',DamageType.BURN,DamageType.FREEZE].join('
 
 let LunarVulnerabilities = ['solarium',DamageType.BURN].join(',');
 
-
 let DemonImmunity = [DamageType.BURN].join(',');
 let DemonResistance = ['deepium',DamageType.POISON,DamageType.STAB].join(',');
 let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE].join(',');
+
+
+function launcher(obj) {
+	// Use this as a convenience to make launchers for anything to be thrown or shot
+	return Object.assign({
+		id: 'weapon.launcher',
+		fake: true,
+		mayShoot: true,
+		damageType: DamageType.STAB,
+		name: 'natural ranged weapon'
+	}, obj );
+}
+
 const MonsterTypeList = {
 
 // GOOD TEAM
@@ -1019,10 +1032,10 @@ const MonsterTypeList = {
 		isEarthChild: true,
 		isOgre: true,
 		isLarge: true,
+		inventoryLoot: launcher({ ammoType: 'isRock', rechargeTime: 2, hitsToKillPlayer: 3, name: "rock" }),
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speed: 0.5,
-		rangedWeapon: { name: "rock", rechargeTime: 2, hitsToKillPlayer: 3, ammoType: 'weapon.rock.eInert', damageType: DamageType.BASH }
 	},
 	"redOoze": {
 		core: [ SYM, 1, '2:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
@@ -1080,7 +1093,7 @@ const MonsterTypeList = {
 	"skeletonArcher": {
 		core: [ SYM, 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		immune: SkeletonImmunity,
-		rangedWeapon: { id:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow' },
+		inventoryLoot: [{ id:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow', fake: true }],
 		isUndead: true,
 		isSkeleton: true,
 		loot: '50% bones, 50% skull',
@@ -1146,7 +1159,7 @@ const MonsterTypeList = {
 		rarity: 1.0,
 		travelType: 'fly',
 		vuln: LunarVulnerabilities,
-		rangedWeapon: { basis: 'eCold', rechargeTime: 1, hitsToKillPlayer: 3}
+		inventoryLoot: { id: 'spell.eCold', rechargeTime: 1, hitsToKillPlayer: 3}
 	},
 
 // NEUTRAL TEAM
@@ -1223,21 +1236,6 @@ function monsterPreProcess(typeId,m) {
 		name: m.damageType
 	}, m.meleeWeapon ));
 	delete m.meleeWeapon;
-
-	if( m.rangedWeapon ) {
-		m.inventoryLoot.push( Object.assign({
-			id: 'fake',
-			isNatural: true,
-			isRanged: true,
-			isWeapon: true,
-			fake: true,
-			range: RANGED_WEAPON_DEFAULT_RANGE,
-			mayShoot: true,
-			damageType: m.damageType || DamageType.STAB,
-			name: 'natural ranged weapon'
-		}, m.rangedWeapon ));
-		delete m.rangedWeapon;
-	}
 }
 
 (function() {
