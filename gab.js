@@ -135,6 +135,12 @@ Gab = (new function(priorGab) {
 		loseTurn: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' ',mVerb,'is',(!newValue?' no longer':''),' stunned.'];
 		},
+		eJump2: function(subj,obj,oldValue,newValue) {
+			return [mSubject,subj,' legs ',mVerb,'feel',(!newValue?' less':''),' springy.'];
+		},
+		eJump3: function(subj,obj,oldValue,newValue) {
+			return [mSubject,subj,' legs ',mVerb,'feel',(!newValue?' less':''),' springy.'];
+		},
 		_generic_: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' ',mVerb,'is',' less enchanted.'];
 		}

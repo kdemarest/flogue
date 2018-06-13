@@ -132,6 +132,35 @@ class ViewFull {
 	}
 }
 
+
+class ViewExperience {
+	constructor(divId) {
+		this.divId = divId;
+		this.experience = 0;
+		this.level = -1;
+	}
+	render(entity) {
+		$('#'+this.divId);
+
+		let level = '<span class="level'+(entity.level>this.level && this.level !==-1 ?' gotLevel':'')+'">Level '+(entity.level+1)+'</span>';
+		this.level = entity.level;
+
+		let exp = '';
+		if( entity.experience !== undefined ) {
+			exp = "Exp: "+Math.percent( entity.experienceProgress(), 0 )+'%';
+			if( entity.experience > this.experience ) {
+				exp = '<span class="gotExperience">'+exp+'</span> (+'+Math.round(entity.experience-this.experience)+')';
+				if( entity.experienceProgress() >= 1.0 ) {
+					tell(mSubject|mCares,entity,' can visit a Solar Altar to level up.');
+				}
+				this.experience = entity.experience;
+			}
+		}
+		$('#'+this.divId).show().html(level+exp);
+	}
+}
+
+
 class ViewInfo {
 	constructor(infoDivId) {
 		this.infoDivId = infoDivId;
@@ -150,12 +179,11 @@ class ViewInfo {
 		s += "Shield: "+(entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block\n";
 		let weapon = entity.calcDefaultWeapon();
 		s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"\n";
-		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travel+'ing</b>' : entity.travelMode+'ing'))+'\n';
+		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+'\n';
 		let conditionList = [];
 		test(entity.invisible,'invis');
 		test(entity.speed<1,'slow');
 		test(entity.speed>1,'fast');
-		test(entity.travelMode!=='walk',entity.travelMode);
 		test(entity.senseBlind,'blind');
 		test(entity.senseXray,'xray');
 		test(entity.senseItems,'treas');

@@ -41,6 +41,7 @@ class Gui {
 		this.view.sign = new ViewSign('guiSign');
 		this.view.miniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',this.imageRepo);
 		this.view.spells = new ViewSpells('guiSpells');
+		this.view.experience = new ViewExperience('guiExperience')
 		this.view.info = new ViewInfo('guiInfo')
 		this.view.status = new ViewStatus('guiStatus');
 		this.view.range = new ViewRange(worldOverlayAdd,worldOverlayRemove);
@@ -90,6 +91,7 @@ class Gui {
 		this.view.status.render(observer,area.entityList);
 		this.view.sign.render(observer);
 		this.view.spells.render(observer);
+		this.view.experience.render(observer);
 		this.view.info.render(observer);
 		this.view.inventory.render(observer);
 		this.view.range.render(observer);

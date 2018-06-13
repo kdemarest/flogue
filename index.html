@@ -88,6 +88,9 @@ function main(levelName) {
 	function onUserEvent(event) {
 		let timePasses = User.commandHandler.evalCommand(User.entity,event);
 		TickWorld(timePasses);
+		event.stopPropagation();
+		event.preventDefault();
+		return false;
 	}
 
 	function onAreaChange(oldArea,area,xPlayer,yPlayer) {
@@ -168,6 +171,8 @@ function main(levelName) {
 				<div id="guiStatus">
 				</div>
 				<div id="guiSpells">
+				</div>
+				<div id="guiExperience">
 				</div>
 				<div id="guiInfo">
 				</div>

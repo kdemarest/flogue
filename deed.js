@@ -117,7 +117,7 @@ let DeedManager = (new class {
 		// WEIRD!! If we just ended a deed, we must STILL calc the value, at least once, so that we can
 		// emit notice that it happened!
 		this.deedList.map(
-			deed => { if( deed.stat ) { statList[deed.stat] = true; } }
+			deed => { if( deed.stat && deed.target.id==target.id) { statList[deed.stat] = true; } }
 		);
 		Object.entries(statList).forEach(
 			([stat,dummy]) => { this.calcStat(target,stat); }
@@ -201,7 +201,7 @@ let effectApply = function(effect,target,source,item) {
 // effect.isResist
 
 let effectApplyTo = function(effect,target,source,item) {
-	function makeAnim(icon) {
+	function animFloatUp(icon) {
 		if( effect.icon !== false ) {
 			new Anim( {}, {
 				follow: 	target,
@@ -213,6 +213,18 @@ let effectApplyTo = function(effect,target,source,item) {
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sAlpha(1-Math.max(0,(2*s.elapsed/s.duration-1))); }
 			});
 		}
+	}
+
+	function animOver(target,img) {
+		new Anim( {}, {
+			follow: 	target,
+			img: 		img,
+			duration: 	0.2,
+			delay: 		effect.rangeDuration || 0,
+			onInit: 		a => { a.create(1); },
+			onSpriteMake: 	s => { s.sScaleSet(0.75); },
+			onSpriteTick: 	s => { }
+		});
 	}
 
 	// Now we can change the value inside it without metting up the origin effect.
@@ -267,34 +279,36 @@ let effectApplyTo = function(effect,target,source,item) {
 
 	if( isResist && effect.isInstant && Math.chance(50) ) {
 		tell(mSubject,target,' resists the effects of ',mObject,effect);
-		new Anim( {}, {
-			follow: 	target,
-			img: 		StickerList.showResistance.img,
-			duration: 	0.2,
-			delay: 		effect.rangeDuration || 0,
-			onInit: 		a => { a.create(1); },
-			onSpriteMake: 	s => { s.sScaleSet(0.75); },
-			onSpriteTick: 	s => { }
-		});
+		animOver(target,StickerList.showResistance.img);
 		return false;
 	}
 
 	if( isResist && !effect.isInstant && effect.duration !== true ) {
 		tell(mSubject,target,' seems partially afected by ',mObject,effect);
 		effect.duration = effect.duration * 0.50;
-		new Anim( {}, {
-			follow: 	target,
-			img: 		StickerList.showResistance.img,
-			duration: 	0.2,
-			delay: 		effect.rangeDuration || 0,
-			onInit: 		a => { a.create(1); },
-			onSpriteMake: 	s => { s.sScaleSet(0.75); },
-			onSpriteTick: 	s => { }
-		});
+		animOver(target,StickerList.showResistance.img);
 	}
 
 	if( effect.icon !== false ) {
-		makeAnim(effect.icon || StickerList.eGeneric.img);
+		if( source && source.command == Command.CAST ) {
+			// Icon flies to the target
+			let dx = target.x-source.x;
+			let dy = target.y-source.y;
+			let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / 15);
+			if( item ) item.rangeDuration = rangeDuration;
+			source.rangeDuration = rangeDuration;
+			effect.rangeDuration = rangeDuration;
+			new Anim({
+				x: 			source.x,
+				y: 			source.y,
+				img: 		effect.icon,
+				duration: 	rangeDuration,
+				onInit: 		a => { a.create(1); },
+				onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sScaleSet(0.6); },
+				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+			});
+		}
+		animFloatUp(effect.icon || StickerList.eGeneric.img);
 	}
 
 	effect.value = rollDice(effect.value);

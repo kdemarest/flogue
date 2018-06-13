@@ -52,7 +52,10 @@ let sReset = function() {
 	this.ry = 0;
 	this.qx = 0;
 	this.qy = 0;
+	this.xVel = 0;
+	this.yVel = 0;
 	this.sScaleSet(1.0);
+	return this;
 }
 let sPos = function(x,y) {
 	this.rx = x;
@@ -72,6 +75,7 @@ let sMove = function(dx=this.xVel,dy=this.yVel) {
 }
 let sQuiver = function(rate,range=0.5) {
 	this.quiver = (this.quiver||0) - this.delta;
+	console.log( "Q=",this.quiver );
 	if( this.quiver <= 0 ) {
 		let rad = Math.rand(0,2*Math.PI);
 		this.qx = Math.cos(rad)*range;
@@ -93,8 +97,10 @@ let sVel = function(deg,vel) {
 //(5/11.18) / 4
 
 let sVelTo = function(dx,dy,duration) {
+	console.log( "vel for ("+dx+','+dy+') A '+this.xVel+','+this.yVel );
 	this.xVel = (this.xVel||0) + dx/duration;
 	this.yVel = (this.yVel||0) + dy/duration;
+	console.log( "vel for ("+dx+','+dy+') B '+this.xVel+','+this.yVel );
 	return this;
 }
 let sGrav = function(amt) {
@@ -129,6 +135,10 @@ class Anim {
 		this.isAnimation = true;
 		this.dead = false;
 		this.delta = 0;
+		this.createAccumulator = 0;
+		this.spritesMade = 0;
+		this.spritesAlive = 0;
+		this.elapsed = 0;
 		if( this.x === undefined && this.follow ) {
 			if( this.follow.inVoid ) {
 				// Don't try to animate on this thing. It is in the void.
@@ -161,6 +171,16 @@ class Anim {
 			this.spriteAdd(this.img);
 		}
 	}
+	createPerSec(numSprites,untilSecond) {
+		if( untilSecond !== undefined && this.elapsed > untilSecond ) {
+			return;
+		}
+		this.createAccumulator += this.delta * numSprites;
+		while( this.createAccumulator > 0 ) {
+			this.create(1);
+			this.createAccumulator -= 1;
+		}
+	}
 	puppetOnExist(entity) {
 		entity.puppetMe = this;
 	}
@@ -184,6 +204,7 @@ class Anim {
 		this.dead = true;
 		if( this.isPuppeteer ) {
 			this.spriteList.forEach( (s,i) => {
+				delete s.dead;
 				if( this.onSpriteDone ) {
 					this.onSpriteDone(s);
 				}
@@ -202,6 +223,9 @@ class Anim {
 		sprite.ry = sprite.ry || 0;
 		sprite.qx = sprite.qx || 0;
 		sprite.qy = sprite.qy || 0;
+		sprite.xVel = 0;
+		sprite.yVel = 0;
+		sprite.quiver = 0;
 		sprite.elapsed = 0;
 		sprite.duration = typeof this.duration === 'number' ? this.duration : true;
 	}
@@ -233,6 +257,8 @@ class Anim {
 		sprite.visible = false;
 		if( this.onSpriteMake ) { this.onSpriteMake(sprite,this); }
 		spriteOnStage( sprite, true );
+		this.drawUpdate(this.xBase,this.yBase,10);	// just pick a visible light level until the main drawUpdate can get to it.
+		this.spritesMade++;
 		return sprite;
 	}
 
@@ -260,6 +286,7 @@ class Anim {
 			return;
 		}
 		this.delta = delta;
+		this.elapsed += delta;
 		if( this.follow && !this.follow.dead ) {
 			this.x = this.follow.x;
 			this.y = this.follow.y;
@@ -268,7 +295,7 @@ class Anim {
 			this.delay -= delta;
 			if( this.delay>0 ) return;
 			this.sprites( s => {
-				s.visible = this.isPuppeteer || this.delay<=0;
+				s.visible = (this.isPuppeteer || this.delay<=0) && !s.dead;
 				this.spriteCalc(s);
 			});
 		}
@@ -277,9 +304,18 @@ class Anim {
 			if( this.dead ) return;
 		}
 		let onSpriteTick = this.onSpriteTick;
+		this.spritesAlive = 0;
 		this.sprites( s=> {
 			s.delta = delta;
 			s.elapsed += delta;
+			if( typeof s.duration == 'number' && s.elapsed > s.duration ) {
+				s.dead = true;
+				if( !this.isPuppeteer ) {
+					s.visible = false;
+				}
+			}
+			if( s.dead ) return;
+			this.spritesAlive++;
 			if( onSpriteTick ) { onSpriteTick( s, this ); }
 			this.spriteCalc(s);
 		});

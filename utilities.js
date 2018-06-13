@@ -33,7 +33,7 @@ function nop() {}
 	Math.percent = function(value,decimals) {
 		let p = 100*Math.pow(10,decimals);
 		let n = '            '+Math.floor(value*p);
-		n = n.substr(0,n.length-decimals)+'.'+n.substr(n.length-decimals);
+		n = n.substr(0,n.length-decimals)+(decimals>0 ? '.'+n.substr(n.length-decimals) : '');
 		return n.substr(-(3+decimals));
 	}
 	String.capitalize = function(s) {

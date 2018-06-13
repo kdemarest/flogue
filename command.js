@@ -180,7 +180,7 @@ class Cmd {
 }
 
 let keyENTER = "Enter";
-let keyESCAPE = "Escape";
+let keyESCAPE = "Tab";
 
 class UserCommandHandler {
 	constructor(keyToCommand,viewInventory,viewRange) {

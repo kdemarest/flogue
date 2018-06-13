@@ -64,6 +64,11 @@ class Item {
 	isRecharged() {
 		return this.rechargeTime === undefined || !this.rechargeLeft;
 	}
+	resetRecharge() {
+		if( this.rechargeTime ) {
+			this.rechargeLeft = this.rechargeTime;
+		}
+	}
 	calcReduction(damageType) {
 		if( !this.isArmor && !this.isShield ) {
 			debugger;

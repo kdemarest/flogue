@@ -51,12 +51,13 @@ ConfigList.ken = () => {
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
-		monsters: 	['isOgre']
+		monsters: 	['isGoblin']
 
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('5x weapon.arrow, weapon.hammer, potion.eFlight, spell.eCold, spell.eShove');
-	MonsterTypeList.player.inventoryWear = 'stuff.lantern, weapon.bow.eFire, shield.eAbsorb, dart.eStun';
+	MonsterTypeList.player.inventoryLoot.push('5x weapon.arrow, weapon.hammer, potion.eFlight, spell.eBlindness, spell.eFire, spell.eHoly, spell.eShove');
+	MonsterTypeList.player.inventoryWear = 'stuff.lantern, weapon.bow.eFire, shield.eAbsorb, dart.eStun, boots.eJump3';
+//	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
 		lootFrequency: 0.80,
@@ -65,8 +66,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 4,
-		themeId: 'kenTheme'
+		startingDepth: 0,
+//		themeId: 'kenTheme'
 	}
 }
 

@@ -233,7 +233,7 @@ let EffectTypeList = {
 // Debuff/Control
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
 	eStun: 			{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'loseTurn', value: true, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eShove.png' },
-	eShove: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'shove', value: 3, isInstant: 1, icon: 'gui/icons/eShove.png' },
+	eShove: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'shove', value: 2, isInstant: 1, icon: 'gui/icons/eShove.png' },
 	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.HESITANT, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 0.2, icon: 'gui/icons/eFear.png' },
 	eVulnerability: { isDeb: 1, level: 10, rarity: 1.00, op: 'add', stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
@@ -647,14 +647,14 @@ const ItemTypeList = {
 	"brazier":    { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" },
 
 	"altar":    { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
-				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.",
+				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.\nTouch it to level up.",
 				effect: { op: 'heal', valueDamage: 6.00, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
 	"fountain": { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, mayPickup: false,
 				isDecor: true, img: "dc-dngn/dngn_blue_fountain.png" },
 	"fontSolar":{ symbol: 'S', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "solar font",
 				light: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontSolar.png" },
-	"fontDeep": { symbol: 'D', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "deep font",
+	"fontDeep": { symbol: 'D', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "deep font", rechargeTime: 4, damageMultiplier: 0.3, damageType: DamageType.ROT, 
 				dark: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontDeep.png" },
 // ORE VEINS
 	"oreVein":    { symbol: 'v', mayWalk: false, mayFly: false, rarity: 1, opacity: 1, isWall: true,
@@ -827,6 +827,7 @@ const MonsterTypeList = {
 		brainOpensDoors: true,
 		brainPicksup: true,
 		brainTalk: true,
+		experience: 0,
 		inventoryLoot: '',
 		inventoryWear: '',
 		isSunChild: true,
@@ -1427,6 +1428,11 @@ TileTypeList.ghostStone.onTouch = function(toucher,self) {
 }
 
 ItemTypeList.altar.onTouch = function(toucher,self) {
+	if( toucher.isMonsterType && toucher.experience!==undefined ) {
+		if( toucher.levelUp() ) {
+			return;
+		}
+	}
 	if( !self.rechargeLeft) {
 		if( toucher.health >= toucher.healthMax ) {
 			tell( mSubject|mCares,toucher,' ',mVerb,'is',' already at full health.');
@@ -1469,6 +1475,21 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 			tell( mSubject|mPossessive|mCares,entity,' ',mObject,item,' suddenly recharges.' );
 		}
 	});
+}
+
+ItemTypeList.fontDeep.onTick = function(dt) {
+	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).nearMe(2);
+	let self = this;
+	nearby.process( entity => {
+		entity.inventory.forEach( item => item.resetRecharge() );
+	});
+	if( this.isRecharged() ) {
+		nearby.process( entity => {
+			let damage = new Picker(self.area.depth).pickDamage(self.rechargeTime,self);
+			entity.takeDamagePassive( null, self, damage, self.damageType || DamageType.ROT );
+		});
+		this.resetRecharge();
+	}
 }
 
 
@@ -1601,6 +1622,6 @@ function loadKeyMapping(name) {
 		F5: Command.CAST5,
 		'.': Command.WAIT,
 		Enter: Command.EXECUTE,
-		Escape: Command.CANCEL
+		Tab: Command.CANCEL
 	};
 }

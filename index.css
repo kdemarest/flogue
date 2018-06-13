@@ -96,6 +96,18 @@ body {
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
+#guiExperience {
+	width: 180px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	white-space: pre;
+	border-top: 1px solid #d2d2d2;
+	color: #d2d2d2;
+	font-family: 'Raleway', sans-serif;
+	font-size: 14px;
+	overflow-y: hidden;
+	overflow-x: hidden;
+}
 #guiInfo {
 	width: 180px;
 	height: 160px;
@@ -140,6 +152,19 @@ body {
 .jump {
 	color: black;
 	background-color: orange;
+}
+.level {
+	font-family: 'Raleway', sans-serif;
+	font-size: 20px;
+	font-weight: 400;
+	margin-right: 16px;
+}
+.gotExperience {
+	color: #6eff00;
+}
+.gotLevel {
+	color: #6eff00;
+	background-color: red;
 }
 .shieldBonus {
 	color: black;

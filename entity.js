@@ -4,7 +4,7 @@
 class Entity {
 	constructor(depth,monsterType,inject) {
 		// Use the average!
-		let level = (depth+monsterType.level) / 2;
+		let level = Math.round( (depth+monsterType.level) / 2 );
 		let inits =    { inVoid: true, inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
 		let values =   { id: GetUniqueEntityId(monsterType.typeId,level) };
 
@@ -13,8 +13,9 @@ class Entity {
 		let isPlayer = monsterType.brain==Brain.USER;
 
 		if( isPlayer ) {
-			inits.healthMax 			= Rules.playerHealth(level);
-			inits.armor     			= 0; //Rules.playerArmor(level);
+			inits.healthMax 		= Rules.playerHealth(level);
+			inits.armor     		= 0; //Rules.playerArmor(level);
+			inits.experience 		= monsterType.experience || 0;
 		}
 		else {
 			let hits = monsterType.power.split(':');
@@ -149,7 +150,50 @@ class Entity {
 	isAlive() {
 		return !this.isDead();
 	}
+	experienceForLevel(level) {
+		return (10+level)*level;
+	}
+	experienceProgress() {
+		return (this.experience || 0) / this.experienceForLevel(this.level+1)
+	}
+	levelUp() {
+		if( this.experience === undefined ) return;
+		if( this.experience < this.experienceForLevel(this.level+1) ) {
+			return;
+		}
+		this.level += 1;
+		this.experience -= this.experienceForLevel(this.level+1);
+		DeedManager.end( deed => deed.stat && deed.stat=='healthMax' );
+		let add = Rules.playerHealth(this.level)-Rules.playerHealth(this.level-1);
+		this.healthMax += add;
+		this.health = Math.max(this.health+add,this.healthMax);
+		tell(mSubject,this,' ',mVerb,'gain',' a level!');
 
+		// happiness flies away from the attacker
+		let tm = 0;
+		let ct=0;
+		let piecesAnim = new Anim({},{
+			follow: 	this,
+			img: 		StickerList.bloodYellow.img,
+			duration: 		a => a.spritesMade && a.spritesAlive==0,
+			onInit: 		a => { },
+			onTick: 		a => a.createPerSec(40,2),
+			onSpriteMake: 	s => s.sScaleSet(0.30).sVel(Math.rand(-30,30),Math.rand(5,10)).duration=1,
+			onSpriteTick: 	s => s.sMove(s.xVel,s.yVel).sGrav(10)
+		});
+		// You also jump back and quiver
+		if( this.spriteList ) {
+			new Anim( {}, {
+				follow: 	this,
+				duration: 2,
+				onInit: 		a => { a.puppet(this.spriteList); },
+				onSpriteMake: 	s => { },
+				onSpriteTick: 	s => { s.sQuiver(0.05,0.10); },
+				onSpriteDone: 	s => { s.sReset(); }
+			});
+		}
+		return true;
+	}
 	dirToEntityPredictable(entity) {
 		let dx = entity.x - this.x;
 		let dy = entity.y - this.y;
@@ -232,6 +276,9 @@ class Entity {
 	}
 
 	canPerceiveEntity(entity) {
+		if( entity.inVoid ) {
+			return false;
+		}
 		if( (entity.isMonsterType && this.senseLife) || (entity.isItemType && this.senseItems) ) {
 			return true;
 		}
@@ -975,12 +1022,17 @@ class Entity {
 
 	takeShove(attacker,item,distance) {
 		let source = attacker || item.ownerOfRecord;
-		let dx = Math.sign(this.x-source.x);
-		let dy = Math.sign(this.y-source.y);
+		let sx = this.x;
+		let sy = this.y;
+
+		let dx = this.x-source.x;
+		let dy = this.y-source.y;
 		if( dx==0 && dy==0 ) {
 			debugger;
 			return;
 		}
+		let dist = Math.sqrt(dx*dx+dy*dy)
+
 		// Special case - all large things resist shove.
 		let resisting = false;
 		if( this.isLarge ) {
@@ -990,12 +1042,29 @@ class Entity {
 
 		let success = true;
 		let bonked = false;
+		let fx = this.x;
+		let fy = this.y;
 		while( success && distance-- ) {
-			success = this.moveTo(this.x+dx,this.y+dy,false,null);
-			if( !success ) bonked = true;
+			fx += dx/dist;
+			fy += dy/dist;
+			success = this.moveTo(Math.round(fx),Math.round(fy),false,null);
+			if( !success ) { bonked = true; break; }
 		}
 		tell(mSubject,this,' ',mVerb,'is',' ',bonked ? 'shoved but blocked.' : (resisting ? 'heavy but moves.' : 'shoved.'));
 		this.loseTurn = true;
+
+		let ddx = this.x - sx;
+		let ddy = this.y - sy;
+		let duration = Math.max(0.1,Math.sqrt(ddx*ddx+ddy*ddy) / 10);
+		new Anim({
+			x: 			sx,
+			y: 			sy,
+			delay: 		source.rangeDuration || 0,
+			duration: 	duration,
+			onInit: 		a => { a.puppet(this.spriteList); },
+			onSpriteMake: 	s => { s.sReset().sVelTo(ddx,ddy,duration); },
+			onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+		});
 	}
 
 	itemToAttackCommand(weapon) {
@@ -1063,6 +1132,7 @@ class Entity {
 		let weapon = weaponList.find( item => !item.range && dist <= (item.reach||1) );
 		if( !weapon ) {
 			// If no melee weapon with appropriate reach, choose a ranged weapon with right range
+			// NOTE: I don't implement blindness here, because no target would make it here if I was blind.
 			weapon = weaponList.find( item => item.range && dist <= item.range );
 		}
 		if( !weapon ) {
@@ -1184,6 +1254,9 @@ class Entity {
 				return;
 			}
 			// Prune out any fake items like natural weapons.
+			if( this.experience !== undefined ) {
+				this.experience += corpse.level;
+			}
 			let inventory = new Finder(corpse.inventory).isReal().all || [];
 			inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
 			this.inventoryTake( inventory, corpse, false );
