@@ -57,7 +57,7 @@ CmdTable[Command.CAST] = {
 	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
 	criteriaToExecute: (cmd,observer) => {
 		if( !cmd.commandItem.isRecharged() ) {
-			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,cmd.commandItem,' is still charging.');
+			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject|mPossessed,cmd.commandItem,' is still charging.');
 			return false;
 		}
 		return true;
@@ -86,7 +86,7 @@ CmdTable[Command.SHOOT] = {
 	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
 	criteriaToExecute: (cmd,observer) => {
 		if( !cmd.commandItem.isRecharged() ) {
-			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject,cmd.commandItem,' is still charging.');
+			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject|mPossessed,cmd.commandItem,' is still charging.');
 			return false;
 		}
 		let weapon = cmd.commandItem;

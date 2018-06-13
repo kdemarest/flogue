@@ -2,11 +2,12 @@ let mSubject = 1;
 let mObject = 2;
 let mPronoun = 4;
 let mPossessive = 8;
-let mA = 16;
-let mCares = 32;
+let mPossessed = 16;
+let mA = 32;
 let mList = 64;
 let mBold = 128;
 let mVerb = 256;
+let mCares = 512;
 
 let IrregularVerbs = [['are','is'],['have','has'],['go','goes']];
 
