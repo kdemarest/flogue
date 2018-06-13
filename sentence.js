@@ -138,12 +138,13 @@ class Sentence {
 				let useA = m[i] & mA;
 				let inList = m[i] & mList;
 				let isBold = m[i] & mBold;
+				let isPossessed = m[i] & mPossessed;
 				let who = m[++i];
 				let specifier = 'the ';
 				if( useA ) {
 					specifier = vowels.indexOf(who.name.charAt(0))>=0 ? 'an ': 'a ';
 				}
-				if( numbers.indexOf(who.name.charAt(0))>=0 ) {
+				if( isPossessed || numbers.indexOf(who.name.charAt(0))>=0 ) {
 					specifier = '';
 				}
 				let thing = (who.properNoun ? '' : specifier)+who.name;
