@@ -902,7 +902,7 @@ class Entity {
 		else
 		if( isImmune ) {
 			quiet = true;
-			tell(mCares,attacker,mSubject,this,' is immune to '+isImmune);
+			tell(mCares,attacker,mSubject,this,' ',mVerb,'is',' immune to '+isImmune);
 			new Anim( {}, {
 				follow: 	this,
 				img: 		StickerList.showImmunity.img,
@@ -916,7 +916,7 @@ class Entity {
 		else
 		if( isResist ) {
 			quiet = true;
-			tell(mSubject,this,' ',mVerb,'resist',' '+isResist+', but takes '+amount+' damage.');
+			tell(mSubject,this,' ',mVerb,'resist',' '+isResist+', but ',mVerb,'take',' '+amount+' damage.');
 			new Anim( {}, {
 				follow: 	this,
 				img: 		StickerList.showResistance.img,

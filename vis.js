@@ -3,6 +3,7 @@ class Vis {
 		this.getMapFn = getMapFn;
 		this.visCache = [];
 		this.cacheVis();
+		this.shootCache = {};
 	}
 	cacheVis() {
 		let map = this.getMapFn();
@@ -24,13 +25,11 @@ class Vis {
 		}
 		return this.visCache[y*map.xLen+x] = opacity;
 	}
-	shoot(px,py,sx,sy,tx,ty,blind) {
+	shoot(px,py,sx,sy,tx,ty,spots) {
 		let map = this.getMapFn();
 		if( sx==tx && sy==ty ) {
+			if( spots ) return spots;
 			return true;
-		}
-		if( blind ) {
-			return false;
 		}
 		let sxInt = Math.floor(sx);
 		let syInt = Math.floor(sy);
@@ -50,21 +49,59 @@ class Vis {
 			let yInt = Math.floor(y);
 			let atPlayer = (xInt==px && yInt==py);
 			if( !atPlayer ) {
-				wallAmount += this.visGet(map,xInt,yInt); // map.tileTypeGet(xInt,yInt).opacity;
-				if( wallAmount >= 1 ) { return false; }
+				if( spots ) {
+					spots.push(xInt-px,yInt-py);
+				}
+				else {
+					console.assert(map.inBounds(xInt,yInt));
+					wallAmount += this.visGet(map,xInt,yInt); // map.tileTypeGet(xInt,yInt).opacity;
+					if( wallAmount >= 1 ) { return false; }
+				}
 			}
 			x += dx;
 			y += dy;
 			dist -= step;
 		}
+		if( spots ) return spots;
+		return true;
+	}
+
+	fast(px,py,spot) {
+		if( !spot.length ) return true;
+		let xLen = this.getMapFn().xLen;
+		let vc = this.visCache;;
+		let wallAmount = 0;
+		for( let i=0 ; i<spot.length ; i+=2 ) {
+			wallAmount += vc[ (py+spot[i+1]) * xLen + (px+spot[i+0]) ];
+			if( wallAmount >= 1 ) { return false; }
+		}
 		return true;
 	}
 
 	shoot4(px,py,x,y,blind) {
-		let tl = this.shoot(px,py,px,py,x,y,blind);
-		let tr = this.shoot(px,py,px+0.95,py+0.00,x+0.95,y+0.00,blind);
-		let bl = this.shoot(px,py,px+0.00,py+0.95,x+0.00,y+0.95,blind);
-		let br = this.shoot(px,py,px+0.95,py+0.95,x+0.95,y+0.95,blind);
+		if( blind ) {
+			return px==x && py==y;
+		}
+		let dx = x-px;
+		let dy = y-py;
+		let cIndex = ''+dx+','+dy;
+		if( !this.shootCache[cIndex] ) {
+			let tl = this.shoot(px,py,px,py,x,y,[]);
+			let tr = this.shoot(px,py,px+0.95,py+0.00,x+0.95,y+0.00,[]);
+			let bl = this.shoot(px,py,px+0.00,py+0.95,x+0.00,y+0.95,[]);
+			let br = this.shoot(px,py,px+0.95,py+0.95,x+0.95,y+0.95,[]);
+			this.shootCache[cIndex] = {
+				tl: tl,
+				tr: tr,
+				bl: bl,
+				br: br
+			};
+		}
+
+		let tl = this.fast(px,py,this.shootCache[cIndex].tl);
+		let tr = this.fast(px,py,this.shootCache[cIndex].tr);
+		let bl = this.fast(px,py,this.shootCache[cIndex].bl);
+		let br = this.fast(px,py,this.shootCache[cIndex].br);
 		let isVisible = tl || tr || bl || br;
 		return isVisible;
 	}

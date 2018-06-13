@@ -231,7 +231,7 @@ class Picker {
 	// 		'isTreasure'		- only picks items marked with isTreasure
 	// 		'!isTreasure'		- makes sure the picked item is not treasure
 	// 		'dagger'			- only picks items that have 'dagger' as the typeId of the item, variety, material, quality or effect
-	//		'potion.healing'	- a healing potion will be selected
+	//		'potion.eHealing'	- a healing potion will be selected
 	//		'!healing'			- an item that does NOT have the healing effect
 	//**
 

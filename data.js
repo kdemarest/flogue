@@ -859,7 +859,7 @@ const MonsterTypeList = {
 		isSunChild: true,
 		isDwarf: true,
 		isNamed: true,
-		inventoryLoot: '10x 100% stuff, potion.healing, 20% potion.eFire',
+		inventoryLoot: '10x 100% stuff, potion.eHealing, 20% potion.eFire',
 		properNoun: true,
 		packAnimal: true
 	},
