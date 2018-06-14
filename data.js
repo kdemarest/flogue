@@ -177,7 +177,7 @@ const StickerList = {
 // Probably should do this at some point.
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
 const RANGED_WEAPON_DEFAULT_RANGE = 7;
-let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.10;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
+let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.05;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
 let DEFAULT_EFFECT_DURATION = 10;
 let ARMOR_SCALE = 100;
 
@@ -524,12 +524,12 @@ const GemQualityList = Fab.add( '', {
 });
 
 const GemList = Fab.add( '', {
-	"garnet": 		{ level:  0, rarity:  0.3, intrinsicEffect: "eHealing", img: "Gem Type1 Red", xAnchor: -0.5, yAnchor: -0.5 },
-	"opal": 		{ level:  5, rarity:  0.3, intrinsicEffect: "eFlight", img: "Gem Type1 Yellow", xAnchor: -0.5, yAnchor: -0.5 },
-	"ruby": 		{ level: 10, rarity:  0.2, intrinsicEffect: "eFire", img: "Gem Type2 Red", xAnchor: -0.5, yAnchor: -0.5 },
-	"emerald": 		{ level: 15, rarity:  0.2, intrinsicEffect: "ePoison", img: "Gem Type2 Green", xAnchor: -0.5, yAnchor: -0.5 },
-	"sapphire": 	{ level: 20, rarity:  0.2, intrinsicEffect: "eCold", img: "Gem Type2 Blue", xAnchor: -0.5, yAnchor: -0.5 },
-	"diamond": 		{ level: 25, rarity:  0.1, intrinsicEffect: "eInvisibility", img: "Gem Type3 Black", xAnchor: -0.5, yAnchor: -0.5 },
+	"garnet": 		{ level:  0, rarity:  0.3, intrinsicEffect: "eHealing", img: "Gem Type1 Red" },
+	"opal": 		{ level:  5, rarity:  0.3, intrinsicEffect: "eFlight", img: "Gem Type1 Yellow" },
+	"ruby": 		{ level: 10, rarity:  0.2, intrinsicEffect: "eFire", img: "Gem Type2 Red" },
+	"emerald": 		{ level: 15, rarity:  0.2, intrinsicEffect: "ePoison", img: "Gem Type2 Green" },
+	"sapphire": 	{ level: 20, rarity:  0.2, intrinsicEffect: "eCold", img: "Gem Type2 Blue" },
+	"diamond": 		{ level: 25, rarity:  0.1, intrinsicEffect: "eInvisibility", img: "Gem Type3 Black" },
 });
 
 const StuffList = Fab.add( '', {
@@ -679,7 +679,7 @@ const ItemTypeList = {
 				imgGet: (self,img) => "ore/"+(img || self.variety.img || "ore")+".png", imgChoices: OreList, icon: 'ore.png' },
 	"gem": 		{ symbol: "g", isTreasure: 1, namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
 				effectChance: 0.20, mayThrow: 1, range: RANGED_WEAPON_DEFAULT_RANGE, mayTargetPosition: 1, autoCommand: Command.USE,
-				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, xAnchor: -0.5, yAnchor: -0.5, icon: 'gem.png' },
+				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, icon: 'gem.png' },
 	"weapon": 	{ symbol: 'w', isTreasure: 1, namePattern: '{material} {variety}{?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
 				useVerb: 'weild', mayTargetPosition: true,
 				effectChance: 0.05,
@@ -723,6 +723,18 @@ const ItemTypeList = {
 
 };
 const ItemSortOrder = ['weapon','helm','armor','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff'];
+const ItemFilterOrder = ['','weapon','armor','shield','potion','spell','ring','gem','ore','stuff'];
+const ItemFilterGroup = {
+	weapon: ['weapon'],
+	armor:  ['armor','helm','bracers','gloves','boots'],
+	shield: ['shield'],
+	ring:   ['ring'],
+	potion: ['potion'],
+	gem:    ['gem'],
+	ore:    ['ore'],
+	spell:  ['spell'],
+	stuff:  ['stuff']
+};
 
 // ItemBag is the top level item probability and price manager.
 // gen = the chance to generate the item. Themes can tweak this number
@@ -1226,7 +1238,7 @@ function monsterPreProcess(typeId,m) {
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];
 	m.inventoryLoot.push( Object.assign({
-		id: 'fake',
+		typeFilter: 'fake',
 		isNatural: true,
 		isMelee: true,
 		isWeapon: true,
@@ -1622,6 +1634,6 @@ function loadKeyMapping(name) {
 		F5: Command.CAST5,
 		'.': Command.WAIT,
 		Enter: Command.EXECUTE,
-		Tab: Command.CANCEL
+		Escape: Command.CANCEL
 	};
 }

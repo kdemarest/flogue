@@ -4,16 +4,17 @@ class Place {
 		Object.assign( this, place );
 		this.inject = this.inject || {};
 	}
-	selectSymbols() {
-		// If any of the symbols are pickable, get that done.
-		for( let s in this.symbols ) {
-			if( Array.isArray(this.symbols[s]) ) {
-				this.symbols[s] = pick(this.symbols[s]);
-				console.log(this.id+" chose "+s+"="+this.symbols[s]);
-			}
-		}
-	}
 	generateStringMap() {
+
+		function containsAnyFieldExcept(obj,fieldList) {
+			for( let key in obj ) {
+				if( !fieldList.includes[key] ) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		if( !this.map && !this.floodId ) debugger;
 		if( !this.map ) {
 			return;
@@ -22,7 +23,12 @@ class Place {
 		if( typeof this.map === 'string' ) {
 			this.mapOriginal = this.map;
 		}
-		this.selectSymbols();
+
+		let pickCache = {};
+		// WEIRD! If a floor type is to be chosen, it MUST be chosen NOW so that we can
+		// make paths properly without worrying about blocking. This means we also have to
+		// pick all the monsters AND any blocking items that might be possible.
+
 		let map = '';
 		let y=0;
 		let x=-1;
@@ -31,32 +37,36 @@ class Place {
 			if( s=='\t' ) { continue; }
 			if( s=='\n' ) { map+=s; ++y; x=-1; continue; }
 			++x;
-			let typeId;
-			let option = this.symbols[s];
+			let supplyMixed = this.symbols[s];
+			if( supplyMixed !== undefined ) {
+				let supplyArray = Array.supplyParse( supplyMixed );
+				let makeArray = Array.supplyToMake( supplyArray, 1.0, pickArray => {
+					// This makes terrain choices persist, picked the same every time.
+					if( !pickCache[s] ) {
+						pickCache[s] = pick(pickArray);
+					}
+					return pickCache[s];
+				});
+				let typeId = makeArray[0].typeFilter.split('.')[0];
+				//if( typeId == 'marker' ) debugger;
 
-			// When you specify symbol.w: 'weapon.dagger' this triggers
-			if( typeof option == 'string' ) {
-				typeId = option.split('.')[0];
-				if( option.indexOf('.')>=0 ) {
-					option = { typeId: option };
+				// We are trying to determine whether an inject even NEEDS to get made. The criteria are tricky.
+				if( makeArray.length > 1 || makeArray[0].count > 1 || makeArray[0].typeFilter.indexOf('.')>=0 || containsAnyFieldExcept(makeArray[0],['typeFilter','count']) ) {
+					let pPos = ''+x+','+y;
+					this.inject[pPos] = this.inject[pPos] || [];
+					this.inject[pPos].push(...makeArray);
 				}
-			}
-			// When you specify symbol.w: { typeId: 'weapon.dagger', isWonderful: true } this triggers
-			if( option !== undefined && typeof option == 'object' ) {
-				console.assert( option.typeId );
-				let pPos = ''+x+','+y;
-				typeId = option.typeId.split('.')[0];
-				this.inject[pPos] = this.inject[pPos] || {};
-				this.inject[pPos][typeId] = option;
-			}
-			// Check if the place chose to used ad-hoc symbology for something
-			if( typeId ) {
-				if( !TypeIdToSymbol[typeId] ) {
+				else {
+					console.log("Chose not to inject "+makeArray[0].typeFilter);
+				}
+
+				s = TypeIdToSymbol[typeId];
+				if( !s ) {
+					debugger;
 					console.log('ERROR: Place '+this.id+' uses unknown type '+typeId);
 					map += TileTypeList.floor.symbol;
 					continue;
 				}
-				s = TypeIdToSymbol[typeId];
 			}
 			if( !SymbolToType[s] && s!==TILE_UNKNOWN ) {
 				console.log('ERROR: unknown symbol ['+s+']');

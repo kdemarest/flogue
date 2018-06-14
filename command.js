@@ -101,6 +101,7 @@ CmdTable[Command.SHOOT] = {
 };
 CmdTable[Command.DROP] = {
 	needsItem: true,
+	itemAllowFilter: true,
 	itemFilter: observer => () =>  new Finder(observer.inventory),
 	passesTimeOnExecution: true
 };
@@ -180,7 +181,7 @@ class Cmd {
 }
 
 let keyENTER = "Enter";
-let keyESCAPE = "Tab";
+let keyESCAPE = "Escape";
 
 class UserCommandHandler {
 	constructor(keyToCommand,viewInventory,viewRange) {

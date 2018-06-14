@@ -346,19 +346,13 @@ class Picker {
 	// picks it, but doesn't give it to anyone.
 	// A lootSpec can be a string of the form 3x 40% weapon.dagger, or
 	// { count: n, chance: 60, id: 'weapon.dagger', inject: { anyvar: value, ... }
-	pickLoot(lootSpec,callback) {
-		let chanceList = []
-		lootSpec = Array.isArray(lootSpec) ? lootSpec : [lootSpec];
-		for( let spec of lootSpec ) {
-			if( typeof spec == 'string' ) chanceList.push(...String.chanceParse(spec));
-			if( typeof spec == 'object' ) chanceList.push(Object.assign({},{count:1, chance:100},spec));
-		}
-		
-		let makeList = new Finder( Array.chancePick(chanceList,Tweak.lootFrequency) );
+	pickLoot(supplyMixed,callback) {
+		let supplyArray = Array.supplyParse(supplyMixed);		
+		let makeList = new Finder( Array.supplyToMake(supplyArray,Tweak.lootFrequency) );
 		let list = [];
 		makeList.process( make => {
-			let any = (''+make.id).toLowerCase()==='any';
-			let type = this.pickItem( [any ? '' : make.id,any ? 'isTreasure' : ''].join(' ') );
+			let any = (''+make.typeFilter).toLowerCase()==='any';
+			let type = this.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ') );
 			if( !type ) {
 				debugger;
 				return;

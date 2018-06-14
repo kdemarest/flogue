@@ -86,10 +86,14 @@ function createDrawList(observer,map,entityList,asType) {
 		q[item.y*map.xLen+item.x] = item;
 		testLight(item.x,item.y,item.light)
 	}
-	for( let anim of animationList ) {
-		testLight(anim.x,anim.y,anim.light)
-	}
 
+// All animations, from any source, start when the object is GATED into the world.
+// Each turn, they are all paused, and then if they are near enough AND visible
+// the animation is turned on.
+
+	for( let anim of animationList ) {
+		testLight(anim.x,anim.y,anim.light);
+	}
 
 	let visId = {};
 	let mapMemoryLight = 2;
@@ -155,8 +159,8 @@ function createDrawList(observer,map,entityList,asType) {
 				else {
 					//dChar = 'T';
 					aa.push(tile);
-					if( item ) { aa.push(item); visId[item.id] = item;}
-					if( entity ) { aa.push(entity); visId[entity.id] = entity;}
+					if( item ) { aa.push(item); visId[item.id] = item; }
+					if( entity ) { aa.push(entity); visId[entity.id] = entity; }
 				}
 			}
 			//else
@@ -364,6 +368,7 @@ class ViewMap {
 					delete entity.puppetMe;
 				}
 			}
+			
 			let glowLight = MaxSightDistance;
 			this.staticTileEntity = this.staticTileEntity || { isStaticTile: true };
 

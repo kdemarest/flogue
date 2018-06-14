@@ -921,7 +921,7 @@ class Entity {
 
 		if( isShielded ) {
 			quiet = true;
-			tell(mSubject,this,' ',mVerb,'catch',' that blow with ',mSubject|mPossessive,this,' ',mObject,shield);
+			tell(mSubject,this,' ',mVerb,'catch',' that blow with ',mSubject|mPossessive,this,' ',mObject|mPossessed,shield);
 			new Anim( {}, {
 				follow: 	this,
 				img: 		StickerList.showResistance.img,
@@ -1148,6 +1148,7 @@ class Entity {
 	attack(target,weapon,isRanged) {
 		console.assert(weapon);
 		this.lastAttackTargetId = target.id;	// Set this early, despite blindness!
+		this.inCombat = true;
 
 		if( (this.senseBlind && !this.baseType.senseBlind) || (target.invisible && !this.senseInvisible) ) {
 			if( Math.chance(50) ) {
@@ -1294,6 +1295,8 @@ class Entity {
 	}
 
 	throwItem(item,target) {
+		this.lastAttackTargetId = target.id;
+		this.inCombat = true;
 		this.generateEffectOnAttack(item);
 		item.giveTo(this.map,target.x,target.y);
 		if( item.damage && !target.isPosition ) {
@@ -1317,6 +1320,7 @@ class Entity {
 
 	cast(item,target) {
 		this.lastAttackTargetId = target.id;
+		this.inCombat = true;
 		item.x = this.x;
 		item.y = this.y;
 		tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');
@@ -1336,6 +1340,8 @@ class Entity {
 	shoot(item,target) {
 		console.assert(item.ammoType);
 
+		this.lastAttackTargetId = target.id;
+		this.inCombat = true;
 		this.generateEffectOnAttack(item);
 
 		let ammo = this.pickAmmo(item);

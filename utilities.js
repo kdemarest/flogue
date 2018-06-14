@@ -47,18 +47,6 @@ function nop() {}
 		}
 		return s;
 	}
-	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^,]+|[*])\s*[,]*/g;
-	String.chanceParse = function(lootString) {
-		let result = [];
-		lootString.replace( ChParser, function( match, count, chance, id ) {
-			count = count ? (parseInt(count) || 1) : 1;
-			if( chance===undefined ) { chance='100'; }
-			chance = parseInt(chance)||100;
-			result.push( { count: count, chance: chance, id: id } );
-		});
-		return result;
-	}
-
 	String.padLeft = function(s,len,char=' ') {
 		while( s.length < len ) {
 			s = char + s;
@@ -130,16 +118,68 @@ function nop() {}
 		return result;
 	}
 
-	Array.chancePick = function(lootArray,sandBag=1.0) {
-		let result = [];
-		for( let loot of lootArray ) {
-			for( let i=0 ; i<loot.count ; ++i ) {
-				if( Math.chance(loot.chance>= 100 ? 100 : loot.chance*sandBag) ) {
-					result.push(loot);
+	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^,]+|[*])\s*[,]*/g;
+	Array.supplyParse = function(supplyMixed) {
+
+		function supplyStringParse(supplyString) {
+			let supply = [];
+			supplyString.replace( ChParser, function( match, count, chance, typeFilter ) {
+				count = count ? (parseInt(count) || 1) : 1;
+				if( chance===undefined ) { chance='100'; }
+				chance = parseInt(chance)||100;
+				supply.push( { count: count, chance: chance, typeFilter: typeFilter } );
+			});
+			return supply;
+		}
+
+		let supplyArray = [];
+		supplyMixed = Array.isArray(supplyMixed) ? supplyMixed : [supplyMixed];
+		for( let mix of supplyMixed ) {
+			if( typeof mix == 'string' ) {
+				supplyArray.push(...supplyStringParse(mix));
+			}
+			if( typeof mix == 'object' ) {
+				console.assert( mix.typeFilter || mix.pick );
+				if( mix.pick ) {
+					supplyArray.push( mix );	// { pick: [ 'floor', 'pit', 'mist' ] }
+				}
+				else {
+					supplyArray.push(Object.assign({},{count:1, chance:100},mix));
 				}
 			}
 		}
-		return result;
+		return supplyArray;
+	}
+
+	Array.supplyValidate = function( supplyArray, typeList ) {
+		supplyArray.forEach( supply => {
+			if( supply.pick ) {
+				supply.pick.forEach( typeFilter => console.assert(typeList[typeFilter.split('.')[0]]) );
+			}
+			else {
+				console.assert(typeList[supply.typeFilter.split('.')[0]]);
+			}
+		});
+	}
+
+	Array.supplyToMake = function(supplyArray,sandBag=1.0,onPick=pick) {
+		let makeList = [];
+		for( let supply of supplyArray ) {
+			if( supply.pick ) {
+				makeList.push({typeFilter: onPick(supply.pick)});
+				continue;
+			}
+			for( let i=0 ; i<(supply.count||1) ; ++i ) {
+				let chance = supply.chance || 100;
+				if( Math.chance(chance>= 100 ? 100 : chance*sandBag) ) {
+					let temp = Object.assign({},supply);
+					delete temp.count;
+					delete temp.chance;
+					makeList.push(temp);
+				}
+			}
+		}
+		return makeList;
 	}
 
 	function betterSplit(s,delim) {

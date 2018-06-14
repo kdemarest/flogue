@@ -13,11 +13,11 @@ function areaBuild(area,theme,tileQuota) {
 		if( !type || !presets ) {
 			// Note that even thought the type might be set here the inject.typeId is allowed to override it.
 			// In practice they won't be different, but the inject.typeId might be a specifier like "weapon.sword"
-			let filterString = inject && inject.typeId ? inject.typeId : (type ? type.typeId : '');
+			let filterString = inject && inject.typeFilter ? inject.typeFilter.replace(/random/,'') : (type ? type.typeId : '');
 			if( !type || type.isTreasure ) {
 				filterString += ' isTreasure';
 			}
-			type = picker.pickItem( filterString );
+			type = picker.pickItem( filterString.trim() );
 			console.assert( type );
 			presets = type.presets;
 		}
@@ -41,19 +41,36 @@ function areaBuild(area,theme,tileQuota) {
 
 	function extractEntitiesFromMap(map,injectList,makeMonsterFn,makeItemFn) {
 		let noEntity = {};
-		map.traverse( (x,y,type) => {
+		map.traverse( (x,y,mapType) => {
 			let pos = ''+x+','+y;
 			let inject = injectList[pos];
-			if( type && type.isMonsterType ) {
-				map.tileSymbolSetFloor(x,y)
-				makeMonsterFn( type, x, y, inject ? inject[type.typeId] : null ); 
-				if( inject ) inject[type.typeId].injected = true;
+			if( !inject ) {
+				inject = [{ typeFilter: mapType.typeId }];
 			}
-			if( type && type.isItemType ) {
-				map.tileSymbolSetFloor(x,y);
-				makeItemFn(type,x,y,null,inject ? inject[type.typeId]: null);	// the null means you have to generate presets for this item.
-				if( inject ) inject[type.typeId].injected = true;
-			}
+			// WARNING! There is no way, currently, to tweak EACH type's probability, so I don't
+			// pass a Tweak in here.
+			let tileSet = false;
+			inject.forEach( make => {
+				console.assert(make.typeFilter);
+				let typeId = make.typeFilter.split('.')[0];
+				if( TileTypeList[typeId] ) {
+					console.assert( !tileSet );
+					map.tileSymbolSet(x,y,TileTypeList[typeId].symbol);
+					tileSet = true;
+					return;
+				}
+				if( MonsterTypeList[typeId] ) {
+					if( !tileSet ) { map.tileSymbolSetFloor(x,y); tileSet=true; }
+					makeMonsterFn( MonsterTypeList[typeId], x, y, make );
+					return;
+				}
+				if( !tileSet ) { map.tileSymbolSetFloor(x,y); tileSet = true; }
+				// If you want a random item, use the item type "random" which is hard-coded to select a
+				// random item. If you want to specify any item with 'silver' you simply can not.
+				console.assert( ItemTypeList[typeId] );
+				makeItemFn( ItemTypeList[typeId], x, y, null, make );	// the null means you have to generate presets for this item.
+			});
+
 		});
 	}
 
@@ -73,16 +90,6 @@ function areaBuild(area,theme,tileQuota) {
 		}
 	}
 
-	function validateInjectList(injectList) {
-		Object.each( injectList, (inject,pos) => {
-			Object.each( inject, (type,typeId) => {
-				if( !type.injected ) {
-					console.log("ERROR: Failed inject of "+typeId+" at "+pos+" payload "+JSON.stringify(type));
-				}
-			});
-		});
-	}
-
 	let injectList = [];
 	area.siteList = [];
 
@@ -97,7 +104,6 @@ function areaBuild(area,theme,tileQuota) {
 	area.entityList = [];
 
 	extractEntitiesFromMap(area.map,injectList,makeMonster,makeItem);
-	validateInjectList(injectList);
 
 	let totalFloor = area.map.count( (x,y,type) => type.isFloor && safeToMake(area.map,x,y) ? 1 : 0);
 	let totalMons  = area.entityList.length;

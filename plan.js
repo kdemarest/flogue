@@ -13,55 +13,55 @@ let Plan = (new class {
 				1: {
 					themeId: 'coreCavernRooms',
 					make: [
-						{ typeId: 'gateway', themeId: 'dwarfTown' },
-						{ typeId: 'gateway', themeId: 'refugeeCamp' },
-						{ typeId: 'fontSolar' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
+						{ typeFilter: 'gateway', themeId: 'refugeeCamp' },
+						{ typeFilter: 'fontSolar' },
 					]
 				},
 				2: {
 					themeId: 'corePits',
 					make: [
-						{ typeId: 'gateway', themeId: 'dwarfTown' },
-						{ typeId: 'gateway', themeId: 'refugeeCampSlaughter' },
-						{ typeId: 'fontSolar' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
+						{ typeFilter: 'gateway', themeId: 'refugeeCampSlaughter' },
+						{ typeFilter: 'fontSolar' },
 					]
 				},
 				3: {
 					themeId: 'coreCavernRooms',
 					make: [
-						{ typeId: 'gateway', themeId: 'spooky' },
-						{ typeId: 'gateway', themeId: 'refugeeCampSlaughter' },
-						{ typeId: 'fontDeep' },
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'gateway', themeId: 'refugeeCampSlaughter' },
+						{ typeFilter: 'fontDeep' },
 					]
 				},
 				4: {
 					themeId: 'coreMaze',
 					make: [
-						{ typeId: 'gateway', themeId: 'dwarfTown' },
-						{ typeId: 'portal', themeId: 'hellscape'  },
-						{ typeId: 'fontSolar' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
+						{ typeFilter: 'portal', themeId: 'hellscape'  },
+						{ typeFilter: 'fontSolar' },
 					]
 				},
 				5: {
 					themeId: 'coreBridges',
 					make: [
-						{ typeId: 'gateway', themeId: 'dwarfGoblinBattle' },
-						{ typeId: 'fontDeep' },
+						{ typeFilter: 'gateway', themeId: 'dwarfGoblinBattle' },
+						{ typeFilter: 'fontDeep' },
 					]
 				},
 				6: {
 					themeId: 'coreSea',
 					make: [
-						{ typeId: 'gateway', themeId: 'dwarfTown' },
-						{ typeId: 'fontSolar' },
-						{ typeId: 'fontDeep' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
 					]
 				},
 				default: {
 					themeId: 'coreCavernMedium',
 					make: [
-						{ typeId: 'gateway' },
-						{ typeId: 'fontDeep' },
+						{ typeFilter: 'gateway' },
+						{ typeFilter: 'fontDeep' },
 					]
 				}
 			},
@@ -69,15 +69,15 @@ let Plan = (new class {
 				default: {
 					themeId: null,
 					make: [
-						{ typeId: 'gateway' },
+						{ typeFilter: 'gateway' },
 					]
 				}
 			}
 		};
 		let p = plan[key][depth] || plan[key].default;
 		if( p.make && key=='core' ) {
-			if( depth > 0 ) p.make.push( { typeId: 'stairsUp' } );
-			if( depth < MAX_DEPTH ) p.make.push( { typeId: 'stairsDown' } );
+			if( depth > 0 ) p.make.push( { typeFilter: 'stairsUp' } );
+			if( depth < MAX_DEPTH ) p.make.push( { typeFilter: 'stairsDown' } );
 		}
 
 		return p;
@@ -98,8 +98,8 @@ let Plan = (new class {
 			// Prune this gate from the plan because we're making the required type.
 			if( plan.make ) {
 				let found = false;
-				Array.filterInPlace( plan.make, schematic => {
-					if( !found && schematic.typeId == gate.gateInverse ) {
+				Array.filterInPlace( plan.make, supply => {
+					if( !found && supply.typeFilter.split('.')[0] == gate.gateInverse ) {
 						found = true;
 						return false;
 					}
@@ -111,7 +111,7 @@ let Plan = (new class {
 				Object.assign({
 					typeId: gate.gateInverse,
 					symbol: TypeIdToSymbol[gate.gateInverse],
-					inject: { toAreaId: currentAreaId, toGateId: gate.id }
+					inject: { typeFilter: gate.gateInverse, toAreaId: currentAreaId, toGateId: gate.id }
 				},
 					gate.gateDir && !theme.inControl ? { x:gate.x, y:gate.y } : { putAnywhere: true }
 				)
@@ -122,13 +122,13 @@ let Plan = (new class {
 		// The theme may choose to control what happens there. Typically the surface does this,
 		// but not others. In general the PLAN should control.
 		if( isCore && !theme.inControl && plan.make ) {
-			plan.make.forEach( schematic => {
-				let typeId = schematic.typeId.split('.')[0];
+			plan.make.forEach( supply => {
+				let typeId = supply.typeFilter.split('.')[0];
 				tileQuota.push({
 					typeId: typeId,
 					symbol: TypeIdToSymbol[typeId],
 					putAnywhere: true,
-					inject: schematic
+					inject: supply
 				});
 			});
 		}

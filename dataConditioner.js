@@ -7,20 +7,24 @@ class DataConditioner {
 		this.validateAndConditionThemeData();
 	}
 
+	// Within any category of rarity, like rCOMMON, you can give a chance that further alters the probability,
+	// for example rCOMMON: 'dog, 50% cat'
 	validateAndConditionThemeData() {
-		function extractRarityHash(theme,rarity,list) {
-			if( !list ) {
+		function extractRarityHash(theme,rarity,supplyMixed) {
+			if( !supplyMixed ) {
 				return;
 			}
-			list = String.chanceParse(list);
-			list.map( chance => {
-				if( theme.rarityHash[chance.id] ) {
+			let supplyArray = Array.supplyParse(supplyMixed);
+			supplyArray.map( supply => {
+				console.assert( supply.count==1 );
+				console.assert( supply.typeFilter );
+				if( theme.rarityHash[supply.typeFilter] ) {
 					// This placeId is duplicated in the same or another rarity table.
 					debugger;
 				}
 
-				theme.rarityHash[chance.id] = rarity;
-				if( !PlaceTypeList[chance.id] ) {
+				theme.rarityHash[supply.typeFilter] = rarity * supply.chance/100;
+				if( !PlaceTypeList[supply.typeFilter] ) {
 					debugger;
 				}
 			});
@@ -37,6 +41,9 @@ class DataConditioner {
 			extractRarityHash(theme,rRARE,theme.rRARE);
 			extractRarityHash(theme,rEPIC,theme.rEPIC);
 			extractRarityHash(theme,rLEGENDARY,theme.rLEGENDARY);
+
+			let supplyArray = Array.supplyParse( theme.rREQUIRED || '' );
+			Array.supplyValidate( supplyArray, PlaceTypeList );
 		}
 	}
 
@@ -98,10 +105,15 @@ class DataConditioner {
 					let s = place.map.charAt(i);
 					if( s=='\t' || s=='\n' || s==TILE_UNKNOWN ) continue;
 					place.tileCount ++;
-					let monster = MonsterTypeList[place.symbols[s]];
-					if( monster ) {
-						level = Math.max(level,monster.level||MIN_DEPTH);
-					}
+					let supplyArray = Array.supplyParse(place.symbols[s]);
+					supplyArray.forEach( supply => {
+						console.assert(supply.typeFilter || supply.pick);
+						// We don't check on the pick list. Maybe we should.
+						let monster = supply.typeFilter ? MonsterTypeList[supply.typeFilter.split('.')[0]] : null;
+						if( monster ) {
+							level = Math.max(level,monster.level||MIN_DEPTH);
+						}
+					});
 				}
 			}
 			if( !place.tileCount && !place.tilePercent ) debugger;
@@ -127,23 +139,15 @@ class DataConditioner {
 			}
 
 			Object.each( place.symbols, option => {
-				// When you specify symbol.w: 'weapon.dagger' this triggers
-				if( typeof option == 'string' ) {
-					add( option.split('.')[0] )
-					return;
-				}
-				// Specify an array to pick among.
-				if( Array.isArray(option) ) {
-					option.forEach( typeId => add(typeId.split('.')[0]) );
-					return;
-				}
-				// When you specify symbol.w: { typeId: 'weapon.dagger', isWonderful: true } this triggers
-				if( option !== undefined && typeof option == 'object' ) {
-					console.assert( option.typeId );
-					add( option.typeId.split('.')[0] );
-					return;
-				}
-				console.assert(false);	// unhandled type in place list.
+				let supplyArray = Array.supplyParse(option);
+				supplyArray.forEach( supply => {
+					if( supply.pick ) {
+						supply.pick.forEach( typeFilter => add( typeFilter.split('.')[0] ) );
+					}
+					else {
+						add( supply.typeFilter.split('.')[0] );
+					}
+				});
 			});
 			place.symbolHash = symbolHash;
 		});

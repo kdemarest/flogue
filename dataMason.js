@@ -79,10 +79,18 @@
 		return tile !== T.Unknown && SymbolToType[tile].wantsBridge;
 	}
 
-	function injectMake(injectList,x,y,typeId,inject) {
+	function injectMake(injectList,x,y,inject) {
+		if( !Array.isArray(inject) && typeof inject == 'object' ) {
+			inject = [inject];
+		}
+		console.assert(Array.isArray(inject));
+		inject.forEach( supply => {
+			// At this point any supply.pick choices should have ALREADY been made!
+			console.assert(supply.typeFilter);
+		});
 		let pos = ''+x+','+y;
-		injectList[pos] = injectList[pos] || {};
-		injectList[pos][typeId] = Object.assign( {}, injectList[pos][typeId], inject );
+		injectList[pos] = injectList[pos] || [];
+		injectList[pos].push(...inject);
 
 	}
 
@@ -703,7 +711,7 @@
 					return;
 				}
 				this.setTile(q.x+mapOffset.x,q.y+mapOffset.y,q.symbol);
-				injectMake( injectList, q.x+mapOffset.x, q.y+mapOffset.y, q.typeId, q.inject );
+				injectMake( injectList, q.x+mapOffset.x, q.y+mapOffset.y, q.inject );
 				q.done = true;
 			});
 		}
@@ -1097,7 +1105,6 @@
 				place = jQuery.extend(true, new Place(), place, {isPrepared: true});
 
 //				console.log("Trying to place "+place.typeId);
-				place.selectSymbols();
 				place.generateMap();
 				place.rotateIfNeeded(rotation);
 			}
@@ -1151,12 +1158,13 @@
 					let typeId = type.typeId;
 					if( place.inject && place.inject[typeId] ) {
 						//console.log(type.typeId+' at '+x+','+y+' will get ',place.inject[type.typeId]);
-						injectMake( injectList, x, y, typeId, place.inject[typeId] );
+						let inject = Object.assign( { typeFilter: typeId }, place.inject[typeId] );
+						injectMake( injectList, x, y, inject );
 					}
 					// Order is important. The specifically positioned one overrides any generic tweaks on the type.
 					let pPos = ''+px+','+py;
 					if( place.inject && place.inject[pPos] ) {
-						injectMake( injectList, x, y, typeId, place.inject[pPos][typeId] );
+						injectMake( injectList, x, y, place.inject[pPos] );
 					}
 				});
 				console.log( "Made mapped place "+place.typeId+" at ("+x+","+y+")" );
@@ -1233,7 +1241,7 @@
 			}
 
 			function injectAndForbid(x,y,q) {
-				injectMake( injectList, x, y, q.typeId, q.inject );
+				injectMake( injectList, x, y, q.inject );
 				forbiddenSymbols.push(q.symbol);
 				q.done = true;
 			}
@@ -1246,7 +1254,7 @@
 						return false;
 					}
 					let pos = ''+x+','+y;
-					if( injectList[pos] && injectList[pos][typeId] && injectList[pos][typeId].fromQuota ) {
+					if( injectList[pos] && injectList[pos].find( make => make.fromQuota ) ) {
 						return false;
 					}
 					return true;
@@ -1310,10 +1318,11 @@
 			});
 		}
 
-		function assembleRequiredPlaces(placeSource,requiredPlaces) {
-			let chanceList = String.chanceParse( requiredPlaces || '' );
-			let makeArray = Array.chancePick(chanceList);
-			return makeArray.map( make => placeSource[make.id] );
+		function assembleRequiredPlaces(placeSource,requiredPlacesSupplyMixed) {
+			let supplyArray = Array.supplyParse( requiredPlacesSupplyMixed || '' );
+			let makeArray   = Array.supplyToMake(supplyArray);
+			// Remember the supplyToMake(), at this time, delivers a single array entry to EACH item in count
+			return makeArray.map( make => placeSource[make.typeFilter] );
 		}
 
 		function makeRequiredPlaces(roster) {
@@ -1321,6 +1330,7 @@
 			let toMake = roster.length;
 			let made   = makeRoster( roster );
 			if( made != toMake ) {
+				console.log("WARNING: Made fewer than asked to make");
 			}
 		}
 

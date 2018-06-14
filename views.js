@@ -165,6 +165,11 @@ class ViewInfo {
 	constructor(infoDivId) {
 		this.infoDivId = infoDivId;
 	}
+	message(msg,payload) {
+		if( msg=='show' ) {
+			this.render(payload);
+		}
+	}
 	render(entity) {
 		function test(t,text) {
 			if( t ) {
@@ -406,7 +411,7 @@ class ViewInventory {
 		this.inventoryRaw = this.inventoryFn().isReal();
 		if( this.allowFilter && this.filterId ) {
 			let filterId = this.filterId;
-			this.inventory.filter( item => item.typeId==filterId );
+			this.inventoryRaw.filter( item => ItemFilterGroup[filterId].includes(item.typeId) );
 		}
 
 		this.inventoryRaw.all.sort( function(a,b) { 
@@ -442,16 +447,15 @@ class ViewInventory {
 
 		let cat = $('<div class="invCategories"></div>').appendTo(this.div);
 		if( this.allowFilter ) {
-			let ItemFilterOrder = [''].concat(ItemSortOrder);
-			ItemFilterOrder.map( typeId => {
-				let typeIcon =  $(icon( typeId=='' ? 'all.png' : ItemTypeList[typeId].icon ));
+			ItemFilterOrder.map( filterId => {
+				let typeIcon =  $(icon( filterId=='' ? 'all.png' : ItemTypeList[filterId].icon ));
 				typeIcon.appendTo(this.div)
-				if( self.allowFilter && self.filterId == typeId ) {
+				if( self.allowFilter && self.filterId==filterId ) {
 					typeIcon.addClass('iconLit');
 				}
 				typeIcon.click( function() {
 					$('.invCategories img').removeClass('iconLit');
-					self.filterId = typeId;
+					self.filterId = filterId;
 					self.render(observer);
 				})
 				.appendTo(cat);
@@ -461,16 +465,19 @@ class ViewInventory {
 		let table = $( '<table class="inv"></table>' ).appendTo(this.div);
 		let tHead = $('<thead><tr><td></td><td></td><td class="right"></td><td>Description</td><td>Armor</td><td colspan="2">Damage</td><td class="right">Bonus</td><td class="right">Chg</td></tr></thead>' ).appendTo(table);
 		let tBody = $('<tbody></tbody>').appendTo(table);
+		let lastTypeId = '';
 		for( let i=0 ; i<this.inventory.count ; ++i ) {
 			let item = this.inventory.all[i];
 			let s = '';
 			s += '<tr>';
+			let spacer = (!lastTypeId || lastTypeId==item.typeId) ? '' : ' class="invSpacer"';
+			lastTypeId = item.typeId;;
 			s += '<td>'+(item.inSlot ? icon('marked.png') : 
 						(item.slot ? icon('unmarked.png') : 
 						(!this.everSeen[item.id]?'<span class="newItem">NEW</span>' : ''
 						)))+'</td>';
 			s += '<td class="right">'+this.inventorySelector.charAt(i)+'.'+'</td>';
-			s += '<td>'+icon(item.icon)+'</td>';
+			s += '<td'+spacer+'>'+icon(item.icon)+'</td>';
 			s += '<td>'+(item._count>1 ? item._count+'x ' : '')+item.name+'</td>';
 			//s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
 			s += '<td class="ctr">'+(item.isArmor||item.isShield?item.calcReduction(DamageType.CUTS,item.isShield):'')+'</td>';
@@ -486,7 +493,7 @@ class ViewInventory {
 			s += '<td class="ctr">'+(item.rechargeTime?item.rechargeTime:'&nbsp;')+'</td>';
 			s += '</tr>';
 
-			$(s).appendTo(tBody).click( event => onItemChoose(event,item) );
+			$(s).appendTo(tBody).click( event => this.onItemChoose(event,item) );
 		}
 		if( !this.inventory.count ) {
 			$("<tr><td colspan=4>Pick up some items by walking upon them.</td></tr>").appendTo(tBody);

@@ -17,7 +17,7 @@ ConfigList.ken = () => {
 			.......
 			..ppp..
 			.x...x.
-			..oo...
+			.....g.
 			.x...x.
 			..fff..
 			.......
@@ -29,7 +29,7 @@ ConfigList.ken = () => {
 			f: 'flames',
 			L: 'lava',
 			M: 'mud',
-			o: 'ogre',
+			g: 'gem'
 		},
 		stickers: {
 		},
@@ -66,8 +66,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 0,
-//		themeId: 'kenTheme'
+		startingDepth: 1,
+		themeId: 'kenTheme'
 	}
 }
 
