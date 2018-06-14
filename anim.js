@@ -266,13 +266,14 @@ class Anim {
 		if( this.dead ) return;
 		this.xBase = xBase;
 		this.yBase = yBase;
+		let self = this;
 
 		this.sprites( s => {
 			s.light = s.glow ? 1 : light;
 			if( !s.alphaChanged ) {
 				s.alpha = s.light;
 			}
-			s.visible = this.isPuppeteer || this.delay<=0;	// required because the gui draw starts each render by setting all to not visible
+			s.visible = self.isPuppeteer || self.delay<=0;	// required because the gui draw starts each render by setting all to not visible
 			this.spriteCalc(s);	// required because if the anim is later in the draw order than the object, the object might not reset the sprite in time.
 		});
 	}
@@ -295,7 +296,7 @@ class Anim {
 			this.delay -= delta;
 			if( this.delay>0 ) return;
 			this.sprites( s => {
-				s.visible = (this.isPuppeteer || this.delay<=0) && !s.dead;
+				s.visible = this.isPuppeteer || !s.dead;
 				this.spriteCalc(s);
 			});
 		}
@@ -310,9 +311,7 @@ class Anim {
 			s.elapsed += delta;
 			if( typeof s.duration == 'number' && s.elapsed > s.duration ) {
 				s.dead = true;
-				if( !this.isPuppeteer ) {
-					s.visible = false;
-				}
+				s.visible = this.isPuppeteer;
 			}
 			if( s.dead ) return;
 			this.spritesAlive++;

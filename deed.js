@@ -200,32 +200,33 @@ let effectApply = function(effect,target,source,item) {
 // effect.duration
 // effect.isResist
 
-let effectApplyTo = function(effect,target,source,item) {
-	function animFloatUp(icon) {
-		if( effect.icon !== false ) {
-			new Anim( {}, {
-				follow: 	target,
-				img: 		effect.icon || StickerList.bloodBlue.img,
-				duration: 	0.4,
-				delay: 		effect.rangeDuration || 0,
-				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sVelTo(0,-1,0.4).sScaleSet(0.75); },
-				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sAlpha(1-Math.max(0,(2*s.elapsed/s.duration-1))); }
-			});
-		}
-	}
-
-	function animOver(target,img) {
+function animFloatUp(target,icon,delay) {
+	if( icon !== false ) {
 		new Anim( {}, {
 			follow: 	target,
-			img: 		img,
-			duration: 	0.2,
-			delay: 		effect.rangeDuration || 0,
+			img: 		icon || StickerList.bloodBlue.img,
+			duration: 	0.4,
+			delay: 		delay || 0,
 			onInit: 		a => { a.create(1); },
-			onSpriteMake: 	s => { s.sScaleSet(0.75); },
-			onSpriteTick: 	s => { }
+			onSpriteMake: 	s => { s.sVelTo(0,-1,0.4).sScaleSet(0.75); },
+			onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sAlpha(1-Math.max(0,(2*s.elapsed/s.duration-1))); }
 		});
 	}
+}
+
+function animOver(target,icon) {
+	new Anim( {}, {
+		follow: 	target,
+		img: 		icon,
+		duration: 	0.2,
+		delay: 		effect.rangeDuration || 0,
+		onInit: 		a => { a.create(1); },
+		onSpriteMake: 	s => { s.sScaleSet(0.75); },
+		onSpriteTick: 	s => { }
+	});
+}
+
+let effectApplyTo = function(effect,target,source,item) {
 
 	// Now we can change the value inside it without metting up the origin effect.
 	effect = Object.assign( {}, effect, { target:target, source: source, item: item });
@@ -308,7 +309,7 @@ let effectApplyTo = function(effect,target,source,item) {
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
 			});
 		}
-		animFloatUp(effect.icon || StickerList.eGeneric.img);
+		animFloatUp(target,effect.icon || StickerList.eGeneric.img,effect.rangeDuration);
 	}
 
 	effect.value = rollDice(effect.value);

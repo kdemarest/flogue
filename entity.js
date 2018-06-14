@@ -226,6 +226,9 @@ class Entity {
 		if( entity.id == this.personalEnemy ) {
 			return false;
 		}
+		if( entity.id == this.masterId ) {
+			return true;
+		}
 		return entity.team == this.team && entity.team != Team.NEUTRAL;
 	}
 	isMyNeutral(entity) {
@@ -550,12 +553,16 @@ class Entity {
 				if( this.loseTurn ) {
 					return Command.LOSETURN;
 				}
+				if( this.busy ) {
+					return Command.BUSY;
+				}
 
 				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
 				let enemyList = this.findAliveOthers().isMyEnemy().canPerceiveEntity().byDistanceFromMe();
 				let theEnemy = enemyList.first;
 				let vendetta = enemyList.includesId(this.personalEnemy);
 				let distanceToNearestEnemy = enemyList.count ? this.getDistance(theEnemy.x,theEnemy.y) : false;
+				let hurt = this.healthPercent()<30;
 
 				// CONFUSED
 				if( this.attitude == Attitude.CONFUSED ) {
@@ -576,6 +583,32 @@ class Entity {
 					this.attitude = Attitude.AGGRESSIVE;
 					if( this.brainTalk ) {
 						tell(mSubject,this,' ',mVerb,'shout',': INTERLOPER!');
+					}
+				}
+
+				if( this.brainMaster && enemyList.count<=0 && this.getDistance(this.brainMaster.x,this.brainMaster.y)>2 &&
+					this.attitude !== Attitude.ENRAGED && this.attitude !== Attitude.PANICKED ) {
+					let friend = this.brainMaster;
+					this.record('stay near master '+this.brainMaster.id,true);
+					let c = this.thinkApproach(friend.x,friend.y,friend);
+					if( c !== false ) {
+						return c;
+					}
+				}
+
+				let hungry = this.brainRavenous || false;
+				hungry = hungry || (this.isAnimal && (distanceToNearestEnemy===false || distanceToNearestEnemy>4));
+				if( hungry && [Attitude.AWAIT,Attitude.AGGRESSIVE,Attitude.HESITANT,Attitude.FEARFUL,Attitude.WANDER].includes(this.attitude) ) {
+					let foodList = new Finder(this.map.itemList,this).filter(item=>item.isEdible).canPerceiveEntity().nearMe(2).byDistanceFromMe();
+					if( foodList.first && foodList.first.x==this.x && foodList.first.y==this.y ) {
+						this.record('found some food. eating.',true);
+						this.commandItem = foodList.first;
+						return Command.EAT;
+					}
+					this.record('head towards food',true);
+					let c = this.thinkApproach(foodList.first.x,foodList.first.y,foodList.first);
+					if( c !== false ) {
+						return c;
 					}
 				}
 
@@ -611,16 +644,22 @@ class Entity {
 
 				// FLOCK
 				// Pack animals and pets return to safety when...
-				let hurt = this.healthPercent()<30;
 				if( hurt && this.brainPet ) {
 					this.vocalize = [mSubject,this,' ',mVerb,Math.chance(50)?'wimper':'whine'];
 				}
-				if( (hurt || !enemyList.count) && (this.brainPet || this.packAnimal) ) {
-					// When hurt, your pet will run towards you. Once with 2 it will flee its enemies, but still stay within 2 of you.
-					let friendList = this.findAliveOthers().isMyFriend().farFromMe(2).byDistanceFromMe();
-					if( friendList.count ) {
+				if( (hurt || !enemyList.count) && (this.brainMaster || this.brainPet || this.packAnimal) ) {
+					// When hurt, your pet will run towards you. Once with 2 it will flee its enemies, but still stay within 2 of you.	
+					let friend;
+					if( this.brainMaster ) {
+						// We explicitly include your master because s/he might be in a different area!
+						friend = this.findAliveOthers().prepend(this.brainMaster).isMyFriend().farFromMe(2).isId(this.brainMaster.id).first;
+					}
+					else {
+						friend = this.findAliveOthers().isMyFriend().farFromMe(2).byDistanceFromMe().first;
+					}
+					if( friend ) {
 						this.record('back to a friend',true);
-						let c = this.thinkApproach(friendList.first.x,friendList.first.y,friendList.first);
+						let c = this.thinkApproach(friend.x,friend.y,friend);
 						if( c !== false ) {
 							return c;
 						}
@@ -1487,6 +1526,17 @@ class Entity {
 	}
 
 	actOnCommand() {
+		if( this.command == Command.BUSY ) {
+			console.assert( typeof this.busy.turns == 'number' && !isNaN(this.busy.turns) );
+			this.busy.turns--;
+			if( this.busy.turns <= 0 ) {
+				this.busy.onDone();
+				delete this.busy;
+			}
+			else {
+				animFloatUp(this,this.busy.icon);
+			}
+		}
 		switch( this.command ) {
 			case Command.LOSETURN: {
 				if( this.brain == 'user' ) {
@@ -1504,6 +1554,27 @@ class Entity {
 				if( this.brain == 'user' ) {
 					tell(mSubject,this,' ',mVerb,'wait','.');
 				}
+				break;
+			}
+			case Command.EAT: {
+				let food = this.commandItem;
+				let provider = food.ownerOfRecord;
+				console.assert(food && food.isEdible);
+				tell(mSubject,this,' ',mVerb,'begin',' to eat ',mObject,food,' (4 turns)');
+				food.giveTo(this,this.x,this.y);
+				this.busy = {
+					turns: 4,
+					icon: StickerList.showEat.img,
+					description: 'eating',
+					onDone: () => {
+						if( this.isPet && provider && provider.team==this.team ) {
+							this.brainMaster = provider;
+							tell(mSubject,this,' ',mVerb,'recognize',' ',mObject|mBold,this.brainMaster,' as ',mObject|mPossessive|mPronoun,this,' new master! ',this.attitude);
+						}
+						food.destroy();
+					}
+				};
+				this.commandItem = null;
 				break;
 			}
 			case Command.DEBUGTEST: {

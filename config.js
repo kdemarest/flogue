@@ -17,7 +17,7 @@ ConfigList.ken = () => {
 			.......
 			..ppp..
 			.x...x.
-			.....g.
+			.....d.
 			.x...x.
 			..fff..
 			.......
@@ -29,7 +29,7 @@ ConfigList.ken = () => {
 			f: 'flames',
 			L: 'lava',
 			M: 'mud',
-			g: 'gem'
+			d: 'dog'
 		},
 		stickers: {
 		},
@@ -51,12 +51,12 @@ ConfigList.ken = () => {
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
-		monsters: 	['isGoblin']
+		monsters: 	['isGoblin','isPet']
 
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('5x weapon.arrow, weapon.hammer, potion.eFlight, spell.eBlindness, spell.eFire, spell.eHoly, spell.eShove');
-	MonsterTypeList.player.inventoryWear = 'stuff.lantern, weapon.bow.eFire, shield.eAbsorb, dart.eStun, boots.eJump3';
+	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, weapon.hammer, spell.eFire');
+	MonsterTypeList.player.inventoryWear = 'stuff.lantern, shield.eAbsorb';
 //	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
