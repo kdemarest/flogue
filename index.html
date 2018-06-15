@@ -7,6 +7,7 @@
 <link rel="stylesheet" type="text/css" href="index.css">
 <!--script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script-->
 <script src="utilities.js" charset="utf-8"></script>
+<script src="dataFab.js" charset="utf-8"></script>
 <script src="data.js" charset="utf-8"></script>
 <script src="dataHumanNames.js" charset="utf-8"></script>
 <script src="dataPlaces.js" charset="utf-8"></script>
@@ -75,11 +76,15 @@ function main(levelName) {
 
 	let User = {
 		entity: null,
+		priorArea: null,
 		commandHandler: null
 	};
 
 	function TickWorld(timePasses) {
 		User.entity.area.tick( timePasses ? User.entity.speed : false );
+		if( timePasses && User.priorArea && User.priorArea.id !== User.entity.area.id ) {
+			User.priorArea.tick( User.entity.speed );
+		}
 		world.areaChange();
 		gui.tick();
 		gui.render();
@@ -95,6 +100,7 @@ function main(levelName) {
 
 	function onAreaChange(oldArea,area,xPlayer,yPlayer) {
 		guiMessage(null,'setArea',area);
+		User.priorArea = User.entity.area;
 		User.entity.gateTo(area,xPlayer,yPlayer);
 	}
 
@@ -138,6 +144,7 @@ function main(levelName) {
 
 	let world,gui;
 	[world,gui] = startGame( User, () => {
+		User.entity.area.tick( false );
 		gui.render();
 		tell([User.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
 		$('#guiLoading').hide();

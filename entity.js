@@ -506,6 +506,18 @@ class Entity {
 	}
 
 	thinkApproach(x,y,target) {
+		if( target && target.area.id !== this.area.id ) {
+			let gate = new Finder(this.map.itemList,this).filter( gate=>gate.toAreaId==target.area.id ).byDistanceFromMe().first;
+			if( gate ) {
+				x = gate.x;
+				y = gate.y;
+				if( x==this.x && y==this.y ) {
+					this.commandItem = gate;
+					return Command.ENTERGATE;
+				}
+			}
+		}
+
 		// Can I walk towards them?
 		let dir = this.dirToPosNatural(x,y);
 		// Aggressive creatures will completely avoid problems if 1/3 health, otherwide they
@@ -586,13 +598,14 @@ class Entity {
 					}
 				}
 
-				if( this.brainMaster && enemyList.count<=0 && this.getDistance(this.brainMaster.x,this.brainMaster.y)>2 &&
-					this.attitude !== Attitude.ENRAGED && this.attitude !== Attitude.PANICKED ) {
-					let friend = this.brainMaster;
-					this.record('stay near master '+this.brainMaster.id,true);
-					let c = this.thinkApproach(friend.x,friend.y,friend);
-					if( c !== false ) {
-						return c;
+				if( this.brainMaster && this.attitude !== Attitude.ENRAGED && this.attitude !== Attitude.PANICKED) {
+					if( (this.brainMaster.area.id!==this.area.id) || (enemyList.count<=0 && this.getDistance(this.brainMaster.x,this.brainMaster.y)>2) ) {
+						let friend = this.brainMaster;
+						this.record('stay near master '+this.brainMaster.id,true);
+						let c = this.thinkApproach(friend.x,friend.y,friend);
+						if( c !== false ) {
+							return c;
+						}
 					}
 				}
 
@@ -1553,6 +1566,14 @@ class Entity {
 				this.shieldBonus = 'stand';
 				if( this.brain == 'user' ) {
 					tell(mSubject,this,' ',mVerb,'wait','.');
+				}
+				break;
+			}
+			case Command.ENTERGATE: {
+				let gate = new Finder(this.map.itemList,this).filter( gate=>gate.gateDir!==undefined).at(this.x,this.y).first;
+				if( gate && gate.toAreaId && gate.toPos ) {
+					let area = this.area.world.getAreaById(gate.toAreaId);
+					this.gateTo(area,gate.toPos.x,gate.toPos.y);
 				}
 				break;
 			}

@@ -100,8 +100,11 @@ class World {
 		}
 		this.setPending(gate)
 	}
+	getAreaById(areaId) {
+		return this.areaList[areaId];
+	}
 	gateTo(areaId,x,y) {
-		let area = this.areaList[areaId];
+		let area = this.getAreaById(areaId);
 		if( !area ) debugger;
 		let oldArea = this.area;
 		this.area = area;

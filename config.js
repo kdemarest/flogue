@@ -55,7 +55,7 @@ ConfigList.ken = () => {
 	}
 
 	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, weapon.hammer, spell.eFire');
-	MonsterTypeList.player.inventoryWear = 'stuff.lantern, shield.eAbsorb';
+	MonsterTypeList.player.inventoryWear = 'stuff.oilLamp, shield.eAbsorb';
 //	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
@@ -65,8 +65,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 1,
-		themeId: 'kenTheme'
+//		startingDepth: 1,
+//		themeId: 'kenTheme'
 	}
 }
 

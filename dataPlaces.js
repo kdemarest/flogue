@@ -314,6 +314,7 @@ ThemeList.coreSwamp = {
 //=========================
 
 ThemeList.cavern = {
+	scapeId: 	'caveRandom',
 	rREQUIRED: 	'gatewayToDwarves',
 	rCOMMON: 	'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
@@ -323,18 +324,21 @@ ThemeList.cavern = {
 }
 
 ThemeList.thePits = {
+	scapeId: 	'caveRandom',
 	rCOMMON: 	'floodPit',
 	monsters: 	['isUndead'],
-	scape: 		{ placeDensity: 0.5 }
+	placeDensity: 0.5
 }
 
 ThemeList.spookyPits = {
+	scapeId: 	'caveRandom',
 	rCOMMON: 	'floodPit',
 	monsters: 	['isUndead'],
-	scape: 		{ placeDensity: 0.5 }
+	placeDensity: 0.5
 }
 
 ThemeList.spooky = {
+	scapeId: 	'caveRandom',
 	rCOMMON: 	'graveYard, nest_bat, floodMist',
 	rUNCOMMON: 	'ruin, nest_viper',
 	rRARE: 		'shaft, fountain1, camp_human, swamp',
@@ -344,7 +348,7 @@ ThemeList.spooky = {
 }
 
 ThemeList.ruins = {
-	scapes: 	['caveRandom'],
+	scapeId: 	'caveRandom',
 	rCOMMON: 	'camp_ogre, camp_goblin, nest_blueScarab, nest_redScarab',
 	rUNCOMMON: 	'collonade, ruin, fountain1, antHive, floodPit, pitEncircle',
 	rRARE: 		'floodWater, swamp, demonNest',
@@ -353,7 +357,7 @@ ThemeList.ruins = {
 }
 
 ThemeList.hellscape = {
-	scapes: 	['caveRandom'],
+	scapeId: 	'caveRandom',
 	rCOMMON: 	'demonNest, firePit',
 	rUNCOMMON: 	'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
 	rRARE: 		'etherHive, balgursChamber',
@@ -363,7 +367,7 @@ ThemeList.hellscape = {
 }
 
 ThemeList.lunarColony = {
-	scapes: 	['caveRandom'],
+	scapeId: 	'caveRandom',
 	rCOMMON: 	'lunarEmbassy',
 	rRARE: 		'etherHive',
 	rEPIC: 		'portal',
@@ -371,7 +375,7 @@ ThemeList.lunarColony = {
 }
 
 ThemeList.sunPlane = {
-	scapes: 	['caveRandom'],
+	scapeId: 	'caveRandom',
 	rREQUIRED: 	'sunDiscipleTemple',
 	rEPIC: 		'portal',
 	monsters: 	['isSunChild','isPlanar'],
@@ -674,7 +678,7 @@ PlaceTypeList.surfaceSunTemple = {
 ##...................##
 #.....................#
 #.....................########
-#.....................+......#
+#.....................+..d...#
 #...b......F..X..1A...#.pwasS#
 #.....................+......#
 #.....................########
@@ -700,6 +704,7 @@ PlaceTypeList.surfaceSunTemple = {
 		a: "armor",
 		s: "spell.eFire",
 		p: "potion.eHealing",
+		d: "dog"
 	},
 }
 
