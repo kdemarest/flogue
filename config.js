@@ -2,9 +2,9 @@ let ConfigList = {};
 
 ConfigList.ken = () => {
 	ScapeList.kenScape = theme => ({
-		dim: 				20,
+		dim: 				30,
 		architecture: 		"cave",
-		floorDensity: 		0.68,
+		floorDensity: 		0.88,
 		seedPercent: 		0.20,
 		monsterDensity: 	0.03,
 		wanderingPassage: 	false,
@@ -12,15 +12,13 @@ ConfigList.ken = () => {
 	PlaceTypeList.kenPlace = {
 		map:
 			`
-			.......
-			.LL.MM.
-			.......
-			..ppp..
-			.x...x.
-			.....d.
-			.x...x.
-			..fff..
-			.......
+			mmmmmmmm
+			mmmmmmmm
+			mmmmmmmm
+			mmmmmmmm
+			mmmmmmmm
+			mmmmmmmm
+			mmmmmmmm
 			`,
 		flags: { rotate: true },
 		symbols: {
@@ -29,7 +27,8 @@ ConfigList.ken = () => {
 			f: 'flames',
 			L: 'lava',
 			M: 'mud',
-			d: 'dog'
+			d: 'dog',
+			m: 'mist'
 		},
 		stickers: {
 		},
@@ -51,7 +50,7 @@ ConfigList.ken = () => {
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
-		monsters: 	['isGoblin','isPet']
+		monsters: 	['isPet']
 
 	}
 

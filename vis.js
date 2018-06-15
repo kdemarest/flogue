@@ -1,3 +1,8 @@
+function getTrueDistance(dx,dy) {
+	return Math.sqrt(dx*dx+dy*dy);
+}
+
+
 class Vis {
 	constructor(getMapFn) {
 		this.getMapFn = getMapFn;
@@ -42,7 +47,7 @@ class Vis {
 		dx = dx / (dist/step);
 		dy = dy / (dist/step);
 		// Always allowed to see itself.
-		dist -= 0.5;
+		dist -= 0.5; //0.5;
 		let wallAmount = 0;
 		while( dist > 0 ) {
 			let xInt = Math.floor(x);
@@ -50,7 +55,10 @@ class Vis {
 			let atPlayer = (xInt==px && yInt==py);
 			if( !atPlayer ) {
 				if( spots ) {
-					spots.push(xInt-px,yInt-py);
+					if( !spots.length || !(spots[spots.length-2]==xInt-px && spots[spots.length-1]==yInt-py) ) {
+						spots.push(xInt-px,yInt-py);
+						window.mySpotTotal = (window.mySpotTotal||0)+1;
+					}
 				}
 				else {
 					console.assert(map.inBounds(xInt,yInt));
@@ -67,12 +75,19 @@ class Vis {
 	}
 
 	fast(px,py,spot) {
+		window.myCount++;
 		if( !spot.length ) return true;
 		let xLen = this.getMapFn().xLen;
 		let vc = this.visCache;;
 		let wallAmount = 0;
 		for( let i=0 ; i<spot.length ; i+=2 ) {
-			wallAmount += vc[ (py+spot[i+1]) * xLen + (px+spot[i+0]) ];
+			let x = (px+spot[i+0]);
+			let y = (py+spot[i+1]);
+			if( window.myCount==window.myLite ) {
+				new Anim( StickerList.crosshairNo, { group: 'vis', x: x, y: y, duration: true });
+			}
+
+			wallAmount += vc[y*xLen+x];
 			if( wallAmount >= 1 ) { return false; }
 		}
 		return true;
@@ -86,6 +101,7 @@ class Vis {
 		let dy = y-py;
 		let cIndex = ''+dx+','+dy;
 		if( !this.shootCache[cIndex] ) {
+			console.log('Caching '+cIndex);
 			let tl = this.shoot(px,py,px,py,x,y,[]);
 			let tr = this.shoot(px,py,px+0.95,py+0.00,x+0.95,y+0.00,[]);
 			let bl = this.shoot(px,py,px+0.00,py+0.95,x+0.00,y+0.95,[]);
@@ -107,7 +123,7 @@ class Vis {
 	}
 
 
-	calcVis(px,py,sightDistance,blind,xray,cachedVis,mapMemory) {
+	calcVisOld(px,py,sightDistance,blind,xray,cachedVis,mapMemory) {
 		let map = this.getMapFn();
 
 		let a = cachedVis || [];
@@ -119,6 +135,11 @@ class Vis {
 			}
 		}
 
+		animationRemove( a=>a.group=='vis' );
+		window.viewShots = true;
+		window.myLite = (window.myLite || 0);
+		window.myCount=0;
+
 		for( let y=0 ; y<map.yLen ; ++y ) {
 			a[y] = a[y] || [];
 			for( let x=0 ; x<map.xLen ; ++x ) {
@@ -127,7 +148,7 @@ class Vis {
 					continue;
 				}
 				a[y][x] = xray ? true : this.shoot4(px,py,x,y,blind);
-				if( mapMemory && a[y][x] ) {
+				if( !window.viewShots && false && mapMemory && a[y][x] ) {
 					let item = q[y*map.xLen+x];
 					mapMemory[y] = mapMemory[y] || [];
 					mapMemory[y][x] = item ? item : map.tileTypeGet(x,y);
@@ -135,6 +156,130 @@ class Vis {
 			}
 		}
 		a[py][px] = true;
+		return a;
+	}
+
+	generateProList() {
+
+		function atanDeg(y,x) {
+			return Math.floor( Math.atan2(y,x)/(2*Math.PI)*360 + 720 ) % 360;
+		}
+
+		let d = MaxSightDistance;
+		let proList = [];
+		for( let y=-d ; y<=d ; ++y ) {
+			for( let x=-d ; x<=d ; ++x ) {
+				if( x==0 && y==0 ) continue;
+				let dist = getTrueDistance(x,y);
+				let mid = atanDeg(y,x);
+				let q = 0.50;
+				let a = atanDeg(y-q,x-q);
+				let b = atanDeg(y-q,x+q);
+				let c = atanDeg(y+q,x-q);
+				let d = atanDeg(y+q,x+q);
+				let left = mid;
+				let right = mid;
+				for( let i=0 ; i<120 ; ++i ) {
+					let l0 = (360+mid-i)%360;
+					let r0 = (360+mid+i)%360;
+					if( l0 == a ) left = a;
+					if( l0 == b ) left = b;
+					if( l0 == c ) left = c;
+					if( l0 == d ) left = d;
+					if( r0 == a ) right = a;
+					if( r0 == b ) right = b;
+					if( r0 == c ) right = c;
+					if( r0 == d ) right = d;
+				}
+				console.assert(left!==right);
+//				left = (left+1) % 360;			// shrink so diagonal walls may be seen
+//				right = (right-1+360) % 360;
+				let span = 0;
+				for( let i = left ; i!=right ; i = (i+1) % 360 ) {
+					++span;
+				}
+				proList.push({x:x,y:y,dist:dist,mid:mid,span:span,left:left,right:right});
+			}
+		}
+		Array.shuffle(proList);	// This is so that the sort is less predictable for equal distances.
+		proList.sort( (a,b) => a.dist-b.dist );
+		return proList;
+	}
+
+	calcVis(px,py,sightDistance,blind,xray,cachedVis,mapMemory) {
+		let map = this.getMapFn();
+		let xLen = map.xLen;
+
+		let a = cachedVis || [];
+		let q = [];
+
+		if( mapMemory ) {
+			for( let item of map.itemList ) {
+				q[item.y*map.xLen+item.x] = item;
+			}
+		}
+
+		// Remember all block sweeps, and their distance.
+		if( !this.proList ) {
+			this.proList = this.generateProList();
+		}
+
+		let defaultValue = false; //xray && !blind;
+		map.traverse( (x,y) => { a[y] = a[y] || []; a[y][x] = defaultValue; } );
+		a[py][px] = true;
+//		if( xray || blind ) return;
+
+		let vc = this.visCache;
+		let sweep = [];
+		let opacity = [];
+		for( let i=0 ; i<360 ; ++i ) {
+			sweep[i] = 40*40;
+			opacity[i] = 0;
+		}
+
+		let done = false;
+		this.proList.forEach( pro => {
+			if( done ) return;
+			let x = pro.x;
+			let y = pro.y;
+			if( x<-sightDistance || y<-sightDistance || x>sightDistance || y>sightDistance ) {
+				done=true;
+				return;
+			}
+			x += px;
+			y += py;
+			if( x<0 || x>=map.xLen || y<0 || y>=map.yLen ) return;
+			let dist = pro.dist;
+			{
+				// The block only needs to be 20% visible to be considered visible.
+				let v = pro.span*0.05;
+				for( let i = pro.left ; i!=pro.right ; i = (i+1) % 360 ) {
+					if( sweep[i] >= dist || opacity[i] < 1 ) {
+						--v;
+						if( v<=0 ) break;
+					}
+				}
+				if( v > 0 ) {
+					return;
+				}
+			}
+			if( mapMemory ) {
+				let item = q[y*map.xLen+x];
+				mapMemory[y] = mapMemory[y] || [];
+				mapMemory[y][x] = item ? item : map.tileTypeGet(x,y);
+			}
+			a[y][x] = true;
+			let opa = vc[y*xLen+x];
+			if( opa>0 ) {
+				let i = pro.left;
+				while( i!=pro.right ) {
+					sweep[i] = Math.min(sweep[i],dist);
+					opacity[i] += opa;
+					i = (i+1) % 360;
+				}
+			}
+		});
+
 		return a;
 	}
 }

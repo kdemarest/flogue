@@ -214,12 +214,12 @@ function animFloatUp(target,icon,delay) {
 	}
 }
 
-function animOver(target,icon) {
+function animOver(target,icon,delay) {
 	new Anim( {}, {
 		follow: 	target,
 		img: 		icon,
 		duration: 	0.2,
-		delay: 		effect.rangeDuration || 0,
+		delay: 		delay || 0,
 		onInit: 		a => { a.create(1); },
 		onSpriteMake: 	s => { s.sScaleSet(0.75); },
 		onSpriteTick: 	s => { }
@@ -280,14 +280,14 @@ let effectApplyTo = function(effect,target,source,item) {
 
 	if( isResist && effect.isInstant && Math.chance(50) ) {
 		tell(mSubject,target,' resists the effects of ',mObject,effect);
-		animOver(target,StickerList.showResistance.img);
+		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
 		return false;
 	}
 
 	if( isResist && !effect.isInstant && effect.duration !== true ) {
 		tell(mSubject,target,' seems partially afected by ',mObject,effect);
 		effect.duration = effect.duration * 0.50;
-		animOver(target,StickerList.showResistance.img);
+		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
 	}
 
 	if( effect.icon !== false ) {
