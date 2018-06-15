@@ -57,7 +57,6 @@ class Vis {
 				if( spots ) {
 					if( !spots.length || !(spots[spots.length-2]==xInt-px && spots[spots.length-1]==yInt-py) ) {
 						spots.push(xInt-px,yInt-py);
-						window.mySpotTotal = (window.mySpotTotal||0)+1;
 					}
 				}
 				else {
@@ -75,7 +74,6 @@ class Vis {
 	}
 
 	fast(px,py,spot) {
-		window.myCount++;
 		if( !spot.length ) return true;
 		let xLen = this.getMapFn().xLen;
 		let vc = this.visCache;;
@@ -83,10 +81,6 @@ class Vis {
 		for( let i=0 ; i<spot.length ; i+=2 ) {
 			let x = (px+spot[i+0]);
 			let y = (py+spot[i+1]);
-			if( window.myCount==window.myLite ) {
-				new Anim( StickerList.crosshairNo, { group: 'vis', x: x, y: y, duration: true });
-			}
-
 			wallAmount += vc[y*xLen+x];
 			if( wallAmount >= 1 ) { return false; }
 		}
@@ -122,43 +116,6 @@ class Vis {
 		return isVisible;
 	}
 
-
-	calcVisOld(px,py,sightDistance,blind,xray,cachedVis,mapMemory) {
-		let map = this.getMapFn();
-
-		let a = cachedVis || [];
-		let q = [];
-
-		if( mapMemory ) {
-			for( let item of map.itemList ) {
-				q[item.y*map.xLen+item.x] = item;
-			}
-		}
-
-		animationRemove( a=>a.group=='vis' );
-		window.viewShots = true;
-		window.myLite = (window.myLite || 0);
-		window.myCount=0;
-
-		for( let y=0 ; y<map.yLen ; ++y ) {
-			a[y] = a[y] || [];
-			for( let x=0 ; x<map.xLen ; ++x ) {
-				if( Math.abs(y-py)>sightDistance || Math.abs(x-px)>sightDistance ) {
-					a[y][x] = false;
-					continue;
-				}
-				a[y][x] = xray ? true : this.shoot4(px,py,x,y,blind);
-				if( !window.viewShots && false && mapMemory && a[y][x] ) {
-					let item = q[y*map.xLen+x];
-					mapMemory[y] = mapMemory[y] || [];
-					mapMemory[y][x] = item ? item : map.tileTypeGet(x,y);
-				}
-			}
-		}
-		a[py][px] = true;
-		return a;
-	}
-
 	generateProList() {
 
 		function atanDeg(y,x) {
@@ -170,9 +127,10 @@ class Vis {
 		for( let y=-d ; y<=d ; ++y ) {
 			for( let x=-d ; x<=d ; ++x ) {
 				if( x==0 && y==0 ) continue;
-				let dist = getTrueDistance(x,y);
-				let mid = atanDeg(y,x);
 				let q = 0.50;
+				let dist = getTrueDistance(x,y);
+				let nearDist = Math.min(getTrueDistance(x-q,y-q),getTrueDistance(x-q,y+q),getTrueDistance(x+q,y-q),getTrueDistance(x+q,y+q));
+				let mid = atanDeg(y,x);
 				let a = atanDeg(y-q,x-q);
 				let b = atanDeg(y-q,x+q);
 				let c = atanDeg(y+q,x-q);
@@ -192,13 +150,11 @@ class Vis {
 					if( r0 == d ) right = d;
 				}
 				console.assert(left!==right);
-//				left = (left+1) % 360;			// shrink so diagonal walls may be seen
-//				right = (right-1+360) % 360;
 				let span = 0;
 				for( let i = left ; i!=right ; i = (i+1) % 360 ) {
 					++span;
 				}
-				proList.push({x:x,y:y,dist:dist,mid:mid,span:span,left:left,right:right});
+				proList.push({x:x,y:y,dist:dist,mid:mid,span:span,left:left,right:right,nearDist:nearDist});
 			}
 		}
 		Array.shuffle(proList);	// This is so that the sort is less predictable for equal distances.
@@ -250,11 +206,12 @@ class Vis {
 			y += py;
 			if( x<0 || x>=map.xLen || y<0 || y>=map.yLen ) return;
 			let dist = pro.dist;
+			let nearDist = pro.nearDist;
 			{
 				// The block only needs to be 20% visible to be considered visible.
 				let v = pro.span*0.05;
 				for( let i = pro.left ; i!=pro.right ; i = (i+1) % 360 ) {
-					if( sweep[i] >= dist || opacity[i] < 1 ) {
+					if( sweep[i] >= nearDist || opacity[i] < 1 ) {
 						--v;
 						if( v<=0 ) break;
 					}

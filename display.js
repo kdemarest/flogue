@@ -19,7 +19,6 @@ function createDrawList(observer,map,entityList,asType) {
 				let rfx = px+fx-d;
 				let rfy = py+fy-d;
 				if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
-//					let lightReaches = observer.senseXray || areaVis.shoot4(rx,ry,rfx,rfy,false);
 					let lightReaches = observer.senseXray || areaVis.shoot4(rfx,rfy,rx,ry,false);
 					if( lightReaches ) {
 						if( light < 0 ) {

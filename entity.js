@@ -1553,7 +1553,6 @@ class Entity {
 				this.shieldBonus = 'stand';
 				if( this.brain == 'user' ) {
 					tell(mSubject,this,' ',mVerb,'wait','.');
-					window.myLite++;
 				}
 				break;
 			}
