@@ -753,8 +753,9 @@ class Entity {
 						this.commandItem = weapon;
 						this.commandTarget = target;
 						let d = this.getDistance(target.x,target.y);
-						if( d > 1 ) {
-							return this.itemToAttackCommand(weapon);
+						let temp = this.itemToAttackCommand(weapon);
+						if( temp !== Command.ATTACK ) {
+							return temp;
 						}
 						return directionToCommand(this.dirToEntityPredictable(target));
 					}
@@ -935,7 +936,7 @@ class Entity {
 			let deg = (dx===0 && dy===0 ? 0 : deltaToDeg(dx,dy));
 			let mag = Math.clamp( amount/this.healthMax, 0.05, 1.0 );
 			let delay = !attacker || !attacker.isUser || attacker.isUser() ? 0 : 0.2;
-			if( attacker && attacker.command == Command.THROW ) {
+			if( attacker && (attacker.command == Command.THROW || attacker.command == Command.SHOOT || attacker.command == Command.CAST) ) {
 				// This seems a little loose to me, but... maybe it will work.
 				delay += attacker.rangeDuration;
 			}
@@ -1140,23 +1141,24 @@ class Entity {
 	}
 
 	itemToAttackCommand(weapon) {
-		if( !weapon.range ) {
-			return Command.ATTACK;
-		}
 		if( weapon.mayThrow ) {
 			return Command.THROW;
 		}
-		if( weapon.isSpell ) {
+		if( weapon.mayCast ) {
 			return Command.CAST;
 		}
-		if( weapon.mayShoot || weapon.isNatural ) {
+		if( weapon.mayShoot ) {
 			return Command.SHOOT;
+		}
+		if( !weapon.range ) {
+			return Command.ATTACK;
 		}
 		debugger;
 		return Command.SHOOT;
 	}
 
 	generateEffectOnAttack(weapon,src) {
+		console.assert(weapon.isWeapon);
 		weapon.effectOnAttack = weapon.effectOnAttack || {
 			op: 		'damage',
 			isInstant: 	true,
@@ -1214,12 +1216,15 @@ class Entity {
 		console.assert( !weapon.rechargeLeft );
 //		console.log( this.typeId+' picked '+(weapon.typeId || weapon.name)+' with recharge '+weapon.rechargeLeft );
 
-		this.generateEffectOnAttack(weapon);
+		if( weapon.isWeapon ) {
+			this.generateEffectOnAttack(weapon);
+		}
 		return weapon;
 	}
 
 	attack(target,weapon,isRanged) {
 		console.assert(weapon);
+		console.assert(weapon.isWeapon);
 		this.lastAttackTargetId = target.id;	// Set this early, despite blindness!
 		this.inCombat = true;
 
@@ -1370,9 +1375,9 @@ class Entity {
 	throwItem(item,target) {
 		this.lastAttackTargetId = target.id;
 		this.inCombat = true;
-		this.generateEffectOnAttack(item);
 		item.giveTo(this.map,target.x,target.y);
-		if( item.damage && !target.isPosition ) {
+		if( item.isWeapon && !target.isPosition ) {
+			this.generateEffectOnAttack(item);
 			this.attack(target,item,true);
 		}
 		else {
@@ -1412,6 +1417,11 @@ class Entity {
 
 	shoot(item,target) {
 		console.assert(item.ammoType);
+
+		if( !this.shotClear(this.x,this.y,target.x,target.y) ) {
+			tell(mSubject,this,' ',mVerb,'has',' no shot!');
+			return false;
+		}
 
 		this.lastAttackTargetId = target.id;
 		this.inCombat = true;
@@ -1484,8 +1494,11 @@ class Entity {
 			if( weapon.mayShoot ) {
 				return this.shoot(weapon,f.first) ? 'shoot' : 'miss';
 			}
-			if( weapon.isSpell ) {
+			if( weapon.mayCast ) {
 				return this.cast(weapon,f.first) ? 'cast' : 'miss';
+			}
+			if( weapon.mayThrow ) {
+				return this.throwItem(weapon,f.first) ? 'throw' : 'miss';
 			}
 			return this.attack(f.first,weapon,false) ? 'attack' : 'miss';
 		}

@@ -111,7 +111,7 @@ class DataConditioner {
 						// We don't check on the pick list. Maybe we should.
 						let monster = supply.typeFilter ? MonsterTypeList[supply.typeFilter.split('.')[0]] : null;
 						if( monster ) {
-							level = Math.max(level,monster.level||MIN_DEPTH);
+							level = Math.max(level,monster.level||DEPTH_MIN);
 							place.comesWithMonster = true;
 						}
 					});

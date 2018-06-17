@@ -66,6 +66,11 @@ function nop() {}
 		a.length = j;
 		return a;
 	}
+	Array.count = function(array,fn) {
+		let total = 0;
+		array.forEach( a => total += fn(a) ? 1 : 0 );
+		return total;
+	}
 	Array.shuffle = function(array) {
 		for (let i = array.length - 1; i > 0; i--) {
 			let j = Math.floor(Math.random() * (i + 1));
@@ -286,9 +291,9 @@ function nop() {}
 		 	return 90+(10*playerLevel);
 		 }
 		 playerArmor(playerLevel) {
-		 	let armorAtLevel1 = 0.30;
-		 	let armorAtLevel100 = 0.80;
-		 	let armor = armorAtLevel1+((playerLevel-1)/100)*(armorAtLevel100-armorAtLevel1);
+		 	let armorAtLevelMin = 0.30;
+		 	let armorAtLevelMax = 0.80;
+		 	let armor = armorAtLevelMin+((playerLevel-1)/DEPTH_SPAN)*(armorAtLevelMax-armorAtLevelMin);
 		 	return Math.clamp(armor,0.0,1.0);
 		 }
 		 playerDamage(playerLevel) {

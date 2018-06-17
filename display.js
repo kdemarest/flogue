@@ -317,7 +317,7 @@ class ViewMap {
 			});
 		};
 
-		spriteCreate = function(spriteList,imgPath) {
+		spriteCreate = function(spriteList,imgPath,mayReuse) {
 			let resource = self.imageRepo.get(imgPath);
 			if( !resource ) {
 				debugger;
@@ -326,7 +326,19 @@ class ViewMap {
 			let sprite = new PIXI.Sprite( resource.texture );
 			sprite.onStage = false;
 			sprite.refs = 1;
-			spriteList.push(sprite);
+			let allocated = false;
+			if( mayReuse ) {
+				for( let i=0 ; i<spriteList.length ; ++i ) {
+					if( spriteList[i].dead ) {
+						spriteList[i] = sprite;
+						allocated = true;
+						break;
+					}
+				}
+			}
+			if( !allocated ) {
+				spriteList.push(sprite);
+			}
 			return sprite;
 		}
 

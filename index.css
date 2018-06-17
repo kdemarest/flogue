@@ -77,14 +77,6 @@ body {
 	font-family: 'Raleway', sans-serif;
 	font-size: 14px;
 }
-.healthWarn {
-	background-color: yellow;
-	color: black;
-}
-.healthCritical {
-	background-color: red;
-	color: black;
-}
 #guiSpells {
 	width: 180px;
 	height: 100px;
@@ -108,6 +100,15 @@ body {
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
+#guiInfo.healthWarn {
+	background-color: yellow;
+	color: black;
+}
+#guiInfo.healthCritical {
+	background-color: red;
+	color: black;
+}
+
 #guiInfo {
 	width: 180px;
 	height: 160px;

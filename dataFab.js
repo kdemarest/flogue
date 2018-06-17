@@ -44,6 +44,16 @@ let Fab = (function() {
 				if( list.uniqueId ) typeMaster[typeId] = list.typeList[typeId];
 			}
 		});
+		// Adjust the level span
+		fabList.forEach( list => {
+			Object.each( list.typeList, type => {
+				if( type.level !== undefined ) {
+					console.assert(!type.levelAdjusted);
+					type.level = Math.floor(type.level*DEPTH_SPAN/100);
+					type.levelAdjusted = true;
+				}
+			});
+		});
 		// Make sure all the symbols already claimed have reserved spaces.
 		fabList.forEach( list => {
 			Object.each( list.typeList, type => {

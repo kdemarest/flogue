@@ -92,6 +92,12 @@ function main(levelName) {
 	}
 
 	function onUserEvent(event) {
+		let now = Date.now()/1000;
+		if( now < (User.entity.nowPrior||0)+(User.entity.timeDelay||0) ) {
+			return;
+		}
+		User.entity.nowPrior = now;
+		User.entity.timeDelay = 0;
 		let timePasses = User.commandHandler.evalCommand(User.entity,event);
 		TickWorld(timePasses);
 		//event.stopPropagation();

@@ -58,7 +58,7 @@ let Plan = (new class {
 					]
 				},
 				default: {
-					themeId: 'coreCavernMedium',
+					themeId: 'coreCavernRooms',
 					make: [
 						{ typeFilter: 'gateway' },
 						{ typeFilter: 'fontDeep' },
@@ -76,8 +76,8 @@ let Plan = (new class {
 		};
 		let p = plan[key][depth] || plan[key].default;
 		if( p.make && key=='core' ) {
-			if( depth > 0 ) p.make.push( { typeFilter: 'stairsUp' } );
-			if( depth < MAX_DEPTH ) p.make.push( { typeFilter: 'stairsDown' } );
+			if( depth > DEPTH_MIN ) p.make.push( { typeFilter: 'stairsUp' } );
+			if( depth < DEPTH_MAX ) p.make.push( { typeFilter: 'stairsDown' } );
 		}
 
 		return p;

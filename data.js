@@ -46,8 +46,9 @@ function deltasToDirNatural(dx,dy) {
 	return deltasToDirPredictable(dx,dy);
 }
 
-let MIN_DEPTH = 0;
-let MAX_DEPTH = 99;
+let DEPTH_MIN = 0;
+let DEPTH_MAX = 19;
+let DEPTH_SPAN = (DEPTH_MAX-DEPTH_MIN)+1;
 // If you change this, you must also chance the .css class .tile
 let TILE_DIM = 48;
 let MaxSightDistance = 8;
@@ -97,6 +98,7 @@ const StickerList = {
 	showDodge: { img: 'gui/icons/iDodge.png' },
 	showEat: { img: 'gui/icons/activityEat.png' },
 	eGeneric: { img: "gui/icons/eGeneric.png" },
+	ePoof: { img: "gui/icons/ePoof.png" },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
 	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
@@ -212,13 +214,13 @@ const TileTypeList = {
 	"pit":        { symbol: ':', mayWalk: true, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, wantsBridge: true, img: "dc-dngn/pit.png" },
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", isDoor: 1, img: "dc-dngn/dngn_open_door.png" },
 	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", isDoor: 1, img: "dc-dngn/dngn_closed_door.png" },
-	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, opacity: 0, mayJump: true, wantsBridge: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
+	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, isWater: true, opacity: 0, mayJump: true, wantsBridge: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
 	"grass":      { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
 	"glass":      { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
 	"shaft":      { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", mayJump: true, img: "dc-dngn/dngn_trap_shaft.png" },
-	"flames":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.26, name: "flames", light: 9, glow:1,
+	"flames":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.26, isFire: true, name: "flames", light: 9, glow:1,
 					effect: { op: 'damage', valueDamage: 4.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "dc-mon/nonliving/fire_elemental.png" },
-	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, mayJump: true, name: "lava", light: 5, glow:1, 
+	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, isFire: true, mayJump: true, name: "lava", light: 5, glow:1, 
 					effect: { op: 'damage', valueDamage: 8.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.34, name: "mist", zOrder: 50, img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, mayJump: true, name: "mud", img: "dc-dngn/floor/dirt0.png" },
@@ -289,6 +291,8 @@ const WeaponList = Fab.add( '', {
 					chanceToFire: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
 	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
 	"solKnife":   	{ level:900, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
+	"pickaxe":   	{ level:  1, rarity: 0.1, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 0, effectChance: 0.00, 
+					attackVerb: 'strike', mineSpeed: 1.0, img: 'item/weapon/pickaxe.png' },
 	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
 	"sword": 		{ level:  1, rarity: 1.0, damageMultiplier: 1.00, damageType: DamageType.CUT, quick: 2, img: 'item/weapon/long_sword1.png' },
 	"greatsword": 	{ level:  5, rarity: 0.3, damageMultiplier: 1.20, damageType: DamageType.CUT, quick: 0, img: 'item/weapon/long_sword2.png' },
@@ -590,7 +594,7 @@ const ItemTypeList = {
 // ORE VEINS
 	"oreVein":    { symbol: 'v', mayWalk: false, mayFly: false, rarity: 1, opacity: 1, isWall: true,
 				  imgGet: (self,img) => "ore/"+(img || self.variety.img || "oreVein")+".png", imgChoices: OreVeinList,
-				  varieties: OreVeinList, mineSwings: 3 },
+				  varieties: OreVeinList, mineSwings: 14 },
 // FAKE
 	"fake":   	{ symbol: SYM, namePattern: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // CORPSE
@@ -604,7 +608,7 @@ const ItemTypeList = {
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
 				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: ImgPotion, icon: 'potion.png' },
 	"spell":    { symbol: 's', isTreasure: 1, namePattern: 'spell{?effect}', rechargeTime: 10, effects: SpellEffects,
-				effectChance: 1.0, isSpell: true, range: RANGED_WEAPON_DEFAULT_RANGE,
+				effectChance: 1.0, mayCast: true, isSpell: true, range: RANGED_WEAPON_DEFAULT_RANGE,
 				img: "item/scroll/scroll.png", icon: 'spell.png' },
 	"ore": 		{ symbol: 'o', isTreasure: 1, namePattern: '{variety}', varieties: OreList, isOre: true,
 				imgGet: (self,img) => "ore/"+(img || self.variety.img || "ore")+".png", imgChoices: OreList, icon: 'ore.png' },
@@ -752,7 +756,7 @@ let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE].j
 function launcher(obj) {
 	// Use this as a convenience to make launchers for anything to be thrown or shot
 	return Object.assign({
-		id: 'weapon.launcher',
+		typeFilter: 'weapon.launcher',
 		fake: true,
 		mayShoot: true,
 		damageType: DamageType.STAB,
@@ -764,7 +768,7 @@ const MonsterTypeList = {
 
 // GOOD TEAM
 	"player": {
-		core: [ '@', 1, '3:10', 'good', 'cut', 'player.png', 'he' ],
+		core: [ '@', 0, '3:10', 'good', 'cut', 'player.png', 'he' ],
 		attitude: Attitude.CALM,
 		brain: Brain.USER,
 		brainOpensDoors: true,
@@ -810,7 +814,7 @@ const MonsterTypeList = {
 		packAnimal: true
 	},
 	"mastiff": {
-		core: [ SYM, 10, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
+		core: [ SYM, 69, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
 		dodge: 1,
 		brainFlee: true,
 		brainPet: true,
@@ -824,7 +828,7 @@ const MonsterTypeList = {
 		regenerate: 0.03
 	},
 	"human": {
-		core: [ SYM, 1, '3:10', 'good', 'cut', 'dc-mon/human.png', '*' ],
+		core: [ SYM, 0, '3:10', 'good', 'cut', 'dc-mon/human.png', '*' ],
 		attitude: Attitude.CALM,
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -835,7 +839,7 @@ const MonsterTypeList = {
 		rarity: 0.10,
 	},
 	"philanthropist": {
-		core: [ SYM, 1, '3:10', 'good', 'cut', 'dc-mon/philanthropist.png', '*' ],
+		core: [ SYM, 0, '3:10', 'good', 'cut', 'dc-mon/philanthropist.png', '*' ],
 		attitude: Attitude.CALM,
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -847,21 +851,21 @@ const MonsterTypeList = {
 		sayPrayer: 'Get in line! Come to the left window for donations!'
 	},
 	"refugee": {
-		core: [ SYM, 1, '2:20', 'good', 'bash', 'dc-mon/refugee.png', '*' ],
+		core: [ SYM, 0, '2:20', 'good', 'bash', 'dc-mon/refugee.png', '*' ],
 		attitude: Attitude.FEARFUL,
 		brainAlertFriends: true,
 		brainTalk: true,
 		brainOpensDoors: true,
 		isSunChild: true,
 		isNamed: true,
-		loot: '10% bones, 5% dogCollar, 3x 10% stuff',
+		loot: '10% bone, 5% dogCollar, 3x 10% stuff',
 		rarity: 0.40,
 		sayPrayer: "Oh god... What I wouldn't give for a steak."
 	},
 
 // EVIL TEAM
 	"avatarOfBalgur": {
-		core: [ SYM, 10, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
+		core: [ SYM, 99, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
 		isUnique: true, neverPick: true,
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -874,7 +878,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"demon": {
-		core: [ SYM, 5, '3:5', 'evil', 'burn', 'player/base/draconian_red_f.png', 'it' ],
+		core: [ SYM, 49, '3:5', 'evil', 'burn', 'player/base/draconian_red_f.png', 'it' ],
 		brainAlertFriends: true,
 		brainTalk: true,
 		immune: DemonImmunity,
@@ -887,7 +891,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"ethermite": {
-		core: [ SYM, 6, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
+		core: [ SYM, 59, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
 		dodge: 1,
 		glow: true,
 		invisible: true,
@@ -899,7 +903,7 @@ const MonsterTypeList = {
 		vuln: 'glass'
 	},
 	"ghoul": {
-		core: [ SYM, 4, '1:2', 'evil', 'rot', 'dc-mon/undead/ghoul.png', 'it' ],
+		core: [ SYM, 39, '1:2', 'evil', 'rot', 'dc-mon/undead/ghoul.png', 'it' ],
 		immune: UndeadImmunity,
 		dark: 2,
 		isUndead: true,
@@ -921,7 +925,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh mighty Thagzog...'
 	},
 	"goblinWar": { 
-		core: [ SYM, 5, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		core: [ SYM, 49, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		name: 'goblin warrior',
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -932,7 +936,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh warrior Thagzog...'
 	},
 	"goblinMut": {
-		core: [ SYM, 8, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		core: [ SYM, 79, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		name: 'goblin mutant',
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -943,7 +947,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh mutant Thagzog...'
 	},
 	"imp": {
-		core: [ SYM, 4, '3:10', 'evil', 'claw', 'dc-mon/demons/imp.png', 'it' ],
+		core: [ SYM, 39, '3:10', 'evil', 'claw', 'dc-mon/demons/imp.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		dodge: 1,
 		glow: 1,
@@ -967,7 +971,7 @@ const MonsterTypeList = {
 		packAnimal: true
 	},
 	"ogreKid": { 
-		core: [ SYM, 4, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
+		core: [ SYM, 39, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
 		name: "ogre child",
 		brainTalk: true, 
 		isEarthChild: true,
@@ -977,7 +981,7 @@ const MonsterTypeList = {
 		speed: 0.75
 	},
 	"ogre": {
-		core: [ SYM, 7, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
+		core: [ SYM, 69, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
 		brainTalk: true,
 		isEarthChild: true,
 		isOgre: true,
@@ -988,7 +992,7 @@ const MonsterTypeList = {
 		speed: 0.5,
 	},
 	"redOoze": {
-		core: [ SYM, 1, '2:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
+		core: [ SYM, 9, '3:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
 		brainRavenous: true,
 		name: "red ooze",
 		glow: 4,
@@ -1004,7 +1008,7 @@ const MonsterTypeList = {
 		vuln: OozeVulnerability
 	},
 	"blueScarab": {
-		core: [ SYM, 6, '2:30', 'evil', 'freeze', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		core: [ SYM, 59, '2:30', 'evil', 'freeze', 'dc-mon/animals/boulder_beetle.png', 'it' ],
 		namePattern: "blue scarab",
 		glow: 3,
 		immune: DamageType.FREEZE,
@@ -1014,7 +1018,7 @@ const MonsterTypeList = {
 		vuln: 'glass,'+DamageType.BURN
 	},
 	"redScarab": {
-		core: [ SYM, 2, '2:30', 'evil', 'burn', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		core: [ SYM, 19, '2:30', 'evil', 'burn', 'dc-mon/animals/boulder_beetle.png', 'it' ],
 		namePattern: "red scarab",
 		glow: 3,
 		immune: DamageType.BURN,
@@ -1024,7 +1028,7 @@ const MonsterTypeList = {
 		vuln: 'glass,'+DamageType.FREEZE
 	},
 	"shadow": {
-		core: [ SYM, 8, '1:12', 'evil', 'rot', 'dc-mon/undead/shadow.png', 'it' ],
+		core: [ SYM, 79, '1:12', 'evil', 'rot', 'dc-mon/undead/shadow.png', 'it' ],
 		dark: 12,
 		immune: ShadowImmunity,
 		isUndead: true,
@@ -1034,30 +1038,30 @@ const MonsterTypeList = {
 		vuln: ['silver',DamageType.SMITE].join(',')
 	},
 	"skeleton": {
-		core: [ SYM, 2, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		core: [ SYM, 19, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		immune: SkeletonImmunity,
 		isUndead: true,
 		isSkeleton: true,
-		loot: '50% bones, 50% skull',
+		loot: '50% bone, 50% skull',
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonArcher": {
-		core: [ SYM, 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		core: [ SYM, 29, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletonArcher.png', 'it' ],
 		immune: SkeletonImmunity,
-		inventoryLoot: [{ id:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow', fake: true }],
+		inventoryLoot: [{ typeFilter:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow', fake: true }],
 		isUndead: true,
 		isSkeleton: true,
-		loot: '50% bones, 50% skull',
+		loot: '50% bone, 50% skull',
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonLg": {
-		core: [ SYM, 6, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
+		core: [ SYM, 59, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
 		name: 'ogre skeleton',
 		immune: SkeletonImmunity,
 		inventoryLoot: '50% spell.eRot',
 		isUndead: true,
 		isLarge: true,
-		loot: '50% bones, 50% skull',
+		loot: '50% bone, 50% skull',
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"soldierAnt": {
@@ -1066,11 +1070,12 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		loot: '10% potion, 20% facetedEye, 10% antGrubMush',
 		isAnimal: true,
+		isSmall: true,
 		speed: 1.5,
 		vuln: 'glass'+','+DamageType.FREEZE
 	},
 	"troll": {
-		core: [ SYM, 5, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
+		core: [ SYM, 49, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
 		brainRavenous: true,
 		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
@@ -1079,7 +1084,7 @@ const MonsterTypeList = {
 		vuln: DamageType.BURN
 	},
 	"viper": {
-		core: [ SYM, 5, '3:16', 'evil', 'bite', 'dc-mon/animals/viper.png', 'it' ],
+		core: [ SYM, 44, '3:16', 'evil', 'bite', 'dc-mon/animals/viper.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		dodge: 2,
 		isAnimal: true,
@@ -1101,7 +1106,7 @@ const MonsterTypeList = {
 		vuln: LunarVulnerabilities
 	},
 	"lunarReaper": {
-		core: [ SYM, 1, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
+		core: [ SYM, 9, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
 		name: "lunar reaper",
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -1128,7 +1133,7 @@ const MonsterTypeList = {
 		travelMode: "fly"
 	},
 	"spinyFrog": {
-		core: [ SYM, 4, '3:10', 'neutral', 'stab', 'dc-mon/animals/spiny_frog.png', 'it' ],
+		core: [ SYM, 39, '3:10', 'neutral', 'stab', 'dc-mon/animals/spiny_frog.png', 'it' ],
 		name: "spiny frog",
 		attitude: Attitude.WANDER,
 		immune: [DamageType.POISON,'mud'].join(','),
@@ -1140,7 +1145,7 @@ const MonsterTypeList = {
 		attitude: Attitude.FEARFUL,
 		isAnimal: true,
 		isSheep: true,
-		loot: '3x 50% wool',
+		loot: '1x lumpOfMeat, 3x 50% wool',
 		packAnimal: true
 	}
 };
@@ -1300,6 +1305,11 @@ TileTypeList.mud.onDepart = function(entity,self) {
 }
 
 ItemTypeList.oreVein.onTouch = function(entity,self) {
+	let tool = entity.getFirstItemInSlot(Slot.WEAPON);
+	if( !tool || !tool.mineSpeed ) {
+		tell(mSubject,entity,' ',mVerb,'need',' a pickaxe to mine this ore.');
+		return;
+	}
 	entity.swings = (entity.swings||0)+1;
 	let dx = self.x - entity.x ;
 	let dy = self.y - entity.y;
@@ -1329,7 +1339,8 @@ ItemTypeList.oreVein.onTouch = function(entity,self) {
 		onSpriteTick: 	s => { s.sQuiver(0.1,0.1); }
 	});
 
-	if( entity.swings >= self.mineSwings ) {
+	entity.timeDelay = Math.max(entity.timeDelay||0,0.10);
+	if( entity.swings >= self.mineSwings/tool.mineSpeed ) {
 		entity.swings = 0;
 		entity.map.tileSymbolSetFloor( self.x, self.y );
 		if( self.mineId ) {

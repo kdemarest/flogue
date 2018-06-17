@@ -208,6 +208,10 @@ class UserCommandHandler {
 			return false;
 		}
 		if( dirCommand == Command.EXECUTE ) {
+			if( !this.viewRange.isShotClear ) {
+				tell(mSubject,observer,' ',mVerb,'lack',' a clear shot.');
+				return;
+			}
 			let target = observer.findAliveOthers().at(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
 			if( !target.count && !this.cmd.commandItem.mayTargetPosition && (!this.cmd.commandItem.effect || !this.cmd.commandItem.effect.mayTargetPosition) ) {
 				return this.cmd.cancel();

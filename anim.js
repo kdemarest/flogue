@@ -249,7 +249,7 @@ class Anim {
 	}
 	spriteAdd(img) {
 		if( this.dead ) return;
-		let sprite = spriteCreate(this.spriteList,img);
+		let sprite = spriteCreate(this.spriteList,img,true);
 		this.spriteInit(sprite);
 		this.spriteBind(sprite);
 		sprite.anchor.set(0.5,0.5);

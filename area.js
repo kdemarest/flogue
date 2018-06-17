@@ -1,13 +1,22 @@
-function areaBuild(area,theme,tileQuota) {
+function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	let picker = new Picker(area.depth);
 
-	function makeMonster(type,x,y,inject) {
-		type = type || picker.pick(picker.monsterTable(area.theme.monsters),null,'!isUnique');
+	function makeMonster(type,x,y,presets,inject,criteriaFn) {
+		console.assert( presets === null );
+		type = type || picker.pick(picker.monsterTable(area.theme.monsters,criteriaFn),null,'!isUnique');
 		let entity = new Entity( area.depth, type, inject );
 		entity.gateTo(area,x,y);
+		let site = area.getSiteAt(x,y);
+		if( site ) {
+			if( site.place && site.place.forbidEnemies ) debugger;
+			site.denizenList.push(entity);
+			entity.homeSiteId = site.id;
+			entity.tether = entity.tether || 2+Math.floor(Math.sqrt(site.marks.length));
+		}
+
 		return entity;
 	}
-	function makeItem(type,x,y,presets,inject) {
+	function makeItem(type,x,y,presets,inject,criteriaFn) {
 		console.assert( x!==undefined && y!==undefined );
 		type = type && !type.isRandom ? type : null;
 		if( !type || !presets ) {
@@ -17,7 +26,7 @@ function areaBuild(area,theme,tileQuota) {
 			if( !type || type.isTreasure ) {
 				filterString += ' isTreasure';
 			}
-			type = picker.pickItem( filterString.trim() );
+			type = picker.pickItem( filterString.trim(), criteriaFn );
 			console.assert( type );
 			presets = type.presets;
 		}
@@ -61,38 +70,74 @@ function areaBuild(area,theme,tileQuota) {
 				}
 				if( MonsterTypeList[typeId] ) {
 					if( !tileSet ) { map.tileSymbolSetFloor(x,y); tileSet=true; }
-					makeMonsterFn( MonsterTypeList[typeId], x, y, make );
+					makeMonsterFn( MonsterTypeList[typeId], x, y, null, make, null );
 					return;
 				}
 				if( !tileSet ) { map.tileSymbolSetFloor(x,y); tileSet = true; }
 				// If you want a random item, use the item type "random" which is hard-coded to select a
 				// random item. If you want to specify any item with 'silver' you simply can not.
 				console.assert( ItemTypeList[typeId] );
-				makeItemFn( ItemTypeList[typeId], x, y, null, make );	// the null means you have to generate presets for this item.
+				makeItemFn( ItemTypeList[typeId], x, y, null, make, null );	// the null means you have to generate presets for this item.
 			});
 
 		});
 	}
 
-	function populateAmong(floorList,count,safeToMakeFn,makeFn) {
-		console.assert( count <= floorList.length/2 );
-		console.assert( floorList.length );
-		while( floorList.length && count>0 ) {
+	function populateAmong(map,floorList,count,safeToMakeFn,makeFn,criteriaFn) {
+		floorList = [].concat(floorList);
+		//console.assert( count <= floorList.length/2 );
+		//console.assert( floorList.length );
+		let madeList = [];
+		while( floorList.length && madeList.length<count ) {
 			let index = Math.randInt(0,floorList.length/2)*2;
-			makeFn(null,floorList[index+0],floorList[index+1]);
+			let x = floorList[index+0];
+			let y = floorList[index+1];
+			if( safeToMakeFn(map,x,y) ) {
+				let e = makeFn(null,x,y,null,null,criteriaFn);
+				if( e ) madeList.push(e);
+			}
 			floorList.splice(index,2);
-			--count;
 		}
+		return madeList;
 	}
 
-	function populate(map,count,safeToMakeFn,makeFn) {
+	function populate(map,count,safeToMakeFn,makeFn,criteriaFn) {
 		let floorList = [];
 		map.traverse( (x,y,type) => {
 			if( type.isFloor && safeToMakeFn(map,x,y) ) {
 				floorList.push(x,y);
 			}
 		});
-		populateAmong( floorList, count, safeToMakeFn, makeFn );
+		return populateAmong( map, floorList, count, safeToMakeFn, makeFn, criteriaFn );
+	}
+
+	function populateInRooms( siteList, map, count, safeToMakeFn, makeFn, criteriaFn, includeFn ) {
+		let countOriginal = count;
+		let nearList = [];
+		siteList.forEach( site => {
+			if( !includeFn(site) ) {
+				return;
+			}
+			if( site.isPlace || site.isRoom ) {
+				if( count > 0 ) {
+					let toMake = 1;
+					let madeList = populateAmong( map, site.marks, toMake, safeToMakeFn, makeFn, criteriaFn );
+					if( madeList.length < toMake ) {
+						nearList.push( site.id );
+					}
+					count -= madeList.length;
+				}
+			}
+		});
+		nearList.forEach( siteId => {
+			let site = siteList.find( site=>site.isNear==siteId && includeFn(site) );
+			if( site && count > 0 ) {
+				let toMake = 1;
+				let madeList = populateAmong( site.marks, toMake, safeToMakeFn, makeFn );
+				count -= madeList.length;
+			}
+		});
+		return countOriginal-count;
 	}
 
 	let injectList = [];
@@ -107,32 +152,55 @@ function areaBuild(area,theme,tileQuota) {
 
 	area.map = new Map(area,masonMap.renderToString(),[]);
 	area.entityList = [];
+	let isFriendFn = (e) => !isEnemyFn(e);
 
 	extractEntitiesFromMap(area.map,injectList,makeMonster,makeItem);
 
-	let totalFloor = area.map.count( (x,y,type) => type.isFloor && safeToMake(area.map,x,y) ? 1 : 0);
-	let totalMons  = area.entityList.length;
-	let totalItems = area.map.itemList.filter( item => item.isTreasure ).length;
+	let totalFloor    = area.map.count( (x,y,type) => type.isFloor && safeToMake(area.map,x,y) ? 1 : 0);
+	let totalEnemies  = Array.count( area.entityList, isEnemyFn );
+	let totalFriends  = Array.count( area.entityList, isFriendFn );
+	let totalItems    = Array.count( area.map.itemList, item => item.isTreasure );
 
-	let owedMons   = Math.round( (totalFloor*theme.monsterDensity) - totalMons );
-	let owedItems  = Math.round( (totalFloor*theme.itemDensity) - totalItems );
+	let owedEnemies   = Math.round( (totalFloor*theme.enemyDensity) );
+	let owedFriends   = Math.round( (totalFloor*theme.friendDensity) );
+	let owedItems     = Math.round( (totalFloor*theme.itemDensity) );
 
-	console.log( "Map has "+totalFloor+" floor. It is owed "+owedMons+"+"+totalMons+" monsters, and "+owedItems+"+"+totalItems+" items." );
+	console.log( "Map has "+totalFloor+" floor:" );
+	console.log( "Enemies: ("+totalFloor+"x"+theme.enemyDensity+")="+owedEnemies+"-"+totalEnemies+"="+(owedEnemies-totalEnemies)+" enemies owed" );
+	console.log( "Friends: ("+totalFloor+"x"+theme.friendDensity+")="+owedFriends+"-"+totalFriends+"="+(owedFriends-totalFriends)+" friends owed" );
+	console.log( "Items  : ("+totalFloor+"x"+theme.itemDensity+")="+owedItems+"-"+totalItems+"="+(owedItems-totalItems)+" items owed" );
 
-	area.siteList.forEach( site => {
-		if( site.isPlace && site.place.comesWithMonsters ) {
-			return;
-		}
-		if( site.isPlace || site.isRoom ) {
-			populateAmong( site.marks, 1, safeToMake, makeMonster );
-			owedMons--;
-			populateAmong( site.marks, 1, safeToMake, makeItem );
-			owedItems--;
-		}
+	totalEnemies += populateInRooms( area.siteList, area.map, owedEnemies-totalEnemies, safeToMake, makeMonster, isEnemyFn, site => {
+		return !(site.isPlace && (site.place.comesWithMonsters || site.place.forbidEnemies));
 	});
 
-	populate( area.map, Math.max(0,owedMons), safeToMake, makeMonster );
-	populate( area.map, Math.max(0,owedItems), safeToMake, makeItem );
+	totalFriends += populateInRooms( area.siteList, area.map, owedFriends-totalFriends, safeToMake, makeMonster, isFriendFn, site => {
+		return !(site.isPlace && site.place.comesWithMonsters);
+	});
+
+	totalItems += populateInRooms( area.siteList, area.map, owedItems-totalItems, safeToMake, makeItem, e=>e.isTreasure, site => {
+		return !(site.isPlace && site.place.comesWithItems);
+	});
+
+	console.log( "Enemies: ("+totalFloor+"x"+theme.enemyDensity+")="+owedEnemies+"-"+totalEnemies+"="+(owedEnemies-totalEnemies)+" enemies owed" );
+	console.log( "Friends: ("+totalFloor+"x"+theme.friendDensity+")="+owedFriends+"-"+totalFriends+"="+(owedFriends-totalFriends)+" friends owed" );
+	console.log( "Items  : ("+totalFloor+"x"+theme.itemDensity+")="+owedItems+"-"+totalItems+"="+(owedItems-totalItems)+" items owed" );
+
+	populate( area.map, Math.max(0,owedEnemies-totalEnemies), (map,x,y) => {
+		let site = area.getSiteAt(x,y);
+		if( site && site.place && site.place.forbidEnemies ) {
+			return false;
+		}
+		return safeToMake(map,x,y);
+	}, makeMonster, isEnemyFn );
+	populate( area.map, Math.max(0,owedFriends-totalFriends), safeToMake, makeMonster, isFriendFn );
+	populate( area.map, Math.max(0,owedItems-totalItems), safeToMake, makeItem, e=>e.isTreasure );
+
+	area.siteList.forEach( site => {
+		if( site.denizenList.length <= 0 ) {
+			console.log("Site "+site.id+" never populated.");
+		}
+	});
 
 	area.gateList = area.map.itemList.filter( item => item.gateDir !== undefined );
 
@@ -229,7 +297,7 @@ class Area {
 		this.picker = new Picker(depth);
 	}
 	build(tileQuota) {
-		return areaBuild(this,this.theme,tileQuota);
+		return areaBuild(this,this.theme,tileQuota, (e) => e.team==Team.EVIL );
 	}
 	getGate(id) {
 		let g = this.gateList.filter( g => g.id==id );
@@ -246,7 +314,7 @@ class Area {
 	tick(speed) {
 		tick( speed, this.map, this.entityList );
 	}
-	siteFind(x,y) {
+	getSiteAt(x,y) {
 		let found;
 		this.siteList.forEach( site => {
 			if( !site.marks ) return;

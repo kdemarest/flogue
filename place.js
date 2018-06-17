@@ -57,7 +57,7 @@ class Place {
 					this.inject[pPos].push(...makeArray);
 				}
 				else {
-					console.log("Chose not to inject "+makeArray[0].typeFilter);
+					//console.log("Chose not to inject "+makeArray[0].typeFilter);
 				}
 
 				s = TypeIdToSymbol[typeId];

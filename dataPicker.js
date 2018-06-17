@@ -7,11 +7,14 @@ class Picker {
 	}
 
 	// Contains entries in MonsterTypeList
-	monsterTable(monsterConstraint) {
+	monsterTable(monsterConstraint,criteriaFn) {
 		let table = [];
 		let closest = [];
 		for( let typeId in MonsterTypeList ) {
 			let m = MonsterTypeList[typeId];
+			if( criteriaFn && !criteriaFn(m) ) {
+				continue;
+			}
 			if( monsterConstraint ) {
 				let ok = false;
 				if( typeof monsterConstraint == 'function' ) {
@@ -107,7 +110,7 @@ class Picker {
 	// itemTypeId is allowed to be empty, although it will make the search take substantially longer.
 	// filter should be an instance of filterStringParam() above.
 	//**
-	itemTraverse(itemTypeId, filter,fn) {
+	itemTraverse( itemTypeId, filter, fn ) {
 		let depth = this.depth;
 		let count = 0;
 		let one = { nothing: { skip:1, level: 0, rarity: 1 } };	// be sure effectChance is undefined in here!!
@@ -241,7 +244,7 @@ class Picker {
 	//		'!healing'			- an item that does NOT have the healing effect
 	//**
 
-	pickItem(filterString) {
+	pickItem(filterString,criteriaFn) {
 		let filter = this.filterStringParse(filterString);
 		let itemTypeId;
 		if( ItemTypeList[filter.firstId] ) {
@@ -258,6 +261,9 @@ class Picker {
 		// Make a table of all items that meet the criteria
 		let table = [];
 		this.itemTraverse( itemTypeId, filter, thing => {
+			if( criteriaFn && !criteriaFn(thing) ) {
+				return;
+			}
 			table.push(thing);
 		});
 		// If no items meet the criteria, we shoud return a fallback item, like gold.

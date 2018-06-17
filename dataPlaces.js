@@ -151,7 +151,6 @@ ScapeList.caveVillage = () => ({
 ScapeList.snowyPlains = () => ({
 	dim: 				40,
 	architecture: 		"plains",
-	monsterDensity: 	0.0,
 });
 
 let ThemeDefault = () => ({
@@ -173,7 +172,8 @@ let ThemeDefault = () => ({
 	placeDensity: 	0.40,
 	seedPercent: 	0.10,
 
-	monsterDensity: 0.06,
+	enemyDensity: 	0.08,
+	friendDensity: 	0.00,
 	itemDensity: 	0.03,
 });
 
@@ -184,7 +184,8 @@ ThemeList.surface = {
 	scapeId: 		'snowyPlains',
 	rREQUIRED: 		'surfaceSunTemple',
 	monsters: 		['isPet'],
-	monsterDensity: 0.0,
+	enemyDensity: 	0.0,
+	friendDensity: 	0.0,
 	itemDensity: 	0.0,
 
 }
@@ -196,7 +197,9 @@ ThemeList.coreCavernRooms = {
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
-	monsters: 		m => (m.isUndead || m.isEarthChild || m.isPlanar || m.isAnimal) && m.team !='good'
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+	enemyDensity: 	0.05,
+	friendDensity: 	0.01,
 }
 
 ThemeList.refugeeCamp = {
@@ -205,7 +208,10 @@ ThemeList.refugeeCamp = {
 	rUNCOMMON: 	'handoutStand, floodPit, pitEncircle',
 	rRARE: 		'den_dog, camp_goblin',
 	monsters: 	['isSunChild','isPet'],
-	sign: 		'Bring your own supplies. We won\'t feed you.'
+	sign: 		'Bring your own supplies. We won\'t feed you.',
+	enemyDensity: 	0.00,
+	friendDensity: 	0.15,
+	itemDensity:    0.00,
 }
 
 ThemeList.refugeeCampSlaughter = {
@@ -216,7 +222,9 @@ ThemeList.refugeeCampSlaughter = {
 	rUNCOMMON: 	'floodPit, pitEncircle, veil, ruin, den_kobold, camp_ogre',
 	rRARE: 		'den_dog',
 	monsters: 	['isSunChild','isPet','isEarthChild'],
-	sign: 		'Refugee Camp "Prosperous Tranquility" Ahead'
+	sign: 		'Refugee Camp "Prosperous Tranquility" Ahead',
+	enemyDensity: 	0.08,
+	friendDensity: 	0.08,
 }
 
 ThemeList.dwarfTown = {
@@ -229,7 +237,9 @@ ThemeList.dwarfTown = {
 	//rCOMMON: 	'dwarfHouse, dwarfHouseSmall, dwarfHouseL, pitEncircle, nest_bat, patch, floodMist',
 	rRARE: 		'firePit, floodWater',
 	prefer: 	['pit'],
-	monsters: 	['isDwarf']
+	monsters: 	['isDwarf'],
+	enemyDensity: 	0.00,
+	friendDensity: 	0.05,
 }
 
 ThemeList.corePits = {
@@ -384,12 +394,15 @@ ThemeList.sunPlane = {
 PlaceTypeList.gateUpMinimal = {
 	map:
 `
-b.b
-.U.
-b.b
+#####
+#b..#
+#.U.+
+#b..#
+#####
 `,
 	rarity: rUNCOMMON,
 	isUtility: true,
+	forbidEnemies: true,
 	flags: { rotate: false },
 	symbols: {
 		U: 'stairsUp',
@@ -408,6 +421,7 @@ PlaceTypeList.gateUpChamber = {
 `,
 	rarity: rUNCOMMON,
 	isUtility: true,
+	forbidEnemies: true,
 	flags: { rotate: false },
 	symbols: {
 		U: 'stairsUp',

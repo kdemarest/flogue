@@ -200,7 +200,7 @@ let effectApply = function(effect,target,source,item) {
 // effect.duration
 // effect.isResist
 
-function animFloatUp(target,icon,delay) {
+function animFloatUp(target,icon,delay,duration=0.4) {
 	if( icon !== false ) {
 		new Anim( {}, {
 			follow: 	target,
@@ -244,24 +244,6 @@ let effectApplyTo = function(effect,target,source,item) {
 		tell(mSubject,item || source || 'that',' has no effect on ',mObject,target);
 		return false;
 	}
-	// DUPLCATE CODE to the calcBestWeapon...
-	let isImmune = false;
-	isImmune = isImmune || (target.isImmune && target.isImmune(effect.typeId));
-	isImmune = isImmune || (target.isImmune && target.isImmune(effect.op));
-	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
-	if( isImmune ) {
-		tell(mSubject,target,' is immune to ',mObject,effect);
-		new Anim( {}, {
-			follow: 	target,
-			img: 		StickerList.showImmunity.img,
-			duration: 	0.2,
-			delay: 		effect.rangeDuration || 0,
-			onInit: 		a => { a.create(1); },
-			onSpriteMake: 	s => { s.sScaleSet(0.75); },
-			onSpriteTick: 	s => { }
-		});
-		return false;
-	}
 
 	// Note that spells with a duration must last at least 1 turn!
 	// This should almost certainly move the DEFAULT_EFFECT_DURATION usage into the Picker.
@@ -269,26 +251,6 @@ let effectApplyTo = function(effect,target,source,item) {
 		((item && item.inSlot) || effect.duration==true ? true :
 		Math.max(1,(effect.duration || DEFAULT_EFFECT_DURATION) * (effect.durationMod||1))
 	));
-	let isResist = false;
-	// I can resist a specific effect type, like "eFire"
-	isResist = isResist || (target.isResist && target.isResist(effect.typeId));
-	// I can resist an effect operation, like "shove"
-	isResist = isResist || (target.isResist && target.isResist(effect.op));
-	// I can resist a value that is being set, like "panicked"
-	isResist = isResist || (effect.op=='set' && target.isResist && target.isResist(effect.value));
-	effect.isResist = isResist;
-
-	if( isResist && effect.isInstant && Math.chance(50) ) {
-		tell(mSubject,target,' resists the effects of ',mObject,effect);
-		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
-		return false;
-	}
-
-	if( isResist && !effect.isInstant && effect.duration !== true ) {
-		tell(mSubject,target,' seems partially afected by ',mObject,effect);
-		effect.duration = effect.duration * 0.50;
-		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
-	}
 
 	if( effect.icon !== false ) {
 		if( source && source.command == Command.CAST ) {
@@ -309,6 +271,55 @@ let effectApplyTo = function(effect,target,source,item) {
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
 			});
 		}
+	}
+
+	if( effect.op == 'damage' ) {
+		let tile = target.map.tileTypeGet(target.x,target.y);
+		if( tile.isWater && effect.damageType == DamageType.BURN ) {
+			tell(mSubject,target,' can not be effected by '+effect.damageType+'s while in ',mObject,tile);
+			animFloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
+			return false;
+		}
+		if( tile.isFire && effect.damageType == DamageType.FREEZE ) {
+			tell(mSubject,target,' can not be effected by '+effect.damageType+'s while in ',mObject,tile);
+			animFloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
+			return false;
+		}
+	}
+
+	// DUPLCATE CODE to the calcBestWeapon...
+	let isImmune = false;
+	isImmune = isImmune || (target.isImmune && target.isImmune(effect.typeId));
+	isImmune = isImmune || (target.isImmune && target.isImmune(effect.op));
+	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
+	if( isImmune ) {
+		tell(mSubject,target,' is immune to ',mObject,effect);
+		animOver( target, StickerList.showImmunity.img, effect.rangeDuration || 0 );
+		return false;
+	}
+
+	let isResist = false;
+	// I can resist a specific effect type, like "eFire"
+	isResist = isResist || (target.isResist && target.isResist(effect.typeId));
+	// I can resist an effect operation, like "shove"
+	isResist = isResist || (target.isResist && target.isResist(effect.op));
+	// I can resist a value that is being set, like "panicked"
+	isResist = isResist || (effect.op=='set' && target.isResist && target.isResist(effect.value));
+	effect.isResist = isResist;
+
+	if( isResist && effect.isInstant && Math.chance(50) ) {
+		tell(mSubject,target,' resists the effects of ',mObject,effect);
+		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
+		return false;
+	}
+
+	if( isResist && !effect.isInstant && effect.duration !== true ) {
+		tell(mSubject,target,' seems partially affected by ',mObject,effect);
+		effect.duration = effect.duration * 0.50;
+		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
+	}
+
+	if( effect.icon !== false ) {
 		animFloatUp(target,effect.icon || StickerList.eGeneric.img,effect.rangeDuration);
 	}
 

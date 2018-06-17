@@ -208,7 +208,7 @@ class ViewInfo {
 			$('#'+this.infoDivId).addClass('healthCritical');
 		}
 		else
-		if( healthRatio < 0.30 ) {
+		if( healthRatio < 0.35 ) {
 			$('#'+this.infoDivId).addClass('healthWarn');
 		}
 
@@ -288,7 +288,7 @@ class ViewMiniMap {
 			.show();
 	}
 	setArea(area) {
-		this.caption = area.name;
+		this.caption = String.capitalize(area.name)+' (Depth '+area.depth+')';
 		this.mapMemoryFn = ()=>area.mapMemory;
 		this.create(area);
 	}
@@ -298,8 +298,10 @@ class ViewMiniMap {
 		}
 	}
 	render(observer) { 
-		let site = observer.area.siteFind(observer.x,observer.y);
-		$('#'+this.captionDivId).show().html(this.caption+(site ? '<br>'+site.id : ''));
+		let site = observer.area.getSiteAt(observer.x,observer.y);
+		$('#'+this.captionDivId).show().html(
+			this.caption + (site ? '<br>'+site.id+'<br>'+site.denizenList.map( entity=>entity.name ).join(',') : '')
+		);
 
 		var canvas = document.getElementById(this.divId+'Canvas');
 		if( !canvas.getContext ) {
@@ -518,6 +520,7 @@ class ViewRange {
 		this.xOfs = 0;
 		this.yOfs = 0;
 		this.worldOverlayRemoveFn( a => a.group=='guiCrosshair' );
+		this.isShotClear = false;
 	}
 	move(xAdd,yAdd) {
 		let x = this.xOfs + xAdd;
@@ -550,11 +553,13 @@ class ViewRange {
 
 	drawRange(map,sx,sy,tx,ty) {
 		let self = this;
+		this.isShotClear = true;
 		function test(x,y) {
 			return map.tileTypeGet(x,y).mayFly;
 		}
 		function add(x,y,ok) {
 			self.worldOverlayAddFn('guiCrosshair',x,y,StickerList[ok?'crosshairYes':'crosshairNo']);	
+			self.isShotClear = self.isShotClear && ok;
 		}
 		shootRange(sx,sy,tx,ty,test,add);
 	}

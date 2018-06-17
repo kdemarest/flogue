@@ -84,11 +84,11 @@
 			inject = [inject];
 		}
 		console.assert(Array.isArray(inject));
-		console.log("Injecting from "+source+":");
+		//console.log("Injecting from "+source+":");
 		inject.forEach( supply => {
 			// At this point any supply.pick choices should have ALREADY been made!
 			console.assert(supply.typeFilter);
-			console.log(supply.typeFilter,supply);
+			//console.log(supply.typeFilter,supply);
 		});
 		let pos = ''+x+','+y;
 		if( injectList[pos] ) {
@@ -682,10 +682,8 @@
 					// We don't really want to intrude into whatever space we're connecting to. That often looks
 					// pretty bad. So jut out from either end.
 					let marks = [];
-// I like yhe idea of jutting, but I think we're failing to connect everything together properly
-// due to jutting. Maybe.
-//					[p.x,p.y]   = this.jut( p.x,  p.y,  p.tx, p.ty, p.zoneId, marks );
-//					[p.tx,p.ty] = this.jut( p.tx, p.ty, p.x,  p.y,  p.tZoneId, marks );
+					[p.x,p.y]   = this.jut( p.x,  p.y,  p.tx, p.ty, p.zoneId, marks );
+					[p.tx,p.ty] = this.jut( p.tx, p.ty, p.x,  p.y,  p.tZoneId, marks );
 
 					let lean = Math.chance(50);
 					function deltasToDirStrict(dx,dy) {
@@ -697,12 +695,29 @@
 					if( p.x!=p.tx || p.y!=p.ty ) {
 						let linkFn = wanderLink ? deltasToDirNaturalOrtho : deltasToDirStrict;
 						this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks);
+						let thruSite = {};
+						let bestId = '';
+						let tempMarks = [].concat(marks);
+						Array.traversePairs( tempMarks, (x,y) => {
+							let siteId = this.getAll(x,y).siteId;
+							if( siteId ) {
+								let site = siteList.find( site=>site.id==siteId );
+								if( site ) {
+									console.log("Transfer ("+x+","+y+") from passage to "+siteId);
+									site.marks.push(x,y);
+									Array.filterInPlace(marks,(mx,my)=>mx==x && my==y);
+								}
+							}
+						});
+						// This will push whatever marks remain. NOTE that the passage might not be contiguous
+						// anymore.
 						siteList.push({
 							id: 'passage.'+GetTimeBasedUid(),
 							marks: marks,
 							isPassage: true,
 							site0: site0,
-							site1: site1
+							site1: site1,
+							denizenList: [],
 						});
 					}
 					else {
@@ -804,6 +819,7 @@
 		assembleSites(siteList) {
 
 			function addSite(site) {
+				site.denizenList = [];
 				siteList.push(site);
 				Array.traversePairs( site.marks, (x,y) => {
 					self.getAll(x,y).siteId = site.id;
@@ -1189,7 +1205,8 @@
 				marks: siteMarks,
 				isPlace: true,
 				placeId: place.typeId,
-				place: place
+				place: place,
+				denizenList: [],
 			};
 			siteList.push(site);
 			// mark on the map which site belongs to whom.

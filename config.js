@@ -43,30 +43,31 @@ ConfigList.ken = () => {
 
 	ThemeList.kenTheme = {
 		scapeId: 	'kenScape',
-		rREQUIRED: 	'kenPlace',
+		rREQUIRED: 	'floodOre',
 		rCOMMON: 	null, //'floodOre',
 		rUNCOMMON: 	null, //'floodOre',
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
-		monsterDensity: 0.00001,
-		monsters: 	['isPet']
+		enemyDensity:  0.01,
+		friendDensity: 0.00001,
+		monsters: 	['isSkeleton']
 
 	}
 
 	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, weapon.hammer, spell.eFire');
-	MonsterTypeList.player.inventoryWear = 'stuff.oilLamp, shield.eAbsorb';
+	MonsterTypeList.player.inventoryWear = 'weapon.pickaxe,stuff.oilLamp, shield.eAbsorb';
 //	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
-		lootFrequency: 0.80,
-		effectChance: 4.0
+//		lootFrequency: 0.80,
+//		effectChance: 4.0
 	});
 
 
 	return {
-//		startingDepth: 1,
-//		themeId: 'kenTheme'
+		startingDepth: 8,
+		themeId: 'kenTheme'
 	}
 }
 
