@@ -23,7 +23,7 @@ function createDrawList(observer,map,entityList,asType) {
 					if( lightReaches ) {
 						if( light < 0 ) {
 							let b = Math.max(Math.abs(lx),Math.abs(ly));
-							a[fy][fx][0] = Math.max(light,a[fy][fx][0]+(light+b));
+							a[fy][fx][0] = Math.max(light,a[fy][fx][0]+Math.min(0,light+b));
 						}
 						else {
 							a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
@@ -82,7 +82,6 @@ function createDrawList(observer,map,entityList,asType) {
 	}
 	// Remember all items in the area
 	for( let item of map.itemList ) {
-		q[item.y*map.xLen+item.x] = item;
 		testLight(item.x,item.y,item.light)
 	}
 
@@ -110,13 +109,13 @@ function createDrawList(observer,map,entityList,asType) {
 			let visible = inBounds && vis[y] && vis[y][x];
 			let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
 			let tile;
-			let item;
+			let itemList;
 			let entity;
 
 			if( inBounds ) {
 				tile =		map.tileTypeGet(x,y);
 				console.assert(tile);
-				item =      q[y*map.xLen+x];
+				itemFind =  map.findItemAt(x,y);
 				entity =    p[y*map.xLen+x];
 				if( !tile.isTileType ) {
 					debugger;
@@ -146,11 +145,15 @@ function createDrawList(observer,map,entityList,asType) {
 					else {
 						aa.length = 1;
 					}
-					if( item && observer.senseItems ) {
-						aa.push(item);
-						aa[0] = revealLight;
+					if( itemFind.count && observer.senseItems ) {
+						itemFind.process( item => {
+							if( item.isTreasure ) {
+								aa.push(item);
+								aa[0] = revealLight;
+							}
+						});
 					}
-					if( entity && observer.senseLife ) {
+					if( entity && observer.senseLife && !entity.isUndead ) {
 						aa.push(entity);
 						aa[0] = revealLight;
 					}
@@ -158,7 +161,12 @@ function createDrawList(observer,map,entityList,asType) {
 				else {
 					//dChar = 'T';
 					aa.push(tile);
-					if( item ) { aa.push(item); visId[item.id] = item; }
+					if( itemFind.count ) {
+						itemFind.process( item => {
+							aa.push(item);
+							visId[item.id] = item;
+						});
+					}
 					if( entity ) { aa.push(entity); visId[entity.id] = entity; }
 				}
 			}
@@ -351,7 +359,7 @@ class ViewMap {
 					let sprite = entity.spriteList[i];
 					spriteOnStage(sprite,true);
 					if( sprite.refs == 1 ) {	// I must be the only controller, so...
-						let zOrder = (entity.isTileType ? 1 : (entity.isItemType ? 2 : (entity.isMonsterType ? 3 : 4)));
+						let zOrder = (entity.isTileType ? 10 : (entity.isItemType ? (entity.isGate ? 20 : (entity.isDecor ? 22 : 24)) : (entity.isMonsterType ? 30 : 40)));
 						sprite.zOrder 	= zOrder;
 						sprite.visible 	= true;
 						sprite.x 		= x+(TILE_DIM/2);

@@ -58,6 +58,15 @@ let SymbolToType = {};
 let TypeIdToSymbol = {};
 let SYM = 111;
 
+// Pathfinding and terrain isProblem
+let Prob = {
+	NONE:  0.0,
+	MILD:  0.3,
+	HARSH: 0.7,
+	// Do NOT have a value of 1.0 or up to 900000 here. The Path class requires numbers below 1.0 for problem spots.
+	WALL:  800000.0,
+	DEATH: 900000.0
+}
 
 Gab = {
 };
@@ -207,11 +216,11 @@ const TileTypeList = {
 	"grass":      { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
 	"glass":      { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
 	"shaft":      { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", mayJump: true, img: "dc-dngn/dngn_trap_shaft.png" },
-	"flames":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.26, name: "flames", mayJump: true, light: 9, glow:1,
-					effect: { op: 'damage', valueDamage: 1.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "dc-mon/nonliving/fire_elemental.png" },
+	"flames":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.26, name: "flames", light: 9, glow:1,
+					effect: { op: 'damage', valueDamage: 4.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "dc-mon/nonliving/fire_elemental.png" },
 	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, mayJump: true, name: "lava", light: 5, glow:1, 
-					effect: { op: 'damage', valueDamage: 3.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
-	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.34, name: "mist", zOrder: 20, img: "effect/cloud_grey_smoke.png", layer: 3 },
+					effect: { op: 'damage', valueDamage: 8.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
+	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.34, name: "mist", zOrder: 50, img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, mayJump: true, name: "mud", img: "dc-dngn/floor/dirt0.png" },
 	"ghostStone": { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
 					effect: { op: 'set', stat: 'invisible', value: true } },
@@ -270,13 +279,14 @@ const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStar
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponList = Fab.add( '', {
-	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, isRock: true, quick: 2, mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw', img: 'item/weapon/ranged/rock.png' },
+	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, isRock: true, quick: 2, mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw', img: 'item/weapon/ranged/rock2.png' },
 	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80,
-					effectAlwaysFires: true, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
+					chanceToFire: 100, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
 	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
 	"bow": 	    	{ level:  0, rarity: 1.0, damageMultiplier: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
 					mayShoot: true, range: RANGED_WEAPON_DEFAULT_RANGE, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
-	"dagger":   	{ level:  3, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
+	"dagger":   	{ level:  3, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, 
+					chanceToFire: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
 	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
 	"solKnife":   	{ level:900, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
 	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
@@ -457,21 +467,21 @@ const StuffList = Fab.add( '', {
 	"lantern": 			{ slot: Slot.HIP, light: 14, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"oilLamp": 			{ slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"candleLamp": 		{ slot: Slot.HIP, light:  6, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"lumpOfMeat": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"trollHide": 		{ },
-	"bones": 			{ mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true },
-	"antGrubMush": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"viperVenom": 		{ },
-	"dogCollar": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"skull": 			{ mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true },
-	"mushroomBread": 	{ mayThrow: true, mayTargetPosition: true, isEdible: true, },
-	"demonScale": 		{ },
-	"demonEye": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"ghoulFlesh": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"pinchOfEarth": 	{ },
+	"lumpOfMeat": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/chunk.png" },
+	"trollHide": 		{ img: "item/armour/troll_hide.png" },
+	"bone": 			{ mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: "item/food/bone.png" },
+	"antGrubMush": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/sultana.png" },
+	"viperVenom": 		{ img: "UNUSED/other/acid_venom.png" },
+	"dogCollar": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/collar.png' },
+	"skull": 			{ mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: 'item/misc/skull.png' },
+	"mushroomBread": 	{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/bread_ration.png'},
+	"demonScale": 		{ img: 'item/misc/demonEye.png' },
+	"demonEye": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/demonEye.png' },
+	"ghoulFlesh": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/chunk_rotten.png' },
+	"pinchOfEarth": 	{ img: 'item/weapon/ranged/rock.png' },
 	"impBrain": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"ogreDrool": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"redOozeSlime": 	{ mayThrow: true, mayTargetPosition: true, isEdible: true },
+	"ogreDrool": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
+	"redOozeSlime": 	{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/redOozeSlime.png' },
 	"scarabCarapace": 	{ },
 	"darkEssence": 		{ },
 	"facetedEye": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
@@ -553,11 +563,11 @@ const WEAPON_EFFECT_DAMAGE_PERCENT = 10;
 const ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
 // GATEWAYS
-	"stairsDown": { symbol: '>', name: "stairs down", rarity: 1, gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
-	"stairsUp":   { symbol: '<', name: "stairs up", rarity: 1, gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
-	"gateway":    { symbol: '=', name: "gateway", rarity: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
-	"portal":     { symbol: '0', name: "portal", rarity: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
-	"pitDrop": 	  { symbol: SYM, name: "pit drop", rarity: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
+	"stairsDown": { symbol: '>', name: "stairs down", rarity: 1, isGate: 1, gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
+	"stairsUp":   { symbol: '<', name: "stairs up", rarity: 1, isGate: 1, gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
+	"gateway":    { symbol: '=', name: "gateway", rarity: 1, isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
+	"portal":     { symbol: '0', name: "portal", rarity: 1, isGate: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
+	"pitDrop": 	  { symbol: SYM, name: "pit drop", rarity: 1, isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
 // MARKERS
 	"marker": 	  { symbol: SYM, name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
 // DECOR
@@ -730,7 +740,7 @@ let ShadowImmunity = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.
 
 let OozeImmunity = ['eShove','eBlind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
 let OozeResistance = [DamageType.CUT,Attitude.ENRAGED,Attitude.CONFUSED].join(',');
-let OozeVulnerability = ['ice','glass',DamageType.BURN,DamageType.FREEZE].join(',');
+let OozeVulnerability = ['ice','glass',DamageType.FREEZE].join(',');
 
 let LunarVulnerabilities = ['solarium',DamageType.BURN].join(',');
 
@@ -784,6 +794,7 @@ const MonsterTypeList = {
 		loot: '30% dogCollar',
 		properNoun: true,
 		packAnimal: true,
+		rarity: 0.10,
 		regenerate: 0.03
 	},
 	"dwarf": {
@@ -800,7 +811,6 @@ const MonsterTypeList = {
 	},
 	"mastiff": {
 		core: [ SYM, 10, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
-		name: "Rover/Fluffy",
 		dodge: 1,
 		brainFlee: true,
 		brainPet: true,
@@ -810,6 +820,7 @@ const MonsterTypeList = {
 		loot: '30% dogCollar',
 		properNoun: true,
 		packAnimal: true,
+		rarity: 0.10,
 		regenerate: 0.03
 	},
 	"human": {
@@ -821,6 +832,7 @@ const MonsterTypeList = {
 		isSunChild: true,
 		isNamed: true,
 		loot: '30% mushroomBread, 30% coin, 10% potion.eHealing',
+		rarity: 0.10,
 	},
 	"philanthropist": {
 		core: [ SYM, 1, '3:10', 'good', 'cut', 'dc-mon/philanthropist.png', '*' ],
@@ -831,6 +843,7 @@ const MonsterTypeList = {
 		isSunChild: true,
 		isNamed: true,
 		loot: '30% mushroomBread, 50% coin, 10% potion.eHealing',
+		rarity: 0.10,
 		sayPrayer: 'Get in line! Come to the left window for donations!'
 	},
 	"refugee": {
@@ -842,12 +855,13 @@ const MonsterTypeList = {
 		isSunChild: true,
 		isNamed: true,
 		loot: '10% bones, 5% dogCollar, 3x 10% stuff',
+		rarity: 0.40,
 		sayPrayer: "Oh god... What I wouldn't give for a steak."
 	},
 
 // EVIL TEAM
 	"avatarOfBalgur": {
-		core: [ SYM, 30, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
+		core: [ SYM, 10, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
 		isUnique: true, neverPick: true,
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -873,7 +887,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"ethermite": {
-		core: [ SYM, 10, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
+		core: [ SYM, 6, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
 		dodge: 1,
 		glow: true,
 		invisible: true,
@@ -898,15 +912,16 @@ const MonsterTypeList = {
 		core: [ SYM, 1, '3:10', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		brainAlertFriends: true,
 		brainTalk: true,
+		brainIgnoreClearShots: 70,
 		isGoblin: true,
 		isEarthChild: true,
-		inventoryLoot: '3x potion.eFire',
+		inventoryLoot: '1x potion.eFire',
 		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 20% any, 30% pinchOfEarth',
 		packAnimal: true,
 		sayPrayer: 'Oh mighty Thagzog...'
 	},
 	"goblinWar": { 
-		core: [ SYM, 12, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		core: [ SYM, 5, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		name: 'goblin warrior',
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -917,7 +932,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh warrior Thagzog...'
 	},
 	"goblinMut": {
-		core: [ SYM, 22, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		core: [ SYM, 8, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		name: 'goblin mutant',
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -928,7 +943,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh mutant Thagzog...'
 	},
 	"imp": {
-		core: [ SYM, 7, '3:10', 'evil', 'claw', 'dc-mon/demons/imp.png', 'it' ],
+		core: [ SYM, 4, '3:10', 'evil', 'claw', 'dc-mon/demons/imp.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		dodge: 1,
 		glow: 1,
@@ -946,13 +961,13 @@ const MonsterTypeList = {
 		brainAlertFriends: true,
 		brainTalk: true,
 		dodge: 1,
-		inventoryLoot: '3x potion.eFire',
+		inventoryLoot: '2x dart.eInert',
 		isEarthChild: true,
-		loot: '50% coin, 50% weapon.dart, 30% weapon.dagger, 30% dogCollar',
+		loot: '50% coin, 4x 50% weapon.dart, 30% weapon.dagger, 30% dogCollar',
 		packAnimal: true
 	},
 	"ogreKid": { 
-		core: [ SYM, 2, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
+		core: [ SYM, 4, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
 		name: "ogre child",
 		brainTalk: true, 
 		isEarthChild: true,
@@ -962,7 +977,7 @@ const MonsterTypeList = {
 		speed: 0.75
 	},
 	"ogre": {
-		core: [ SYM, 10, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
+		core: [ SYM, 7, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
 		brainTalk: true,
 		isEarthChild: true,
 		isOgre: true,
@@ -999,7 +1014,7 @@ const MonsterTypeList = {
 		vuln: 'glass,'+DamageType.BURN
 	},
 	"redScarab": {
-		core: [ SYM, 12, '2:30', 'evil', 'burn', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		core: [ SYM, 2, '2:30', 'evil', 'burn', 'dc-mon/animals/boulder_beetle.png', 'it' ],
 		namePattern: "red scarab",
 		glow: 3,
 		immune: DamageType.BURN,
@@ -1019,7 +1034,7 @@ const MonsterTypeList = {
 		vuln: ['silver',DamageType.SMITE].join(',')
 	},
 	"skeleton": {
-		core: [ SYM, 3, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		core: [ SYM, 2, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		immune: SkeletonImmunity,
 		isUndead: true,
 		isSkeleton: true,
@@ -1036,7 +1051,7 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonLg": {
-		core: [ SYM, 13, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
+		core: [ SYM, 6, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
 		name: 'ogre skeleton',
 		immune: SkeletonImmunity,
 		inventoryLoot: '50% spell.eRot',
@@ -1055,7 +1070,7 @@ const MonsterTypeList = {
 		vuln: 'glass'+','+DamageType.FREEZE
 	},
 	"troll": {
-		core: [ SYM, 8, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
+		core: [ SYM, 5, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
 		brainRavenous: true,
 		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
@@ -1167,13 +1182,18 @@ TileTypeList.crystal.onTouch = function(entity,self) {
 }
 
 TileTypeList.pit.isProblem = function(entity,self) {
+	if( entity.travelMode == 'walk' ) {
+		// This is a temporary fix to the problem that dogs that can jump are allowed to enter
+		// pit squares but might actually have no viable path out...
+		return Prob.DEATH;
+	}
 	if( entity.travelMode == 'walk' && (!entity.jumpMax || entity.jump>0) ) {
-		return 'death';
+		return Prob.DEATH;
 	}
-	if( entity.attitude !== Attitude.AGGRESSIVE ) {
-		return true;
+	if( entity.travelMode == 'walk' && entity.attitude !== Attitude.AGGRESSIVE ) {
+		return Prob.MILD;
 	}
-	return false;
+	return Prob.NONE;
 }
 
 
@@ -1191,13 +1211,25 @@ TileTypeList.flames.onDepartType = function(entity,self) {
 	tell( mSubject|mCares,entity,' ',mVerb,'leave',' ',mObject,self,'.' );
 }
 
+TileTypeList.flames.getDamage = function(toucher,self) {
+	return value
+}
+
 TileTypeList.flames.isProblem = function(entity,self) {
-	return !entity.isImmune(self.damageType);
+	if( entity.isImmune(self.damageType) ) {
+		return Prob.NONE;
+	}
+	let valueDamage = self.effect.valueDamage;
+	let damage = Math.max(1,Math.floor(new Picker(entity.area.depth).pickDamage(self.rechargeTime) * valueDamage))
+	let ratio = damage/entity.health;
+	if( ratio <= 0.3 ) return Prob.MILD;
+	if( ratio <= 0.7 ) return Prob.HARSH;
+	return Prob.DEATH;
 }
 
 TileTypeList.flames.onTouch = function(toucher,self) {
 	// We could pass in an onDamage that would also catch you on fire...
-	let valueDamage = self.effect.valueDamage * (toucher.jump ||toucher.travelMode=='fly' ? 0.5 : 1.0);
+	let valueDamage = self.effect.valueDamage;
 	let effect = Object.assign( {}, self.effect, { valueDamage: valueDamage } );
 	effect = new Picker(toucher.area.depth).assignEffect(effect);
 	effectApply( effect, toucher, null, self );
@@ -1212,7 +1244,15 @@ TileTypeList.lava.onDepartType = function(entity,self) {
 }
 
 TileTypeList.lava.isProblem = function(entity,self) {
-	return !entity.isImmune(self.damageType);
+	if( entity.isImmune(self.damageType) || entity.travelMode !== 'walk' ) {
+		return Prob.NONE;
+	}
+	let valueDamage = self.effect.valueDamage;
+	let damage = Math.max(1,Math.floor(new Picker(entity.area.depth).pickDamage(0) * valueDamage))
+	let ratio = damage/entity.health;
+	if( ratio <= 0.3 ) return Prob.MILD;
+	if( ratio <= 0.7 ) return Prob.HARSH;
+	return Prob.DEATH;
 }
 
 TileTypeList.lava.onTouch = function(toucher,self) {
@@ -1224,7 +1264,10 @@ TileTypeList.lava.onTouch = function(toucher,self) {
 }
 
 TileTypeList.mud.isProblem = function(entity,self) {
-	return ( entity.travelMode == "walk" );
+	if( entity.travelMode == "walk" ) {
+		return Prob.HARSH;
+	}
+	return Prob.NONE;
 }
 
 TileTypeList.mud.onEnterType = function(entity,self) {
@@ -1274,7 +1317,7 @@ ItemTypeList.oreVein.onTouch = function(entity,self) {
 		img: 		StickerList.oreChaff.img, //self.imgGet(self),
 		duration: 	0.2,
 		onInit: 		a => { a.create(6); },
-		onSpriteMake: 	s => { s.sScaleSet(0.3).sVel(Math.rand(-90,90),Math.rand(2,5)); s.zOrder=11; },
+		onSpriteMake: 	s => { s.sScaleSet(0.3).sVel(Math.rand(-90,90),Math.rand(2,5)); s.zOrder=100; },
 		onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sGrav(40).sRot(360); }
 	});
 	new Anim( {}, {
@@ -1453,7 +1496,7 @@ MonsterTypeList.redOoze.onAttacked = function() {
 }
 
 MonsterTypeList.redOoze.onMove = function(x,y) {
-	let f = this.map.findItem().at(x,y).filter( i=>i.isCorpse );
+	let f = this.map.findItemAt(x,y).filter( i=>i.isCorpse );
 	if( f.first && this.health < this.healthMax*this.growLimit ) {
 		tell(mSubject,this,' ',mVerb,'absorb',' ',mObject,f.first,' and ',mVerb,'regain',' strength!');
 		let heal = Math.floor(this.healthMax * 0.25);

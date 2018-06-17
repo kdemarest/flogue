@@ -79,16 +79,21 @@
 		return tile !== T.Unknown && SymbolToType[tile].wantsBridge;
 	}
 
-	function injectMake(injectList,x,y,inject) {
+	function injectMake(injectList,x,y,inject,source) {
 		if( !Array.isArray(inject) && typeof inject == 'object' ) {
 			inject = [inject];
 		}
 		console.assert(Array.isArray(inject));
+		console.log("Injecting from "+source+":");
 		inject.forEach( supply => {
 			// At this point any supply.pick choices should have ALREADY been made!
 			console.assert(supply.typeFilter);
+			console.log(supply.typeFilter,supply);
 		});
 		let pos = ''+x+','+y;
+		if( injectList[pos] ) {
+			debugger;
+		}
 		injectList[pos] = injectList[pos] || [];
 		injectList[pos].push(...inject);
 
@@ -519,7 +524,9 @@
 						(x,y,tile,z) => isWalkable(tile) && (z===undefined || z != zoneId),
 						(x,y,t) => t.zoneId = zoneId
 					);
-					
+					if( keepTiles && tiles.count<=0 ) {
+						debugger;
+					}
 					zoneList[zoneId] = { x:x, y:y, zoneId: zoneId, tiles: tiles, count: tiles.length/2 };
 					++zoneId;
 				}
@@ -675,8 +682,10 @@
 					// We don't really want to intrude into whatever space we're connecting to. That often looks
 					// pretty bad. So jut out from either end.
 					let marks = [];
-					[p.x,p.y]   = this.jut( p.x,  p.y,  p.tx, p.ty, p.zoneId, marks );
-					[p.tx,p.ty] = this.jut( p.tx, p.ty, p.x,  p.y,  p.tZoneId, marks );
+// I like yhe idea of jutting, but I think we're failing to connect everything together properly
+// due to jutting. Maybe.
+//					[p.x,p.y]   = this.jut( p.x,  p.y,  p.tx, p.ty, p.zoneId, marks );
+//					[p.tx,p.ty] = this.jut( p.tx, p.ty, p.x,  p.y,  p.tZoneId, marks );
 
 					let lean = Math.chance(50);
 					function deltasToDirStrict(dx,dy) {
@@ -707,11 +716,12 @@
 
 		quotaMakePositioned(quota,injectList,mapOffset) {
 			quota.forEach( q => {
+				console.assert( !q.done );
 				if( q.putAnywhere ) {
 					return;
 				}
 				this.setTile(q.x+mapOffset.x,q.y+mapOffset.y,q.symbol);
-				injectMake( injectList, q.x+mapOffset.x, q.y+mapOffset.y, q.inject );
+				injectMake( injectList, q.x+mapOffset.x, q.y+mapOffset.y, q.inject, "makePositioned" );
 				q.done = true;
 			});
 		}
@@ -815,6 +825,7 @@
 
 				// No site exists within this zone, so just make a wilderness room out of it.
 				if( Object.isEmpty(found) ) {
+					console.assert( zone.tiles && zone.tiles.length );
 					addSite({
 						id: 'room.'+GetTimeBasedUid(),
 						marks: zone.tiles,
@@ -1159,12 +1170,12 @@
 					if( place.inject && place.inject[typeId] ) {
 						//console.log(type.typeId+' at '+x+','+y+' will get ',place.inject[type.typeId]);
 						let inject = Object.assign( { typeFilter: typeId }, place.inject[typeId] );
-						injectMake( injectList, x, y, inject );
+						injectMake( injectList, x, y, inject, "placeMake by "+typeId );
 					}
 					// Order is important. The specifically positioned one overrides any generic tweaks on the type.
 					let pPos = ''+px+','+py;
 					if( place.inject && place.inject[pPos] ) {
-						injectMake( injectList, x, y, place.inject[pPos] );
+						injectMake( injectList, x, y, place.inject[pPos], "placeMake by "+pPos );
 					}
 				});
 				console.log( "Made mapped place "+place.typeId+" at ("+x+","+y+")" );
@@ -1241,7 +1252,8 @@
 			}
 
 			function injectAndForbid(x,y,q) {
-				injectMake( injectList, x, y, q.inject );
+				console.assert( !q.done );
+				injectMake( injectList, x, y, q.inject, "injectAndForbid" );
 				forbiddenSymbols.push(q.symbol);
 				q.done = true;
 			}
@@ -1423,6 +1435,8 @@
 			onStep(s);
 		}
 
+		TileTypeList.pit.mayWalk = false;
+
 		paletteCommit( theme );
 
 		let mapOffset = { x: -1, y: -1 };	// this is merely a likely offset. The final sizeToExtent will really deal with it...
@@ -1446,6 +1460,7 @@
 		map.convert(T.Unknown,T.FillWall);
 
 		//map.quotaMakeOthers(quota,injectList);
+		TileTypeList.pit.mayWalk = true;
 
 		return map;
 	}

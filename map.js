@@ -5,6 +5,7 @@ class SimpleMap {
 	constructor(tileRaw) {
 		this.isMap = true;
 		if( TILE_UNKNOWN != ' ' ) debugger;
+		
 		this.tile = tileRaw.replace(/ /g,TileTypeList.floor.symbol).split('\n');
 		while( this.tile[this.tile.length-1].trim() == '' ) {
 			this.tile.length -= 1;
@@ -143,17 +144,36 @@ class SimpleMap {
 		y += DirectionAdd[dir].y;
 		return this.tileTypeGet(x,y);
 	}
+	renderToString() {
+		let s = '';
+		this.traverse( (x,y) => {
+			s += this.tileSymbolGet(x,y) || '?';
+			if( x==this.xLen-1 ) {
+				s += '\n';
+			}
+		});
+		return s;
+	}
 }
 
 
 
 class Map extends SimpleMap {
-	constructor(area,tile,itemList) {
-		super(tile);
+	constructor(area,tileRaw,itemList) {
+		super(tileRaw);
 		this.area = area;
 		this.actionCount = 0;
 		this.tileEntity = [];
-		this.itemList = itemList;
+		this.itemList = itemList || [];
+		this.itemLookup = [];
+		this.itemLookupStaticNop = [];
+		this.itemList.forEach( item => {
+			let lPos = item.y*this.xLen+item.x;
+			this.itemLookup[lPos] = (this.itemLookup[lPos] || []);
+			this.itemLookup[lPos].push(item);
+		});
+		this.walkLookup = []
+		this.calcWalkableAll();
 		this.initSprites();
 	}
 	get entityList() {
@@ -165,6 +185,39 @@ class Map extends SimpleMap {
 			this.tileSprite[y] = this.tileSprite[y] || [];
 			this.tileSprite[y][x] = [];
 		});
+	}
+	calcWalkable(x,y) {
+		let lPos = y*this.xLen+x;
+		let itemList = this.itemLookup[lPos] || this.itemLookupStaticNop;
+		let ask = null;
+		let prob = Prob.NONE;
+		itemList.forEach( item => {
+			if( item.isProblem ) {
+				ask = item;
+			}
+			else
+			if( !item.mayWalk ) {
+				prob = Prob.WALL;
+			}
+		});
+		let tile = this.tileTypeGet(x,y);
+		if( tile.isProblem ) {
+			ask = ask || tile;
+		}
+		else
+		if( !tile.mayWalk ) {
+			prob = Prob.WALL;
+		}
+		this.walkLookup[lPos] = ask && prob !== Prob.WALL ? ask : prob;
+	}
+
+	calcWalkableAll() {
+		let walk = [];
+		this.traverse( (x,y) => this.calcWalkable(x,y) );
+	}
+	setObstacle(x,y,prob) {
+		let lPos = y*this.xLen+x;
+		this.walkLookup[lPos] = prob;
 	}
 	toEntity(x,y,adhocEntity) {
 		if( !this.tileEntity[y] ) {
@@ -203,6 +256,7 @@ class Map extends SimpleMap {
 				e.spriteList = null;
 			}
 		}
+		this.calcWalkable(x,y);
 	}
 	pickPosToStartGame() {
 		let f = new Finder(this.itemList).filter( item => item.playerStartHere );
@@ -275,12 +329,19 @@ class Map extends SimpleMap {
 		return this.itemCreateByType(x,y,ItemTypeList[typeId],presets,inject);
 	}
 
+	findItemAt(x,y) {
+		if( !this.inBounds(x,y) ) return false;
+		return new Finder(this.itemLookup[y*this.xLen+x] || this.itemLookupStaticNop);
+	}
+
 	_itemRemove(item) {
 		if( !this.itemList.includes(item) ) {
 			debugger;
 		}
 		Array.filterInPlace( this.itemList, i => i.id!=item.id );
+		Array.filterInPlace( this.itemLookup[item.y*this.xLen+item.x], i => i.id!=item.id );
 		spriteDeathCallback( item.spriteList );
+		this.calcWalkable(item.x,item.y);
 		//this.tileSymbolSet(item.x,item.y,TileTypeList['floor'].symbol);
 	}
 	_itemTake(item,x,y) {
@@ -288,8 +349,13 @@ class Map extends SimpleMap {
 			debugger;
 		}
 		this.itemList.push(item);
+		let lPos = y*this.xLen+x;
+		this.itemLookup[lPos] = (this.itemLookup[lPos] || []);
+		this.itemLookup[lPos].push(item);
 		item.x = x;
 		item.y = y;
+		this.calcWalkable(x,y);
 		//this.tileSymbolSet(item.x,item.y,item.symbol);
 	}
 }
+

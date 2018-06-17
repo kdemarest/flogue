@@ -134,12 +134,14 @@ class Entity {
 			}
 			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{},{ usedToBe: this, mannerOfDeath: mannerOfDeath, isCorpse: true } );
 		}
-		if( this.deathPhrase ) {
-			tell(...this.deathPhrase);
+		let deathPhrase = this.deathPhrase;
+		if( !deathPhrase ) {
+			deathPhrase = [mSubject,this,' ',mVerb,this.vanish?'vanish':'die','!'];
 		}
-		else {
-			tell(mSubject,this,' ',mVerb,this.vanish?'vanish':'die','!');
+		if( this.brainMaster ) {
+			deathPhrase.unshift(mCares,this.brainMaster);
 		}
+		tell(...deathPhrase);
 		spriteDeathCallback(this.spriteList);
 		this.dead = true;
 	}
@@ -226,7 +228,7 @@ class Entity {
 		if( entity.id == this.personalEnemy ) {
 			return false;
 		}
-		if( entity.id == this.masterId ) {
+		if( this.brainMaster && entity.id == this.brainMaster.id ) {
 			return true;
 		}
 		return entity.team == this.team && entity.team != Team.NEUTRAL;
@@ -419,7 +421,7 @@ class Entity {
 		}
 
 		// Am I colliding with an item?
-		let g = this.map.findItem().at(x,y).filter( collide );
+		let g = this.map.findItemAt(x,y).filter( collide );
 		if( g.count ) {
 			return g.first;
 		}
@@ -437,7 +439,7 @@ class Entity {
 		return type===null;
 	}
 
-	mayEnter(x,y,avoidProblem) {
+	mayEnter(x,y,problemTolerance) {
 		if( !this.map.inBounds(x,y) ) {
 			return false;
 		}
@@ -447,13 +449,13 @@ class Entity {
 		}
 
 		// Maybe we're not colliding, but perhaps there is an item present that is a problem.
-		let g = this.map.findItem().at(x,y);
+		let g = this.map.findItemAt(x,y);
 		if( g.count ) {
 			let abort = false;
 			g.process( item => {
 				if( !item.isProblem ) return;
 				let problem = item.isProblem(entity);
-				if( problem == 'death' || (problem && avoidProblem) ) {
+				if( problem > problemTolerance ){
 					abort = true;
 				}
 			});
@@ -469,20 +471,26 @@ class Entity {
 		}
 
 		let problem = entityType.isProblem(this,entityType);
-		if( problem == 'death' || (problem && avoidProblem) ) {
+		if( problem > problemTolerance ) {
 			return false;
 		}
 		return true;
 	}
 
-	mayGo(dir,avoidProblem) {
-		return this.mayEnter(this.x+DirectionAdd[dir].x,this.y+DirectionAdd[dir].y,avoidProblem);
+	mayGo(dir,problemTolerance) {
+		return this.mayEnter(this.x+DirectionAdd[dir].x,this.y+DirectionAdd[dir].y,problemTolerance);
 	}
 
-	avoidProblem() {
+	problemTolerance() {
 		// WARNING! This does NOT consider whether the creature is immune to the damage,
 		// nor does it understand that their movement mode might be immune.
-		return( this.attitude!=Attitude.ENRAGED && this.attitude!=Attitude.CONFUSED && this.attitude!=Attitude.PANICKED);
+		if( this.attitude == Attitude.ENRAGED ) {
+			return Prob.HARSH;
+		}
+		if( this.attitude == Attitude.PANICKED || this.attitude == Attitude.CONFUSED ) {
+			return Prob.MILD;
+		}
+		return Prob.NONE;
 	}
 
 	thinkWander(walkAnywhere=false) {
@@ -497,7 +505,7 @@ class Entity {
 				RandCommand[Math.randInt(0,RandCommand.length)];
 			let dir = commandToDirection(command);
 			if( dir !== false ) {
-				if( walkAnywhere || this.mayGo(dir,this.avoidProblem()) ) {
+				if( walkAnywhere || this.mayGo(dir,this.problemTolerance()) ) {
 					return command;
 				}
 			}
@@ -518,22 +526,32 @@ class Entity {
 			}
 		}
 
+		if( this.brainMaster && !this.brainPath ) { debugger; }
+
+		if( this.brainPath ) {
+			let path = new Path(this.map);
+			let result = path.findPath(this,this.x,this.y,x,y);
+			if( result ) {
+				let dir = path.path[0];
+				this.record( this.name+" going "+dir+" from ("+this.x+','+this.y+')' );
+				return directionToCommand(dir);
+			}
+			this.record( this.name+" pathing failed!" );
+		}
+
+
 		// Can I walk towards them?
 		let dir = this.dirToPosNatural(x,y);
 		// Aggressive creatures will completely avoid problems if 1/3 health, otherwide they
 		// avoid problems most of the time, but eventually will give in and take the risk.
-		let avoidProblem = true;
-		// Out of control attitudes just ignore caution.
-		if( this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
-			avoidProblem = false;
-		}
+		let problemTolerance = this.problemTolerance();
 		// If you're aggressive and healthy, there is a 15% change you will charge forward through problems.
-		if( this.attitude == Attitude.AGGRESSIVE && this.health>this.healthMax/3 && Math.chance(15) ) {
-			avoidProblem = false;
+		if( this.attitude == Attitude.AGGRESSIVE && Math.chance(15) ) {
+			problemTolerance = Prob.HARSH;
 		}
-		this.record( (avoidProblem ? '' : 'not ')+'avoiding problem', true );
+		this.record( 'Problem tolerance = '+problemTolerance, true );
 
-		if( this.mayGo(dir,avoidProblem) ) {
+		if( this.mayGo(dir,problemTolerance) ) {
 			this.record('approach '+(target ? target.name : '('+x+','+y+')'),true);
 			return directionToCommand(dir);
 		}
@@ -618,10 +636,12 @@ class Entity {
 						this.commandItem = foodList.first;
 						return Command.EAT;
 					}
-					this.record('head towards food',true);
-					let c = this.thinkApproach(foodList.first.x,foodList.first.y,foodList.first);
-					if( c !== false ) {
-						return c;
+					if( foodList.first ) {
+						this.record('head towards food',true);
+						let c = this.thinkApproach(foodList.first.x,foodList.first.y,foodList.first);
+						if( c !== false ) {
+							return c;
+						}
 					}
 				}
 
@@ -647,7 +667,7 @@ class Entity {
 					}
 					else {
 						let dirLast = commandToDirection(this.commandLast);
-						if( Math.chance(90) && dirLast !== false && !this.beyondTether() && this.mayGo(dirLast,this.avoidProblem()) ) {
+						if( Math.chance(90) && dirLast !== false && !this.beyondTether() && this.mayGo(dirLast,this.problemTolerance()) ) {
 							this.record('keep walking',true);
 							return this.commandLast;
 						}
@@ -708,7 +728,7 @@ class Entity {
 					let dirAway = [dirAwayRandom,dirAwayPerfect,(dirAwayPerfect+8-1)%DirectionCount,(dirAwayPerfect+1)%DirectionCount];
 					while( dirAway.length ) {
 						let dir = dirAway.shift();
-						if( panic || this.mayGo(dir,this.avoidProblem()) ) {
+						if( panic || this.mayGo(dir,this.problemTolerance()) ) {
 							this.record( (panic ? 'panicked flee' : 'fled')+' from '+theEnemy.name, true );
 							return directionToCommand(dir);
 						}
@@ -904,7 +924,7 @@ class Entity {
 			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: false };
 			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
 		}
-		if( attacker && attacker.isMonsterType ) {
+		if( attacker && attacker.isMonsterType && (!this.brainMaster || this.brainMaster.id !=attacker.id) ) {
 			this.personalEnemy = attacker.id;
 		}
 
@@ -1174,6 +1194,7 @@ class Entity {
 		});
 		// remove any ranged weapon or reach weapon with an obstructed shot
 		weaponList.filter( item => {
+			if( Math.chance(this.brainIgnoreClearShots||0) ) return false;
 			let r = ( item.range || item.reach || 1 );
 			return self.shotClear(self.x,self.y,target.x,target.y);
 		});
@@ -1191,7 +1212,7 @@ class Entity {
 			weapon = this.naturalMeleeWeapon;
 		}
 		console.assert( !weapon.rechargeLeft );
-		console.log( this.typeId+' picked '+(weapon.typeId || weapon.name)+' with recharge '+weapon.rechargeLeft );
+//		console.log( this.typeId+' picked '+(weapon.typeId || weapon.name)+' with recharge '+weapon.rechargeLeft );
 
 		this.generateEffectOnAttack(weapon);
 		return weapon;
@@ -1243,7 +1264,7 @@ class Entity {
 
 		// Trigger my weapon.
 		if( weapon && weapon.effect ) {
-			let fireWeaponEffect = weapon.effectAlwaysFires || WEAPON_EFFECT_OP_ALWAYS.includes(weapon.effect.op) || Math.chance(WEAPON_EFFECT_CHANCE_TO_FIRE);
+			let fireWeaponEffect = WEAPON_EFFECT_OP_ALWAYS.includes(weapon.effect.op) || Math.chance(weapon.chanceToFire || WEAPON_EFFECT_CHANCE_TO_FIRE);
 			if( fireWeaponEffect ) {
 				weapon.trigger( target, this, Command.ATTACK );
 			}
@@ -1463,6 +1484,9 @@ class Entity {
 			if( weapon.mayShoot ) {
 				return this.shoot(weapon,f.first) ? 'shoot' : 'miss';
 			}
+			if( weapon.isSpell ) {
+				return this.cast(weapon,f.first) ? 'cast' : 'miss';
+			}
 			return this.attack(f.first,weapon,false) ? 'attack' : 'miss';
 		}
 		else
@@ -1530,7 +1554,7 @@ class Entity {
 		}
 
 		if( this.brainPicksup ) {
-			let f = this.map.findItem().at(x,y).filter( item => item.mayPickup!==false );
+			let f = this.map.findItemAt(x,y).filter( item => item.mayPickup!==false );
 			for( let item of f.all ) {
 				this.pickup(item);
 			}
@@ -1570,7 +1594,7 @@ class Entity {
 				break;
 			}
 			case Command.ENTERGATE: {
-				let gate = new Finder(this.map.itemList,this).filter( gate=>gate.gateDir!==undefined).at(this.x,this.y).first;
+				let gate = this.map.findItemAt(this.x,this.y).filter( gate=>gate.gateDir!==undefined ).first;
 				if( gate && gate.toAreaId && gate.toPos ) {
 					let area = this.area.world.getAreaById(gate.toAreaId);
 					this.gateTo(area,gate.toPos.x,gate.toPos.y);
@@ -1590,6 +1614,8 @@ class Entity {
 					onDone: () => {
 						if( this.isPet && provider && provider.team==this.team ) {
 							this.brainMaster = provider;
+							//this.watch = true;
+							this.brainPath = true;
 							tell(mSubject,this,' ',mVerb,'recognize',' ',mObject|mBold,this.brainMaster,' as ',mObject|mPossessive|mPronoun,this,' new master! ',this.attitude);
 						}
 						food.destroy();
@@ -1616,11 +1642,17 @@ class Entity {
 				break;
 			}
 			case Command.DEBUGVIEW: {
-				this.senseItems = true;
-				this.senseLife = true;
+				if( !this.senseItems ) {
+					this.senseItems = true;
+					this.senseLife = true;
+				}
+				else {
+					this.senseItems = false;
+					this.senseLife = false;
+				}
 				this.map.traverse( (x,y) => {
 					this.mapMemory[y] = this.mapMemory[y] || {};
-					let type = this.map.findItem().at(x,y).filter( item=>!item.isTreasure ).first || this.map.tileTypeGet(x,y);
+					let type = this.map.findItemAt(x,y).filter( item=>!item.isTreasure ).first || this.map.tileTypeGet(x,y);
 					this.mapMemory[y][x] = type;
 				});
 				break;

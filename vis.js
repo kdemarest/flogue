@@ -95,7 +95,7 @@ class Vis {
 		let dy = y-py;
 		let cIndex = ''+dx+','+dy;
 		if( !this.shootCache[cIndex] ) {
-			console.log('Caching '+cIndex);
+			//console.log('Caching '+cIndex);
 			let tl = this.shoot(px,py,px,py,x,y,[]);
 			let tr = this.shoot(px,py,px+0.95,py+0.00,x+0.95,y+0.00,[]);
 			let bl = this.shoot(px,py,px+0.00,py+0.95,x+0.00,y+0.95,[]);

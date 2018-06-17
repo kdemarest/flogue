@@ -49,9 +49,6 @@ class Finder {
 	at(x,y) {
 		return this.filter( e => e.x==x && e.y==y );
 	}
-	atDir(x,y,dir) {
-		return this.at( x + DirectionAdd[dir].x, y + DirectionAdd[dir].y );
-	}
 	near(x,y,rectDist=1) {
 		return this.filter( e => (Math.abs(e.x-x)<=rectDist && Math.abs(e.y-y)<=rectDist) );
 	}
@@ -107,9 +104,6 @@ class Finder {
 	}
 	excludeMe() {
 		return this.exclude(this.me);
-	}
-	atDirFromMe(dir) {
-		return this.atDir(this.me.x,this.me.y,dir);
 	}
 	nearMe(rectDist=1) {
 		return this.near(this.me.x,this.me.y,rectDist);

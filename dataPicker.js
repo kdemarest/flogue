@@ -37,6 +37,7 @@ class Picker {
 				continue;
 			}
 			let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(m.level,this.depth) * 100000, 1, 100000));
+			if( m.rarity ) console.assert( m.rarity>=0 );
 			chance *= (m.rarity || 1);
 			table.push(chance,m);
 		}
@@ -160,7 +161,7 @@ class Picker {
 
 						// Order here MUST be the same as in Item constructor.
 						let effectChance = v.effectChance!==undefined ? v.effectChance : (m.effectChance!==undefined ? m.effectChance : (q.varietyChance!==undefined ? q.varietyChance : item.effectChance || 0));
-						effectChance = effectChance * Tweak.effectChance;
+						effectChance = Math.clamp(effectChance * Tweak.effectChance, 0.0, 1.0);
 						let appearTotal = 0;
 						let rarityTotal = 0;
 						//if( depth == 5 ) debugger;
@@ -173,9 +174,14 @@ class Picker {
 							let level = Math.max(0,(item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.isInert ? 0 : (e.level||0)));
 							let appear = Math.chanceToAppearSigmoid(level,depth);
 							let rarity = (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
+							console.assert( rarity >= 0 );
 							if( rarity ) rarity = rarity + (1-Math.clamp(rarity,0,1)) * Math.min(depth*0.01,1.0);
+							console.assert( rarity >= 0 );
 							if( ei == 'eInert' ) {
+								// Slight contradiction here. Some things have 100% chance for an effect, so
+								// the rarity of eInert will be zero.
 								rarity = effectChance<=0 ? 100000 : (rarityTotal / effectChance)-rarityTotal;	// if div by zero, fix the item type list!
+								console.assert( rarity >= 0 );
 								// Use the .max here because, what if ALL other entities have a 'never appear' level problem?
 								appear = appearTotal / (effectArray.length-1);	// an average
 								if( !appear ) {
@@ -334,7 +340,7 @@ class Picker {
 		if( q && q.damageMultiplier ) dm *= q.damageMultiplier;
 		if( e && e.damageMultiplier ) dm *= e.damageMultiplier;
 
-		let mult = (rechargeTime||0)>1 ? 1+rechargeTime*DEFAULT_DAMAGE_BONUS_FOR_RECHARGE : 1;
+		let mult = (rechargeTime||0)>1 ? 1+(rechargeTime-1)*DEFAULT_DAMAGE_BONUS_FOR_RECHARGE : 1;
 		let damage = Rules.playerDamage(this.depth) * mult * dm;
 		return Math.max(1,Math.floor(damage));
 	}

@@ -173,7 +173,7 @@ let ThemeDefault = () => ({
 	placeDensity: 	0.40,
 	seedPercent: 	0.10,
 
-	monsterDensity: 0.03,
+	monsterDensity: 0.06,
 	itemDensity: 	0.03,
 });
 
@@ -193,7 +193,7 @@ ThemeList.coreCavernRooms = {
 	scapeId: 		'caveRoomsNarrowlyConnected', //'caveRoomsWellConnected',
 	placeDensity: 	0.70,
 	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
-	rUNCOMMON: 		'antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		m => (m.isUndead || m.isEarthChild || m.isPlanar || m.isAnimal) && m.team !='good'
@@ -235,8 +235,8 @@ ThemeList.dwarfTown = {
 ThemeList.corePits = {
 	scapeId: 	'caveBroadWinding',
 	rREQUIRED: 	'floodPitLarge, 4x floodPit',
-	rCOMMON: 	'floodPit, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodWater',
-	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rCOMMON: 	'floodPit, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold',
+	rUNCOMMON: 	'camp_human, antHive, tinyRoom, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, floodWater',
 	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
@@ -248,14 +248,14 @@ ThemeList.coreBridges = {
 	scapeId: 	'caveMazeLike',
 	rCOMMON: 	'floodPit, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodWater',
 	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rRARE: 		'goblinGathering, tinyRoom, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
 }
 
 ThemeList.coreMaze = {
 	scapeId: 	'caveMazeLike',
-	rCOMMON: 	'demonNest, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive',
+	rCOMMON: 	'demonNest, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom',
 	rUNCOMMON: 	'floodPit, camp_goblin, den_kobold, nest_bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'camp_human, goblinGathering, portal, circle, ruin, swamp, firePit, floodOre, floodWater',
 	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
@@ -766,6 +766,20 @@ a.o..
 		s: 'shadow',
 		o: 'columnBroken',
 		a: 'columnStump'
+	}
+}
+
+PlaceTypeList.tinyRoom = {
+	map:
+`
+.....
+.#+#.
+.+.+.
+.#+#.
+.....
+`,
+	flags: { rotate: false },
+	symbols: {
 	}
 }
 

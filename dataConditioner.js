@@ -112,6 +112,7 @@ class DataConditioner {
 						let monster = supply.typeFilter ? MonsterTypeList[supply.typeFilter.split('.')[0]] : null;
 						if( monster ) {
 							level = Math.max(level,monster.level||MIN_DEPTH);
+							place.comesWithMonster = true;
 						}
 					});
 				}

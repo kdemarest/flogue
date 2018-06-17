@@ -90,7 +90,7 @@ class World {
 		if( !this.player || this.player.commandLast!=Command.WAIT ) {
 			return;
 		}
-		let gateHere = map.findItem().at(this.player.x,this.player.y).filter( item => item.gateDir!==undefined );
+		let gateHere = map.findItemAt(this.player.x,this.player.y).filter( item => item.gateDir!==undefined );
 		if( !gateHere.first ) {
 			return;
 		}

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+
+<style>
+pre {
+	font-family: "courier";
+	line-height: 0.8;
+	font-size:12px;
+}
+</style>
+
+<script src="jquery.3.3.1.js" charset="utf-8"></script>
+<script src="utilities.js" charset="utf-8"></script>
+<script src="dataFab.js" charset="utf-8"></script>
+<script src="data.js" charset="utf-8"></script>
+<script src="dataHumanNames.js" charset="utf-8"></script>
+<script src="dataPlaces.js" charset="utf-8"></script>
+<script src="dataConditioner.js" charset="utf-8"></script>
+<script src="dataPicker.js" charset="utf-8"></script>
+<script src="dataMason.js" charset="utf-8"></script>
+<script src="place.js" charset="utf-8"></script>
+<script src="map.js" charset="utf-8"></script>
+<script type="text/javascript">
+
+	ScapeList.kenScape = theme => ({
+		dim: 				30,
+		architecture: 		"cave",
+		floorDensity: 		0.68,
+		seedPercent: 		0.20,
+		monsterDensity: 	0.03,
+		wanderingPassage: 	true,
+	});
+
+	ThemeList.kenTheme = {
+		scapeId: 	'kenScape',
+		rREQUIRED: 	null, //'kenPlace',
+		rCOMMON: 	null, //'floodOre',
+		rUNCOMMON: 	null, //'floodOre',
+		rRARE: 		null, //'firePit, floodWater',
+		rEPIC: 		null, //'floodOre',
+		prefer: 	null,
+		monsters: 	['isPet']
+
+	}
+
+//	return {
+//		startingDepth: 1,
+//		themeId: 'kenTheme'
+//	}
+let roster = {};
+
+roster.simplest = {
+	expect: 1,
+	map: `
+		####
+		#SE#
+		####
+	`
+}
+
+roster.noPath = {
+	expect: false,
+	map:`
+		######
+		#S.#E#
+		######
+	`
+}
+
+
+roster.stumps = {
+	expect: 20,
+	map: `
+		###############
+		#.............#
+		#.S.....#.....#
+		#.......#.....#
+		#########.....#
+		#.............#
+		#.............#
+		#.....#####...#
+		#.....#...#...#
+		#.....#.E.#...#
+		#.....#...#...#
+		#.....#...#...#
+		#.............#
+		#.............#
+		#.............#
+		#.............#
+		#.............#
+		###############
+	`
+}
+
+roster.loops = {
+	expect: 52,
+	map: `
+		###############
+		#...#.........#
+		#.S.#...#.....#
+		#.......#.....#
+		#########.....#
+		#......######.#
+		#...###.....#.#
+		#...#.#####.#.#
+		#...#.#...#.#.#
+		#...#.#.E.#.#.#
+		#...#.#...#.#.#
+		#...#.#...#.#.#
+		#...#.......#.#
+		#...#########.#
+		#.............#
+		#.............#
+		#.............#
+		###############
+	`
+}
+
+roster.oneFire = {
+	expect: 4,
+	map: `
+		#######
+		#S.f.E#
+		#######
+	`
+}
+
+roster.fire = {
+	expect: 7,
+	map: `
+		###############
+		#.............#
+		#.............#
+		#.....f.......#
+		#..S..f...E...#
+		#.....f.......#
+		#.............#
+		#.............#
+		#.............#
+		#.............#
+		#.............#
+		###############
+	`
+}
+
+roster.thruFire = {
+	expect: 7,
+	map: `
+		###############
+		#.............#
+		#.....ffffffff#
+		#.....f.......#
+		#..S..f...E...#
+		#.....f.......#
+		#.....ffffffff#
+		#.............#
+		#.............#
+		#.............#
+		#.............#
+		###############
+	`
+}
+
+roster.twoPipe = {
+	expect: 7,
+	map: `
+		###########
+		#...f.f...#
+		#...####f##
+		#.S.#.E...#
+		#...#####f#
+		#...f...f.#
+		###########
+	`
+}
+
+roster.complex = {
+	expect: 7,
+	map: `
+		###############
+		#.............#
+		#.....ffffff..#
+		#.....f.......#
+		#..S..f...E...#
+		#.....f.......#
+		#.....ffffffff#
+		#.............#
+		#.............#
+		#.............#
+		#.............#
+		###############
+	`
+}
+
+roster.fireLoops = {
+	expect: 52,
+	map: `
+		###############
+		#...#.........#
+		#.S.#fff#.....#
+		#.......#ff...#
+		#########.f...#
+		#......######.#
+		#...###.....#.#
+		#...#.#####.#.#
+		#...#.#...#.#.#
+		#...#.#.E.#f#.#
+		#...#.#...#f#.#
+		#...#.#...#.#.#
+		#...#.......#.#
+		#...#########f#
+		#.............#
+		#...###########
+		#...f.........#
+		###############
+	`
+}
+
+roster.fireCircle = {
+	expect: 4,
+	map: `
+		###############
+		#.............#
+		#.............#
+		#.....fff.....#
+		#..S..fEf.....#
+		#.....fff.....#
+		#.............#
+		#.............#
+		#.............#
+		#.............#
+		#.............#
+		###############
+	`
+}
+
+
+function solve(mapSource,expect) {
+	let sx,sy,ex,ey;
+	let raw = new SimpleMap(mapSource);
+	let fireList = [];
+	raw.traverse( (x,y) => {
+		let tile = raw.tileSymbolGet(x,y);
+		if( tile == 'S' ) {
+			sx=x;
+			sy=y;
+			raw.tileSymbolSet(x,y,'.');
+		}
+		if( tile == 'E' ) {
+			ex=x;
+			ey=y;
+			raw.tileSymbolSet(x,y,'.');
+		}
+		if( tile == 'f' ) {
+			fireList.push(x,y);
+			raw.tileSymbolSet(x,y,'.');
+		}
+	});
+	let map = new Map(null,raw.tile.join('\n'),[]);
+	Array.traversePairs(fireList, (x,y) => map.setObstacle(x,y,0.3) );
+
+	document.getElementById('map').innerHTML = map.renderToString();
+	document.getElementById('result').innerHTML = "Working...";
+
+	let path = new Path(map);
+	let result = path.findPath(null,sx,sy,ex,ey,() => {
+		document.getElementById('map').innerHTML = path.renderToString();		
+	});
+	document.getElementById('result').innerHTML = result ? "Path found." : "No Path";
+	return result;
+}
+
+function test(attempt,name) {
+	let result = solve( attempt.map.trim().replace(/\t/g,'') );
+	console.assert(result===attempt.expect);	// triple equals is important.
+}
+
+function main() {
+	let result = test( roster.fireCircle );
+
+//	for( let key in roster ) {
+//		test(roster[key],key);
+//	}
+}
+
+$(document).ready( () => {
+	new DataConditioner();
+	setTimeout( main, 10 );
+});
+
+</script>
+</head>
+<body>
+	<pre id="map"></pre>
+	<pre id="result"></pre>
+</body>
+</html>

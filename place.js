@@ -8,7 +8,7 @@ class Place {
 
 		function containsAnyFieldExcept(obj,fieldList) {
 			for( let key in obj ) {
-				if( !fieldList.includes[key] ) {
+				if( !fieldList.includes(key) ) {
 					return true;
 				}
 			}
@@ -21,7 +21,7 @@ class Place {
 		}
 		// Replace map symbols with allocated symbols
 		if( typeof this.map === 'string' ) {
-			this.mapOriginal = this.map;
+			this.mapOriginal = this.map.trim().replace(/\t/g,'');
 		}
 
 		let pickCache = {};

@@ -208,7 +208,7 @@ class UserCommandHandler {
 			return false;
 		}
 		if( dirCommand == Command.EXECUTE ) {
-			let target = new Finder(observer.entityList).at(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
+			let target = observer.findAliveOthers().at(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
 			if( !target.count && !this.cmd.commandItem.mayTargetPosition && (!this.cmd.commandItem.effect || !this.cmd.commandItem.effect.mayTargetPosition) ) {
 				return this.cmd.cancel();
 			}

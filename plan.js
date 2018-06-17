@@ -133,7 +133,7 @@ let Plan = (new class {
 			});
 		}
 
-		tileQuota.forEach( q => q.fromQuota=true );
+		tileQuota.forEach( q => { q.fromQuota=true; q.inject.fromQuota=true; } );
 		return tileQuota;
 	}
 	determineTheme(depth,isCore) {

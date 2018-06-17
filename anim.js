@@ -75,7 +75,7 @@ let sMove = function(dx=this.xVel,dy=this.yVel) {
 }
 let sQuiver = function(rate,range=0.5) {
 	this.quiver = (this.quiver||0) - this.delta;
-	console.log( "Q=",this.quiver );
+//	console.log( "Q=",this.quiver );
 	if( this.quiver <= 0 ) {
 		let rad = Math.rand(0,2*Math.PI);
 		this.qx = Math.cos(rad)*range;
@@ -97,10 +97,10 @@ let sVel = function(deg,vel) {
 //(5/11.18) / 4
 
 let sVelTo = function(dx,dy,duration) {
-	console.log( "vel for ("+dx+','+dy+') A '+this.xVel+','+this.yVel );
+//	console.log( "vel for ("+dx+','+dy+') A '+this.xVel+','+this.yVel );
 	this.xVel = (this.xVel||0) + dx/duration;
 	this.yVel = (this.yVel||0) + dy/duration;
-	console.log( "vel for ("+dx+','+dy+') B '+this.xVel+','+this.yVel );
+//	console.log( "vel for ("+dx+','+dy+') B '+this.xVel+','+this.yVel );
 	return this;
 }
 let sGrav = function(amt) {
@@ -253,7 +253,7 @@ class Anim {
 		this.spriteInit(sprite);
 		this.spriteBind(sprite);
 		sprite.anchor.set(0.5,0.5);
-		sprite.zOrder = 10;
+		sprite.zOrder = 100;
 		sprite.visible = false;
 		if( this.onSpriteMake ) { this.onSpriteMake(sprite,this); }
 		spriteOnStage( sprite, true );

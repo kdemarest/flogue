@@ -24,16 +24,16 @@ function areaBuild(area,theme,tileQuota) {
 
 		let item = area.map.itemCreateByType(x,y,type,presets,inject);
 		if( type.gateDir !== undefined ) {
-			console.log( "Gate "+type.typeId+" at ("+x+","+y+") leads to "+(!inject ? 'TBD' : inject.toAreaId+' / '+inject.toGateId) );
-			console.log( "The item says "+item.toAreaId+' / '+item.toGateId );
+//			console.log( "Gate "+type.typeId+" at ("+x+","+y+") leads to "+(!inject ? 'TBD' : inject.toAreaId+' / '+inject.toGateId) );
+//			console.log( "The item says "+item.toAreaId+' / '+item.toGateId );
 		}
 		console.assert( item.x!==undefined );
 		return item;
 	}
 	function safeToMake(map,x,y) {
 		let tile = map.tileTypeGet(x,y);
-		if( !tile.mayWalk ) return false;
-		let item = map.findItem().at(x,y);
+		if( !tile.mayWalk || tile.isProblem ) return false;
+		let item = map.findItemAt(x,y);
 		if( item.count ) return false;
 		let entity = new Finder(area.entityList).at(x,y);
 		return !entity.count;
@@ -74,13 +74,8 @@ function areaBuild(area,theme,tileQuota) {
 		});
 	}
 
-	function populate(map,count,safeToMakeFn,makeFn) {
-		let floorList = [];
-		map.traverse( (x,y,type) => {
-			if( type.isFloor && safeToMakeFn(map,x,y) ) {
-				floorList.push(x,y);
-			}
-		});
+	function populateAmong(floorList,count,safeToMakeFn,makeFn) {
+		console.assert( count <= floorList.length/2 );
 		console.assert( floorList.length );
 		while( floorList.length && count>0 ) {
 			let index = Math.randInt(0,floorList.length/2)*2;
@@ -88,6 +83,16 @@ function areaBuild(area,theme,tileQuota) {
 			floorList.splice(index,2);
 			--count;
 		}
+	}
+
+	function populate(map,count,safeToMakeFn,makeFn) {
+		let floorList = [];
+		map.traverse( (x,y,type) => {
+			if( type.isFloor && safeToMakeFn(map,x,y) ) {
+				floorList.push(x,y);
+			}
+		});
+		populateAmong( floorList, count, safeToMakeFn, makeFn );
 	}
 
 	let injectList = [];
@@ -113,8 +118,21 @@ function areaBuild(area,theme,tileQuota) {
 	let owedItems  = Math.round( (totalFloor*theme.itemDensity) - totalItems );
 
 	console.log( "Map has "+totalFloor+" floor. It is owed "+owedMons+"+"+totalMons+" monsters, and "+owedItems+"+"+totalItems+" items." );
-	populate( area.map, owedMons, safeToMake, makeMonster );
-	populate( area.map, owedItems, safeToMake, makeItem );
+
+	area.siteList.forEach( site => {
+		if( site.isPlace && site.place.comesWithMonsters ) {
+			return;
+		}
+		if( site.isPlace || site.isRoom ) {
+			populateAmong( site.marks, 1, safeToMake, makeMonster );
+			owedMons--;
+			populateAmong( site.marks, 1, safeToMake, makeItem );
+			owedItems--;
+		}
+	});
+
+	populate( area.map, Math.max(0,owedMons), safeToMake, makeMonster );
+	populate( area.map, Math.max(0,owedItems), safeToMake, makeItem );
 
 	area.gateList = area.map.itemList.filter( item => item.gateDir !== undefined );
 

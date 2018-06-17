@@ -6,22 +6,21 @@ ConfigList.ken = () => {
 		architecture: 		"cave",
 		floorDensity: 		0.88,
 		seedPercent: 		0.20,
-		monsterDensity: 	0.03,
 		wanderingPassage: 	false,
 	});
 	PlaceTypeList.kenPlace = {
 		map:
 			`
-			mmmmmmmm
-			mmmmmmmm
-			mmmmmmmm
-			mmmmmmmm
-			mmmmmmmm
-			mmmmmmmm
-			mmmmmmmm
+			.X..d....
+			.ffffff..
+			.f....f..
+			.f..f.f..
+			.f..f.f..
+			.ffff.f..
 			`,
 		flags: { rotate: true },
 		symbols: {
+			X: { typeFilter: 'marker', playerStartHere: true },
 			x: 'brazier',
 			p: 'pit',
 			f: 'flames',
@@ -50,6 +49,7 @@ ConfigList.ken = () => {
 		rRARE: 		null, //'firePit, floodWater',
 		rEPIC: 		null, //'floodOre',
 		prefer: 	null,
+		monsterDensity: 0.00001,
 		monsters: 	['isPet']
 
 	}
