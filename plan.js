@@ -27,7 +27,7 @@ let Plan = (new class {
 					]
 				},
 				3: {
-					themeId: 'coreCavernRooms',
+					themeId: 'coreRooms',
 					make: [
 						{ typeFilter: 'gateway', themeId: 'spooky' },
 						{ typeFilter: 'gateway', themeId: 'refugeeCampSlaughter' },
@@ -55,6 +55,28 @@ let Plan = (new class {
 						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
+					]
+				},
+				7: {
+					themeId: 'coreMorphousRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				8: {
+					themeId: 'coreCavernRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'fontSolar' },
+					]
+				},
+				9: {
+					themeId: 'coreMixedRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'fontSolar' },
 					]
 				},
 				default: {

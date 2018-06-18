@@ -318,8 +318,8 @@ let GetTimeBasedUid = (function() {
 	let counter = 0;
 
 	return function() {
-		counter = (counter+1)%10000;	// assumes we won't make more than 10,000 items in the same millisecond
-		let n = (new Date().getTime())*10000 + counter;
+		counter = (counter+1)%100000;	// assumes we won't make more than n items in the same millisecond
+		let n = Math.floor(Date.now()/1000)*100000 + counter;
 		let uid = '';
 		while( n > 0 ) {
 			let q = n - Math.floor(n/codes.length)*codes.length;
@@ -329,6 +329,14 @@ let GetTimeBasedUid = (function() {
 		return uid;
 	}
 })();
+
+//let qList = {};
+//for( let q=0 ; q<100000 ; ++q ) {
+//	let n = GetTimeBasedUid();
+//	if( qList[n] ) debugger;
+//	qList[n] = 1;
+//}
+
 
 let GetUniqueEntityId = (function() {
 	let humanNameList = null;

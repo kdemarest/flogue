@@ -1,12 +1,22 @@
 let ConfigList = {};
 
 ConfigList.ken = () => {
-	ScapeList.kenScape = theme => ({
+	ScapeList.kenCave = theme => ({
 		dim: 				30,
 		architecture: 		"cave",
 		floorDensity: 		0.88,
 		seedPercent: 		0.20,
-		wanderingPassage: 	false,
+		passageWander: 		0,
+	});
+	ScapeList.kenRooms = theme => ({
+		dim: 				60,
+		architecture: 		"rooms",
+		floorDensity: 		0.25,
+		circleChance: 		0.10,
+		preferDoors: 		true,
+		passageWander: 		30,
+		passageWidth2: 		10,
+		passageWidth3: 		0
 	});
 	PlaceTypeList.kenPlace = {
 		map:
@@ -42,17 +52,17 @@ ConfigList.ken = () => {
 	};
 
 	ThemeList.kenTheme = {
-		scapeId: 	'kenScape',
-		rREQUIRED: 	'floodOre',
-		rCOMMON: 	null, //'floodOre',
-		rUNCOMMON: 	null, //'floodOre',
-		rRARE: 		null, //'firePit, floodWater',
-		rEPIC: 		null, //'floodOre',
-		prefer: 	null,
-		enemyDensity:  0.01,
-		friendDensity: 0.00001,
-		monsters: 	['isSkeleton']
-
+		scapeId: 		'kenRooms',
+//		rREQUIRED: 		'floodOre',
+		placeDensity: 	0.20,
+		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
+		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
+		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+		rEPIC: 			'graveYard',
+		monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+		prefer: 		null,
+		enemyDensity:  	0.04,
+		friendDensity: 	0.00001,
 	}
 
 	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, weapon.hammer, spell.eFire');
@@ -66,8 +76,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 8,
-		themeId: 'kenTheme'
+		startingDepth: 3,
+//		themeId: 'kenTheme'
 	}
 }
 

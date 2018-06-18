@@ -64,7 +64,7 @@ ScapeList.caveRandom = () => ({
 	architecture: 		"cave",
 	floorDensity: 		Math.rand(0.10,0.70),
 	seedPercent: 		Math.rand(0.0001,0.90),
-	wanderingPassage: 	Math.chance(50),
+	passageWander: 		50,
 });
 
 ScapeList.caveWeblike = () => ({
@@ -72,7 +72,7 @@ ScapeList.caveWeblike = () => ({
 	architecture: 		"cave",
 	floorDensity: 		0.12,
 	seedPercent: 		0.63,
-	wanderingPassage: 	true,
+	passageWander: 		100,
 });
 
 ScapeList.caveMazeLike = () => ({
@@ -80,7 +80,7 @@ ScapeList.caveMazeLike = () => ({
 	architecture: 		"cave",
 	floorDensity: 		0.12,
 	seedPercent: 		0.63,
-	wanderingPassage: 	false,
+	passageWander: 		0,
 });
 
 ScapeList.caveSpacious = () => ({
@@ -88,7 +88,7 @@ ScapeList.caveSpacious = () => ({
 	architecture: 		"cave",
 	floorDensity: 		0.68,
 	seedPercent: 		0.20,
-	wanderingPassage: 	false,
+	passageWander: 		0,
 });
 
 ScapeList.caveBroadWinding = () => ({
@@ -96,7 +96,7 @@ ScapeList.caveBroadWinding = () => ({
 	architecture: 		"cave",
 	floorDensity: 		0.35,
 	seedPercent: 		0.50,
-	wanderingPassage: 	true,
+	passageWander: 		100,
 });
 
 ScapeList.caveRoomsWellConnected = () => ({
@@ -104,7 +104,7 @@ ScapeList.caveRoomsWellConnected = () => ({
 	architecture: 		"cave",
 	floorDensity: 		0.30,
 	seedPercent: 		0.20,
-	wanderingPassage: 	true,
+	passageWander: 		100,
 });
 
 ScapeList.caveRoomsNarrowlyConnected = () => ({
@@ -112,7 +112,7 @@ ScapeList.caveRoomsNarrowlyConnected = () => ({
 	architecture: 		"cave",
 	floorDensity: 		0.25,
 	seedPercent: 		0.15,
-	wanderingPassage: 	true,
+	passageWander: 		100,
 });
 
 ScapeList.caveTendrils = () => ({
@@ -120,7 +120,7 @@ ScapeList.caveTendrils = () => ({
 	architecture: 		"cave",
 	floorDensity: 		0.20,
 	seedPercent: 		0.20,
-	wanderingPassage: 	true,
+	passageWander: 		100,
 });
 
 ScapeList.caveTownRural = () => ({
@@ -128,7 +128,7 @@ ScapeList.caveTownRural = () => ({
 	architecture: 		"cave",
 	floorDensity: 		0.04,
 	seedPercent: 		0.20,
-	wanderingPassage: 	false,
+	passageWander: 		0,
 });
 
 
@@ -137,7 +137,7 @@ ScapeList.caveTown = () => ({
 	architecture: 		"cave",
 	floorDensity: 		Math.rand(0.40,0.50),
 	seedPercent: 		Math.rand(0.10,0.20),
-	wanderingPassage: 	false,
+	passageWander: 		0,
 });
 
 ScapeList.caveVillage = () => ({
@@ -145,7 +145,7 @@ ScapeList.caveVillage = () => ({
 	architecture: 		"cave",
 	floorDensity: 		Math.rand(0.10,0.50),
 	seedPercent: 		Math.rand(0.10,0.20),
-	wanderingPassage: 	false
+	passageWander: 		0
 });
 
 ScapeList.snowyPlains = () => ({
@@ -277,7 +277,8 @@ ThemeList.dwarfGoblinBattle = {
 	floorDensity: 		0.88,
 	seedPercent: 		0.20,
 	placeDensity: 		0.70,
-	wanderingPassage: 	true,
+	passageWander: 		100,
+	passageWidth2: 		50,
 	rREQUIRED: 	'troops_dwarf, troops_goblin',
 	rCOMMON: 	'floodPit, nest_bat, nest_viper',
 	rUNCOMMON: 	'antHive, ruin, patch, veil, pitEncircle, floodOre',
@@ -300,12 +301,12 @@ ThemeList.coreSea = {
 	floorDensity: 		0.88,
 	seedPercent: 		0.40,
 	placeDensity: 		0.70,
-	wanderingPassage: 	true,
-	outlineWall: 'water',
-	fillWall: 	'floor',
-	rREQUIRED: 	'floodWater',
-	rCOMMON: 	'floodWaterSmall',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+	passageWander: 		100,
+	outlineWall: 		'water',
+	fillWall: 			'floor',
+	rREQUIRED: 			'floodWater',
+	rCOMMON: 			'floodWaterSmall',
+	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
 }
 
 ThemeList.coreSwamp = {
@@ -314,12 +315,74 @@ ThemeList.coreSwamp = {
 	floorDensity: 		0.28,
 	seedPercent: 		0.40,
 	placeDensity: 		0.70,
-	wanderingPassage: 	true,
-	outlineWall: 'mud',
-	fillWall: 	'mud',
-	rCOMMON: 	'floodMud',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+	passageWander: 		100,
+	outlineWall: 		'mud',
+	fillWall: 			'mud',
+	rCOMMON: 			'floodMud',
+	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
 }
+
+ThemeList.coreRooms = {
+	dim: 				40,
+	architecture: 		"rooms",
+	floorDensity: 		0.25,
+	circleChance: 		10,
+	overlapChance: 		10,
+	preferDoors: 		true,
+	passageWander: 		30,
+	passageWidth2: 		10,
+	passageWidth3: 		0,
+	placeDensity: 		0.35,
+	passageWander: 		20,
+	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 			'graveYard',
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+	enemyDensity: 	0.05,
+	friendDensity: 	0.01,
+}
+
+ThemeList.coreMorphousRooms = {
+	dim: 				40,
+	architecture: 		"rooms",
+	floorDensity: 		0.40,
+	circleChance: 		100,
+	overlapChance: 		100,
+	preferDoors: 		true,
+	passageWander: 		20,
+	passageWidth2: 		0,
+	passageWidth3: 		0,
+	placeDensity: 		0.35,
+	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 			'graveYard',
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+	enemyDensity: 	0.05,
+	friendDensity: 	0.01,
+}
+
+ThemeList.coreMixedRooms = {
+	dim: 				40,
+	architecture: 		"rooms",
+	floorDensity: 		0.40,
+	circleChance: 		50,
+	overlapChance: 		10,
+	preferDoors: 		true,
+	passageWander: 		50,
+	passageWidth2: 		10,
+	passageWidth3: 		0,
+	placeDensity: 		0.35,
+	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 			'graveYard',
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+	enemyDensity: 	0.05,
+	friendDensity: 	0.01,
+}
+
 
 //=========================
 
@@ -922,9 +985,9 @@ PlaceMany( 'nest', ['blueScarab','redScarab','viper'], VARIETY => ({
 	map:
 `
 .x-x.
-x-y-x
+x-.-x
 -yyy-
-x-y-x
+x-.-x
 .x-x.
 `,
 	flags: { rotate: true, hasWall: true },

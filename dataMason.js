@@ -470,13 +470,24 @@
 
 			return keepTiles ? hotTiles : { length: hotTiles.length };
 		}
-		twoOnlyOpposed(x,y,testFn) {
+		twoOnlyOpposed(x,y,testFn,show) {
+			if( show ) {
+				let t = '';
+				let d = 3;
+				for( let y0=y-d ; y0<=y+d ; ++y0 ) {
+					for( let x0=x-d ; x0<=x+d ; ++x0 ) {
+						t += this.getTile(x0,y0);
+					}
+					t += '\n';
+				}
+				console.log(t);
+			}
 			let n = testFn(this.getTile(x,y-1));
 			let s = testFn(this.getTile(x,y+1));
 			let e = testFn(this.getTile(x-1,y));
 			let w = testFn(this.getTile(x+1,y));
-			if( n && s && !e && !w ) return true;
-			if( e && w && !n && !s ) return true;
+			if( n=='W' && s=='W' && e=='F' && w=='F' ) return true;
+			if( e=='W' && w=='W' && n=='F' && s=='F' ) return true;
 			return false;
 		}
 		countGaps(x,y) {
@@ -579,25 +590,30 @@
 			return false;
 		}
 		setPassageTile(x,y,dir,zoneId) {
+			let acted = false;
 			let tile = this.getTile(x,y);
 			if( wantsDoor(tile) && this.count8(x,y,isDoor)<=0 ) {
 				// If this is a tile marked for doors, then make a door.
 				this.setTile(x,y,T.Door);
+				acted=true;
 			}
 			else 
 			if( wantsBridge(tile) && this.count4(x,y,isWall)==0 && this.count4(x,y,isFloor)<=1 ) {
 				this.setTile(x,y,dir==0 || dir==4 ? T.BridgeNS : T.BridgeEW);
+				acted=true;
 			}
 			else 
 			if( !isWalkable(tile) ) {
 				// Only mar the area if it is NOT already walkable.
 				this.setTile(x,y,T.PassageFloor);
+				acted=true;
 			}
 
 			this.setZoneId(x,y,zoneId);
+			return acted;
 		}
 
-		zoneLink(x,y,tx,ty,zoneId,tZoneId,linkFn,marks) {
+		zoneLink(x,y,tx,ty,zoneId,tZoneId,linkFn,marks,width) {
 			// to - from
 			let t = [];
 			let reps = 9999;
@@ -609,10 +625,16 @@
 				if( x==tx && y==ty ) {
 					return;
 				}
-				this.setPassageTile(x,y,dir,zoneId);
-				if( marks ) {
-					// This intentionally misses the start and end points, which should already have sites.
-					marks.push(x,y);
+				for( let rx=-Math.floor(width/2) ; rx<Math.ceil(width/2) ; ++rx ) {
+					for( let ry=-Math.floor(width/2) ; ry<Math.ceil(width/2) ; ++ry ) {
+						let px = x+rx;
+						let py = y+ry;
+						let acted = this.setPassageTile(px,py,dir,zoneId);
+						if( acted && marks ) {
+							// This intentionally misses the start and end points, which should already have sites.
+							marks.push(px,py);
+						}
+					}
 				}
 			}
 			return false;
@@ -654,8 +676,9 @@
 			return [x,y];
 		}
 
-		connectAll(siteList,wanderLink) {
+		connectAll(siteList,passageWander,preferDoors,passageWidth2=0,passageWidth3=0) {
 			let i = 0;
+			let doorCount = 0;
 			let reps = 100;
 			do {
 				let zoneList = this.floodAll(true,true);
@@ -664,7 +687,6 @@
 				}
 
 				let proximity = this.findProximity(zoneList);
-
 
 				// Now, in order, make connections.
 				let link = {};
@@ -679,11 +701,18 @@
 					let site0 = this.getAll(p.x,p.y).siteId;	// allowed to be undefined
 					let site1 = this.getAll(p.tx,p.ty).siteId;	// allowed to be undefined
 
+					let width = Math.chance(passageWidth2) ? 2 : ( Math.chance(passageWidth3) ? 3 : 1 );
+
 					// We don't really want to intrude into whatever space we're connecting to. That often looks
 					// pretty bad. So jut out from either end.
+					let doorCheck = [p.x,p.y,p.tx,p.ty];
 					let marks = [];
-					[p.x,p.y]   = this.jut( p.x,  p.y,  p.tx, p.ty, p.zoneId, marks );
-					[p.tx,p.ty] = this.jut( p.tx, p.ty, p.x,  p.y,  p.tZoneId, marks );
+					if( width == 1 ) {
+						[p.x,p.y]   = this.jut( p.x,  p.y,  p.tx, p.ty, p.zoneId, marks );
+						[p.tx,p.ty] = this.jut( p.tx, p.ty, p.x,  p.y,  p.tZoneId, marks );
+						doorCheck.push(p.x,p.y);
+						doorCheck.push(p.tx,p.ty);
+					}
 
 					let lean = Math.chance(50);
 					function deltasToDirStrict(dx,dy) {
@@ -693,8 +722,8 @@
 						return deltasToDirPredictable(dx,dy);
 					}
 					if( p.x!=p.tx || p.y!=p.ty ) {
-						let linkFn = wanderLink ? deltasToDirNaturalOrtho : deltasToDirStrict;
-						this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks);
+						let linkFn = Math.chance(passageWander) ? deltasToDirNaturalOrtho : deltasToDirStrict;
+						this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
 						let thruSite = {};
 						let bestId = '';
 						let tempMarks = [].concat(marks);
@@ -703,30 +732,49 @@
 							if( siteId ) {
 								let site = siteList.find( site=>site.id==siteId );
 								if( site ) {
-									console.log("Transfer ("+x+","+y+") from passage to "+siteId);
+									//console.log("Transfer ("+x+","+y+") from passage to "+siteId);
 									site.marks.push(x,y);
 									Array.filterInPlace(marks,(mx,my)=>mx==x && my==y);
 								}
 							}
 						});
+						while( preferDoors && doorCheck.length ) {
+							let x = doorCheck.shift();
+							let y = doorCheck.shift();
+							if( isFloor(this.getTile(x,y)) ) {
+								if( this.twoOnlyOpposed( x, y, tile => {
+									if( isWall(tile) || isUnknown(tile) ) return 'W';
+									if( isFloor(tile) ) return 'F';
+								}, true) ) {
+									console.assert(T.Door == '+');
+									this.setTile(x,y,T.Door);
+									++doorCount;
+								}
+							}
+						}
+
 						// This will push whatever marks remain. NOTE that the passage might not be contiguous
-						// anymore.
-						siteList.push({
-							id: 'passage.'+GetTimeBasedUid(),
-							marks: marks,
-							isPassage: true,
-							site0: site0,
-							site1: site1,
-							denizenList: [],
-						});
+						// anymore. ALSO if all of this passage was transferred to other sites, it will be empty.
+						if( marks.length ) {
+							siteList.push({
+								id: 'passage.'+GetTimeBasedUid(),
+								marks: marks,
+								isPassage: true,
+								site0: site0,
+								site1: site1,
+								denizenList: [],
+								treasureList: []
+							});
+						}
 					}
 					else {
 						debugger;
 					}
 //					console.log("Linked "+pair);
-					link[pair] = true;
+					link[pair] = (link[pair]||0)+1;
 				}
 			} while( reps-- );
+			console.log("Made "+doorCount+" passage doors.");
 		}
 
 		quotaMakePositioned(quota,injectList,mapOffset) {
@@ -819,11 +867,43 @@
 		assembleSites(siteList) {
 
 			function addSite(site) {
+				if( siteList.find(s=>s.id==site.id) ) debugger;
+				console.assert(site.marks.length);
 				site.denizenList = [];
+				site.treasureList = [];
 				siteList.push(site);
 				Array.traversePairs( site.marks, (x,y) => {
 					self.getAll(x,y).siteId = site.id;
 				});
+			}
+
+			function addRoom(marks,nearSiteId) {
+				let s = {
+					id: 'room.'+GetTimeBasedUid(),
+					marks: marks,
+					isRoom: true
+				};
+				if( nearSiteId ) {
+					s.isNear = nearSiteId;
+				}
+
+				addSite(s);
+			}
+
+			function addNear(marks,siteId) {
+				let site = siteList.find(site=>site.id==siteId);
+				console.assert(site);
+				if( marks.length > site.marks.length ) {
+					// We are bigger than the site, so make us our own room.
+					addRoom(marks,siteId);
+				}
+				else {
+					addSite({
+						id: 'near.'+siteId+'.'+GetTimeBasedUid(),
+						marks: marks,
+						isNear: siteId,
+					});
+				}
 			}
 
 			let self = this;
@@ -842,11 +922,7 @@
 				// No site exists within this zone, so just make a wilderness room out of it.
 				if( Object.isEmpty(found) ) {
 					console.assert( zone.tiles && zone.tiles.length );
-					addSite({
-						id: 'room.'+GetTimeBasedUid(),
-						marks: zone.tiles,
-						isRoom: true
-					});
+					addRoom(zone.tiles);
 					return;
 				}
 
@@ -859,12 +935,10 @@
 							marks.push(x,y);
 						}
 					});
-					let siteId = Object.keys(found)[0];
-					addSite({
-						id: 'near.'+siteId,
-						marks: marks,
-						isNear: siteId,
-					});
+					if( marks.length ) {
+						let siteId = Object.keys(found)[0];
+						addNear(marks,siteId);
+					}
 					return;
 				}
 
@@ -875,6 +949,7 @@
 				do {
 					anyFound = false;
 					let markHash = {};
+					// Expand outward until all adjacent sites are filled.
 					Array.traversePairs( zone.tiles, (x,y) => {
 						let a = this.getAll(x,y);
 						if( a.siteId ) return;
@@ -887,6 +962,7 @@
 							}
 						});
 					});
+					// Accumulate a list of siteId's that we're near, and all the marks for it.
 					Object.each( markHash, (marks,siteId) => {
 						nearHash[siteId] = nearHash[siteId] || []
 						Array.traversePairs( marks, (x,y) => {
@@ -898,11 +974,9 @@
 				if( reps <=0 ) debugger;
 
 				Object.each( nearHash, (marks,siteId) => {
-					addSite({
-						id: 'near.'+siteId,
-						marks: marks,
-						isNear: siteId,
-					});
+					if( marks.length ) {
+						addNear(marks,siteId);
+					}
 				});
 			});
 		}
@@ -923,14 +997,21 @@
 			return best;
 		}
 		removePointlessDoors() {
+			let removeCount = 0;
 			this.traverse( (x,y)=> {
 				let tile = this.getTile(x,y);
 				if( isDoor(tile) ) {
-					if( !this.twoOnlyOpposed(x,y,isBlocking) ) {
-						this.setTile(x,y,this.majorityNear(x,y,isWall) || T.FillWall);
+					if( !this.twoOnlyOpposed(x,y,tile => {
+						return isWall(tile) || isUnknown(tile) ? 'W' : ( isFloor(tile) ? 'F' : 'X' );
+					}, true) ) {
+						let fn = this.countGaps(x,y) <= 1 ? isWall : isFloor;
+						console.log("Remove: "+fn);
+						this.setTile(x,y,this.majorityNear(x,y,fn) || T.FillFloor);
+						++removeCount;
 					}
 				}
 			},-1,-1,-1,-1);
+			console.log("Removed "+removeCount+" pointless doors.");
 			return this;
 		}
 		wallify(wallTile) {
@@ -956,6 +1037,48 @@
 				}
 			});
 			return this;
+		}
+		fillCircle(x0, y0, radius, fn) {
+
+			function strip(sx,ex,y) {
+				console.assert(sx<=ex);
+				while( sx <= ex ) {
+					let tile = self.getTile(sx,y);
+					count += fn(sx,y,tile) ? 1 : 0;
+					sx++;
+				}
+			}
+			let self = this;
+			let count = 0;
+			var x = radius;
+			var y = 0;
+			var radiusError = 1 - x;
+
+			while (x >= y) {
+				strip( x0-x, x0+x, y0-y );
+				strip( x0-x, x0+x, y0+y );
+				strip( x0-y, x0+y, y0-x );
+				strip( x0-y, x0+y, y0+x );
+				y++;
+				if (radiusError < 0) {
+					radiusError += 2 * y + 1;
+				}
+				else {
+					x--;
+					radiusError+= 2 * (y - x + 1);
+				}
+			}
+			return count;
+		}
+		fillRect(sx,sy,xLen,yLen,fn) {
+			let count = 0;
+			for( let y=0 ; y<yLen ; ++y ) {
+				for( let x=0 ; x<xLen ; ++x ) {
+					let tile = this.getTile(sx+x,sy+y);
+					count += fn(sx+x,sy+y,tile) ? 1 : 0
+				}
+			}
+			return count;
 		}
 		convert(tileFrom,tileTo) {
 			this.traverse( (x,y) => {
@@ -992,109 +1115,6 @@
 			fn(n);
 		}
 	}
-
-	function makeAmoeba(map,percentToEat,seedPercent,mustConnect) {
-		let i=0;
-		percentToEat = Math.clamp(percentToEat||0,0.01,1.0);
-		seedPercent = Math.clamp(seedPercent||0,0.001,1.0);
-		let floorToMake = Math.max(1,Math.ceil(map.area() * percentToEat));
-		let floorMade = 0;
-		let makeChance = 30;
-
-		let seedToMake = Math.max(1,floorToMake*seedPercent);
-
-		map.traverse( (x,y) => {
-			let tile = map.getTile(x,y);
-			if( !isWall(tile) && !isUnknown(tile) ) {
-				seedToMake--;
-				floorMade++;
-			}
-		});
-
-		while( seedToMake>0 ) {
-			let x,y;
-			[x,y] = map.randPos(-3);
-			if( isUnknown(map.getTile(x,y)) ) {
-				map.setTile(x,y,T.FillFloor);
-				--seedToMake;
-				++floorMade;
-			}
-		}
-
-		let reps = 50;
-		let zoneList = [];
-
-		function more() {
-			if( !reps-- ) { return false; }
-			if( floorMade < floorToMake ) { return true; }
-			if( mustConnect ) {
-				if( zoneList.length != 1 ) { return true; }
-			}
-			return false;
-		}
-
-		while( more.call(this) ) {
-			let list = map.gather( (x,y) => {
-				let tile = map.getTile(x,y);
-				return isUnknown(tile) && map.count4(x,y,isWalkable) > 0;
-			});
-//			console.log("Gathered "+list.length);
-//			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
-
-			while( list.length ) {
-				let y = list.pop();
-				let x = list.pop();
-				if( Math.randInt(0,100) < makeChance ) {
-					map.setTile(x,y,T.FillFloor);
-					++floorMade;
-				}
-			}
-
-//			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
-//			console.log("floor-likes = floor="+Math.floor(map.countAll(isWalkable)/map.area()*100)+'%');
-			let removeCount = 0;
-			zoneList = map.floodAll();
-//			console.log( zoneList.length+' zones');
-			while( zoneList.length && zoneList[zoneList.length-1].count < floorMade-floorToMake ) {
-				let zone = zoneList.pop();
-				let count = map.zoneFlood(zone.x,zone.y,zone.zoneId,false,NO_ZONE,T.Unknown);
-				if( count !== zone.count ) {
-					debugger;
-				}
-				floorMade -= count;
-				removeCount += 1;
-			}
-//			if( removeCount ) {
-//				console.log("Removed "+removeCount+'. now floor='+floorMade);
-//				console.log( zoneList.length+' zones remain');
-//			}
-		}
-		// We no longer remove diagonal quads because it runs the risk of harming somebody's
-		// carefully crafted place...
-		//map.removeDiagnoalQuads();
-		map.removeSingletonUnknowns();
-		return this;
-	}
-
-	function makeRooms(map,floorDensity,maxRoomScale) {
-		floorDensity = Math.clamp(floorDensity,0.02,1.0);
-		let minRoomX = 3;
-		let minRoomY = 3;
-		let maxRoomX = Math.clamp(map.xLen() * maxRoomScale,minRoomX,map.xLen()-2);
-		let maxRoomY = Math.clamp(map.yLen() * maxRoomScale,minRoomY,map.yLen()-2);
-		let floorToMake = Math.ceil(map.area() * floorDensity);
-		let floorMade = 0;
-
-		while( floorToMake > 0 ) {
-			let xLen = Math.randInt(minRoomX,maxRoomX);
-			let yLen = Math.randInt(minRoomY,maxRoomY);
-			let fit = false;
-			--floorToMake;
-		}
-
-	}
-
-
 
 	function positionPlaces(depth,map,numPlaceTilesOriginal,quota,requiredPlaces,rarityHash,injectList,siteList) {
 
@@ -1207,7 +1227,9 @@
 				placeId: place.typeId,
 				place: place,
 				denizenList: [],
+				treasureList: []
 			};
+			if( siteList.find(s=>s.id==site.id) ) debugger;
 			siteList.push(site);
 			// mark on the map which site belongs to whom.
 			for( let i=0 ; i<site.marks.length ; i+=2 ) {
@@ -1399,6 +1421,134 @@
 		makeRandomPlaces(placePicker);
 	}
 
+	function makeAmoeba(map,percentToEat,seedPercent,mustConnect) {
+		let i=0;
+		percentToEat = Math.clamp(percentToEat||0,0.01,1.0);
+		seedPercent = Math.clamp(seedPercent||0,0.001,1.0);
+		let floorToMake = Math.max(1,Math.ceil(map.area() * percentToEat));
+		let floorMade = 0;
+		let makeChance = 30;
+
+		let seedToMake = Math.max(1,floorToMake*seedPercent);
+
+		map.traverse( (x,y) => {
+			let tile = map.getTile(x,y);
+			if( !isWall(tile) && !isUnknown(tile) ) {
+				seedToMake--;
+				floorMade++;
+			}
+		});
+
+		while( seedToMake>0 ) {
+			let x,y;
+			[x,y] = map.randPos(-3);
+			if( isUnknown(map.getTile(x,y)) ) {
+				map.setTile(x,y,T.FillFloor);
+				--seedToMake;
+				++floorMade;
+			}
+		}
+
+		let reps = 50;
+		let zoneList = [];
+
+		function more() {
+			if( !reps-- ) { return false; }
+			if( floorMade < floorToMake ) { return true; }
+			if( mustConnect ) {
+				if( zoneList.length != 1 ) { return true; }
+			}
+			return false;
+		}
+
+		while( more.call(this) ) {
+			let list = map.gather( (x,y) => {
+				let tile = map.getTile(x,y);
+				return isUnknown(tile) && map.count4(x,y,isWalkable) > 0;
+			});
+//			console.log("Gathered "+list.length);
+//			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
+
+			while( list.length ) {
+				let y = list.pop();
+				let x = list.pop();
+				if( Math.randInt(0,100) < makeChance ) {
+					map.setTile(x,y,T.FillFloor);
+					++floorMade;
+				}
+			}
+
+//			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
+//			console.log("floor-likes = floor="+Math.floor(map.countAll(isWalkable)/map.area()*100)+'%');
+			let removeCount = 0;
+			zoneList = map.floodAll();
+//			console.log( zoneList.length+' zones');
+			while( zoneList.length && zoneList[zoneList.length-1].count < floorMade-floorToMake ) {
+				let zone = zoneList.pop();
+				let count = map.zoneFlood(zone.x,zone.y,zone.zoneId,false,NO_ZONE,T.Unknown);
+				if( count !== zone.count ) {
+					debugger;
+				}
+				floorMade -= count;
+				removeCount += 1;
+			}
+//			if( removeCount ) {
+//				console.log("Removed "+removeCount+'. now floor='+floorMade);
+//				console.log( zoneList.length+' zones remain');
+//			}
+		}
+		// We no longer remove diagonal quads because it runs the risk of harming somebody's
+		// carefully crafted place...
+		//map.removeDiagnoalQuads();
+		map.removeSingletonUnknowns();
+		return this;
+	}
+
+
+	function makeRooms(map,percentToEat,circleChance,overlapChance,siteList) {
+
+		percentToEat = Math.clamp(percentToEat||0,0.01,1.0);
+		let floorToMake = Math.max(1,Math.ceil(map.area() * percentToEat));
+		let floorMade = 0;
+
+		map.traverse( (x,y) => {
+			let tile = map.getTile(x,y);
+			if( !isWall(tile) && !isUnknown(tile) ) {
+				floorMade++;
+			}
+		});
+
+		function weakFill(x,y,tile) {
+			if( !tile || isUnknown(tile) ) {
+				map.setTile(x,y,T.FillFloor);
+				return true;
+			}
+		}
+
+		function overlapTest(x,y,tile) {
+			if( !isUnknown(tile) ) {
+				return true;
+			}
+		}
+
+		let xLenMaxDefault = Math.floor(map.xLen()/3.2);
+		let xLenMax = Math.min(xLenMaxDefault,map.xLen()-2);
+		let reps = map.area();
+		while( floorMade < floorToMake && --reps ) {
+			let circ = Math.chance(circleChance);
+			let x,y;
+			[x,y] = map.randPos(1);
+			let xLen = Math.floor(Math.randInt(2,xLenMax) / (circ?2:1));
+			let yLen = circ ? xLen : Math.randInt(Math.floor(Math.max(2,xLen/2)),Math.floor(Math.min(xLenMax,xLen*2)));
+			x = Math.min(x,map.xLen()-xLen);
+			y = Math.min(y,map.yLen()-yLen);
+			let overlap = circ ? map.fillCircle(x,y,xLen+1,overlapTest) : map.fillRect(x-1,y-1,xLen+1,yLen+1,overlapTest);
+			if( overlap && !Math.chance(overlapChance) ) continue;
+
+			let made = circ ? map.fillCircle(x,y,xLen,weakFill) : map.fillRect(x,y,xLen,yLen,weakFill);
+			floorMade += made;
+		}
+	}
 
 	function runImmediate(maker) {
 		while( !maker.next().done ) {
@@ -1468,9 +1618,12 @@
 		if( theme.architecture == 'cave' ) {
 			makeAmoeba(map,theme.floorDensity,theme.seedPercent,theme.mustConnect);
 		}
+		if( theme.architecture == 'rooms' ) {
+			makeRooms(map,theme.floorDensity,theme.circleChance||0,theme.overlapChance||20);
+		}
 
 		map.assembleSites(siteList);
-		map.connectAll(siteList,theme.wanderingPassage);
+		map.connectAll(siteList,theme.passageWander,theme.preferDoors,theme.passageWdth2||0,theme.passageWidth3||0);
 		map.removePointlessDoors();
 		map.wallify(T.OutlineWall);
 		map.sizeToExtentsWithBorder(injectList,siteList,1);

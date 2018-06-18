@@ -54,12 +54,12 @@ pre {
 		// Seed Percent
 		// Lower number (0.05) means each room is more consolidated
 		// Higher number (0.50) means lots of little rooms that connect.
-		// floor=0.50, seed 0.02, wanderingPassage false, makes nice connected rooms
+		// floor=0.50, seed 0.02, passageWander false, makes nice connected rooms
 		let scape = {
 			dim: sideDimension,
 			architecture: "cave",
 			mustConnect: false,
-			wanderingPassage: true,
+			passageWander: 	100,
 			floorDensity: 	0.40,
 			seedPercent: 	0.20,
 			placeDensity: 	0.50			// always relative to floor

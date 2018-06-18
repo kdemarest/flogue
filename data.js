@@ -291,7 +291,7 @@ const WeaponList = Fab.add( '', {
 					chanceToFire: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
 	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
 	"solKnife":   	{ level:900, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
-	"pickaxe":   	{ level:  1, rarity: 0.1, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 0, effectChance: 0.00, 
+	"pickaxe":   	{ level:  0, rarity: 0.01, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 0, effectChance: 0.00, 
 					attackVerb: 'strike', mineSpeed: 1.0, img: 'item/weapon/pickaxe.png' },
 	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
 	"sword": 		{ level:  1, rarity: 1.0, damageMultiplier: 1.00, damageType: DamageType.CUT, quick: 2, img: 'item/weapon/long_sword1.png' },
@@ -546,10 +546,10 @@ const RingList = Fab.add( '', {
 });
 
 const CoinStacks = Fab.add( '', {
-	coinOne: { img: "coinOne" },
-	coinThree: { img: "coinThree" },
-	coinTen: { img: "coinTen" },
-	coinMany: { img: "coinPile" },
+	coinOne: 	{ img: "coinOne" },
+	coinThree: 	{ img: "coinThree" },
+	coinTen: 	{ img: "coinTen" },
+	coinMany: 	{ img: "coinPile" },
 });
 let coinImgFn = (self,img) => {
 	let c = self ? self.goldCount : null;

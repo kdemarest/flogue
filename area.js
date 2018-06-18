@@ -12,6 +12,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			site.denizenList.push(entity);
 			entity.homeSiteId = site.id;
 			entity.tether = entity.tether || 2+Math.floor(Math.sqrt(site.marks.length));
+			if( entity.attitude==Attitude.AGGRESSIVE ) {
+				entity.attitude = Attitude.AWAIT;
+			}
 		}
 
 		return entity;
@@ -37,6 +40,13 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 //			console.log( "The item says "+item.toAreaId+' / '+item.toGateId );
 		}
 		console.assert( item.x!==undefined );
+
+		let site = area.getSiteAt(x,y);
+		if( site ) {
+			if( site.place && site.place.forbidTreasure ) debugger;
+			site.treasureList.push(item);
+		}
+
 		return item;
 	}
 	function safeToMake(map,x,y) {
@@ -114,6 +124,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	function populateInRooms( siteList, map, count, safeToMakeFn, makeFn, criteriaFn, includeFn ) {
 		let countOriginal = count;
 		let nearList = [];
+		console.log('Sites: '+(siteList.filter(site=>site.isPlace||site.isRoom).length));
 		siteList.forEach( site => {
 			if( !includeFn(site) ) {
 				return;
@@ -179,7 +190,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	});
 
 	totalItems += populateInRooms( area.siteList, area.map, owedItems-totalItems, safeToMake, makeItem, e=>e.isTreasure, site => {
-		return !(site.isPlace && site.place.comesWithItems);
+		return !(site.isPlace && (site.place.comesWithItems || site.place.forbidTreasure));
 	});
 
 	console.log( "Enemies: ("+totalFloor+"x"+theme.enemyDensity+")="+owedEnemies+"-"+totalEnemies+"="+(owedEnemies-totalEnemies)+" enemies owed" );
@@ -194,12 +205,16 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		return safeToMake(map,x,y);
 	}, makeMonster, isEnemyFn );
 	populate( area.map, Math.max(0,owedFriends-totalFriends), safeToMake, makeMonster, isFriendFn );
-	populate( area.map, Math.max(0,owedItems-totalItems), safeToMake, makeItem, e=>e.isTreasure );
+	populate( area.map, Math.max(0,owedItems-totalItems), (map,x,y) => {
+		let site = area.getSiteAt(x,y);
+		if( site && site.place && site.place.forbidTreasure ) {
+			return false;
+		}
+		return safeToMake(map,x,y);
+	}, makeItem, e=>e.isTreasure );
 
 	area.siteList.forEach( site => {
-		if( site.denizenList.length <= 0 ) {
-			console.log("Site "+site.id+" never populated.");
-		}
+		console.log( "Site "+site.id+" ["+site.marks.length+"] monsters: "+site.denizenList.length+" items: "+site.treasureList.length );
 	});
 
 	area.gateList = area.map.itemList.filter( item => item.gateDir !== undefined );
