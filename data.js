@@ -545,6 +545,18 @@ const RingList = Fab.add( '', {
 	"diamondSetting": 	{ level: 25, rarity:  0.1, name: 'diamond' }
 });
 
+const CoinStacks = Fab.add( '', {
+	coinOne: { img: "coinOne" },
+	coinThree: { img: "coinThree" },
+	coinTen: { img: "coinTen" },
+	coinMany: { img: "coinPile" },
+});
+let coinImgFn = (self,img) => {
+	let c = self ? self.goldCount : null;
+	let cs = CoinStacks;
+	return "item/misc/"+(img || (c<=1 ? cs.coinOne : (c<=4 ? cs.coinThree : (c<=10 ? cs.coinTen : cs.coinMany))).img)+".png";
+};
+
 const NulImg = { img: '' };
 
 // Item Events
@@ -601,8 +613,8 @@ const ItemTypeList = {
 	"corpse":   { symbol: SYM, namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1, isCorpse: true,
 				img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // TREASURE
-	"coin": 	{ symbol: '$', namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true,
-				isTreasure: 1, img: "item/misc/gold_pile.png", icon: 'coin.png' },
+	"coin": 	{ symbol: '$', namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true, isTreasure: 1,
+				imgGet: coinImgFn, imgChoices: CoinStacks, icon: 'coin.png' },
 	"potion":   { symbol: 'p', isTreasure: 1, namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
 				effectChance: 1.0, isPotion: true, range: RANGED_WEAPON_DEFAULT_RANGE,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
