@@ -31,6 +31,17 @@ body {
 #guiMap {
 	display: inline-block;
 }
+.monName {
+	font-family: 'Raleway', sans-serif;
+	font-size: 20px;
+	font-weight: 400;
+	margin-right: 16px;
+}
+#guiInfo.monColor, .monColor {
+	color: #dc9a38;
+	border-color: #dc9a38;
+}
+
 #guiNarrative {
 	white-space: pre;
 	font-family: 'Raleway', sans-serif;
@@ -131,9 +142,17 @@ body {
 	margin: 0px 0px;
 	overflow-y: hidden;
 	overflow-x: hidden;
+	position: relative;
 }
 #guiMiniMap canvas {
 	align-self: center;
+	background-color: #00000000;
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+#guiMiniMapCanvas1 {
+	z-index:10;
 }
 #guiMiniMapCaption {
 	text-align: left;
@@ -340,7 +359,12 @@ table .inv tbody tr .ctr {
 	position: relative;
 	margin-bottom: 2px;
 	white-space: nowrap;
+	cursor: pointer;
 }
+.health-bar:hover {
+	background-color: cyan;
+}
+
 .bar {
 	background: #c54;
 	width: 100%;
@@ -350,6 +374,7 @@ table .inv tbody tr .ctr {
 	padding-left: 4px;
 	padding-right: 4px;
 	overflow-x: hidden;
+	overflow-y: hidden;
 
 	transition: width .5s linear;
 }

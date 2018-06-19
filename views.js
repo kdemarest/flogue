@@ -139,8 +139,16 @@ class ViewExperience {
 		this.experience = 0;
 		this.level = -1;
 	}
+	message(msg,payload) {
+		if( msg=='show' ) {
+			this.render(payload);
+		}
+	}
 	render(entity) {
-		$('#'+this.divId);
+		if( !entity.isUser() ) {
+			$('#'+this.divId).show().html('<span class="monName monColor">'+String.capitalize(entity.name)+'</span>');
+			return;
+		}
 
 		let level = '<span class="level'+(entity.level>this.level && this.level !==-1 ?' gotLevel':'')+'">Level '+(entity.level+1)+'</span>';
 		this.level = entity.level;
@@ -176,14 +184,16 @@ class ViewInfo {
 				conditionList.push(text);
 			}
 		}
-		$('#'+this.infoDivId).empty().removeClass('healthWarn healthCritical');
+		$('#'+this.infoDivId).empty().removeClass('monColor healthWarn healthCritical');
 		let s = "";
 		s += "Health: "+entity.health+" of "+entity.healthMax+"\n";
-		s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R\n";
-		let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
-		s += "Shield: "+(entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block\n";
-		let weapon = entity.calcDefaultWeapon();
-		s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"\n";
+		if( entity.isUser() ) {
+			s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R\n";
+			let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
+			s += "Shield: "+(entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block\n";
+			let weapon = entity.calcDefaultWeapon();
+			s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"\n";
+		}
 		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+'\n';
 		let conditionList = [];
 		test(entity.invisible,'invis');
@@ -202,22 +212,27 @@ class ViewInfo {
 		s += entity.immune ? "Immune: "+entity.immune+'\n' : '';
 		s += entity.vuln ? "Vulnerable: "+entity.vuln+'\n' : '';
 		s += "Gold: "+Math.floor(entity.goldCount||0)+"\n";
+		if( !entity.isUser() ) {
+			$('#'+this.infoDivId).addClass('monColor');
+		}
+		else {
+			let healthRatio = entity.health/entity.healthMax;
+			if( healthRatio < 0.15 ) {
+				$('#'+this.infoDivId).addClass('healthCritical');
+			}
+			else
+			if( healthRatio < 0.35 ) {
+				$('#'+this.infoDivId).addClass('healthWarn');
+			}
+		}
 		$('#'+this.infoDivId).show().append(s);
-		let healthRatio = entity.health/entity.healthMax;
-		if( healthRatio < 0.15 ) {
-			$('#'+this.infoDivId).addClass('healthCritical');
-		}
-		else
-		if( healthRatio < 0.35 ) {
-			$('#'+this.infoDivId).addClass('healthWarn');
-		}
 
 	}
 
 }
 
 class ViewStatus {
-	constructor(divId,) {
+	constructor(divId) {
 		this.divId = divId;
 		this.slotList = [];
 		this.slotMax = 10;
@@ -229,6 +244,7 @@ class ViewStatus {
 				.canPerceiveEntity().filter(e=>e.id==observer.id || e.inCombat).byDistanceFromMe().keepTop(this.slotMax);
 
 		// Remove unused slots.
+		guiMessage(null,'hide');
 		Array.filterInPlace( this.slotList, slot => {
 			if( !f.includesId( slot.entityId ) ) {
 				$(slot).remove();
@@ -250,7 +266,10 @@ class ViewStatus {
 				.appendTo('#'+self.divId)
 				.show()
 				.mouseover( function() {
-					guiMessage('info','show',entity);
+					guiMessage(null,'show',entity);
+				})
+				.mouseout( function() {
+					guiMessage(null,'hide');
 				});
 				div.entityId = entity.id;
 				div.entityLastHealth = entity.health;
@@ -277,15 +296,20 @@ class ViewMiniMap {
 		this.drawn = [];
 	}
 	create(area) {
-		$( '#'+this.divId+'Canvas' ).remove();
+		$( '#'+this.divId+'Canvas0' ).remove();
+		$( '#'+this.divId+'Canvas1' ).remove();
+		this.cleared = false;
 		this.xLen = area.map.xLen;
 		this.yLen = area.map.yLen;
 		this.scale = Math.max(this.yLen,this.xLen) < 2000 ? 2 : 1;
 		let dim = Math.max(this.xLen,this.yLen);
+		this.xLenCanvas = this.scale*dim;
+		this.yLenCanvas = this.scale*dim;
 		$( '#'+this.divId)
-			.width(dim*this.scale)
-			.height(dim*this.scale)
-			.append('<canvas id="'+this.divId+'Canvas'+'" height="'+dim*this.scale+'" width="'+dim*this.scale+'"></canvas>')
+			.width(this.xLenCanvas)
+			.height(this.yLenCanvas)
+			.append('<canvas id="'+this.divId+'Canvas0'+'" height="'+this.yLenCanvas+'" width="'+this.xLenCanvas+'"></canvas>')
+			.append('<canvas id="'+this.divId+'Canvas1'+'" height="'+this.yLenCanvas+'" width="'+this.xLenCanvas+'"></canvas>')
 			.show();
 	}
 	setArea(area) {
@@ -304,13 +328,14 @@ class ViewMiniMap {
 			this.caption + (site ? '<br>'+site.id+'<br>'+site.denizenList.map( entity=>entity.name ).join(',') : '')
 		);
 
-		var canvas = document.getElementById(this.divId+'Canvas');
-		if( !canvas.getContext ) {
+		var canvas0 = document.getElementById(this.divId+'Canvas0');
+		var canvas1 = document.getElementById(this.divId+'Canvas1');
+		if( !canvas0.getContext || !canvas1.getContext ) {
 			debugger;
 		}
 
 		let self = this;
-		function draw(entity,x,y,scale) {
+		function draw(c,entity,x,y,scale) {
 			let imgGet = self.imageRepo.imgGet[entity.typeId];
 			if( !imgGet ) debugger;
 			if( imgGet ) {
@@ -327,11 +352,13 @@ class ViewMiniMap {
 		}
 
 		let unvisitedMap = StickerList.unvisitedMap;
-		let c = canvas.getContext("2d");
+		let c0 = canvas0.getContext("2d");
+		let c1 = canvas1.getContext("2d");
 		if( !this.cleared ) {
-			draw(unvisitedMap,0,0,2000);
+			draw(c0,unvisitedMap,0,0,2000);
 			this.cleared = true;
 		}
+		c1.clearRect(0,0,this.xLenCanvas,this.yLenCanvas);
 
 		let mapMemory = this.mapMemoryFn();
 		let drawLate = [];
@@ -359,18 +386,18 @@ class ViewMiniMap {
 				}
 				this.drawn[y*this.xLen+x] = entity;
 				if( !entity ) {
-					draw(unvisitedMap,x,y,this.scale);
+					draw(c0,unvisitedMap,x,y,this.scale);
 					continue;
 				}
 				if( entity.isWall && !entity.mineId ) {
 					entity = StickerList.wallProxy;
 				}
-				draw(entity,x,y,this.scale);
+				draw(c0,entity,x,y,this.scale);
 			}
 		}
 		while( drawLate.length ) {
 			let d = drawLate.pop();
-			draw(d.entity,d.x,d.y,d.scale);
+			draw(c1,d.entity,d.x,d.y,d.scale);
 		}
 	}
 }
@@ -520,12 +547,9 @@ class ViewInventory {
 }
 
 class ViewRange {
-	constructor(worldOverlayAddFn,worldOverlayRemoveFn) {
-		this.worldOverlayAddFn = worldOverlayAddFn;
-		this.worldOverlayRemoveFn = worldOverlayRemoveFn;
+	constructor() {
 		this.xOfs = 0;
 		this.yOfs = 0;
-		this.crosshairAnim = null;
 		this.visibleFn = null;
 		this.rangeLimit = 0;
 		this.active = false;
@@ -533,7 +557,7 @@ class ViewRange {
 	clear() {
 		this.xOfs = 0;
 		this.yOfs = 0;
-		this.worldOverlayRemoveFn( a => a.group=='guiCrosshair' );
+		guiMessage(null,'overlayRemove',{group: 'guiCrosshair'});
 		this.isShotClear = false;
 	}
 	move(xAdd,yAdd) {
@@ -572,14 +596,14 @@ class ViewRange {
 			return map.tileTypeGet(x,y).mayFly;
 		}
 		function add(x,y,ok) {
-			self.worldOverlayAddFn('guiCrosshair',x,y,StickerList[ok?'crosshairYes':'crosshairNo']);	
+			guiMessage(null,'overlayAdd',{ group: 'guiCrosshair', x:x, y:y, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
 			self.isShotClear = self.isShotClear && ok;
 		}
 		shootRange(sx,sy,tx,ty,test,add);
 	}
 
 	render(observer) {
-		this.worldOverlayRemoveFn( a=>a.group=='guiCrosshair' );
+		guiMessage( null, 'overlayRemove', { group: 'guiCrosshair' } );
 		this.active = this.visibleFn && this.visibleFn();
 		if( this.active ) {
 			//console.log("crosshair at "+(observer.x+this.xOfs)+','+(observer.y+this.yOfs));

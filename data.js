@@ -77,7 +77,7 @@ DynamicViewList = {
 };
 
 const StickerList = {
-	wallProxy: { img: "spells/air/static_discharge.png" },
+	wallProxy: { img: "dc-dngn/wallProxy.png" },
 	observerProxy: { img: "gems/Gem Type2 Yellow.png" },
 	gateProxy: { img: "gems/Gem Type2 Green.png" },
 	gateDownProxy: { img: "gems/Gem Type2 Purple.png" },
@@ -99,6 +99,7 @@ const StickerList = {
 	showEat: { img: 'gui/icons/activityEat.png' },
 	eGeneric: { img: "gui/icons/eGeneric.png" },
 	ePoof: { img: "gui/icons/ePoof.png" },
+	selectBox: { img: "gui/selectBox.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
 	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },

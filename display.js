@@ -293,7 +293,9 @@ let spriteOnStage;
 let spriteMakeInWorld;
 
 class ViewMap {
-	constructor(divId,imageRepo) {
+	constructor(divId,imageRepo,worldOverlayAddFn,worldOverlayRemoveFn) {
+		this.worldOverlayAddFn = worldOverlayAddFn;
+		this.worldOverlayRemoveFn = worldOverlayRemoveFn;
 		this.divId = divId;
 		this.imageRepo = imageRepo;
 		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
@@ -457,6 +459,21 @@ class ViewMap {
 		if( msg=='zoom' ) {
 			this.setZoom(this.zoom+1);
 			this.render(this.observer);
+		}
+		if( msg == 'overlayRemove' ) {
+			this.worldOverlayRemoveFn( a => a.group==payload.group );
+		}
+		if( msg == 'overlayAdd' ) {
+			this.worldOverlayAddFn(payload.group,payload.x,payload.y,payload.img);	
+		}
+		if( msg == 'show' ) {
+			this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
+			this.worldOverlayAddFn('guiSelect', payload.x,payload.y, StickerList.selectBox.img);	
+			this.render(this.observer);
+		}
+		if( msg == 'hide' ) {
+			this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
+//			this.render(this.observer);
 		}
 	}
 

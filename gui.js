@@ -21,11 +21,13 @@ class Gui {
 	}
 
 	create(onItemChoose) {
-		function worldOverlayAdd(group,x,y,sticker) {
-			new Anim( sticker, {
+		function worldOverlayAdd(group,x,y,img) {
+//			console.log(group,x,y,img);
+			new Anim( {}, {
 				group: 		group,
 				x: 			x,
 				y: 			y,
+				img: 		img,
 				duration: 	true
 			});
 		}
@@ -34,17 +36,17 @@ class Gui {
 		}
 
 		this.view.dynamic = DynamicViewList.none;
-		this.view.full = new ViewFull('#guiControls','#guiMain');
+		this.view.full = new ViewFull('#guiControls','#guiMain',);
 		this.view.zoom = new ViewZoom('#guiControls');
 		this.view.narrative = new ViewNarrative('guiNarrative');
-		this.view.map = new ViewMap('guiMap',this.imageRepo);
+		this.view.map = new ViewMap('guiMap',this.imageRepo,worldOverlayAdd,worldOverlayRemove);
 		this.view.sign = new ViewSign('guiSign');
 		this.view.miniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',this.imageRepo);
 		this.view.spells = new ViewSpells('guiSpells');
 		this.view.experience = new ViewExperience('guiExperience')
 		this.view.info = new ViewInfo('guiInfo')
 		this.view.status = new ViewStatus('guiStatus');
-		this.view.range = new ViewRange(worldOverlayAdd,worldOverlayRemove);
+		this.view.range = new ViewRange();
 		this.view.inventory = new ViewInventory('guiInventory',this.imageRepo,onItemChoose);
 	}
 

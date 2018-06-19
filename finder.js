@@ -78,7 +78,7 @@ class Finder {
 		return this;
 	}
 	byDistanceFromPosition(x,y) {
-		if( this.result.length > 20 ) debugger;
+		if( this.result.length > 40 ) debugger;
 		this.result.sort( (a,b) => ((a.x-x)*(a.x-x)+(a.y-y)*(a.y-y)) - ((b.x-x)*(b.x-x)+(b.y-y)*(b.y-y))  );
 		return this;
 	}
