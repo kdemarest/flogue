@@ -224,7 +224,7 @@ class ViewStatus {
 	}
 
 	render(observer,entityList) {
-
+		// We both exclude and then prepend the observer to make sure the observer is first in the list.
 		let f = new Finder(entityList,observer).isAlive().exclude(observer).prepend(observer)
 				.canPerceiveEntity().filter(e=>e.id==observer.id || e.inCombat).byDistanceFromMe().keepTop(this.slotMax);
 
@@ -274,6 +274,7 @@ class ViewMiniMap {
 		this.caption = '';
 		this.mapMemoryFn = null;
 		this.imageRepo = imageRepo;
+		this.drawn = [];
 	}
 	create(area) {
 		$( '#'+this.divId+'Canvas' ).remove();
@@ -297,7 +298,7 @@ class ViewMiniMap {
 			this.setArea(payload);
 		}
 	}
-	render(observer) { 
+	render(observer) {
 		let site = observer.area.getSiteAt(observer.x,observer.y);
 		$('#'+this.captionDivId).show().html(
 			this.caption + (site ? '<br>'+site.id+'<br>'+site.denizenList.map( entity=>entity.name ).join(',') : '')
@@ -327,29 +328,42 @@ class ViewMiniMap {
 
 		let unvisitedMap = StickerList.unvisitedMap;
 		let c = canvas.getContext("2d");
-		draw(unvisitedMap,0,0,200);
+		if( !this.cleared ) {
+			draw(unvisitedMap,0,0,2000);
+			this.cleared = true;
+		}
 
 		let mapMemory = this.mapMemoryFn();
 		let drawLate = [];
 		for( let y=0 ; y<this.yLen ; ++y ) {
+			if( !mapMemory[y] ) {
+				continue;
+			}
 			for( let x=0 ; x<this.xLen ; ++x ) {
-				if( !mapMemory[y] || !mapMemory[y][x] ) {
+				let entity = mapMemory[y][x];
+				if( entity ) {
+					if( x==observer.x && y==observer.y ) {
+						entity = StickerList.observerProxy;
+						drawLate.push({entity:entity,x:x,y:y,scale:this.scale*4});
+						continue;
+					}
+					if( entity.gateDir !== undefined ) {
+						entity = StickerList[entity.gateDir>0 ? 'gateDownProxy' : 'gateProxy'];
+						drawLate.push({entity:entity,x:x,y:y,scale:this.scale*3});
+						continue;
+					}
+				}
+
+				if( this.drawn[y*this.xLen+x] === entity ) {
+					continue;
+				}
+				this.drawn[y*this.xLen+x] = entity;
+				if( !entity ) {
 					draw(unvisitedMap,x,y,this.scale);
 					continue;
 				}
-				let entity = mapMemory[y][x];
-				if( x==observer.x && y==observer.y ) {
-					entity = StickerList.observerProxy;
-					drawLate.push({entity:entity,x:x,y:y,scale:this.scale*4});
-				}
-				else
 				if( entity.isWall && !entity.mineId ) {
 					entity = StickerList.wallProxy;
-				}
-				else
-				if( entity.gateDir !== undefined ) {
-					entity = StickerList[entity.gateDir>0 ? 'gateDownProxy' : 'gateProxy'];
-					drawLate.push({entity:entity,x:x,y:y,scale:this.scale*3});
 				}
 				draw(entity,x,y,this.scale);
 			}
@@ -536,9 +550,9 @@ class ViewRange {
 		this.visibleFn = visibleFn;
 		this.rangeLimit = rangeLimit;
 		if( !this.active ) {
-			let f = entity.findAliveOthers().canPerceiveEntity().canTargetEntity().isId(entity.lastAttackTargetId).nearMe(this.rangeLimit);
+			let f = entity.findAliveOthersNearby().isId(entity.lastAttackTargetId).canPerceiveEntity().canTargetEntity().nearMe(this.rangeLimit);
 			if( !f.first ) {
-				f = entity.findAliveOthers().isNotMyFriend().canPerceiveEntity().canTargetEntity().byDistanceFromMe().nearMe(this.rangeLimit);
+				f = entity.findAliveOthersNearby().isNotMyFriend().canPerceiveEntity().canTargetEntity().nearMe(this.rangeLimit).byDistanceFromMe();
 			}
 			if( f.first ) {
 				this.xOfs = f.first.x-entity.x;

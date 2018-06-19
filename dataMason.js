@@ -1531,7 +1531,7 @@
 			}
 		}
 
-		let xLenMaxDefault = Math.floor(map.xLen()/3.2);
+		let xLenMaxDefault = Math.clamp(Math.floor(map.xLen()/3.2),2,12);
 		let xLenMax = Math.min(xLenMaxDefault,map.xLen()-2);
 		let reps = map.area();
 		while( floorMade < floorToMake && --reps ) {

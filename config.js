@@ -9,10 +9,11 @@ ConfigList.ken = () => {
 		passageWander: 		0,
 	});
 	ScapeList.kenRooms = theme => ({
-		dim: 				60,
+		dim: 				200,
 		architecture: 		"rooms",
 		floorDensity: 		0.25,
-		circleChance: 		0.10,
+		circleChance: 		10,
+		overlapChance: 		10,
 		preferDoors: 		true,
 		passageWander: 		30,
 		passageWidth2: 		10,
@@ -77,7 +78,7 @@ ConfigList.ken = () => {
 
 	return {
 		startingDepth: 3,
-//		themeId: 'kenTheme'
+		themeId: 'kenTheme'
 	}
 }
 

@@ -114,6 +114,24 @@ class Entity {
 		tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
 	}
 
+	findAliveOthersNearby(entityList = this.entityList) {
+		let list = [];
+		for( let e of entityList ) {
+			if( !e.isDead() && this.getDistance(e.x,e.y)<=MaxSightDistance && e.id!=this.id ) {
+				list.push(e);
+			}
+		}
+		return new Finder(list,this,false);
+	}
+	findAliveOthersAt(x,y) {
+		let entityList = this.entityList;
+		for( let e of entityList ) {
+			if( !e.isDead() && e.id!=this.id && e.x==x && e.y==y ) {
+				return new Finder([e],this,false);
+			}
+		}
+		return new Finder([],this,false);
+	}
 	findAliveOthers(entityList = this.entityList) {
 		return new Finder(entityList,this).excludeMe().isAlive();
 	}
@@ -256,8 +274,8 @@ class Entity {
 		}
 		else {
 			// Calc vis if I am near the user, that it, I might be interacting with him!
-			let user = this.findAliveOthers().filter( e => e.isUser() ).nearMe(9);
-			doVis = !!user.first;
+			let user = this.entityList.find( e => e.isUser() );
+			doVis = user && this.getDistance(user.x,user.y) < MaxSightDistance;
 		}
 
 		if( doVis ) {
@@ -289,7 +307,7 @@ class Entity {
 		}
 		if( !this.vis ) {
 			let d = this.getDistance(entity.x,entity.y);
-			return d <= (this.sightDistance || STADARD_MONSTER_SIGHT_DISTANCE);
+			return d <= (this.sightDistance || STANDARD_MONSTER_SIGHT_DISTANCE);
 		}
 		// This gets us up to whoever actually owns this item. But on the map, you just use the item.
 		// This means that items can NOT be invisible independent of their owners.
@@ -375,7 +393,7 @@ class Entity {
 	}
 
 	enemyAtPos(x,y) {
-		return this.findAliveOthers().at(x,y).isMyEnemy();
+		return this.findAliveOthersAt(x,y).isMyEnemy();
 	}
 
 	getDistance(x,y) {
@@ -383,7 +401,7 @@ class Entity {
 	}
 
 	at(x,y) {
-		let f = this.findAliveOthers().at(x,y);
+		let f = this.findAliveOthersAt(x,y);
 		return f.first || this.map.tileTypeGet(x,y);
 	}
 
@@ -412,7 +430,7 @@ class Entity {
 		let mayTravel = 'may'+String.capitalize(travelMode || "walk");
 
 		// Am I colliding with another entity?
-		let f = this.findAliveOthers().at(x,y).filter( collide );
+		let f = this.findAliveOthersAt(x,y).filter( collide );
 		if( ignoreEntity ) {
 			f.exclude(ignoreEntity);
 		}
@@ -515,7 +533,7 @@ class Entity {
 
 	thinkApproach(x,y,target) {
 		if( target && target.area.id !== this.area.id ) {
-			let gate = new Finder(this.map.itemList,this).filter( gate=>gate.toAreaId==target.area.id ).byDistanceFromMe().first;
+			let gate = new Finder(this.map.itemList,this).filter( gate=>gate.toAreaId==target.area.id ).closestToMe().first;
 			if( gate ) {
 				x = gate.x;
 				y = gate.y;
@@ -588,7 +606,7 @@ class Entity {
 				}
 
 				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
-				let enemyList = this.findAliveOthers().isMyEnemy().canPerceiveEntity().byDistanceFromMe();
+				let enemyList = this.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
 				let theEnemy = enemyList.first;
 				let vendetta = enemyList.includesId(this.personalEnemy);
 				let distanceToNearestEnemy = enemyList.count ? this.getDistance(theEnemy.x,theEnemy.y) : false;
@@ -685,10 +703,10 @@ class Entity {
 					let friend;
 					if( this.brainMaster ) {
 						// We explicitly include your master because s/he might be in a different area!
-						friend = this.findAliveOthers().prepend(this.brainMaster).isMyFriend().farFromMe(2).isId(this.brainMaster.id).first;
+						friend = this.findAliveOthersNearby().prepend(this.brainMaster).isMyFriend().farFromMe(2).isId(this.brainMaster.id).first;
 					}
 					else {
-						friend = this.findAliveOthers().isMyFriend().farFromMe(2).byDistanceFromMe().first;
+						friend = this.findAliveOthersNearby().isMyFriend().nearMe(15).farFromMe(2).byDistanceFromMe().first;
 					}
 					if( friend ) {
 						this.record('back to a friend',true);
@@ -1485,7 +1503,7 @@ class Entity {
 
 		// Move into monsters
 		//-------------------
-		let f = this.findAliveOthers().at(x,y);
+		let f = this.findAliveOthersAt(x,y);
 		let allyToSwap = false;
 
 		// Attack enemies or neutrals
@@ -1558,7 +1576,7 @@ class Entity {
 			allyToSwap.setPosition(this.x,this.y);
 		}
 		this.setPosition(x,y);
-		if( this.findAliveOthers().at(x,y).count ) {
+		if( this.findAliveOthersAt(x,y).count ) {
 			debugger;
 		}
 

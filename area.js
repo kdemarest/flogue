@@ -234,11 +234,11 @@ function tick(speed,map,entityList) {
 
 	function orderByTurn() {
 		let list = [[],[],[]];	// players, pets, others
-		entityList.map( entity => {
+		for( let entity of entityList ) {
 			let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
 			list[group].push(entity);
-		});
-		list[2].sort( (a,b) => a.speed-b.speed );
+		}
+		//list[2].sort( (a,b) => a.speed-b.speed );
 		return [].concat(list[0],list[1],list[2]);
 	}
 
@@ -270,6 +270,11 @@ function tick(speed,map,entityList) {
 		clearCommands(entityList);
 		return;
 	}
+
+//On really huge maps entityList gets to be aroound 400 entities.
+//So, do we really want to tick all of them? Or do we put them all on some
+//kind of deferred schedule... And then only tick the last level around the gate that
+//was used to get to the current level...
 
 	let entityListByTurnOrder = orderByTurn(entityList);
 	let dt = 1 / speed;
