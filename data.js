@@ -103,8 +103,18 @@ const StickerList = {
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
 	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
-	crosshairNo:  { img: "dc-misc/travel_exclusion.png", scale: 1.0, xAnchor: 0, yAnchor: 0 }
-
+	crosshairNo:  { img: "dc-misc/travel_exclusion.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
+	slice0: { img: 'gui/sliceEmpty.png' },
+	slice10: { img: 'gui/slice10.png' },
+	slice20: { img: 'gui/slice20.png' },
+	slice30: { img: 'gui/slice30.png' },
+	slice40: { img: 'gui/slice40.png' },
+	slice50: { img: 'gui/slice50.png' },
+	slice60: { img: 'gui/slice60.png' },
+	slice70: { img: 'gui/slice70.png' },
+	slice80: { img: 'gui/slice80.png' },
+	slice90: { img: 'gui/slice90.png' },
+	slice100: { img: 'gui/sliceReady.png' },
 };
 
 // Probably should do this at some point.
@@ -115,7 +125,7 @@ let DEFAULT_EFFECT_DURATION = 10;
 let ARMOR_SCALE = 100;
 
 const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
-const EffectShape = { SINGLE: "single", SMALL: "small", MEDIUM: "medium", LARGE: "large" };
+const EffectShape = { SINGLE: "single", BLAST3: "blast3", BLAST5: "blast5", BLAST7: "blast7" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
 const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
 const ShieldBlocks = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP,DamageType.BURN,DamageType.FREEZE,DamageType.CORRODE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
@@ -185,6 +195,9 @@ let EffectTypeList = {
 	eCold: 			{ isDmg: 1, level:  10, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
 	eAcid: 			{ isDmg: 1, level:  15, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
 	eHoly: 			{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly3: 		{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, effectShape: EffectShape.BLAST3, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly5: 		{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, effectShape: EffectShape.BLAST5, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly7: 		{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, effectShape: EffectShape.BLAST7, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
 	eRot: 			{ isDmg: 1, level:  25, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
 };
 
@@ -490,6 +503,9 @@ const StuffList = Fab.add( '', {
 	"scarabCarapace": 	{ },
 	"darkEssence": 		{ },
 	"facetedEye": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
+	"sunCrystal":   	{ mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "gems/sunCrystal.png", mayTargetPosition: true,
+						effect: { name: 'radiance', op: 'damage', damageModifier: 1.0, effectShape: EffectShape.BLAST5, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
+						},
 	"trollBlood": 		{ },
 	"lunarEssence": 	{ },
 	"batWing": 			{ },
@@ -1542,6 +1558,13 @@ MonsterTypeList.redOoze.onMove = function(x,y) {
 		});
 
 		f.first.destroy();
+	}
+}
+
+StuffList.sunCrystal.onTick = function(dt) {
+	if( this.owner.isMap ) {
+		let tile = adhoc(this.map.tileTypeGet(this.x,this.y),this.map,this.x,this.y);
+		effectApply(this.effect,tile,this.ownerOfRecord,this);
 	}
 }
 

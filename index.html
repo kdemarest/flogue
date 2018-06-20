@@ -56,7 +56,7 @@ function adhoc(tileType,map,x,y) {
 		// persistent in the map item list.
 		return tileType;
 	}
-	return Object.assign({},tileType,{x:x,y:y,map:map,isPosition:true});
+	return Object.assign({},tileType,{x:x,y:y,area:map.area,map:map,isPosition:true});
 }
 
 
@@ -168,8 +168,10 @@ function main(levelName) {
 		Flogue loading...
 	</div>
 	<table id="guiMain">
-		<tr><td colspan="2">
+		<tr><td>
 			<div id="guiNarrative"></div>
+		</td><td>
+			<div id="guiControls"></div>
 		</td></tr>
 		<tr>
 			<td>
@@ -180,20 +182,12 @@ function main(levelName) {
 					<div id="guiDynamic" class="guiInventory"></div>
 				</div>
 			</td><td class="alignTop">
-				<div id="guiControls">
-				</div>
-				<div id="guiStatus">
-				</div>
-				<div id="guiSpells">
-				</div>
-				<div id="guiExperience">
-				</div>
-				<div id="guiInfo">
-				</div>
-				<div id="guiMiniMap">
-				</div>
-				<div id="guiMiniMapCaption">
-				</div>
+				<div id="guiStatus"></div>
+				<div id="guiSpells"></div>
+				<div id="guiExperience"></div>
+				<div id="guiInfo"></div>
+				<div id="guiMiniMap"></div>
+				<div id="guiMiniMapCaption"></div>
 			</td>
 		</tr>
 	</table>

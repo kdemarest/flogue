@@ -30,6 +30,7 @@ body {
 }
 #guiMap {
 	display: inline-block;
+	cursor: crosshair;
 }
 .monName {
 	font-family: 'Raleway', sans-serif;
@@ -38,21 +39,27 @@ body {
 	margin-right: 16px;
 }
 #guiInfo.monColor, .monColor {
-	color: #dc9a38;
-	border-color: #dc9a38;
+	color: cyan; /* #dc9a38; */
+	border-color: cyan;
 }
 
 #guiNarrative {
+	display: inline-block;
 	white-space: pre;
 	font-family: 'Raleway', sans-serif;
 	font-size: 14px;
 	line-height: 14px;
 	height: 56px;
-	width: 100%;
+	width: 816px;
 	margin: 0px 0px;
+	margin-left: 8px;
+	margin-right: 8px;
 	overflow-y: scroll;
 	overflow-x: auto;
 	margin-bottom: 10px;
+}
+#guiControls {
+	display: inline-block;
 }
 #guiNarrative b {
 	color: orange;
@@ -82,14 +89,14 @@ body {
     white-space: pre-wrap;
 }
 #guiStatus {
-	width: 180px;
-	height: 160px;
+	width: 240px;
+	height: 140px;
 	overflow-y: hidden;
 	font-family: 'Raleway', sans-serif;
 	font-size: 14px;
 }
 #guiSpells {
-	width: 180px;
+	width: 240px;
 	height: 100px;
 	display: block;
 	white-space: pre;
@@ -99,8 +106,15 @@ body {
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
+#guiSpells img.spellRecharge {
+	block: inline-block;
+    height: 16px;
+    margin-right: 8px;
+    vertical-align:middle;
+}
+
 #guiExperience {
-	width: 180px;
+	width: 240px;
 	padding-top: 10px;
 	padding-bottom: 10px;
 	white-space: pre;
@@ -121,16 +135,16 @@ body {
 }
 
 #guiInfo {
-	width: 180px;
-	height: 160px;
+	width: 240px;
+	height: 180px;
 	padding-top: 10px;
 	padding-bottom: 10px;
-	white-space: pre;
+	white-space: normal;
 	border-top: 1px solid #d2d2d2;
 	color: #d2d2d2;
 	font-family: 'Raleway', sans-serif;
 	font-size: 14px;
-	overflow-y: hidden;
+	overflow-y: auto;
 	overflow-x: hidden;
 }
 #guiMiniMap {
@@ -223,7 +237,7 @@ body {
 	background: #b30000; 
 }
 
-.invSpacer {
+table .inv tbody tr td.invSpacer {
 	padding-top: 16px;
 }
 
@@ -334,7 +348,6 @@ table .inv tbody tr td {
 	padding-left: 2px;
 	padding-right: 8px;
 	white-space: nowrap;
-	vertical-align: bottom;
 	padding-bottom: 1px;
 }
 table .inv tbody tr .right {
@@ -349,7 +362,7 @@ table .inv tbody tr .ctr {
 	-webkit-box-sizing: border-box;
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;
-	width: 100px;
+	width: 100%;
 	height: 20px;
 	padding: 2px;
 	background: #ddd;

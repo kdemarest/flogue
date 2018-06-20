@@ -292,8 +292,9 @@ let spriteAttach;
 let spriteOnStage;
 let spriteMakeInWorld;
 
-class ViewMap {
+class ViewMap extends ViewObserver {
 	constructor(divId,imageRepo,worldOverlayAddFn,worldOverlayRemoveFn) {
+		super();
 		this.worldOverlayAddFn = worldOverlayAddFn;
 		this.worldOverlayRemoveFn = worldOverlayRemoveFn;
 		this.divId = divId;
@@ -301,10 +302,46 @@ class ViewMap {
 		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
 		document.getElementById(this.divId).appendChild(this.app.view);
 		this.setDimensions();
+		this.hookEvents();
+		this.spriteHooks();
+	}
 
-
+	hookEvents() {
 		let self = this;
+		$('#'+this.divId+' canvas').mousemove( function(e) {
+			let offset = $(this).offset(); 
+			let mx = Math.floor((e.pageX - offset.left)/TILE_DIM);
+			let my = Math.floor((e.pageY - offset.top)/TILE_DIM);
 
+			if( self.observer ) {
+				let observer = self.observer;
+				let area = observer.area;
+				let x = (observer.x-self.sd) + mx;
+				let y = (observer.y-self.sd) + my;
+				guiMessage( null, 'hide' );
+				if( observer.canPerceivePosition(x,y) ) {
+					let entity = new Finder(area.entityList,observer).at(x,y).canPerceiveEntity().first || new Finder(area.map.itemList,observer).at(x,y).canPerceiveEntity().first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
+					if( entity ) {
+						console.log( x,y,entity.name);
+						guiMessage( null, 'show', entity );
+						guiMessage( null, 'pick', { xOfs: x-observer.x, yOfs: y-observer.y } );
+					}
+				}
+			}
+		});
+		$('#'+this.divId+' canvas').mouseout( function(e) {
+			guiMessage(null,'hide',null);
+			console.log('mouse out of canvas');
+		});
+		$('#'+this.divId+' canvas').click( function(e) {
+			var e = $.Event("keydown");
+			e.key = 'Enter';
+			$(document).trigger(e);
+		});
+	}
+
+	spriteHooks() {
+		let self = this;
 		spriteDeathCallback = function(spriteList) {
 			if( !spriteList ) return;
 			Array.filterInPlace( spriteList, sprite => {
@@ -418,14 +455,6 @@ class ViewMap {
 			// but only if real time is not stopped.
 			animationTick(delta/60);
 		});
-
-		$('#'+this.divId).mousemove( function(event) {
-			var offset = $(this).offset();
-			let x = (event.pageX - offset.left);
-			var y = (event.pageY - offset.top);
-			event.xMap = x;
-			event.yMap = y;
-		});
 	}
 
 	setDimensions() {
@@ -456,9 +485,10 @@ class ViewMap {
 	}
 
 	message(msg,payload) {
+		super.message(msg,payload);
 		if( msg=='zoom' ) {
 			this.setZoom(this.zoom+1);
-			this.render(this.observer);
+			this.render();
 		}
 		if( msg == 'overlayRemove' ) {
 			this.worldOverlayRemoveFn( a => a.group==payload.group );
@@ -469,19 +499,24 @@ class ViewMap {
 		if( msg == 'show' ) {
 			this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
 			this.worldOverlayAddFn('guiSelect', payload.x,payload.y, StickerList.selectBox.img);	
-			this.render(this.observer);
+			console.log('ViewMap show');
+			this.render();
 		}
 		if( msg == 'hide' ) {
 			this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
-//			this.render(this.observer);
+			console.log('ViewMap hide');
+			this.render();
+		}
+		if( msg == 'render' ) {
+			this.render();
 		}
 	}
 
-	draw(drawList,observer) {
+	draw(drawList) {
 
 		let maxLight = MaxSightDistance;
 		this.drawListCache = drawList;
-		this.observer = observer;
+		let observer = this.observer;
 
 		if( this.zoom === undefined ) {
 			this.setZoom(1);
@@ -528,9 +563,16 @@ class ViewMap {
 
 		this.app.stage.children.sort( (a,b) => a.zOrder-b.zOrder );
 	}
-	render(observer) {
+	render() {
+		//var focused =  $( document.activeElement ) ;
+		//if( !focused || focused.length == 0 ) {
+		//	console.log('re-focused from ',focused);
+		//	$('#'+this.divId+' canvas').focus();
+		//}
+
+		let observer = this.observer;
 		let area = observer.area;
 		let drawList = createDrawList(observer,area.map,area.entityList);
-		this.draw(drawList,observer);
+		this.draw(drawList);
 	}
 }

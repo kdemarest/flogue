@@ -39,15 +39,15 @@ class Gui {
 		this.view.full = new ViewFull('#guiControls','#guiMain',);
 		this.view.zoom = new ViewZoom('#guiControls');
 		this.view.narrative = new ViewNarrative('guiNarrative');
-		this.view.map = new ViewMap('guiMap',this.imageRepo,worldOverlayAdd,worldOverlayRemove);
 		this.view.sign = new ViewSign('guiSign');
-		this.view.miniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',this.imageRepo);
 		this.view.spells = new ViewSpells('guiSpells');
+		this.view.range = new ViewRange();
 		this.view.experience = new ViewExperience('guiExperience')
 		this.view.info = new ViewInfo('guiInfo')
 		this.view.status = new ViewStatus('guiStatus');
-		this.view.range = new ViewRange();
 		this.view.inventory = new ViewInventory('guiInventory',this.imageRepo,onItemChoose);
+		this.view.map = new ViewMap('guiMap',this.imageRepo,worldOverlayAdd,worldOverlayRemove);
+		this.view.miniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',this.imageRepo);
 	}
 
 	makeDynamicGui() {
@@ -75,6 +75,7 @@ class Gui {
 			console.log( "Error: Message target "+target+" does not exist." );
 			return;
 		}
+		console.log(message);
 		Object.each( this.view, (view,viewId) => {
 			if( view.message && (!target || target==viewId) ) {
 				view.message(message,payload);
@@ -85,21 +86,21 @@ class Gui {
 
 	render() {
 		let area = this.getPlayer().area;
-		let observer = this.spectator;
+		guiMessage( null, 'observer', this.spectator );
 
 		area.vis.cacheVis();
 
 		this.view.narrative.render();
-		this.view.status.render(observer,area.entityList);
-		this.view.sign.render(observer);
-		this.view.spells.render(observer);
-		this.view.experience.render(observer);
-		this.view.info.render(observer);
-		this.view.inventory.render(observer);
-		this.view.range.render(observer);
-		this.view.map.render(observer);
-		this.view.miniMap.render(observer);	// must be after viewMap so the visibility
-		this.view.dynamic.render(observer);
+		this.view.sign.render();
+		this.view.spells.render();
+		this.view.range.render();
+		this.view.experience.render();
+		this.view.info.render();
+		this.view.status.render(area.entityList);
+		this.view.inventory.render();
+		this.view.map.render();
+		this.view.miniMap.render();	// must be after viewMap so the visibility
+		this.view.dynamic.render();
 	}
 
 	tick() {

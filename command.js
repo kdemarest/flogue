@@ -284,7 +284,6 @@ class UserCommandHandler {
 
 		if( cmd.needsTarget && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) ) {
 			this.viewRange.prime(
-				observer,
 				cmd.targetRange(cmd.commandItem),
 				() => cmd.needsTarget && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) );
 			let result = this.pickTarget( this.keyToCommand[event.key], observer );

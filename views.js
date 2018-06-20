@@ -2,11 +2,37 @@ function getCastableSpellList(entity) {
 	return new Finder(entity.inventory).filter( item=>item.isSpell && item.effect && item.effect.op && !item.effect.isBlank );
 }
 
-class ViewNarrative {
+class ViewObserver {
+	constructor() {
+		this.observerStack = [];
+		this.observerOverride = null;
+	}
+	get observer() {
+		return this.observerOverride || this.observerStack[0];
+	}
+	override(observer) {
+		this.observerOverride = observer;
+	}
+	push(observer) {
+		this.observerStack.unshift(observer);
+	}
+	pop(observer) {
+		this.observerStack.shift(observer);
+	}
+	message(msg,payload) {
+		if( msg == 'observer' && payload !== this.observer ) {
+			this.push(payload);
+		}
+	}
+}
+
+class ViewNarrative extends ViewObserver {
 	constructor(divId) {
+		super();
 		this.divId = divId;
 	}
 	message(msg,payload) {
+		super.message(msg,payload);
 		if( msg=='receive' ) {
 			let history = payload;
 			while( history.length > 50 ) {
@@ -22,11 +48,13 @@ class ViewNarrative {
 	}
 }
 
-class ViewSign {
+class ViewSign extends ViewObserver {
 	constructor(divId) {
+		super();
 		this.divId = divId;
 	}
-	render(observer) {
+	render() {
+		let observer = this.observer;
 		let signList = new Finder(observer.entityList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
 		if( !signList.count ) {
 			signList = new Finder(observer.map.itemList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
@@ -41,20 +69,24 @@ class ViewSign {
 	}
 }
 
-class ViewSpells {
+class ViewSpells extends ViewObserver {
 	constructor(spellDivId) {
+		super();
 		this.MAX_SLOTS = 5;
 		this.spellDivId = spellDivId;
 	}
-	render(observer) {
+	render() {
+		let observer = this.observer;
 		$('#'+this.spellDivId).empty();
 		let spellList = getCastableSpellList(observer);
 		for( let i=0 ; i<spellList.all.length && i<this.MAX_SLOTS ; ++i ) {
 			let spell = spellList.all[i];
+			let pct = Math.floor( (1 - ( (spell.rechargeLeft||0) / (spell.rechargeTime||10) )) * 10 )*10;
+			let img = '<img class="spellRecharge" src="tiles/'+StickerList['slice'+pct].img+'">';
 			let text = 'F'+(i+1)+' '+spell.effect.name+'\n';
 			let lit = observer.commandItem == spell && spell.isRecharged();
 			let unlit = !spell.isRecharged();
-			$('#'+this.spellDivId).append('<div class="spell'+(unlit?' unlit':(lit?' lit':''))+'">'+text+'</div>');
+			$('#'+this.spellDivId).append('<div class="spell'+(unlit?' unlit':(lit?' lit':''))+'">'+img+text+'</div>');
 		}
 	}
 }
@@ -133,19 +165,29 @@ class ViewFull {
 }
 
 
-class ViewExperience {
+class ViewExperience extends ViewObserver {
 	constructor(divId) {
+		super();
 		this.divId = divId;
 		this.experience = 0;
 		this.level = -1;
 	}
 	message(msg,payload) {
+		super.message(msg,payload);
 		if( msg=='show' ) {
-			this.render(payload);
+			this.override(payload);
+			this.render();
+		}
+		if( msg=='hide' ) {
+			this.override(null);
+			this.render();
 		}
 	}
-	render(entity) {
-		if( !entity.isUser() ) {
+	render() {
+		let entity = this.observer;
+		if( !entity ) return;
+
+		if( entity.isTileType || entity.isItemType || (entity.isMonsterType && !entity.isUser()) ) {
 			$('#'+this.divId).show().html('<span class="monName monColor">'+String.capitalize(entity.name)+'</span>');
 			return;
 		}
@@ -169,49 +211,76 @@ class ViewExperience {
 }
 
 
-class ViewInfo {
+class ViewInfo extends ViewObserver {
 	constructor(infoDivId) {
+		super();
 		this.infoDivId = infoDivId;
 	}
 	message(msg,payload) {
+		super.message(msg,payload);
 		if( msg=='show' ) {
-			this.render(payload);
+			this.override(payload);
+			this.render();
+		}
+		if( msg=='hide' ) {
+			this.override(null);
+			this.render();
 		}
 	}
-	render(entity) {
+	render() {
+		let entity = this.observer;
+		console.log('ViewInfo renders ',entity.name);
+
 		function test(t,text) {
 			if( t ) {
 				conditionList.push(text);
 			}
 		}
+
 		$('#'+this.infoDivId).empty().removeClass('monColor healthWarn healthCritical');
-		let s = "";
-		s += "Health: "+entity.health+" of "+entity.healthMax+"\n";
-		if( entity.isUser() ) {
-			s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R\n";
-			let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
-			s += "Shield: "+(entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block\n";
-			let weapon = entity.calcDefaultWeapon();
-			s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"\n";
+		if( entity.isTileType ) {
+			return;
 		}
-		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+'\n';
+
+		if( entity.isItemType ) {
+			let ex = itemExplain(entity);
+			let s = ex.icon+'<br>'+
+				ex.description+'<br>'+
+				(ex.damage ? ex.damage+' '+ex.damageType+' damage '+ex.aoe : ( ex.armor ? ex.armor+' armor' : '' ))+'<br>'+
+				ex.bonus+' '+(ex.recharge ? ex.recharge+' recharge' : '');
+			$('#'+this.infoDivId).show().html(s);
+			return;
+		}
+
+		let s = "";
+		s += "Health: "+entity.health+" of "+entity.healthMax+"<br>";
+		if( entity.isUser() ) {
+			s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R<br>";
+			let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
+			s += "Shield: "+(entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block<br>";
+			let weapon = entity.calcDefaultWeapon();
+			s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"<br>";
+		}
+		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
+
+		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+'<br>';
 		let conditionList = [];
+		test(entity.attitude==Attitude.ENRAGED,'<b>enraged</b>');
+		test(entity.attitude==Attitude.CONFUSED,'<b>confused</b>');
+		test(entity.attitude==Attitude.PANICKED,'<b>panicked</b>');
 		test(entity.invisible,'invis');
-		test(entity.speed<1,'slow');
-		test(entity.speed>1,'fast');
 		test(entity.senseBlind,'blind');
 		test(entity.senseXray,'xray');
 		test(entity.senseItems,'treas');
 		test(entity.senseLife,'bat');
 		test(entity.regenerate>MonsterTypeList[entity.typeId].regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
-		test(entity.attitude==Attitude.ENRAGED,'enraged');
-		test(entity.attitude==Attitude.CONFUSED,'confused');
-		test(entity.attitude==Attitude.PANICKED,'panicked');
-		s += conditionList.join(',')+'\n';
-		s += entity.resist ? "Resist: "+entity.resist+'\n' : '';
-		s += entity.immune ? "Immune: "+entity.immune+'\n' : '';
-		s += entity.vuln ? "Vulnerable: "+entity.vuln+'\n' : '';
-		s += "Gold: "+Math.floor(entity.goldCount||0)+"\n";
+		s += conditionList.join(',')+'<br>';
+		s += entity.resist ? "Resist: "+entity.resist+'<br>' : '';
+		s += entity.immune ? "Immune: "+entity.immune+'<br>' : '';
+		s += entity.vuln ? "Vulnerable: "+entity.vuln+'<br>' : '';
+		if( entity.isUser() ) {
+			s += "Gold: "+Math.floor(entity.goldCount||0)+"<br>";
+		}
 		if( !entity.isUser() ) {
 			$('#'+this.infoDivId).addClass('monColor');
 		}
@@ -231,20 +300,22 @@ class ViewInfo {
 
 }
 
-class ViewStatus {
+class ViewStatus extends ViewObserver {
 	constructor(divId) {
+		super();
 		this.divId = divId;
 		this.slotList = [];
 		this.slotMax = 10;
 	}
 
-	render(observer,entityList) {
+	render(entityList) {
+		let observer = this.observer;
+
 		// We both exclude and then prepend the observer to make sure the observer is first in the list.
 		let f = new Finder(entityList,observer).isAlive().exclude(observer).prepend(observer)
 				.canPerceiveEntity().filter(e=>e.id==observer.id || e.inCombat).byDistanceFromMe().keepTop(this.slotMax);
 
 		// Remove unused slots.
-		guiMessage(null,'hide');
 		Array.filterInPlace( this.slotList, slot => {
 			if( !f.includesId( slot.entityId ) ) {
 				$(slot).remove();
@@ -286,8 +357,9 @@ class ViewStatus {
 	}
 }
 
-class ViewMiniMap {
+class ViewMiniMap extends ViewObserver {
 	constructor(divId,captionDivId,imageRepo) {
+		super();
 		this.divId = divId;
 		this.captionDivId = captionDivId;
 		this.caption = '';
@@ -301,8 +373,8 @@ class ViewMiniMap {
 		this.cleared = false;
 		this.xLen = area.map.xLen;
 		this.yLen = area.map.yLen;
-		this.scale = Math.max(this.yLen,this.xLen) < 2000 ? 2 : 1;
 		let dim = Math.max(this.xLen,this.yLen);
+		this.scale = Math.max(1,Math.floor( 240/dim ));
 		this.xLenCanvas = this.scale*dim;
 		this.yLenCanvas = this.scale*dim;
 		$( '#'+this.divId)
@@ -318,11 +390,13 @@ class ViewMiniMap {
 		this.create(area);
 	}
 	message(msg,payload) {
+		super.message(msg,payload);
 		if( msg == 'setArea' ) {
 			this.setArea(payload);
 		}
 	}
-	render(observer) {
+	render() {
+		let observer = this.observer;
 		let site = observer.area.getSiteAt(observer.x,observer.y);
 		$('#'+this.captionDivId).show().html(
 			this.caption + (site ? '<br>'+site.id+'<br>'+site.denizenList.map( entity=>entity.name ).join(',') : '')
@@ -402,9 +476,27 @@ class ViewMiniMap {
 	}
 }
 
+function itemExplain(item) {
+	function icon(file) {
+		return file ? '<img src="tiles/gui/icons/'+file+'">' : '';
+	}
+	return {
+		icon: 			icon(item.icon),
+		description: 	((item._count||0)>1 ? item._count+'x ' : '')+String.capitalize(item.name),
+		damage: 		item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : ''),
+		damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
+		armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUTS,item.isShield) : '',
+		aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? ' ('+item.effect.effectShape+')' : '',
+		bonus: 			item.isArmor && item.effect ? item.effect.name : (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:''),
+		recharge: 		item.rechargeTime ? item.rechargeTime : '',
+	};
+}
 
-class ViewInventory {
+
+
+class ViewInventory extends ViewObserver {
 	constructor(inventoryDivId,imageRepo,onItemChoose) {
+		super();
 		this.inventoryDivId = inventoryDivId;
 		this.imageRepo = imageRepo;
 		this.onItemChoose = onItemChoose;
@@ -442,10 +534,13 @@ class ViewInventory {
 		}
 		this.div.hide();
 	}
-	render(observer) {
+	render() {
 		function order(typeId) {
 			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
 		}
+
+		let observer = this.observer;
+
 		if( !this.visibleFn || !this.visibleFn() ) {
 			this._hide();
 			return;
@@ -499,7 +594,7 @@ class ViewInventory {
 				typeIcon.click( function() {
 					$('.invCategories img').removeClass('iconLit');
 					self.filterId = filterId;
-					self.render(observer);
+					self.render();
 				})
 				.appendTo(cat);
 			});
@@ -511,29 +606,25 @@ class ViewInventory {
 		let lastTypeId = '';
 		for( let i=0 ; i<this.inventory.count ; ++i ) {
 			let item = this.inventory.all[i];
+			let ex = itemExplain(item);
+
 			let s = '';
 			s += '<tr>';
 			let spacer = (!lastTypeId || lastTypeId==item.typeId) ? '' : ' class="invSpacer"';
 			lastTypeId = item.typeId;;
-			s += '<td>'+(item.inSlot ? icon('marked.png') : 
+			s += '<td'+spacer+'>'+(item.inSlot ? icon('marked.png') : 
 						(item.slot ? icon('unmarked.png') : 
 						(!this.everSeen[item.id]?'<span class="newItem">NEW</span>' : ''
 						)))+'</td>';
-			s += '<td class="right">'+this.inventorySelector.charAt(i)+'.'+'</td>';
-			s += '<td'+spacer+'>'+icon(item.icon)+'</td>';
-			s += '<td>'+(item._count>1 ? item._count+'x ' : '')+item.name+'</td>';
+			s += '<td'+spacer+' class="right">'+this.inventorySelector.charAt(i)+'.'+'</td>';
+			s += '<td'+spacer+'>'+ex.icon+'</td>';
+			s += '<td'+spacer+'>'+ex.description+ex.aoe+'</td>';
 			//s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
-			s += '<td class="ctr">'+(item.isArmor||item.isShield?item.calcReduction(DamageType.CUTS,item.isShield):'')+'</td>';
-			let damage = item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : '');
-			s += '<td class="right">'+damage+'</td>';
-			let dtype = item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : '');
-			s += '<td>'+dtype+'</td>';
-			let bonus = (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:'&nbsp;');
-			if( item.isArmor && item.effect ) {
-				bonus = item.effect.name;
-			}
-			s += '<td class="right">'+bonus+'</td>';
-			s += '<td class="ctr">'+(item.rechargeTime?item.rechargeTime:'&nbsp;')+'</td>';
+			s += '<td'+spacer+' class="ctr">'+ex.armor+'</td>';
+			s += '<td'+spacer+' class="right">'+ex.damage+'</td>';
+			s += '<td'+spacer+'>'+ex.damageType+'</td>';
+			s += '<td'+spacer+' class="right">'+ex.bonus+'</td>';
+			s += '<td'+spacer+' class="ctr">'+(ex.recharge || '&nbsp;')+'</td>';
 			s += '</tr>';
 
 			$(s).appendTo(tBody).click( event => this.onItemChoose(event,item) );
@@ -546,8 +637,9 @@ class ViewInventory {
 	}
 }
 
-class ViewRange {
+class ViewRange extends ViewObserver {
 	constructor() {
+		super();
 		this.xOfs = 0;
 		this.yOfs = 0;
 		this.visibleFn = null;
@@ -569,8 +661,20 @@ class ViewRange {
 		this.xOfs = x;
 		this.yOfs = y;
 
+		if( this.observer ) {
+			let observer = this.observer;
+			let area = observer.area;
+			x = observer.x + x;
+			y = observer.y + y;
+			if( observer.canPerceivePosition(x,y) ) {
+				let entity = new Finder(area.entityList,observer).canPerceiveEntity().at(x,y).first || new Finder(area.map.itemList,observer).canPerceiveEntity().at(x,y).first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
+				console.log( "viewRange is showing "+entity.name );
+				guiMessage(null,'show',entity);
+			}
+		}
 	}
-	prime(entity,rangeLimit,visibleFn) {
+	prime(rangeLimit,visibleFn) {
+		let entity = this.observer;
 		this.visibleFn = visibleFn;
 		this.rangeLimit = rangeLimit;
 		if( !this.active ) {
@@ -585,6 +689,16 @@ class ViewRange {
 			else {
 				this.xOfs = 0;
 				this.yOfs = 0;
+			}
+			this.move(0,0);
+		}
+	}
+	message( msg, payload ) {
+		super.message(msg,payload);
+		if( msg == 'pick' ) {
+			this.active = this.visibleFn && this.visibleFn();
+			if( this.active ) {
+				this.move(payload.xOfs-this.xOfs,payload.yOfs-this.yOfs);
 			}
 		}
 	}
@@ -602,12 +716,19 @@ class ViewRange {
 		shootRange(sx,sy,tx,ty,test,add);
 	}
 
-	render(observer) {
+	render() {
+		let observer = this.observer;
 		guiMessage( null, 'overlayRemove', { group: 'guiCrosshair' } );
 		this.active = this.visibleFn && this.visibleFn();
+		if( !this.active && this.activeLast ) {
+			// sadly this is the only way to know that we're no longer showing the range...
+			guiMessage(null,'hide');
+		}
 		if( this.active ) {
 			//console.log("crosshair at "+(observer.x+this.xOfs)+','+(observer.y+this.yOfs));
+			console.log('drawRange');
 			this.drawRange(observer.map,observer.x,observer.y,observer.x+this.xOfs,observer.y+this.yOfs);
 		}
+		this.activeLast = this.active;
 	}
 }

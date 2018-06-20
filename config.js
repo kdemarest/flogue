@@ -66,7 +66,7 @@ ConfigList.ken = () => {
 		friendDensity: 	0.00001,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, weapon.hammer, spell.eFire');
+	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, weapon.hammer, spell.eFire, stuff.sunCrystal');
 	MonsterTypeList.player.inventoryWear = 'weapon.pickaxe,stuff.oilLamp, shield.eAbsorb';
 //	MonsterTypeList.player.experience = 100;
 

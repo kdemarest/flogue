@@ -173,19 +173,23 @@ let effectApply = function(effect,target,source,item) {
 		return effectApplyTo(effect,target,source,item);
 	}
 	let dist = 0;
-	if( effectShape == EffectShape.SMALL ) {
+	if( effectShape == EffectShape.BLAST3 ) {
 		dist = 1;
 	}
-	if( effectShape == EffectShape.MEDIUM ) {
+	if( effectShape == EffectShape.BLAST5 ) {
 		dist = 2;
 	}
-	if( effectShape == EffectShape.LARGE ) {
+	if( effectShape == EffectShape.BLAST7 ) {
 		dist = 3;
 	}
-	if( radius ) {
+	if( dist ) {
+		let area = target.area;
 		for( let y=-dist ; y<=dist ; ++y ) {
 			for( let x=-dist ; x<=dist ; ++x ) {
-				effectApplyTo(source,item,effect,target);
+				let targetList = new Finder(area.entityList).at(target.x+x,target.y+y);
+				targetList.process( t => {
+					effectApplyTo(effect,t,source,item);
+				});
 			}
 		}
 		return;

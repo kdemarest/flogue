@@ -248,7 +248,7 @@ function tick(speed,map,entityList) {
 				item.rechargeLeft = Math.max(0,item.rechargeLeft-1);
 			}
 			if( item.onTick ) {
-				item.onTick.call(item,dt,map,entityList);
+				item.onTick.call(item,dt);
 			}
 		}
 	}
