@@ -1451,7 +1451,7 @@ PlaceTypeList.dwarfSmithy = {
 		f: "flames",
 	},
 	inject: {
-		dwarf: { job: "not a smith", attitude: Attitude.AWAIT, tether: 2 }
+		dwarf: { job: 'smith', attitude: Attitude.AWAIT, tether: 2 }
 	}
 }
 

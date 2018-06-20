@@ -745,7 +745,7 @@
 								if( this.twoOnlyOpposed( x, y, tile => {
 									if( isWall(tile) || isUnknown(tile) ) return 'W';
 									if( isFloor(tile) ) return 'F';
-								}, true) ) {
+								}) ) {
 									console.assert(T.Door == '+');
 									this.setTile(x,y,T.Door);
 									++doorCount;
@@ -774,7 +774,7 @@
 					link[pair] = (link[pair]||0)+1;
 				}
 			} while( reps-- );
-			console.log("Made "+doorCount+" passage doors.");
+			//console.log("Made "+doorCount+" passage doors.");
 		}
 
 		quotaMakePositioned(quota,injectList,mapOffset) {
@@ -1003,7 +1003,7 @@
 				if( isDoor(tile) ) {
 					if( !this.twoOnlyOpposed(x,y,tile => {
 						return isWall(tile) || isUnknown(tile) ? 'W' : ( isFloor(tile) ? 'F' : 'X' );
-					}, true) ) {
+					}) ) {
 						let fn = this.countGaps(x,y) <= 1 ? isWall : isFloor;
 						console.log("Remove: "+fn);
 						this.setTile(x,y,this.majorityNear(x,y,fn) || T.FillFloor);

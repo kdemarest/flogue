@@ -229,7 +229,6 @@ class ViewInfo extends ViewObserver {
 	}
 	render() {
 		let entity = this.observer;
-		console.log('ViewInfo renders ',entity.name);
 
 		function test(t,text) {
 			if( t ) {
@@ -476,7 +475,7 @@ class ViewMiniMap extends ViewObserver {
 	}
 }
 
-function itemExplain(item) {
+function itemExplain(item,buySell) {
 	function icon(file) {
 		return file ? '<img src="tiles/gui/icons/'+file+'">' : '';
 	}
@@ -489,13 +488,14 @@ function itemExplain(item) {
 		aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? ' ('+item.effect.effectShape+')' : '',
 		bonus: 			item.isArmor && item.effect ? item.effect.name : (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:''),
 		recharge: 		item.rechargeTime ? item.rechargeTime : '',
+		price: 			new Picker(item.area.depth).pickPrice(buySell,item),
 	};
 }
 
 
 
 class ViewInventory extends ViewObserver {
-	constructor(inventoryDivId,imageRepo,onItemChoose) {
+	constructor(inventoryDivId,imageRepo,onItemChoose,colFilter) {
 		super();
 		this.inventoryDivId = inventoryDivId;
 		this.imageRepo = imageRepo;
@@ -508,6 +508,7 @@ class ViewInventory extends ViewObserver {
 		this.filterId = '';
 		this.inventoryFn = null;
 		this.visibleFn = null;
+		this.colFilter = colFilter || {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1};
 	}
 	getItemByKey(keyPressed) {
 		let n = this.inventorySelector.indexOf(keyPressed);
@@ -585,13 +586,14 @@ class ViewInventory extends ViewObserver {
 
 		let cat = $('<div class="invCategories"></div>').appendTo(this.div);
 		if( this.allowFilter ) {
+			$(document).off( '.ItemFilter' );
 			ItemFilterOrder.map( filterId => {
 				let typeIcon =  $(icon( filterId=='' ? 'all.png' : ItemTypeList[filterId].icon ));
 				typeIcon.appendTo(this.div)
 				if( self.allowFilter && self.filterId==filterId ) {
 					typeIcon.addClass('iconLit');
 				}
-				typeIcon.click( function() {
+				typeIcon.on( 'click.ItemFilter', null, function() {
 					$('.invCategories img').removeClass('iconLit');
 					self.filterId = filterId;
 					self.render();
@@ -600,34 +602,73 @@ class ViewInventory extends ViewObserver {
 			});
 		}
 
+		if( this.headerComponent ) {
+			this.headerComponent().appendTo(this.div);
+		}
+
+		function colJoin( colList ) {
+			let s = '';
+			Object.each(self.colFilter, (ok,col) => {
+				if( ok ) { s += colList[col]; }
+			});
+			return s;
+		}
+
+		function td(spc,cls,text) {
+			let c = spc||cls ? (' class="'+(spc?'invSpacer':'')+(spc&&cls?' ':'')+(cls?cls:'')+'"') : '';
+			return '<td'+c+'>'+text+'</td>';
+		}
+
+
+
+		let colHead = {
+			slot: 			'<td></td>',
+			key: 			'<td></td>',
+			icon: 			'<td class="right"></td>',
+			description: 	'<td>Description</td>',
+			armor: 			'<td>Armor</td>',
+			damage: 		'<td colspan="2">Damage</td>',
+			bonus: 			'<td class="right">Bonus</td>',
+			charges: 		'<td class="right">Chg</td>',
+			price: 			'<td class="right">Price</td>'
+		};
+
+
 		let table = $( '<table class="inv"></table>' ).appendTo(this.div);
-		let tHead = $('<thead><tr><td></td><td></td><td class="right"></td><td>Description</td><td>Armor</td><td colspan="2">Damage</td><td class="right">Bonus</td><td class="right">Chg</td></tr></thead>' ).appendTo(table);
+		let tHead = $('<thead><tr>'+colJoin(colHead)+'</tr></thead>' ).appendTo(table);
 		let tBody = $('<tbody></tbody>').appendTo(table);
 		let lastTypeId = '';
+
+
 		for( let i=0 ; i<this.inventory.count ; ++i ) {
 			let item = this.inventory.all[i];
-			let ex = itemExplain(item);
+			let ex = itemExplain(item,this.mode);
 
-			let s = '';
-			s += '<tr>';
-			let spacer = (!lastTypeId || lastTypeId==item.typeId) ? '' : ' class="invSpacer"';
+			let cell = {};
+			let spc = lastTypeId && lastTypeId!=item.typeId;
 			lastTypeId = item.typeId;;
-			s += '<td'+spacer+'>'+(item.inSlot ? icon('marked.png') : 
-						(item.slot ? icon('unmarked.png') : 
-						(!this.everSeen[item.id]?'<span class="newItem">NEW</span>' : ''
-						)))+'</td>';
-			s += '<td'+spacer+' class="right">'+this.inventorySelector.charAt(i)+'.'+'</td>';
-			s += '<td'+spacer+'>'+ex.icon+'</td>';
-			s += '<td'+spacer+'>'+ex.description+ex.aoe+'</td>';
-			//s += '<td>'+(item.slot?item.slot:'&nbsp;')+'</td>';
-			s += '<td'+spacer+' class="ctr">'+ex.armor+'</td>';
-			s += '<td'+spacer+' class="right">'+ex.damage+'</td>';
-			s += '<td'+spacer+'>'+ex.damageType+'</td>';
-			s += '<td'+spacer+' class="right">'+ex.bonus+'</td>';
-			s += '<td'+spacer+' class="ctr">'+(ex.recharge || '&nbsp;')+'</td>';
-			s += '</tr>';
 
-			$(s).appendTo(tBody).click( event => this.onItemChoose(event,item) );
+			cell.slot = td( spc, '', 
+				(item.inSlot ? icon('marked.png') : 
+				(item.slot ? icon('unmarked.png') : 
+				(!this.everSeen[item.id]?'<span class="newItem">NEW</span>' : ''
+				)))
+			);
+			cell.key  			= td( spc, 'right', this.inventorySelector.charAt(i)+'.' );
+			cell.icon 			= td( spc, '', ex.icon );
+			cell.description 	= td( spc, '', ex.description+ex.aoe );
+			cell.armor 			= td( spc, 'ctr', ex.armor );
+			cell.damage 		= td( spc, 'right', ex.damage ) + td( spc, '', ex.damageType );
+			cell.bonus 			= td( spc, 'right', ex.bonus );
+			cell.charges 		= td( spc, 'ctr', ex.recharge || '&nbsp;' );
+			cell.price 			= td( spc, 'right', ex.price || '&nbsp;' );
+
+			let s = '<tr>'+colJoin(cell)+'</tr>';
+
+			$(s).appendTo(tBody).click( event => {
+				event.commandItem = item;
+				this.onItemChoose(event);
+			});
 		}
 		if( !this.inventory.count ) {
 			$("<tr><td colspan=4>Pick up some items by walking upon them.</td></tr>").appendTo(tBody);

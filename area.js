@@ -8,7 +8,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		entity.gateTo(area,x,y);
 		let site = area.getSiteAt(x,y);
 		if( site ) {
-			if( site.place && site.place.forbidEnemies ) debugger;
+			//if( site.place && site.place.forbidEnemies ) debugger;
 			site.denizenList.push(entity);
 			entity.homeSiteId = site.id;
 			entity.tether = entity.tether || 2+Math.floor(Math.sqrt(site.marks.length));
@@ -124,7 +124,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	function populateInRooms( siteList, map, count, safeToMakeFn, makeFn, criteriaFn, includeFn ) {
 		let countOriginal = count;
 		let nearList = [];
-		console.log('Sites: '+(siteList.filter(site=>site.isPlace||site.isRoom).length));
+		//console.log('Sites: '+(siteList.filter(site=>site.isPlace||site.isRoom).length));
 		siteList.forEach( site => {
 			if( !includeFn(site) ) {
 				return;
@@ -213,9 +213,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		return safeToMake(map,x,y);
 	}, makeItem, e=>e.isTreasure );
 
-	area.siteList.forEach( site => {
-		console.log( "Site "+site.id+" ["+site.marks.length+"] monsters: "+site.denizenList.length+" items: "+site.treasureList.length );
-	});
+//	area.siteList.forEach( site => {
+//		console.log( "Site "+site.id+" ["+site.marks.length+"] monsters: "+site.denizenList.length+" items: "+site.treasureList.length );
+//	});
 
 	area.gateList = area.map.itemList.filter( item => item.gateDir !== undefined );
 

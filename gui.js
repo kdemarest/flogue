@@ -34,7 +34,7 @@ class Gui {
 		function worldOverlayRemove(fn) {
 			return animationRemove(fn);
 		}
-
+		this.onItemChoose = onItemChoose;
 		this.view.dynamic = DynamicViewList.none;
 		this.view.full = new ViewFull('#guiControls','#guiMain',);
 		this.view.zoom = new ViewZoom('#guiControls');
@@ -56,16 +56,23 @@ class Gui {
 			return false;
 		}
 		let onClose = () => {
-			this.view.dynamic = ViewList.none;
+			this.view.dynamic = DynamicViewList.none;
 		}
-		let v = {divId: 'guiDynamic', player: player, imageRepo: this.imageRepo, onClose: onClose};
+		let v = {
+			divId: 'guiDynamic',
+			player: player,
+			imageRepo: this.imageRepo,
+			onItemChoose: this.onItemChoose,
+			onClose: onClose,
+		};
+		Object.assign(v,player.guiViewCreator);
+
 		if( !DynamicViewList[v.view] ) {
 			console.log( "Error: No such dynamic view "+v.view+" in "+v );
 			delete player.guiViewCreator;
 			return false;
 		}
 
-		Object.assign(v,player.guiViewCreator);
 		this.view.dynamic = DynamicViewList[v.view](v);
 		delete player.guiViewCreator;
 		return true;
@@ -75,7 +82,7 @@ class Gui {
 			console.log( "Error: Message target "+target+" does not exist." );
 			return;
 		}
-		console.log(message);
+		//console.log(message);
 		Object.each( this.view, (view,viewId) => {
 			if( view.message && (!target || target==viewId) ) {
 				view.message(message,payload);

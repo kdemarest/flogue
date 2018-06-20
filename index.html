@@ -123,7 +123,7 @@ function main(levelName) {
 			()=>user.entity,
 		);
 		gui.create(
-			(event,item) => { event.commandItem = item; onUserEvent(event); }
+			(event) => { onUserEvent(event); }
 		);
 		let keyMap = loadKeyMapping("default");
 		user.commandHandler = new UserCommandHandler(keyMap,gui.view.inventory,gui.view.range);
@@ -164,6 +164,7 @@ function main(levelName) {
 </script>
 </head>
 <body>
+	<div class='top'>
 	<div id="guiLoading">
 		Flogue loading...
 	</div>
@@ -191,6 +192,7 @@ function main(levelName) {
 			</td>
 		</tr>
 	</table>
+	</div>
 	<script>
 		main("test");
 	</script>

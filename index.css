@@ -12,13 +12,13 @@ body {
 	display: block;
 }
 .guiButton {
-    border-radius: 8px;
-    border: 2px solid #d2d2d2;
-    margin: 4px;
+	border-radius: 8px;
+	border: 2px solid #d2d2d2;
+	margin: 4px;
 }
 .guiButton:hover {
 	border-width: 3px;
-    margin: 3px;
+	margin: 3px;
 	cursor: pointer;
 	background-color: #222222;
 }
@@ -204,6 +204,37 @@ body {
 	color: black;
 	background-color: orange;
 }
+
+.merchant {
+	font-family: 'Raleway', sans-serif;
+	font-size: 30px;
+	font-weight: 400;
+	text-align: left;
+	qborder-bottom: 1px solid #d2d2d2;
+	padding-bottom: 6px;
+	margin-bottom: 16px;
+	margin-left: 10px;
+}
+
+.merchantOp {
+	font-size: 20px;
+    display: inline-block;
+    vertical-align: top;
+    cursor: pointer;
+	border-radius: 8px;
+	border: 2px solid #d2d2d2;
+	margin: 4px;
+	padding-left: 6px;
+	padding-right: 6px;
+}
+
+.merchantOp:hover {
+	border-width: 3px;
+	margin: 3px;
+	cursor: pointer;
+	background-color: #222222;
+}
+
 .guiInventory {
 	display: none;
 	z-index: 10;

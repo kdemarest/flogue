@@ -354,6 +354,10 @@ class Picker {
 		let base = Math.max(1,this.depth);
 		return base;
 	}
+	pickPrice(buySell,item) {
+		let mult = (item.priceMod||1) * ( buySell=='buy' ? 100 : 30);
+		return item.level * mult;
+	}
 
 	// picks it, but doesn't give it to anyone.
 	// A lootSpec can be a string of the form 3x 40% weapon.dagger, or

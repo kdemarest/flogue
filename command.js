@@ -224,15 +224,25 @@ class UserCommandHandler {
 	}
 
 	evalCommand(observer,event) {
+		let zeroTime = [Command.BUY,Command.SELL,Command.CRAFT,Command.NONE];
+
 		this.observer = observer;		// hack!!
+
+		if( event.command ) {
+			observer.command = event.command;
+			observer.commandItem = event.commandItem || null;
+			observer.commandTarget = event.commandTarget || null;
+			return !zeroTime.includes(event.command);
+		}
+
 		let cmd = this.cmd;
 
 		if( cmd.command == Command.NONE ) {
 			let command = this.keyToCommand[event.key] || Command.NONE;
 			if( !CmdTable[command] ) {
 				observer.command = command;
-				observer.commandItem = null;
-				observer.commandTarget = null;
+				observer.commandItem = event.commandItem || null;
+				observer.commandTarget = event.commandTarget || null;
 				return command !== Command.NONE;
 			}
 			cmd.command = command;

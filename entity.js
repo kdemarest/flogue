@@ -1527,7 +1527,7 @@ class Entity {
 			allyToSwap = f.first;
 		}
 		else
-		if( f.count && f.first.job ) {
+		if( f.count && this.isUser() && f.first.job ) {
 			this.guiViewCreator = { view: f.first.job, entity: f.first };
 			return false;
 		}
@@ -1766,6 +1766,28 @@ class Entity {
 					}
 					this.don(item,item.slot);
 				}
+				break;
+			}
+			case Command.BUY: {
+				let item = this.commandItem;
+				let seller = this.commandTarget;
+				console.assert( item.owner && !item.owner.isMap );
+				console.assert( seller.id == item.owner.id );
+				console.assert( new Finder(seller.inventory).isId(item.id).count );
+				let price = new Picker(this.area.depth).pickPrice('buy',item);
+				this.goldCount = (this.goldCount||0) - price;
+				seller.goldCount = (seller.goldCount||0) + price;
+				item.giveTo(this,this.x,this.y);
+				break;
+			}
+			case Command.SELL: {
+				let item = this.commandItem;
+				let buyer = this.commandTarget;
+				let price = new Picker(this.area.depth).pickPrice('sell',item);
+				console.assert( new Finder(this.inventory).isId(item.id).count );
+				buyer.goldCount = (buyer.goldCount||0) - price;
+				this.goldCount = (this.goldCount||0) + price;
+				item.giveTo(buyer,buyer.x,buyer.y);
 				break;
 			}
 			case Command.PRAY: {
