@@ -211,7 +211,7 @@ ThemeList.refugeeCamp = {
 	sign: 		'Bring your own supplies. We won\'t feed you.',
 	enemyDensity: 	0.00,
 	friendDensity: 	0.15,
-	itemDensity:    0.00,
+	itemDensity:    0.0001,
 }
 
 ThemeList.refugeeCampSlaughter = {
@@ -241,6 +241,7 @@ ThemeList.dwarfTown = {
 	monsters: 	['isDwarf'],
 	enemyDensity: 	0.00,
 	friendDensity: 	0.05,
+	itemDensity:    0.0001,
 }
 
 ThemeList.corePits = {
@@ -383,6 +384,24 @@ ThemeList.coreMixedRooms = {
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
+
+ThemeList.coreHellscape = {
+	dim: 				Math.randInt(80),
+	architecture: 		"cave",
+	floorDensity: 		0.58,
+	seedPercent: 		0.30,
+	passageWander: 		50,
+	passageWidth2: 		50,
+	placeDensity: 		0.05,
+	rCOMMON: 		'demonNest, firePit',
+	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
+	rRARE: 			'etherHive',
+	prefer: 		['flames','mud'],
+	monsters: 		['isDemon','isPlanar'],
+	enemyDensity: 	0.10,
+	friendDensity: 	0.05,
+}
+
 
 
 //=========================

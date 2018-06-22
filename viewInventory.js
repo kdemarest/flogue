@@ -177,6 +177,9 @@ class ViewInventory extends ViewObserver {
 			})
 			.mouseover( event => {
 				guiMessage(null,'show',item);
+			})
+			.mouseout( event => {
+				guiMessage(null,'hide');
 			});
 		}
 		if( !this.inventory.count ) {

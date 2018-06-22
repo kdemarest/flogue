@@ -497,9 +497,10 @@ class ViewMap extends ViewObserver {
 			this.worldOverlayAddFn(payload.group,payload.x,payload.y,payload.img);	
 		}
 		if( msg == 'show' ) {
-			this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
-			this.worldOverlayAddFn('guiSelect', payload.x,payload.y, StickerList.selectBox.img);	
-			console.log('ViewMap show');
+			if( !payload.isItemType || (payload.owner && payload.owner.isMap) ) {
+				this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
+				this.worldOverlayAddFn('guiSelect', payload.x,payload.y, StickerList.selectBox.img);	
+			}
 			this.render();
 		}
 		if( msg == 'hide' ) {

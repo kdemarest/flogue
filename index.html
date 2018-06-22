@@ -135,6 +135,7 @@ function main(levelName) {
 		let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
 		let area = world.createArea(config.startingDepth,ThemeList[themeId],true,[]);
 		user.entity = new Entity( area.depth, MonsterTypeList.player, null, area.jobPicker );
+		Gab.observer = user.entity;
 		world.gateTo(area.id,...area.map.pickPosToStartGame());
 		Narrative.addRecipient(
 			user.entity,

@@ -491,11 +491,11 @@ const OreList = Fab.add( '', {
 });
 
 const GemQualityList = Fab.add( '', {
-	"flawed": 		{ level:  0, rarity: 1.0, priceMultiplier: 0.5 },
-	"average": 		{ level:  5, rarity: 0.8, priceMultiplier: 0.7 },
-	"large": 		{ level: 10, rarity: 0.6, priceMultiplier: 0.9 },
-	"flawless": 	{ level: 15, rarity: 0.4, priceMultiplier: 1.2 },
-	"sublime": 		{ level: 20, rarity: 0.2, priceMultiplier: 1.5 }
+	"flawed": 		{ level:  0, rarity: 1.0, xPrice: 0.5 },
+	"average": 		{ level:  5, rarity: 0.8, xPrice: 1.0 },
+	"large": 		{ level: 10, rarity: 0.6, xPrice: 2.0 },
+	"flawless": 	{ level: 15, rarity: 0.4, xPrice: 4.0 },
+	"sublime": 		{ level: 20, rarity: 0.2, xPrice: 9.0 }
 });
 
 const GemList = Fab.add( '', {
@@ -743,7 +743,7 @@ const ItemTypeList = {
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/headgear/helmet2_etched.png", icon: 'helm.png' },
 	"armor": 	{ symbol: 'a', isTreasure: 1, xPrice: 8.0, namePattern: "{variety} armor{+plus}{?effect}", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
-				effectChance: 1.0,
+				effectChance: 0.10,
 				armorMultiplier: 0.60,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				imgGet: (self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"), imgChoices: ArmorList, icon: 'armor.png' },
@@ -766,7 +766,7 @@ const ItemTypeList = {
 				useVerb: 'wear', triggerOnUse: true, effectOverride: { duration: true },
 				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList, icon: 'ring.png' },
 // INGREDIENTS
-	"stuff": 	{ symbol: 't', isTreasure: 1, xPrice: 0.4, namePattern: "{variety}{?effect}", varieties: StuffList,
+	"stuff": 	{ symbol: 't', isTreasure: 1, isStuff: 1, xPrice: 0.4, namePattern: "{variety}{?effect}", varieties: StuffList,
 				imgGet: (self,img) => (img || (self?self.variety.img:'') || 'item/misc/misc_rune.png'), imgChoices: StuffList, icon: 'stuff.png' },
 
 };

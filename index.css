@@ -42,6 +42,12 @@ body {
 	color: cyan; /* #dc9a38; */
 	border-color: cyan;
 }
+.better {
+	color: #3bf93b
+}
+.worse {
+	color: #f93b3b;
+}
 
 #guiNarrative {
 	display: inline-block;
@@ -200,6 +206,10 @@ body {
 }
 .gotExperience {
 	color: #6eff00;
+}
+.readyToLevel {
+	background-color: lightgreen;
+	color: black;
 }
 .gotLevel {
 	color: #6eff00;

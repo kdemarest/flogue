@@ -58,7 +58,7 @@ let JobTypeList = {
 	},
 	jeweler: {
 		isMerchant: true,
-		buyTest: item => item.isRing,
+		buyTest: item => item.isRing || item.isGem,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Rings, amulets, you name it!",
 		inventoryLoot: '40x ring, 100x 50% ring'

@@ -10,6 +10,9 @@ class ViewObserver {
 	get observer() {
 		return this.observerOverride || this.observerStack[0];
 	}
+	get trueObserver() {
+		return this.observerStack[0];
+	}
 	override(observer) {
 		this.observerOverride = observer;
 	}
@@ -53,8 +56,18 @@ class ViewSign extends ViewObserver {
 		super();
 		this.divId = divId;
 	}
+	message(msg,payload) {
+		super.message(msg,payload);
+		if( msg=='clearSign' ) {
+			guiMessage( null, 'hide' );
+			this.observer.lastBumpedId = null;
+		}
+	}
 	render() {
 		let observer = this.observer;
+		if( !observer ) {
+			return;
+		}
 		let lastBumpedId = observer.lastBumpedId; 
 		let signList = { count:0 };
 		if( lastBumpedId ) {
@@ -213,7 +226,8 @@ class ViewExperience extends ViewObserver {
 
 		let exp = '';
 		if( entity.experience !== undefined ) {
-			exp = "Exp: "+Math.percent( entity.experienceProgress(), 0 )+'%';
+			let eprog = entity.experienceProgress();
+			exp = "Exp: <span"+(eprog>=1.0?' class="readyToLevel"':'')+">"+Math.percent( eprog, 0 )+'%</span>';
 			if( entity.experience > this.experience ) {
 				exp = '<span class="gotExperience">'+exp+'</span> (+'+Math.round(entity.experience-this.experience)+')';
 				if( entity.experienceProgress() >= 1.0 ) {
@@ -257,12 +271,45 @@ class ViewInfo extends ViewObserver {
 			return;
 		}
 
+		function itemSummarize(you,item,comp) {
+			let mine = you.inventory.find(i=>i.id==item.id)
+			let ex = itemExplain(item);
+			let s = ex.icon+'<br>';
+			s += ex.description+'<br>';
+			let dam,arm;
+			if( ex.damage ) {
+				dam = ex.damage+' '+ex.damageType+' damage'+(ex.aoe ? ' '+ex.aoe : '');
+				if( comp ) {
+					if( comp.damage > item.damage ) dam = '<span class="worse">'+dam+'</span>';
+					if( comp.damage < item.damage ) dam = '<span class="better">'+dam+'</span>';
+				}
+			}
+			if( ex.armor ) {
+				arm = ex.armor+' armor';
+				if( comp ) {
+					if( comp.armor > item.armor ) arm = '<span class="worse">'+arm+'</span>';
+					if( comp.armor < item.armor ) arm = '<span class="better">'+arm+'</span>';
+				}
+			}
+			if( dam || arm ) {
+				s += dam+arm+'<br>';
+			}
+			s += (ex.bonus ? ex.bonus+' ' : '')+(ex.recharge ? ex.recharge+' recharge' : '');
+			if( !mine ) {
+				s = '<div class="monColor">'+s+'</div>';
+			}
+			return s;
+		}
+
 		if( entity.isItemType ) {
-			let ex = itemExplain(entity);
-			let s = ex.icon+'<br>'+
-				ex.description+'<br>'+
-				(ex.damage ? ex.damage+' '+ex.damageType+' damage '+ex.aoe : ( ex.armor ? ex.armor+' armor' : '' ))+'<br>'+
-				ex.bonus+' '+(ex.recharge ? ex.recharge+' recharge' : '');
+			let you = this.trueObserver;
+			let item = entity;
+			let s = itemSummarize(you,item);
+			if( item.slot && !you.inventory.find(i=>i.id==item.id) ) {
+				let f = you.getItemsInSlot(item.slot);
+				if( f.count ) { s += '<hr>'; }
+				f.process( i=>{ s += '<br>'+itemSummarize(you,i,item); });
+			}
 			$('#'+this.infoDivId).show().html(s);
 			return;
 		}

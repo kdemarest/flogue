@@ -77,6 +77,87 @@ let Plan = (new class {
 					make: [
 						{ typeFilter: 'gateway', themeId: 'spooky' },
 						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				10: {
+					themeId: 'coreMixedRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				11: {
+					themeId: 'coreMixedRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				12: {
+					themeId: 'coreMixedRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				13: {
+					themeId: 'coreMixedRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				14: {
+					themeId: 'coreMixedRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				15: {
+					themeId: 'coreBridges',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				16: {
+					themeId: 'coreMixedRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				17: {
+					themeId: 'coreMixedRooms',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'fontSolar' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				18: {
+					themeId: 'coreHellscape',
+					make: [
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
+						{ typeFilter: 'fontDeep' },
+						{ typeFilter: 'fontDeep' },
+					]
+				},
+				19: {
+					themeId: 'coreHellscape',
+					make: [
+						{ typeFilter: 'fontDeep' },
+						{ typeFilter: 'fontDeep' },
+						{ typeFilter: 'fontDeep' },
 					]
 				},
 				default: {

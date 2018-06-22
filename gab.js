@@ -2,6 +2,7 @@ Gab = (new function(priorGab) {
 	console.assert(this!==window);
 	Object.assign(this,priorGab);
 	let self = this;
+	let observer = null;
 	let cityNameList = Array.shuffle(['Gunderhite','Thurmulna','Kurstifal','Unkruzia']);
 	let areaId2CityName = {};
 
@@ -45,6 +46,9 @@ Gab = (new function(priorGab) {
 		}
 		if( e.isNamed ) {
 			let s = e.name+' the '+(e.jobId ? e.typeId+' '+e.jobId : e.typeId);
+			if( e.brainMaster ) {
+				s += '('+(new Sentence(mSubject|mPossessive,e.brainMaster,' '+(e.isPet?'pet':'slave')).refine(observer))+')';
+			}
 			s += JobTypeList[e.jobId] ? '\n'+JobTypeList[e.jobId].sign+'\nHit [Enter] to talk.' : '';
 			return s;
 		}

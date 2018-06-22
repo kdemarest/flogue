@@ -787,7 +787,7 @@ class Entity {
 					let panic = (this.attitude == Attitude.PANICKED);
 					let dirAwayPerfect = (this.dirToEntityNatural(theEnemy)+4)%DirectionCount;;
 					let c = this.thinkRetreat(dirAwayPerfect,panic);
-					if( c!==false ) {
+					if( c ) {
 						this.record( (panic ? 'panicked flee' : 'fled')+' from '+theEnemy.name, true );
 						return c;
 					}
