@@ -70,6 +70,9 @@ let Prob = {
 	DEATH: 900000.0
 }
 
+let PRICE_MULT_BUY  = 10;
+let PRICE_MULT_SELL = 3;
+
 Gab = {
 };
 
@@ -153,54 +156,60 @@ let EffectTypeList = {
 	eWater: 		{ level:  0, rarity: 1.00, isWater: 1 },
 	eBlank: 		{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
 // Tactical
-	eLuminari: 		{ isTac: 1, level:  null, rarity: 1.00, op: 'add', stat: 'light', value: 3, durationMod: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
+	eLuminari: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'light', value: 3, durationMod: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
 //	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },
-	eGreed: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseItems', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'greed', icon: 'gui/icons/eVision.png' },
-	eEcholoc: 		{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseLife', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'bat sense', icon: 'gui/icons/eVision.png' },
-	eSeeInvisible: 	{ isTac: 1, level:  null, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, durationMod: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
-	eXray: 			{ isTac: 1, level:  null, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'earth vision', icon: 'gui/icons/eVision.png' },
+	eGreed: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseItems', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'greed', icon: 'gui/icons/eVision.png' },
+	eEcholoc: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseLife', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'bat sense', icon: 'gui/icons/eVision.png' },
+	eSeeInvisible: 	{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, durationMod: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
+	eXray: 			{ isTac: 1, level:  0, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'earth vision', icon: 'gui/icons/eVision.png' },
 // Buff
 	eFlight: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode,
 					additionalDoneTest: (self) => { return self.target.map.tileTypeGet(self.target.x,self.target.y).mayWalk; }, icon: 'gui/icons/eFly.png' },
 	eJump2: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'set', stat: 'jumpMax', value: 2, isHelp: 1, icon: 'gui/icons/eHaste.png' },
 	eJump3: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'set', stat: 'jumpMax', value: 3, isHelp: 1, icon: 'gui/icons/eHaste.png' },
-	eHaste: 		{ isBuf: 1, level: 10, rarity: 1.00, op: 'add', stat: 'speed', value: 1, isHelp: 1, requires: e=>e.speed<5, icon: 'gui/icons/eHaste.png' },
-	eResistance: 	{ isBuf: 1, level: 20, rarity: 0.50, op: 'add', stat: 'resist',
+	eHaste: 		{ isBuf: 1, level:  0, rarity: 0.30, op: 'add', stat: 'speed', value: 1, isHelp: 1, xPrice: 3, requires: e=>e.speed<5, icon: 'gui/icons/eHaste.png' },
+	eResistance: 	{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickResist), isHelp: 1, namePattern: 'resist {value}s', icon: 'gui/icons/eResist.png' },
-	eAbsorb: 		{ isBuf: 1, level:  1, rarity: 0.50, op: 'add', stat: 'resist',
+	eAbsorb: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickAbsorb), isHelp: 1, namePattern: 'absorb {value}s', icon: 'gui/icons/eResist.png' },
-	eBlock: 		{ isBuf: 1, level:  1, rarity: 0.50, op: 'add', stat: 'resist',
+	eBlock: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickAbsorb), isHelp: 1, namePattern: 'block {value}s', icon: 'gui/icons/eResist.png' },
-	eInvisibility: 	{ isBuf: 1, level: 10, rarity: 0.20, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible, durationMod: 3.0, icon: 'gui/icons/eInvisible.png' },
+	eInvisibility: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible, durationMod: 3.0, icon: 'gui/icons/eInvisible.png' },
 	eIgnore: 		{ isBuf: 1, level:  0, rarity: 1.00, op: 'add', stat: 'immune',
 					valuePick: () => pick(PickIgnore), isHelp: 1, namePattern: 'ignore {value}', icon: 'gui/icons/eImmune.png' },
 // Debuff/Control
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
-	eStun: 			{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'loseTurn', value: true, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eShove.png' },
-	eShove: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'shove', value: 2, isInstant: 1, icon: 'gui/icons/eShove.png' },
+	eStun: 			{ isDeb: 1, level:  0, rarity: 0.50, op: 'set', stat: 'loseTurn', value: true, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eShove.png' },
+	eShove: 		{ isDeb: 1, level:  0, rarity: 0.50, op: 'shove', value: 2, isInstant: 1, icon: 'gui/icons/eShove.png' },
 	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.HESITANT, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 0.2, icon: 'gui/icons/eFear.png' },
-	eVulnerability: { isDeb: 1, level: 10, rarity: 1.00, op: 'add', stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
+	eVulnerability: { isDeb: 1, level:  0, rarity: 1.00, op: 'add', stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
 					valuePick: () => pick(PickVuln), isHarm: 1, durationMod: 2.0, namePattern: 'vulnerability to {value}', icon: 'gui/icons/eVuln.png' },
-	eSlow: 			{ isDeb: 1, level: 20, rarity: 1.00, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, durationMod: 0.3, requires: e=>e.speed>0.5 },
-	eBlindness: 	{ isDeb: 1, level: 30, rarity: 1.00, op: 'set', stat: 'senseBlind', value: true, isHarm: 1, durationMod: 0.25, requires: e=>!e.blind, icon: 'gui/icons/eBlind.png' },
-	eConfusion: 	{ isDeb: 1, level: 40, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
-	ePanic: 		{ isDeb: 1, level: 50, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 1.0, icon: 'gui/icons/eFear.png' },
-	eRage: 			{ isDeb: 1, level: 60, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1, durationMod: 0.5, icon: 'gui/icons/eAttitude.png' },
+	eSlow: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, durationMod: 0.3, requires: e=>e.speed>0.5 },
+	eBlindness: 	{ isDeb: 1, level:  0, rarity: 0.30, op: 'set', stat: 'senseBlind', value: true, isHarm: 1, durationMod: 0.25, requires: e=>!e.blind, icon: 'gui/icons/eBlind.png' },
+	eConfusion: 	{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
+	ePanic: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 1.0, icon: 'gui/icons/eFear.png' },
+	eRage: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1, durationMod: 0.5, icon: 'gui/icons/eAttitude.png' },
 // Healing
 	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
-	eRegeneration: 	{ isHel: 1, level: 20, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, icon: 'gui/icons/eHeal.png' },
+	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, icon: 'gui/icons/eHeal.png' },
 // Damage
 	eFire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
-	ePoison: 		{ isDmg: 1, level:  5, rarity: 1.00, op: 'damage', valueDamage: 2.50, isHarm: 1, isInstant: 1, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
-	eCold: 			{ isDmg: 1, level:  10, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
-	eAcid: 			{ isDmg: 1, level:  15, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
-	eHoly: 			{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eHoly3: 		{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, effectShape: EffectShape.BLAST3, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eHoly5: 		{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, effectShape: EffectShape.BLAST5, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eHoly7: 		{ isDmg: 1, level:  20, rarity: 1.00, op: 'damage', valueDamage: 2.00, effectShape: EffectShape.BLAST7, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eRot: 			{ isDmg: 1, level:  25, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
+	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.50, isHarm: 1, isInstant: 1, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
+	eCold: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
+	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
+	eAcid3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
+	eHoly: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 1.50, effectShape: EffectShape.BLAST3, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly5: 		{ isDmg: 1, level:  0, rarity: 0.20, op: 'damage', valueDamage: 1.20, effectShape: EffectShape.BLAST5, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly7: 		{ isDmg: 1, level:  0, rarity: 0.05, op: 'damage', valueDamage: 1.00, effectShape: EffectShape.BLAST7, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
 };
+
+for( let key in EffectTypeList ) {
+	// all effect bearing items have a bigger price.
+	EffectTypeList[key].xPrice = 1.3 * 1/(EffectTypeList[key].rarity||1.0);
+}
 
 EffectTypeList.eFire.onTargetPosition = function(map,x,y) {
 	map.tileSymbolSet(x,y,TileTypeList.flames.symbol);
@@ -279,7 +288,8 @@ const ImgPotion = {
 	eShove: 		{ img: "black" }
 };
 
-
+// do NOT assign NullEffects to make something have no effects. Instead, give it effectChance of 0.0001
+const NullEfects = { eInert: { level: 0, rarity: 1 } };
 const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
 	'eRegeneration','eFire','ePoison','eCold','eAcid'].includes(k) );
@@ -287,46 +297,60 @@ const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStun','eStartle','e
 	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRot','eRage','ePanic','eConfusion','eShove'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration','eResistance','eGreed'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
+const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eHoly','eHoly3','eHoly5','eHoly7','ePoison','eFire','eCold','eBlindness','eSlow','eConfusion'].includes(k) );
 const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eResistance'].includes(k) );
 const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari'].includes(k) );
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
-const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','eHesitate','ePoison','eFire','eCold','eBlindness','eSlow','eVuln'].includes(k) );
+const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eAcid','eAcid3','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
-const WeaponList = Fab.add( '', {
-	"rock":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.50, damageType: DamageType.BASH, isRock: true, quick: 2, mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw', img: 'item/weapon/ranged/rock2.png' },
-	"dart":     	{ level:  0, rarity: 1.0, damageMultiplier: 0.20, damageType: DamageType.STAB, quick: 2, effectChance: 0.80,
-					chanceToFire: 100, slot: false, effects: DartEffects, mayThrow: true, range: 10, attackVerb: 'strike', img: 'UNUSED/spells/components/bolt.png' },
+const AmmoList = Fab.add( '', {
 	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
-	"bow": 	    	{ level:  0, rarity: 1.0, damageMultiplier: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
+});
+
+const WeaponList = Fab.add( '', {
+	"rock":     	{ level:  0, rarity: 1.0, xDamage: 0.50, damageType: DamageType.BASH, isRock: true, quick: 2,
+					mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw',
+					effectChance: 0.0001,
+					img: 'item/weapon/ranged/rock2.png' },
+	"dart":     	{ level:  0, rarity: 0.5, xDamage: 0.20, damageType: DamageType.STAB, quick: 2,
+					effectChance: 0.80,
+					chanceToFire: 100,
+					slot: false,
+					effects: DartEffects,
+					mayThrow: true,
+					range: 10,
+					attackVerb: 'strike', 
+					img: 'UNUSED/spells/components/bolt.png' },
+	"bow": 	    	{ level:  0, rarity: 1.0, xDamage: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
 					mayShoot: true, range: RANGED_WEAPON_DEFAULT_RANGE, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
-	"dagger":   	{ level:  3, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, 
+	"dagger":   	{ level:  3, rarity: 0.5, xDamage: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, 
 					chanceToFire: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
 	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
-	"solKnife":   	{ level:900, rarity: 0.0001, damageMultiplier: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
-	"pickaxe":   	{ level:  0, rarity: 0.01, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 0, effectChance: 0.00, 
+	"solKnife":   	{ level:900, rarity: 0.0001, xDamage: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
+	"pickaxe":   	{ level:  0, rarity: 0.01, xDamage: 0.70, damageType: DamageType.STAB, quick: 0, 
 					attackVerb: 'strike', mineSpeed: 1.0, img: 'item/weapon/pickaxe.png' },
-	"club":   		{ level:  0, rarity: 1.0, damageMultiplier: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
-	"sword": 		{ level:  1, rarity: 1.0, damageMultiplier: 1.00, damageType: DamageType.CUT, quick: 2, img: 'item/weapon/long_sword1.png' },
-	"greatsword": 	{ level:  5, rarity: 0.3, damageMultiplier: 1.20, damageType: DamageType.CUT, quick: 0, img: 'item/weapon/long_sword2.png' },
-	"mace": 		{ level:  3, rarity: 1.0, damageMultiplier: 0.90, damageType: DamageType.BASH, quick: 1, img: 'item/weapon/mace1.png' },
-	"hammer": 		{ level:  4, rarity: 0.4, damageMultiplier: 1.40, damageType: DamageType.BASH, quick: 0, img: 'item/weapon/hammer2.png' },
-	"axe": 			{ level:  2, rarity: 0.6, damageMultiplier: 1.00, damageType: DamageType.CUT, quick: 1, mayThrow: true, range: 5, attackVerb: 'strike', img: 'item/weapon/battle_axe1.png' },
-	"spear": 		{ level:  8, rarity: 0.9, damageMultiplier: 0.70, damageType: DamageType.STAB, quick: 1, reach: 2, mayThrow: true, range: 6, attackVerb: 'strike', img: 'item/weapon/spear2.png' },
-	"pike": 		{ level: 12, rarity: 0.7, damageMultiplier: 0.90, damageType: DamageType.STAB, quick: 0, reach: 2, img: 'item/weapon/bardiche1.png' },
-	"pitchfork": 	{ level: 20, rarity: 0.5, damageMultiplier: 1.20, damageType: DamageType.STAB, quick: 0, reach: 2, mayThrow: true, range: 4, img: 'item/weapon/trident1.png' },
+	"club":   		{ level:  0, rarity: 1.0, xDamage: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
+	"sword": 		{ level:  1, rarity: 1.0, xDamage: 1.00, damageType: DamageType.CUT, quick: 2, img: 'item/weapon/long_sword1.png' },
+	"greatsword": 	{ level:  5, rarity: 0.3, xDamage: 1.20, damageType: DamageType.CUT, quick: 0, img: 'item/weapon/long_sword2.png' },
+	"mace": 		{ level:  3, rarity: 1.0, xDamage: 0.90, damageType: DamageType.BASH, quick: 1, img: 'item/weapon/mace1.png' },
+	"hammer": 		{ level:  4, rarity: 0.4, xDamage: 1.40, damageType: DamageType.BASH, quick: 0, img: 'item/weapon/hammer2.png' },
+	"axe": 			{ level:  2, rarity: 0.6, xDamage: 1.00, damageType: DamageType.CUT, quick: 1, mayThrow: true, range: 5, attackVerb: 'strike', img: 'item/weapon/battle_axe1.png' },
+	"spear": 		{ level:  8, rarity: 0.9, xDamage: 0.70, damageType: DamageType.STAB, quick: 1, reach: 2, mayThrow: true, range: 6, attackVerb: 'strike', img: 'item/weapon/spear2.png' },
+	"pike": 		{ level: 12, rarity: 0.7, xDamage: 0.90, damageType: DamageType.STAB, quick: 0, reach: 2, img: 'item/weapon/bardiche1.png' },
+	"pitchfork": 	{ level: 20, rarity: 0.5, xDamage: 1.20, damageType: DamageType.STAB, quick: 0, reach: 2, mayThrow: true, range: 4, img: 'item/weapon/trident1.png' },
 });
 
 const WeaponMaterialList = Fab.add( '', {
 	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot'},
 	"silver": 		{ level:  5, toMake: 'silver ingot' },
-	"ice": 			{ level: 10, toMake: 'ice block' },
-	"glass": 		{ level: 20, toMake: 'malachite' },
-	"lunarium": 	{ level: 30, toMake: 'lunarium ingot' },
-	"solarium": 	{ level: 40, toMake: 'solarium ingot' },
-	"deepium": 		{ level: 50, toMake: 'deepium ingot' },
+	"ice": 			{ level: 25, toMake: 'ice block' },
+	"glass": 		{ level: 40, toMake: 'malachite' },
+	"lunarium": 	{ level: 55, toMake: 'lunarium ingot' },
+	"deepium": 		{ level: 70, toMake: 'deepium ingot' },
+	"solarium": 	{ level: 85, toMake: 'solarium ingot' },
 });
 
 const ShieldList = Fab.add( '', {
@@ -334,9 +358,9 @@ const ShieldList = Fab.add( '', {
 	// damage and simply halt it. A miss chance.
 	"buckler":     	{ level:  0, rarity: 1.0, armorMultiplier: 0.70, blockChance: 0.10 },
 	"targe":     	{ level:  5, rarity: 1.0, armorMultiplier: 0.80, blockChance: 0.15 },
-	"heater":     	{ level: 10, rarity: 1.0, armorMultiplier: 0.90, blockChance: 0.20 },
-	"kite":     	{ level: 15, rarity: 1.0, armorMultiplier: 1.00, blockChance: 0.25 },
-	"pavise":     	{ level: 20, rarity: 1.0, armorMultiplier: 1.20, blockChance: 0.30 },
+	"heater":     	{ level: 20, rarity: 0.8, armorMultiplier: 0.90, blockChance: 0.20 },
+	"kite":     	{ level: 40, rarity: 0.6, armorMultiplier: 1.00, blockChance: 0.25 },
+	"pavise":     	{ level: 60, rarity: 0.1, armorMultiplier: 1.20, blockChance: 0.30 },
 });
 
 const ArmorList = Fab.add( '', {
@@ -348,15 +372,15 @@ const ArmorList = Fab.add( '', {
 	"chain": 		{ level: 10, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'iron ingot', img: 'item/armour/chain_mail1.png' },
 	"steelPlate": 	{ level: 15, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'iron ingot', img: 'item/armour/plate_mail1.png' },
 	"trollHideArmor": 	{ level: 20, rarity: 1.0, armorMultiplier: 1.20, ingredientId: 'troll hide', img: 'item/armour/troll_leather_armour.png' },
-	"chitin": 		{ level: 25, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'chitin', img: 'item/armour/elven_leather_armor.png' },
 	"elven": 		{ level: 30, rarity: 1.0, armorMultiplier: 1.30, ingredientId: 'chitin', img: 'item/armour/chain_mail2.png' },
-	"dwarven": 		{ level: 35, rarity: 1.0, armorMultiplier: 1.10, ingredientId: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
-	"ice": 			{ level: 40, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'ice block', img: 'item/armour/elven_ringmail.png' },
-	"glass": 		{ level: 45, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'malachite', img: 'item/armour/crystal_plate_mail.png' },
-	"demon": 		{ level: 50, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'malachite', img: 'item/armour/orcish_platemail.png' },
-	"lunar": 		{ level: 55, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'lunarium ingot', img: 'item/armour/blue_dragon_scale_mail.png' },
-	"solar": 		{ level: 60, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'solarium ingot', img: 'item/armour/crystal_plate_mail.png' },
-	"deep": 		{ level: 65, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'deepium ingot', img: 'item/armour/gold_dragon_armour.png' },
+	"chitin": 		{ level: 35, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'chitin', img: 'item/armour/elven_leather_armor.png' },
+	"dwarven": 		{ level: 45, rarity: 1.0, armorMultiplier: 1.10, ingredientId: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
+	"ice": 			{ level: 50, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'ice block', img: 'item/armour/elven_ringmail.png' },
+	"glass": 		{ level: 55, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'malachite', img: 'item/armour/crystal_plate_mail.png' },
+	"demon": 		{ level: 65, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'malachite', img: 'item/armour/orcish_platemail.png' },
+	"lunar": 		{ level: 50, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'lunarium ingot', img: 'item/armour/blue_dragon_scale_mail.png' },
+	"deep": 		{ level: 80, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'deepium ingot', img: 'item/armour/gold_dragon_armour.png' },
+	"solar": 		{ level: 85, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'solarium ingot', img: 'item/armour/crystal_plate_mail.png' },
 });
 
 const HelmList = Fab.add( '', {
@@ -432,23 +456,24 @@ const GloveList = Fab.add( '', {
 
 
 const OreVeinList = Fab.add( '', {
-	"oreNone": 			{ level:  0, rarity: 10.00, name: "ore vein", img: 'oreVein' },
-	"oreVeinCoal": 		{ level:  1, rarity:  1.0, name: "coal vein", mineId: 'coal', img: 'oreLumpBlack' },
-	"oreVeinTin": 		{ level:  2, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin', img: 'oreMetalWhite' },
-	"oreVeinIron": 		{ level:  5, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron', img: 'oreMetalBlack' },
-	"oreVeinCopper": 	{ level: 10, rarity:  0.6, name: "copper ore vein", mineId: 'oreCopper', img: 'oreMetalOrange' },
-	"oreVeinSilver": 	{ level: 15, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver', img: 'oreMetalWhite' },
-	"oreVeinGold": 		{ level: 20, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold', img: 'oreMetalYellow' },
-	"oreVeinMalachite": { level: 25, rarity:  0.3, name: "malachite ore vein", mineId: 'oreMalachite', img: 'oreMetalBlue' },
-	"oreVeinLunarium": 	{ level:  1, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'oreGemCyan' },
-	"oreVeinSolarium": 	{ level:  1, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium', img: 'oreGemYellow' },
-	"oreVeinDeepium": 	{ level: 40, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium", img: 'oreGemBlack' },
-	"oreVeinGarnet": 	{ level:  1, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", img: 'oreGemPurple', isGemOre: true },
-	"oreVeinOpal": 		{ level:  5, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", img: 'oreGemWhite', isGemOre: true },
-	"oreVeinRuby": 		{ level: 10, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", img: 'oreGemRed', isGemOre: true },
-	"oreVeinEmerald": 	{ level: 15, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", img: 'oreGemGreen', isGemOre: true },
-	"oreVeinSapphire": 	{ level: 20, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", img: 'oreGemBlue', isGemOre: true },
-	"oreVeinDiamond": 	{ level: 55, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", img: 'oreGemWhite', isGemOre: true }
+	"oreVeinCoal": 		{ level:  0, rarity:  1.0, name: "coal vein", mineId: 'coal', img: 'oreLumpBlack' },
+	"oreVeinTin": 		{ level:  5, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin', img: 'oreMetalWhite' },
+	"oreVeinIron": 		{ level: 10, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron', img: 'oreMetalBlack' },
+	"oreVeinCopper": 	{ level: 25, rarity:  0.6, name: "copper ore vein", mineId: 'oreCopper', img: 'oreMetalOrange' },
+	"oreVeinSilver": 	{ level: 30, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver', img: 'oreMetalWhite' },
+	"oreVeinGold": 		{ level: 45, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold', img: 'oreMetalYellow' },
+	"oreVeinPlatinum": 	{ level: 55, rarity:  0.3, name: "platinum ore vein", mineId: 'orePlatinum', img: 'oreMetalBlue' },
+	"oreVeinLunarium": 	{ level: 75, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'oreGemCyan' },
+	"oreVeinSolarium": 	{ level: 60, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium', img: 'oreGemYellow' },
+	"oreVeinDeepium": 	{ level: 85, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium", img: 'oreGemBlack' },
+	"oreVeinGarnet": 	{ level: 20, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", img: 'oreGemPurple', isGemOre: true },
+	"oreVeinOpal": 		{ level: 35, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", img: 'oreGemWhite', isGemOre: true },
+	"oreVeinRuby": 		{ level: 40, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", img: 'oreGemRed', isGemOre: true },
+	"oreVeinEmerald": 	{ level: 50, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", img: 'oreGemGreen', isGemOre: true },
+	"oreVeinSapphire": 	{ level: 65, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", img: 'oreGemBlue', isGemOre: true },
+	"oreVeinDiamond": 	{ level: 80, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", img: 'oreGemWhite', isGemOre: true },
+	// must be last!
+	"oreNone": 			{ level:  0, rarity: 0.001, isNone: true, name: "ore vein", img: 'oreVein' },
 });
 
 
@@ -459,7 +484,7 @@ const OreList = Fab.add( '', {
 	"oreCopper": 	{ level: 10, rarity: 0.6, name: "copper ore", refinesTo: "ingotCopper", img: 'oreMetalOrange', scale: 0.5 },
 	"oreSilver": 	{ level: 15, rarity: 0.5, name: "silver ore", refinesTo: "ingotSilver", img: 'oreMetalWhite', scale: 0.5 },
 	"oreGold": 		{ level: 20, rarity: 0.3, name: "gold ore", refinesTo: "ingotGold", img: 'oreMetalYellow', scale: 0.5 },
-	"oreMalachite": { level: 25, rarity: 0.3, name: "malachite ore", refinesTo: "ingotMalachite", img: 'oreMetalBlue', scale: 0.5 },
+	"orePlatinum": { level: 25, rarity: 0.3, name: "malachite ore", refinesTo: "ingotMalachite", img: 'oreMetalBlue', scale: 0.5 },
 	"oreLunarium": 	{ level: 30, rarity: 0.2, name: "lunarium ore", refinesTo: "ingotLunarium", img: 'oreGemCyan', scale: 0.5 },
 	"oreSolarium": 	{ level: 35, rarity: 0.1, name: "solarium ore", refinesTo: "ingotSolarium", img: 'oreGemYellow', scale: 0.5 },
 	"oreDeepium": 	{ level: 40, rarity: 0.1, name: "deepium ore", refinesTo: "ingotDeepium", img: 'oreGemBlack', scale: 0.5 },
@@ -467,19 +492,37 @@ const OreList = Fab.add( '', {
 
 const GemQualityList = Fab.add( '', {
 	"flawed": 		{ level:  0, rarity: 1.0, priceMultiplier: 0.5 },
-	"average": 		{ level: 10, rarity: 0.8, priceMultiplier: 0.7 },
-	"large": 		{ level: 20, rarity: 0.6, priceMultiplier: 0.9 },
-	"flawless": 	{ level: 30, rarity: 0.4, priceMultiplier: 1.2 },
-	"sublime": 		{ level: 50, rarity: 0.2, priceMultiplier: 1.5 }
+	"average": 		{ level:  5, rarity: 0.8, priceMultiplier: 0.7 },
+	"large": 		{ level: 10, rarity: 0.6, priceMultiplier: 0.9 },
+	"flawless": 	{ level: 15, rarity: 0.4, priceMultiplier: 1.2 },
+	"sublime": 		{ level: 20, rarity: 0.2, priceMultiplier: 1.5 }
 });
 
 const GemList = Fab.add( '', {
-	"garnet": 		{ level:  0, rarity:  0.3, intrinsicEffect: "eHealing", img: "Gem Type1 Red" },
-	"opal": 		{ level:  5, rarity:  0.3, intrinsicEffect: "eFlight", img: "Gem Type1 Yellow" },
-	"ruby": 		{ level: 10, rarity:  0.2, intrinsicEffect: "eFire", img: "Gem Type2 Red" },
-	"emerald": 		{ level: 15, rarity:  0.2, intrinsicEffect: "ePoison", img: "Gem Type2 Green" },
-	"sapphire": 	{ level: 20, rarity:  0.2, intrinsicEffect: "eCold", img: "Gem Type2 Blue" },
-	"diamond": 		{ level: 25, rarity:  0.1, intrinsicEffect: "eInvisibility", img: "Gem Type3 Black" },
+	"garnet": 		{ level:  0, rarity:  0.3, img: "Gem Type1 Red" },
+	"opal": 		{ level:  3, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"turquoise": 	{ level:  6, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"amethyst": 	{ level:  9, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"pearl": 		{ level: 12, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"amber": 		{ level: 15, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"jade": 		{ level: 18, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"lapis lazuli": { level: 21, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"topaz": 		{ level: 24, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"moonstone": 	{ level: 27, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"agate": 		{ level: 30, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"tourmaline": 	{ level: 33, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"peridot": 		{ level: 36, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"malachite": 	{ level: 39, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"citrine": 		{ level: 42, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"jasper": 		{ level: 45, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"carnelian": 	{ level: 48, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"chalcedony": 	{ level: 51, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"beryl": 		{ level: 54, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"spinel": 		{ level: 57, rarity:  0.3, img: "Gem Type1 Yellow" },
+	"ruby": 		{ level: 60, rarity:  0.2, img: "Gem Type2 Red" },
+	"emerald": 		{ level: 65, rarity:  0.2, img: "Gem Type2 Green" },
+	"sapphire": 	{ level: 70, rarity:  0.2, img: "Gem Type2 Blue" },
+	"diamond": 		{ level: 75, rarity:  0.1, img: "Gem Type3 Black" },
 });
 
 const StuffList = Fab.add( '', {
@@ -557,10 +600,10 @@ const RingMaterialList = Fab.add( '', {
 const RingList = Fab.add( '', {
 	"garnetSetting": 	{ level:  0, rarity:  0.3, name: 'garnet' },
 	"opalSetting": 		{ level:  5, rarity:  0.3, name: 'opal' },
-	"rubySetting": 		{ level: 10, rarity:  0.2, name: 'ruby' },
-	"emeraldSetting": 	{ level: 15, rarity:  0.2, name: 'emerald' },
-	"sapphireSetting": 	{ level: 20, rarity:  0.2, name: 'sapphire' },
-	"diamondSetting": 	{ level: 25, rarity:  0.1, name: 'diamond' }
+	"rubySetting": 		{ level: 20, rarity:  0.2, name: 'ruby' },
+	"emeraldSetting": 	{ level: 40, rarity:  0.2, name: 'emerald' },
+	"sapphireSetting": 	{ level: 60, rarity:  0.2, name: 'sapphire' },
+	"diamondSetting": 	{ level: 80, rarity:  0.1, name: 'diamond' }
 });
 
 const CoinStacks = Fab.add( '', {
@@ -570,7 +613,7 @@ const CoinStacks = Fab.add( '', {
 	coinMany: 	{ img: "coinPile" },
 });
 let coinImgFn = (self,img) => {
-	let c = self ? self.goldCount : null;
+	let c = self ? self.coinCount : null;
 	let cs = CoinStacks;
 	return "item/misc/"+(img || (c<=1 ? cs.coinOne : (c<=4 ? cs.coinThree : (c<=10 ? cs.coinTen : cs.coinMany))).img)+".png";
 };
@@ -597,19 +640,19 @@ const WEAPON_EFFECT_DAMAGE_PERCENT = 10;
 const ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
 // GATEWAYS
-	"stairsDown": { symbol: '>', name: "stairs down", rarity: 1, isGate: 1, gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
-	"stairsUp":   { symbol: '<', name: "stairs up", rarity: 1, isGate: 1, gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
-	"gateway":    { symbol: '=', name: "gateway", rarity: 1, isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
-	"portal":     { symbol: '0', name: "portal", rarity: 1, isGate: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
-	"pitDrop": 	  { symbol: SYM, name: "pit drop", rarity: 1, isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
+	"stairsDown": { symbol: '>', name: "stairs down", 	rarity: 1, isGate: 1, gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
+	"stairsUp":   { symbol: '<', name: "stairs up", 	rarity: 1, isGate: 1, gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
+	"gateway":    { symbol: '=', name: "gateway", 		rarity: 1, isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
+	"portal":     { symbol: '0', name: "portal", 		rarity: 1, isGate: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
+	"pitDrop": 	  { symbol: SYM, name: "pit drop", 		rarity: 1, isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
 // MARKERS
 	"marker": 	  { symbol: SYM, name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
 // DECOR
-	"bridgeNS": { symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, img: "dc-dngn/bridgeNS.png" },
-	"bridgeEW": { symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, img: "dc-dngn/bridgeEW.png" },
+	"bridgeNS": 	{ symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, img: "dc-dngn/bridgeNS.png" },
+	"bridgeEW": 	{ symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, img: "dc-dngn/bridgeEW.png" },
 	"columnBroken": { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
 	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
-	"brazier":    { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" },
+	"brazier":    	{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" },
 
 	"altar":    { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
 				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.\nTouch it to level up.",
@@ -619,78 +662,118 @@ const ItemTypeList = {
 				isDecor: true, img: "dc-dngn/dngn_blue_fountain.png" },
 	"fontSolar":{ symbol: 'S', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "solar font",
 				light: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontSolar.png" },
-	"fontDeep": { symbol: 'D', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "deep font", rechargeTime: 4, damageMultiplier: 0.3, damageType: DamageType.ROT, 
+	"fontDeep": { symbol: 'D', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "deep font", rechargeTime: 4, xDamage: 0.3, damageType: DamageType.ROT, 
 				dark: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontDeep.png" },
 // ORE VEINS
-	"oreVein":    { symbol: 'v', mayWalk: false, mayFly: false, rarity: 1, opacity: 1, isWall: true,
-				  imgGet: (self,img) => "ore/"+(img || self.variety.img || "oreVein")+".png", imgChoices: OreVeinList,
-				  varieties: OreVeinList, mineSwings: 14 },
+	"oreVein":    {
+		symbol: 'v',
+		mayWalk: false,
+		mayFly: false,
+		rarity: 1,
+		opacity: 1,
+		isWall: true,
+		noneChance: 0.90,
+		imgGet: (self,img) => "ore/"+(img || self.variety.img || "oreVein")+".png",
+		imgChoices: OreVeinList,
+		varieties: OreVeinList,
+		mineSwings: 14
+	},
 // FAKE
 	"fake":   	{ symbol: SYM, namePattern: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // CORPSE
 	"corpse":   { symbol: SYM, namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1, isCorpse: true,
 				img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // TREASURE
-	"coin": 	{ symbol: '$', namePattern: '{goldCount} gold', goldCount: 0, goldVariance: 0.30, isGold: true, isTreasure: 1,
+	"coin": 	{ symbol: '$', xPrice: 1.0, namePattern: '{coinCount} gold', coinCount: 0, coinVariance: 0.30, isCoin: true, isTreasure: 1,
 				imgGet: coinImgFn, imgChoices: CoinStacks, icon: 'coin.png' },
-	"potion":   { symbol: 'p', isTreasure: 1, namePattern: 'potion{?effect}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
+	"potion":   { symbol: 'p', isTreasure: 1, xPrice: 1.0, namePattern: 'potion{?effect}{+plus}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
 				effectChance: 1.0, isPotion: true, range: RANGED_WEAPON_DEFAULT_RANGE,
 				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
 				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: ImgPotion, icon: 'potion.png' },
-	"spell":    { symbol: 's', isTreasure: 1, namePattern: 'spell{?effect}', rechargeTime: 10, effects: SpellEffects,
+	"spell":    { symbol: 's', isTreasure: 1, xPrice: 3.0, namePattern: 'spell{?effect}{+plus}', rechargeTime: 10, effects: SpellEffects,
 				effectChance: 1.0, mayCast: true, isSpell: true, range: RANGED_WEAPON_DEFAULT_RANGE,
 				img: "item/scroll/scroll.png", icon: 'spell.png' },
-	"ore": 		{ symbol: 'o', isTreasure: 1, namePattern: '{variety}', varieties: OreList, isOre: true,
+	"ore": 		{ symbol: 'o', isTreasure: 1, xPrice: 0.1, namePattern: '{variety}', varieties: OreList, isOre: true,
 				imgGet: (self,img) => "ore/"+(img || self.variety.img || "ore")+".png", imgChoices: OreList, icon: 'ore.png' },
-	"gem": 		{ symbol: "g", isTreasure: 1, namePattern: '{quality} {variety}{?effect}', qualities: GemQualityList, varieties: GemList, effects: GemEffects, isGem: true,
-				effectChance: 0.20, mayThrow: 1, range: RANGED_WEAPON_DEFAULT_RANGE, mayTargetPosition: 1, autoCommand: Command.USE,
-				imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png", imgChoices: GemList, scale:0.3, icon: 'gem.png' },
-	"weapon": 	{ symbol: 'w', isTreasure: 1, namePattern: '{material} {variety}{?effect}', materials: WeaponMaterialList, varieties: WeaponList, effects: WeaponEffects, slot: Slot.WEAPON, isWeapon: true,
-				useVerb: 'weild', mayTargetPosition: true,
-				effectChance: 0.05,
-				img: "item/weapon/dagger.png", icon: 'weapon.png' },
-	"shield": 	{ symbol: 'x', isTreasure: 1, namePattern: "{variety} shield{?effect}", varieties: ShieldList, effects: ShieldEffects, slot: Slot.SHIELD, isShield: true,
-				effectChance: 0.20,
+	"gem": 		{
+		symbol: "g",
+		isTreasure: 1,
+		xPrice: 1.5,
+		namePattern: '{quality} {variety}{+plus}{?effect}',
+		qualities: GemQualityList,
+		varieties: GemList,
+		effects: GemEffects,
+		isGem: true,
+		effectChance: 0.30,
+		mayThrow: 1,
+		range: RANGED_WEAPON_DEFAULT_RANGE,
+		mayTargetPosition: 1,
+		autoCommand: Command.USE,
+		imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png",
+		imgChoices: GemList,
+		scale:0.3,
+		icon: 'gem.png'
+	},
+	"weapon": 	{
+		symbol: 'w',
+		isTreasure: 1,
+		xPrice: 4.0,
+		namePattern: '{material} {variety}{+plus}{?effect}',
+		materials: WeaponMaterialList,
+		varieties: WeaponList,
+		effects: WeaponEffects,
+		slot: Slot.WEAPON,
+		isWeapon: true,
+		useVerb: 'weild',
+		mayTargetPosition: true,
+		effectChance: 0.15,
+		img: "item/weapon/dagger.png",
+		icon: 'weapon.png'
+	},
+	"ammo": 	{ symbol: 'm', isTreasure: 1, xPrice: 0.1, namePattern: '{material} {variety}{+plus}{?effect}', materials: WeaponMaterialList, varieties: AmmoList, effects: AmmoEffects, slot: Slot.AMMO, isWeapon: true,
+				useVerb: 'ready', effectChance: 0.30, img: "item/weapon/dagger.png", icon: 'weapon.png' },
+	"shield": 	{ symbol: 'x', isTreasure: 1, xPrice: 3.0, namePattern: "{variety} shield{+plus}{?effect}", varieties: ShieldList, effects: ShieldEffects, slot: Slot.SHIELD, isShield: true,
+				effectChance: 0.25,
 				armorMultiplier: 0.50,
 				useVerb: 'hold', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/shields/shield3_round.png", icon: 'shield.png' },
-	"helm": 	{ symbol: 'h', isTreasure: 1, namePattern: "{variety} helm{?effect}", varieties: HelmList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
-				effectChance: 0.05,
+	"helm": 	{ symbol: 'h', isTreasure: 1, xPrice: 2.5, namePattern: "{variety} helm{+plus}{?effect}", varieties: HelmList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
+				effectChance: 0.15,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/headgear/helmet2_etched.png", icon: 'helm.png' },
-	"armor": 	{ symbol: 'a', isTreasure: 1, namePattern: "{variety} armor{?effect}", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
-				effectChance: 0.05,
+	"armor": 	{ symbol: 'a', isTreasure: 1, xPrice: 8.0, namePattern: "{variety} armor{+plus}{?effect}", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
+				effectChance: 1.0,
 				armorMultiplier: 0.60,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				imgGet: (self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"), imgChoices: ArmorList, icon: 'armor.png' },
-	"bracers": 	{ symbol: 'b', isTreasure: 1, namePattern: "{variety} bracers{?effect}", varieties: BracerList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
-				effectChance: 0.05,
+	"bracers": 	{ symbol: 'b', isTreasure: 1, xPrice: 3.5, namePattern: "{variety} bracers{+plus}{?effect}", varieties: BracerList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
+				effectChance: 0.15,
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "UNUSED/armour/gauntlet1.png", icon: 'bracers.png' },
-	"boots": 	{ symbol: 'c', isTreasure: 1, namePattern: "{variety} boots{?effect}", varieties: BootList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
-				effectChance: 0.05,
+	"boots": 	{ symbol: 'c', isTreasure: 1, xPrice: 1.8, namePattern: "{variety} boots{+plus}{?effect}", varieties: BootList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
+				effectChance: 0.15,
 				armorMultiplier: 0.10,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/boots2_jackboots.png", icon: 'boots.png' },
-	"gloves": 	{ symbol: 'l', isTreasure: 1, namePattern: "{variety}", varieties: GloveList, slot: Slot.HANDS, isGloves: true,
+	"gloves": 	{ symbol: 'l', isTreasure: 1, xPrice: 1.0, namePattern: "{variety}", varieties: GloveList, slot: Slot.HANDS, isGloves: true,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "UNUSED/armour/glove4.png", icon: 'gloves.png' },
-	"ring": 	{ symbol: 'r', isTreasure: 1, namePattern: "{material} {variety} ring{?effect}", materials: RingMaterialList, varieties: RingList,
+	"ring": 	{ symbol: 'r', isTreasure: 1, xPrice: 6.0, namePattern: "{material} {variety} ring{+plus}{?effect}", materials: RingMaterialList, varieties: RingList,
 				effects: RingEffects, slot: Slot.FINGERS, isRing: true,
-				effectChance: 0.10,
+				effectChance: 0.50,
 				useVerb: 'wear', triggerOnUse: true, effectOverride: { duration: true },
 				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList, icon: 'ring.png' },
 // INGREDIENTS
-	"stuff": 	{ symbol: 't', isTreasure: 1, namePattern: "{variety}{?effect}", varieties: StuffList,
+	"stuff": 	{ symbol: 't', isTreasure: 1, xPrice: 0.4, namePattern: "{variety}{?effect}", varieties: StuffList,
 				imgGet: (self,img) => (img || (self?self.variety.img:'') || 'item/misc/misc_rune.png'), imgChoices: StuffList, icon: 'stuff.png' },
 
 };
-const ItemSortOrder = ['weapon','helm','armor','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff'];
+const ItemSortOrder = ['weapon','ammo','helm','armor','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff'];
 const ItemFilterOrder = ['','weapon','armor','shield','potion','spell','ring','gem','ore','stuff'];
 const ItemFilterGroup = {
-	weapon: ['weapon'],
+	weapon: ['weapon','ammo'],
 	armor:  ['armor','helm','bracers','gloves','boots'],
 	shield: ['shield'],
 	ring:   ['ring'],
@@ -709,12 +792,13 @@ const ItemFilterGroup = {
 let ItemBag = (function() {
 	let raw = {
 		// 			cGen 	cEff	price	basis
-		coin: 	[	35.0, 	  0.0,	  1.0,	[], ],
+		coin: 	[	30.0, 	  0.0,	  1.0,	[], ],
 		potion: [	10.0, 	100.0,	 10.0,	['effect'], ],
 		spell: 	[	 1.0, 	100.0,	 50.0,	['effect'], ],
 		ore: 	[	 5.0, 	  0.0,	  1.0,	['variety'], ],
 		gem: 	[	 4.0,	 20.0,	 20.0,	['material','quality','effect'], ],
 		weapon: [	15.0, 	  5.0,	 40.0,	['material','effect','variety'], ],
+		ammo: 	[	 5.0, 	  5.0,	 40.0,	['material','effect','variety'], ],
 		helm: 	[	 2.5, 	  5.0,	 30.0,	['variety','effect'], ],
 		armor: 	[	 7.0, 	  5.0,	 30.0,	['variety','effect'], ],
 		bracers:[	 2.0, 	  5.0,	 30.0,	['variety','effect'], ],
@@ -834,12 +918,11 @@ const MonsterTypeList = {
 	"dwarf": {
 		core: [ SYM, 0, '3:10', 'good', 'bash', 'dc-mon/dwarf.png', '*' ],
 		name: "Fili",
-		job: Job.BREWER,
 		brainFlee: true,
 		isSunChild: true,
 		isDwarf: true,
 		isNamed: true,
-		inventoryLoot: '10x 100% stuff, potion.eHealing, 20% potion.eFire',
+		jobId: 'PICK',
 		properNoun: true,
 		packAnimal: true
 	},
@@ -1255,7 +1338,7 @@ TileTypeList.flames.isProblem = function(entity,self) {
 		return Prob.NONE;
 	}
 	let valueDamage = self.effect.valueDamage;
-	let damage = Math.max(1,Math.floor(new Picker(entity.area.depth).pickDamage(self.rechargeTime) * valueDamage))
+	let damage = Math.max(1,Math.floor(new Picker(entity.area.depth).pickDamage(entity.area.depth,self.rechargeTime) * valueDamage))
 	let ratio = damage/entity.health;
 	if( ratio <= 0.3 ) return Prob.MILD;
 	if( ratio <= 0.7 ) return Prob.HARSH;
@@ -1283,7 +1366,7 @@ TileTypeList.lava.isProblem = function(entity,self) {
 		return Prob.NONE;
 	}
 	let valueDamage = self.effect.valueDamage;
-	let damage = Math.max(1,Math.floor(new Picker(entity.area.depth).pickDamage(0) * valueDamage))
+	let damage = Math.max(1,Math.floor(new Picker(entity.area.depth).pickDamage(entity.area.depth,0) * valueDamage))
 	let ratio = damage/entity.health;
 	if( ratio <= 0.3 ) return Prob.MILD;
 	if( ratio <= 0.7 ) return Prob.HARSH;
@@ -1464,7 +1547,7 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 	});
 	if( this.isRecharged() ) {
 		nearby.process( entity => {
-			let damage = new Picker(self.area.depth).pickDamage(self.rechargeTime,self);
+			let damage = new Picker(self.area.depth).pickDamage(self.area.depth,self.rechargeTime,self);
 			entity.takeDamagePassive( null, self, damage, self.damageType || DamageType.ROT );
 		});
 		this.resetRecharge();

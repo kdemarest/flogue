@@ -104,6 +104,18 @@ function nop() {}
 			fn(obj[key],key);
 		}
 	}
+	Object.merge = function(target,source,ignore) {
+		if( source ) {
+			for( let key in source ) {
+				if( ignore[key] ) {
+					continue;
+				}
+				target[key] = source[key];
+			}
+		}
+		return target;
+	}
+
 	// Produces a new object composed of each key that the fn returned true for.
 	Object.filter = function(obj,fn) {
 		let result = {};
@@ -119,6 +131,22 @@ function nop() {}
 		let result = {};
 		for( let key in obj ) {
 			Object.assign(result, fn.call(obj,obj[key],key));
+		}
+		return result;
+	}
+
+	Array.supplyConcat = function(...args) {
+		let result = [];
+		for( let i=0 ; i <args.length ; ++i ) {
+			if( !args[i] ) continue;
+			if( Array.isArray(args[i]) ) {
+				if( !args[i].length ) {
+					continue;
+				}
+				result.push(...args[i]);
+				continue;
+			}
+			result.push(args[i]);
 		}
 		return result;
 	}
@@ -221,15 +249,18 @@ function nop() {}
 		return '';
 	}
 	String.tokenReplace = function(s,obj) {
-		return s.replace(/{([%]*)([?]*)(\w+)}/g,function(whole,pct,hasQ,key) {
+		return s.replace(/{([%]*)([?]*)([+]*)(\w+)}/g,function(whole,pct,hasQ,plus,key) {
 			let isPercent = pct=='%';
+			let isPlus = plus=='+';
 			let useOf = hasQ=='?';
 
-			if( useOf && obj[key] === undefined ) {
+			if( (useOf || isPlus) && obj[key] === undefined ) {
 				return '';
 			}
 			if( typeof obj[key] == 'number' ) {
-				return (obj[key] * (isPercent?100:1))+(isPercent?'%':'');
+				if( isPlus && !obj[key] ) return '';
+				let p = isPlus && obj[key] ? ' +' : '';
+				return p+(obj[key] * (isPercent?100:1))+(isPercent?'%':'');
 			}
 			if( typeof obj[key] == 'string' ) {
 				return (useOf && obj[key] ? ' of ' : '')+obj[key];
@@ -255,13 +286,28 @@ function nop() {}
 		return Math.clamp( n, 0.1, 1.0 );
 	}
 
+	Math.chanceToAppearRamp = function(entityLevel,mapLevel) {
+		if( mapLevel < entityLevel ) {
+			return 0;
+		}
+
+		let amt = 0.01 * (entityLevel*entityLevel*entityLevel+1) / (DEPTH_MAX*DEPTH_MAX*DEPTH_MAX);
+		return amt*(mapLevel-entityLevel+1);
+
+		return (entityLevel+mapLevel) / (DEPTH_MAX*2);
+
+		let total  = DEPTH_MAX+1-entityLevel;
+		let remain = DEPTH_MAX+1-mapLevel;
+		return 0.1*entityLevel + remain/total;
+	}
+
 	Math.chanceToAppearBell = function(entityLevel,mapLevel) {
 		if( mapLevel < entityLevel ) {
 			return 0;
 		}
 		let o = 0.65;
 		let u = 2.0;
-		let x = mapLevel - entityLevel;
+		let x = (mapLevel - entityLevel)/10*DEPTH_SPAN;
 
 		// Creates a bell curve which is near 1.0 at five levels above 
 		let chance = 1.629308 * (1/(o*Math.sqrt(2*Math.PI))) * Math.exp( -( Math.pow((x/5)-u,2) / (2*o*o) ) );
@@ -269,7 +315,7 @@ function nop() {}
 		return chance;
 	}
 
-	Math.chanceToAppearSigmoid = function(entityLevel,mapLevel,span=20) {
+	Math.chanceToAppearSigmoid = function(entityLevel,mapLevel,span=DEPTH_SPAN) {
 		if( mapLevel < entityLevel ) {
 			return 0;
 		}
@@ -280,6 +326,26 @@ function nop() {}
 		//let chance = 1 - (1 / (1+Math.exp(x*(5/span)-(span*0.25))));
 		let chance = 1-(1/(1+Math.pow(100,x/(0.5*span)-1)));
 
+		return chance;
+	}
+
+	Math.chanceToAppearSigmoidDropping = function(entityLevel,mapLevel,span=DEPTH_SPAN*0.25) {
+		if( mapLevel < entityLevel ) {
+			return 0;
+		}
+		// it takes <span> levels for this thing to get from 0.0 frequency to 1.0 frequency.
+		let x = mapLevel - entityLevel;
+
+		// Increases chances from about 7% to near 100% ten levels away from starting level.
+		//let chance = 1 - (1 / (1+Math.exp(x*(5/span)-(span*0.25))));
+		let chance = 1-(1/(1+Math.pow(100,x/(0.5*span)-1)));
+
+		let base   = entityLevel+span;
+		let total  = DEPTH_MAX+1-base;
+		let remain = DEPTH_MAX+1-mapLevel;
+		if( remain > 0 && total > 0 ) {
+			chance = (entityLevel+1)/(mapLevel+1); //(remain/total);
+		}
 		return chance;
 	}
 
@@ -412,6 +478,8 @@ class PickTable {
 	scanArray(table,chanceFn) {
 		console.assert( table && table.length );
 		this.makeBlank();
+		this.sourceArray = table;
+		this.reset = () => this.scanArray(table,fn);
 		for( let i=0 ; i<table.length ; i++ ) {
 			if( !table[i] ) debugger;
 			let value = chanceFn(table[i]);
@@ -426,15 +494,35 @@ class PickTable {
 	}
 	scanHash(hash,fn) {
 		this.makeBlank();
+		this.sourceHash = hash;
+		this.reset = () => this.scanHash(hash,fn);
 		for( let key in hash ) {
 			let value = fn( hash[key], key );
 			if( value !== undefined && value !== null && value !== false) {
+				console.assert( hash[key] );
 				this.table.push( hash[key] )
 				this.chance.push( value );
 				this.total += value;
 			}
 		}
 		return this;
+	}
+	scanKeys(hash) {
+		this.makeBlank();
+		this.sourceHash = hash;
+		this.reset = () => this.scanKeys(hash);
+		for( let key in hash ) {
+			this.table.push( key )
+			this.chance.push( hash[key] );
+			this.total += hash[key];
+		}
+		return this;
+	}
+	validate(typeList) {
+		for( let i=0 ; i<this.table.length ; ++i ) {
+			let key = this.table[i].typeId || this.table[i];
+			console.assert(typeList[key]);
+		}
 	}
 	pick() {
 		let n = Math.rand(0,this.total);
@@ -447,6 +535,12 @@ class PickTable {
 			}
 		}
 		debugger;
+	}
+	noChances() {
+		for( let i=0 ; i<this.chance.length ; ++i ) {
+			if( this.chance[i] != 0 ) return false;
+		}
+		return true;
 	}
 	forbidLast() {
 		console.assert( !this.isEmpty() );

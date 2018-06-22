@@ -44,6 +44,15 @@ class DataConditioner {
 
 			let supplyArray = Array.supplyParse( theme.rREQUIRED || '' );
 			Array.supplyValidate( supplyArray, PlaceTypeList );
+
+			if( theme.jobSupply ) {
+				let jobSupply = Array.supplyParse( theme.jobSupply || '' );
+				Array.supplyValidate( jobSupply, JobTypeList );
+			}
+			if( theme.jobPick ) {
+				let pt = new PickTable().scanKeys(theme.jobPick);
+				pt.validate(JobTypeList);
+			}
 		}
 	}
 
@@ -164,6 +173,7 @@ class DataConditioner {
 		Fab.add( 'isTileType', 		TileTypeList, 	true, true );
 		Fab.add( 'isItemType',		ItemTypeList, 	true, true, ItemTypeDefaults );
 		Fab.add( 'isMonsterType',	MonsterTypeList, true, true, MonsterTypeDefaults );
+		Fab.add( 'isJobType',		JobTypeList );
 
 		Fab.process();
 

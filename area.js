@@ -3,8 +3,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 
 	function makeMonster(type,x,y,presets,inject,criteriaFn) {
 		console.assert( presets === null );
+
 		type = type || picker.pick(picker.monsterTable(area.theme.monsters,criteriaFn),null,'!isUnique');
-		let entity = new Entity( area.depth, type, inject );
+		let entity = new Entity( area.depth, type, inject, area.jobPicker );
 		entity.gateTo(area,x,y);
 		let site = area.getSiteAt(x,y);
 		if( site ) {
@@ -12,7 +13,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			site.denizenList.push(entity);
 			entity.homeSiteId = site.id;
 			entity.tether = entity.tether || 2+Math.floor(Math.sqrt(site.marks.length));
-			if( entity.attitude==Attitude.AGGRESSIVE ) {
+			if( entity.team == Team.EVIL && entity.attitude==Attitude.AGGRESSIVE ) {
 				entity.attitude = Attitude.AWAIT;
 			}
 		}
@@ -43,7 +44,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 
 		let site = area.getSiteAt(x,y);
 		if( site ) {
-			if( site.place && site.place.forbidTreasure ) debugger;
+//			if( site.place && site.place.forbidTreasure ) debugger;
 			site.treasureList.push(item);
 		}
 
@@ -164,7 +165,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	area.map = new Map(area,masonMap.renderToString(),[]);
 	area.entityList = [];
 	let isFriendFn = (e) => !isEnemyFn(e);
-
+	
 	extractEntitiesFromMap(area.map,injectList,makeMonster,makeItem);
 
 	let totalFloor    = area.map.count( (x,y,type) => type.isFloor && safeToMake(area.map,x,y) ? 1 : 0);
@@ -315,6 +316,20 @@ class Area {
 		this.siteList = null;
 		this.mapMemory = [];
 		this.picker = new Picker(depth);
+
+		if( theme.jobPick ) {
+			this.jobPickTable = new PickTable().scanKeys(theme.jobPick);
+			this.jobPicker = () => {
+				if( this.jobPickTable.noChances() ) {
+					this.jobPickTable.reset();
+				}
+				let jobId = this.jobPickTable.pick();
+				this.jobPickTable.forbidLast();
+				return jobId;
+			}
+		}
+
+
 	}
 	build(tileQuota) {
 		return areaBuild(this,this.theme,tileQuota, (e) => e.team==Team.EVIL );

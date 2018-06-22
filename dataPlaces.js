@@ -232,10 +232,11 @@ ThemeList.dwarfTown = {
 	isTown: 	true,
 	passageFloor: 'tileStoneFloor',
 	scapeId: 	'caveTown',
-	rREQUIRED: 	'3x floodOre, floodPit, gatewayFromDwarves, dwarfHouseSmall, dwarfHouse, 50% dwarfHouse, 90% dwarfSmithy, 70% dwarfTemple, 2x 60% dwarfPlaza, 30% den_dog, 10% camp_human',
+	rREQUIRED: 	'dwarfSmithy, dwarfPlaza, 8x shop, 3x floodOre, floodPit, gatewayFromDwarves, dwarfHouseSmall, dwarfHouse, 50% dwarfHouse, 70% dwarfTemple, 2x 60% dwarfPlaza, 30% den_dog, 10% camp_human',
 	rCOMMON: 	'floodOre',
 	//rCOMMON: 	'dwarfHouse, dwarfHouseSmall, dwarfHouseL, pitEncircle, nest_bat, patch, floodMist',
 	rRARE: 		'firePit, floodWater',
+	jobPick: 	{ brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
 	prefer: 	['pit'],
 	monsters: 	['isDwarf'],
 	enemyDensity: 	0.00,
@@ -1358,7 +1359,7 @@ xxxx+xxxx
 		d: "dwarf",
 	},
 	inject: {
-		dwarf: { name: "dwarf cleric", attitude: Attitude.WANDER, tether: 5 }
+		dwarf: { name: "dwarf cleric", jobId: 'priest', attitude: Attitude.WANDER, tether: 5 }
 	}
 }
 
@@ -1434,6 +1435,27 @@ xxxx+xx
 	}
 }
 
+PlaceTypeList.shop = {
+	map:
+`
+xxxxx
+x.d.x
+b...b
+.....
+`,
+	forbidTreasure: true,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		b: 'brazier',
+		d: 'dwarf',
+	},
+	inject: {
+		dwarf: { attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' }
+	}
+}
+
 PlaceTypeList.dwarfSmithy = {
 	map:
 `
@@ -1451,7 +1473,7 @@ PlaceTypeList.dwarfSmithy = {
 		f: "flames",
 	},
 	inject: {
-		dwarf: { job: 'smith', attitude: Attitude.AWAIT, tether: 2 }
+		dwarf: { jobId: 'smith', attitude: Attitude.AWAIT, tether: 2 }
 	}
 }
 
@@ -1461,14 +1483,15 @@ PlaceTypeList.dwarfPlaza = {
  ....
 ......
 ..ff..
-..ff..
+.dff..
 ......
  .... 
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
 		'.': "tileStoneFloor",
-		f: "fountain"
+		f: "fountain",
+		d: { typeFilter: 'dwarf', jobId: 'evangelist', attitude: Attitude.AWAIT, tether: 2 }
 	}
 }
 

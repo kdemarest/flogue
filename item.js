@@ -1,48 +1,98 @@
+function ItemCalc(item,presets,field,op) {
+	function calc(piece) {
+		let a = piece ? (piece[field] || def) : def;
+		if( isNaN(a) ) debugger;
+		n = (op=='*' ? n*a : n+a);
+		if( isNaN(n) ) debugger;
+	}
+
+	let def = op=='*' ? 1 : 0;
+	let n = def;
+	calc(item);
+	if( presets ) {
+		calc(presets.quality);
+		calc(presets.material);
+		calc(presets.variety);
+		calc(presets.effect);
+	}
+	return n;
+}
+
 // ITEM
 class Item {
-	constructor(level,itemType,presets,inject) {
-		console.assert(level>=0);
+	constructor(depth,itemType,presets,inject) {
+		console.assert(depth>=0);
 		console.assert(itemType);
 
 		if( !presets ) {
 			// ERROR: you should do your own item picking, and provide presets!
 			debugger;
 		}
-		let ignore = { level:1, rarity:1, armorMultiplier:1, blockChance: 1, damageMultiplier:1, name:1, namePattern:1, ingredientId:1, type:1, typeId:1 };
-		function merge(target,source) {
-			if( !source ) { return; }
-			for( let key in source ) {
-				if( ignore[key] ) {
-					continue;
-				}
-				target[key] = source[key];
-			}
-			return target;
-		}
+		let ignoreFields = { level:1, rarity:1, armorMultiplier:1, blockChance: 1, xDamage:1, name:1, namePattern:1, ingredientId:1, type:1, typeId:1 };
+
+		let levelRaw = ItemCalc(this,presets,'level','+');
+		let level = levelRaw >= depth ? levelRaw : Math.randInt(levelRaw,depth+1);
 
 		// Notice that the init overrides the typeId. This is to make sure that the inject doesn't do so with a dot 
 		// phrase, like weapon.dagger (which it definitely might!)
-		let inits = { level: level, typeId: itemType.typeId, id: GetUniqueEntityId(itemType.typeId,level), owner: null, x:null, y:null };
+		let inits = {
+			depth: depth,
+			level: level,
+			levelRaw: levelRaw,
+			typeId: itemType.typeId,
+			id: GetUniqueEntityId(itemType.typeId,depth),
+			owner: null,
+			x:null,
+			y:null
+		};
 		Object.assign( this, itemType, presets, inject||{}, inits );
 
 		// order is VERY important here! Variety rules, then material, then quality.
-		merge(this,this.quality);
-		merge(this,this.material);
-		merge(this,this.variety);
+		Object.merge(this,this.quality,ignoreFields);
+		Object.merge(this,this.material,ignoreFields);
+		Object.merge(this,this.variety,ignoreFields);
 
-		let picker = new Picker(this.level);
-		if( this.rechargeTime ) this.rechargeTime 	= picker.pickRechargeTime(this);
-		if( this.isArmor )		this.armor 			= picker.pickArmorRating(this.level,this,this.material,this.variety,this.quality,this.effect);
-		if( this.isShield )		this.armor 			= picker.pickArmorRating(this.level,this,this.material,this.variety,this.quality,this.effect);
-		if( this.isShield )		this.blockChance	= picker.pickBlockChance(this.level,this,this.material,this.variety,this.quality,this.effect);
-		if( this.isWeapon )		this.damage 		= picker.pickDamage(this.rechargeTime,this,this.material,this.variety,this.quality,this.effect);
-		if( this.isGold )		this.goldCount  	= picker.pickGoldCount();
+		let adjust = function(cap,level,calc,mult=1) {
+			let reps = 100;
+			let done = false;
+			let valueRaw = calc(levelRaw);
+			let plus, value;
+			while( !done && --reps) {
+				value = calc(level);
+				plus = Math.max(0,(value-valueRaw)*mult);
+				done = plus <= cap;
+				if( !done ) --level;
+			}
+			console.assert( done );
+			this.plus = Math.round(plus);
+			return value;
+		}.bind(this);
+
+
+		let picker = new Picker(this.depth);
+		if( this.rechargeTime ) {
+			this.rechargeTime 	= adjust( 10, level, L=>picker.pickRechargeTime(L,this) );
+		}
+		if( this.isArmor ) {
+			this.armor 			= adjust( 5, level, L=>picker.pickArmorRating(L,this) );
+		}
+		if( this.isShield ) {
+			this.armor 			= adjust( 5, level, L=>picker.pickArmorRating(L,this) );
+		}
+		if( this.isShield ) {
+			this.blockChance 	= adjust( 15, level, L=>picker.pickBlockChance(L,this), 100 );
+		}
+		if( this.isWeapon ) {
+			this.damage 		= adjust( 5, level, L=>picker.pickDamage(L,this.rechargeTime,this) );
+		}
+
+		if( this.isCoin )		this.coinCount  	= picker.pickCoinCount();
 		if( this.effect ) 		this.effect 		= picker.assignEffect(this.effect,this,this.rechargeTime);
 
 		console.assert( !this.isArmor || this.armor >= 0 );
 		console.assert( !this.isShield || this.armor >= 0 );
 		console.assert( !this.isWeapon || this.damage >= 0 );
-		console.assert( !this.isGold || this.goldCount >= 0 );
+		console.assert( !this.isCoin || this.coinCount >= 0 );
 
 		if( this.x !== null || this.y !== null || this.owner !== null ) {
 			debugger;

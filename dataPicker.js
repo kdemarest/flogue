@@ -48,7 +48,7 @@ class Picker {
 	}
 
 	filterStringParse(filterString) {
-		filterString = filterString.trim();
+		if( filterString ) { filterString = filterString.trim(); }
 		let nopTrue = () => true;
 		let nop = () => {};
 
@@ -132,18 +132,18 @@ class Picker {
 
 		for( let ii in itemTypeProxy ) {
 			let item = itemTypeProxy[ii];
-			let effectArray = Object.values(item.effects || one);
-			if( item.effects ) {
-				Array.filterInPlace( effectArray, e=>e.typeId!='eInert' );
-				effectArray.push( { typeId: 'eInert', name: 'inert', level: 0, rarity: 0, isInert: 1 } );
-			}
+			let noneChance = item.noneChance || 0;
 
-			for( let vi in item.varieties || one ) {
+			let vRarityTotal = 0;
+			let vAppearTotal = 0;
+			let varietyArray = Object.values( item.varieties || one );
+			for( let vIndex=0 ; vIndex < varietyArray.length ; ++vIndex ) {
+				let v = varietyArray[vIndex];
+				let vi = v.typeId || 'nothing';
 				if( filter.killId[vi] ) {
 					if( logging ) console.log( item.typeId+' killed for being '+vi );
 					continue;
 				}
-				let v = (item.varieties || one)[vi];
 				for( let mi in item.materials || one ) {
 					if( filter.killId[mi] ) {
 						if( logging ) console.log( item.typeId+' killed for being '+mi );
@@ -163,6 +163,16 @@ class Picker {
 						}
 
 						// Order here MUST be the same as in Item constructor.
+						let effectArray = Object.values(v.effects || m.effects || q.effects || item.effects || one);
+						if( v.effects ) {
+							//console.log(v.typeId+' has custom effects.');
+						}
+						if( !effectArray[0].skip ) {
+							Array.filterInPlace( effectArray, e=>e.typeId!='eInert' );
+							effectArray.push( { typeId: 'eInert', name: 'inert', level: 0, rarity: 0, isInert: 1 } );
+						}
+
+						// Order here MUST be the same as in Item constructor.
 						let effectChance = v.effectChance!==undefined ? v.effectChance : (m.effectChance!==undefined ? m.effectChance : (q.varietyChance!==undefined ? q.varietyChance : item.effectChance || 0));
 						effectChance = Math.clamp(effectChance * Tweak.effectChance, 0.0, 1.0);
 						let appearTotal = 0;
@@ -175,12 +185,45 @@ class Picker {
 							//if( done[id] ) { debugger; continue; }
 							//done[id] = 1;
 							let level = Math.max(0,(item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.isInert ? 0 : (e.level||0)));
-							let appear = Math.chanceToAppearSigmoid(level,depth);
+							let appear = Math.chanceToAppearRamp(level,depth);
+							if( v.typeId == 'diamond' && level <= depth && level == 7 ) {
+								console.log('Diamond, level '+level+' on depth '+depth+' is '+appear );
+							}
+
 							let rarity = (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
 							console.assert( rarity >= 0 );
-							if( rarity ) rarity = rarity + (1-Math.clamp(rarity,0,1)) * Math.min(depth*0.01,1.0);
+
+							// Scale to depth...
+							if( rarity && rarity < 1.0 ) {
+								let delta = 1.0 - rarity;
+								let pct = Math.clamp(depth/DEPTH_SPAN,0.0,1.0);
+								rarity = rarity + delta*pct;
+							}
 							console.assert( rarity >= 0 );
+
+							//when a certian weapon has a GREATER effectChance, then its inert chance is SMALLER, meaning
+							//that OVERALL you see it less! So it is important for the CUMULATIVE chance of one thing to be the same
+							// as the cumulative chance for another. The only way to scale this is to multiple by effectChance. Maybe.
+
+							if( effectChance ) {
+								rarity *= effectChance / effectArray.length
+							}
+
+							let didNone = false;
+							if( noneChance && v.isNone ) {
+								didNone = true;
+								console.assert( vIndex == varietyArray.length-1 );
+								rarity = (vRarityTotal / (1-noneChance))-vRarityTotal;	// if div by zero, fix the item type list!
+								//rarity = rarity || 1;
+								console.assert( rarity >= 0 );
+								// Use the .max here because, what if ALL other entities have a 'never appear' level problem?
+								appear = vAppearTotal / (varietyArray.length-1);	// an average
+								//appear = appear || 1;
+							}
+
+
 							if( ei == 'eInert' ) {
+								console.assert(!didNone);
 								// Slight contradiction here. Some things have 100% chance for an effect, so
 								// the rarity of eInert will be zero.
 								rarity = effectChance<=0 ? 100000 : (rarityTotal / effectChance)-rarityTotal;	// if div by zero, fix the item type list!
@@ -191,7 +234,7 @@ class Picker {
 									// None of the effects on this item were low enough level, probably
 									// so just use inert as level zero and re-calculate.
 									if( !e.level == 0 ) debugger;	// inet should ALWAYS be level zero.
-									appear = Math.chanceToAppearSigmoid(level,depth);
+									appear = Math.chanceToAppearRamp(level,depth);
 									// Note that this might STILL result in a zero appear. And that is OK, we just have to
 									// trust that something else will appear!
 								}
@@ -201,6 +244,8 @@ class Picker {
 							if( isNaN(appear) ) debugger;
 							appearTotal += appear;
 							rarityTotal += rarity;
+							vAppearTotal += appear;
+							vRarityTotal += rarity;
 
 							// Yes, these are LATE in the function. They have to be!
 							if( filter.killId[ei] ) {
@@ -219,6 +264,7 @@ class Picker {
 								rarity: rarity,
 								_id: id
 							});
+							//console.log( thing._id+' D'+thing.depth+' L'+thing.level+' appear: '+thing.appear+' rarity: '+thing.rarity);
 							if( !v.skip ) { thing.presets.variety = v; }
 							if( !m.skip ) { thing.presets.material = m; }
 							if( !q.skip ) { thing.presets.quality = q; }
@@ -269,7 +315,7 @@ class Picker {
 		// If no items meet the criteria, we shoud return a fallback item, like gold.
 		if( !table.length ) {
 			debugger;
-			return ItemTypeList.gold;
+			return ItemTypeList.coin;
 		}
 		// Make a table with all the chances to appear figured out.
 		let p = new PickTable().scanArray( table, thing=> thing.appear*thing.rarity );
@@ -292,9 +338,11 @@ class Picker {
 		effect.effectShape = effect.effectShape || EffectShape.SINGLE;
 
 		if( effect.valueDamage ) {
-			effect.value = Math.max(1,Math.floor(this.pickDamage(rechargeTime) * effect.valueDamage));
+			effect.value = Math.max(1,Math.floor(this.pickDamage(rechargeTime||0) * effect.valueDamage));
+			console.assert( !isNaN(effect.value) );
 			if( item && (item.isWeapon || item.isArmor || item.isShield) && WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
 				effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+				console.assert( !isNaN(effect.value) );
 			}
 		}
 		if( effect.valuePick ) {
@@ -308,17 +356,12 @@ class Picker {
 		return effect;
 	}
 
-	pickRechargeTime(itemType) {
-		return rollDice(itemType.rechargeTime);
+	pickRechargeTime(level,item) {
+		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime+(level/DEPTH_SPAN)*10);
 	}
 
-	pickArmorRating(level,i,m,v,q,e) {
-		let am = 1;
-		if( i && i.armorMultiplier ) am *= i.armorMultiplier;
-		if( m && m.armorMultiplier ) am *= m.armorMultiplier;
-		if( v && v.armorMultiplier ) am *= v.armorMultiplier;
-		if( q && q.armorMultiplier ) am *= q.armorMultiplier;
-		if( e && e.armorMultiplier ) am *= e.armorMultiplier;
+	pickArmorRating(level,item) {
+		let am = ItemCalc(item,item,'armorMultiplier','*');
 		console.assert(am>=0 && level>=0);
 
 		// Intentionally leave out the effect level, because that is due to the effect.
@@ -327,36 +370,31 @@ class Picker {
 		if( isNaN(baseArmor) ) debugger;
 		return Math.floor(baseArmor*ARMOR_SCALE);
 	}
-	pickBlockChance(level,i,m,v,q,e) {
-		let mc = 1;
-		if( i && i.blockChance ) mc *= 1+i.blockChance;
-		if( m && m.blockChance ) mc *= 1+m.blockChance;
-		if( v && v.blockChance ) mc *= 1+v.blockChance;
-		if( q && q.blockChance ) mc *= 1+q.blockChance;
-		if( e && e.blockChance ) mc *= 1+e.blockChance;
+	pickBlockChance(level,item) {
+		let mc = ItemCalc(item,item,'blockChance','+');
+		mc += Math.floor( (0.20 * (level/DEPTH_SPAN))*100 ) / 100;
 		mc = Math.clamp(mc,0,0.5);	// I'm arbitrarily capping miss chance at 50%
 		console.assert(mc>=0 && level>=0);
 		return mc;
 	}
-	pickDamage(rechargeTime,i,m,v,q,e) {
-		let dm = 1;
-		if( i && i.damageMultiplier ) dm *= i.damageMultiplier;
-		if( m && m.damageMultiplier ) dm *= m.damageMultiplier;
-		if( v && v.damageMultiplier ) dm *= v.damageMultiplier;
-		if( q && q.damageMultiplier ) dm *= q.damageMultiplier;
-		if( e && e.damageMultiplier ) dm *= e.damageMultiplier;
-
+	pickDamage(level,rechargeTime,item) {
+		let dm = ItemCalc(item,item,'xDamage','*');
 		let mult = (rechargeTime||0)>1 ? 1+(rechargeTime-1)*DEFAULT_DAMAGE_BONUS_FOR_RECHARGE : 1;
-		let damage = Rules.playerDamage(this.depth) * mult * dm;
+		let damage = Rules.playerDamage(level) * mult * dm;
 		return Math.max(1,Math.floor(damage));
 	}
-	pickGoldCount() {
+	pickCoinCount() {
 		let base = Math.max(1,this.depth);
 		return base;
 	}
 	pickPrice(buySell,item) {
-		let mult = (item.priceMod||1) * ( buySell=='buy' ? 100 : 30);
-		return item.level * mult;
+		if( item.coinCount ) {
+			return item.coinCount;
+		}
+		let base = item.level + item.depth;
+		let xPrice = ItemCalc(item,item,'xPrice','*');
+		let mult = (buySell=='buy' ? PRICE_MULT_BUY : PRICE_MULT_SELL);
+		return Math.floor(base * xPrice * mult);
 	}
 
 	// picks it, but doesn't give it to anyone.

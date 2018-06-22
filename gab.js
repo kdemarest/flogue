@@ -30,18 +30,23 @@ Gab = (new function(priorGab) {
 //		return sentence.refine(null);
 //	}
 
+
+
 	let sign4Type = {
 		stairsUp: 	(e)=> () => 'These stairs ascend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.WAIT)+'" to ascend.',
 		stairsDown: (e)=> () => 'These stairs descend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.WAIT)+'" to descend.',
 		gateway: 	(e)=> () => 'To '+getAreaName(e.themeId,e.toAreaId)+'\nHit "'+commandToKey(Command.WAIT)+'" to enter.',
 		portal: 	(e) => 'This portal pulses with an aura of menace.'
 	}
+
 	function signFor(e) {
 		if( sign4Type[e.typeId] ) {
 			return sign4Type[e.typeId](e);
 		}
 		if( e.isNamed ) {
-			return e.name+' the '+(e.job ? e.typeId+' '+e.job : e.typeId);
+			let s = e.name+' the '+(e.jobId ? e.typeId+' '+e.jobId : e.typeId);
+			s += JobTypeList[e.jobId] ? '\n'+JobTypeList[e.jobId].sign+'\nHit [Enter] to talk.' : '';
+			return s;
 		}
 	}
 

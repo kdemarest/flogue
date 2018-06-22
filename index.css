@@ -58,12 +58,17 @@ body {
 	overflow-x: auto;
 	margin-bottom: 10px;
 }
-#guiControls {
-	display: inline-block;
+#guiNarrative.dim {
+	/* must be above narrative bold in this file. */
+	color: #555555;
 }
 #guiNarrative b {
 	color: orange;
 }
+#guiControls {
+	display: inline-block;
+}
+
 .alignTop {
 	vertical-align: top;
 }
@@ -303,6 +308,11 @@ table .inv tbody tr td.invSpacer {
 	color: gold;
 	font-style: italic;
 }
+
+.inv .tooExpensive {
+	color: gray;
+}
+
 table .inv {
 	border-collapse: separate;
 	margin-left: 6px;

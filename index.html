@@ -9,6 +9,7 @@
 <script src="utilities.js" charset="utf-8"></script>
 <script src="dataFab.js" charset="utf-8"></script>
 <script src="data.js" charset="utf-8"></script>
+<script src="dataJobs.js" charset="utf-8"></script>
 <script src="dataHumanNames.js" charset="utf-8"></script>
 <script src="dataPlaces.js" charset="utf-8"></script>
 <script src="dataConditioner.js" charset="utf-8"></script>
@@ -27,6 +28,8 @@
 <script src="anim.js" charset="utf-8"></script>
 <script src="tell.js" charset="utf-8"></script>
 <script src="views.js" charset="utf-8"></script>
+<script src="viewInventory.js" charset="utf-8"></script>
+<script src="viewMerchant.js" charset="utf-8"></script>
 <script src="viewJobs.js" charset="utf-8"></script>
 <script src="display.js" charset="utf-8"></script>
 <script src="sentence.js" charset="utf-8"></script>
@@ -131,7 +134,7 @@ function main(levelName) {
 		let world = new World( ()=>user.entity, onAreaChange );
 		let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
 		let area = world.createArea(config.startingDepth,ThemeList[themeId],true,[]);
-		user.entity = new Entity( area.depth, MonsterTypeList.player, null );
+		user.entity = new Entity( area.depth, MonsterTypeList.player, null, area.jobPicker );
 		world.gateTo(area.id,...area.map.pickPosToStartGame());
 		Narrative.addRecipient(
 			user.entity,

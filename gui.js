@@ -67,13 +67,12 @@ class Gui {
 		};
 		Object.assign(v,player.guiViewCreator);
 
-		if( !DynamicViewList[v.view] ) {
-			console.log( "Error: No such dynamic view "+v.view+" in "+v );
-			delete player.guiViewCreator;
-			return false;
+		if( v.entity.isMerchant ) {
+			this.view.dynamic = new ViewMerchant(v);
 		}
-
-		this.view.dynamic = DynamicViewList[v.view](v);
+		else {
+			debugger;
+		}
 		delete player.guiViewCreator;
 		return true;
 	}

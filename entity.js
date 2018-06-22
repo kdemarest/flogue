@@ -2,7 +2,7 @@
 // ENTITY (monsters, players etc)
 //
 class Entity {
-	constructor(depth,monsterType,inject) {
+	constructor(depth,monsterType,inject,jobPickFn) {
 		// Use the average!
 		let level = Math.round( (depth+monsterType.level) / 2 );
 		let inits =    { inVoid: true, inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
@@ -30,7 +30,16 @@ class Entity {
 		if( monsterType.pronoun == '*' ) {
 			inits.pronoun = Math.chance(70) ? 'he' : 'she';
 		}
-		Object.assign( this, monsterType, inits, inject || {}, values );
+
+		let jobId = values.jobId || (inject ? inject.jobId : '') || inits.jobId || monsterType.jobId;
+		if( jobId == 'PICK' ) {
+			jobId = jobPickFn();
+			values.jobId = jobId;	// because values has the highest priority.
+		}
+		let jobData = Object.merge( {}, JobTypeList[jobId], { type:1, typeId:1, baseType:1, level:1, rarity:1, name:1, namePattern:1 } );
+		jobData.inventoryLoot = Array.supplyConcat( monsterType.inventoryLoot, inits.inventoryLoot, jobData.inventoryLoot, inject?inject.inventoryLoot:null, values.inventoryLoot );
+
+		Object.assign( this, monsterType, inits, jobData, inject || {}, values );
 		this.xOrigin = this.x;
 		this.yOrigin = this.y;
 
@@ -80,6 +89,9 @@ class Entity {
 		this.historyPending.length = 0;
 		if( this.watch ) {
 			console.log(this.history[0]);
+		}
+		while( this.history.length > 20 ) {
+			this.history.pop();
 		}
 	}
 	get baseType() {
@@ -379,8 +391,8 @@ class Entity {
 		if( x!==item.x || y!==item.y ) debugger;
 
 		item.ownerOfRecord = this;
-		if( item.isGold ) {
-			this.goldCount = (this.goldCount||0) + item.goldCount;
+		if( item.isCoin ) {
+			this.coinCount = (this.coinCount||0) + item.coinCount;
 			item.destroy();
 			return;
 		}
@@ -531,6 +543,18 @@ class Entity {
 		return Command.WAIT;
 	}
 
+	thinkRetreat(dirAwayPerfect,panic=false) {
+		let dirAwayRandom = (dirAwayPerfect+8+Math.randInt(0,3)-1) % DirectionCount;
+		let dirAway = [dirAwayRandom,dirAwayPerfect,(dirAwayPerfect+8-1)%DirectionCount,(dirAwayPerfect+1)%DirectionCount];
+		while( dirAway.length ) {
+			let dir = dirAway.shift();
+			if( panic || this.mayGo(dir,this.problemTolerance()) ) {
+				return directionToCommand(dir);
+			}
+		}
+		return false;
+	}
+
 	thinkApproach(x,y,target) {
 		if( target && target.area.id !== this.area.id ) {
 			let gate = new Finder(this.map.itemList,this).filter( gate=>gate.toAreaId==target.area.id ).closestToMe().first;
@@ -601,6 +625,19 @@ class Entity {
 				if( this.loseTurn ) {
 					return Command.LOSETURN;
 				}
+
+				// Hard to say whether this should take priority over .busy, but it is pretty important.
+				if( this.bumpCount >=2 ) {
+					// The player is bumping into me, trying to get me to move.
+					let c = this.thinkRetreat(this.bumpDir);
+					if( c ) {
+						this.record( 'retreat from bumper ', true );
+						return c;
+					}
+					this.record( 'wander from bumper ', true );
+					return this.thinkWander();
+				}
+
 				if( this.busy ) {
 					return Command.BUSY;
 				}
@@ -611,6 +648,7 @@ class Entity {
 				let vendetta = enemyList.includesId(this.personalEnemy);
 				let distanceToNearestEnemy = enemyList.count ? this.getDistance(theEnemy.x,theEnemy.y) : false;
 				let hurt = this.healthPercent()<30;
+				let mindControlled = [Attitude.CONFUSED,Attitude.ENRAGED,Attitude.PANICKED].includes(this.attitude);
 
 				// CONFUSED
 				if( this.attitude == Attitude.CONFUSED ) {
@@ -634,7 +672,7 @@ class Entity {
 					}
 				}
 
-				if( this.brainMaster && this.attitude !== Attitude.ENRAGED && this.attitude !== Attitude.PANICKED) {
+				if( this.brainMaster && !mindControlled) {
 					if( (this.brainMaster.area.id!==this.area.id) || (enemyList.count<=0 && this.getDistance(this.brainMaster.x,this.brainMaster.y)>2) ) {
 						let friend = this.brainMaster;
 						this.record('stay near master '+this.brainMaster.id,true);
@@ -647,7 +685,7 @@ class Entity {
 
 				let hungry = this.brainRavenous || false;
 				hungry = hungry || (this.isAnimal && (distanceToNearestEnemy===false || distanceToNearestEnemy>4));
-				if( hungry && [Attitude.AWAIT,Attitude.AGGRESSIVE,Attitude.HESITANT,Attitude.FEARFUL,Attitude.WANDER].includes(this.attitude) ) {
+				if( hungry && !mindControlled  ) {
 					let foodList = new Finder(this.map.itemList,this).filter(item=>item.isEdible).canPerceiveEntity().nearMe(2).byDistanceFromMe();
 					if( foodList.first && foodList.first.x==this.x && foodList.first.y==this.y ) {
 						this.record('found some food. eating.',true);
@@ -662,6 +700,13 @@ class Entity {
 						}
 					}
 				}
+
+				if( !enemyList.count && this.team==Team.GOOD && !mindControlled ) {
+					let f = this.findAliveOthersNearby().nearMe(1).filter( e=>e.isUser() );
+					// when it is peaceful times, and the user is adjacent to me, s/he might want to interact, so
+					// just hang out and wait.
+					if( f.count ) return Command.WAIT;
+				} 
 
 				if( this.attitude == Attitude.AWAIT ) {
 					if( distanceToNearestEnemy===false && this.beyondOrigin() ) {
@@ -739,17 +784,12 @@ class Entity {
 					// This is a very basic flee, trying to always move away from nearest enemy. However, a
 					// smarter version would pick every adjacent square and test whether any enemy could reach
 					// that square, and more to the safest square.
-					// PANICKED
 					let panic = (this.attitude == Attitude.PANICKED);
 					let dirAwayPerfect = (this.dirToEntityNatural(theEnemy)+4)%DirectionCount;;
-					let dirAwayRandom = (dirAwayPerfect+8+Math.randInt(0,3)-1) % DirectionCount;
-					let dirAway = [dirAwayRandom,dirAwayPerfect,(dirAwayPerfect+8-1)%DirectionCount,(dirAwayPerfect+1)%DirectionCount];
-					while( dirAway.length ) {
-						let dir = dirAway.shift();
-						if( panic || this.mayGo(dir,this.problemTolerance()) ) {
-							this.record( (panic ? 'panicked flee' : 'fled')+' from '+theEnemy.name, true );
-							return directionToCommand(dir);
-						}
+					let c = this.thinkRetreat(dirAwayPerfect,panic);
+					if( c!==false ) {
+						this.record( (panic ? 'panicked flee' : 'fled')+' from '+theEnemy.name, true );
+						return c;
 					}
 
 					this.record('cannot flee',true);
@@ -1522,24 +1562,25 @@ class Entity {
 		}
 		else
 		// Switch with friends, else bonk!
-		if( f.count && !f.first.job && this.isMyFriend(f.first) && this.isUser() ) {
+		if( f.count && !f.first.isMerchant && this.isMyFriend(f.first) && this.isUser() ) {
 			// swap places with allies
 			allyToSwap = f.first;
 		}
 		else
-		if( f.count && this.isUser() && f.first.job ) {
-			this.guiViewCreator = { view: f.first.job, entity: f.first };
-			return false;
-		}
-		else
 		if( f.count ) {
-			(f.first.onTouch || bonk)(this,f.first);
+			let entity = f.first;
+			console.assert(entity.isMonsterType);
+			this.lastBumpedId = entity.id;
+			entity.bumpCount = (entity.bumpCount||0)+1;
+			entity.bumpDir = deltasToDirPredictable(entity.x-this.x,entity.y-this.y);
+			(entity.onTouch || bonk)(this,entity);
 			return false;
 		}
 
 		// If we can not occupy the target tile, then touch it/bonk into it
 		let collider = this.findFirstCollider(this.travelMode,x,y,allyToSwap);
 		if( collider ) {
+			this.lastBumpedId = collider.id;
 			(collider.onTouch || bonk)(this,adhoc(collider,this.map,x,y));
 			return false;
 		}
@@ -1576,6 +1617,7 @@ class Entity {
 			allyToSwap.setPosition(this.x,this.y);
 		}
 		this.setPosition(x,y);
+
 		if( this.findAliveOthersAt(x,y).count ) {
 			debugger;
 		}
@@ -1629,6 +1671,13 @@ class Entity {
 				if( gate && gate.toAreaId && gate.toPos ) {
 					let area = this.area.world.getAreaById(gate.toAreaId);
 					this.gateTo(area,gate.toPos.x,gate.toPos.y);
+				}
+				break;
+			}
+			case Command.EXECUTE: {
+				let f = this.findAliveOthersNearby().filter( e=>e.id==this.lastBumpedId );
+				if( f.first && this.isUser() && f.first.isMerchant ) {
+					this.guiViewCreator = { entity: f.first };
 				}
 				break;
 			}
@@ -1775,8 +1824,8 @@ class Entity {
 				console.assert( seller.id == item.owner.id );
 				console.assert( new Finder(seller.inventory).isId(item.id).count );
 				let price = new Picker(this.area.depth).pickPrice('buy',item);
-				this.goldCount = (this.goldCount||0) - price;
-				seller.goldCount = (seller.goldCount||0) + price;
+				this.coinCount = (this.coinCount||0) - price;
+				seller.coinCount = (seller.coinCount||0) + price;
 				item.giveTo(this,this.x,this.y);
 				break;
 			}
@@ -1785,8 +1834,8 @@ class Entity {
 				let buyer = this.commandTarget;
 				let price = new Picker(this.area.depth).pickPrice('sell',item);
 				console.assert( new Finder(this.inventory).isId(item.id).count );
-				buyer.goldCount = (buyer.goldCount||0) - price;
-				this.goldCount = (this.goldCount||0) + price;
+				buyer.coinCount = (buyer.coinCount||0) - price;
+				this.coinCount = (this.coinCount||0) + price;
 				item.giveTo(buyer,buyer.x,buyer.y);
 				break;
 			}
@@ -1836,6 +1885,11 @@ class Entity {
 
 		if( timePasses ) {
 			this.shieldBonus = '';
+			if( this.bumpCount ) {
+				// If the user ever isn't adjscent to you, then you must be relieved of bump obligations.
+				let f = this.findAliveOthersNearby().filter(e=>e.isUser());
+				if( !f.first ) this.bumpCount=0;
+			}
 		}
 
 		if( commandToDirection(this.command) !== false ) {
