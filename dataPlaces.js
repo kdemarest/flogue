@@ -232,15 +232,17 @@ ThemeList.dwarfTown = {
 	isTown: 	true,
 	passageFloor: 'tileStoneFloor',
 	scapeId: 	'caveTown',
-	rREQUIRED: 	'dwarfSmithy, dwarfPlaza, 8x shop, 3x floodOre, floodPit, gatewayFromDwarves, dwarfHouseSmall, dwarfHouse, 50% dwarfHouse, 70% dwarfTemple, 2x 60% dwarfPlaza, 30% den_dog, 10% camp_human',
-	rCOMMON: 	'floodOre',
-	//rCOMMON: 	'dwarfHouse, dwarfHouseSmall, dwarfHouseL, pitEncircle, nest_bat, patch, floodMist',
+	rREQUIRED: 	'dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
+				'gatewayFromDwarves, 2x dwarfHouseSmall, 2x dwarfHouse, '+
+				'70% dwarfTemple, 30% den_dog, 10% camp_human',
+	rCOMMON: 	'floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall',
+	rUNCOMMON: 	'floodPit, dwarfHouse',
 	rRARE: 		'firePit, floodWater',
 	jobPick: 	{ brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
 	prefer: 	['pit'],
 	monsters: 	['isDwarf'],
 	enemyDensity: 	0.00,
-	friendDensity: 	0.05,
+	friendDensity: 	0.01,
 	itemDensity:    0.0001,
 }
 
@@ -402,6 +404,26 @@ ThemeList.coreHellscape = {
 	friendDensity: 	0.05,
 }
 
+ThemeList.coreFinalLevel = {
+	dim: 				Math.randInt(80),
+	architecture: 		"rooms",
+	floorDensity: 		0.30,
+	circleChance: 		100,
+	overlapChance: 		20,
+	preferDoors: 		false,
+	passageWander: 		100,
+	passageWidth2: 		50,
+	passageWidth3: 		0,
+	placeDensity: 		0.10,
+	rREQUIRED: 		'balgursChamber',
+	rCOMMON: 		'demonNest, firePit',
+	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
+	rRARE: 			'etherHive',
+	prefer: 		['flames','mud'],
+	monsters: 		['isDemon','isPlanar'],
+	enemyDensity: 	0.20,
+	friendDensity: 	0.05,
+}
 
 
 //=========================
@@ -453,7 +475,7 @@ ThemeList.hellscape = {
 	scapeId: 	'caveRandom',
 	rCOMMON: 	'demonNest, firePit',
 	rUNCOMMON: 	'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
-	rRARE: 		'etherHive, balgursChamber',
+	rRARE: 		'etherHive',
 	prefer: 	['flames','mud'],
 	monsters: 	['isDemon','isPlanar'],
 	//items: 		['isGem'],
@@ -1454,7 +1476,27 @@ xxxx+xx
 	}
 }
 
-PlaceTypeList.shop = {
+PlaceTypeList.market = {
+	map:
+`
+.d...d.
+stt.tts
+.......
+.......
+stt.tts
+.d...d.
+`,
+	forbidTreasure: true,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		t: 'table',
+		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
+		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' } ]
+	},
+}
+
+PlaceTypeList.shopSmall = {
 	map:
 `
 xxxxx
@@ -1468,12 +1510,53 @@ b...b
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
 		b: 'brazier',
-		d: 'dwarf',
+		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
+		s: { typeFilter: 'sign', sign: 'BYJOB' }
 	},
-	inject: {
-		dwarf: { attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' }
-	}
 }
+
+PlaceTypeList.shopOpenAir = {
+	map:
+`
+ ... 
+.ttt.
+..d..
+.s...
+ ... 
+`,
+	forbidTreasure: true,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		t: 'table',
+		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
+		s: { typeFilter: 'sign', sign: 'BYJOB' }
+	},
+}
+
+PlaceTypeList.shopLarge = {
+	map:
+`
+xxxxxxx
+x..d..x
+xtttttx
+x.....x
+x.....x
+xt....x
+xxx+xxx
+`,
+	forbidTreasure: true,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		'.': "tileStoneFloor",
+		x: "tileStoneWall",
+		t: 'table',
+		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
+		s: { typeFilter: 'sign', sign: 'BYJOB' }
+	},
+}
+
+
 
 PlaceTypeList.dwarfSmithy = {
 	map:

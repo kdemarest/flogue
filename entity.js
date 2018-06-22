@@ -1541,6 +1541,13 @@ class Entity {
 			return;
 		}
 
+		let bump = function(entity) {
+			this.lastBumpedId = entity.id;
+			entity.bumpCount = (entity.bumpCount||0)+1;
+			entity.bumpDir = deltasToDirPredictable(entity.x-this.x,entity.y-this.y);
+		}.bind(this);
+
+
 		// Move into monsters
 		//-------------------
 		let f = this.findAliveOthersAt(x,y);
@@ -1570,9 +1577,7 @@ class Entity {
 		if( f.count ) {
 			let entity = f.first;
 			console.assert(entity.isMonsterType);
-			this.lastBumpedId = entity.id;
-			entity.bumpCount = (entity.bumpCount||0)+1;
-			entity.bumpDir = deltasToDirPredictable(entity.x-this.x,entity.y-this.y);
+			bump(entity);
 			(entity.onTouch || bonk)(this,entity);
 			return false;
 		}
@@ -1581,6 +1586,12 @@ class Entity {
 		let collider = this.findFirstCollider(this.travelMode,x,y,allyToSwap);
 		if( collider ) {
 			this.lastBumpedId = collider.id;
+			if( collider.isTable ) {
+				let bx = x + (collider.x-this.x);
+				let by = y + (collider.y-this.y);
+				let e = this.findAliveOthersAt(bx,by).first;
+				if( e ) bump(e);
+			}
 			(collider.onTouch || bonk)(this,adhoc(collider,this.map,x,y));
 			return false;
 		}

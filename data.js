@@ -70,6 +70,19 @@ let Prob = {
 	DEATH: 900000.0
 }
 
+let ZOrder = {
+	TILE: 10,
+	GATE: 20,
+	DECOR: 22,
+	TABLE: 24,
+	ITEM: 26,
+	SIGN: 28,
+	MONSTER: 30,
+	OTHER: 40,
+	MIST: 50,
+	ANIM: 100
+};
+
 let PRICE_MULT_BUY  = 10;
 let PRICE_MULT_SELL = 3;
 
@@ -246,7 +259,7 @@ const TileTypeList = {
 					effect: { op: 'damage', valueDamage: 4.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "dc-mon/nonliving/fire_elemental.png" },
 	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, isFire: true, mayJump: true, name: "lava", light: 5, glow:1, 
 					effect: { op: 'damage', valueDamage: 8.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
-	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.34, name: "mist", zOrder: 50, img: "effect/cloud_grey_smoke.png", layer: 3 },
+	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.34, name: "mist", zOrder: ZOrder.MIST, img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, mayJump: true, name: "mud", img: "dc-dngn/floor/dirt0.png" },
 	"ghostStone": { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
 					effect: { op: 'set', stat: 'invisible', value: true } },
@@ -287,6 +300,20 @@ const ImgPotion = {
 	eResistance: 	{ img: "yellow" },
 	eShove: 		{ img: "black" }
 };
+
+const ImgTables = {
+	small: 	{ img: "decor/tableSmall.png" },
+	left: 	{ img: "decor/tableLeft.png" },
+	middle: { img: "decor/tableMiddle.png" },
+	right: 	{ img: "decor/tableRight.png" }
+}
+
+const ImgSigns = {
+	standing: { img: "decor/sign.png" },
+	onWall:    { img: "decor/signFixed.png" },
+	onTable:    { img: "decor/signTable.png" },
+};
+
 
 // do NOT assign NullEffects to make something have no effects. Instead, give it effectChance of 0.0001
 const NullEfects = { eInert: { level: 0, rarity: 1 } };
@@ -653,6 +680,11 @@ const ItemTypeList = {
 	"columnBroken": { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
 	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
 	"brazier":    	{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" },
+	"table":    	{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "table", isDecor: true, isTable: true, zOrder: ZOrder.TABLE,
+					img: "decor/table.png", imgChoices: ImgTables, imgGet: (self,img) => img || self.img },
+	"sign":    		{ symbol: SYM, mayWalk: true, mayFly: true,  opacity: 0, name: "sign", mayPickup: false, zOrder: ZOrder.SIGN, isDecor: true, isSign: true,
+					allowPlacementOnBlocking: true, img: "decor/sign.png", imgChoices: ImgSigns,
+					imgGet: (self,img) => img || self.img },
 
 	"altar":    { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
 				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.\nTouch it to level up.",
@@ -1516,6 +1548,22 @@ ItemTypeList.altar.onTick = function(dt) {
 	}
 	this.glow = !this.rechargeLeft;
 	this.light = this.rechargeLeft ? 0 : ItemTypeList.altar.light;
+}
+
+ItemTypeList.table.imgChoose = function(map,x,y) {
+	let left = map.findItemAt(x-1,y).filter(item=>item.isTable).count;
+	let right = map.findItemAt(x+1,y).filter(item=>item.isTable).count;
+	this.img = this.imgChoices[(left ? (right ? 'middle' : 'right') : (right ? 'left' : 'small'))].img;
+}
+
+ItemTypeList.sign.imgChoose = function(map,x,y) {
+	let tile = map.tileTypeGet(x,y);
+	let item = map.findItemAt(x,y).filter(item=>!item.mayWalk).first;
+	if( !tile.mayWalk || item ) {
+		this.img = this.imgChoices[item && item.isTable ? 'onTable' : 'onWall'].img;
+		return;
+	}
+	this.img = this.imgChoices.standing.img;
 }
 
 ItemTypeList.fontSolar.onTick = function(dt) {

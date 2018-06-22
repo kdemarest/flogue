@@ -410,7 +410,7 @@ class ViewMap extends ViewObserver {
 					let sprite = entity.spriteList[i];
 					spriteOnStage(sprite,true);
 					if( sprite.refs == 1 ) {	// I must be the only controller, so...
-						let zOrder = (entity.isTileType ? 10 : (entity.isItemType ? (entity.isGate ? 20 : (entity.isDecor ? 22 : 24)) : (entity.isMonsterType ? 30 : 40)));
+						let zOrder = entity.zOrder || (entity.isTileType ? ZOrder.TILE : (entity.isItemType ? (entity.isGate ? ZOrder.GATE : (entity.isDecor ? ZOrder.DECOR : ZOrder.ITEM)) : (entity.isMonsterType ? ZOrder.MONSTER : ZOrder.OTHER)));
 						sprite.zOrder 	= zOrder;
 						sprite.visible 	= true;
 						sprite.x 		= x+(TILE_DIM/2);

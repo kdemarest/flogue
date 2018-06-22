@@ -152,6 +152,30 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		return countOriginal-count;
 	}
 
+	function postProcess(map, entityList) {
+		map.traverse( (x,y,tile) => {
+			if( tile.imgChoose ) {
+				let tile = map.toEntity(x,y);
+				tile.imgChoose.call(tile,map,x,y);
+			}
+		});
+		new Finder( map.itemList ).process( item => {
+			if( item.isSign && item.sign=='BYJOB' ) {
+				new Finder(entityList,item).filter(entity=>entity.jobId).closestToMe().process( entity => {
+					item.sign = String.capitalize(JobTypeList[entity.jobId].name);
+				});
+			}
+			if( item.imgChoose ) {
+				item.imgChoose.call(item,map,item.x,item.y);
+			}
+		});
+		new Finder( entityList ).process( entity => {
+			new Finder( entity.inventory ).process( item => {
+			});
+		});
+	}
+
+
 	let injectList = [];
 	area.siteList = [];
 
@@ -213,6 +237,8 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		}
 		return safeToMake(map,x,y);
 	}, makeItem, e=>e.isTreasure );
+
+	postProcess(area.map, area.entityList);
 
 //	area.siteList.forEach( site => {
 //		console.log( "Site "+site.id+" ["+site.marks.length+"] monsters: "+site.denizenList.length+" items: "+site.treasureList.length );

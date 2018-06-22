@@ -314,7 +314,7 @@ class Map extends SimpleMap {
 		if( x===undefined ) debugger;
 		if( type.isRandom ) debugger;
 		let tile = this.tileTypeGet(x,y);
-		if( !tile || !tile.mayWalk ) {
+		if( !tile || (!tile.mayWalk && !type.allowPlacementOnBlocking) ) {
 			let dir = this.pickDirWalkable(x,y);
 			if( dir !== false ) {
 				x += DirectionAdd[dir].x;

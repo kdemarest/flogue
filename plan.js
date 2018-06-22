@@ -153,7 +153,7 @@ let Plan = (new class {
 					]
 				},
 				19: {
-					themeId: 'coreHellscape',
+					themeId: 'coreFinalLevel',
 					make: [
 						{ typeFilter: 'fontDeep' },
 						{ typeFilter: 'fontDeep' },
