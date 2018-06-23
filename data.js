@@ -303,9 +303,12 @@ const ImgPotion = {
 
 const ImgTables = {
 	small: 	{ img: "decor/tableSmall.png" },
-	left: 	{ img: "decor/tableLeft.png" },
-	middle: { img: "decor/tableMiddle.png" },
-	right: 	{ img: "decor/tableRight.png" }
+	W: 	{ img: "decor/tableW.png" },
+	EW: { img: "decor/tableEW.png" },
+	E: 	{ img: "decor/tableE.png" },
+	N: 	{ img: "decor/tableN.png" },
+	NS: { img: "decor/tableNS.png" },
+	S: 	{ img: "decor/tableS.png" }
 }
 
 const ImgSigns = {
@@ -675,13 +678,13 @@ const ItemTypeList = {
 // MARKERS
 	"marker": 	  { symbol: SYM, name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
 // DECOR
-	"bridgeNS": 	{ symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, img: "dc-dngn/bridgeNS.png" },
-	"bridgeEW": 	{ symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, img: "dc-dngn/bridgeEW.png" },
+	"bridgeNS": 	{ symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, noFloor: true, img: "dc-dngn/bridgeNS.png" },
+	"bridgeEW": 	{ symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, noFloor: true, img: "dc-dngn/bridgeEW.png" },
 	"columnBroken": { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
 	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
 	"brazier":    	{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" },
 	"table":    	{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "table", isDecor: true, isTable: true, zOrder: ZOrder.TABLE,
-					img: "decor/table.png", imgChoices: ImgTables, imgGet: (self,img) => img || self.img },
+					img: "decor/tableSmall.png", imgChoices: ImgTables, imgGet: (self,img) => img || self.img },
 	"sign":    		{ symbol: SYM, mayWalk: true, mayFly: true,  opacity: 0, name: "sign", mayPickup: false, zOrder: ZOrder.SIGN, isDecor: true, isSign: true,
 					allowPlacementOnBlocking: true, img: "decor/sign.png", imgChoices: ImgSigns,
 					imgGet: (self,img) => img || self.img },
@@ -1551,9 +1554,19 @@ ItemTypeList.altar.onTick = function(dt) {
 }
 
 ItemTypeList.table.imgChoose = function(map,x,y) {
-	let left = map.findItemAt(x-1,y).filter(item=>item.isTable).count;
-	let right = map.findItemAt(x+1,y).filter(item=>item.isTable).count;
-	this.img = this.imgChoices[(left ? (right ? 'middle' : 'right') : (right ? 'left' : 'small'))].img;
+	let w = map.findItemAt(x-1,y).filter(item=>item.isTable).count;
+	let e = map.findItemAt(x+1,y).filter(item=>item.isTable).count;
+	if( e || w ) {
+		this.img = this.imgChoices[(w ? (e ? 'EW' : 'E') : 'W')].img;
+		return;
+	}
+	let n = map.findItemAt(x,y-1).filter(item=>item.isTable).count;
+	let s = map.findItemAt(x,y+1).filter(item=>item.isTable).count;
+	if( n || s ) {
+		this.img = this.imgChoices[(n ? (s ? 'NS' : 'S') : 'N')].img;
+		return;
+	}
+	return 'small';
 }
 
 ItemTypeList.sign.imgChoose = function(map,x,y) {

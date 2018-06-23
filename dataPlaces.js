@@ -1388,7 +1388,7 @@ xb.....bx
 x.......x
 xb.....bx
 x.......x
-xxxx+xxxx
+xxxs+xxxx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
@@ -1397,10 +1397,8 @@ xxxx+xxxx
 		A: "altar",
 		b: "brazier",
 		f: "fountain",
-		d: "dwarf",
-	},
-	inject: {
-		dwarf: { name: "dwarf cleric", jobId: 'priest', attitude: Attitude.WANDER, tether: 5 }
+		d: { typeFilter: 'dwarf', name: "dwarf cleric", jobId: 'priest', attitude: Attitude.WANDER, tether: 3 },
+		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'tileStoneWall' } ]
 	}
 }
 
@@ -1423,10 +1421,8 @@ xxxx+xxxx
 	symbols: {
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
-		d: "dwarf",
-	},
-	inject: {
-		dwarf: { attitude: Attitude.WANDER, tether: 10 }
+		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 3 },
+		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'tileStoneWall' } ]
 	}
 }
 
@@ -1501,7 +1497,7 @@ PlaceTypeList.shopSmall = {
 `
 xxxxx
 x.d.x
-b...b
+bs..b
 .....
 `,
 	forbidTreasure: true,
@@ -1519,10 +1515,9 @@ PlaceTypeList.shopOpenAir = {
 	map:
 `
  ... 
-.ttt.
+.stt.
 ..d..
-.s...
- ... 
+.....
 `,
 	forbidTreasure: true,
 	flags: { rotate: true, hasWall: true },
@@ -1530,7 +1525,7 @@ PlaceTypeList.shopOpenAir = {
 		'.': "tileStoneFloor",
 		t: 'table',
 		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
-		s: { typeFilter: 'sign', sign: 'BYJOB' }
+		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' }]
 	},
 }
 
@@ -1543,7 +1538,7 @@ xtttttx
 x.....x
 x.....x
 xt....x
-xxx+xxx
+xxs+xxx
 `,
 	forbidTreasure: true,
 	flags: { rotate: true, hasWall: true },
@@ -1552,7 +1547,7 @@ xxx+xxx
 		x: "tileStoneWall",
 		t: 'table',
 		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
-		s: { typeFilter: 'sign', sign: 'BYJOB' }
+		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'tileStoneWall'}]
 	},
 }
 
@@ -1562,7 +1557,7 @@ PlaceTypeList.dwarfSmithy = {
 	map:
 `
  xxxxx
- xfffx 
+ sfffx 
 .......
 ..d....
 .......
@@ -1571,11 +1566,9 @@ PlaceTypeList.dwarfSmithy = {
 	symbols: {
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
-		d: "dwarf",
+		d: { typeFilter: 'dwarf', jobId: 'smith', attitude: Attitude.AWAIT, tether: 2 },
 		f: "flames",
-	},
-	inject: {
-		dwarf: { jobId: 'smith', attitude: Attitude.AWAIT, tether: 2 }
+		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'tileStoneWall'}]
 	}
 }
 

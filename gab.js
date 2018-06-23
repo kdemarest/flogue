@@ -45,7 +45,7 @@ Gab = (new function(priorGab) {
 			return sign4Type[e.typeId](e);
 		}
 		if( e.isNamed ) {
-			let s = e.name+' the '+(e.jobId ? e.typeId+' '+e.jobId : e.typeId);
+			let s = e.name+' the '+(e.jobId ? String.capitalize(e.typeId)+' '+String.capitalize(e.jobId) : String.capitalize(e.typeId));
 			if( e.brainMaster ) {
 				s += '('+(new Sentence(mSubject|mPossessive,e.brainMaster,' '+(e.isPet?'pet':'slave')).refine(observer))+')';
 			}

@@ -77,8 +77,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 10,
-		themeId: 'dwarfTown'
+		startingDepth: 2,
+//		themeId: 'dwarfTown'
 	}
 }
 

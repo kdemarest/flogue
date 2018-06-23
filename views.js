@@ -316,7 +316,7 @@ class ViewInfo extends ViewObserver {
 
 		let s = "";
 		if( !entity.isUser() ) {
-			s += entity.attitude+'<br>';
+			s += entity.attitude+' '+entity.bumpCount+'<br>';
 		}
 		s += "Health: "+entity.health+" of "+entity.healthMax+"<br>";
 		if( entity.isUser() ) {
@@ -437,6 +437,7 @@ class ViewMiniMap extends ViewObserver {
 		$( '#'+this.divId+'Canvas0' ).remove();
 		$( '#'+this.divId+'Canvas1' ).remove();
 		this.cleared = false;
+		this.drawn = [];
 		this.xLen = area.map.xLen;
 		this.yLen = area.map.yLen;
 		let dim = Math.max(this.xLen,this.yLen);

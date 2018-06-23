@@ -1541,9 +1541,12 @@ class Entity {
 			return;
 		}
 
-		let bump = function(entity) {
+		let bump = function(entity,incCount=true) {
 			this.lastBumpedId = entity.id;
-			entity.bumpCount = (entity.bumpCount||0)+1;
+			entity.bumpBy = this.id;
+			if( incCount ) {
+				entity.bumpCount = (entity.bumpCount||0)+1;
+			}
 			entity.bumpDir = deltasToDirPredictable(entity.x-this.x,entity.y-this.y);
 		}.bind(this);
 
@@ -1577,7 +1580,7 @@ class Entity {
 		if( f.count ) {
 			let entity = f.first;
 			console.assert(entity.isMonsterType);
-			bump(entity);
+			bump(entity,true);
 			(entity.onTouch || bonk)(this,entity);
 			return false;
 		}
@@ -1590,7 +1593,7 @@ class Entity {
 				let bx = x + (collider.x-this.x);
 				let by = y + (collider.y-this.y);
 				let e = this.findAliveOthersAt(bx,by).first;
-				if( e ) bump(e);
+				if( e ) bump(e,false);
 			}
 			(collider.onTouch || bonk)(this,adhoc(collider,this.map,x,y));
 			return false;
@@ -1898,7 +1901,7 @@ class Entity {
 			this.shieldBonus = '';
 			if( this.bumpCount ) {
 				// If the user ever isn't adjscent to you, then you must be relieved of bump obligations.
-				let f = this.findAliveOthersNearby().filter(e=>e.isUser());
+				let f = this.findAliveOthersNearby().isId(this.bumpBy).nearMe(1);
 				if( !f.first ) this.bumpCount=0;
 			}
 		}

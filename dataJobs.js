@@ -79,5 +79,8 @@ let JobTypeList = {
 	},
 	evangelist: {
 		sign: "The sun has fled the sky!",
+	},
+	priest: {
+		sign: "Let us give thanks!",
 	}
 }

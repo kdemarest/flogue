@@ -74,17 +74,17 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 				console.assert(make.typeFilter);
 				let typeId = make.typeFilter.split('.')[0];
 				if( TileTypeList[typeId] ) {
-					console.assert( !tileSet );
+					//console.assert( !tileSet );
 					map.tileSymbolSet(x,y,TileTypeList[typeId].symbol);
 					tileSet = true;
 					return;
 				}
 				if( MonsterTypeList[typeId] ) {
-					if( !tileSet ) { map.tileSymbolSetFloor(x,y); tileSet=true; }
+					if( !tileSet && !MonsterTypeList[typeId].noFloor ) { map.tileSymbolSetFloor(x,y); tileSet=true; }
 					makeMonsterFn( MonsterTypeList[typeId], x, y, null, make, null );
 					return;
 				}
-				if( !tileSet ) { map.tileSymbolSetFloor(x,y); tileSet = true; }
+				if( !tileSet && !ItemTypeList[typeId].noFloor ) { map.tileSymbolSetFloor(x,y); tileSet = true; }
 				// If you want a random item, use the item type "random" which is hard-coded to select a
 				// random item. If you want to specify any item with 'silver' you simply can not.
 				console.assert( ItemTypeList[typeId] );
