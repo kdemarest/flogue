@@ -79,16 +79,26 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 					tileSet = true;
 					return;
 				}
+				let m = MonsterTypeList[typeId];
 				if( MonsterTypeList[typeId] ) {
-					if( !tileSet && !MonsterTypeList[typeId].noFloor ) { map.tileSymbolSetFloor(x,y); tileSet=true; }
-					makeMonsterFn( MonsterTypeList[typeId], x, y, null, make, null );
+					if( !tileSet ) {
+						if( m.underMe ) map.tileSymbolSet(x,y,TypeIdToSymbol[m.underMe]);
+						else map.tileSymbolSetFloor(x,y);
+						tileSet=true;
+					}
+					makeMonsterFn( m, x, y, null, make, null );
 					return;
 				}
-				if( !tileSet && !ItemTypeList[typeId].noFloor ) { map.tileSymbolSetFloor(x,y); tileSet = true; }
+				let i = ItemTypeList[typeId];
+				if( !tileSet ) {
+					if( i.underMe ) map.tileSymbolSet(x,y,TypeIdToSymbol[i.underMe]);
+					else map.tileSymbolSetFloor(x,y);
+					tileSet=true;
+				}
 				// If you want a random item, use the item type "random" which is hard-coded to select a
 				// random item. If you want to specify any item with 'silver' you simply can not.
-				console.assert( ItemTypeList[typeId] );
-				makeItemFn( ItemTypeList[typeId], x, y, null, make, null );	// the null means you have to generate presets for this item.
+				console.assert( i );
+				makeItemFn( i, x, y, null, make, null );	// the null means you have to generate presets for this item.
 			});
 
 		});
@@ -157,6 +167,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			if( tile.imgChoose ) {
 				let tile = map.toEntity(x,y);
 				tile.imgChoose.call(tile,map,x,y);
+				console.assert( typeof tile.img == 'string' );
 			}
 		});
 		new Finder( map.itemList ).process( item => {
@@ -167,6 +178,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			}
 			if( item.imgChoose ) {
 				item.imgChoose.call(item,map,item.x,item.y);
+				console.assert( typeof item.img == 'string' );
 			}
 		});
 		new Finder( entityList ).process( entity => {

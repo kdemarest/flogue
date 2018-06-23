@@ -316,7 +316,7 @@ class ViewInfo extends ViewObserver {
 
 		let s = "";
 		if( !entity.isUser() ) {
-			s += entity.attitude+' '+entity.bumpCount+'<br>';
+			s += entity.attitude+' '+(entity.bumpCount||'')+'<br>';
 		}
 		s += "Health: "+entity.health+" of "+entity.healthMax+"<br>";
 		if( entity.isUser() ) {

@@ -232,6 +232,12 @@ EffectTypeList.eCold.onTargetPosition = function(map,x,y) {
 	map.tileSymbolSet(x,y,TileTypeList.water.symbol);
 }
 
+const ImgBridges = {
+	NS: { img: "dc-dngn/bridgeNS.png" },
+	EW: { img: "dc-dngn/bridgeEW.png" }
+}
+
+
 
 // Item Events
 // onTouch - fires each round a monster is standing on a tile, and ALSO when you bonk into a non-passable tile.
@@ -251,6 +257,7 @@ const TileTypeList = {
 	"pit":        { symbol: ':', mayWalk: true, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, wantsBridge: true, img: "dc-dngn/pit.png" },
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", isDoor: 1, img: "dc-dngn/dngn_open_door.png" },
 	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", isDoor: 1, img: "dc-dngn/dngn_closed_door.png" },
+	"bridge":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "bridge", isBridge: true, img: "dc-dngn/bridgeNS.png", imgChoices: ImgBridges, imgGet: (self,img) => img || self.img },
 	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, isWater: true, opacity: 0, mayJump: true, wantsBridge: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
 	"grass":      { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
 	"glass":      { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
@@ -678,8 +685,6 @@ const ItemTypeList = {
 // MARKERS
 	"marker": 	  { symbol: SYM, name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
 // DECOR
-	"bridgeNS": 	{ symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, noFloor: true, img: "dc-dngn/bridgeNS.png" },
-	"bridgeEW": 	{ symbol: SYM, mayWalk: true, mayFly: true, rarity: 1, name: "bridge", mayPickup: false, isDecor: true, isBridge: true, noFloor: true, img: "dc-dngn/bridgeEW.png" },
 	"columnBroken": { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
 	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
 	"brazier":    	{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" },
@@ -693,7 +698,7 @@ const ItemTypeList = {
 				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.\nTouch it to level up.",
 				effect: { op: 'heal', valueDamage: 6.00, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
 				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
-	"fountain": { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, mayPickup: false,
+	"fountain": { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, mayPickup: false, name: "fountain",
 				isDecor: true, img: "dc-dngn/dngn_blue_fountain.png" },
 	"fontSolar":{ symbol: 'S', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "solar font",
 				light: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontSolar.png" },
@@ -1567,6 +1572,18 @@ ItemTypeList.table.imgChoose = function(map,x,y) {
 		return;
 	}
 	return 'small';
+}
+
+TileTypeList.bridge.imgChoose = function(map,x,y) {
+	let w = map.tileTypeGet(x-1,y);
+	let e = map.tileTypeGet(x+1,y);
+	let n = map.tileTypeGet(x,y-1);
+	let s = map.tileTypeGet(x,y+1);
+	if( w.isPit && e.isPit ) {
+		this.img = this.imgChoices.NS.img;
+		return;
+	}
+	this.img = this.imgChoices.EW.img;
 }
 
 ItemTypeList.sign.imgChoose = function(map,x,y) {

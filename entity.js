@@ -1916,9 +1916,10 @@ class Entity {
 		if( timePasses ) {
 			let tileType = this.map.tileTypeGet(this.x,this.y);
 			console.assert(tileType);
+			let mayJump = tileType.mayJump;
 
 			if( this.jumpMax ) {
-				if( this.travelMode == 'walk' && tileType.mayJump && (this.jump || !priorTileType.mayJump) ) {
+				if( this.travelMode == 'walk' && mayJump && (this.jump || !priorTileType.mayJump) ) {
 					// This assumes you ALWAYS want to jump over anything that you CAN jump over. It might
 					// not always be the case... SO perhaps we should check if tileType.isProblem, or if !tileType.mayWalk.
 					this.jump = (this.jump||0)+1;

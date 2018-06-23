@@ -598,8 +598,8 @@
 				acted=true;
 			}
 			else 
-			if( wantsBridge(tile) && this.count4(x,y,isWall)==0 && this.count4(x,y,isFloor)<=1 ) {
-				this.setTile(x,y,dir==0 || dir==4 ? T.BridgeNS : T.BridgeEW);
+			if( wantsBridge(tile) ) { //&& this.count4(x,y,isWall)==0 && this.count4(x,y,isFloor)<=1 ) {
+				this.setTile(x,y,T.Bridge);
 				acted=true;
 			}
 			else 
@@ -1568,7 +1568,7 @@
 	}
 
 	function paletteCommit(palette) {
-		let tileTypes = ['floor','wall','door','fillFloor','fillWall','outlineWall','passageFloor','bridgeNS','bridgeEW','entrance','exit','unknown'];
+		let tileTypes = ['floor','wall','door','fillFloor','fillWall','outlineWall','passageFloor','bridge','entrance','exit','unknown'];
 		for( let tileType of tileTypes ) {
 			let TileType = String.capitalize(tileType);	// Floor
 			if( palette[tileType] && palette[tileType].length > 1 ) {

@@ -163,8 +163,7 @@ let ThemeDefault = () => ({
 	fillWall:  		TileTypeList.wall.symbol,
 	outlineWall:  	TileTypeList.wall.symbol,
 	passageFloor: 	TileTypeList.floor.symbol,
-	bridgeNS: 		ItemTypeList.bridgeNS.symbol,
-	bridgeEW: 		ItemTypeList.bridgeEW.symbol,
+	bridge: 		TileTypeList.bridge.symbol,
 	unknown: 		TILE_UNKNOWN,
 
 	architecture: 	"cave",
@@ -755,13 +754,13 @@ PlaceTypeList.goblinGathering = {
 	}
 };
 
-PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt,map,entityList) {
+PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt) {
 	if( !this.rechargeLeft ) {
-		let f = new Finder(entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).near(this.x,this.y,6);
+		let f = new Finder(this.entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).near(this.x,this.y,6);
 		if( f.count ) {
 			let entity = pick(f.all);
-			let amount = Math.floor((entity.healthMax/2) - entity.health);
-			entity.takeHealing(this,rollDice('1d4'),DamageType.ROT,true);
+			let amount = Math.floor(entity.healthMax - entity.health);
+			entity.takeHealing(this,amount,DamageType.ROT,true);
 			tell( mSubject,this,' ',mVerb,'imbue',' ',mObject,entity,' with dark power.');
 /*
 			let dx = this.x - entity.x;

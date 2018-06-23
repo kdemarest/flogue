@@ -220,14 +220,13 @@ class Map extends SimpleMap {
 		this.walkLookup[lPos] = prob;
 	}
 	toEntity(x,y,adhocEntity) {
-		if( !this.tileEntity[y] ) {
-			this.tileEntity[y] = this.tileEntity[y] || [];
-			if( !this.tileEntity[y][x] ) {
-				adhocEntity = adhocEntity || adhoc( SymbolToType[tileSymbolGet(x,y)], this, x, y );
-				this.tileEntity[y][x] = adhocEntity;
-				console.log('Tile entity ('+x+','+y+') '+adhocEntity.typeId);
-			}
+		this.tileEntity[y] = this.tileEntity[y] || [];
+		if( !this.tileEntity[y][x] ) {
+			adhocEntity = adhocEntity || adhoc( SymbolToType[this.tileSymbolGet(x,y)], this, x, y );
+			this.tileEntity[y][x] = adhocEntity;
+			console.log('Tile entity ('+x+','+y+') '+adhocEntity.typeId);
 		}
+		console.assert(this.tileEntity[y][x]);
 		return this.tileEntity[y][x];
 	}
 	tileTypeGet(x,y) {
