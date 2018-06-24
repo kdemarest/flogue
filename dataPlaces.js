@@ -745,7 +745,7 @@ PlaceTypeList.goblinGathering = {
 	monsterTypes: {
 		goblinPriest: { basis: 'goblin', name: "goblin priest", damage: '2d6+2', damageType: DamageType.ROT, isGoblin: true,
 						attitude: Attitude.WORSHIP, shout: 'Death to all heretic overworld invaders!',
-						inventoryLoot: 'spell.eRot', sightDistance: 7,
+						inventoryLoot: 'spell.eRot', senseVis: 7,
 						resist: DamageType.ROT,
 						img: "dc-mon/gnoll.png" }
 	},
@@ -756,7 +756,7 @@ PlaceTypeList.goblinGathering = {
 
 PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt) {
 	if( !this.rechargeLeft ) {
-		let f = new Finder(this.entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).near(this.x,this.y,6);
+		let f = new Finder(this.area.entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).near(this.x,this.y,6);
 		if( f.count ) {
 			let entity = pick(f.all);
 			let amount = Math.floor(entity.healthMax - entity.health);
@@ -1405,14 +1405,14 @@ PlaceTypeList.dwarfHouse = {
 	map:
 `
 xxxxxxxxx
+x.b.b.b.x
+x.b.b.b.x
 x.......x
-x.......x
+xxxxxx+xx
 x..d....x
-x.......x
-x.......x
-x.......x
-x....d..x
-x.......x
+xt.....tx
+xt...d.tx
+xt.....tx
 x.......x
 xxxx+xxxx
 `,
@@ -1420,6 +1420,8 @@ xxxx+xxxx
 	symbols: {
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
+		t: 'table',
+		b: 'bed',
 		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 3 },
 		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'tileStoneWall' } ]
 	}
@@ -1486,7 +1488,7 @@ stt.tts
 	symbols: {
 		'.': "tileStoneFloor",
 		t: 'table',
-		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
+		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 2, jobId: 'PICK' },
 		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' } ]
 	},
 }

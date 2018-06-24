@@ -54,19 +54,19 @@ ConfigList.ken = () => {
 
 	ThemeList.kenTheme = {
 		scapeId: 		'kenRooms',
-//		rREQUIRED: 		'floodOre',
+		rREQUIRED: 		'floodPit',
 		placeDensity: 	0.20,
-		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
-		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
-		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
-		rEPIC: 			'graveYard',
-		monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+//		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
+//		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
+//		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+//		rEPIC: 			'graveYard',
+		monsters: 		['isDemonHound','isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.04,
+		enemyDensity:  	0.02,
 		friendDensity: 	0.00001,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, weapon.hammer, spell.eFire, stuff.sunCrystal');
+	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, potion.eOdorless, potion.eStink, ring.eBloodhound, cloak.eInvisibility, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
 	MonsterTypeList.player.inventoryWear = 'weapon.pickaxe,stuff.oilLamp, shield.eAbsorb';
 //	MonsterTypeList.player.experience = 100;
 
@@ -77,8 +77,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 2,
-//		themeId: 'dwarfTown'
+		startingDepth: 15,
+		themeId: 'kenTheme'
 	}
 }
 

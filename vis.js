@@ -122,7 +122,7 @@ class Vis {
 			return Math.floor( Math.atan2(y,x)/(2*Math.PI)*360 + 720 ) % 360;
 		}
 
-		let d = MaxSightDistance;
+		let d = MaxVis;
 		let proList = [];
 		for( let y=-d ; y<=d ; ++y ) {
 			for( let x=-d ; x<=d ; ++x ) {
@@ -162,7 +162,7 @@ class Vis {
 		return proList;
 	}
 
-	calcVis(px,py,sightDistance,blind,xray,cachedVis,mapMemory) {
+	calcVis(px,py,senseVis,blind,xray,cachedVis,mapMemory) {
 		let map = this.getMapFn();
 		let xLen = map.xLen;
 
@@ -198,7 +198,7 @@ class Vis {
 			if( done ) return;
 			let x = pro.x;
 			let y = pro.y;
-			if( x<-sightDistance || y<-sightDistance || x>sightDistance || y>sightDistance ) {
+			if( x<-senseVis || y<-senseVis || x>senseVis || y>senseVis ) {
 				done=true;
 				return;
 			}

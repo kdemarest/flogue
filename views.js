@@ -318,7 +318,7 @@ class ViewInfo extends ViewObserver {
 		if( !entity.isUser() ) {
 			s += entity.attitude+' '+(entity.bumpCount||'')+'<br>';
 		}
-		s += "Health: "+entity.health+" of "+entity.healthMax+"<br>";
+		s += "Health: "+entity.health+" of "+entity.healthMax+" ("+entity.x+","+entity.y+")<br>";
 		if( entity.isUser() ) {
 			s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R<br>";
 			let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
@@ -501,8 +501,21 @@ class ViewMiniMap extends ViewObserver {
 		}
 		c1.clearRect(0,0,this.xLenCanvas,this.yLenCanvas);
 
-		let mapMemory = this.mapMemoryFn();
 		let drawLate = [];
+
+		observer.entityList.forEach( entity => {
+			if( entity.brainMaster && entity.brainMaster.id==observer.id ) {
+				drawLate.push({entity:StickerList.friendProxy,x:entity.x,y:entity.y,scale:this.scale*2});
+				return;
+			}
+			if( observer.senseLife ) {
+				let sticker = observer.isMyEnemy(entity) ? StickerList.enemyProxy : StickerList.friendProxy;
+				drawLate.push({entity:sticker,x:entity.x,y:entity.y,scale:this.scale});
+				return;
+			}
+		});
+
+		let mapMemory = this.mapMemoryFn();
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			if( !mapMemory[y] ) {
 				continue;
@@ -511,13 +524,12 @@ class ViewMiniMap extends ViewObserver {
 				let entity = mapMemory[y][x];
 				if( entity ) {
 					if( x==observer.x && y==observer.y ) {
-						entity = StickerList.observerProxy;
-						drawLate.push({entity:entity,x:x,y:y,scale:this.scale*4});
+						drawLate.push({entity:StickerList.observerProxy,x:x,y:y,scale:this.scale*4});
 						continue;
 					}
 					if( entity.gateDir !== undefined ) {
-						entity = StickerList[entity.gateDir>0 ? 'gateDownProxy' : 'gateProxy'];
-						drawLate.push({entity:entity,x:x,y:y,scale:this.scale*3});
+						let gate = StickerList[entity.gateDir>0 ? 'gateDownProxy' : 'gateProxy'];
+						drawLate.push({entity:gate,x:x,y:y,scale:this.scale*3});
 						continue;
 					}
 				}
@@ -591,7 +603,7 @@ class ViewRange extends ViewObserver {
 			let area = observer.area;
 			x = observer.x + x;
 			y = observer.y + y;
-			if( observer.canPerceivePosition(x,y) ) {
+			if( observer.canSeePosition(x,y) ) {
 				let entity = new Finder(area.entityList,observer).canPerceiveEntity().at(x,y).first || new Finder(area.map.itemList,observer).canPerceiveEntity().at(x,y).first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
 				console.log( "viewRange is showing "+entity.name );
 				guiMessage(null,'show',entity);

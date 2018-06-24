@@ -52,7 +52,8 @@ let DEPTH_MAX = 19;
 let DEPTH_SPAN = (DEPTH_MAX-DEPTH_MIN)+1;
 // If you change this, you must also chance the .css class .tile
 let TILE_DIM = 48;
-let MaxSightDistance = 8;
+let MapVis = 8;		// The vision distance used when actually drawing your map display, casting light etc.
+let MaxVis = 8;		// The vision distance max any monster can see
 
 let STANDARD_MONSTER_SIGHT_DISTANCE = 6;
 let TILE_UNKNOWN = ' ';		// reserved so that map creation can look sane.
@@ -69,6 +70,7 @@ let Prob = {
 	WALL:  800000.0,
 	DEATH: 900000.0
 }
+let SCENT_AGE_LIMIT = 100000;
 
 let ZOrder = {
 	TILE: 10,
@@ -96,6 +98,8 @@ DynamicViewList = {
 const StickerList = {
 	wallProxy: { img: "dc-dngn/wallProxy.png" },
 	observerProxy: { img: "gems/Gem Type2 Yellow.png" },
+	enemyProxy: { img: "gems/Gem Type2 Red.png" },
+	friendProxy: { img: "gems/Gem Type2 Green.png" },
 	gateProxy: { img: "gems/Gem Type2 Green.png" },
 	gateDownProxy: { img: "gems/Gem Type2 Purple.png" },
 	unvisitedMap: { img: "gui/mapUnvisited.png" },
@@ -146,7 +150,10 @@ const EffectShape = { SINGLE: "single", BLAST3: "blast3", BLAST5: "blast5", BLAS
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
 const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP];
 const ShieldBlocks = [DamageType.CUT,DamageType.STAB,DamageType.PIERCE,DamageType.BITE,DamageType.CLAW,DamageType.WHOMP,DamageType.BURN,DamageType.FREEZE,DamageType.CORRODE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
-const Attitude = { ENRAGED: "enraged", AGGRESSIVE: "aggressive", AWAIT: "await", HESITANT: "hesitant", CONFUSED: "confused", FEARFUL: "fearful", PANICKED: "panicked", WANDER: "wander", CALM: "calm", WORSHIP: "worshipping" };
+const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked",
+				FEARFUL: "fearful", CALM: "calm",
+				AWAIT: "await", WORSHIP: "worshipping",
+				AGGRESSIVE: "aggressive", PATROL: "patroling", HUNT: "hunting", HESITANT: "hesitant", WANDER: "wandering" };
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
 const Job = { SMITH: "smith", BREWER: "brewer", ARMORER: "armorer", LAPIDARY: "lapidary", JEWELER: "jeweler" };
 const Slot = { HEAD: "head", NECK: "neck", ARMS: "arms", HANDS: "hands", FINGERS: "fingers", WAIST: "waist", HIP: "hip", FEET: "feet", ARMOR: "armor", WEAPON: "weapon", AMMO: "ammo", SHIELD: "shield" };
@@ -175,6 +182,10 @@ let EffectTypeList = {
 	eEcholoc: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseLife', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'bat sense', icon: 'gui/icons/eVision.png' },
 	eSeeInvisible: 	{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, durationMod: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
 	eXray: 			{ isTac: 1, level:  0, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'earth vision', icon: 'gui/icons/eVision.png' },
+	eTeleport: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'teleport', isInstant: true, isHelp: true, name: 'teleport', icon: 'gui/icons/eTeleport.png' },
+	eOdorless: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'scentReduce', value: SCENT_AGE_LIMIT, isHelp: true, name: 'no scent', icon: 'gui/icons/eFragrance.png' },
+	eStink: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'stink', value: 0.8, isHarm: true, name: 'stink', icon: 'gui/icons/eFragrance.png' },
+	eBloodhound: 	{ isTac: 1, level:  0, rarity: 1.00, op: 'set', stat: 'senseSmell', value: 100, isHelp: true, name: 'bloodhound', icon: 'gui/icons/eFragrance.png' },
 // Buff
 	eFlight: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode,
 					additionalDoneTest: (self) => { return self.target.map.tileTypeGet(self.target.x,self.target.y).mayWalk; }, icon: 'gui/icons/eFly.png' },
@@ -327,19 +338,20 @@ const ImgSigns = {
 
 // do NOT assign NullEffects to make something have no effects. Instead, give it effectChance of 0.0001
 const NullEfects = { eInert: { level: 0, rarity: 1 } };
-const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
+const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eOdorless','eStink','eBloodhound','eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
 	'eRegeneration','eFire','ePoison','eCold','eAcid'].includes(k) );
-const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStun','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
+const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
 	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRot','eRage','ePanic','eConfusion','eShove'].includes(k) );
-const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration','eResistance','eGreed'].includes(k) );
+const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBloodhound','eOdorless','eRegeneration','eResistance','eGreed'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
 const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eHoly','eHoly3','eHoly5','eHoly7','ePoison','eFire','eCold','eBlindness','eSlow','eConfusion'].includes(k) );
 const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eResistance'].includes(k) );
 const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari'].includes(k) );
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
+const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eInvisibility', 'eOdorless'].includes(k) );
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
-const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
+const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eOdorless','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
 const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eAcid','eAcid3','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
@@ -419,6 +431,18 @@ const ArmorList = Fab.add( '', {
 	"deep": 		{ level: 80, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'deepium ingot', img: 'item/armour/gold_dragon_armour.png' },
 	"solar": 		{ level: 85, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'solarium ingot', img: 'item/armour/crystal_plate_mail.png' },
 });
+
+const CloakList = Fab.add( '', {
+	"corduroyCloak": 	{ level:  0, rarity: 1.0, armorMultiplier: 0.01, img: 'item/armour/cloak3.png' },
+	"canvasCloak": 		{ level: 10, rarity: 1.0, armorMultiplier: 0.01, img: 'item/armour/cloak3.png' },
+	"linenCloak": 		{ level: 20, rarity: 1.0, armorMultiplier: 0.01, img: 'item/armour/cloak3.png' },
+	"silkCloak": 		{ level: 30, rarity: 1.0, armorMultiplier: 0.01, img: 'item/armour/cloak3.png' },
+	"elvishCloak": 		{ level: 40, rarity: 1.0, armorMultiplier: 0.01, img: 'item/armour/cloak3.png' },
+	"dwarvishCloak":	{ level: 50, rarity: 1.0, armorMultiplier: 0.01, img: 'item/armour/cloak3.png' },
+	"demonCloak": 		{ level: 60, rarity: 1.0, armorMultiplier: 0.01, img: 'item/armour/cloak3.png' },
+	"lunarCloak": 		{ level: 70, rarity: 1.0, armorMultiplier: 0.01, img: 'item/armour/cloak3.png' },
+});
+
 
 const HelmList = Fab.add( '', {
 	"fur": 			{ level:  0, rarity: 1.0, armorMultiplier: 0.50 },
@@ -644,8 +668,8 @@ const RingList = Fab.add( '', {
 });
 
 const CoinStacks = Fab.add( '', {
-	coinOne: 	{ img: "coinOne" },
-	coinThree: 	{ img: "coinThree" },
+	coinOne: 	{ img: "coin01" },
+	coinThree: 	{ img: "coin01" },
 	coinTen: 	{ img: "coinTen" },
 	coinMany: 	{ img: "coinPile" },
 });
@@ -693,7 +717,11 @@ const ItemTypeList = {
 	"sign":    		{ symbol: SYM, mayWalk: true, mayFly: true,  opacity: 0, name: "sign", mayPickup: false, zOrder: ZOrder.SIGN, isDecor: true, isSign: true,
 					allowPlacementOnBlocking: true, img: "decor/sign.png", imgChoices: ImgSigns,
 					imgGet: (self,img) => img || self.img },
-
+	"bed": 			{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "wooden bed", mayPickup: false, isDecor: true, isBed: true,
+					imgChoices: { head: {img:'decor/bedHead.png'}, foot: {img:'decor/bedFoot.png'} },
+					imgGet: (self,img) => img || self.img },
+	"barrel": 		{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "barrel", mayPickup: false, isDecor: true,
+					img: 'decor/barrel.png' },
 	"altar":    { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
 				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.\nTouch it to level up.",
 				effect: { op: 'heal', valueDamage: 6.00, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
@@ -777,6 +805,11 @@ const ItemTypeList = {
 				armorMultiplier: 0.50,
 				useVerb: 'hold', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/shields/shield3_round.png", icon: 'shield.png' },
+	"cloak": 	{ symbol: 'c', isTreasure: 1, xPrice: 8.0, namePattern: "{variety} cloak{+plus}{?effect}", varieties: CloakList, effects: CloakEffects, slot: Slot.ARMOR, isArmor: true,
+				effectChance: 0.20, isCloak: true,
+				armorMultiplier: 0.01,
+				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
+				imgGet: (self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"), imgChoices: CloakList, icon: 'armor.png' },
 	"helm": 	{ symbol: 'h', isTreasure: 1, xPrice: 2.5, namePattern: "{variety} helm{+plus}{?effect}", varieties: HelmList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
 				effectChance: 0.15,
 				armorMultiplier: 0.15,
@@ -792,7 +825,7 @@ const ItemTypeList = {
 				armorMultiplier: 0.15,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "UNUSED/armour/gauntlet1.png", icon: 'bracers.png' },
-	"boots": 	{ symbol: 'c', isTreasure: 1, xPrice: 1.8, namePattern: "{variety} boots{+plus}{?effect}", varieties: BootList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
+	"boots": 	{ symbol: 'k', isTreasure: 1, xPrice: 1.8, namePattern: "{variety} boots{+plus}{?effect}", varieties: BootList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
 				effectChance: 0.15,
 				armorMultiplier: 0.10,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
@@ -814,7 +847,7 @@ const ItemSortOrder = ['weapon','ammo','helm','armor','bracers','gloves','boots'
 const ItemFilterOrder = ['','weapon','armor','shield','potion','spell','ring','gem','ore','stuff'];
 const ItemFilterGroup = {
 	weapon: ['weapon','ammo'],
-	armor:  ['armor','helm','bracers','gloves','boots'],
+	armor:  ['armor','cloak','helm','bracers','gloves','boots'],
 	shield: ['shield'],
 	ring:   ['ring'],
 	potion: ['potion'],
@@ -859,7 +892,7 @@ const MonsterTypeDefaults = {
 	attitude: Attitude.AGGRESSIVE,
 	light: 0,
 	senseBlind: false, senseXray: false, senseItems: false, senseLife: false,
-	invisible: false, senseInvisible: false, sightDistance: STANDARD_MONSTER_SIGHT_DISTANCE,
+	invisible: false, senseInvisible: false, senseVis: STANDARD_MONSTER_SIGHT_DISTANCE,
 	brain: Brain.AI, brainFlee: false, brainOpensDoors: false, brainTalk: false,
 	corpse: 'corpse',
 	immune: '', resist: '', vuln: '',
@@ -937,15 +970,17 @@ const MonsterTypeList = {
 		light: 4,
 		neverPick: true,
 		regenerate: 0.01,
-		sightDistance: MaxSightDistance,
+		senseVis: 	MaxVis,
 		strictAmmo: true
 	},
 	"dog": {
 		core: [ 'd', 0, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
+		attitude: Attitude.HUNT,
 		brainFlee: true,
 		brainPet: true,
 		dodge: 1,
 		isAnimal: true,
+		isDog: true,
 		isPet: true,
 		isNamed: true,
 		jumpMax: 2,
@@ -953,7 +988,8 @@ const MonsterTypeList = {
 		properNoun: true,
 		packAnimal: true,
 		rarity: 0.10,
-		regenerate: 0.03
+		regenerate: 0.03,
+		senseSmell: 200,
 	},
 	"dwarf": {
 		core: [ SYM, 0, '3:10', 'good', 'bash', 'dc-mon/dwarf.png', '*' ],
@@ -968,17 +1004,20 @@ const MonsterTypeList = {
 	},
 	"mastiff": {
 		core: [ SYM, 69, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
+		attitude: Attitude.HUNT,
 		dodge: 1,
 		brainFlee: true,
 		brainPet: true,
 		isAnimal: true,
+		isDog: true,
 		isPet: true,
 		isNamed: true,
 		loot: '30% dogCollar',
 		properNoun: true,
 		packAnimal: true,
 		rarity: 0.10,
-		regenerate: 0.03
+		regenerate: 0.03,
+		senseSmell: 200,
 	},
 	"human": {
 		core: [ SYM, 0, '3:10', 'good', 'cut', 'dc-mon/human.png', '*' ],
@@ -1043,8 +1082,23 @@ const MonsterTypeList = {
 		sayPrayer: 'Hail Balgur, ruler of the deep!',
 		vuln: DemonVulnerability,
 	},
+	"demonHound": {
+		core: [ SYM, 15, '3:5', 'evil', 'bite', 'dc-mon/animals/hell_hound.png', 'it' ],
+		attitude: Attitude.HUNT,
+		brainPathSmell: true,
+		immune: DemonImmunity,
+		isDemon: true,
+		isDemonHound: true,
+		loot: '30% demonEye',
+		packAnimal: true,
+		resist: DemonResistance,
+		senseSmell: 400,
+		scentReduce: 100,
+		vuln: DemonVulnerability,
+	},
 	"ethermite": {
 		core: [ SYM, 59, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
+		attitude: Attitude.HUNT,
 		dodge: 1,
 		glow: true,
 		invisible: true,
@@ -1057,13 +1111,17 @@ const MonsterTypeList = {
 	},
 	"ghoul": {
 		core: [ SYM, 39, '1:2', 'evil', 'rot', 'dc-mon/undead/ghoul.png', 'it' ],
+		attitude: Attitude.HUNT,
 		immune: UndeadImmunity,
 		dark: 2,
 		isUndead: true,
+		isGhoul: true,
 		loot: '30% coin, 20% potion.eRot, 50% ghoulFlesh',
 		senseLife: true,
+		stink: 0.5,
 		resist: UndeadResistance,
-		vuln: UndeadVulnerability
+		vuln: UndeadVulnerability,
+		senseSmell: 200,
 	},
 	"goblin": {
 		core: [ SYM, 1, '3:10', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
@@ -1120,8 +1178,10 @@ const MonsterTypeList = {
 		dodge: 1,
 		inventoryLoot: '2x dart.eInert',
 		isEarthChild: true,
+		isKobold: true,
 		loot: '50% coin, 4x 50% weapon.dart, 30% weapon.dagger, 30% dogCollar',
-		packAnimal: true
+		packAnimal: true,
+		senseSmell: 200,
 	},
 	"ogreKid": { 
 		core: [ SYM, 39, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
@@ -1131,7 +1191,8 @@ const MonsterTypeList = {
 		lootInventory: 'weapon.rock',
 		loot: '50% weapon.club, 20% ogreDrool',
 		resist: DamageType.CUT,
-		speed: 0.75
+		speed: 0.75,
+		stink: 0.6,
 	},
 	"ogre": {
 		core: [ SYM, 69, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
@@ -1143,11 +1204,14 @@ const MonsterTypeList = {
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speed: 0.5,
+		stink: 0.8,
 	},
 	"redOoze": {
 		core: [ SYM, 9, '3:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
+		attitude: Attitude.HUNT,
 		brainRavenous: true,
 		name: "red ooze",
+		eatenFoodToInventory: true,
 		glow: 4,
 		immune: OozeImmunity,
 		isPlanar: true,
@@ -1158,7 +1222,8 @@ const MonsterTypeList = {
 		scale: 0.50,
 		growLimit: 3.0,
 		speed: 0.75,
-		vuln: OozeVulnerability
+		vuln: OozeVulnerability,
+		senseSmell: 200,
 	},
 	"blueScarab": {
 		core: [ SYM, 59, '2:30', 'evil', 'freeze', 'dc-mon/animals/boulder_beetle.png', 'it' ],
@@ -1192,6 +1257,7 @@ const MonsterTypeList = {
 	},
 	"skeleton": {
 		core: [ SYM, 19, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		isUndead: true,
 		isSkeleton: true,
@@ -1200,6 +1266,7 @@ const MonsterTypeList = {
 	},
 	"skeletonArcher": {
 		core: [ SYM, 29, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletonArcher.png', 'it' ],
+		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		inventoryLoot: [{ typeFilter:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow', fake: true }],
 		isUndead: true,
@@ -1210,6 +1277,7 @@ const MonsterTypeList = {
 	"skeletonLg": {
 		core: [ SYM, 59, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
 		name: 'ogre skeleton',
+		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		inventoryLoot: '50% spell.eRot',
 		isUndead: true,
@@ -1224,8 +1292,9 @@ const MonsterTypeList = {
 		loot: '10% potion, 20% facetedEye, 10% antGrubMush',
 		isAnimal: true,
 		isSmall: true,
+		senseSmell: 200,
 		speed: 1.5,
-		vuln: 'glass'+','+DamageType.FREEZE
+		vuln: 'glass'+','+DamageType.FREEZE,
 	},
 	"troll": {
 		core: [ SYM, 49, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
@@ -1234,6 +1303,7 @@ const MonsterTypeList = {
 		isEarthChild: true,
 		isLarge: true,
 		regenerate: 0.15,
+		stink: 0.4,
 		vuln: DamageType.BURN
 	},
 	"viper": {
@@ -1242,7 +1312,8 @@ const MonsterTypeList = {
 		dodge: 2,
 		isAnimal: true,
 		loot: '40% viperVenom',
-		speed: 2.0
+		senseSmell: 20,
+		speed: 2.0,
 	},
 
 // LUNAR
@@ -1292,6 +1363,7 @@ const MonsterTypeList = {
 		immune: [DamageType.POISON,'mud'].join(','),
 		isAnimal: true,
 		loot: '50% frogSpine',
+		stink: 0.8,
 	},
 	"sheep": {
 		core: [ SYM, 1, '1:20', 'neutral', 'bite', 'dc-mon/animals/sheep.png', 'it' ],
@@ -1574,6 +1646,7 @@ ItemTypeList.table.imgChoose = function(map,x,y) {
 	return 'small';
 }
 
+
 TileTypeList.bridge.imgChoose = function(map,x,y) {
 	let w = map.tileTypeGet(x-1,y);
 	let e = map.tileTypeGet(x+1,y);
@@ -1585,6 +1658,12 @@ TileTypeList.bridge.imgChoose = function(map,x,y) {
 	}
 	this.img = this.imgChoices.EW.img;
 }
+
+ItemTypeList.bed.imgChoose = function(map,x,y) {
+	let n = map.findItemAt(x,y-1).filter(item=>item.isBed).first;
+	this.img = this.imgChoices[n?'head':'foot'].img;
+}
+
 
 ItemTypeList.sign.imgChoose = function(map,x,y) {
 	let tile = map.tileTypeGet(x,y);
@@ -1656,6 +1735,7 @@ MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 }
 
 MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
+	if( !attacker ) return;
 	let f = this.findAliveOthers().includeMe().filter( e => e.typeId==this.typeId );
 	if( f.count ) {
 		let numAlerted = 0;

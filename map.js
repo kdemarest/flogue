@@ -92,10 +92,38 @@ class SimpleMap {
 		}
 		return this;
 	}
+	traverseNear(cx,cy,dist,fn) {
+		let sy = Math.max(cy-dist,0);
+		let ey = Math.min(cy+dist,this.yLen-1);
+		let sx = Math.max(cx-dist,0);
+		let ex = Math.min(cx+dist,this.xLen-1);
+		for( let y=sy ; y<=ey ; ++y ) {
+			for( let x=sx ; x<=ex ; ++x ) {
+				if( fn(x,y) === false ) return;
+			}
+		}
+		return this;
+	}
 	count(fn) {
 		let c = 0;
 		this.traverse( (x,y,type) => c += fn(x,y,type) );
 		return c;
+	}
+	dirChoose(x,y,ratingFn) {
+		let bestDir = false;
+		let bestRating = null;
+		for( let dir=0 ; dir<DirectionCount ; ++dir ) {
+			let dx = x+DirectionAdd[dir].x;
+			let dy = y+DirectionAdd[dir].y;
+			if( this.inBounds(dx,dy) ) {
+				let rating = ratingFn(dx,dy,bestRating);
+				if( rating !== false ) {
+					bestDir = dir;
+					bestRating = rating;
+				}
+			}
+		}
+		return bestDir;
 	}
 
 	tileSymbolSet(x,y,symbol) {
@@ -172,8 +200,12 @@ class Map extends SimpleMap {
 			this.itemLookup[lPos] = (this.itemLookup[lPos] || []);
 			this.itemLookup[lPos].push(item);
 		});
-		this.walkLookup = []
-		this.calcWalkableAll();
+		this.walkLookup = this.calcLookup([],pWalk(this));
+		// This ignores the first-round stink anything might generate. And really, everything "should" have been
+		// walking around for a while, so we should make fake prior-stink trails for everything. But ya know.
+		this.scentLookup = [];
+		this.siteLookup = [];
+		
 		this.initSprites();
 	}
 	get entityList() {
@@ -186,35 +218,69 @@ class Map extends SimpleMap {
 			this.tileSprite[y][x] = [];
 		});
 	}
-	calcWalkable(x,y) {
-		let lPos = y*this.xLen+x;
-		let itemList = this.itemLookup[lPos] || this.itemLookupStaticNop;
-		let ask = null;
-		let prob = Prob.NONE;
-		itemList.forEach( item => {
-			if( item.isProblem ) {
-				ask = item;
-			}
-			else
-			if( !item.mayWalk ) {
-				prob = Prob.WALL;
+	calcLookup(lookup,testFn) {
+		let xLen = this.xLen;
+		this.traverse( (x,y) => {
+			let lPos = y*this.xLen+x;
+			lookup[lPos] = testFn(x,y);
+		});
+		return lookup;
+	}
+	leaveScent(x,y,entity,timeReduction=0) {
+		// WARNING: Don't make any monster that uses smell have ANY stink. It will
+		// mask the scent of its prey with its own smell!
+		if( !entity.isMonsterType && !entity.stink ) {
+			return false;
+		}
+		let time = Time.simTime - timeReduction;
+		let lPos = (y*this.xLen+x)*2;
+		if( time >= (this.scentLookup[lPos+0] || 0) ) {
+			this.scentLookup[lPos+0] = time;
+			this.scentLookup[lPos+1] = entity;
+		}
+		if( !entity.stink ) {
+			return 1;
+		}
+		// NOTICE: You do NOT want the surrounding stink to ever be as much as the stink you are currently
+		// laying, because pathfinding needs decreasing values to follow.
+		let stinkTime = Math.floor(time-(10*Math.clamp(1-entity.stink,0.0,0.98)));
+		this.traverseNear(x,y,1, (x,y) => {
+			let lPos = (y*this.xLen+x)*2;
+			if( stinkTime >= (this.scentLookup[lPos+0] || 0) ) {
+				this.scentLookup[lPos+0] = stinkTime;
+				this.scentLookup[lPos+1] = entity;
 			}
 		});
-		let tile = this.tileTypeGet(x,y);
-		if( tile.isProblem ) {
-			ask = ask || tile;
+		return 2;
+	}
+	calcWalkable(x,y,entityAtSpot) {
+		let lPos = y*this.xLen+x;
+		if( entityAtSpot ) {
+			this.walkLookup[lPos] = Prob.WALL;
+			return;
 		}
-		else
-		if( !tile.mayWalk ) {
-			prob = Prob.WALL;
+		let testFn = pWalk(this);
+		this.walkLookup[lPos] = testFn(x,y);
+	}
+	getScentAge(x,y) {
+		return Time.simTime-(this.scentLookup[(y*this.xLen+x)*2+0] || SCENT_AGE_LIMIT);
+	}
+	getScentEntity(x,y,maxScentAge=SCENT_AGE_LIMIT,excludeId) {
+		maxScentAge = Math.min(maxScentAge,SCENT_AGE_LIMIT);
+		let lPos = (y*this.xLen+x)*2;
+		let simTime = this.scentLookup[lPos+0];
+		if( !simTime || simTime < Time.simTime-maxScentAge ) {
+			return null;
 		}
-		this.walkLookup[lPos] = ask && prob !== Prob.WALL ? ask : prob;
+		let found = this.scentLookup[lPos+1];
+		if( found.id == excludeId ) {
+			return null;
+		}
+		return found;
 	}
 
-	calcWalkableAll() {
-		let walk = [];
-		this.traverse( (x,y) => this.calcWalkable(x,y) );
-	}
+
+	// This is used in testing, but not the main game.
 	setObstacle(x,y,prob) {
 		let lPos = y*this.xLen+x;
 		this.walkLookup[lPos] = prob;
@@ -224,7 +290,7 @@ class Map extends SimpleMap {
 		if( !this.tileEntity[y][x] ) {
 			adhocEntity = adhocEntity || adhoc( SymbolToType[this.tileSymbolGet(x,y)], this, x, y );
 			this.tileEntity[y][x] = adhocEntity;
-			console.log('Tile entity ('+x+','+y+') '+adhocEntity.typeId);
+			//console.log('Tile entity ('+x+','+y+') '+adhocEntity.typeId);
 		}
 		console.assert(this.tileEntity[y][x]);
 		return this.tileEntity[y][x];
@@ -284,9 +350,6 @@ class Map extends SimpleMap {
 		}
 		return list.length ? pick(list) : false;
 	}
-	findItem(me) {
-		return new Finder(this.itemList,me);
-	}
 	spiralFind(x,y,fn) {
 		let dir = 0;
 		let span = 0.5;
@@ -309,6 +372,13 @@ class Map extends SimpleMap {
 		return false;
 	}
 
+	getSiteAt(x,y) {
+		if( !this.inBounds(x,y) ) {
+			return false;
+		}
+		return this.siteLookup[y*this.xLen+x];
+	}
+
 	itemCreateByType(x,y,type,presets,inject) {
 		if( x===undefined ) debugger;
 		if( type.isRandom ) debugger;
@@ -328,9 +398,30 @@ class Map extends SimpleMap {
 		return this.itemCreateByType(x,y,ItemTypeList[typeId],presets,inject);
 	}
 
+	isItemAt(x,y) {
+		// This has a TINY little flow, in that the left and right sides wrap around. But it is used
+		// during pathfind, so we're going to let this little problem slide.
+		let i = this.itemLookup[y*this.xLen+x];
+		return i && i.length;
+	}
+	findItem(me) {
+		return new Finder(this.itemList,me);
+	}
+	findFirstItemAt(x,y) {
+		if( !this.inBounds(x,y) ) return false;
+		return this.itemLookup[y*this.xLen+x];
+	}
 	findItemAt(x,y) {
 		if( !this.inBounds(x,y) ) return false;
 		return new Finder(this.itemLookup[y*this.xLen+x] || this.itemLookupStaticNop);
+	}
+	findChosenItemAt(x,y,fn) {
+		if( this.inBounds(x,y) ) {
+			let a = this.itemLookup[y*this.xLen+x];
+			if( a ) {
+				return a.find(fn);
+			}
+		}
 	}
 
 	_itemRemove(item) {
@@ -341,6 +432,13 @@ class Map extends SimpleMap {
 		Array.filterInPlace( this.itemLookup[item.y*this.xLen+item.x], i => i.id!=item.id );
 		spriteDeathCallback( item.spriteList );
 		this.calcWalkable(item.x,item.y);
+		this.traverse( (x,y) => {
+			let lPos = (y*this.xLen+x)*2;
+			if( this.scentLookup[lPos+1] == item ) {
+				this.scentLookup[lPos+0] = SCENT_AGE_LIMIT;
+				this.scentLookup[lPos+1] = null;
+			}
+		});
 		//this.tileSymbolSet(item.x,item.y,TileTypeList['floor'].symbol);
 	}
 	_itemTake(item,x,y) {
@@ -354,6 +452,7 @@ class Map extends SimpleMap {
 		item.x = x;
 		item.y = y;
 		this.calcWalkable(x,y);
+		this.leaveScent(x,y,item);
 		//this.tileSymbolSet(item.x,item.y,item.symbol);
 	}
 }

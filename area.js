@@ -187,7 +187,6 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		});
 	}
 
-
 	let injectList = [];
 	area.siteList = [];
 
@@ -201,7 +200,16 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	area.map = new Map(area,masonMap.renderToString(),[]);
 	area.entityList = [];
 	let isFriendFn = (e) => !isEnemyFn(e);
-	
+
+	area.siteList.forEach( site => {
+		if( !site.marks ) return;
+		for( let i=0 ; i<site.marks.length ; i+=2 ) {
+			let x = site.marks[i+0];
+			let y = site.marks[i+1];
+			area.map.siteLookup[y*area.map.xLen+x] = site;
+		}
+	});
+
 	extractEntitiesFromMap(area.map,injectList,makeMonster,makeItem);
 
 	let totalFloor    = area.map.count( (x,y,type) => type.isFloor && safeToMake(area.map,x,y) ? 1 : 0);
@@ -387,17 +395,12 @@ class Area {
 	tick(speed) {
 		tick( speed, this.map, this.entityList );
 	}
+	pickSite(fn) {
+		let list = this.siteList.filter( fn );
+		let n = Math.randInt(0,list.length);
+		return list[n];
+	}
 	getSiteAt(x,y) {
-		let found;
-		this.siteList.forEach( site => {
-			if( !site.marks ) return;
-			for( let i=0 ; i<site.marks.length ; i+=2 ) {
-				if( site.marks[i+0]==x && site.marks[i+1]==y ) {
-					found = site;
-					return false;
-				}
-			}
-		});
-		return found;
+		return this.map.getSiteAt(x,y);
 	}
 }

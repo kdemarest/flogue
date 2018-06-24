@@ -7,6 +7,7 @@
 <link rel="stylesheet" type="text/css" href="index.css">
 <!--script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script-->
 <script src="utilities.js" charset="utf-8"></script>
+<script src="time.js" charset="utf-8"></script>
 <script src="dataFab.js" charset="utf-8"></script>
 <script src="data.js" charset="utf-8"></script>
 <script src="dataJobs.js" charset="utf-8"></script>
@@ -92,11 +93,15 @@ function main(levelName) {
 		world.areaChange();
 		gui.tick();
 		gui.render();
+		if( timePasses ) {
+			Time.simTimeInc();
+		}
 	}
 
 	function onUserEvent(event) {
-		let now = Date.now()/1000;
+		let now = Time.wallTime;
 		if( now < (User.entity.nowPrior||0)+(User.entity.timeDelay||0) ) {
+			// This makes sure that time-consuming activities, like mining, don't go too quickly.
 			return;
 		}
 		User.entity.nowPrior = now;

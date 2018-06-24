@@ -44,7 +44,7 @@ let sScale = function(a) {
 	return this;
 }
 let sScaleSet = function(absScale) {
-	this.transform.scale.set(this.baseScale*absScale*(TILE_DIM/32));
+	this.transform.scale.set(this.baseScale*absScale);
 	return this;
 }
 let sReset = function() {
@@ -109,7 +109,10 @@ let sGrav = function(amt) {
 }
 let sAlpha = function(amt) {
 	this.alphaChanged = true;
-	this.alpha = amt * this.light;
+	// KEN WARNING
+	this.alpha = amt; // * this.light;
+	if( this.alpha !== amt ) debugger;
+	return this;
 }
 let sPct = function() {
 	if( typeof this.duration == 'number' ) {
@@ -131,7 +134,7 @@ let sSine = function(pct,scale) {
 
 class Anim {
 	constructor(sticker,data) {
-		Object.assign(this,{ delay: 0, alpha: 1, scale: 1, isAnim: 1 }, sticker, data);
+		Object.assign(this,{ delay: 0, scale: 1, isAnim: 1 }, sticker, data);
 		this.isAnimation = true;
 		this.dead = false;
 		this.delta = 0;
@@ -218,7 +221,7 @@ class Anim {
 		if( this.dead ) return;
 		console.assert( this.duration !== undefined );
 		console.assert( typeof this.duration !== 'number' || !isNaN(this.duration) );
-		sprite.baseScale = sprite.baseScale || 1;
+		sprite.baseScale = sprite.baseScale || TILE_DIM/sprite.width;
 		sprite.rx = sprite.rx || 0;
 		sprite.ry = sprite.ry || 0;
 		sprite.qx = sprite.qx || 0;

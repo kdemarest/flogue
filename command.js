@@ -212,7 +212,7 @@ class UserCommandHandler {
 				tell(mSubject,observer,' ',mVerb,'lack',' a clear shot.');
 				return;
 			}
-			let target = observer.findAliveOthersAt(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
+			let target = observer.findAliveOthersOrSelfAt(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
 			if( !target.count && !this.cmd.commandItem.mayTargetPosition && (!this.cmd.commandItem.effect || !this.cmd.commandItem.effect.mayTargetPosition) ) {
 				return this.cmd.cancel();
 			}

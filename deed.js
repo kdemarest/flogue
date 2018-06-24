@@ -4,9 +4,6 @@ class Deed {
 	// Set duration = true for perpetual
 	//effect,target,source,item
 	constructor(_effect) {
-		if( _effect.stat && _effect.target[_effect.stat] === undefined ) {
-			debugger;
-		}
 		Object.assign( this, _effect );
 		this.timeLeft = this.isInstant ? false : this.duration;
 		this.killMe = false;
@@ -24,25 +21,49 @@ class Deed {
 			this.handler();
 			return;
 		}
+		let target = this.target;
+		let stat = this.stat;
 		if( this.op == 'set' ) {
-			this.target[this.stat] = this.value;
+			target[stat] = this.value;
+		}
+		if( this.op == 'max' ) {
+			if( target[stat] === undefined ) {
+				target[stat] = this.value;
+			}
+			else {
+				target[stat] = Math.max(target[stat],this.value);
+			}
+		}
+		if( this.op == 'min' ) {
+			if( target[stat] === undefined ) {
+				target[stat] = this.value;
+			}
+			else {
+				target[stat] = Math.min(target[stat],this.value);
+			}
 		}
 		if( this.op == 'add' ) {
-			if( typeof this.target[this.stat] === 'string' ) {
-				if( !String.arIncludes(this.target[this.stat],this.value) ) {
-					this.target[this.stat] = String.arAdd(this.target[this.stat],this.value);
+			if( typeof target[stat] === 'string' ) {
+				if( !String.arIncludes(target[stat],this.value) ) {
+					target[stat] = String.arAdd(target[stat],this.value);
 				}
 			}
 			else {
-				this.target[this.stat] += this.value;
+				if( target[stat] === undefined ) {
+					target[stat] = 0;
+				}
+				target[stat] += this.value;
 			}
 		}
 		if( this.op == 'sub' ) {
-			if( typeof this.target[this.stat] === 'string' ) {
-				this.target[this.stat] = String.arSub(this.target[this.stat],this.value);
+			if( typeof target[stat] === 'string' ) {
+				target[stat] = String.arSub(target[stat],this.value);
 			}
 			else {
-				this.target[this.stat] -= this.value;
+				if( target[stat] === undefined ) {
+					target[stat] = 0;
+				}
+				target[stat] -= this.value;
 			}
 		}
 	}
@@ -101,9 +122,9 @@ let DeedManager = (new class {
 	// effect starts, or one expires.
 	calcStat(target,stat) {
 		let oldValue = target[stat];
-		if( target.baseType[stat] === undefined ) {
-			debugger;
-		}
+//		if( target.baseType[stat] === undefined ) {
+//			debugger;
+//		}
 		target[stat] = target.baseType[stat];
 		for( let deed of this.deedList ) {
 			if( !deed.killMe && deed.target.id == target.id && deed.stat == stat ) {
@@ -386,4 +407,7 @@ DeedManager.addHandler('damage',function() {
 });
 DeedManager.addHandler('shove',function() {
 	this.target.takeShove(this.source,this.item,this.value);
+});
+DeedManager.addHandler('teleport',function() {
+	this.target.takeTeleport(this.source,this.item);
 });

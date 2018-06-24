@@ -1,10 +1,53 @@
+
+function pWalk(map) {
+	let nulItem = {};
+	return function(x,y) {
+		if( !map.isItemAt(x,y) ) {
+			let tile = map.tileTypeGet(x,y);
+			if( !tile.mayWalk ) return Prob.WALL;
+			if( tile.isProblem ) return tile;
+			return Prob.NONE;
+		}
+
+		let mayWalk = map.findChosenItemAt( x, y, item => !item.mayWalk );
+		if( !mayWalk ) return Prob.WALL;
+		let tile = map.tileTypeGet(x,y);
+		if( !tile.mayWalk ) return Prob.WALL;
+		let itemProblem = map.findChosenItemAt( x, y, item => item.isProblem );
+		if( itemProblem ) return item;
+		if( tile.isProblem ) return tile;
+		return Prob.NONE;
+	}
+}
+
+function pWalkQuick(map) {
+	let xLen = map.xLen;
+	return function(x,y) {
+		return map.walkLookup[y*xLen+x];
+	}
+}
+
+function pVerySafe(map,fn) {
+	return function(x,y) {
+		let tile = map.tileTypeGet(x,y);
+		if( !tile.mayWalk || tile.isProblem ) return false;
+		let item = map.findChosenItemAt(x,y,item=>!item.mayWalk || item.isProblem);
+		if( item ) return false;
+		let entity = new Finder(map.area.entityList).near(x,y,2);
+		if( entity.count ) return false;
+		return fn ? fn(x,y) : true;
+	}
+}
+
+
 class Path {
-	constructor(map) {
+	constructor(map,distLimit,testFn) {
 		this.map = map;
 		this.xLen = map.xLen;
 		this.yLen = map.yLen;
+		this.distLimit = distLimit === null ? xLen*yLen : distLimit;
+		this.testFn = testFn || pWalkQuick(map);
 		this.grid = null;
-		this.gridInit = map.walkLookup;
 		this.sx = null;
 		this.sy = null;
 		this.ex = null;
@@ -56,18 +99,25 @@ class Path {
 		this.sy = sy;
 		this.ex = ex;
 		this.ey = ey;
-		this.grid = [].concat(this.gridInit);
+		this.grid = [];
 		this.path = [];
+
+		this.status = {};
 
 		let xLen = this.xLen;
 		let yLen = this.yLen;
 		let grid = this.grid;
+		let testFn = this.testFn;
+		let distLimit = this.distLimit;
 
 		function flood() {
 
 			function fill(x,y,dist) {
 				let lPos = y*xLen+x;
 				let v = grid[lPos];
+				if( v===undefined ) {
+					v=testFn(x,y);
+				}
 				if( typeof v !== 'number' ) {
 					v = v.isProblem(entity,v);
 					console.assert( (v>=0 && v<=1) || v == Prob.DEATH );
@@ -77,6 +127,10 @@ class Path {
 				}
 				let myDist = Math.floor(dist+1+v*10);
 				grid[lPos] = myDist;	// or if isProblem, more than 1
+				if( myDist > distLimit ) {
+					self.status.reachedLimit = 1;
+					return false;
+				}
 				hotTiles.push(myDist,x,y);
 				++numMade;
 				return true;
@@ -88,7 +142,9 @@ class Path {
 			let numDone = 0;
 			let dist = 1;		// This MUST start at 1, because all legal-move grid positions are n>=0 && n<1.0
 			let lPos = sy*xLen+sx;
-			console.assert( grid[lPos] !== undefined );
+			console.assert( grid[lPos] === undefined );
+			let initialTest = testFn(sx,sy);
+			console.assert( initialTest !== undefined );
 			grid[lPos] = dist;
 			hotTiles.push(dist,sx,sy);
 			++numMade;
@@ -121,6 +177,8 @@ class Path {
 				}
 				dist += 1;
 			}
+			if( reps <=0 ) self.status.exceededReps = 1;
+			else self.status.floodFoundNoPath = 1;
 			return false;
 		}
 
@@ -156,6 +214,12 @@ class Path {
 				x += DirectionAdd[bestDir].x;
 				y += DirectionAdd[bestDir].y;
 				if( onStep ) onStep();
+			}
+			if( reps <=0 ) {
+				this.status.pathTooLong = 1;
+			}
+			if( this.path.length == 0 ) {
+				this.status.zeroLengthPath = 1;
 			}
 		}
 		return this.path.length;

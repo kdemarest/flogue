@@ -141,7 +141,7 @@ class Item {
 				y: 			this.y,
 				img: 		this.imgGet ? this.imgGet(this) : this.img,
 				duration: 	0.3,
-				onSpriteMake: 	s => { s.sVelTo(MaxSightDistance,0,0.3); },
+				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.3); },
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
 			});
 		}
@@ -208,7 +208,7 @@ class Item {
 		}
 
 		// Here is where we should figure out the area of effect and hit all as needed.
-		let result = effectApply( this.effect, target, this.owner.isMonsterType ? this.owner : null, this );
+		let result = effectApply( this.effect, target, this.ownerOfRecord, this );
 		if( !result ) {
 			return false;
 		}

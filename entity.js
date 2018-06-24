@@ -40,8 +40,6 @@ class Entity {
 		jobData.inventoryLoot = Array.supplyConcat( monsterType.inventoryLoot, inits.inventoryLoot, jobData.inventoryLoot, inject?inject.inventoryLoot:null, values.inventoryLoot );
 
 		Object.assign( this, monsterType, inits, jobData, inject || {}, values );
-		this.xOrigin = this.x;
-		this.yOrigin = this.y;
 
 		if( this.name && this.name.indexOf('/')>0 ) {
 			this.name = this.name.split('/')[this.pronoun=='she' ? 1 : 0];
@@ -110,26 +108,22 @@ class Entity {
 		this.area = area;
 		let fnName = this.isUser() ? 'unshift' : 'push';
 		this.area.entityList[fnName](this);
-		this.inVoid = false;
-		this.x = x;
-		this.y = y;
 		let c = this.findFirstCollider(this.travelMode,x,y,this);
 		if( c ) {
 			[x,y] = this.map.spiralFind( this.x, this.y, (x,y) => !this.findFirstCollider(this.travelMode,x,y,this) );
 			console.assert( x!==false );
-			this.x = x;
-			this.y = y;
 		}
 		if( Gab && hadNoArea ) {
 			Gab.entityPostProcess(this);
 		}
+		this.setPosition(x,y);
 		tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
 	}
 
 	findAliveOthersNearby(entityList = this.entityList) {
 		let list = [];
 		for( let e of entityList ) {
-			if( !e.isDead() && this.getDistance(e.x,e.y)<=MaxSightDistance && e.id!=this.id ) {
+			if( !e.isDead() && this.getDistance(e.x,e.y)<=MaxVis && e.id!=this.id ) {
 				list.push(e);
 			}
 		}
@@ -139,6 +133,15 @@ class Entity {
 		let entityList = this.entityList;
 		for( let e of entityList ) {
 			if( !e.isDead() && e.id!=this.id && e.x==x && e.y==y ) {
+				return new Finder([e],this,false);
+			}
+		}
+		return new Finder([],this,false);
+	}
+	findAliveOthersOrSelfAt(x,y) {
+		let entityList = this.entityList;
+		for( let e of entityList ) {
+			if( !e.isDead() && e.x==x && e.y==y ) {
 				return new Finder([e],this,false);
 			}
 		}
@@ -243,6 +246,9 @@ class Entity {
 	}
 
 	isMyEnemy(entity) {
+		if( entity.id == this.id ) {
+			return false;
+		}
 		if( this.attitude == Attitude.ENRAGED ) {
 			return true;
 		}
@@ -287,11 +293,11 @@ class Entity {
 		else {
 			// Calc vis if I am near the user, that it, I might be interacting with him!
 			let user = this.entityList.find( e => e.isUser() );
-			doVis = user && this.getDistance(user.x,user.y) < MaxSightDistance;
+			doVis = user && this.getDistance(user.x,user.y) < MaxVis;
 		}
 
 		if( doVis ) {
-			this.vis = this.area.vis.calcVis(this.x,this.y,this.sightDistance,this.senseBlind,this.senseXray,this.vis,this.mapMemory);
+			this.vis = this.area.vis.calcVis(this.x,this.y,this.senseVis,this.senseBlind,this.senseXray,this.vis,this.mapMemory);
 		}
 		else {
 			this.vis = null;
@@ -300,9 +306,13 @@ class Entity {
 		return this.vis;
 	}
 
-	canPerceivePosition(x,y) {
+	canSeePosition(x,y) {
 		if( x===undefined || y===undefined ) {
 			debugger;
+		}
+		if( !this.vis ) {
+			let d = this.getDistance(x,y);
+			return d <= (this.senseVis || STANDARD_MONSTER_SIGHT_DISTANCE);
 		}
 		if( typeof this.vis[y]==='undefined' || typeof this.vis[y][x]==='undefined' ) {
 			return false;
@@ -310,26 +320,40 @@ class Entity {
 		return this.vis[y][x];
 	}
 
-	canPerceiveEntity(entity) {
+	canTargetEntity(entity) {
 		if( entity.inVoid ) {
 			return false;
 		}
+		// You can always target yourself.
+		if( this.id == entity.id ) {
+			return true;
+		}
+		// Magic might be helping you see things
 		if( (entity.isMonsterType && this.senseLife) || (entity.isItemType && this.senseItems) ) {
 			return true;
 		}
-		if( !this.vis ) {
-			let d = this.getDistance(entity.x,entity.y);
-			return d <= (this.sightDistance || STANDARD_MONSTER_SIGHT_DISTANCE);
-		}
-		// This gets us up to whoever actually owns this item. But on the map, you just use the item.
-		// This means that items can NOT be invisible independent of their owners.
 		if( entity.ownerOfRecord ) {
 			entity = entity.ownerOfRecord;
 		}
-		if( (this.senseBlind || (entity.invisible && !this.senseInvisible)) && entity.id!==this.id ) { // you can always perceive yourself
+		let d = this.getDistance(entity.x,entity.y);
+		// Adjacent things can be smelled if they stink, or detected with a good sense of smell.
+		if( d <= 1 && (entity.stink || (this.senseSmell && !entity.scentReduce)) ) {
+			return true;
+		}
+		// blind can not target
+		if( this.senseBlind ) {
 			return false;
 		}
-		return this.canPerceivePosition(entity.x,entity.y);
+		// You can't target invisible unless you can see invisible (but see scent above)
+		if( entity.invisible && !this.senseInvisible ) {
+			return false;
+		}
+		// Otherwise, you can target an entity in any position you can see.
+		return this.canSeePosition(entity.x,entity.y);
+	}
+
+	canPerceiveEntity(entity) {
+		return this.canTargetEntity(entity);
 	}
 
 	canTargetPosition(x,y) {
@@ -340,9 +364,6 @@ class Entity {
 			return false;
 		}
 		return this.vis[y][x];
-	}
-	canTargetEntity(entity) {
-		return this.canTargetPosition(entity.x,entity.y);
 	}
 
 	get naturalMeleeWeapon() {
@@ -412,6 +433,10 @@ class Entity {
 		return Math.max(Math.abs(x-this.x),Math.abs(y-this.y));
 	}
 
+	isAt(x,y) {
+		return this.x==x && this.y==y;
+	}
+
 	at(x,y) {
 		let f = this.findAliveOthersAt(x,y);
 		return f.first || this.map.tileTypeGet(x,y);
@@ -419,6 +444,19 @@ class Entity {
 
 	atDir(x,y,dir) {
 		return at(x + DirectionAdd[dir].x, y + DirectionAdd[dir].y);
+	}
+
+	dirToBestScent(x,y,target) {
+		let dir = this.map.dirChoose( x, y, (x,y,bestAge) => {
+			let entity = this.map.getScentEntity(x,y,this.senseSmell);
+			if( !entity || entity.id !== target.id ) return false;
+			let age = this.map.getScentAge(x,y);;
+			if( bestAge == null || age < bestAge ) {
+				return age;
+			}
+			return false;
+		});
+		return dir;
 	}
 
 	// NOTE: This collides with monsters first, then items, then tiles. It could be a LOT
@@ -436,7 +474,7 @@ class Entity {
 		}
 
 		let self = this;
-		let curTile = this.map.tileTypeGet(this.x,this.y);
+		let curTile = this.map.tileTypeGet(this.inVoid ? x : this.x,this.inVoid ? y : this.y);
 		console.assert(curTile);
 
 		let mayTravel = 'may'+String.capitalize(travelMode || "walk");
@@ -523,21 +561,49 @@ class Entity {
 		return Prob.NONE;
 	}
 
-	thinkWander(walkAnywhere=false) {
-		this.record('wander'+(walkAnywhere ? ' anywhere' : ''), true);
-
+	thinkStumbleF(chanceToNotMove=50) {
+		let wait = Math.chance(chanceToNotMove);
+		this.record('stumble'+(wait?' wait':''), true);
+		if( wait ) return Command.WAIT;
 		const RandCommand = [Command.N, Command.NE, Command.E, Command.SE, Command.S, Command.SW, Command.W, Command.NW];
+		return RandCommand[Math.randInt(0,RandCommand.length)];
+	}
+
+	thinkTetherReturn(tetherMagnet=70) {
+		let returnChance = this.beyondTether() ? tetherMagnet : ( !this.at(this.xOrigin,this.yOrigin) ? tetherMagnet/2 : 0 );
+		if( Math.chance(returnChance) ) {
+			this.record('wander return', true);
+			let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+			if( c ) return c;
+		}
+		return false;
+	}
+
+	thinkWanderF(avgPause=7,avgWanderDist=8,tetherMagnet=70) {
+		if( this.commandLast == Command.WAIT && Math.chance(100/avgPause) ) {
+			this.record('wander pause', true);
+			return Command.WAIT;
+		}
+
+		if( this.tether ) {
+			let c = this.thinkTetherReturn(tetherMagnet);
+			if( c ) return c;
+		}
+
+		let dirLast = commandToDirection(this.commandLast);
+		if( dirLast !== false ) {
+			if( Math.chance(100/avgWanderDist) && this.mayGo(dirLast,this.problemTolerance()) ) {
+				this.record('wander forward',true);
+				return this.commandLast;
+			}
+			return Command.WAIT;
+		}
+
 		let reps = 4;
-		let command;
 		do {
-			command = this.beyondTether() && Math.chance(90) ?
-				directionToCommand[deltasToDirNatural(this.xOrigin-this.x,this.yOrigin-this.y)] :
-				RandCommand[Math.randInt(0,RandCommand.length)];
-			let dir = commandToDirection(command);
-			if( dir !== false ) {
-				if( walkAnywhere || this.mayGo(dir,this.problemTolerance()) ) {
-					return command;
-				}
+			let dir = Math.randInt(0,8);
+			if( this.mayGo(dir,this.problemTolerance()) ) {
+				return directionToCommand(dir);
 			}
 		} while( --reps );
 		return Command.WAIT;
@@ -549,10 +615,50 @@ class Entity {
 		while( dirAway.length ) {
 			let dir = dirAway.shift();
 			if( panic || this.mayGo(dir,this.problemTolerance()) ) {
+				this.record( 'flee', true );
 				return directionToCommand(dir);
 			}
 		}
+		this.record( 'unable to retreat', true );
 		return false;
+	}
+
+	thinkFlock(howClose=2) {
+		// When hurt, your pet will run towards you. Once within 2 it will flee its enemies, but still stay within 2 of you.	
+		let friend = this.findAliveOthersNearby().isMyFriend().farFromMe(howClose).byDistanceFromMe().first;
+		if( friend ) {
+			this.record('back to a friend',true);
+			return this.thinkApproach(friend.x,friend.y,friend);
+		}
+		return false;
+	}
+
+
+	thinkFlee(enemy) {
+		let dirAwayPerfect = (this.dirToEntityNatural(enemy)+4)%DirectionCount;
+		let dirLeft = (dirAwayPerfect+8-1)%DirectionCount;
+		let dirRight = (dirAwayPerfect+1)%DirectionCount;
+
+		// Generally try to flee towards your friends, if they exist and are in a valid flee direction.
+		if( this.brainMaster || this.packAnimal ) {
+			let f = this.findAliveOthersNearby().isMyFriend();
+			let friend;
+			if( this.brainMaster && f.isId(this.brainMaster.id) ) {
+				friend = this.brainMaster;
+			}
+			else {
+				friend = f.farFromMe(1).byDistanceFromMe().first;
+			}
+			if( friend ) {
+				// Go towards your master or pack animal if possible.
+				let dirToFriend = this.dirToEntityPredictable(friend);
+				if( dirToFriend == dirAwayPerfect || dirToFriend == dirLeft || dirToFriend == dirRight ) {
+					return this.thinkApproach(friend.x,friend.y,friend);
+				}
+			}
+		}
+
+		return this.thinkRetreat(dirAwayPerfect);
 	}
 
 	thinkApproach(x,y,target) {
@@ -570,15 +676,20 @@ class Entity {
 
 		if( this.brainMaster && !this.brainPath ) { debugger; }
 
-		if( this.brainPath ) {
+		if( this.brainPath || true ) {
 			let path = new Path(this.map);
 			let result = path.findPath(this,this.x,this.y,x,y);
 			if( result ) {
 				let dir = path.path[0];
-				this.record( this.name+" going "+dir+" from ("+this.x+','+this.y+')' );
+				this.record( "Pathing "+dir+" from ("+this.x+','+this.y+') to reach ('+x+','+y+')', target ? target.id : '' );
 				return directionToCommand(dir);
 			}
-			this.record( this.name+" pathing failed!" );
+			this.record( JSON.stringify( path.status ) );
+			this.record( "Pathing FAIL from ("+this.x+','+this.y+') to reach ('+x+','+y+')', target ? target.id : '' );
+			let dest = this.destination;
+			if( dest && dest.x==x && dest.y==y && dest.killOnFailedPath ) {
+				delete this.destination;
+			}
 		}
 
 
@@ -599,6 +710,54 @@ class Entity {
 		}
 		return false;
 	}
+
+	thinkAwaitF() {
+		if( !this.beyondOrigin() ) {
+			return Command.WAIT;
+		}
+		let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+		return c || Command.WAIT;
+	}
+
+
+	thinkWorshipF(enemyDist) {
+		if( this.beyondOrigin() ) {
+			let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+			if( c ) return c;
+		}
+		return Command.PRAY;
+	}
+
+	thinkStayNear(friend) {
+		this.record('stay near '+friend.id,true);
+		return this.thinkApproach(friend.x,friend.y,friend);
+	}
+
+	thinkBumpF() {
+		// The player is bumping into me, trying to get me to move.
+		let c = this.thinkRetreat(this.bumpDir);
+		if( c ) {
+			this.record( 'retreat from bumper ', true );
+			return c;
+		}
+		this.record( 'wander from bumper ', true );
+		return this.thinkWanderF();
+	}
+
+	thinkHunger(foodDist=2) {
+		let foodList = new Finder(this.map.itemList,this).filter(item=>item.isEdible).canPerceiveEntity().nearMe(foodDist).byDistanceFromMe();
+		if( foodList.first && foodList.first.x==this.x && foodList.first.y==this.y ) {
+			this.record('found some food. eating.',true);
+			this.commandItem = foodList.first;
+			return Command.EAT;
+		}
+		if( foodList.first ) {
+			this.record('head towards food',true);
+			return this.thinkApproach(foodList.first.x,foodList.first.y,foodList.first);
+		}
+		return false;
+	}
+
 	beyondTether() {
 		return this.tether && this.getDistance(this.xOrigin,this.yOrigin) > this.tether;
 	}
@@ -609,6 +768,9 @@ class Entity {
 	think() {
 		if( this.isDead() ) {
 			return;
+		}
+		if( this.typeId == 'demonHound' ) {
+			this.watch=1;
 		}
 
 		let useAiTemporarily = false;
@@ -628,14 +790,7 @@ class Entity {
 
 				// Hard to say whether this should take priority over .busy, but it is pretty important.
 				if( this.bumpCount >=2 ) {
-					// The player is bumping into me, trying to get me to move.
-					let c = this.thinkRetreat(this.bumpDir);
-					if( c ) {
-						this.record( 'retreat from bumper ', true );
-						return c;
-					}
-					this.record( 'wander from bumper ', true );
-					return this.thinkWander();
+					return this.thinkBumpF();
 				}
 
 				if( this.busy ) {
@@ -644,194 +799,183 @@ class Entity {
 
 				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
 				let enemyList = this.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
+				let wasSmell = false;
+				if( !enemyList.count && this.senseSmell ) {
+					let smelled = this.map.getScentEntity(this.x,this.y,this.senseSmell,this.id);
+					if( smelled && this.isMyEnemy(smelled) ) {
+						if( !this.lastScent || this.lastScent.id != smelled.id || Math.chance(5) ) {
+							tell('<b>',mSubject|mCares,smelled,' ',mVerb,'hear',' ',mA|mObject,this,' howling!','</b>');
+						}
+						enemyList.prepend(smelled);
+						wasSmell = true;
+						this.lastScent = smelled;
+					}
+				}
+
 				let theEnemy = enemyList.first;
 				let vendetta = enemyList.includesId(this.personalEnemy);
 				let distanceToNearestEnemy = enemyList.count ? this.getDistance(theEnemy.x,theEnemy.y) : false;
 				let hurt = this.healthPercent()<30;
-				let mindControlled = [Attitude.CONFUSED,Attitude.ENRAGED,Attitude.PANICKED].includes(this.attitude);
 
-				// CONFUSED
 				if( this.attitude == Attitude.CONFUSED ) {
-					return Math.chance(30) ? Command.WAIT : this.thinkWander(true);
+					return this.thinkStumbleF(50);
 				}
 
-				// WORSHIP
-				if( this.attitude == Attitude.WORSHIP ) {
-					if( distanceToNearestEnemy===false && this.beyondOrigin() ) {
-						let c = this.thinkApproach(this.xOrigin,this.yOrigin);
-						if( c ) {
-							return c;
-						}
-					}
-					if( distanceToNearestEnemy===false || distanceToNearestEnemy > (this.tooClose||3) ) {
-						return Command.PRAY;
-					}
-					this.attitude = Attitude.AGGRESSIVE;
-					if( this.brainTalk ) {
-						tell(mSubject,this,' ',mVerb,'shout',': INTERLOPER!');
-					}
+				if( this.attitude == Attitude.PANICKED ) {
+					return this.thinkRetreat(theEnemy,true);
 				}
 
-				if( this.brainMaster && !mindControlled) {
-					if( (this.brainMaster.area.id!==this.area.id) || (enemyList.count<=0 && this.getDistance(this.brainMaster.x,this.brainMaster.y)>2) ) {
-						let friend = this.brainMaster;
-						this.record('stay near master '+this.brainMaster.id,true);
-						let c = this.thinkApproach(friend.x,friend.y,friend);
-						if( c !== false ) {
-							return c;
-						}
-					}
+				if( this.attitude == Attitude.ENRAGED ) {
+					if( theEnemy ) return this.thinkApproach(theEnemy);
+					return this.thinkWanderF();
 				}
 
-				let hungry = this.brainRavenous || false;
-				hungry = hungry || (this.isAnimal && (distanceToNearestEnemy===false || distanceToNearestEnemy>4));
-				if( hungry && !mindControlled  ) {
-					let foodList = new Finder(this.map.itemList,this).filter(item=>item.isEdible).canPerceiveEntity().nearMe(2).byDistanceFromMe();
-					if( foodList.first && foodList.first.x==this.x && foodList.first.y==this.y ) {
-						this.record('found some food. eating.',true);
-						this.commandItem = foodList.first;
-						return Command.EAT;
-					}
-					if( foodList.first ) {
-						this.record('head towards food',true);
-						let c = this.thinkApproach(foodList.first.x,foodList.first.y,foodList.first);
-						if( c !== false ) {
-							return c;
-						}
-					}
+				if( this.personalEnemy && !vendetta ) {
+					// Give up on my personal enemy if it exits my perception.
+					this.personalEnemy = null;
 				}
 
-				if( !enemyList.count && this.team==Team.GOOD && !mindControlled ) {
-					let f = this.findAliveOthersNearby().nearMe(1).filter( e=>e.isUser() );
-					// when it is peaceful times, and the user is adjacent to me, s/he might want to interact, so
-					// just hang out and wait.
-					if( f.count ) return Command.WAIT;
-				} 
-
-				if( this.attitude == Attitude.AWAIT ) {
-					if( distanceToNearestEnemy===false && this.beyondOrigin() ) {
-						let c = this.thinkApproach(this.xOrigin,this.yOrigin);
-						if( c ) {
-							return c;
-						}
-					}
-					if( distanceToNearestEnemy===false || distanceToNearestEnemy > (this.tooClose||4) ) {
-						return Command.WAIT;
-					}
+				// OK, now all the mind control stuff is done, we need to manage out attitude a little.
+				if( theEnemy && distanceToNearestEnemy <= (this.tooClose||4) ) {
+					this.record( 'enemy too close! Go aggressive.', true );
 					this.changeAttitude( Attitude.AGGRESSIVE );
+					tell(mSubject|mCares,this,' ',mVerb,'think',' ',mObject,theEnemy,' ',mVerb|mObject,'is',' too close!');
 				}
 
-				// WANDER
-				if( this.attitude == Attitude.WANDER && !vendetta ) {
-					if( this.tooClose && distanceToNearestEnemy && distanceToNearestEnemy < this.tooClose ) {
-						// Fall through to the aggression, BUT don't change to aggressive
-						// until you are attacked. If the player manages to flee beyond your tooClose
-						// range, then more power to him.
-					}
-					else {
-						let dirLast = commandToDirection(this.commandLast);
-						if( Math.chance(90) && dirLast !== false && !this.beyondTether() && this.mayGo(dirLast,this.problemTolerance()) ) {
-							this.record('keep walking',true);
-							return this.commandLast;
-						}
-						return Math.chance(20) ? Command.WAIT : this.thinkWander();
-					}
-				}
-
-				// FLOCK
-				// Pack animals and pets return to safety when...
-				if( hurt && this.brainPet ) {
-					this.vocalize = [mSubject,this,' ',mVerb,Math.chance(50)?'wimper':'whine'];
-				}
-				if( (hurt || !enemyList.count) && (this.brainMaster || this.brainPet || this.packAnimal) ) {
-					// When hurt, your pet will run towards you. Once with 2 it will flee its enemies, but still stay within 2 of you.	
-					let friend;
-					if( this.brainMaster ) {
-						// We explicitly include your master because s/he might be in a different area!
-						friend = this.findAliveOthersNearby().prepend(this.brainMaster).isMyFriend().farFromMe(2).isId(this.brainMaster.id).first;
-					}
-					else {
-						friend = this.findAliveOthersNearby().isMyFriend().nearMe(15).farFromMe(2).byDistanceFromMe().first;
-					}
-					if( friend ) {
-						this.record('back to a friend',true);
-						let c = this.thinkApproach(friend.x,friend.y,friend);
-						if( c !== false ) {
-							return c;
-						}
-					}
-				}
-
-				if( !enemyList.count && this.attitude!==this.baseType.attitude ) {
-					// This will revert us from being angry to wandering or whatever, once
-					// the enemy is gone.
+				if( !theEnemy && this.attitude!==this.baseType.attitude ) {
+					// Revert to preferred behavior once enemies are gone.
 					this.changeAttitude( this.baseType.attitude );
 				}
 
-
-				// If no enemy to attack or fles, then just wander around 
-				if( !enemyList.count ) {
-					this.record('no enemy',true);
-					return this.thinkWander();
+				// This is a very basic flee, trying to always move away from nearest enemy. However, a
+				// smarter version would pick every adjacent square and test whether any enemy could reach
+				// that square, and more to the safest square.
+				let flee = theEnemy && (
+					(hurt && (this.brainFlee || this.packAnimal)) ||
+					(this.attitude == Attitude.FEARFUL) ||
+					(this.attitude == Attitude.HESITANT && Math.chance(40))
+				);
+				if( flee ) {
+					let c = this.thinkFlee(theEnemy);
+					if( c ) return c;
 				}
 
-				// FEARFUL
-				// PANICKED
-				// ~HESITANT
-				// Flee if I am fearful or sometimes if hesitant
-				let flee = (hurt && this.brainFlee) || ( this.attitude == Attitude.FEARFUL || this.attitude == Attitude.PANICKED || (this.attitude == Attitude.HESITANT && !vendetta && Math.chance(40)));
-				if( flee ) {
-					// This is a very basic flee, trying to always move away from nearest enemy. However, a
-					// smarter version would pick every adjacent square and test whether any enemy could reach
-					// that square, and more to the safest square.
-					let panic = (this.attitude == Attitude.PANICKED);
-					let dirAwayPerfect = (this.dirToEntityNatural(theEnemy)+4)%DirectionCount;;
-					let c = this.thinkRetreat(dirAwayPerfect,panic);
-					if( c ) {
-						this.record( (panic ? 'panicked flee' : 'fled')+' from '+theEnemy.name, true );
-						return c;
-					}
+				let farFromMaster = this.brainMaster && (
+					(this.brainMaster.area.id!==this.area.id) ||
+					(enemyList.count<=0 && this.getDistance(this.brainMaster.x,this.brainMaster.y)>2)
+				);
+				if( farFromMaster ) {
+					let c = this.thinkStayNear(this.brainMaster);
+					if( c ) return c;
+				}
 
-					this.record('cannot flee',true);
+				let hungry = this.brainRavenous || (this.isAnimal && (!theEnemy || distanceToNearestEnemy>4));
+				if( hungry  ) {
+					let c = this.thinkHunger( this.brainRavenous ? 5 : 2 );
+					if( c ) return c;
+				}
+
+				let pauseBesideUser = !enemyList.count && this.team==Team.GOOD && this.findAliveOthersNearby().nearMe(1).filter( e=>e.isUser() ).count;
+				if( pauseBesideUser ) {
+					return Command.WAIT;
+				} 
+
+				if( this.attitude == Attitude.WORSHIP ) {
+					let c = this.thinkWorshipF();
+					if( c ) return c;
+				}
+
+				if( this.attitude == Attitude.AWAIT ) {
+					return this.thinkAwait();
+				}
+
+				if( hurt && this.brainPet ) {
+					this.vocalize = [mSubject,this,' ',mVerb,Math.chance(50)?'wimper':'whine'];
+				}
+
+				let flock = this.packAnimal && !enemyList.count;
+				if( flock ) {
+					let c = this.thinkFlock();
+					if( c ) return c;
+				}
+
+				// WANDER
+				if( this.attitude == Attitude.WANDER ) {
+					return this.thinkWanderF();
+				}
+
+				if( this.attitude == Attitude.HUNT && this.tether ) {
+					delete this.tether;
+				}
+
+				if( this.attitude == Attitude.HUNT && !theEnemy ) {
+					if( !this.destination ) {
+						let area = this.area;
+						let safeSpot = pVerySafe(this.map, (x,y) => {
+							let site = area.getSiteAt(x,y);
+							return site && (site.isRoom || site.isPlace);
+						});
+						let pos = this.map.pickPosBy(1,1,1,1,safeSpot);
+						let site = this.map.getSiteAt(pos[0],pos[1]);
+						this.destination = { x: pos[0], y: pos[1], site: site, closeEnough: 3, killOnFailedPath: true };
+						this.record( 'New dest '+site.id+' ('+pos[0]+','+pos[1]+')' );
+					}
+					if( this.x == this.destination.x && this.y == this.destination.y ) {
+						debugger;
+						delete this.destination;
+						return Command.WAIT;
+					}
+					let c = this.thinkApproach(this.destination.x, this.destination.y);
+					if( c ) return c;
+				}
+
+				// If no enemy to attack or flee, then just wander around 
+				if( !enemyList.count ) {
+					this.record('no enemy',true);
+					return this.thinkWanderF();
 				}
 
 				// AGGRESSIVE
 				// Attack if I am within reach, and aggressive or sometimes if hesitant
-				let doAttack = this.attitude != Attitude.FEARFUL;
-				if( this.attitude == Attitude.HESITANT && !vendetta && Math.chance(50) ) {
-					doAttack = false;
-				}
-				if( doAttack ) {
-					let weapon = this.calcBestWeapon(enemyList.first);
-					let distLimit = weapon.reach || weapon.range || 1;
-					let inRange = this.findAliveOthers(enemyList.all).nearMe(distLimit);
-					if( inRange.count ) {
-						let target = vendetta && inRange.includesId(vendetta.id) ? vendetta : inRange.first;	// For now, always just attack closest.
-						this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
-						this.commandItem = weapon;
-						this.commandTarget = target;
-						let d = this.getDistance(target.x,target.y);
-						let temp = this.itemToAttackCommand(weapon);
-						if( temp !== Command.ATTACK ) {
-							return temp;
-						}
-						return directionToCommand(this.dirToEntityPredictable(target));
+				let weapon = this.calcBestWeapon(enemyList.first);
+				let distLimit = weapon.reach || weapon.range || 1;
+				let inRange = new Finder(enemyList.all,this).nearMe(distLimit);
+				if( inRange.count ) {
+					let target = vendetta && inRange.includesId(vendetta.id) ? vendetta : inRange.first;	// For now, always just attack closest.
+					this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
+					this.commandItem = weapon;
+					this.commandTarget = target;
+					let d = this.getDistance(target.x,target.y);
+					let temp = this.itemToAttackCommand(weapon);
+					if( temp !== Command.ATTACK ) {
+						return temp;
 					}
+					return directionToCommand(this.dirToEntityPredictable(target));
 				}
 
-				if( this.beyondTether() && !this.brainDisengageFailed ) {
-					let c = this.thinkApproach(this.xOrigin,this.yOrigin);
-					if( c ) {
-						this.brainDisengageAttempt = true;
-						return c;
+//				if( this.beyondTether() && !this.brainDisengageFailed ) {
+//					let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+//					if( c ) {
+//						this.brainDisengageAttempt = true;
+//						return c;
+//					}
+//				}
+
+				if( wasSmell ) {
+					// We are heading towards out enemy due to smell.
+					let dir = this.dirToBestScent(this.x,this.y,theEnemy);
+					if( dir !== false && this.mayGo(dir,this.problemTolerance()) ) {
+						return directionToCommand(dir);
 					}
+					// We don't get to use regular pathfind because we found it through smell.
+					return this.thinkWanderF();
 				}
 
 				let c = this.thinkApproach(theEnemy.x,theEnemy.y,theEnemy);
 				if( c ) {
 					return c;
 				}
-				return Math.chance(50) ? Command.WAIT : this.thinkWander();
+				return this.thinkWanderF();
 
 			}).apply(this);			
 
@@ -1198,6 +1342,12 @@ class Entity {
 		});
 	}
 
+	takeTeleport(source,item) {
+		let safeSpot = pVerySafe(this.map);
+		let pos = this.map.pickPosBy(1,1,1,1,safeSpot);
+		this.moveTo(pos[0],pos[1]);
+	}
+
 	itemToAttackCommand(weapon) {
 		if( weapon.mayThrow ) {
 			return Command.THROW;
@@ -1519,15 +1669,51 @@ class Entity {
 	}
 
 	setPosition(x,y) {
-		if( this.x == x && this.y == y ) {
+		if( this.x === x && this.y === y ) {
 			return;
 		}
-		this.tileTypeLast = this.map.tileTypeGet(this.x,this.y);
-		console.assert(this.tileTypeLast);
+		if( !this.inVoid ) {
+			this.tileTypeLast = this.map.tileTypeGet(this.x,this.y);
+			console.assert(this.tileTypeLast);
+			if( this.x !== undefined ) {
+				this.map.calcWalkable(this.x,this.y,null);
+			}
+		}
+		if( this.inVoid ) {
+			this.areaOrigin = this.area;
+			this.xOrigin = x;
+			this.yOrigin = y;
+			this.inVoid = false;
+		}
+		else {
+			// Only leave scent where you WERE, so you can sell it where you ARE.
+			this.map.leaveScent(this.x,this.y,this,this.scentReduce||0);
+		}
 		this.x = x;
 		this.y = y;
+		this.map.calcWalkable(x,y,this);
 		// This just makes sure that items have coordinates, for when they're the root of things.
-		this.inventory.map( item => { item.x=x; item.y=y; } );
+		this.inventory.forEach( item => { item.x=x; item.y=y; } );
+
+		let dest = this.destination;
+		if( dest ) {
+			dest.lastDist = (dest.lastDist || 0);
+			let dist = this.getDistance(dest.x,dest.y);
+			if( Math.abs(dist-dest.lastDist) < 2 ) {
+				// So, we're probably ACTUALLY stalled when we haven't moved 
+				dest.stalled = (dest.stalled||0) + 1;
+			}
+			else {
+				dest.stalled = 0;
+			}
+			if( dist <= (dest.closeEnough||3) ) {
+				this.record( "ARRIVED", true );
+				if( dest.onReached ) {
+					dest.onReached.call(this);
+				}
+				delete this.destination;
+			}
+		}
 	}
 
 	moveDir(dir,weapon) {
@@ -1630,6 +1816,10 @@ class Entity {
 		if( allyToSwap ) {
 			allyToSwap.setPosition(this.x,this.y);
 		}
+
+		//=======================
+		// ACTUAL MOVEMENT OF THE MONSTER
+		//=======================
 		this.setPosition(x,y);
 
 		if( this.findAliveOthersAt(x,y).count ) {
@@ -1712,7 +1902,11 @@ class Entity {
 							this.brainPath = true;
 							tell(mSubject,this,' ',mVerb,'recognize',' ',mObject|mBold,this.brainMaster,' as ',mObject|mPossessive|mPronoun,this,' new master! ',this.attitude);
 						}
-						food.destroy();
+						if( this.eatenFoodToInventory ) {
+						}
+						else {
+							food.destroy();
+						}
 					}
 				};
 				this.commandItem = null;

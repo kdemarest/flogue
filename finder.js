@@ -24,9 +24,11 @@ class Finder {
 	}
 
 	exclude(entity) {
+		console.assert(entity);
 		return this.filter( e => e.id!=entity.id );
 	}
 	prepend(entity) {
+		console.assert(entity);
 		if( !this.result.includes(entity) ) {
 			this.result.unshift(entity);
 		}
@@ -35,6 +37,9 @@ class Finder {
 	filter(fn) {
 		Array.filterInPlace( this.result, fn );
 		return this;
+	}
+	isId(id) {
+		return this.filter( e => e.id==id );
 	}
 	includesId(id) {
 		return this.result.find( e => e.id==id );
@@ -96,9 +101,6 @@ class Finder {
 	isTypeId(typeId) {
 		return this.filter( e => e.typeId == typeId );
 	}
-	isId(id) {
-		return this.filter( e => e.id==id );
-	}
 	getId(id) {
 		for( let e of this.result ) {
 			if( e.id == id ) {
@@ -134,14 +136,11 @@ class Finder {
 	farFromMe(rectDist=1) {
 		return this.far(this.me.x,this.me.y,rectDist);
 	}
-	canTargetPosition(x,y) {
-		return this.filter( e => this.me.canTargetPosition(x,y) );
-	}
 	canTargetEntity(x,y) {
 		return this.filter( e => this.me.canTargetEntity(e) );
 	}
-	canPeceivePosition(x,y) {
-		return this.filter( e => this.me.canPerceivePosition(x,y) );
+	canSeePosition(x,y) {
+		return this.filter( e => this.me.canSeePosition(x,y) );
 	}
 	canPerceiveEntity() {
 		return this.filter( e => this.me.canPerceiveEntity(e) );

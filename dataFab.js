@@ -133,4 +133,6 @@ function monsterPreProcess(typeId,m) {
 		name: m.damageType
 	}, m.meleeWeapon ));
 	delete m.meleeWeapon;
+
+	console.assert( m.stink===undefined || (m.stink>=0 && m.stink<=1) );
 }

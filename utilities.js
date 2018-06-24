@@ -92,6 +92,10 @@ function nop() {}
 			}
 		}
 	}
+	Array.pickFromPairs = function(array) {
+		let n = Math.randInt(0,array.length/2) * 2;
+		return [array[n+0],array[n+1]];
+	}
 	Object.isEmpty= function(obj) {
 		for(var key in obj) {
 			if(obj.hasOwnProperty(key))

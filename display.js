@@ -8,7 +8,6 @@ function createDrawList(observer,map,entityList,asType) {
 	let areaVis = observer.area.vis;
 
 	function spillLight(px,py,x,y,light) {
-		let d2 = (displaySightDistance*2)+1;
 		let range = Math.abs(light);
 		for( let ly=-range ; ly<=range ; ++ly ) {
 			for( let lx=-range ; lx<=range ; ++lx ) {
@@ -34,13 +33,11 @@ function createDrawList(observer,map,entityList,asType) {
 		}
 	}
 
-	let displaySightDistance = MaxSightDistance;
-
 	//let convert = { '#': '█' };
 	let py = observer.y;
 	let px = observer.x;
-	let d = displaySightDistance;
-	let d2 = (displaySightDistance*2)+1
+	let d = MapVis;
+	let d2 = (d*2)+1
 	let a = GlobalRenderCache || [];
 
 	// Initialize the array, and clear all light levels.
@@ -92,6 +89,55 @@ function createDrawList(observer,map,entityList,asType) {
 	for( let anim of animationList ) {
 		testLight(anim.x,anim.y,anim.light);
 	}
+/*
+	if( !window.silly ) {
+		window.silly = new Anim( {}, {
+			group: 			'scent',
+			x: 				observer.x,
+			y: 				observer.y-1,
+			img: 			observer.img,
+			duration: 		true,
+			onSpriteMake: 	s => { s.sScaleSet(0.6).sAlpha(0.3); s.glow=1; }
+		});
+	}
+
+	console.assert(window.silly.spriteList[0].alpha == 0.3);
+	window.silly.x = observer.x;
+	window.silly.y = observer.y-1;
+*/
+
+	
+	animationRemove( anim=>anim.group=='scent' );
+
+	if( observer.senseSmell) {
+		for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
+			let ty = y-(py-d);
+			for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
+				let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
+				if( !inBounds ) continue;
+				let tx = x-(px-d);
+				let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
+				if( !inPane ) continue;
+
+				let smelled = map.getScentEntity(x,y,observer.senseSmell);
+				if( !smelled ) continue;
+
+				let age = map.getScentAge(x,y);
+				let alpha = 0.0 + Math.clamp(1-(age/observer.senseSmell),0,1) * 0.6;
+				if( !alpha ) continue;
+
+				new Anim( {}, {
+					group: 			'scent',
+					x: 				x,
+					y: 				y,
+					img: 			smelled.img,
+					duration: 		true,
+					onSpriteMake: 	s => { s.sScaleSet(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
+				});
+			}
+		}
+	}
+
 
 	let visId = {};
 	let mapMemoryLight = 2;
@@ -111,12 +157,16 @@ function createDrawList(observer,map,entityList,asType) {
 			let tile;
 			let itemList;
 			let entity;
+			let smelled;
 
 			if( inBounds ) {
 				tile =		map.tileTypeGet(x,y);
 				console.assert(tile);
 				itemFind =  map.findItemAt(x,y);
 				entity =    p[y*map.xLen+x];
+				if( !entity && observer.senseSmell ) {
+					smelled = map.getScentEntity(x,y,observer.senseSmell);
+				}
 				if( !tile.isTileType ) {
 					debugger;
 				}
@@ -319,19 +369,22 @@ class ViewMap extends ViewObserver {
 				let x = (observer.x-self.sd) + mx;
 				let y = (observer.y-self.sd) + my;
 				guiMessage( null, 'hide' );
-				if( observer.canPerceivePosition(x,y) ) {
+				if( observer.canSeePosition(x,y) ) {
 					let entity = new Finder(area.entityList,observer).at(x,y).canPerceiveEntity().first || new Finder(area.map.itemList,observer).at(x,y).canPerceiveEntity().first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
 					if( entity ) {
-						console.log( x,y,entity.name);
+						//console.log( x,y,entity.name);
 						guiMessage( null, 'show', entity );
 						guiMessage( null, 'pick', { xOfs: x-observer.x, yOfs: y-observer.y } );
+						if( entity.isMonsterType ) {
+							console.log( entity.history.join('\n') );
+						}
 					}
 				}
 			}
 		});
 		$('#'+this.divId+' canvas').mouseout( function(e) {
 			guiMessage(null,'hide',null);
-			console.log('mouse out of canvas');
+			//console.log('mouse out of canvas');
 		});
 		$('#'+this.divId+' canvas').click( function(e) {
 			var e = $.Event("keydown");
@@ -406,6 +459,7 @@ class ViewMap extends ViewObserver {
 						let sprite = spriteCreate( entity.spriteList, imgGet(entity) );
 						sprite.keepAcrossAreas = entity.isUser && entity.isUser();
 						sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
+						sprite.baseScale = entity.scale || TILE_DIM/sprite.width;
 					}
 					let sprite = entity.spriteList[i];
 					spriteOnStage(sprite,true);
@@ -415,8 +469,7 @@ class ViewMap extends ViewObserver {
 						sprite.visible 	= true;
 						sprite.x 		= x+(TILE_DIM/2);
 						sprite.y 		= y+(TILE_DIM/2);
-						sprite.baseScale= entity.scale||1;
-						sprite.transform.scale.set( sprite.baseScale * (TILE_DIM/32) );
+						sprite.transform.scale.set( sprite.baseScale );
 						sprite.alpha 	= (entity.alpha||1) * LightAlpha[light];
 						//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 					}
@@ -427,7 +480,7 @@ class ViewMap extends ViewObserver {
 				}
 			}
 			
-			let glowLight = MaxSightDistance;
+			let glowLight = MaxVis;
 			this.staticTileEntity = this.staticTileEntity || { isStaticTile: true };
 
 			// These are the world coordinate offsets
@@ -458,7 +511,7 @@ class ViewMap extends ViewObserver {
 	}
 
 	setDimensions() {
-		this.sd = MaxSightDistance;
+		this.sd = MaxVis;
 		this.d = ((this.sd*2)+1);
 		let tileWidth  = TILE_DIM * this.d;
 		let tileHeight = TILE_DIM * this.d;
@@ -470,18 +523,18 @@ class ViewMap extends ViewObserver {
 	setZoom(_zoom) {
 		this.zoom = _zoom % 3;
 		let oldDim = TILE_DIM;
-		if( this.zoom == 0 ) { TILE_DIM=32 ; MaxSightDistance=11; }
-		if( this.zoom == 1 ) { TILE_DIM=48 ; MaxSightDistance=8; }
-		if( this.zoom == 2 ) { TILE_DIM=64 ; MaxSightDistance=6; }
+		if( this.zoom == 0 ) { TILE_DIM=32 ; MaxVis=11; }
+		if( this.zoom == 1 ) { TILE_DIM=48 ; MaxVis=8; }
+		if( this.zoom == 2 ) { TILE_DIM=64 ; MaxVis=6; }
 		//document.documentElement.style.setProperty('--TILE_DIM', TILE_DIM);
-		//document.documentElement.style.setProperty('--TILE_SPAN', MaxSightDistance*2+1);
+		//document.documentElement.style.setProperty('--TILE_SPAN', MaxVis*2+1);
 		this.setDimensions();
 		for( let child of this.app.stage.children ) {
 			child.x = ((child.x-(oldDim/2)) / oldDim) * TILE_DIM + TILE_DIM/2;
 			child.y = ((child.y-(oldDim/2)) / oldDim) * TILE_DIM + TILE_DIM/2;
-			child.transform.scale.set( child.baseScale * (TILE_DIM/32) );
+			child.transform.scale.set( child.baseScale );
 		}
-		this.observer.sightDistance = MaxSightDistance;
+		this.observer.senseVis = MaxVis;
 	}
 
 	message(msg,payload) {
@@ -505,7 +558,7 @@ class ViewMap extends ViewObserver {
 		}
 		if( msg == 'hide' ) {
 			this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
-			console.log('ViewMap hide');
+			//console.log('ViewMap hide');
 			this.render();
 		}
 		if( msg == 'render' ) {
@@ -515,7 +568,7 @@ class ViewMap extends ViewObserver {
 
 	draw(drawList) {
 
-		let maxLight = MaxSightDistance;
+		let maxLight = MaxVis;
 		this.drawListCache = drawList;
 		let observer = this.observer;
 
@@ -531,6 +584,7 @@ class ViewMap extends ViewObserver {
 
 		let wx = (this.observer.x-this.sd);
 		let wy = (this.observer.y-this.sd);
+
 		for( let y=0 ; y<this.d ; ++y ) {
 			for( let x=0 ; x<this.d ; ++x ) {
 				if( !this.drawListCache[y] || !this.drawListCache[y][x] ) {
@@ -560,6 +614,7 @@ class ViewMap extends ViewObserver {
 			}
 			//debug += '\n';
 		}
+
 		//console.log(debug);
 
 		this.app.stage.children.sort( (a,b) => a.zOrder-b.zOrder );
