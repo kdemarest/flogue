@@ -5,7 +5,7 @@ const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", 
 				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", SHOOT: "shoot",
 				LOSETURN: "lose turn", PRAY: "pray", EAT: "eat", ENTERGATE: "enterGate",
 				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop",
-				BUY: "buy", SELL: "sell", CRAFT: "craft",
+				BUY: "buy", SELL: "sell", CRAFT: "craft", BUSY: "busy",
 				DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGVIEW: "debugview", DEBUGANIM: "debuganim", DEBUGTEST: "debugtest",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit",
 				EXECUTE: "execute", CANCEL: "cancel"
@@ -64,6 +64,7 @@ let SYM = 111;
 // Pathfinding and terrain isProblem
 let Prob = {
 	NONE:  0.0,
+	ENTITY: 0.2,		// be wary of changing this!
 	MILD:  0.3,
 	HARSH: 0.7,
 	// Do NOT have a value of 1.0 or up to 900000 here. The Path class requires numbers below 1.0 for problem spots.
@@ -182,7 +183,7 @@ let EffectTypeList = {
 	eEcholoc: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseLife', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'bat sense', icon: 'gui/icons/eVision.png' },
 	eSeeInvisible: 	{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, durationMod: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
 	eXray: 			{ isTac: 1, level:  0, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'earth vision', icon: 'gui/icons/eVision.png' },
-	eTeleport: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'teleport', isInstant: true, isHelp: true, name: 'teleport', icon: 'gui/icons/eTeleport.png' },
+	eTeleport: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'teleport', isInstant: true, xRecharge: 2.0, isHelp: true, name: 'teleport', icon: 'gui/icons/eTeleport.png' },
 	eOdorless: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'scentReduce', value: SCENT_AGE_LIMIT, isHelp: true, name: 'no scent', icon: 'gui/icons/eFragrance.png' },
 	eStink: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'stink', value: 0.8, isHarm: true, name: 'stink', icon: 'gui/icons/eFragrance.png' },
 	eBloodhound: 	{ isTac: 1, level:  0, rarity: 1.00, op: 'set', stat: 'senseSmell', value: 100, isHelp: true, name: 'bloodhound', icon: 'gui/icons/eFragrance.png' },
@@ -217,9 +218,14 @@ let EffectTypeList = {
 // Healing
 	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
 	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, icon: 'gui/icons/eHeal.png' },
+	eCurePoison: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isPoison || deed.damageType==DamageType.POISON, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
+	eCureDisease: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isDisease, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
 // Damage
 	eFire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
-	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.50, isHarm: 1, isInstant: 1, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
+	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.50, isHarm: 1, isPoison: 1,
+					duration: 10, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
+	ePoisonForever: { isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.05, isHarm: 1, isPoison: 1,
+					duration: true, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
 	eCold: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
 	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
 	eAcid3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
@@ -338,7 +344,7 @@ const ImgSigns = {
 
 // do NOT assign NullEffects to make something have no effects. Instead, give it effectChance of 0.0001
 const NullEfects = { eInert: { level: 0, rarity: 1 } };
-const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eOdorless','eStink','eBloodhound','eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
+const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eCureDisease','eCurePoison','eOdorless','eStink','eBloodhound','eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
 	'eRegeneration','eFire','ePoison','eCold','eAcid'].includes(k) );
 const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
@@ -357,26 +363,26 @@ const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eG
 
 const AmmoList = Fab.add( '', {
 	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
-});
-
-const WeaponList = Fab.add( '', {
 	"rock":     	{ level:  0, rarity: 1.0, xDamage: 0.50, damageType: DamageType.BASH, isRock: true, quick: 2,
 					mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw',
 					effectChance: 0.0001,
 					img: 'item/weapon/ranged/rock2.png' },
 	"dart":     	{ level:  0, rarity: 0.5, xDamage: 0.20, damageType: DamageType.STAB, quick: 2,
 					effectChance: 0.80,
-					chanceToFire: 100,
+					chanceOfEffect: 100,
 					slot: false,
 					effects: DartEffects,
 					mayThrow: true,
 					range: 10,
 					attackVerb: 'strike', 
 					img: 'UNUSED/spells/components/bolt.png' },
+});
+
+const WeaponList = Fab.add( '', {
 	"bow": 	    	{ level:  0, rarity: 1.0, xDamage: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
 					mayShoot: true, range: RANGED_WEAPON_DEFAULT_RANGE, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
 	"dagger":   	{ level:  3, rarity: 0.5, xDamage: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, 
-					chanceToFire: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
+					chanceOfEffect: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
 	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
 	"solKnife":   	{ level:900, rarity: 0.0001, xDamage: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
 	"pickaxe":   	{ level:  0, rarity: 0.01, xDamage: 0.70, damageType: DamageType.STAB, quick: 0, 
@@ -612,6 +618,24 @@ const StuffList = Fab.add( '', {
 						effect: { name: 'radiance', op: 'damage', damageModifier: 1.0, effectShape: EffectShape.BLAST5, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
 						},
 	"trollBlood": 		{ },
+	"spinneret": 		{ },
+	"chitin": 			{ },
+	"poisonGland": 		{ },
+	"snailSlime": 		{
+		img: 'dc-misc/snailSlime.png',
+		mayPickup: false,
+		onTick: function() {
+			if( this.owner.isMap ) {
+				this.map.scentClear(this.x,this.y);
+			}
+			if( this.timeUntilDestruction ) {
+				this.timeUntilDestruction -= 1;
+				if( this.timeUntilDestruction <= 0 ) {
+					this.destroy();
+				}
+			}
+		}
+	},
 	"lunarEssence": 	{ },
 	"batWing": 			{ },
 	"frogSpine": 		{ },
@@ -691,12 +715,11 @@ let Tweak = {
 };
 
 const ARMOR_EFFECT_CHANCE_TO_FIRE = 10;
-const ARMOR_EFFECT_OP_ALWAYS = ['damage'];
 const ARMOR_EFFECT_DAMAGE_PERCENT = 10;
 
 const WEAPON_EFFECT_CHANCE_TO_FIRE = 10;
-const WEAPON_EFFECT_OP_ALWAYS = ['damage'];
-const WEAPON_EFFECT_DAMAGE_PERCENT = 10;
+const WEAPON_EFFECT_OP_ALWAYS = ['damage'];	// Weapons with this op will ALWAYS fire their special effect
+const WEAPON_EFFECT_DAMAGE_PERCENT = 20;	// Damage done is that case should be only x% of regular damage.
 
 const ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
@@ -865,7 +888,7 @@ const ItemFilterGroup = {
 let ItemBag = (function() {
 	let raw = {
 		// 			cGen 	cEff	price	basis
-		coin: 	[	30.0, 	  0.0,	  1.0,	[], ],
+		coin: 	[	28.0, 	  0.0,	  1.0,	[], ],
 		potion: [	10.0, 	100.0,	 10.0,	['effect'], ],
 		spell: 	[	 1.0, 	100.0,	 50.0,	['effect'], ],
 		ore: 	[	 5.0, 	  0.0,	  1.0,	['variety'], ],
@@ -874,6 +897,7 @@ let ItemBag = (function() {
 		ammo: 	[	 5.0, 	  5.0,	 40.0,	['material','effect','variety'], ],
 		helm: 	[	 2.5, 	  5.0,	 30.0,	['variety','effect'], ],
 		armor: 	[	 7.0, 	  5.0,	 30.0,	['variety','effect'], ],
+		cloak: 	[	 2.0, 	  5.0,	 30.0,	['variety','effect'], ],
 		bracers:[	 2.0, 	  5.0,	 30.0,	['variety','effect'], ],
 		gloves: [	 0.5, 	  5.0,	 30.0,	['variety','effect'], ],
 		boots: 	[	 2.0, 	  5.0,	 30.0,	['variety','effect'], ],
@@ -897,7 +921,7 @@ const MonsterTypeDefaults = {
 	corpse: 'corpse',
 	immune: '', resist: '', vuln: '',
 	loseTurn: false,
-	packAnimal: false,
+	brainPackAnimal: false,
 	personalEnemy: '',
 	picksUp: false,
 	reach: 1,
@@ -986,7 +1010,7 @@ const MonsterTypeList = {
 		jumpMax: 2,
 		loot: '30% dogCollar',
 		properNoun: true,
-		packAnimal: true,
+		brainPackAnimal: true,
 		rarity: 0.10,
 		regenerate: 0.03,
 		senseSmell: 200,
@@ -1000,7 +1024,7 @@ const MonsterTypeList = {
 		isNamed: true,
 		jobId: 'PICK',
 		properNoun: true,
-		packAnimal: true
+		brainPackAnimal: true
 	},
 	"mastiff": {
 		core: [ SYM, 69, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
@@ -1014,7 +1038,7 @@ const MonsterTypeList = {
 		isNamed: true,
 		loot: '30% dogCollar',
 		properNoun: true,
-		packAnimal: true,
+		brainPackAnimal: true,
 		rarity: 0.10,
 		regenerate: 0.03,
 		senseSmell: 200,
@@ -1077,24 +1101,48 @@ const MonsterTypeList = {
 		isDemon: true,
 		lootInventory: 'weapon.dart.eFire',
 		loot: '30% coin, 50% potion.eFire, 30% demonScale, 20% pitchfork, 30% demonEye',
-		packAnimal: true,
+		brainPackAnimal: true,
 		resist: DemonResistance,
 		sayPrayer: 'Hail Balgur, ruler of the deep!',
 		vuln: DemonVulnerability,
 	},
 	"demonHound": {
-		core: [ SYM, 15, '3:5', 'evil', 'bite', 'dc-mon/animals/hell_hound.png', 'it' ],
+		core: [ SYM, 15, '3:7', 'evil', 'bite', 'dc-mon/animals/hell_hound.png', 'it' ],
 		attitude: Attitude.HUNT,
-		brainPathSmell: true,
+		brainAlertFriends: true,
+		brainPackAnimal: true,
+		dodge: 1,
 		immune: DemonImmunity,
 		isDemon: true,
 		isDemonHound: true,
 		loot: '30% demonEye',
-		packAnimal: true,
 		resist: DemonResistance,
 		senseSmell: 400,
 		scentReduce: 100,
 		vuln: DemonVulnerability,
+	},
+	"deepCentipede": {
+		core: [ SYM, 24, '4:20', 'evil', 'stab', 'dc-mon/animals/giant_centipede.png', 'it' ],
+		attitude: Attitude.HUNT,
+		tooClose: 9,
+		isInsect: true,
+		immune: DamageType.POISON,
+		loot: '40% chitin, 80% poisonGland',
+		naturalWeapon: { chanceOfEffect: 25, effect: EffectTypeList.ePoison },
+		senseSmell: 100,
+		scentReduce: 50
+	},
+	"deepSpider": {
+		core: [ SYM, 59, '2:20', 'evil', 'stab', 'mon/spider.png', 'it' ],
+		attitude: Attitude.AWAIT,
+		tooClose: 7,
+		isInsect: true,
+		isSpider: true,
+		loot: '30% spinneret, 70% poisonGland',
+		naturalWeapon: { chanceOfEffect: 34, effect: EffectTypeList.ePoisonForever },
+		resist: DamageType.POISON,
+		senseLife: true,
+		vuln: DamageType.BASH,
 	},
 	"ethermite": {
 		core: [ SYM, 59, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
@@ -1105,7 +1153,7 @@ const MonsterTypeList = {
 		isPlanar: 1,
 		light: 6,
 		loot: '50% gem.eSeeInvisible, 30% gem, 20% gem',
-		packAnimal: true,
+		brainPackAnimal: true,
 		sneakAttackMult: 3,
 		vuln: 'glass'
 	},
@@ -1123,6 +1171,20 @@ const MonsterTypeList = {
 		vuln: UndeadVulnerability,
 		senseSmell: 200,
 	},
+	"giantSnail": {
+		core: [ SYM, 59, '10:100', 'neutral', 'rot', 'mon/snail.png', 'it' ],
+		imgChoices: { moving: { img: 'mon/snail.png' }, hiding: { img: 'mon/snailInShell.png' } },
+		imgGet: (self,img) => img || self.imgChoices[self.inShell?'hiding':'moving'].img,
+		attitude: Attitude.HUNT,
+		immuneInShell: ArmorDefendsAgainst.join(','),
+		isAnimal: true,
+		isGiant: true,
+		isSnail: true,
+		loot: '50% snailSlime',
+		scentReduce: -1,	// Makes it always override any scent
+		trail: 'stuff.snailSlime',
+		resistInShell: [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT].join(','),
+	},
 	"goblin": {
 		core: [ SYM, 1, '3:10', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		brainAlertFriends: true,
@@ -1132,7 +1194,7 @@ const MonsterTypeList = {
 		isEarthChild: true,
 		inventoryLoot: '1x potion.eFire',
 		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 20% any, 30% pinchOfEarth',
-		packAnimal: true,
+		brainPackAnimal: true,
 		sayPrayer: 'Oh mighty Thagzog...'
 	},
 	"goblinWar": { 
@@ -1180,7 +1242,7 @@ const MonsterTypeList = {
 		isEarthChild: true,
 		isKobold: true,
 		loot: '50% coin, 4x 50% weapon.dart, 30% weapon.dagger, 30% dogCollar',
-		packAnimal: true,
+		brainPackAnimal: true,
 		senseSmell: 200,
 	},
 	"ogreKid": { 
@@ -1200,7 +1262,7 @@ const MonsterTypeList = {
 		isEarthChild: true,
 		isOgre: true,
 		isLarge: true,
-		inventoryLoot: launcher({ ammoType: 'isRock', rechargeTime: 2, hitsToKillPlayer: 3, name: "rock" }),
+		inventoryLoot: launcher({ ammoType: 'isRock', ammoSpec: 'ammo.rock.eInert', rechargeTime: 2, hitsToKillPlayer: 3, name: "rock" }),
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speed: 0.5,
@@ -1351,7 +1413,7 @@ const MonsterTypeList = {
 		isAnimal: true,
 		isBat: true,
 		loot: '50% batWing',
-		packAnimal: true,
+		brainPackAnimal: true,
 		senseInvisible: true,
 		senseLife: true,
 		travelMode: "fly"
@@ -1371,7 +1433,7 @@ const MonsterTypeList = {
 		isAnimal: true,
 		isSheep: true,
 		loot: '1x lumpOfMeat, 3x 50% wool',
-		packAnimal: true
+		brainPackAnimal: true
 	}
 };
 
@@ -1800,6 +1862,31 @@ MonsterTypeList.redOoze.onMove = function(x,y) {
 		});
 
 		f.first.destroy();
+	}
+}
+
+MonsterTypeList.giantSnail.onMove = function(x,y,xOld,yOld) {
+	let slimeList = this.lootGenerate( this.trail, this.level );
+	console.assert( slimeList.length == 1 );
+	let slime = slimeList[0];
+	slime.timeUntilDestruction = 10;
+	slime.giveTo( this.map, xOld, yOld );
+}
+
+MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
+	if( amount > 0 ) {
+		this.inShell = true;
+		this.immune = this.immuneInShell;
+		this.resist = this.resistInShell;
+		this.busy = {
+			turns: 10,
+			description: 'in its shell',
+			onDone: () => {
+				this.inShell = false;
+				this.immune = '';
+				this.resist = '';
+			}
+		};
 	}
 }
 

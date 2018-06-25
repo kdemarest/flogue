@@ -121,7 +121,7 @@ function monsterPreProcess(typeId,m) {
 
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];
-	m.inventoryLoot.push( Object.assign({
+	let natWeapon = Object.assign({
 		typeFilter: 'fake',
 		isNatural: true,
 		isMelee: true,
@@ -131,8 +131,9 @@ function monsterPreProcess(typeId,m) {
 		reach: m.reach || 1,
 		damageType: m.damageType || DamageType.CUTS,
 		name: m.damageType
-	}, m.meleeWeapon ));
-	delete m.meleeWeapon;
+	}, m.naturalWeapon );
+	m.inventoryLoot.push( natWeapon );
+	delete m.naturalWeapon;
 
 	console.assert( m.stink===undefined || (m.stink>=0 && m.stink<=1) );
 }

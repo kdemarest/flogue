@@ -2,6 +2,9 @@
 function pWalk(map) {
 	let nulItem = {};
 	return function(x,y) {
+		if( map.isEntityAt(x,y) ) {
+			return Prob.ENTITY;
+		}
 		if( !map.isItemAt(x,y) ) {
 			let tile = map.tileTypeGet(x,y);
 			if( !tile.mayWalk ) return Prob.WALL;
@@ -9,8 +12,8 @@ function pWalk(map) {
 			return Prob.NONE;
 		}
 
-		let mayWalk = map.findChosenItemAt( x, y, item => !item.mayWalk );
-		if( !mayWalk ) return Prob.WALL;
+		let itemBlocking = map.findChosenItemAt( x, y, item => !item.mayWalk );
+		if( itemBlocking ) return Prob.WALL;
 		let tile = map.tileTypeGet(x,y);
 		if( !tile.mayWalk ) return Prob.WALL;
 		let itemProblem = map.findChosenItemAt( x, y, item => item.isProblem );
@@ -54,13 +57,16 @@ class Path {
 		this.ey = null;
 		this.path = [];
 	}
+	leadsTo(x,y) {
+		return this.ex==x && this.ey==y;
+	}
 	gridGet(x,y) {
 		return this.grid[y*this.xLen+x] || Prob.NONE;
 	}
-	renderToString() {
+	render() {
 		let pathSummary = [];
-		let px = this.ex;
-		let py = this.ey;
+		let px = this.exActual;
+		let py = this.eyActual;
 		for( let i=this.path.length-1 ; i>=0 ; i-- ) {
 			let dir = this.path[i];
 			px -= DirectionAdd[dir].x;
@@ -81,6 +87,10 @@ class Path {
 				c = 'E';
 			}
 			else
+			if( x==this.exActual && y==this.eyActual ) {
+				c = 'e';
+			}
+			else
 			if( pathSummary[y*this.xLen+x] ) {
 				c = pathSummary[y*this.xLen+x];
 			}
@@ -89,9 +99,9 @@ class Path {
 				s += '\n';
 			}
 		});
-		return s;
+		return s.split('\n');
 	}
-	findPath(entity,sx,sy,ex,ey,onStep) {
+	findPath(entity,sx,sy,ex,ey,closeEnough=0,onStep) {
 
 		let self = this;
 
@@ -99,6 +109,8 @@ class Path {
 		this.sy = sy;
 		this.ex = ex;
 		this.ey = ey;
+		this.exActual = ex;
+		this.eyActual = ey;
 		this.grid = [];
 		this.path = [];
 
@@ -136,7 +148,6 @@ class Path {
 				return true;
 			}
 
-
 			let hotTiles = [];
 			let numMade = 0;
 			let numDone = 0;
@@ -169,8 +180,15 @@ class Path {
 						let ny = y + DirectionAdd[dir].y;
 						if( testEdge && (nx<0 || ny<0 || nx>=xLen || ny>=yLen) ) continue;
 						let ok = fill(nx,ny,dist);
-						if( !ok ) continue;
-						if( nx == ex && ny == ey ) {
+						if( !ok ) {
+							continue;
+						}
+						let dx = nx-ex;
+						let dy = ny-ey;
+						if( dx >= -closeEnough && dx<=closeEnough && dy>=-closeEnough && dy<=closeEnough ) {
+							// Move the end, so that we can back-search from it.
+							self.exActual = nx;
+							self.eyActual = ny;
 							return true;
 						}
 					}
@@ -184,12 +202,16 @@ class Path {
 
 		let found = flood();
 		if( !found ) {
-			return false;
+			this.success = false;
+			return this.success;
 		}
 
+		this.success = true;
+
 		{
-			let x = ex;
-			let y = ey;
+			// WARNING! These might not be the same as what was passed in, due to closeEnough. That is OK!
+			let x = this.exActual;
+			let y = this.eyActual;
 			let reps = 1000;
 			let favor = [0,1,0,1,0,1,0,1];
 			while( --reps && !(x==sx && y==sy) ) {
@@ -216,13 +238,14 @@ class Path {
 				if( onStep ) onStep();
 			}
 			if( reps <=0 ) {
+				this.success = false;
 				this.status.pathTooLong = 1;
 			}
 			if( this.path.length == 0 ) {
 				this.status.zeroLengthPath = 1;
 			}
 		}
-		return this.path.length;
+		return this.success;
 	}
 }
 

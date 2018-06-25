@@ -89,11 +89,13 @@ class Deed {
 			this.end();
 		}
 		else
-		if( this.onTick ) {
+		{
 			if( this.handler ) {
 				this.handler(dt);
 			}
-			this.onTick(this.target,dt,this.data);
+			if( this.onTick ) {
+				this.onTick(this.target,dt,this.data);
+			}
 		}
 	}
 }
@@ -176,6 +178,13 @@ let DeedManager = (new class {
 	}
 	cleanup() {
 		Array.filterInPlace(this.deedList, deed => !deed.killMe );
+	}
+	traverseDeeds(target,fn) {
+		for( let deed of this.deedList ) {
+			if( deed.target.id == target.id ) {
+				fn(deed);
+			}
+		}		
 	}
 	tick(target,dt) {
 		// This makes sure that any deeds added while ticking do NOT actually tick this round.
@@ -403,11 +412,21 @@ DeedManager.addHandler('heal',function() {
 	this.target.takeHealing(this.source,this.value,this.healingType);
 });
 DeedManager.addHandler('damage',function() {
-	this.target.takeDamage(this.source,this.item,this.value,this.damageType,this.onAttack);
+	let attacker = this.source;
+	if( this.duration === true || this.duration > 0 ) {
+		// for non-instant damaging effects, we don't want the attacker to be conveyed, because it will
+		// result in effects that make it appear you were jsut attacked, for example by a dead guy, or at range
+		attacker = null;
+	}
+
+	this.target.takeDamage(attacker,this.item,this.value,this.damageType,this.onAttack);
 });
 DeedManager.addHandler('shove',function() {
 	this.target.takeShove(this.source,this.item,this.value);
 });
 DeedManager.addHandler('teleport',function() {
 	this.target.takeTeleport(this.source,this.item);
+});
+DeedManager.addHandler('strip',function() {
+	this.target.stripDeeds(this.stripFn);
 });

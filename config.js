@@ -60,14 +60,14 @@ ConfigList.ken = () => {
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
-		monsters: 		['isDemonHound','isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.02,
-		friendDensity: 	0.00001,
+		enemyDensity:  	0.000001,
+		friendDensity: 	0.010,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, potion.eOdorless, potion.eStink, ring.eBloodhound, cloak.eInvisibility, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
-	MonsterTypeList.player.inventoryWear = 'weapon.pickaxe,stuff.oilLamp, shield.eAbsorb';
+	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, 3x potion.eCurePoison, potion.eOdorless, potion.eStink, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
+	MonsterTypeList.player.inventoryWear = 'cloak.eInvisibility, ring.eBloodhound, weapon.pickaxe, stuff.oilLamp, shield.eAbsorb';
 //	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {

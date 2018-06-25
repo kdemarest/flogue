@@ -119,10 +119,10 @@ function createDrawList(observer,map,entityList,asType) {
 				let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
 				if( !inPane ) continue;
 
-				let smelled = map.getScentEntity(x,y,observer.senseSmell);
+				let smelled = map.scentGetEntity(x,y,observer.senseSmell);
 				if( !smelled ) continue;
 
-				let age = map.getScentAge(x,y);
+				let age = map.scentGetAge(x,y);
 				let alpha = 0.0 + Math.clamp(1-(age/observer.senseSmell),0,1) * 0.6;
 				if( !alpha ) continue;
 
@@ -165,7 +165,7 @@ function createDrawList(observer,map,entityList,asType) {
 				itemFind =  map.findItemAt(x,y);
 				entity =    p[y*map.xLen+x];
 				if( !entity && observer.senseSmell ) {
-					smelled = map.getScentEntity(x,y,observer.senseSmell);
+					smelled = map.scentGetEntity(x,y,observer.senseSmell);
 				}
 				if( !tile.isTileType ) {
 					debugger;
@@ -299,6 +299,7 @@ class ImageRepo {
 		// variation of imgChoices. It is the responsibilty of the type to implement this properly.
 		for( let symbol in SymbolToType ) {
 			let type = SymbolToType[symbol];
+			if( type.typeId == 'giantSnail' ) debugger;
 			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
 			if( type.imgGet && !type.imgChoices ) debugger;
 			if( type.imgChoices ) {
@@ -317,6 +318,7 @@ class ImageRepo {
 
 		let self = this;
 		scan(StickerList,'img');
+		scan(AmmoList,'img');
 		scan(WeaponList,'img');
 		scanIcon(EffectTypeList,'icon');
 

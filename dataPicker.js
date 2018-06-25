@@ -339,10 +339,17 @@ class Picker {
 
 		if( effect.valueDamage ) {
 			effect.value = Math.max(1,Math.floor(this.pickDamage(rechargeTime||0) * effect.valueDamage));
+
 			console.assert( !isNaN(effect.value) );
-			if( item && (item.isWeapon || item.isArmor || item.isShield) && WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
-				effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
-				console.assert( !isNaN(effect.value) );
+
+			if( item && (item.isWeapon || item.isArmor || item.isShield) ) {
+				effect.chanceOfEffect = effect.chanceOfEffect || ( item.isWeapon ? WEAPON_EFFECT_CHANCE_TO_FIRE : ARMOR_EFFECT_CHANCE_TO_FIRE );
+				
+				if( WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
+					effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+					console.assert( !isNaN(effect.value) );
+					effect.chanceOfEffect = 100;
+				}
 			}
 		}
 		if( effect.valuePick ) {
@@ -357,7 +364,8 @@ class Picker {
 	}
 
 	pickRechargeTime(level,item) {
-		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime+(level/DEPTH_SPAN)*10);
+		let xRecharge = ItemCalc(item,item,'xRecharge','*');
+		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/DEPTH_SPAN)*10);
 	}
 
 	pickArmorRating(level,item) {

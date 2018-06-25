@@ -151,6 +151,12 @@ class Finder {
 	isMyFriend() {
 		return this.filter( e => this.me.isMyFriend(e) );
 	}
+	isMySuperior() {
+		return this.filter( e => this.me.isMySuperior(e) );
+	}
+	isMyInferior() {
+		return this.filter( e => this.me.isMyInferior(e) );
+	}
 	isNotMyFriend() {
 		return this.filter( e => !this.me.isMyFriend(e) );
 	}

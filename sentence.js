@@ -27,12 +27,16 @@ class Sentence {
 	scan() {
 		let m = this.list;
 		for( let i=0 ; i<m.length ; ++i ) {
-			if( m[i]&mSubject ) {
+			if( m[i]&mVerb ) {
+				// verbs don't contain the object, but might be asking about it.
+				continue;
+			}
+			if( m[i]&mSubject && typeof m[i+1] === 'object' ) {
 				this.subject = this.subject || m[++i];
 			}
 			else
-			if( m[i]&mObject ) {
-				this.Object = this.Object || m[++i];
+			if( m[i]&mObject && typeof m[i+1] === 'object' ) {
+				this.object = this.object || m[++i];
 			}
 		}
 	}
@@ -171,7 +175,17 @@ class Sentence {
 			}
 			++i;
 		}
-		s = String.capitalize(s);
+		let atSentenceStart = true;
+		s = s.replace( /((<[\s\S]*?>)|(\w+)|(\W)|([.?!]))/g, function( whole, any, tag, word, white, punc ) {
+			if( atSentenceStart && word ) {
+				any = String.capitalize(any);
+				atSentenceStart = false;
+			}
+			if( punc ) {
+				atSentenceStart = true;
+			}
+			return any;
+		});
 		return s;
 	}
 }

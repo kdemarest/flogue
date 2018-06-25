@@ -85,6 +85,13 @@ function nop() {}
 		}
 		return array;
 	}
+	Array.traverseSpan = function(array,span,fn) {
+		for( let i=0 ; i<array.length ; i+=span ) {
+			if( fn(array[i+0],array[i+1],array[i+2],array[i+3],array[i+4]) === false ) {
+				return;
+			}
+		}
+	}
 	Array.traversePairs = function(array,fn) {
 		for( let i=0 ; i<array.length ; i+=2 ) {
 			if( fn(array[i+0],array[i+1]) === false ) {
@@ -563,7 +570,7 @@ class PickTable {
 }
 
 
-function showHealthBar(id,newValue,lastValue,total,label) {
+function showHealthBar(id,newValue,lastValue,total,label,backgroundColor) {
 	let hBar = $(id);
 	let bar = hBar.find(' .bar');
 	let hit = hBar.find(' .hit');
@@ -577,6 +584,7 @@ function showHealthBar(id,newValue,lastValue,total,label) {
 	bar.text('  '+label);
 	hit.css('width', hitWidth);
 	hBar.data('value', newValue);
+	bar.css('background-color', backgroundColor);
 
 	setTimeout(function(){
 		hit.css({'width': '0'});

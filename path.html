@@ -13,14 +13,18 @@ pre {
 
 <script src="jquery.3.3.1.js" charset="utf-8"></script>
 <script src="utilities.js" charset="utf-8"></script>
+<script src="time.js" charset="utf-8"></script>
 <script src="dataFab.js" charset="utf-8"></script>
 <script src="data.js" charset="utf-8"></script>
+<script src="dataJobs.js" charset="utf-8"></script>
 <script src="dataHumanNames.js" charset="utf-8"></script>
 <script src="dataPlaces.js" charset="utf-8"></script>
 <script src="dataConditioner.js" charset="utf-8"></script>
 <script src="dataPicker.js" charset="utf-8"></script>
 <script src="dataMason.js" charset="utf-8"></script>
 <script src="place.js" charset="utf-8"></script>
+<script src="path.js" charset="utf-8"></script>
+<script src="vis.js" charset="utf-8"></script>
 <script src="map.js" charset="utf-8"></script>
 <script type="text/javascript">
 
@@ -165,7 +169,22 @@ roster.thruFire = {
 }
 
 roster.twoPipe = {
+	expect: 8,
+	map: `
+		###########
+		#...f.f...#
+		#...####f##
+		#.S.#.E...#
+		#...#####f#
+		#...f...f.#
+		###########
+	`
+}
+
+roster.twoPipeClose = {
 	expect: 7,
+	endIsMonster: true,
+	closeEnough: 1,
 	map: `
 		###########
 		#...f.f...#
@@ -236,12 +255,126 @@ roster.fireCircle = {
 		###############
 	`
 }
+roster.closeEnough = {
+	expect: 2,
+	closeEnough: 2,
+	map: `
+		###############
+		#.............#
+		#.######......#
+		#.....#.......#
+		#..S..#E......#
+		#.....#.......#
+		#.#####.......#
+		#.............#
+		#.............#
+		###############
+	`
+}
+roster.limited = {
+	expect: false,
+	distLimit: 9,
+	closeEnough: 2,
+	map: `
+		###############
+		#.............#
+		#.#####.......#
+		#.....#.......#
+		#..S..#....E..#
+		#.....#.......#
+		#.#####.......#
+		#.............#
+		#.............#
+		###############
+	`
+}
+
+roster.crowdedHall = {
+	expect: 15,
+	map: `
+		###############
+		#...mmm.......#
+		#...###.......#
+		#.....#.#.....#
+		#..S..#.#..E..#
+		#.....#.#.....#
+		#.#####.#.....#
+		#.......#.....#
+		###############
+	`
+}
+roster.lessCrowdedHall = {
+	expect: 10,
+	map: `
+		###############
+		#...m.m.......#
+		#...###....E..#
+		#.....#.#.....#
+		#..S..#.#.....#
+		#.....#.#.....#
+		#.#####.#.....#
+		#.......#.....#
+		###############
+	`
+}
+roster.lessCrowdedHallClose = {
+	expect: 7,
+	closeEnough: 4,
+	map: `
+		###############
+		#...m.........#
+		#...###.......#
+		#.....#.#...E.#
+		#..S..#.#.....#
+		#.....#.#.....#
+		#.#####.#.....#
+		#.......#.....#
+		###############
+	`
+}
+roster.tedious = {
+	expect: 81,
+	map: `
+		###############
+		#.S.m.........#
+		#############.#
+		#...m.........#
+		#.#############
+		#...m.........#
+		#############.#
+		#...m.........#
+		#.#############
+		#...m.........#
+		#############.#
+		#...m.........#
+		#.#############
+		#...m......E..#
+		###############
+	`
+}
 
 
-function solve(mapSource,expect) {
+
+/**
+A test case, above, can have the following:
+	map 			- an ascii map, which S=start, E=end, f=fire, m=monster
+	test 			- a function that returns an (x,y) function that tests each square being traversed.
+	endIsMonster 	- true makes the obstacle a Prob.ENTITY, which is important
+	distLimit		- the distance at which the test should no longer keep searching and fail
+	expect 			- what the expected path length is. set to false if you expect pathing failure.
+	entity 			- the entity that is doing the pathing.
+	closeEnough 	- how close the path needs to get to the end point to be considered success
+**/
+
+
+function solve(source,caseId) {
+	let mapSource = source.map.trim().replace(/\t/g,'')
 	let sx,sy,ex,ey;
 	let raw = new SimpleMap(mapSource);
-	let fireList = [];
+	document.getElementById('caseId').innerHTML = caseId;
+	document.getElementById('mapOriginal').innerHTML = raw.tile.join('\n');
+
+	let obList = [];
 	raw.traverse( (x,y) => {
 		let tile = raw.tileSymbolGet(x,y);
 		if( tile == 'S' ) {
@@ -253,37 +386,59 @@ function solve(mapSource,expect) {
 			ex=x;
 			ey=y;
 			raw.tileSymbolSet(x,y,'.');
+			if( source.endIsMonster ) {
+				obList.push(x,y,Prob.ENTITY);
+			}
 		}
 		if( tile == 'f' ) {
-			fireList.push(x,y);
+			obList.push(x,y,Prob.MILD);
+			raw.tileSymbolSet(x,y,'.');
+		}
+		if( tile == 'm' ) {
+			obList.push(x,y,Prob.ENTITY);
 			raw.tileSymbolSet(x,y,'.');
 		}
 	});
 	let map = new Map(null,raw.tile.join('\n'),[]);
-	Array.traversePairs(fireList, (x,y) => map.setObstacle(x,y,0.3) );
+	Array.traverseSpan(obList, 3, (x,y,prob) => map.setObstacle(x,y,prob) );
 
-	document.getElementById('map').innerHTML = map.renderToString();
 	document.getElementById('result').innerHTML = "Working...";
 
-	let path = new Path(map);
-	let result = path.findPath(null,sx,sy,ex,ey,() => {
-		document.getElementById('map').innerHTML = path.renderToString();		
-	});
+	let path = new Path(
+		map,
+		source.distLimit,
+		source.test ? source.test(map) : null
+	);
+	path.findPath(
+		source.entity,
+		sx,sy,ex,ey,
+		source.closeEnough,
+		() => {
+			document.getElementById('map').innerHTML = path.render().join('\n');		
+		}
+	);
 	document.getElementById('result').innerHTML = result ? "Path found." : "No Path";
-	return result;
+	return path;
 }
 
-function test(attempt,name) {
-	let result = solve( attempt.map.trim().replace(/\t/g,'') );
-	console.assert(result===attempt.expect);	// triple equals is important.
+function test(attempt,caseId) {
+	let result = solve( attempt, caseId );
+	if( attempt.expect === false ) {
+		console.assert( result.success == false );
+	}
+	else {
+		console.assert( result.path.length === attempt.expect );
+	}
 }
 
 function main() {
-	let result = test( roster.fireCircle );
+//	let result = test( roster.fireCircle );
 
-//	for( let key in roster ) {
-//		test(roster[key],key);
-//	}
+	for( let key in roster ) {
+		test(roster[key],key);
+	}
+	document.getElementById('caseId').innerHTML = 'ALL TESTS PASSED';
+
 }
 
 $(document).ready( () => {
@@ -294,6 +449,8 @@ $(document).ready( () => {
 </script>
 </head>
 <body>
+	<pre id="caseId"></pre>
+	<pre id="mapOriginal"></pre>
 	<pre id="map"></pre>
 	<pre id="result"></pre>
 </body>

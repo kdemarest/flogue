@@ -101,22 +101,16 @@ class Entity {
 		}
 		let hadNoArea = !this.area;
 		console.assert( x!==undefined && y!==undefined );
-		// DANGER! Doing this while within a loop across the entityList will result in pain!
-		if( this.area ) {
-			Array.filterInPlace( this.area.entityList, entity => entity.id!=this.id );
-		}
-		this.area = area;
-		let fnName = this.isUser() ? 'unshift' : 'push';
-		this.area.entityList[fnName](this);
+		this.setPosition(x,y,area);
 		let c = this.findFirstCollider(this.travelMode,x,y,this);
 		if( c ) {
 			[x,y] = this.map.spiralFind( this.x, this.y, (x,y) => !this.findFirstCollider(this.travelMode,x,y,this) );
 			console.assert( x!==false );
+			this.setPosition(x,y);
 		}
 		if( Gab && hadNoArea ) {
 			Gab.entityPostProcess(this);
 		}
-		this.setPosition(x,y);
 		tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
 	}
 
@@ -245,6 +239,15 @@ class Entity {
 		return deltasToDirNatural(dx,dy);
 	}
 
+	isMySuperior(entity) {
+		if( this.brainMaster && entity.id == this.brainMaster.id ) {
+			return true;
+		}
+		return entity.id > this.id;
+	}
+	isMyInferior(entity) {
+		return !this.isMySuperior(entity);
+	}
 	isMyEnemy(entity) {
 		if( entity.id == this.id ) {
 			return false;
@@ -445,18 +448,33 @@ class Entity {
 	atDir(x,y,dir) {
 		return at(x + DirectionAdd[dir].x, y + DirectionAdd[dir].y);
 	}
+	traverseDeeds(fn) {
+		DeedManager.traverseDeeds(this,fn);
+	}
+	hasDeed(testFn) {
+		let found = false;
+		DeedManager.traverseDeeds(this,deed => {
+			if( testFn(deed) ) found = true;
+		});
+		return found;
+	}
+	stripDeeds(testFn) {
+		DeedManager.end( testFn );
+	}
 
 	dirToBestScent(x,y,target) {
+		let _bestAge;
 		let dir = this.map.dirChoose( x, y, (x,y,bestAge) => {
-			let entity = this.map.getScentEntity(x,y,this.senseSmell);
+			let entity = this.map.scentGetEntity(x,y,this.senseSmell);
 			if( !entity || entity.id !== target.id ) return false;
-			let age = this.map.getScentAge(x,y);;
+			let age = this.map.scentGetAge(x,y);;
 			if( bestAge == null || age < bestAge ) {
+				_bestAge = age;
 				return age;
 			}
 			return false;
 		});
-		return dir;
+		return [dir,_bestAge];
 	}
 
 	// NOTE: This collides with monsters first, then items, then tiles. It could be a LOT
@@ -625,7 +643,7 @@ class Entity {
 
 	thinkFlock(howClose=2) {
 		// When hurt, your pet will run towards you. Once within 2 it will flee its enemies, but still stay within 2 of you.	
-		let friend = this.findAliveOthersNearby().isMyFriend().farFromMe(howClose).byDistanceFromMe().first;
+		let friend = this.findAliveOthersNearby().isMyFriend().isMySuperior().farFromMe(howClose).byDistanceFromMe().first;
 		if( friend ) {
 			this.record('back to a friend',true);
 			return this.thinkApproach(friend.x,friend.y,friend);
@@ -640,7 +658,7 @@ class Entity {
 		let dirRight = (dirAwayPerfect+1)%DirectionCount;
 
 		// Generally try to flee towards your friends, if they exist and are in a valid flee direction.
-		if( this.brainMaster || this.packAnimal ) {
+		if( this.brainMaster || this.brainPackAnimal ) {
 			let f = this.findAliveOthersNearby().isMyFriend();
 			let friend;
 			if( this.brainMaster && f.isId(this.brainMaster.id) ) {
@@ -677,18 +695,34 @@ class Entity {
 		if( this.brainMaster && !this.brainPath ) { debugger; }
 
 		if( this.brainPath || true ) {
-			let path = new Path(this.map);
-			let result = path.findPath(this,this.x,this.y,x,y);
-			if( result ) {
-				let dir = path.path[0];
-				this.record( "Pathing "+dir+" from ("+this.x+','+this.y+') to reach ('+x+','+y+')', target ? target.id : '' );
-				return directionToCommand(dir);
+
+			let stallSet = (toggle) => {
+				if( !toggle ) {
+					this.stall = 0;
+					return;
+				}
+				this.stall = (this.stall || 0) + 1;
+				if( target && target.isDestination && this.stall > (target.stallLimit || 5) ) {
+					delete this.destination;
+				}
 			}
-			this.record( JSON.stringify( path.status ) );
-			this.record( "Pathing FAIL from ("+this.x+','+this.y+') to reach ('+x+','+y+')', target ? target.id : '' );
-			let dest = this.destination;
-			if( dest && dest.x==x && dest.y==y && dest.killOnFailedPath ) {
-				delete this.destination;
+
+			if( !this.path || !this.path.success || this.path.path.length <= 0 || !this.path.leadsTo(x,y) ) {
+				this.path = new Path(this.map);
+				let success = this.path.findPath(this,this.x,this.y,x,y,1);
+				if( success ) {
+					this.record( "Pathing "+this.path.path[0]+" from ("+this.x+','+this.y+') to reach ('+x+','+y+')', target ? target.id : '' );
+					stallSet(false);
+				}
+				else {
+					this.record( JSON.stringify( this.path.status ) );
+					this.record( "Pathing FAIL from ("+this.x+','+this.y+') to reach ('+x+','+y+')', target ? target.id : '' );
+					stallSet(true);
+				}
+			}
+			if( this.path && this.path.success ) {
+				let dir = this.path.path.shift();
+				return directionToCommand(dir);
 			}
 		}
 
@@ -801,7 +835,7 @@ class Entity {
 				let enemyList = this.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
 				let wasSmell = false;
 				if( !enemyList.count && this.senseSmell ) {
-					let smelled = this.map.getScentEntity(this.x,this.y,this.senseSmell,this.id);
+					let smelled = this.map.scentGetEntity(this.x,this.y,this.senseSmell,this.id);
 					if( smelled && this.isMyEnemy(smelled) ) {
 						if( !this.lastScent || this.lastScent.id != smelled.id || Math.chance(5) ) {
 							tell('<b>',mSubject|mCares,smelled,' ',mVerb,'hear',' ',mA|mObject,this,' howling!','</b>');
@@ -836,10 +870,12 @@ class Entity {
 				}
 
 				// OK, now all the mind control stuff is done, we need to manage out attitude a little.
-				if( theEnemy && distanceToNearestEnemy <= (this.tooClose||4) ) {
+				if( theEnemy && this.attitude!==Attitude.AGGRESSIVE && distanceToNearestEnemy <= (this.tooClose||4) ) {
 					this.record( 'enemy too close! Go aggressive.', true );
+					if( this.attacker !== Attitude.HUNT || this.attitude !== Attitude.PATROL ) {
+						tell(mCares,theEnemy,mSubject,this,' ',mVerb,'think',' ',mObject,theEnemy,' ',mVerb|mObject,'is',' too close!');
+					}
 					this.changeAttitude( Attitude.AGGRESSIVE );
-					tell(mSubject|mCares,this,' ',mVerb,'think',' ',mObject,theEnemy,' ',mVerb|mObject,'is',' too close!');
 				}
 
 				if( !theEnemy && this.attitude!==this.baseType.attitude ) {
@@ -851,7 +887,7 @@ class Entity {
 				// smarter version would pick every adjacent square and test whether any enemy could reach
 				// that square, and more to the safest square.
 				let flee = theEnemy && (
-					(hurt && (this.brainFlee || this.packAnimal)) ||
+					(hurt && (this.brainFlee || this.brainPackAnimal)) ||
 					(this.attitude == Attitude.FEARFUL) ||
 					(this.attitude == Attitude.HESITANT && Math.chance(40))
 				);
@@ -886,14 +922,14 @@ class Entity {
 				}
 
 				if( this.attitude == Attitude.AWAIT ) {
-					return this.thinkAwait();
+					return this.thinkAwaitF();
 				}
 
 				if( hurt && this.brainPet ) {
 					this.vocalize = [mSubject,this,' ',mVerb,Math.chance(50)?'wimper':'whine'];
 				}
 
-				let flock = this.packAnimal && !enemyList.count;
+				let flock = this.brainPackAnimal && !enemyList.count;
 				if( flock ) {
 					let c = this.thinkFlock();
 					if( c ) return c;
@@ -917,7 +953,17 @@ class Entity {
 						});
 						let pos = this.map.pickPosBy(1,1,1,1,safeSpot);
 						let site = this.map.getSiteAt(pos[0],pos[1]);
-						this.destination = { x: pos[0], y: pos[1], site: site, closeEnough: 3, killOnFailedPath: true };
+						this.destination = {
+							isDestination: true,
+							area: area,
+							x: pos[0],
+							y: pos[1],
+							site: site,
+							closeEnough: 3,
+							stallLimit: 4,
+							name: 'desination '+(site ? site.id : '')+' ('+pos[0]+','+pos[1]+')',
+							id: 'DEST.'+(site ? site.id : GetTimeBasedUid())
+						};
 						this.record( 'New dest '+site.id+' ('+pos[0]+','+pos[1]+')' );
 					}
 					if( this.x == this.destination.x && this.y == this.destination.y ) {
@@ -925,7 +971,7 @@ class Entity {
 						delete this.destination;
 						return Command.WAIT;
 					}
-					let c = this.thinkApproach(this.destination.x, this.destination.y);
+					let c = this.thinkApproach(this.destination.x, this.destination.y, this.destination);
 					if( c ) return c;
 				}
 
@@ -963,7 +1009,14 @@ class Entity {
 
 				if( wasSmell ) {
 					// We are heading towards out enemy due to smell.
-					let dir = this.dirToBestScent(this.x,this.y,theEnemy);
+					let dir,age;
+					[dir,age] = this.dirToBestScent(this.x,this.y,theEnemy);
+					let ageHere = this.map.scentGetAge(this.x,this.y);
+					// We hit a dead end of scent... We want to generally invalidate it.
+					// This will cause us to run back up the scent trail, invalidating it as we go.
+					if( age > ageHere ) {
+						this.map.scentIncAge(this.x,this.y,this.senseSmell);
+					}
 					if( dir !== false && this.mayGo(dir,this.problemTolerance()) ) {
 						return directionToCommand(dir);
 					}
@@ -979,6 +1032,7 @@ class Entity {
 
 			}).apply(this);			
 
+			if( this.command == undefined ) debugger;
 			this.record( this.attitude+" cmd: "+this.command );
 		}
 	}
@@ -1155,13 +1209,14 @@ class Entity {
 				});
 			}
 			// blood flies away from the attacker
+			let arc = attacker ? 45 : 179;
 			let piecesAnim = new Anim({},{
 				follow: 	this,
 				img: 		StickerList[this.bloodId || 'bloodRed'].img,
 				delay: 		delay,
 				duration: 	0.2,
 				onInit: 		a => { a.create(4+Math.floor(7*mag)); },
-				onSpriteMake: 	s => { s.sScaleSet(0.20+0.10*mag).sVel(Math.rand(deg-45,deg+45),4+Math.rand(0,3+7*mag)); },
+				onSpriteMake: 	s => { s.sScaleSet(0.20+0.10*mag).sVel(Math.rand(deg-arc,deg+arc),4+Math.rand(0,3+7*mag)); },
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
 			});
 			// You also jump back and quiver
@@ -1286,7 +1341,7 @@ class Entity {
 			let retaliationEffects = new Finder(this.inventory).filter( item => item.inSlot && item[is] );
 			retaliationEffects.process( item => {
 				if( item.effect && item.effect.isHarm ) {
-					let fireEffect = ARMOR_EFFECT_OP_ALWAYS.includes(item.effect.op) || Math.chance(ARMOR_EFFECT_CHANCE_TO_FIRE);
+					let fireEffect = Math.chance(item.chanceOfEffect || 100);
 					if( fireEffect ) {
 						item.trigger( attacker, this, Command.NONE );
 					}
@@ -1437,7 +1492,7 @@ class Entity {
 		this.inCombat = true;
 
 		if( (this.senseBlind && !this.baseType.senseBlind) || (target.invisible && !this.senseInvisible) ) {
-			if( Math.chance(50) ) {
+			if( !this.senseLife && Math.chance(50) ) {
 				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,target,' but in the wrong direction!');
 				return;
 			}
@@ -1477,7 +1532,7 @@ class Entity {
 
 		// Trigger my weapon.
 		if( weapon && weapon.effect ) {
-			let fireWeaponEffect = WEAPON_EFFECT_OP_ALWAYS.includes(weapon.effect.op) || Math.chance(weapon.chanceToFire || WEAPON_EFFECT_CHANCE_TO_FIRE);
+			let fireWeaponEffect = Math.chance(weapon.chanceOfEffect || 100);
 			if( fireWeaponEffect ) {
 				weapon.trigger( target, this, Command.ATTACK );
 			}
@@ -1530,10 +1585,12 @@ class Entity {
 	pickup(item) {
 		if( !item ) debugger;
 
-		item.giveTo(this,this.x,this.y);
-		if( (item.isArmor || item.isShield) && !item.armor ) {
-			debugger;
+		if( item.onPickup ) {
+			let allow = item.onPickup(this);
+			if( !allow ) return false;
 		}
+
+		item.giveTo(this,this.x,this.y);
 		if( item.isCorpse ) {
 			let corpse = item.usedToBe;
 			if( !corpse || !corpse.loot ) {
@@ -1551,6 +1608,7 @@ class Entity {
 			return;
 		}
 		tell(mSubject,this,' ',mVerb,'pick',' up ',mObject|mBold,item,'.');
+		return true;
 	}
 
 	getAmmoName(ammoType) {
@@ -1570,8 +1628,9 @@ class Entity {
 				if( this.strictAmmo ) {
 					return false;
 				}
-				// In theory we could generate a certain ammot type, if this weapon isn't specifying a particular item type.
-				let ammoList = this.lootTake( 'weapon.eInert '+weapon.ammoType, this.level, this, true );
+				// Ammo auto-generation
+				// The ammoSpec is used to generate the exact right type of ammo.
+				let ammoList = this.lootTake( weapon.ammoSpec, this.level, this, true );
 				console.assert(ammoList[0]);
 				ammoList[0].breakChance = 100;	// avoid generating heaps of whatever is being used for ammo!
 				return ammoList[0];
@@ -1668,44 +1727,51 @@ class Entity {
 		return true;
 	}
 
-	setPosition(x,y) {
-		if( this.x === x && this.y === y ) {
+	setPosition(x,y,area) {
+		if( !area ) {
+			area = this.area;
+		}
+
+		if( this.x === x && this.y === y && this.area.id == area.id ) {
 			return;
 		}
+
+
 		if( !this.inVoid ) {
 			this.tileTypeLast = this.map.tileTypeGet(this.x,this.y);
-			console.assert(this.tileTypeLast);
-			if( this.x !== undefined ) {
-				this.map.calcWalkable(this.x,this.y,null);
-			}
+			console.assert( this.tileTypeLast );
+			console.assert( this.x !== undefined );
+			this.map.calcWalkable(this.x,this.y,null);
+			this.map.scentLeave(this.x,this.y,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
+			this.map._entityRemove(this);
 		}
 		if( this.inVoid ) {
-			this.areaOrigin = this.area;
+			console.assert( area );
+			this.areaOrigin = area;
 			this.xOrigin = x;
 			this.yOrigin = y;
 			this.inVoid = false;
 		}
-		else {
-			// Only leave scent where you WERE, so you can sell it where you ARE.
-			this.map.leaveScent(this.x,this.y,this,this.scentReduce||0);
-		}
 		this.x = x;
 		this.y = y;
+		if( !this.area || this.area.id !== area.id ) {
+			if( this.area ) {
+				// DANGER! Doing this while within a loop across the entityList will result in pain!
+				Array.filterInPlace( this.area.entityList, entity => entity.id!=this.id );
+			}
+			this.area = area;
+			let fnName = this.isUser() ? 'unshift' : 'push';
+			this.area.entityList[fnName](this);
+		}
+
+		this.map._entityInsert(this);
 		this.map.calcWalkable(x,y,this);
 		// This just makes sure that items have coordinates, for when they're the root of things.
 		this.inventory.forEach( item => { item.x=x; item.y=y; } );
 
 		let dest = this.destination;
 		if( dest ) {
-			dest.lastDist = (dest.lastDist || 0);
 			let dist = this.getDistance(dest.x,dest.y);
-			if( Math.abs(dist-dest.lastDist) < 2 ) {
-				// So, we're probably ACTUALLY stalled when we haven't moved 
-				dest.stalled = (dest.stalled||0) + 1;
-			}
-			else {
-				dest.stalled = 0;
-			}
 			if( dist <= (dest.closeEnough||3) ) {
 				this.record( "ARRIVED", true );
 				if( dest.onReached ) {
@@ -1758,7 +1824,7 @@ class Entity {
 		}
 		else
 		// Switch with friends, else bonk!
-		if( f.count && !f.first.isMerchant && this.isMyFriend(f.first) && this.isUser() ) {
+		if( f.count && (!this.isUser() || !f.first.isMerchant) && this.isMyFriend(f.first) && this.isMyInferior(f.first) ) {
 			// swap places with allies
 			allyToSwap = f.first;
 		}
@@ -1814,6 +1880,7 @@ class Entity {
 		}
 
 		if( allyToSwap ) {
+			console.log( this.name+" ally swap with "+allyToSwap.name );
 			allyToSwap.setPosition(this.x,this.y);
 		}
 
@@ -1827,7 +1894,7 @@ class Entity {
 		}
 
 		if( this.onMove ) {
-			this.onMove.call(this,x,y);
+			this.onMove.call(this,x,y,xOld,yOld);
 		}
 
 		if( this.brainPicksup ) {
@@ -1840,6 +1907,7 @@ class Entity {
 	}
 
 	actOnCommand() {
+		if( this.command == undefined ) debugger;
 		if( this.command == Command.BUSY ) {
 			console.assert( typeof this.busy.turns == 'number' && !isNaN(this.busy.turns) );
 			this.busy.turns--;
@@ -1848,7 +1916,9 @@ class Entity {
 				delete this.busy;
 			}
 			else {
-				animFloatUp(this,this.busy.icon);
+				if( this.busy.icon ) {
+					animFloatUp(this,this.busy.icon);
+				}
 			}
 		}
 		switch( this.command ) {

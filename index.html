@@ -6,6 +6,8 @@
 <link rel="stylesheet" type="text/css" href="minireset.css">
 <link rel="stylesheet" type="text/css" href="index.css">
 <!--script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script-->
+<script src="jquery.3.3.1.js" charset="utf-8"></script>
+<script src="pixi.min.js" charset="utf-8"></script>
 <script src="utilities.js" charset="utf-8"></script>
 <script src="time.js" charset="utf-8"></script>
 <script src="dataFab.js" charset="utf-8"></script>
@@ -16,16 +18,14 @@
 <script src="dataConditioner.js" charset="utf-8"></script>
 <script src="dataPicker.js" charset="utf-8"></script>
 <script src="dataMason.js" charset="utf-8"></script>
-<script src="jquery.3.3.1.js" charset="utf-8"></script>
-<script src="pixi.min.js" charset="utf-8"></script>
-<script src="gab.js" charset="utf-8"></script>
-<script src="deed.js" charset="utf-8"></script>
+<script src="place.js" charset="utf-8"></script>
+<script src="path.js" charset="utf-8"></script>
 <script src="vis.js" charset="utf-8"></script>
 <script src="map.js" charset="utf-8"></script>
-<script src="path.js" charset="utf-8"></script>
+<script src="gab.js" charset="utf-8"></script>
+<script src="deed.js" charset="utf-8"></script>
 <script src="item.js" charset="utf-8"></script>
 <script src="entity.js" charset="utf-8"></script>
-<script src="place.js" charset="utf-8"></script>
 <script src="anim.js" charset="utf-8"></script>
 <script src="tell.js" charset="utf-8"></script>
 <script src="views.js" charset="utf-8"></script>
@@ -182,6 +182,8 @@ function main(levelName) {
 			<div id="guiNarrative"></div>
 		</td><td>
 			<div id="guiControls"></div>
+		</td><td>
+			<div id="guiPathDebugSummary"></div>
 		</td></tr>
 		<tr>
 			<td>
@@ -198,6 +200,9 @@ function main(levelName) {
 				<div id="guiInfo"></div>
 				<div id="guiMiniMap"></div>
 				<div id="guiMiniMapCaption"></div>
+			</td>
+			<td>
+				<div id="guiPathDebug"></div>
 			</td>
 		</tr>
 	</table>

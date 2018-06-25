@@ -198,6 +198,10 @@ body {
 	color: black;
 	background-color: orange;
 }
+.poison {
+	color: black;
+	background-color: #66cc1a;
+}
 .level {
 	font-family: 'Raleway', sans-serif;
 	font-size: 20px;
@@ -452,4 +456,9 @@ table .inv tbody tr .ctr {
 	width: 0px;
 
 	transition: width .5s linear;
+}
+
+#guiPathDebug {
+	white-space: pre;
+	font-family: "Courier New", monospace;
 }

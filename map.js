@@ -200,6 +200,8 @@ class Map extends SimpleMap {
 			this.itemLookup[lPos] = (this.itemLookup[lPos] || []);
 			this.itemLookup[lPos].push(item);
 		});
+		this.entityLookup = [];		
+		this.entityLookupStaticNop = [];
 		this.walkLookup = this.calcLookup([],pWalk(this));
 		// This ignores the first-round stink anything might generate. And really, everything "should" have been
 		// walking around for a while, so we should make fake prior-stink trails for everything. But ya know.
@@ -226,7 +228,7 @@ class Map extends SimpleMap {
 		});
 		return lookup;
 	}
-	leaveScent(x,y,entity,timeReduction=0) {
+	scentLeave(x,y,entity,timeReduction=0) {
 		// WARNING: Don't make any monster that uses smell have ANY stink. It will
 		// mask the scent of its prey with its own smell!
 		if( !entity.isMonsterType && !entity.stink ) {
@@ -245,6 +247,10 @@ class Map extends SimpleMap {
 		// laying, because pathfinding needs decreasing values to follow.
 		let stinkTime = Math.floor(time-(10*Math.clamp(1-entity.stink,0.0,0.98)));
 		this.traverseNear(x,y,1, (x,y) => {
+			let tile = this.tileTypeGet(x,y);
+			if( !tile.mayWalk || tile.isProblem ) {
+				return;
+			}
 			let lPos = (y*this.xLen+x)*2;
 			if( stinkTime >= (this.scentLookup[lPos+0] || 0) ) {
 				this.scentLookup[lPos+0] = stinkTime;
@@ -252,6 +258,13 @@ class Map extends SimpleMap {
 			}
 		});
 		return 2;
+	}
+	scentClear(x,y) {
+		let lPos = (y*this.xLen+x)*2;
+		if( this.scentLookup[lPos] ) {
+			this.scentLookup[lPos+0] = -SCENT_AGE_LIMIT;
+			this.scentLookup[lPos+1] = null;
+		}
 	}
 	calcWalkable(x,y,entityAtSpot) {
 		let lPos = y*this.xLen+x;
@@ -262,10 +275,15 @@ class Map extends SimpleMap {
 		let testFn = pWalk(this);
 		this.walkLookup[lPos] = testFn(x,y);
 	}
-	getScentAge(x,y) {
+	scentGetAge(x,y) {
 		return Time.simTime-(this.scentLookup[(y*this.xLen+x)*2+0] || SCENT_AGE_LIMIT);
 	}
-	getScentEntity(x,y,maxScentAge=SCENT_AGE_LIMIT,excludeId) {
+	scentIncAge(x,y,amount) {
+		console.assert(amount);
+		let lPos = (y*this.xLen+x)*2;
+		this.scentLookup[(y*this.xLen+x)*2+0] -= amount;
+	}
+	scentGetEntity(x,y,maxScentAge=SCENT_AGE_LIMIT,excludeId) {
 		maxScentAge = Math.min(maxScentAge,SCENT_AGE_LIMIT);
 		let lPos = (y*this.xLen+x)*2;
 		let simTime = this.scentLookup[lPos+0];
@@ -424,6 +442,28 @@ class Map extends SimpleMap {
 		}
 	}
 
+	isEntityAt(x,y) {
+		// This has a TINY little flow, in that the left and right sides wrap around. But it is used
+		// during pathfind, so we're going to let this little problem slide.
+		let e = this.entityLookup[y*this.xLen+x];
+		return e && e.length;
+	}
+	findEntityAt(x,y) {
+		if( !this.inBounds(x,y) ) return false;
+		return new Finder(this.entityLookup[y*this.xLen+x] || this.entityLookupStaticNop);
+	}
+	_entityRemove(entity) {
+		//console.log( '- '+entity.name+' ('+entity.x+','+entity.y+')' );
+		let lPos = entity.y*this.xLen+entity.x;
+		Array.filterInPlace( this.entityLookup[lPos], e => e.id!=entity.id );
+	}
+	_entityInsert(entity) {
+		//console.log( '+ '+entity.name+' ('+entity.x+','+entity.y+')' );
+		let lPos = entity.y*this.xLen+entity.x;
+		this.entityLookup[lPos] = (this.entityLookup[lPos] || []);
+		this.entityLookup[lPos].push(entity);
+	}
+
 	_itemRemove(item) {
 		if( !this.itemList.includes(item) ) {
 			debugger;
@@ -452,7 +492,7 @@ class Map extends SimpleMap {
 		item.x = x;
 		item.y = y;
 		this.calcWalkable(x,y);
-		this.leaveScent(x,y,item);
+		this.scentLeave(x,y,item);
 		//this.tileSymbolSet(item.x,item.y,item.symbol);
 	}
 }

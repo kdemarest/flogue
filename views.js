@@ -318,7 +318,24 @@ class ViewInfo extends ViewObserver {
 		if( !entity.isUser() ) {
 			s += entity.attitude+' '+(entity.bumpCount||'')+'<br>';
 		}
-		s += "Health: "+entity.health+" of "+entity.healthMax+" ("+entity.x+","+entity.y+")<br>";
+		let poisonMax = 0;
+		entity.traverseDeeds( deed => {
+			if( poisonMax === true ) return;
+			if( deed.damageType == DamageType.POISON ) {
+				if( deed.duration === true ) {
+					poisonMax = true;
+				}
+				else {
+					poisonMax = Math.max(poisonMax,deed.timeLeft);
+				}
+			}
+		});
+		if( poisonMax ) {
+			s += 'Health: <span class="poison">&nbsp;POISONED ('+(poisonMax===true ? 'FOREVER' : poisonMax)+')&nbsp;</span><br>';
+		}
+		else {
+			s += "Health: "+entity.health+" of "+entity.healthMax+" ("+entity.x+","+entity.y+")<br>";
+		}
 		if( entity.isUser() ) {
 			s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R<br>";
 			let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
@@ -348,6 +365,8 @@ class ViewInfo extends ViewObserver {
 		}
 		if( !entity.isUser() ) {
 			s += (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'');
+			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');
+			$('#guiPathDebug').html(entity.path ? entity.path.render().join('\n') : '');
 			$('#'+this.infoDivId).addClass('monColor');
 		}
 		else {
@@ -417,7 +436,8 @@ class ViewStatus extends ViewObserver {
 		// Update all slots.
 		this.slotList.forEach( slot => {
 			let entity = f.getId( slot.entityId );
-			showHealthBar( slot, entity.health, slot.entityLastHealth, entity.healthMax, entity.name );
+			let color = entity.hasDeed(deed=>deed.damageType==DamageType.POISON) ? '#66cc1a' : '#c54';
+			showHealthBar( slot, entity.health, slot.entityLastHealth, entity.healthMax, entity.name, color );
 			slot.entityLastHealth = entity.health;
 		});
 	}
