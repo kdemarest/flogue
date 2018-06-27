@@ -67,7 +67,7 @@ class Path {
 		let pathSummary = [];
 		let px = this.exActual;
 		let py = this.eyActual;
-		for( let i=this.path.length-1 ; i>=0 ; i-- ) {
+		for( let i=this.path.length-1 ; i>=0 ; i-=3 ) {
 			let dir = this.path[i];
 			px -= DirectionAdd[dir].x;
 			py -= DirectionAdd[dir].y;
@@ -100,6 +100,32 @@ class Path {
 			}
 		});
 		return s.split('\n');
+	}
+	stillOnIt(x,y) {
+		let p = this.path;
+		console.assert(p);
+		if( p.length <= 0 ) {
+			return false;
+		}
+		for( let i=0 ; i<p.length ; i += 3 ) {
+			if( p[i+0] == x && p[i+1] == y ) {
+				return true;
+			}
+		}
+		return false;
+	}
+	getDirFrom(x,y) {
+		let p = this.path;
+		console.assert(p);
+		if( p.length <= 0 ) {
+			return false;
+		}
+		for( let i=0 ; i<p.length ; i += 3 ) {
+			if( p[i+0] == x && p[i+1] == y ) {
+				return p[i+2];
+			}
+		}
+		return false;
 	}
 	findPath(entity,sx,sy,ex,ey,closeEnough=0,onStep) {
 
@@ -232,9 +258,10 @@ class Path {
 						}
 					}
 				}
-				this.path.unshift((bestDir+4)%8);
 				x += DirectionAdd[bestDir].x;
 				y += DirectionAdd[bestDir].y;
+
+				this.path.unshift(x,y,(bestDir+4)%8);
 				if( onStep ) onStep();
 			}
 			if( reps <=0 ) {

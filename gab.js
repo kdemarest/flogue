@@ -136,7 +136,16 @@ Gab = (new function(priorGab) {
 			return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' treasure!'];
 		},
 		senseLife: function(subj,obj,oldValue,newValue) {
-			return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' creatures!'];
+			return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' living creatures!'];
+		},
+		senseSmell: function(subj,obj,oldValue,newValue) {
+			return [mSubject,subj,' sense of smell ',mVerb,(newValue>oldValue?'improves':'decreases'),'.'];
+		},
+		stink: function(subj,obj,oldValue,newValue) {
+			return [mSubject,subj,' ',mVerb,'become',' ',mVerb,(newValue>oldValue?'stinkier':'less stinky'),'.'];
+		},
+		scentReduce: function(subj,obj,oldValue,newValue) {
+			return [mSubject,subj,' ',mVerb,'become',' ',mVerb,(newValue>oldValue?'harder to smell':'easier to smell'),'.'];
 		},
 		light: function(subj,obj,oldValue,newValue) {
 			return ['The area around ',mSubject,subj,' '+(newValue>oldValue?' brightens':'grows darker')+'.'];
@@ -151,7 +160,7 @@ Gab = (new function(priorGab) {
 			return [mSubject,subj,' legs ',mVerb,'feel',(!newValue?' less':''),' springy.'];
 		},
 		_generic_: function(subj,obj,oldValue,newValue) {
-			return [mSubject,subj,' ',mVerb,'is',' less enchanted.'];
+			return [mSubject,subj,' ',mVerb,'is',' ',newValue ? '' : 'less',' enchanted.'];
 		}
 	};
 

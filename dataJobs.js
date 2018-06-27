@@ -1,7 +1,23 @@
 // Check out this awesomeness: http://rmhh.co.uk/occup/b.html
 let JobTypeList = {
+	layman: {
+		isLayman: true,
+		attitude: Attitude.WANDER,
+		sign: "Just an ordinary person.",
+	},
+	sentry: {
+		isSentry: true,
+		attitude: Attitude.AWAIT,
+		tether: 7,
+		tooClose: 7,
+		sign: "A sentry trying to keep people safe.",
+		inventoryLoot: 'weapon.sword',
+	},
 	brewer: {
 		isMerchant: true,
+		isMinor: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isPotion || item.isStuff,
 		colFilter: {slot:1,key:1,icon:1,description:1,price:1},
 		sign: "Concoctions to change your outlook!",
@@ -9,6 +25,9 @@ let JobTypeList = {
 	},
 	scribe: {
 		isMerchant: true,
+		isMajor: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isSpell || item.isPaper,
 		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Arcane scribing for the gifted!",
@@ -16,6 +35,9 @@ let JobTypeList = {
 	},
 	armorer: {
 		isMerchant: true,
+		isMajor: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isArmor || item.isShield || item.isOre,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Come back safe and sound!",
@@ -23,6 +45,9 @@ let JobTypeList = {
 	},
 	smith: {
 		isMerchant: true,
+		isMajor: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isWeapon || item.isAmmo || item.isOre,
 		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Defend yourself, or press the attack!",
@@ -30,6 +55,9 @@ let JobTypeList = {
 	},
 	bowyer: {
 		isMerchant: true,
+		isMajor: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isBow || item.isAmmo || item.mayThrow,
 		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Shoot from a distance to triumph safely!",
@@ -37,6 +65,9 @@ let JobTypeList = {
 	},
 	cobbler: {
 		isMerchant: true,
+		isMidsize: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isBoots,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,bonus:1,charges:1,price:1},
 		sign: "Shoes and boots that last!",
@@ -44,6 +75,9 @@ let JobTypeList = {
 	},
 	gaunter: {
 		isMerchant: true,
+		isMidsize: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isGloves,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Gloves for any hand!",
@@ -51,6 +85,9 @@ let JobTypeList = {
 	},
 	lapidary: {
 		isMerchant: true,
+		isMidsize: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isGem,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "The finest gems, custom cut!",
@@ -58,6 +95,9 @@ let JobTypeList = {
 	},
 	jeweler: {
 		isMerchant: true,
+		isMajor: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isRing || item.isGem,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Rings, amulets, you name it!",
@@ -65,6 +105,9 @@ let JobTypeList = {
 	},
 	peddler: {
 		isMerchant: true,
+		isMinor: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isStuff,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "I sell goods of all kinds!",
@@ -72,15 +115,22 @@ let JobTypeList = {
 	},
 	miner: {
 		isMerchant: true,
+		isMinor: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		buyTest: item => item.isOre,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Raw material from the depths!",
 		inventoryLoot: '200x ore, 100x 50% ore'
 	},
 	evangelist: {
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		sign: "The sun has fled the sky!",
 	},
 	priest: {
+		attitude: Attitude.AWAIT,
+		tether: 2,
 		sign: "Let us give thanks!",
 	}
 }

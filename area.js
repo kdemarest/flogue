@@ -365,12 +365,24 @@ class Area {
 
 		if( theme.jobPick ) {
 			this.jobPickTable = new PickTable().scanKeys(theme.jobPick);
-			this.jobPicker = () => {
-				if( this.jobPickTable.noChances() ) {
-					this.jobPickTable.reset();
+			this.jobPicker = (filter) => {
+				let pickTable = this.jobPickTable;
+				if( pickTable.noChances() ) {
+					pickTable.reset();
 				}
-				let jobId = this.jobPickTable.pick();
-				this.jobPickTable.forbidLast();
+				if( filter ) {
+					// WARNING! All of the QUALIFYING jobs might have already
+					// been driven to zero. So reset and let its chance numbers go negative.
+					pickTable = new PickTable().scanPickTable(this.jobPickTable,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
+					if( pickTable.noChances() ) {
+						let temp = new PickTable().scanKeys(theme.jobPick);
+						pickTable = new PickTable().scanPickTable(temp,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
+					}
+				}
+				let jobId = pickTable.pick();
+				// NUANCE! The index in the filtered table will just HAPPEN to be identical due to the implementation of scanPickTable.
+				this.jobPickTable.indexPicked = pickTable.indexPicked;
+				this.jobPickTable.decrementLast(1);		// won't have effect apply if a filter is present!!
 				return jobId;
 			}
 		}

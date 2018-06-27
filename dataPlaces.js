@@ -7,6 +7,8 @@ let PlaceTypeList = { };
 THe level of a place can be specified, BUT if not the place will be scanned and assigned a level
 equal to the highest level monster appearing
 
+jobPick: as each is made it is decremented, meaning that sooner or later all of the types will get made. It
+then resets again.
 
 PlaceTypeList.uniqueIdentity = {
 	// The map can use any symbols yu want. Just re-map them in the 'symbols' area below.
@@ -171,6 +173,8 @@ let ThemeDefault = () => ({
 	placeDensity: 	0.40,
 	seedPercent: 	0.10,
 
+	jobPick: 		{ layman: 10, brewer: 1, peddler: 1 },
+
 	enemyDensity: 	0.08,
 	friendDensity: 	0.00,
 	itemDensity: 	0.03,
@@ -204,10 +208,11 @@ ThemeList.coreCavernRooms = {
 ThemeList.refugeeCamp = {
 	scapeId: 	'caveBroadWinding',
 	rCOMMON: 	'camp_refugee',
-	rUNCOMMON: 	'handoutStand, floodPit, pitEncircle',
+	rUNCOMMON: 	'pen_sheep, handoutStand, floodPit, pitEncircle',
 	rRARE: 		'den_dog, camp_goblin',
-	monsters: 	['isSunChild','isPet'],
+	monsters: 	['isSunChild','isPet','isLivestock'],
 	sign: 		'Bring your own supplies. We won\'t feed you.',
+	jobPick: 	{ layman: 10, brewer: 1, cobbler: 1, peddler: 1, sentry: 4, evangelist: 1 },
 	enemyDensity: 	0.00,
 	friendDensity: 	0.15,
 	itemDensity:    0.0001,
@@ -218,10 +223,11 @@ ThemeList.refugeeCampSlaughter = {
 	placeDensity: 	0.70,
 	rREQUIRED: 	'camp_refugee, camp_refugee, camp_goblin, camp_ogre, floodOre',
 	rCOMMON: 	'camp_refugee, camp_goblin',
-	rUNCOMMON: 	'floodPit, pitEncircle, veil, ruin, den_kobold, camp_ogre',
+	rUNCOMMON: 	'pen_sheep, floodPit, pitEncircle, veil, ruin, den_kobold, camp_ogre',
 	rRARE: 		'den_dog',
 	monsters: 	['isSunChild','isPet','isEarthChild'],
 	sign: 		'Refugee Camp "Prosperous Tranquility" Ahead',
+	jobPick: 	{ layman: 10, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
 	enemyDensity: 	0.08,
 	friendDensity: 	0.08,
 }
@@ -237,7 +243,7 @@ ThemeList.dwarfTown = {
 	rCOMMON: 	'floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall',
 	rUNCOMMON: 	'floodPit, dwarfHouse',
 	rRARE: 		'firePit, floodWater',
-	jobPick: 	{ brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
+	jobPick: 	{ layman: 10, sentry: 3, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
 	prefer: 	['pit'],
 	monsters: 	['isDwarf'],
 	enemyDensity: 	0.00,
@@ -759,7 +765,7 @@ PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt) {
 		let f = new Finder(this.area.entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).near(this.x,this.y,6);
 		if( f.count ) {
 			let entity = pick(f.all);
-			let amount = Math.floor(entity.healthMax - entity.health);
+			let amount = entity.healthMax - entity.health;
 			entity.takeHealing(this,amount,DamageType.ROT,true);
 			tell( mSubject,this,' ',mVerb,'imbue',' ',mObject,entity,' with dark power.');
 /*
@@ -1084,6 +1090,22 @@ xxxxx
 	}
 }));
 
+PlaceMany( 'pen', ['sheep'], VARIETY => ({
+	map:
+`
+....
+.ss.
+.ss.
+....
+`,
+	flags: { rotate: true, hasWall: true },
+	symbols: {
+		x: "wall",
+		s: { typeFilter: VARIETY, attitude: Attitude.WANDER, tether: 2, tooClose: 1 },
+	}
+}));
+
+
 PlaceTypeList.swamp = {
 	map:
 `
@@ -1348,7 +1370,7 @@ xxx+xxx
 		d: "dwarf",
 	},
 	inject: {
-		dwarf: { name: "dwarf herald", attitude: Attitude.WANDER, tether: 3 },
+		dwarf: { name: "dwarf herald", attitude: Attitude.WANDER, tether: 3, jobId: 'isSentry'  },
 		gateway: { themeId: 'dwarfTown' },
 	}
 }
@@ -1396,7 +1418,7 @@ xxxs+xxxx
 		A: "altar",
 		b: "brazier",
 		f: "fountain",
-		d: { typeFilter: 'dwarf', name: "dwarf cleric", jobId: 'priest', attitude: Attitude.WANDER, tether: 3 },
+		d: { typeFilter: 'dwarf', name: "dwarf cleric", jobId: 'priest' },
 		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'tileStoneWall' } ]
 	}
 }
@@ -1410,7 +1432,7 @@ x.b.b.b.x
 x.......x
 xxxxxx+xx
 x..d....x
-xt.....tx
+xt.d...tx
 xt...d.tx
 xt.....tx
 x.......x
@@ -1422,7 +1444,7 @@ xxxx+xxxx
 		x: "tileStoneWall",
 		t: 'table',
 		b: 'bed',
-		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 3 },
+		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 3, jobId: 'isSentry'  },
 		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'tileStoneWall' } ]
 	}
 }
@@ -1446,7 +1468,7 @@ xxxx+xx
 		d: "dwarf",
 	},
 	inject: {
-		dwarf: { attitude: Attitude.WANDER, tether: 6 }
+		dwarf: { attitude: Attitude.WANDER, tether: 6, jobId: 'isLayman'  }
 	}
 }
 
@@ -1469,7 +1491,7 @@ xxxx+xx
 		d: "dwarf",
 	},
 	inject: {
-		dwarf: { attitude: Attitude.WANDER, tether: 6 }
+		dwarf: { attitude: Attitude.WANDER, tether: 6, jobId: 'isLayman' }
 	}
 }
 
@@ -1488,7 +1510,7 @@ stt.tts
 	symbols: {
 		'.': "tileStoneFloor",
 		t: 'table',
-		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 2, jobId: 'PICK' },
+		d: { typeFilter: 'dwarf', jobId: 'isMerchant' },
 		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' } ]
 	},
 }
@@ -1507,7 +1529,7 @@ bs..b
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
 		b: 'brazier',
-		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
+		d: { typeFilter: 'dwarf', jobId: 'isMidsize' },
 		s: { typeFilter: 'sign', sign: 'BYJOB' }
 	},
 }
@@ -1525,7 +1547,7 @@ PlaceTypeList.shopOpenAir = {
 	symbols: {
 		'.': "tileStoneFloor",
 		t: 'table',
-		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
+		d: { typeFilter: 'dwarf', jobId: 'isMinor' },
 		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' }]
 	},
 }
@@ -1547,7 +1569,7 @@ xxs+xxx
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
 		t: 'table',
-		d: { typeFilter: 'dwarf', attitude: Attitude.AWAIT, tether: 2, jobId: 'PICK' },
+		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 2, jobId: 'isMajor' },
 		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'tileStoneWall'}]
 	},
 }
@@ -1567,7 +1589,7 @@ PlaceTypeList.dwarfSmithy = {
 	symbols: {
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
-		d: { typeFilter: 'dwarf', jobId: 'smith', attitude: Attitude.AWAIT, tether: 2 },
+		d: { typeFilter: 'dwarf', jobId: 'smith' },
 		f: "flames",
 		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'tileStoneWall'}]
 	}
@@ -1587,7 +1609,7 @@ PlaceTypeList.dwarfPlaza = {
 	symbols: {
 		'.': "tileStoneFloor",
 		f: "fountain",
-		d: { typeFilter: 'dwarf', jobId: 'evangelist', attitude: Attitude.AWAIT, tether: 2 }
+		d: { typeFilter: 'dwarf', jobId: 'evangelist' }
 	}
 }
 

@@ -89,6 +89,9 @@ let ZOrder = {
 let PRICE_MULT_BUY  = 10;
 let PRICE_MULT_SELL = 3;
 
+let MONSTER_SCALE_VARIANCE_MIN = 0.75;
+let MONSTER_SCALE_VARIANCE_MAX = 1.00;
+
 Gab = {
 };
 
@@ -126,6 +129,8 @@ const StickerList = {
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
 	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
 	crosshairNo:  { img: "dc-misc/travel_exclusion.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
+	sortAscending: { img: 'gui/sortAscending.png' },
+	sortDescending: { img: 'gui/sortDescending.png' },
 	slice0: { img: 'gui/sliceEmpty.png' },
 	slice10: { img: 'gui/slice10.png' },
 	slice20: { img: 'gui/slice20.png' },
@@ -217,15 +222,15 @@ let EffectTypeList = {
 	eRage: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1, durationMod: 0.5, icon: 'gui/icons/eAttitude.png' },
 // Healing
 	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
-	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, icon: 'gui/icons/eHeal.png' },
+	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, xPrice: 1.5, icon: 'gui/icons/eHeal.png' },
 	eCurePoison: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isPoison || deed.damageType==DamageType.POISON, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
 	eCureDisease: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isDisease, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
 // Damage
 	eFire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
 	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.50, isHarm: 1, isPoison: 1,
 					duration: 10, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
-	ePoisonForever: { isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.05, isHarm: 1, isPoison: 1,
-					duration: true, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
+	ePoisonForever: { isDmg: 1, level:  0, rarity: 0.01, op: 'damage', valueDamage: 0.05, isHarm: 1, isPoison: 1,
+					duration: true, damageType: DamageType.POISON, name: 'mortal poison', icon: 'gui/icons/ePoison.png' },
 	eCold: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
 	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
 	eAcid3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
@@ -593,64 +598,69 @@ const GemList = Fab.add( '', {
 });
 
 const StuffList = Fab.add( '', {
-	"lantern": 			{ slot: Slot.HIP, light: 14, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"oilLamp": 			{ slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"candleLamp": 		{ slot: Slot.HIP, light:  6, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"lumpOfMeat": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/chunk.png" },
-	"trollHide": 		{ img: "item/armour/troll_hide.png" },
-	"bone": 			{ mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: "item/food/bone.png" },
-	"antGrubMush": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/sultana.png" },
-	"viperVenom": 		{ img: "UNUSED/other/acid_venom.png" },
-	"dogCollar": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/collar.png' },
-	"skull": 			{ mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: 'item/misc/skull.png' },
-	"mushroomBread": 	{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/bread_ration.png'},
-	"demonScale": 		{ img: 'item/misc/demonEye.png' },
-	"demonEye": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/demonEye.png' },
-	"ghoulFlesh": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/chunk_rotten.png' },
-	"pinchOfEarth": 	{ img: 'item/weapon/ranged/rock.png' },
-	"impBrain": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"ogreDrool": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
-	"redOozeSlime": 	{ mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/redOozeSlime.png' },
-	"scarabCarapace": 	{ },
-	"darkEssence": 		{ },
-	"facetedEye": 		{ mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"sunCrystal":   	{ mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "gems/sunCrystal.png", mayTargetPosition: true,
-						effect: { name: 'radiance', op: 'damage', damageModifier: 1.0, effectShape: EffectShape.BLAST5, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
+	"lantern": 			{ rarity: 0.2, slot: Slot.HIP, light: 14, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"oilLamp": 			{ rarity: 0.4, slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"candleLamp": 		{ rarity: 0.6, slot: Slot.HIP, light:  6, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"lumpOfMeat": 		{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/chunk.png" },
+	"trollHide": 		{ rarity: 0.5, img: "item/armour/troll_hide.png" },
+	"bone": 			{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: "item/food/bone.png" },
+	"antGrubMush": 		{ rarity: 0.8, mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/sultana.png" },
+	"viperVenom": 		{ rarity: 0.6, img: "UNUSED/other/acid_venom.png" },
+	"dogCollar": 		{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/collar.png' },
+	"skull": 			{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: 'item/misc/skull.png' },
+	"mushroomBread": 	{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/bread_ration.png'},
+	"demonScale": 		{ rarity: 0.2, img: 'item/misc/demonEye.png' },
+	"demonEye": 		{ rarity: 0.2, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/demonEye.png' },
+	"ghoulFlesh": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/chunk_rotten.png' },
+	"pinchOfEarth": 	{ rarity: 1.0, img: 'item/weapon/ranged/rock.png' },
+	"impBrain": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true },
+	"ogreDrool": 		{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
+	"redOozeSlime": 	{ rarity: 0.2, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/redOozeSlime.png' },
+	"scarabCarapace": 	{ rarity: 1.0, },
+	"darkEssence": 		{ rarity: 0.1, },
+	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true },
+	"sunCrystal":   	{ rarity: 0.6, mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "gems/sunCrystal.png", mayTargetPosition: true,
+						effect: { name: 'radiance', op: 'damage', valueDamage: 1.0, effectShape: EffectShape.BLAST5, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
 						},
-	"trollBlood": 		{ },
-	"spinneret": 		{ },
-	"chitin": 			{ },
-	"poisonGland": 		{ },
-	"snailSlime": 		{
-		img: 'dc-misc/snailSlime.png',
-		mayPickup: false,
-		onTick: function() {
-			if( this.owner.isMap ) {
-				this.map.scentClear(this.x,this.y);
-			}
-			if( this.timeUntilDestruction ) {
-				this.timeUntilDestruction -= 1;
-				if( this.timeUntilDestruction <= 0 ) {
-					this.destroy();
-				}
-			}
-		}
-	},
-	"lunarEssence": 	{ },
-	"batWing": 			{ },
-	"frogSpine": 		{ },
-	"wool": 			{ },
-	"ingotIron": 		{ },
-	"ingotCopper": 		{ },
-	"ingotSilver": 		{ },
-	"ingotGold": 		{ },
-	"ingotTin": 		{ },
-	"ingotMalachite": 	{ },
-	"ingotLunarium": 	{ },
-	"ingotSolarium": 	{ },
-	"ingotDeepium": 	{ },
+	"trollBlood": 		{ rarity: 0.6, },
+	"spinneret": 		{ rarity: 0.4, },
+	"chitin": 			{ rarity: 1.0, },
+	"poisonGland": 		{ rarity: 0.4, },
+	"snailTrail": 		{ rarity: 0.4, alpha: 0.3, img: 'dc-misc/snailSlime.png', isSnailSlime: true, mayPickup: false, },
+	"snailSlime": 		{ rarity: 0.4, alpha: 0.5, img: 'dc-misc/snailSlime.png', isSnailSlime: true, },
+	"lunarEssence": 	{ rarity: 0.6, },
+	"batWing": 			{ rarity: 1.0, },
+	"frogSpine": 		{ rarity: 0.8, },
+	"wool": 			{ rarity: 1.0, },
+	"ingotIron": 		{ rarity: 1.0, },
+	"ingotCopper": 		{ rarity: 0.9, },
+	"ingotSilver": 		{ rarity: 0.8, },
+	"ingotGold": 		{ rarity: 0.7, },
+	"ingotTin": 		{ rarity: 1.0, },
+	"ingotMalachite": 	{ rarity: 0.6, },
+	"ingotLunarium": 	{ rarity: 0.5, },
+	"ingotSolarium": 	{ rarity: 0.4, },
+	"ingotDeepium": 	{ rarity: 0.3, },
 
 });
+
+StuffList.snailTrail.onTick = function() {
+	if( this.owner.isMap ) {
+		this.map.scentClear(this.x,this.y);
+	}
+	if( this.timeUntilDestruction ) {
+		this.timeUntilDestruction -= 1;
+		if( this.timeUntilDestruction <= 0 ) {
+			this.destroy();
+		}
+	}
+}
+
+StuffList.snailSlime.onTick = function() {
+	if( this.owner.isMap ) {
+		this.map.scentClear(this.x,this.y);
+	}
+}
 
 
 
@@ -828,7 +838,7 @@ const ItemTypeList = {
 				armorMultiplier: 0.50,
 				useVerb: 'hold', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "item/armour/shields/shield3_round.png", icon: 'shield.png' },
-	"cloak": 	{ symbol: 'c', isTreasure: 1, xPrice: 8.0, namePattern: "{variety} cloak{+plus}{?effect}", varieties: CloakList, effects: CloakEffects, slot: Slot.ARMOR, isArmor: true,
+	"cloak": 	{ symbol: 'c', isTreasure: 1, xPrice: 8.0, namePattern: "{variety}{+plus}{?effect}", varieties: CloakList, effects: CloakEffects, slot: Slot.ARMOR, isArmor: true,
 				effectChance: 0.20, isCloak: true,
 				armorMultiplier: 0.01,
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
@@ -866,7 +876,7 @@ const ItemTypeList = {
 				imgGet: (self,img) => (img || (self?self.variety.img:'') || 'item/misc/misc_rune.png'), imgChoices: StuffList, icon: 'stuff.png' },
 
 };
-const ItemSortOrder = ['weapon','ammo','helm','armor','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff'];
+const ItemSortOrder = ['weapon','ammo','helm','armor','cloak','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff'];
 const ItemFilterOrder = ['','weapon','armor','shield','potion','spell','ring','gem','ore','stuff'];
 const ItemFilterGroup = {
 	weapon: ['weapon','ammo'],
@@ -1022,7 +1032,7 @@ const MonsterTypeList = {
 		isSunChild: true,
 		isDwarf: true,
 		isNamed: true,
-		jobId: 'PICK',
+		jobId: 'isLayman',
 		properNoun: true,
 		brainPackAnimal: true
 	},
@@ -1099,7 +1109,7 @@ const MonsterTypeList = {
 		brainTalk: true,
 		immune: DemonImmunity,
 		isDemon: true,
-		lootInventory: 'weapon.dart.eFire',
+		lootInventory: 'ammo.dart.eFire',
 		loot: '30% coin, 50% potion.eFire, 30% demonScale, 20% pitchfork, 30% demonEye',
 		brainPackAnimal: true,
 		resist: DemonResistance,
@@ -1129,6 +1139,7 @@ const MonsterTypeList = {
 		immune: DamageType.POISON,
 		loot: '40% chitin, 80% poisonGland',
 		naturalWeapon: { chanceOfEffect: 25, effect: EffectTypeList.ePoison },
+		senseSight: 2,
 		senseSmell: 100,
 		scentReduce: 50
 	},
@@ -1171,20 +1182,6 @@ const MonsterTypeList = {
 		vuln: UndeadVulnerability,
 		senseSmell: 200,
 	},
-	"giantSnail": {
-		core: [ SYM, 59, '10:100', 'neutral', 'rot', 'mon/snail.png', 'it' ],
-		imgChoices: { moving: { img: 'mon/snail.png' }, hiding: { img: 'mon/snailInShell.png' } },
-		imgGet: (self,img) => img || self.imgChoices[self.inShell?'hiding':'moving'].img,
-		attitude: Attitude.HUNT,
-		immuneInShell: ArmorDefendsAgainst.join(','),
-		isAnimal: true,
-		isGiant: true,
-		isSnail: true,
-		loot: '50% snailSlime',
-		scentReduce: -1,	// Makes it always override any scent
-		trail: 'stuff.snailSlime',
-		resistInShell: [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT].join(','),
-	},
 	"goblin": {
 		core: [ SYM, 1, '3:10', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
 		brainAlertFriends: true,
@@ -1226,14 +1223,14 @@ const MonsterTypeList = {
 		glow: 1,
 		immune: DamageType.BURN,
 		isDemon: true,
-		lootInventory: '3x weapon.dart.eFire',
+		lootInventory: '3x ammo.dart.eFire',
 		loot: '30% potion.eFire, 30% impBrain',
 		senseInvisible: true,
 		travelMode: "fly",
 		vuln: DemonVulnerability
 	},
 	"kobold": {
-		core: [ SYM, 1, '4:20', 'evil', 'cut', 'dc-mon/kobold.png', '*' ],
+		core: [ SYM, 14, '4:20', 'evil', 'cut', 'dc-mon/kobold.png', '*' ],
 		attitude: Attitude.HESITANT,
 		brainAlertFriends: true,
 		brainTalk: true,
@@ -1241,7 +1238,7 @@ const MonsterTypeList = {
 		inventoryLoot: '2x dart.eInert',
 		isEarthChild: true,
 		isKobold: true,
-		loot: '50% coin, 4x 50% weapon.dart, 30% weapon.dagger, 30% dogCollar',
+		loot: '50% coin, 4x 50% ammo.dart, 30% weapon.dagger, 30% dogCollar',
 		brainPackAnimal: true,
 		senseSmell: 200,
 	},
@@ -1250,7 +1247,7 @@ const MonsterTypeList = {
 		name: "ogre child",
 		brainTalk: true, 
 		isEarthChild: true,
-		lootInventory: 'weapon.rock',
+		inventoryLoot: 'ammo.rock',
 		loot: '50% weapon.club, 20% ogreDrool',
 		resist: DamageType.CUT,
 		speed: 0.75,
@@ -1269,7 +1266,7 @@ const MonsterTypeList = {
 		stink: 0.8,
 	},
 	"redOoze": {
-		core: [ SYM, 9, '3:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
+		core: [ SYM, 19, '3:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
 		attitude: Attitude.HUNT,
 		brainRavenous: true,
 		name: "red ooze",
@@ -1285,6 +1282,7 @@ const MonsterTypeList = {
 		growLimit: 3.0,
 		speed: 0.75,
 		vuln: OozeVulnerability,
+		senseSight: 1,
 		senseSmell: 200,
 	},
 	"blueScarab": {
@@ -1359,12 +1357,13 @@ const MonsterTypeList = {
 		vuln: 'glass'+','+DamageType.FREEZE,
 	},
 	"troll": {
-		core: [ SYM, 49, '3:6', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
+		core: [ SYM, 49, '5:4', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
 		brainRavenous: true,
 		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
 		isLarge: true,
 		regenerate: 0.15,
+		senseSight: 4,
 		stink: 0.4,
 		vuln: DamageType.BURN
 	},
@@ -1427,13 +1426,32 @@ const MonsterTypeList = {
 		loot: '50% frogSpine',
 		stink: 0.8,
 	},
+	"giantSnail": {
+		core: [ SYM, 59, '10:100', 'neutral', 'rot', 'mon/snail.png', 'it' ],
+		imgChoices: { moving: { img: 'mon/snail.png' }, hiding: { img: 'mon/snailInShell.png' } },
+		imgGet: (self,img) => img || self.imgChoices[self.inShell?'hiding':'moving'].img,
+		attitude: Attitude.HUNT,
+		brainFleeAttackers: true,
+		immuneInShell: ArmorDefendsAgainst.join(','),
+		isAnimal: true,
+		isGiant: true,
+		isSnail: true,
+		tooClose: 1,
+		loot: '50% snailSlime',
+		scentReduce: -1,	// Makes it always override any scent
+		speed: 0.5,
+		trail: 'stuff.snailTrail',
+		resistInShell: [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT].join(','),
+	},
 	"sheep": {
 		core: [ SYM, 1, '1:20', 'neutral', 'bite', 'dc-mon/animals/sheep.png', 'it' ],
 		attitude: Attitude.FEARFUL,
+		brainFleeAttackers: true,
+		brainPackAnimal: true,
 		isAnimal: true,
+		isLivestock: true,
 		isSheep: true,
 		loot: '1x lumpOfMeat, 3x 50% wool',
-		brainPackAnimal: true
 	}
 };
 
@@ -1741,7 +1759,7 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).nearMe(1);
 	let self = this;
 	nearby.process( entity => {
-		let deed = DeedManager.findFirst( d=>d.isSolarRegen );
+		let deed = DeedManager.findFirst( d=>d.target && d.target.id==entity.id && d.isSolarRegen );
 		if( deed ) {
 			deed.timeLeft = 4;
 		}
@@ -1776,7 +1794,7 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 
 
 MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
-	if( attacker.command == Command.THROW || this.getDistance(attacker.x,attacker.y) > 1 ) {
+	if( !attacker || attacker.command == Command.THROW || this.getDistance(attacker.x,attacker.y) > 1 ) {
 		return;
 	}
 
@@ -1843,7 +1861,7 @@ MonsterTypeList.redOoze.onMove = function(x,y) {
 	let f = this.map.findItemAt(x,y).filter( i=>i.isCorpse );
 	if( f.first && this.health < this.healthMax*this.growLimit ) {
 		tell(mSubject,this,' ',mVerb,'absorb',' ',mObject,f.first,' and ',mVerb,'regain',' strength!');
-		let heal = Math.floor(this.healthMax * 0.25);
+		let heal = this.healthMax * 0.25;
 		this.takeHealing(this,heal,DamageType.CORRODE,true,true);
 		this.rescale.call(this)
 
@@ -1866,6 +1884,9 @@ MonsterTypeList.redOoze.onMove = function(x,y) {
 }
 
 MonsterTypeList.giantSnail.onMove = function(x,y,xOld,yOld) {
+	if( this.map.findItemAt(x,y).filter( item=>item.isSnailSlime ).count ) {
+		return;
+	}
 	let slimeList = this.lootGenerate( this.trail, this.level );
 	console.assert( slimeList.length == 1 );
 	let slime = slimeList[0];
@@ -1878,6 +1899,7 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 		this.inShell = true;
 		this.immune = this.immuneInShell;
 		this.resist = this.resistInShell;
+		spriteDeathCallback(this.spriteList);
 		this.busy = {
 			turns: 10,
 			description: 'in its shell',
@@ -1885,6 +1907,7 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 				this.inShell = false;
 				this.immune = '';
 				this.resist = '';
+				spriteDeathCallback(this.spriteList);
 			}
 		};
 	}

@@ -5,6 +5,7 @@ class DataConditioner {
 		this.determinePlaceLevels();
 		this.determinePlaceSymbolHash();
 		this.validateAndConditionThemeData();
+		this.validateLoot();
 	}
 
 	// Within any category of rarity, like rCOMMON, you can give a chance that further alters the probability,
@@ -54,6 +55,26 @@ class DataConditioner {
 				pt.validate(JobTypeList);
 			}
 		}
+	}
+
+	validateLoot() {
+		let picker = new Picker(0);
+		Object.each( MonsterTypeList, m => {
+			let supplyMixed = Array.supplyConcat( m.inventoryLoot, m.inventoryWear );
+			let supplyArray = Array.supplyParse(supplyMixed);		
+			for( let i=0 ; i<supplyArray.length ; ++i ) {
+				supplyArray[i].chance = 100;
+			}
+			let makeList = new Finder( Array.supplyToMake(supplyArray) );
+			makeList.process( make => {
+				let any = (''+make.typeFilter).toLowerCase()==='any';
+				let type = picker.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' '), null, false );
+				if( !type ) {
+					console.log( 'Monster '+m.typeId+' has illegal loot '+make.typeFilter );
+					debugger;
+				}
+			});
+		});
 	}
 
 	mergePlaceTypesToGlobals() {

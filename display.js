@@ -299,7 +299,6 @@ class ImageRepo {
 		// variation of imgChoices. It is the responsibilty of the type to implement this properly.
 		for( let symbol in SymbolToType ) {
 			let type = SymbolToType[symbol];
-			if( type.typeId == 'giantSnail' ) debugger;
 			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
 			if( type.imgGet && !type.imgChoices ) debugger;
 			if( type.imgChoices ) {
@@ -462,6 +461,9 @@ class ViewMap extends ViewObserver {
 						sprite.keepAcrossAreas = entity.isUser && entity.isUser();
 						sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
 						sprite.baseScale = entity.scale || TILE_DIM/sprite.width;
+						if( entity.isMonsterType && !entity.scale) {
+							sprite.baseScale *= Math.rand(MONSTER_SCALE_VARIANCE_MIN,MONSTER_SCALE_VARIANCE_MAX);
+						}
 					}
 					let sprite = entity.spriteList[i];
 					spriteOnStage(sprite,true);

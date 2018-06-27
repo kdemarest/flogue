@@ -290,7 +290,7 @@ class Picker {
 	//		'!healing'			- an item that does NOT have the healing effect
 	//**
 
-	pickItem(filterString,criteriaFn) {
+	pickItem(filterString,criteriaFn,defaultToCoins=true) {
 		let filter = this.filterStringParse(filterString);
 		let itemTypeId;
 		if( ItemTypeList[filter.firstId] ) {
@@ -314,6 +314,9 @@ class Picker {
 		});
 		// If no items meet the criteria, we shoud return a fallback item, like gold.
 		if( !table.length ) {
+			if( !defaultToCoins ) {
+				return false;
+			}
 			debugger;
 			return ItemTypeList.coin;
 		}

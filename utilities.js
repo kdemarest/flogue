@@ -498,7 +498,24 @@ class PickTable {
 				if( typeof value != 'number' ) debugger;
 				this.table.push( table[i] );
 				this.chance.push( value );
-				this.total += value;
+				this.total += Math.max(0,value);
+			}
+		}
+		return this;
+	}
+	scanPickTable(pick,keepFn) {
+		console.assert( pick && pick.table && pick.table.length && pick.chance && pick.chance.length==pick.table.length);
+		this.makeBlank();
+		this.sourceArray = pick.table;
+		this.reset = () => this.scanPickTable(pick,keepFn);
+		for( let i=0 ; i<pick.table.length ; i++ ) {
+			if( !pick.table[i] ) debugger;
+			let value = keepFn(pick.table[i],pick.chance[i]);
+			if( value !== undefined && value !== null && value !== false) {
+				if( typeof value != 'number' ) debugger;
+				this.table.push( pick.table[i] );
+				this.chance.push( value );
+				this.total += Math.max(0,value);
 			}
 		}
 		return this;
@@ -513,7 +530,7 @@ class PickTable {
 				console.assert( hash[key] );
 				this.table.push( hash[key] )
 				this.chance.push( value );
-				this.total += value;
+				this.total += Math.max(0,value);
 			}
 		}
 		return this;
@@ -525,7 +542,7 @@ class PickTable {
 		for( let key in hash ) {
 			this.table.push( key )
 			this.chance.push( hash[key] );
-			this.total += hash[key];
+			this.total += Math.max(0,hash[key]);
 		}
 		return this;
 	}
@@ -538,7 +555,7 @@ class PickTable {
 	pick() {
 		let n = Math.rand(0,this.total);
 		for( let i=0 ; i<this.table.length ; ++i ) {
-			n -= this.chance[i];
+			n -= Math.max(0,this.chance[i]);
 			if( n<=0 ) {
 				this.indexPicked = i;
 				this.valuePicked = this.table[i];
@@ -549,21 +566,31 @@ class PickTable {
 	}
 	noChances() {
 		for( let i=0 ; i<this.chance.length ; ++i ) {
-			if( this.chance[i] != 0 ) return false;
+			if( this.chance[i] <= 0 ) return false;		// negative chances supported.
 		}
 		return true;
 	}
 	forbidLast() {
 		console.assert( !this.isEmpty() );
-		this.total -= this.chance[this.indexPicked];
-		this.chance[this.indexPicked] = 0;
+		if( this.chance[this.indexPicked] > 0 ) {
+			this.total -= this.chance[this.indexPicked];
+			this.chance[this.indexPicked] = 0;
+		}
+	}
+	decrementLast(amount) {
+		console.assert( !this.isEmpty() );
+		let totalDec = Math.max(0,Math.min(amount,this.chance[this.indexPicked]));
+		this.total -= totalDec;
+		this.chance[this.indexPicked] -= amount;	// Allowed to go into negatives.
 	}
 	forbid(fn) {
 		console.assert( !this.isEmpty() );
 		for( let i=0 ; i<this.table.length ; ++i ) {
 			if( fn(this.table[i]) ) {
-				this.total -= this.chance[i];
-				this.chance[i] = 0;
+				if( this.chance[i] > 0 ) {
+					this.total -= this.chance[i];
+					this.chance[i] = 0;
+				}
 			}
 		}
 	} 

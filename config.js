@@ -11,7 +11,7 @@ ConfigList.ken = () => {
 	ScapeList.kenRooms = theme => ({
 		dim: 				40,
 		architecture: 		"rooms",
-		floorDensity: 		0.25,
+		floorDensity: 		0.45,
 		circleChance: 		10,
 		overlapChance: 		10,
 		preferDoors: 		true,
@@ -60,15 +60,15 @@ ConfigList.ken = () => {
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
-		monsters: 		['isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isDemonHound','isSnail'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.000001,
-		friendDensity: 	0.010,
+		enemyDensity:  	0.042,
+		friendDensity: 	0.022,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, 3x potion.eCurePoison, potion.eOdorless, potion.eStink, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
+	MonsterTypeList.player.inventoryLoot.push('boots.eOdorless, stuff.lumpOfMeat, 3x stuff.snailSlime, 3x potion.eCurePoison, potion.eOdorless, potion.eStink, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
 	MonsterTypeList.player.inventoryWear = 'cloak.eInvisibility, ring.eBloodhound, weapon.pickaxe, stuff.oilLamp, shield.eAbsorb';
-//	MonsterTypeList.player.experience = 100;
+	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
 //		lootFrequency: 0.80,
@@ -78,7 +78,7 @@ ConfigList.ken = () => {
 
 	return {
 		startingDepth: 15,
-		themeId: 'kenTheme'
+		themeId: 'dwarfTown'
 	}
 }
 

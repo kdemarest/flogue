@@ -266,15 +266,6 @@ class Map extends SimpleMap {
 			this.scentLookup[lPos+1] = null;
 		}
 	}
-	calcWalkable(x,y,entityAtSpot) {
-		let lPos = y*this.xLen+x;
-		if( entityAtSpot ) {
-			this.walkLookup[lPos] = Prob.WALL;
-			return;
-		}
-		let testFn = pWalk(this);
-		this.walkLookup[lPos] = testFn(x,y);
-	}
 	scentGetAge(x,y) {
 		return Time.simTime-(this.scentLookup[(y*this.xLen+x)*2+0] || SCENT_AGE_LIMIT);
 	}
@@ -297,6 +288,11 @@ class Map extends SimpleMap {
 		return found;
 	}
 
+	calcWalkable(x,y) {
+		let lPos = y*this.xLen+x;
+		let testFn = pWalk(this);
+		this.walkLookup[lPos] = testFn(x,y);
+	}
 
 	// This is used in testing, but not the main game.
 	setObstacle(x,y,prob) {

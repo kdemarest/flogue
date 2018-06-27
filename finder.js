@@ -34,6 +34,9 @@ class Finder {
 		}
 		return this;
 	}
+	arrayMap(fn) {
+		return this.result.map(fn);
+	}
 	filter(fn) {
 		Array.filterInPlace( this.result, fn );
 		return this;
@@ -95,7 +98,7 @@ class Finder {
 		return this;
 	}
 	process(fn) {
-		this.result.map(fn);
+		this.result.forEach(fn);
 		return this;
 	}
 	isTypeId(typeId) {
@@ -150,6 +153,9 @@ class Finder {
 	}
 	isMyFriend() {
 		return this.filter( e => this.me.isMyFriend(e) );
+	}
+	isMyPack() {
+		return this.filter( e => this.me.isMyPack(e) );
 	}
 	isMySuperior() {
 		return this.filter( e => this.me.isMySuperior(e) );

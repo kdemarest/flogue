@@ -41,6 +41,7 @@ class Item {
 			levelRaw: levelRaw,
 			typeId: itemType.typeId,
 			id: GetUniqueEntityId(itemType.typeId,depth),
+			inVoid: true,
 			owner: null,
 			x:null,
 			y:null
@@ -175,6 +176,7 @@ class Item {
 		this.x = x;
 		this.y = y;
 		this.owner = entity;
+		this.inVoid = false;
 		if( Gab && hadNoOwner ) {
 			Gab.entityPostProcess(this);
 		}

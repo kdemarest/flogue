@@ -1,5 +1,12 @@
 function getCastableSpellList(entity) {
-	return new Finder(entity.inventory).filter( item=>item.isSpell && item.effect && item.effect.op && !item.effect.isBlank );
+	let hasId = {};
+	return new Finder(entity.inventory).filter( item=>{
+		if( item.isSpell && item.effect && item.effect.op && !item.effect.isBlank ) {
+			let ok = !hasId[item.effect.typeId];
+			hasId[item.effect.typeId] = 1;
+			return ok;
+		}
+	});
 }
 
 class ViewObserver {
@@ -276,7 +283,7 @@ class ViewInfo extends ViewObserver {
 			let ex = itemExplain(item);
 			let s = ex.icon+'<br>';
 			s += ex.description+'<br>';
-			let dam,arm;
+			let dam='',arm='';
 			if( ex.damage ) {
 				dam = ex.damage+' '+ex.damageType+' damage'+(ex.aoe ? ' '+ex.aoe : '');
 				if( comp ) {
@@ -316,6 +323,7 @@ class ViewInfo extends ViewObserver {
 
 		let s = "";
 		if( !entity.isUser() ) {
+			s += '['+(this.lastDirAttempt||'-')+'] ';
 			s += entity.attitude+' '+(entity.bumpCount||'')+'<br>';
 		}
 		let poisonMax = 0;
@@ -334,7 +342,7 @@ class ViewInfo extends ViewObserver {
 			s += 'Health: <span class="poison">&nbsp;POISONED ('+(poisonMax===true ? 'FOREVER' : poisonMax)+')&nbsp;</span><br>';
 		}
 		else {
-			s += "Health: "+entity.health+" of "+entity.healthMax+" ("+entity.x+","+entity.y+")<br>";
+			s += "Health: "+Math.ceil(entity.health)+" of "+Math.ceil(entity.healthMax)+" ("+entity.x+","+entity.y+")<br>";
 		}
 		if( entity.isUser() ) {
 			s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R<br>";
@@ -365,8 +373,8 @@ class ViewInfo extends ViewObserver {
 		}
 		if( !entity.isUser() ) {
 			s += (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'');
-			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');
-			$('#guiPathDebug').html(entity.path ? entity.path.render().join('\n') : '');
+//			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');
+//			$('#guiPathDebug').html(entity.path ? entity.path.render().join('\n') : '');
 			$('#'+this.infoDivId).addClass('monColor');
 		}
 		else {
@@ -504,7 +512,7 @@ class ViewMiniMap extends ViewObserver {
 				if( !entity ) debugger;
 				let resource = self.imageRepo.get(imgPath);
 				if( resource ) {
-					c.drawImage( resource.texture.baseTexture.source, x*self.scale, y*self.scale, scale,scale );
+					c.drawImage( resource.texture.baseTexture.source, x*self.scale-(self.scale/2), y*self.scale-(self.scale/2), scale,scale );
 				}
 				else {
 					console.log( "Unable to find image for "+entity.typeId+" img "+imgPath );
@@ -576,13 +584,21 @@ class ViewMiniMap extends ViewObserver {
 }
 
 function itemExplain(item,buySell) {
+	function order(typeId) {
+		return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
+	}
 	function icon(file) {
 		return file ? '<img src="tiles/gui/icons/'+file+'">' : '';
 	}
 	return {
+		item: 			item,
+		typeId: 		item.typeId,
 		level: 			item.level,
+		typeOrder: 		order(item.typeId),
 		icon: 			icon(item.icon),
 		description: 	((item._count||0)>1 ? item._count+'x ' : '')+String.capitalize(item.name),
+		count: 			((item._count||0)>1 ? item._count+'x ' : ''),
+		name: 			String.capitalize(item.name),
 		damage: 		item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : ''),
 		damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
 		armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUTS,item.isShield) : '',
@@ -590,6 +606,7 @@ function itemExplain(item,buySell) {
 		bonus: 			item.isArmor && item.effect ? item.effect.name : (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:''),
 		recharge: 		item.rechargeTime ? item.rechargeTime : '',
 		price: 			new Picker(item.area.depth).pickPrice(buySell,item),
+		priceWithCommas: (new Picker(item.area.depth).pickPrice(buySell,item)).toLocaleString(),
 	};
 }
 
