@@ -91,16 +91,28 @@ let Fab = (function() {
 })();
 
 function monsterPreProcess(typeId,m) {
+	let brain = null;
+	let body = null;
 	if( m.core ) {
 		m.symbol = m.core[0];
 		m.level = m.core[1];
 		m.power = m.core[2];
 		m.team  = m.core[3];
 		m.damageType = m.core[4];
-		m.img = m.core[5];
-		m.pronoun = m.core[6];
+		brain = m.core[5];
+		body  = m.core[6];
+		m.img = m.core[7];
+		m.pronoun = m.core[8];
 		delete m.core;
 	}
+
+	console.assert( !brain || (BrainMindset[brain]!==undefined && BrainAbility[brain]!==undefined) );
+	console.assert( !body  || (BodyAbility[body]!==undefined && BodySlots[body]!==undefined) );
+
+	m.brainMindset = String.combine(',',m.brainMindset,BrainMindset[brain]);
+	m.brainAbility = String.combine(',',m.brainAbility,BrainAbility[brain]);
+	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[body]);
+	m.bodySlots    = (m.bodySlots || []).concat( BodySlots[body] );
 
 	let blood = {
 		isPlanar: 	'bloodYellow',
@@ -118,6 +130,9 @@ function monsterPreProcess(typeId,m) {
 		}
 	}
 	m.bloodId = m.bloodId || 'bloodRed';
+	if( m.isAnimal ) {
+		m.darkVision = m.darkVision || DEFAULT_MONSTER_DARK_VISION;
+	}
 
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];

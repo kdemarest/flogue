@@ -79,11 +79,27 @@ function clearCommands(entityList) {
 
 function main(levelName) {
 
-	let User = {
-		entity: null,
-		priorArea: null,
-		commandHandler: null
-	};
+	let User = (new class {
+		constructor() {
+			this.isHumanUser = true;
+			this.entity = null;
+			this.priorArea = null;
+			this.commandHandler = null;
+			this.areaMap = {};
+		}
+		getAreaMap(areaId) {
+			this.areaMap[areaId] = this.areaMap[areaId] || [];
+			return this.areaMap[areaId];
+		}
+		takeControlOf(newEntity) {
+			if( newEntity.area.id !== this.entity.area.id ) {
+				this.priorArea = this.entity.area;
+			}
+			this.entity.userControllingMe = null;
+			this.entity = newEntity;
+			this.entity.userControllingMe = this;
+		}
+	}())
 
 	function TickWorld(timePasses) {
 		User.entity.area.tick( timePasses ? User.entity.speed : false );
@@ -113,7 +129,7 @@ function main(levelName) {
 		//return false;
 	}
 
-	function onAreaChange(oldArea,area,xPlayer,yPlayer) {
+	function onAreaChange(area,xPlayer,yPlayer) {
 		guiMessage(null,'setArea',area);
 		User.priorArea = User.entity.area;
 		User.entity.gateTo(area,xPlayer,yPlayer);
@@ -138,12 +154,13 @@ function main(levelName) {
 
 		let world = new World( ()=>user.entity, onAreaChange );
 		let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
-		let area = world.createArea(config.startingDepth,ThemeList[themeId],true,[]);
+		let area = world.createArea(null,config.startingDepth,ThemeList[themeId],true,[]);
 		user.entity = new Entity( area.depth, MonsterTypeList.player, null, area.jobPicker );
+		user.entity.userControllingMe = user;
 		Gab.observer = user.entity;
 		world.gateTo(area.id,...area.map.pickPosToStartGame());
 		Narrative.addRecipient(
-			user.entity,
+			() => user.entity,
 			(observer,entity) => !observer ? true : observer.canPerceiveEntity(entity),
 			(message,history) => guiMessage('narrative','receive',history)
 		);

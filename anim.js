@@ -142,6 +142,12 @@ class Anim {
 		this.spritesMade = 0;
 		this.spritesAlive = 0;
 		this.elapsed = 0;
+		if( this.at ) {
+			console.assert( this.at.x!==undefined && this.at.y!==undefined && this.at.area!==undefined );
+			this.x = this.at.x;
+			this.y = this.at.y;
+			this.areaId = this.at.area.id;
+		}
 		if( this.x === undefined && this.follow ) {
 			if( this.follow.inVoid ) {
 				// Don't try to animate on this thing. It is in the void.
@@ -152,10 +158,12 @@ class Anim {
 			}
 			this.x = this.follow.x;
 			this.y = this.follow.y;
+			this.areaId = this.follow.area.id;
 		}
 		console.assert( this.duration !== undefined );
 		if( this.x === undefined ) debugger;
 		if( this.y === undefined ) debugger;
+		if( this.areaId === undefined || typeof this.areaId !== 'string') debugger;
 		this.spriteList = [];
 		if( this.onInit ) {
 			this.onInit(this);

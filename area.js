@@ -360,7 +360,6 @@ class Area {
 		this.map = null;
 		this.entityList = null;
 		this.siteList = null;
-		this.mapMemory = [];
 		this.picker = new Picker(depth);
 
 		if( theme.jobPick ) {

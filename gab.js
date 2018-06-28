@@ -47,7 +47,7 @@ Gab = (new function(priorGab) {
 		if( e.isNamed ) {
 			let s = e.name+' the '+(e.jobId ? String.capitalize(e.typeId)+' '+String.capitalize(e.jobId) : String.capitalize(e.typeId));
 			if( e.brainMaster ) {
-				s += '('+(new Sentence(mSubject|mPossessive,e.brainMaster,' '+(e.isPet?'pet':'slave')).refine(observer))+')';
+				s += '('+(new Sentence(mSubject|mPossessive,e.brainMaster,' '+(e.isAnimal?'pet':'slave')).refine(observer))+')';
 			}
 			s += JobTypeList[e.jobId] ? '\n'+JobTypeList[e.jobId].sign+'\nHit [Enter] to talk.' : '';
 			return s;

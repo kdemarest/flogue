@@ -103,6 +103,10 @@ function nop() {}
 		let n = Math.randInt(0,array.length/2) * 2;
 		return [array[n+0],array[n+1]];
 	}
+	Array.move = function(array, from, to) {
+	    array.splice(to, 0, array.splice(from, 1)[0]);
+	}
+
 	Object.isEmpty= function(obj) {
 		for(var key in obj) {
 			if(obj.hasOwnProperty(key))
@@ -122,6 +126,16 @@ function nop() {}
 					continue;
 				}
 				target[key] = source[key];
+			}
+		}
+		return target;
+	}
+	Object.copySelected = function(target,source,select) {
+		if( source ) {
+			for( let key in source ) {
+				if( select[key] !== undefined ) {
+					target[key] = source[key];
+				}
 			}
 		}
 		return target;
@@ -224,6 +238,18 @@ function nop() {}
 			}
 		}
 		return makeList;
+	}
+
+	String.combine = function(delim,...args) {
+		let result = '';
+		for( let i=0 ; i <args.length ; ++i ) {
+			if( !args[i] ) continue;
+			if( result ) {
+				result += delim;
+			}
+			result += args[i];
+		}
+		return result;
 	}
 
 	function betterSplit(s,delim) {

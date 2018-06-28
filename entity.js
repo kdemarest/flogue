@@ -3,14 +3,15 @@
 //
 class Entity {
 	constructor(depth,monsterType,inject,jobPickFn) {
+		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
+		// a deeper map level then they average their native level and the map's level.
+		let isPlayer = monsterType.control==Control.USER;
+
 		// Use the average!
-		let level = Math.round( (depth+monsterType.level) / 2 );
+		let level = 	isPlayer ? depth : Math.round( (depth+monsterType.level) / 2 );
 		let inits =    { inVoid: true, inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
 		let values =   { id: GetUniqueEntityId(monsterType.typeId,level) };
 
-		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
-		// a deeper map level then they average their native level and the map's level.
-		let isPlayer = monsterType.brain==Brain.USER;
 
 		if( isPlayer ) {
 			inits.healthMax 		= Rules.playerHealth(level);
@@ -32,7 +33,7 @@ class Entity {
 		}
 
 		let jobId = values.jobId || (inject ? inject.jobId : '') || inits.jobId || monsterType.jobId;
-		if( !JobTypeList[jobId] ) {
+		if( jobId && !JobTypeList[jobId] ) {
 			let jobFilter = jobId;
 			jobId = jobPickFn(jobFilter);
 			values.jobId = jobId;	// because values has the highest priority.
@@ -76,6 +77,9 @@ class Entity {
 	}
 	get map() {
 		return this.area.map;
+	}
+	get mapMemory() {
+		return this.userControllingMe ? this.userControllingMe.getAreaMap(this.area.id) : null;
 	}
 	get entityList() {
 		return this.area.entityList;
@@ -148,7 +152,7 @@ class Entity {
 		return new Finder(entityList,this).excludeMe().isAlive();
 	}
 	isUser() {
-		return this.brain == Brain.USER;
+		return this.control == Control.USER;
 	}
 	die() {
 		if( this.dead && this.isUser() ) {
@@ -174,6 +178,15 @@ class Entity {
 		tell(...deathPhrase);
 		spriteDeathCallback(this.spriteList);
 		this.dead = true;
+
+		if( this.oldMe ) {
+			let deed = this.findFirstDeed( deed => deed.op=='possess' );
+			deed.end();
+		}
+
+		if( this.onDeath ) {
+			this.onDeath();
+		}
 	}
 
 	isDead() {
@@ -226,6 +239,12 @@ class Entity {
 			});
 		}
 		return true;
+	}
+	mindset(wayOfThinking) {
+		return String.arIncludes( this.brainMindset, wayOfThinking );
+	}
+	able(action) {
+		return String.arIncludes( this.brainAbility, action ) && String.arIncludes( this.bodyAbility, action );
 	}
 	dirToEntityPredictable(entity) {
 		let dx = entity.x - this.x;
@@ -331,11 +350,8 @@ class Entity {
 
 	calcVis() {
 		let doVis = false;
-		if( this.brain == Brain.USER ) {
+		if( this.isUser() ) {
 			doVis = true;
-			// technically the user should have a has of all mapMemories, except this memory will persist across
-			// whatever form you have taken, for example, even if you magic jar something.
-			this.mapMemory = this.area.mapMemory;	
 		}
 		else {
 			// Calc vis if I am near the user, that it, I might be interacting with him!
@@ -344,27 +360,36 @@ class Entity {
 		}
 
 		if( doVis ) {
-			this.vis = this.area.vis.calcVis(this.x,this.y,this.senseVis,this.senseBlind,this.senseXray,this.vis,this.mapMemory);
+			this.visCache = this.area.vis.calcVis(
+				this.x,
+				this.y,
+				this.senseSight!==undefined ? this.senseSight : STANDARD_MONSTER_SIGHT_DISTANCE,
+				this.senseBlind,
+				this.senseXray,
+				this.visCache,
+				this.mapMemory
+			);
 		}
 		else {
-			this.vis = null;
+			this.visCache = null;
 		}
 
-		return this.vis;
+		return this.visCache;
 	}
 
 	canSeePosition(x,y) {
 		if( x===undefined || y===undefined ) {
 			debugger;
 		}
-		if( !this.vis ) {
+		let visCache = this.visCache;
+		if( !visCache ) {
 			let d = this.getDistance(x,y);
-			return d <= (this.senseVis || STANDARD_MONSTER_SIGHT_DISTANCE);
+			return d <= (this.senseSight!==undefined ? this.senseSight : STANDARD_MONSTER_SIGHT_DISTANCE);
 		}
-		if( typeof this.vis[y]==='undefined' || typeof this.vis[y][x]==='undefined' ) {
+		if( typeof visCache[y]==='undefined' || typeof visCache[y][x]==='undefined' ) {
 			return false;
 		}
-		return this.vis[y][x];
+		return visCache[y][x];
 	}
 
 	canTargetEntity(entity) {
@@ -413,10 +438,11 @@ class Entity {
 		if( x===undefined || y===undefined ) {
 			debugger;
 		}
-		if( typeof this.vis[y]==='undefined' || typeof this.vis[y][x]==='undefined' ) {
+		let visCache = this.visCache;
+		if( typeof this.visCache[y]==='undefined' || typeof this.visCache[y][x]==='undefined' ) {
 			return false;
 		}
-		return this.vis[y][x];
+		return this.visCache[y][x];
 	}
 
 	get naturalMeleeWeapon() {
@@ -470,9 +496,9 @@ class Entity {
 			item.destroy();
 			return;
 		}
-		if( item.autoEquip && item.slot ) {
+		if( item.autoEquip && item.slot && this.bodySlots ) {
 			let itemsInSlot = this.getItemsInSlot(item.slot);
-			if( itemsInSlot.count < HumanSlotLimit[item.slot] ) {
+			if( itemsInSlot.count < this.bodySlots[item.slot] ) {
 				this.don(item,item.slot);
 			}
 		}
@@ -486,8 +512,8 @@ class Entity {
 		return Math.max(Math.abs(x-this.x),Math.abs(y-this.y));
 	}
 
-	isAt(x,y) {
-		return this.x==x && this.y==y;
+	isAt(x,y,area) {
+		return this.x==x && this.y==y && this.area.id==area.id;
 	}
 
 	at(x,y) {
@@ -497,6 +523,13 @@ class Entity {
 
 	atDir(x,y,dir) {
 		return at(x + DirectionAdd[dir].x, y + DirectionAdd[dir].y);
+	}
+	findFirstDeed(fn) {
+		let found = null;
+		DeedManager.traverseDeeds(this,deed => {
+			if( fn(deed) ) found = deed;
+		});
+		return found;
 	}
 	traverseDeeds(fn) {
 		DeedManager.traverseDeeds(this,fn);
@@ -762,7 +795,8 @@ class Entity {
 		while( dirAway.length ) {
 			let dir = dirAway.shift();
 			if( panic || this.mayGo(dir,this.problemTolerance()) ) {
-				this.record( 'flee', true );
+				this.record( 'fleeing', true );
+				console.assert( dir>=0 && dir < 8 );
 				return directionToCommand(dir);
 			}
 		}
@@ -787,7 +821,7 @@ class Entity {
 		let dirRight = (dirAwayPerfect+1)%DirectionCount;
 
 		// Generally try to flee towards your friends, if they exist and are in a valid flee direction.
-		if( this.brainMaster || this.brainPackAnimal ) {
+		if( this.brainMaster || this.mindset('pack') ) {
 			let f = this.findAliveOthersNearby().isMyFriend();
 			let friend;
 			if( this.brainMaster && f.isId(this.brainMaster.id) ) {
@@ -913,15 +947,21 @@ class Entity {
 		}
 
 		let useAiTemporarily = false;
-		if( this.brain == Brain.USER ) {
+		if( this.control == Control.USER ) {
 			// Placeholder, since the onPlayerKey already sets the command for us
 			if( this.loseTurn || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
 				useAiTemporarily = true;
 			}
 		}
 
-		if( this.brain == Brain.AI || useAiTemporarily ) {
+		if( this.control == Control.EMPTY ) {
+			this.command = Command.LOSETURN;
+		}
+
+		if( this.control == Control.AI || useAiTemporarily ) {
 			this.command = (function() {
+
+				if( this.typeId == window.debugEntity ) debugger;
 
 				if( this.loseTurn ) {
 					return Command.LOSETURN;
@@ -936,7 +976,7 @@ class Entity {
 					return Command.BUSY;
 				}
 
-				if( this.brainPackAnimal && !this.packId ) {
+				if( this.mindset('pack') && !this.packId ) {
 					this.packId = this.findSparsePack();
 				}
 
@@ -965,7 +1005,8 @@ class Entity {
 				}
 
 				if( this.attitude == Attitude.PANICKED ) {
-					return this.thinkRetreat(theEnemy,true);
+					let dirAway = (this.dirToEntityNatural(enemy)+4)%DirectionCount;
+					return this.thinkRetreat(dirAway,true) || this.thinkWanderF();
 				}
 
 				if( this.attitude == Attitude.ENRAGED ) {
@@ -987,20 +1028,20 @@ class Entity {
 				);
 
 				let flee = theEnemy && (
-					( hurt && (this.brainFlee || this.brainPackAnimal) ) ||
+					( hurt && (this.mindset('fleeWhenHurt') || this.mindset('pack')) ) ||
 					(this.attitude == Attitude.FEARFUL) ||
 					(this.attitude == Attitude.HESITANT && Math.chance(40))
 				);
-				flee = flee || (personalEnemy && this.brainFleeAttackers)
+				flee = flee || (personalEnemy && this.mindset('fleeWhenAttacked'))
 
-				let packWhenNotThreatened = this.brainPackAnimal && !enemyList.count;
+				let packWhenNotThreatened = this.mindset('pack') && !enemyList.count;
 
 				let pauseBesideUser = !enemyList.count && this.team==Team.GOOD && this.findAliveOthersNearby().nearMe(1).filter( e=>e.isUser() ).count;
 
-				let hungry = this.brainRavenous || (this.isAnimal && (!theEnemy || distanceToNearestEnemy>4));
+				let hungry = this.mindset('ravenous') || (this.isAnimal && (!theEnemy || distanceToNearestEnemy>4));
 
-				let isDefensive = this.team == Team.NEUTRAL || this.brainFleeAttackers || this.attitude == Attitude.FEARFUL;
-				let isAggressor = !isDefensive && this.team !== Team.NEUTRAL && !this.brainFleeAttackers && this.attitude!==Attitude.FEARFUL && this.attitude!==Attitude.AGGRESSIVE;
+				let isDefensive = this.team == Team.NEUTRAL || this.mindset('fleeWhenAttacked') || this.attitude == Attitude.FEARFUL;
+				let isAggressor = !isDefensive && this.team !== Team.NEUTRAL && !this.mindset('fleeWhenAttacked') && this.attitude!==Attitude.FEARFUL;
 
 				if( tooClose && isDefensive ) {
 					// Maybe if you've hit it...
@@ -1008,11 +1049,13 @@ class Entity {
 				}
 
 				if( tooClose && isAggressor ) {
-					this.record( 'enemy too close! Go aggressive.', true );
-					if( this.attacker !== Attitude.HUNT || this.attitude !== Attitude.PATROL ) {
-						tell(mCares,theEnemy,mSubject,this,' ',mVerb,'think',' ',mObject,theEnemy,' ',mVerb|mObject,'is',' too close!');
+					if( this.attitude!==Attitude.AGGRESSIVE ) {
+						this.record( 'enemy too close! Go aggressive.', true );
+						if( this.attacker !== Attitude.HUNT || this.attitude !== Attitude.PATROL ) {
+							tell(mCares,theEnemy,mSubject,this,' ',mVerb,'think',' ',mObject,theEnemy,' ',mVerb|mObject,'is',' too close!');
+						}
+						this.changeAttitude( Attitude.AGGRESSIVE );
 					}
-					this.changeAttitude( Attitude.AGGRESSIVE );
 				}
 
 				if( !theEnemy && this.attitude!==this.attitudeBase ) {
@@ -1035,7 +1078,7 @@ class Entity {
 				}
 
 				if( hungry  ) {
-					let c = this.thinkHunger( this.brainRavenous ? 5 : 2 );
+					let c = this.thinkHunger( this.mindset('ravenous') ? 5 : 2 );
 					if( c ) return c;
 				}
 
@@ -1050,10 +1093,6 @@ class Entity {
 
 				if( this.attitude == Attitude.AWAIT ) {
 					return this.thinkAwaitF();
-				}
-
-				if( hurt && this.brainPet ) {
-					this.vocalize = [mSubject,this,' ',mVerb,Math.chance(50)?'wimper':'whine'];
 				}
 
 				if( packWhenNotThreatened && !this.tether ) {
@@ -1206,7 +1245,7 @@ class Entity {
 		friendList.process( entity => {
 			if( entity.attitude == Attitude.WANDER || entity.attitude == Attitude.AWAIT ) {
 				entity.changeAttitude(Attitude.AGGRESSIVE);
-				if( tellAbout && !numAlerted && this.brainTalk ) {
+				if( tellAbout && !numAlerted && this.able('talk') ) {
 					tell(mSubject,self,' ',mVerb,'shout',' to nearby allies.');
 				}
 				++numAlerted;
@@ -1435,7 +1474,7 @@ class Entity {
 			if( this.attitude == Attitude.HESITANT || this.attitude == Attitude.WANDER || this.attitude == Attitude.AWAIT ) {
 				this.changeAttitude(Attitude.AGGRESSIVE);
 			}
-			if( this.brainAlertFriends ) {
+			if( this.mindset('alert') ) {
 				this.alertFriends();
 			}
 		}
@@ -1504,6 +1543,7 @@ class Entity {
 		new Anim({
 			x: 			sx,
 			y: 			sy,
+			areaId: 	this.area.id,		
 			delay: 		source.rangeDuration || 0,
 			duration: 	duration,
 			onInit: 		a => { a.puppet(this.spriteList); },
@@ -1516,6 +1556,46 @@ class Entity {
 		let safeSpot = pVerySafe(this.map);
 		let pos = this.map.pickPosBy(1,1,1,1,safeSpot);
 		this.moveTo(pos[0],pos[1]);
+	}
+
+	takeBePossessed(effect,toggle) {
+		let fieldsToTransfer = { control:1, name:1, team:1, brainMindset: 1, brainAbility: 1, visCache: 1, experience: 1, isChosenOne: 1, strictAmmo: true };
+
+		let source = effect.source;
+		console.assert(source);
+		if( !toggle ) {
+			console.assert( source.isPossessing );
+			if( this.userControllingMe ) {
+				this.userControllingMe.takeControlOf(source);
+			}
+			Object.copySelected( source, this, fieldsToTransfer );
+			Object.copySelected( this, this.oldMe, fieldsToTransfer );
+			delete this.oldMe;
+			source.isPossessing = false;
+			tell(mSubject,source,' ',mVerb,'leave',' the mind of ',mObject,this,'.');
+			if( source.isUser() ) {
+				guiMessage(null,'resetMiniMap',source.area);
+			}
+			return true;
+		}
+		if( this.isMindless || this.isUndead || source.id == this.id || source.isPossessing || this.oldMe ) {
+			tell(mSubject,this,' ',mVerb,'is',' impossible to possess!');
+			return false;
+		}
+		tell(mSubject,source,' ',mVerb,'enter',' the mind of ',mObject,this,'.');
+		this.oldMe = Object.copySelected( {}, this, fieldsToTransfer );
+		Object.copySelected( this, source, fieldsToTransfer );
+		if( source.userControllingMe ) {
+			source.userControllingMe.takeControlOf(this);
+		}
+		source.isPossessing = true;
+		source.control = Control.EMPTY;
+		source.visCache = null;
+		source.name = 'Mindless husk';
+		if( this.isUser() ) {
+			guiMessage(null,'resetMiniMap',this.area);
+		}
+		return true;
 	}
 
 	itemToAttackCommand(weapon) {
@@ -1562,6 +1642,13 @@ class Entity {
 			if( item.isWeapon ) return true;
 			if( (item.isSpell || item.isPotion) && item.effect && item.effect.isHarm ) return true;
 			return false;
+		});
+		// Exclude any weapon that I can not personally use
+		weaponList.filter( item => {
+			if( item.mayCast && !this.able('cast') ) return false;
+			if( item.mayThrow && !this.able('throw') ) return false;
+			if( item.mayShoot && !this.able('shoot') ) return false;
+			if( item.mayGaze && !this.able('gaze') ) return false;
 		});
 		// We now have a roster of all possible weapons. Eliminate those that are not charged.
 		weaponList.filter( item => !item.rechargeLeft );
@@ -1700,6 +1787,11 @@ class Entity {
 	pickup(item) {
 		if( !item ) debugger;
 
+		if( !this.able('pickup') ) {
+			tell(mSubject,this,' ',mVerb,'attempt',' to pick something up, but can not!');
+			return;
+		}
+
 		if( item.onPickup ) {
 			let allow = item.onPickup(this);
 			if( !allow ) return false;
@@ -1755,6 +1847,11 @@ class Entity {
 	}
 
 	throwItem(item,target) {
+		if( !this.able('throw') ) {
+			tell(mSubject,this,' ',mVerb,'attempt',' to throw, but can not!');
+			return;
+		}
+
 		this.lastAttackTargetId = target.id;
 		this.inCombat = true;
 		item.giveTo(this.map,target.x,target.y);
@@ -1778,7 +1875,25 @@ class Entity {
 		}
 	}
 
+	gaze(item) {
+		if( !this.able('gaze') ) {
+			tell(mSubject,this,' ',mVerb,'attempt',' to gaze, but can not!');
+			return;
+		}
+		this.shieldBonus = 'stand';
+		item.x = this.x;
+		item.y = this.y;
+		let shatter = Math.chance(33);
+		tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'.'+(shatter ? ' It shatters!' : ''));
+		item.trigger(this,this,this.command);
+		if( shatter ) { item.destroy(); }
+	}
+
 	cast(item,target) {
+		if( !this.able('cast') ) {
+			tell(mSubject,this,' ',mVerb,'attempt',' to cast, but can not!');
+			return;
+		}
 		this.lastAttackTargetId = target.id;
 		this.inCombat = true;
 		item.x = this.x;
@@ -1799,6 +1914,11 @@ class Entity {
 
 	shoot(item,target) {
 		console.assert(item.ammoType);
+
+		if( !this.able('shoot') ) {
+			tell(mSubject,this,' ',mVerb,'attempt',' to shoot, but can not!');
+			return;
+		}
 
 		if( !this.shotClear(this.x,this.y,target.x,target.y) ) {
 			tell(mSubject,this,' ',mVerb,'has',' no shot!');
@@ -1933,7 +2053,7 @@ class Entity {
 		if( this.isUser() && this.isMyNeutral(f.first) ) {
 			wantToAttack = true;
 		}
-		if( this.team == Team.NEUTRAL || this.brainFleeAttackers ) {
+		if( this.team == Team.NEUTRAL || this.mindset('fleeWhenAttacked') ) {
 			wantToAttack = false;
 		}
 
@@ -2025,7 +2145,7 @@ class Entity {
 			this.onMove.call(this,x,y,xOld,yOld);
 		}
 
-		if( this.brainPicksup ) {
+		if( this.mindset('pickup') && this.able('pickup') ) {
 			let f = this.map.findItemAt(x,y).filter( item => item.mayPickup!==false );
 			for( let item of f.all ) {
 				this.pickup(item);
@@ -2037,35 +2157,29 @@ class Entity {
 	actOnCommand() {
 		if( this.command == undefined ) debugger;
 		if( this.command == Command.BUSY ) {
-			console.assert( typeof this.busy.turns == 'number' && !isNaN(this.busy.turns) );
-			this.busy.turns--;
-			if( this.busy.turns <= 0 ) {
-				this.busy.onDone();
-				delete this.busy;
-			}
-			else {
-				if( this.busy.icon ) {
-					animFloatUp(this,this.busy.icon);
+			console.assert( this.busy.turns === true || (typeof this.busy.turns == 'number' && !isNaN(this.busy.turns)) );
+			if( typeof this.busy.turns == 'number' ) {
+				this.busy.turns--;
+				if( this.busy.turns <= 0 ) {
+					this.busy.onDone();
+					delete this.busy;
 				}
+			}
+			if( this.busy && this.busy.icon ) {
+				animFloatUp(this,this.busy.icon);
 			}
 		}
 		switch( this.command ) {
 			case Command.LOSETURN: {
-				if( this.brain == 'user' ) {
-					tell(mSubject,this,' ',mVerb,'spend', ' time recovering.');
+				if( this.control !== Control.EMPTY ) {
+					tell(mSubject|mCares,this,' ',mVerb,'spend', ' time recovering.');
 				}
 				this.loseTurn = false;
-				let tileType = this.map.tileTypeGet(this.x,this.y);
-				if( tileType && tileType.onTouch ) {
-					tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
-				}
 				break;
 			}
 			case Command.WAIT: {
 				this.shieldBonus = 'stand';
-				if( this.brain == 'user' ) {
-					tell(mSubject,this,' ',mVerb,'wait','.');
-				}
+				tell(mSubject|mCares,this,' ',mVerb,'wait','.');
 				break;
 			}
 			case Command.ENTERGATE: {
@@ -2137,17 +2251,19 @@ class Entity {
 					this.senseLife = false;
 				}
 				this.map.traverse( (x,y) => {
-					this.mapMemory[y] = this.mapMemory[y] || {};
-					let type = this.map.findItemAt(x,y).filter( item=>!item.isTreasure ).first || this.map.tileTypeGet(x,y);
-					this.mapMemory[y][x] = type;
+					let mapMemory = this.mapMemory;
+					if( mapMemory ) {
+						let type = this.map.findItemAt(x,y).filter( item=>!item.isTreasure ).first || this.map.tileTypeGet(x,y);
+						let mPos = y*this.map.xLen+x;
+						mapMemory[mPos] = type;
+					}
 				});
 				break;
 			}
 			case Command.DEBUGANIM: {
 				let entity = this;
 				let anim = new Anim({},{
-					x: 			entity.x,
-					y: 			entity.y,
+					at: 		entity,
 					img: 		entity.img,
 					onInit: 		a => { a.create(1); },
 					onSpriteMake: 	s => { s.duration = 0.5; },
@@ -2184,14 +2300,7 @@ class Entity {
 				break;
 			}
 			case Command.GAZE: {
-				this.shieldBonus = 'stand';
-				let item = this.commandItem;
-				item.x = this.x;
-				item.y = this.y;
-				let shatter = Math.chance(33);
-				tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'.'+(shatter ? ' It shatters!' : ''));
-				item.trigger(this,this,this.command);
-				if( shatter ) { item.destroy(); }
+				this.gaze(this.commandItem);
 				break;
 			}
 			case Command.THROW: {
@@ -2214,9 +2323,9 @@ class Entity {
 					this.doff(item);
 				}
 				else
-				if( item.slot ) {
+				if( item.slot && this.bodySlots ) {
 					let itemToRemove = this.getItemsInSlot(item.slot);
-					if( itemToRemove.count >= HumanSlotLimit[item.slot] ) {
+					if( itemToRemove.count >= this.bodySlots[item.slot] ) {
 						this.doff(itemToRemove.first);
 					}
 					this.don(item,item.slot);

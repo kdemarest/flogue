@@ -3,8 +3,8 @@ let Narrative = (new class {
 		this.recipientList = [];
 		this.accumulate = 0;
 	}
-	addRecipient( observer, canPerceiveEntityFn, receiveFn ) {
-		this.recipientList.push( { observer: observer, canPerceiveEntityFn: canPerceiveEntityFn, receiveFn: receiveFn, history: [], buffer: [] });
+	addRecipient( observerFn, canPerceiveEntityFn, receiveFn ) {
+		this.recipientList.push( { observerFn: observerFn, canPerceiveEntityFn: canPerceiveEntityFn, receiveFn: receiveFn, history: [], buffer: [] });
 	}
 	hold() {
 		this.accumulate++;
@@ -21,17 +21,18 @@ let Narrative = (new class {
 			debugger;
 		}
 		this.recipientList.map( recipient => {
-			let observerCares = sentence.doesObserverCare(recipient.observer.id);
+			let observer = recipient.observerFn();
+			let observerCares = sentence.doesObserverCare(observer.id);
 			if( !observerCares ) {
 				return;
 			}
-			let cp = recipient.canPerceiveEntityFn(recipient.observer,sentence.subject);
+			let cp = recipient.canPerceiveEntityFn(observer,sentence.subject);
 			if( sentence.object ) {
-				cp = cp || recipient.canPerceiveEntityFn(recipient.observer,sentence.object);
+				cp = cp || recipient.canPerceiveEntityFn(observer,sentence.object);
 			}
 
-			if( cp || recipient.observer.observeDistantEvents ) {
-				let message = (cp?'':'FAR: ')+sentence.refine(recipient.observer);
+			if( cp || observer.observeDistantEvents ) {
+				let message = (cp?'':'FAR: ')+sentence.refine(observer);
 				if( this.accumulate ) {
 					recipient.buffer.unshift(message);
 				}

@@ -3,6 +3,7 @@
 // WARNING: The strings for directions MUST remain the same for commandToDirection() to work.
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
 				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", SHOOT: "shoot",
+				FAVORITE: "favorite",
 				LOSETURN: "lose turn", PRAY: "pray", EAT: "eat", ENTERGATE: "enterGate",
 				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop",
 				BUY: "buy", SELL: "sell", CRAFT: "craft", BUSY: "busy",
@@ -54,6 +55,7 @@ let DEPTH_SPAN = (DEPTH_MAX-DEPTH_MIN)+1;
 let TILE_DIM = 48;
 let MapVis = 8;		// The vision distance used when actually drawing your map display, casting light etc.
 let MaxVis = 8;		// The vision distance max any monster can see
+let DEFAULT_MONSTER_DARK_VISION = 6;
 
 let STANDARD_MONSTER_SIGHT_DISTANCE = 6;
 let TILE_UNKNOWN = ' ';		// reserved so that map creation can look sane.
@@ -163,7 +165,6 @@ const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
 const Job = { SMITH: "smith", BREWER: "brewer", ARMORER: "armorer", LAPIDARY: "lapidary", JEWELER: "jeweler" };
 const Slot = { HEAD: "head", NECK: "neck", ARMS: "arms", HANDS: "hands", FINGERS: "fingers", WAIST: "waist", HIP: "hip", FEET: "feet", ARMOR: "armor", WEAPON: "weapon", AMMO: "ammo", SHIELD: "shield" };
-const HumanSlotLimit = { head: 1, neck: 1, arms: 1, hands: 1, fingers: 2, waist: 1, hip: 1, feet: 1, armor: 1, weapon: 1, shield: 1 };
 const PickIgnore = ['mud','forceField'];
 const PickVuln   = [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
 const PickResist = [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
@@ -220,6 +221,7 @@ let EffectTypeList = {
 	eConfusion: 	{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
 	ePanic: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 1.0, icon: 'gui/icons/eFear.png' },
 	eRage: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1, durationMod: 0.5, icon: 'gui/icons/eAttitude.png' },
+	ePossess: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'possess', durationMod: 5.0, icon: 'gui/icons/ePossess.png' },
 // Healing
 	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
 	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, xPrice: 1.5, icon: 'gui/icons/eHeal.png' },
@@ -352,7 +354,7 @@ const NullEfects = { eInert: { level: 0, rarity: 1 } };
 const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eCureDisease','eCurePoison','eOdorless','eStink','eBloodhound','eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
 	'eRegeneration','eFire','ePoison','eCold','eAcid'].includes(k) );
-const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
+const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['ePossess','eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
 	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRot','eRage','ePanic','eConfusion','eShove'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBloodhound','eOdorless','eRegeneration','eResistance','eGreed'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
@@ -385,7 +387,8 @@ const AmmoList = Fab.add( '', {
 
 const WeaponList = Fab.add( '', {
 	"bow": 	    	{ level:  0, rarity: 1.0, xDamage: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
-					mayShoot: true, range: RANGED_WEAPON_DEFAULT_RANGE, ammoType: 'isArrow', conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
+					mayShoot: true, range: RANGED_WEAPON_DEFAULT_RANGE, ammoType: 'isArrow', ammoSpec: 'ammo.arrow.eInert',
+					conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
 	"dagger":   	{ level:  3, rarity: 0.5, xDamage: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, 
 					chanceOfEffect: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
 	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
@@ -620,7 +623,7 @@ const StuffList = Fab.add( '', {
 	"darkEssence": 		{ rarity: 0.1, },
 	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true },
 	"sunCrystal":   	{ rarity: 0.6, mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "gems/sunCrystal.png", mayTargetPosition: true,
-						effect: { name: 'radiance', op: 'damage', valueDamage: 1.0, effectShape: EffectShape.BLAST5, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
+						effect: { name: 'radiance', op: 'damage', valueDamage: 1.0, effectShape: EffectShape.BLAST5, effectFilter: eff=>eff.target.team==Team.EVIL, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
 						},
 	"trollBlood": 		{ rarity: 0.6, },
 	"spinneret": 		{ rarity: 0.4, },
@@ -807,6 +810,7 @@ const ItemTypeList = {
 		isGem: true,
 		effectChance: 0.30,
 		mayThrow: 1,
+		mayGaze: 1,
 		range: RANGED_WEAPON_DEFAULT_RANGE,
 		mayTargetPosition: 1,
 		autoCommand: Command.USE,
@@ -917,7 +921,7 @@ let ItemBag = (function() {
 	return Object.convert(raw,(row,key) => { let a={}; a[key] = { cGen: row[0], cEff: row[1], price: row[2], basis: row[3] }; return a; });
 })();
 
-const Brain = { AI: "ai", USER: "user" };
+const Control = { AI: "ai", USER: "user", EMPTY: "empty" };
 let MaxLightValue = 15;
 let LightFullBrightDistance = 7;
 
@@ -926,14 +930,12 @@ const MonsterTypeDefaults = {
 	attitude: Attitude.AGGRESSIVE,
 	light: 0,
 	senseBlind: false, senseXray: false, senseItems: false, senseLife: false,
-	invisible: false, senseInvisible: false, senseVis: STANDARD_MONSTER_SIGHT_DISTANCE,
-	brain: Brain.AI, brainFlee: false, brainOpensDoors: false, brainTalk: false,
+	invisible: false, senseInvisible: false,
+	control: Control.AI,
 	corpse: 'corpse',
 	immune: '', resist: '', vuln: '',
 	loseTurn: false,
-	brainPackAnimal: false,
 	personalEnemy: '',
-	picksUp: false,
 	reach: 1,
 	regenerate: 0,
 	speed: 1,
@@ -985,33 +987,73 @@ function launcher(obj) {
 	}, obj );
 }
 
+let BrainMindset = {
+	sentient: 		'alert,fleeWhenHurt,pack',
+	simpleton: 		'',
+	demon: 			'',
+	canine:   		'alert,fleeWhenHurt,pack',
+	animal:   		'fleeWhenHurt',
+	animalHunter:   '',
+	animalHerd:   	'fleeWhenAttacked,pack',
+	undead: 		'',
+	hivemind: 		'alert,pack',
+}
+
+let BrainAbility = {
+	sentient: 		'cast,gaze,open,pickup,shoot,talk,throw',
+	simpleton: 		'gaze,open,pickup,shoot,talk,throw',
+	demon: 			'cast,gaze,open,pickup,shoot,talk,throw',
+	canine:   		'gaze,open,pickup,shoot,talk,throw',
+	animal:   		'',
+	animalHunter:   '',
+	animalHerd: 	'',
+	undead: 		'open,pickup,shoot,throw',
+	hivemind: 		'gaze,open,pickup,shoot,talk,throw',
+}
+
+let BodyAbility = {
+	humanoid: 		'cast,gaze,open,pickup,shoot,talk,throw',
+	quadruped: 		'gaze,open,pickup',
+	multiped: 		'gaze,open,pickup',
+	wingedBiped: 	'gaze,open,pickup',
+	noped:    		'gaze',
+	blob:    		'open,pickup',
+}
+
+let BodySlots = {
+	humanoid: 		{ head: 1, neck: 1, arms: 1, hands: 1, fingers: 2, waist: 1, hip: 1, feet: 1, armor: 1, weapon: 1, shield: 1 },
+	quadruped: 		{ head: 1, neck: 1, waist: 1, hip: 1, feet: 2, armor: 1 },
+	multiped: 		{ head: 1, neck: 1, waist: 1, hip: 1, fingers: 2, feet: 2, armor: 1 },
+	wingedBiped: 	{ head: 1, neck: 1, feet: 1 },
+	noped:  		{ head: 1 },
+	blob:  			{ },
+}
+
+
 const MonsterTypeList = {
 
 // GOOD TEAM
 	"player": {
-		core: [ '@', 0, '3:10', 'good', 'cut', 'player.png', 'he' ],
+		core: [ '@', 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'player.png', 'he' ],
 		attitude: Attitude.CALM,
-		brain: Brain.USER,
-		brainOpensDoors: true,
-		brainPicksup: true,
-		brainTalk: true,
+		brainMindset: 'pickup',
+		control: Control.USER,
 		experience: 0,
 		inventoryLoot: '',
 		inventoryWear: '',
+		isChosenOne: true,
 		isSunChild: true,
 		isNamed: false,
 		jumpMax: 1,
 		light: 4,
 		neverPick: true,
 		regenerate: 0.01,
-		senseVis: 	MaxVis,
+		senseSight: MaxVis,
 		strictAmmo: true
 	},
 	"dog": {
-		core: [ 'd', 0, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
+		core: [ 'd', 0, '10:10', 'good', 'bite', 'canine', 'quadruped', 'UNUSED/spells/components/dog2.png', '*'  ],
 		attitude: Attitude.HUNT,
-		brainFlee: true,
-		brainPet: true,
 		dodge: 1,
 		isAnimal: true,
 		isDog: true,
@@ -1020,15 +1062,14 @@ const MonsterTypeList = {
 		jumpMax: 2,
 		loot: '30% dogCollar',
 		properNoun: true,
-		brainPackAnimal: true,
 		rarity: 0.10,
 		regenerate: 0.03,
 		senseSmell: 200,
+		senseSight: 3,
 	},
 	"dwarf": {
-		core: [ SYM, 0, '3:10', 'good', 'bash', 'dc-mon/dwarf.png', '*' ],
+		core: [ SYM, 0, '3:10', 'good', 'bash', 'sentient', 'humanoid', 'dc-mon/dwarf.png', '*' ],
 		name: "Fili",
-		brainFlee: true,
 		isSunChild: true,
 		isDwarf: true,
 		isNamed: true,
@@ -1037,39 +1078,30 @@ const MonsterTypeList = {
 		brainPackAnimal: true
 	},
 	"mastiff": {
-		core: [ SYM, 69, '10:10', 'good', 'bite', 'UNUSED/spells/components/dog2.png', '*' ],
+		core: [ SYM, 69, '10:10', 'good', 'bite', 'canine', 'quadruped', 'UNUSED/spells/components/dog2.png', '*' ],
 		attitude: Attitude.HUNT,
 		dodge: 1,
-		brainFlee: true,
-		brainPet: true,
 		isAnimal: true,
 		isDog: true,
 		isPet: true,
 		isNamed: true,
 		loot: '30% dogCollar',
 		properNoun: true,
-		brainPackAnimal: true,
 		rarity: 0.10,
 		regenerate: 0.03,
 		senseSmell: 200,
 	},
 	"human": {
-		core: [ SYM, 0, '3:10', 'good', 'cut', 'dc-mon/human.png', '*' ],
+		core: [ SYM, 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'dc-mon/human.png', '*' ],
 		attitude: Attitude.CALM,
-		brainAlertFriends: true,
-		brainTalk: true,
-		brainOpensDoors: true,
 		isSunChild: true,
 		isNamed: true,
 		loot: '30% mushroomBread, 30% coin, 10% potion.eHealing',
 		rarity: 0.10,
 	},
 	"philanthropist": {
-		core: [ SYM, 0, '3:10', 'good', 'cut', 'dc-mon/philanthropist.png', '*' ],
+		core: [ SYM, 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'dc-mon/philanthropist.png', '*' ],
 		attitude: Attitude.CALM,
-		brainAlertFriends: true,
-		brainTalk: true,
-		brainOpensDoors: true,
 		isSunChild: true,
 		isNamed: true,
 		loot: '30% mushroomBread, 50% coin, 10% potion.eHealing',
@@ -1077,11 +1109,8 @@ const MonsterTypeList = {
 		sayPrayer: 'Get in line! Come to the left window for donations!'
 	},
 	"refugee": {
-		core: [ SYM, 0, '2:20', 'good', 'bash', 'dc-mon/refugee.png', '*' ],
+		core: [ SYM, 0, '2:20', 'good', 'bash', 'sentient', 'humanoid', 'dc-mon/refugee.png', '*' ],
 		attitude: Attitude.FEARFUL,
-		brainAlertFriends: true,
-		brainTalk: true,
-		brainOpensDoors: true,
 		isSunChild: true,
 		isNamed: true,
 		loot: '10% bone, 5% dogCollar, 3x 10% stuff',
@@ -1091,10 +1120,9 @@ const MonsterTypeList = {
 
 // EVIL TEAM
 	"avatarOfBalgur": {
-		core: [ SYM, 99, '25:2', 'evil', 'burn', 'dc-mon/hell_knight.png', 'he' ],
-		isUnique: true, neverPick: true,
-		brainAlertFriends: true,
-		brainTalk: true,
+		core: [ SYM, 99, '25:2', 'evil', 'burn', 'sentient', 'humanoid', 'dc-mon/hell_knight.png', 'he' ],
+		isUnique: true,
+		neverPick: true,
 		immune: ['eShove',DamageType.BURN,Attitude.PANICKED].join(','),
 		inventoryLoot: 'spell.eFire, spell.eRot, spell.ePoison',
 		isDemon: true,
@@ -1104,23 +1132,18 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"demon": {
-		core: [ SYM, 49, '3:5', 'evil', 'burn', 'player/base/draconian_red_f.png', 'it' ],
-		brainAlertFriends: true,
-		brainTalk: true,
+		core: [ SYM, 49, '3:5', 'evil', 'burn', 'sentient', 'humanoid', 'player/base/draconian_red_f.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: 'ammo.dart.eFire',
 		loot: '30% coin, 50% potion.eFire, 30% demonScale, 20% pitchfork, 30% demonEye',
-		brainPackAnimal: true,
 		resist: DemonResistance,
 		sayPrayer: 'Hail Balgur, ruler of the deep!',
 		vuln: DemonVulnerability,
 	},
 	"demonHound": {
-		core: [ SYM, 15, '3:7', 'evil', 'bite', 'dc-mon/animals/hell_hound.png', 'it' ],
+		core: [ SYM, 15, '3:7', 'evil', 'bite', 'canine', 'quadruped', 'dc-mon/animals/hell_hound.png', 'it' ],
 		attitude: Attitude.HUNT,
-		brainAlertFriends: true,
-		brainPackAnimal: true,
 		dodge: 1,
 		immune: DemonImmunity,
 		isDemon: true,
@@ -1132,7 +1155,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"deepCentipede": {
-		core: [ SYM, 24, '4:20', 'evil', 'stab', 'dc-mon/animals/giant_centipede.png', 'it' ],
+		core: [ SYM, 24, '4:20', 'evil', 'stab', 'animalHunter', 'multiped', 'dc-mon/animals/giant_centipede.png', 'it' ],
 		attitude: Attitude.HUNT,
 		tooClose: 9,
 		isInsect: true,
@@ -1144,7 +1167,7 @@ const MonsterTypeList = {
 		scentReduce: 50
 	},
 	"deepSpider": {
-		core: [ SYM, 59, '2:20', 'evil', 'stab', 'mon/spider.png', 'it' ],
+		core: [ SYM, 59, '2:20', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/spider.png', 'it' ],
 		attitude: Attitude.AWAIT,
 		tooClose: 7,
 		isInsect: true,
@@ -1156,26 +1179,26 @@ const MonsterTypeList = {
 		vuln: DamageType.BASH,
 	},
 	"ethermite": {
-		core: [ SYM, 59, '3:20', 'evil', 'bite', 'dc-mon/shining_eye.png', '*' ],
+		core: [ SYM, 59, '3:20', 'evil', 'bite', 'animalHunter', 'noped', 'dc-mon/shining_eye.png', '*' ],
 		attitude: Attitude.HUNT,
+		brainMindset: 'pack',
 		dodge: 1,
 		glow: true,
 		invisible: true,
 		isPlanar: 1,
 		light: 6,
 		loot: '50% gem.eSeeInvisible, 30% gem, 20% gem',
-		brainPackAnimal: true,
 		sneakAttackMult: 3,
 		vuln: 'glass'
 	},
 	"ghoul": {
-		core: [ SYM, 39, '1:2', 'evil', 'rot', 'dc-mon/undead/ghoul.png', 'it' ],
+		core: [ SYM, 39, '1:2', 'evil', 'rot', 'undead', 'humanoid', 'dc-mon/undead/ghoul.png', 'it' ],
 		attitude: Attitude.HUNT,
 		immune: UndeadImmunity,
 		dark: 2,
 		isUndead: true,
 		isGhoul: true,
-		loot: '30% coin, 20% potion.eRot, 50% ghoulFlesh',
+		loot: '30% coin, 50% ring, 50% ghoulFlesh',
 		senseLife: true,
 		stink: 0.5,
 		resist: UndeadResistance,
@@ -1183,22 +1206,17 @@ const MonsterTypeList = {
 		senseSmell: 200,
 	},
 	"goblin": {
-		core: [ SYM, 1, '3:10', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
-		brainAlertFriends: true,
-		brainTalk: true,
+		core: [ SYM, 1, '3:10', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
 		brainIgnoreClearShots: 70,
 		isGoblin: true,
 		isEarthChild: true,
 		inventoryLoot: '1x potion.eFire',
 		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 20% any, 30% pinchOfEarth',
-		brainPackAnimal: true,
 		sayPrayer: 'Oh mighty Thagzog...'
 	},
 	"goblinWar": { 
-		core: [ SYM, 49, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		core: [ SYM, 49, '3:8', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
 		name: 'goblin warrior',
-		brainAlertFriends: true,
-		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
 		lootInventory: 'weapon.axe',
@@ -1206,10 +1224,8 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh warrior Thagzog...'
 	},
 	"goblinMut": {
-		core: [ SYM, 79, '3:8', 'evil', 'cut', 'dc-mon/goblin.png', '*' ],
+		core: [ SYM, 79, '3:8', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
 		name: 'goblin mutant',
-		brainAlertFriends: true,
-		brainTalk: true,
 		isGoblin: true,
 		isEarthChild: true,
 		lootInventory: 'weapon.axe',
@@ -1217,7 +1233,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh mutant Thagzog...'
 	},
 	"imp": {
-		core: [ SYM, 39, '3:10', 'evil', 'claw', 'dc-mon/demons/imp.png', 'it' ],
+		core: [ SYM, 39, '3:10', 'evil', 'claw', 'demon', 'humanoid', 'dc-mon/demons/imp.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		dodge: 1,
 		glow: 1,
@@ -1230,22 +1246,18 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability
 	},
 	"kobold": {
-		core: [ SYM, 14, '4:20', 'evil', 'cut', 'dc-mon/kobold.png', '*' ],
+		core: [ SYM, 14, '4:20', 'evil', 'cut', 'canine', 'humanoid', 'dc-mon/kobold.png', '*' ],
 		attitude: Attitude.HESITANT,
-		brainAlertFriends: true,
-		brainTalk: true,
 		dodge: 1,
 		inventoryLoot: '2x dart.eInert',
 		isEarthChild: true,
 		isKobold: true,
 		loot: '50% coin, 4x 50% ammo.dart, 30% weapon.dagger, 30% dogCollar',
-		brainPackAnimal: true,
 		senseSmell: 200,
 	},
 	"ogreKid": { 
-		core: [ SYM, 39, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
+		core: [ SYM, 39, '10:10', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
 		name: "ogre child",
-		brainTalk: true, 
 		isEarthChild: true,
 		inventoryLoot: 'ammo.rock',
 		loot: '50% weapon.club, 20% ogreDrool',
@@ -1254,8 +1266,7 @@ const MonsterTypeList = {
 		stink: 0.6,
 	},
 	"ogre": {
-		core: [ SYM, 69, '10:10', 'evil', 'bash', 'dc-mon/ogre.png', '*' ],
-		brainTalk: true,
+		core: [ SYM, 69, '10:10', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
 		isEarthChild: true,
 		isOgre: true,
 		isLarge: true,
@@ -1266,9 +1277,9 @@ const MonsterTypeList = {
 		stink: 0.8,
 	},
 	"redOoze": {
-		core: [ SYM, 19, '3:3', 'evil', 'corrode', 'dc-mon/jelly.png', 'it' ],
+		core: [ SYM, 19, '3:3', 'evil', 'corrode', 'animalHunter', 'blob', 'dc-mon/jelly.png', 'it' ],
 		attitude: Attitude.HUNT,
-		brainRavenous: true,
+		brainMindset: 'ravenous',
 		name: "red ooze",
 		eatenFoodToInventory: true,
 		glow: 4,
@@ -1286,7 +1297,7 @@ const MonsterTypeList = {
 		senseSmell: 200,
 	},
 	"blueScarab": {
-		core: [ SYM, 59, '2:30', 'evil', 'freeze', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		core: [ SYM, 59, '2:30', 'evil', 'freeze', 'animalHunter', 'multiped', 'dc-mon/animals/boulder_beetle.png', 'it' ],
 		namePattern: "blue scarab",
 		glow: 3,
 		immune: DamageType.FREEZE,
@@ -1296,7 +1307,7 @@ const MonsterTypeList = {
 		vuln: 'glass,'+DamageType.BURN
 	},
 	"redScarab": {
-		core: [ SYM, 19, '2:30', 'evil', 'burn', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		core: [ SYM, 19, '2:30', 'evil', 'burn', 'animalHunter', 'multiped', 'dc-mon/animals/boulder_beetle.png', 'it' ],
 		namePattern: "red scarab",
 		glow: 3,
 		immune: DamageType.BURN,
@@ -1306,7 +1317,7 @@ const MonsterTypeList = {
 		vuln: 'glass,'+DamageType.FREEZE
 	},
 	"shadow": {
-		core: [ SYM, 79, '1:12', 'evil', 'rot', 'dc-mon/undead/shadow.png', 'it' ],
+		core: [ SYM, 79, '1:12', 'evil', 'rot', 'undead', 'humanoid', 'dc-mon/undead/shadow.png', 'it' ],
 		dark: 12,
 		immune: ShadowImmunity,
 		isUndead: true,
@@ -1316,7 +1327,7 @@ const MonsterTypeList = {
 		vuln: ['silver',DamageType.SMITE].join(',')
 	},
 	"skeleton": {
-		core: [ SYM, 19, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		core: [ SYM, 19, '2:10', 'evil', 'claw', 'undead', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		isUndead: true,
@@ -1325,7 +1336,7 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonArcher": {
-		core: [ SYM, 29, '2:10', 'evil', 'claw', 'dc-mon/undead/skeletonArcher.png', 'it' ],
+		core: [ SYM, 29, '2:10', 'evil', 'claw', 'undead', 'humanoid', 'dc-mon/undead/skeletonArcher.png', 'it' ],
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		inventoryLoot: [{ typeFilter:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow', fake: true }],
@@ -1335,7 +1346,7 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonLg": {
-		core: [ SYM, 59, '2:8', 'evil', 'claw', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
+		core: [ SYM, 59, '2:8', 'evil', 'claw', 'undead', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
 		name: 'ogre skeleton',
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
@@ -1346,9 +1357,8 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"soldierAnt": {
-		core: [ SYM, 1, '2:22', 'evil', 'bite', 'dc-mon/animals/soldier_ant.png', 'it' ],
+		core: [ SYM, 1, '2:12', 'evil', 'bite', 'hivemind', 'multiped', 'dc-mon/animals/soldier_ant.png', 'it' ],
 		name: "soldier ant",
-		brainAlertFriends: true,
 		loot: '10% potion, 20% facetedEye, 10% antGrubMush',
 		isAnimal: true,
 		isSmall: true,
@@ -1357,8 +1367,8 @@ const MonsterTypeList = {
 		vuln: 'glass'+','+DamageType.FREEZE,
 	},
 	"troll": {
-		core: [ SYM, 49, '5:4', 'evil', 'claw', 'dc-mon/troll.png', '*' ],
-		brainRavenous: true,
+		core: [ SYM, 49, '5:4', 'evil', 'claw', 'animalHunter', 'humanoid', 'dc-mon/troll.png', '*' ],
+		brainMindset: 'ravenous',
 		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
 		isLarge: true,
@@ -1368,7 +1378,7 @@ const MonsterTypeList = {
 		vuln: DamageType.BURN
 	},
 	"viper": {
-		core: [ SYM, 44, '3:16', 'evil', 'bite', 'dc-mon/animals/viper.png', 'it' ],
+		core: [ SYM, 44, '3:16', 'evil', 'bite', 'animalHunter', 'noped', 'dc-mon/animals/viper.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		dodge: 2,
 		isAnimal: true,
@@ -1379,10 +1389,8 @@ const MonsterTypeList = {
 
 // LUNAR
 	"lunarOne": {
-		core: [ SYM, 12, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_demonologist.png', '*' ],
+		core: [ SYM, 12, '3:10', 'lunar', 'freeze', 'sentient', 'humanoid', 'dc-mon/deep_elf_demonologist.png', '*' ],
 		name: "lunar one",
-		brainAlertFriends: true,
-		brainTalk: true,
 		immune: DamageType.FREEZE,
 		inventoryLoot: '3x 50% potion.eCold',
 		isLunarChild: true,
@@ -1391,10 +1399,8 @@ const MonsterTypeList = {
 		vuln: LunarVulnerabilities
 	},
 	"lunarReaper": {
-		core: [ SYM, 9, '3:10', 'lunar', 'freeze', 'dc-mon/deep_elf_high_priest.png', '*' ],
+		core: [ SYM, 9, '3:10', 'lunar', 'freeze', 'sentient' ,'humanoid', 'dc-mon/deep_elf_high_priest.png', '*' ],
 		name: "lunar reaper",
-		brainAlertFriends: true,
-		brainTalk: true,
 		immune: DamageType.FREEZE,
 		isLunarChild: true,
 		loot: '2x 50% coin, 40% lunarEssence',
@@ -1406,7 +1412,7 @@ const MonsterTypeList = {
 
 // NEUTRAL TEAM
 	"bat": {
-		core: [ SYM, 1, '2:20', 'neutral', 'bite', 'dc-mon/animals/giant_bat.png', 'it' ],
+		core: [ SYM, 1, '2:20', 'neutral', 'bite', 'animal', 'wingedBiped', 'dc-mon/animals/giant_bat.png', 'it' ],
 		attitude: Attitude.WANDER,
 		dodge: 2,
 		isAnimal: true,
@@ -1418,7 +1424,7 @@ const MonsterTypeList = {
 		travelMode: "fly"
 	},
 	"spinyFrog": {
-		core: [ SYM, 39, '3:10', 'neutral', 'stab', 'dc-mon/animals/spiny_frog.png', 'it' ],
+		core: [ SYM, 39, '3:10', 'neutral', 'stab', 'animal', 'quadruped', 'dc-mon/animals/spiny_frog.png', 'it' ],
 		name: "spiny frog",
 		attitude: Attitude.WANDER,
 		immune: [DamageType.POISON,'mud'].join(','),
@@ -1427,11 +1433,11 @@ const MonsterTypeList = {
 		stink: 0.8,
 	},
 	"giantSnail": {
-		core: [ SYM, 59, '10:100', 'neutral', 'rot', 'mon/snail.png', 'it' ],
+		core: [ SYM, 59, '10:100', 'neutral', 'rot', 'animal', 'noped', 'mon/snail.png', 'it' ],
 		imgChoices: { moving: { img: 'mon/snail.png' }, hiding: { img: 'mon/snailInShell.png' } },
 		imgGet: (self,img) => img || self.imgChoices[self.inShell?'hiding':'moving'].img,
 		attitude: Attitude.HUNT,
-		brainFleeAttackers: true,
+		brainMindset: 'fleeWhenAttacked',
 		immuneInShell: ArmorDefendsAgainst.join(','),
 		isAnimal: true,
 		isGiant: true,
@@ -1444,10 +1450,8 @@ const MonsterTypeList = {
 		resistInShell: [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT].join(','),
 	},
 	"sheep": {
-		core: [ SYM, 1, '1:20', 'neutral', 'bite', 'dc-mon/animals/sheep.png', 'it' ],
+		core: [ SYM, 1, '1:20', 'neutral', 'bite', 'animalHerd', 'quadruped', 'dc-mon/animals/sheep.png', 'it' ],
 		attitude: Attitude.FEARFUL,
-		brainFleeAttackers: true,
-		brainPackAnimal: true,
 		isAnimal: true,
 		isLivestock: true,
 		isSheep: true,
@@ -1465,7 +1469,7 @@ const MonsterTypeList = {
 
 
 TileTypeList['lockedDoor'].onTouch = function(entity,self) {
-	if( entity.brainOpensDoors ) {
+	if( entity.able('open') ) {
 		entity.map.tileSymbolSet( self.x, self.y, TileTypeList.door.symbol );
 		tell(mSubject,entity,' ',mVerb,'open',' the ',mObject,self);
 	}
@@ -1627,8 +1631,7 @@ ItemTypeList.oreVein.onTouch = function(entity,self) {
 		onSpriteDone: 	s => { s.sReset(); }
 	});
 	let chunkAnim = new Anim({},{
-		x: 			self.x,
-		y: 			self.y,
+		at: 		self,
 		img: 		StickerList.oreChaff.img, //self.imgGet(self),
 		duration: 	0.2,
 		onInit: 		a => { a.create(6); },
@@ -1636,8 +1639,7 @@ ItemTypeList.oreVein.onTouch = function(entity,self) {
 		onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sGrav(40).sRot(360); }
 	});
 	new Anim( {}, {
-		x: 			self.x,
-		y: 			self.y,
+		at: 		self,
 		img: 		self.imgGet(self),
 		duration: 	chunkAnim,
 		onSpriteMake: 	s => { },
@@ -1682,6 +1684,11 @@ TileTypeList.ghostStone.onTouch = function(toucher,self) {
 }
 
 ItemTypeList.altar.onTouch = function(toucher,self) {
+	if( toucher.isChosenOne && ( !toucher.deathReturn || !toucher.isAt(self.x,self.y,self.area) ) ) {
+		tell(mSubject|mCares,toucher,' will return here upon death.');
+		toucher.deathReturn = { x:self.x, y:self.y, area:self.area };
+	}
+
 	if( toucher.isMonsterType && toucher.experience!==undefined ) {
 		if( toucher.levelUp() ) {
 			return;
@@ -1790,8 +1797,6 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 		this.resetRecharge();
 	}
 }
-
-
 
 MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 	if( !attacker || attacker.command == Command.THROW || this.getDistance(attacker.x,attacker.y) > 1 ) {
@@ -1947,6 +1952,7 @@ function loadKeyMapping(name) {
 		v: Command.DEBUGVIEW,
 		z: Command.DEBUGANIM,
 		i: Command.INVENTORY,
+		f: Command.FAVORITE,
 		q: Command.QUAFF,
 		t: Command.THROW,
 		s: Command.SHOOT,

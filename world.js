@@ -2,7 +2,6 @@ class World {
 	constructor(getPlayer,onAreaChange) {
 		this.getPlayer = getPlayer;
 		this.areaList = {};
-		this.area = null;
 		this.pending = {
 			gate: null
 		};
@@ -15,7 +14,7 @@ class World {
 		return this.getPlayer();
 	}
 
-	createArea(depth,theme,isCore,gateList) {
+	createArea(currentAreaId,depth,theme,isCore,gateList) {
 		console.assert(depth !== undefined && !isNaN(depth));
 
 		theme = Object.assign(
@@ -27,7 +26,7 @@ class World {
 		);
 
 		console.log( "\nCreating area "+theme.typeId+" at depth "+depth+" core="+isCore );
-		let tileQuota = Plan.shapeWorld(this.area?this.area.id:null,depth,theme,isCore,gateList);
+		let tileQuota = Plan.shapeWorld(currentAreaId,depth,theme,isCore,gateList);
 		let areaId = isCore ? 'area.core.'+depth : 'area.'+theme.typeId+'.'+depth+'.'+GetTimeBasedUid();
 		let area = new Area(areaId,depth,theme);
 		area.isCore = isCore;
@@ -36,20 +35,19 @@ class World {
 		area.build(tileQuota)
 		return area;
 	}
-	setPending(gate) {
-		let toArea = this.areaList[gate.toAreaId];
+	linkGatesAndCreateArea(gate,curArea,toArea) {
 		if( !toArea ) {
 			console.log( "Gate "+gate.id+" has no toAreaId" );
-			let isCore = this.area.isCore && gate.gateDir!=0;
-			let depth = this.area.depth + gate.gateDir;
+			let isCore = curArea.isCore && gate.gateDir!=0;
+			let depth = curArea.depth + gate.gateDir;
 			console.assert(gate.themeId);
 			let theme = ThemeList[gate.themeId];
-			let gateList = this.area.gateList.filter( g => {
+			let gateList = curArea.gateList.filter( g => {
 				return (g.id == gate.id) || (isCore && g.gateDir == gate.gateDir);
 			});
 			console.log( "gateList: "+gateList.length );
 
-			toArea = this.createArea(depth,theme,isCore,gateList);
+			toArea = this.createArea(curArea.id,depth,theme,isCore,gateList);
 		}
 
 		gate.toAreaId = toArea.id;
@@ -57,7 +55,9 @@ class World {
 		if( gate.gateInverse !== false ) {
 			let g = toArea.gateList.filter( foreignGate => foreignGate.toGateId==gate.id );
 			if( !g[0] ) {
-				g = toArea.gateList.filter( foreignGate => foreignGate.typeId == gate.gateInverse && (!foreignGate.toAreaId || foreignGate.toAreaId==this.area.id) );
+				g = toArea.gateList.filter( foreignGate => {
+					return foreignGate.typeId == gate.gateInverse && (!foreignGate.toAreaId || foreignGate.toAreaId==curArea.id)
+				});
 			}
 			let gate2 = g[0];
 			if( !gate2 ) {
@@ -67,7 +67,7 @@ class World {
 				toArea.gateList.push(gate2);
 			}
 			// Always set these, since even if it was a found gate it should still properly link...
-			gate2.toAreaId = this.area.id;
+			gate2.toAreaId = curArea.id;
 			gate2.toGateId = gate.id;
 			gate2.toPos = { x: gate.x, y: gate.y };
 			console.assert( gate2.toAreaId && gate2.toGateId );
@@ -83,19 +83,23 @@ class World {
 
 		console.assert( gate.toAreaId );
 		console.assert( gate.toGateId || gate.toPos );
+	}
+	setPending(gate) {
+		this.linkGatesAndCreateArea(gate,gate.area,this.areaList[gate.toAreaId]);
 		this.pending.gate = gate;
 	}
-	detectPlayerOnGate(map,entityList) {
+	detectPlayerOnGate() {
 		// checking the commandToDirection means the player just moved, and isn't just standing there.
-		if( !this.player || this.player.commandLast!=Command.WAIT ) {
+		let player = this.player;
+		if( !player || player.commandLast!=Command.WAIT ) {
 			return;
 		}
-		let gateHere = map.findItemAt(this.player.x,this.player.y).filter( item => item.gateDir!==undefined );
+		let gateHere = player.map.findItemAt(player.x,player.y).filter( item => item.gateDir!==undefined );
 		if( !gateHere.first ) {
 			return;
 		}
 		let gate = gateHere.first;
-		if( map.area.depth == 0 && gate.gateDir<0 ) {
+		if( player.area.depth == 0 && gate.gateDir<0 ) {
 			return;
 		}
 		this.setPending(gate)
@@ -106,25 +110,22 @@ class World {
 	gateTo(areaId,x,y) {
 		let area = this.getAreaById(areaId);
 		if( !area ) debugger;
-		let oldArea = this.area;
-		this.area = area;
-		this.onAreaChange(oldArea,area,x,y);
+		this.onAreaChange(area,x,y);
 		return area;
 	}
 	areaChange() {
-		this.detectPlayerOnGate(this.area.map,this.area.entityList);
+		this.detectPlayerOnGate();
 
-		let gate = this.pending.gate;
-		if( !gate ) {
+		if( !this.pending.gate ) {
 			return;
 		}
+		let gate = this.pending.gate;
 		this.pending.gate = null;
 
 		tell(mSubject,this.player,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
 
 		// WARNING! Someday we will need to push the DeedList that is NOT the player into the old area.
 		// and resurrect the new area's deed list.
-		let oldArea = this.area;
 		let newArea = this.gateTo(gate.toAreaId,gate.toPos.x,gate.toPos.y);
 		if( gate.killMeWhenDone ) {
 			gate.destroy();

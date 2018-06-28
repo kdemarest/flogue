@@ -393,7 +393,7 @@ ThemeList.coreMixedRooms = {
 }
 
 ThemeList.coreHellscape = {
-	dim: 				Math.randInt(80),
+	dim: 				80,
 	architecture: 		"cave",
 	floorDensity: 		0.58,
 	seedPercent: 		0.30,
@@ -410,7 +410,7 @@ ThemeList.coreHellscape = {
 }
 
 ThemeList.coreFinalLevel = {
-	dim: 				Math.randInt(80),
+	dim: 				80,
 	architecture: 		"rooms",
 	floorDensity: 		0.30,
 	circleChance: 		100,
@@ -751,7 +751,7 @@ PlaceTypeList.goblinGathering = {
 	monsterTypes: {
 		goblinPriest: { basis: 'goblin', name: "goblin priest", damage: '2d6+2', damageType: DamageType.ROT, isGoblin: true,
 						attitude: Attitude.WORSHIP, shout: 'Death to all heretic overworld invaders!',
-						inventoryLoot: 'spell.eRot', senseVis: 7,
+						inventoryLoot: 'spell.eRot',
 						resist: DamageType.ROT,
 						img: "dc-mon/gnoll.png" }
 	},
@@ -1561,7 +1561,7 @@ xtttttx
 x.....x
 x.....x
 xt....x
-xxs+xxx
+xxsx+xx
 `,
 	forbidTreasure: true,
 	flags: { rotate: true, hasWall: true },

@@ -138,8 +138,7 @@ class Item {
 		if( this.owner && this.owner.isMap && entity.isUser() ) {
 			// Item flies to your gui sidebar...
 			new Anim({},{
-				x: 			this.x,
-				y: 			this.y,
+				at: 		this,
 				img: 		this.imgGet ? this.imgGet(this) : this.img,
 				duration: 	0.3,
 				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.3); },
@@ -159,8 +158,7 @@ class Item {
 			}
 			spriteMakeInWorld(this,this.owner.x,this.owner.y);
 			new Anim({
-				x: 			this.owner.x,
-				y: 			this.owner.y,
+				at: 		this.owner,
 				duration: 	rangeDuration,
 				onInit: 		a => { a.puppet(this.spriteList); },
 				onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },

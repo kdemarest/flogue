@@ -1,10 +1,10 @@
 
-
+let HACK_MEMORY_FLAG = 2.5;
 let GlobalRenderCache = [];
 function createDrawList(observer,map,entityList,asType) {
 
 	// Recalc this here, just in case.
-	let vis = observer.calcVis();
+	let visCache = observer.calcVis();
 	let areaVis = observer.area.vis;
 
 	function spillLight(px,py,x,y,light) {
@@ -75,7 +75,8 @@ function createDrawList(observer,map,entityList,asType) {
 			let e = ( entity.id == observer.id && observer.invisible ) ? StickerList.invisibleObserver : entity;
 			p[entity.y*map.xLen+entity.x] = e;
 		}
-		testLight(entity.x,entity.y,entity.light||0);
+		let light = entity.id==observer.id ? Math.max(entity.darkVision||0,entity.light||0) : entity.light||0;
+		testLight(entity.x,entity.y,light);
 	}
 	// Remember all items in the area
 	for( let item of map.itemList ) {
@@ -87,25 +88,10 @@ function createDrawList(observer,map,entityList,asType) {
 // the animation is turned on.
 
 	for( let anim of animationList ) {
-		testLight(anim.x,anim.y,anim.light);
+		if( anim.areaId == observer.area.id ) {
+			testLight(anim.x,anim.y,anim.light);
+		}
 	}
-/*
-	if( !window.silly ) {
-		window.silly = new Anim( {}, {
-			group: 			'scent',
-			x: 				observer.x,
-			y: 				observer.y-1,
-			img: 			observer.img,
-			duration: 		true,
-			onSpriteMake: 	s => { s.sScaleSet(0.6).sAlpha(0.3); s.glow=1; }
-		});
-	}
-
-	console.assert(window.silly.spriteList[0].alpha == 0.3);
-	window.silly.x = observer.x;
-	window.silly.y = observer.y-1;
-*/
-
 	
 	animationRemove( anim=>anim.group=='scent' );
 
@@ -130,6 +116,7 @@ function createDrawList(observer,map,entityList,asType) {
 					group: 			'scent',
 					x: 				x,
 					y: 				y,
+					areaId: 		observer.area.id,
 					img: 			smelled.img,
 					duration: 		true,
 					onSpriteMake: 	s => { s.sScaleSet(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
@@ -140,8 +127,9 @@ function createDrawList(observer,map,entityList,asType) {
 
 
 	let visId = {};
-	let mapMemoryLight = 2;
+	let mapMemoryLight = HACK_MEMORY_FLAG; //2.5; //15; //2;
 	let revealLight = 7;		// Assumes max light is about 10.
+	let mapMemory = observer.mapMemory;
 
 	// Now assign tile layers, and remember that [0] is the light level. Tiles
 	// that shine light will do so in this loop.
@@ -152,7 +140,7 @@ function createDrawList(observer,map,entityList,asType) {
 		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
 			let tx = x-(px-d);
 			let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
-			let visible = inBounds && vis[y] && vis[y][x];
+			let visible = inBounds && visCache[y] && visCache[y][x];
 			let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
 			let tile;
 			let itemList;
@@ -188,8 +176,9 @@ function createDrawList(observer,map,entityList,asType) {
 				if( !visible ) {
 					//dChar = 'i';
 					aa[0] = mapMemoryLight;
-					if( observer.mapMemory && observer.mapMemory[y] && observer.mapMemory[y][x] ) {
-						aa[1] = observer.mapMemory[y][x];
+					let mPos = y*map.xLen+x;
+					if( mapMemory && mapMemory[mPos] ) {
+						aa[1] = mapMemory[mPos];
 						aa.length = 2;
 					}
 					else {
@@ -228,6 +217,10 @@ function createDrawList(observer,map,entityList,asType) {
 	}
 	//console.log(debug);
 
+	// WARNING! These all cast darkness, but it WILL alter any light settings around the
+	// mapMemories. This is OK, I think, because the cast darkness makes your memories
+	// harder to see as well.
+
 	for( let entity of entityList ) {
 		testLight(entity.x,entity.y,-(entity.dark||0));
 	}
@@ -238,6 +231,9 @@ function createDrawList(observer,map,entityList,asType) {
 
 	for( let anim of animationList ) {
 		if( anim.entity && !visId[anim.entity.id] ) {
+			continue;
+		}
+		if( anim.areaId !== observer.area.id ) {
 			continue;
 		}
 		let tx = Math.floor(anim.x-(px-d));
@@ -351,6 +347,11 @@ class ViewMap extends ViewObserver {
 		this.divId = divId;
 		this.imageRepo = imageRepo;
 		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
+		this.desaturateFilter = new PIXI.filters.ColorMatrixFilter();
+		this.desaturateFilter.desaturate();
+		this.resetFilter = new PIXI.filters.ColorMatrixFilter();
+		this.resetFilter.reset();
+
 		document.getElementById(this.divId).appendChild(this.app.view);
 		this.setDimensions();
 		this.hookEvents();
@@ -449,9 +450,9 @@ class ViewMap extends ViewObserver {
 			return sprite;
 		}
 
-		spriteMakeInWorld = function(entity,xWorld,yWorld) {
+		spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision) {
 
-			function make(x,y,entity,imgGet,light) {
+			function make(x,y,entity,imgGet,light,doTint,doGrey) {
 
 				entity.spriteList = entity.spriteList || [];
 
@@ -477,6 +478,19 @@ class ViewMap extends ViewObserver {
 						sprite.alpha 	= (entity.alpha||1) * LightAlpha[light];
 						//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 					}
+					if( doTint ) {
+						sprite.filters = [this.desaturateFilter];
+						sprite.tint = 0xAAAAFF;
+					}
+					else
+					if( doGrey ) {
+						sprite.filters = [this.desaturateFilter];
+						sprite.tint = 0xFFFFFF;
+					}
+					else {
+						sprite.filters = [this.resetFilter];
+						sprite.tint = 0xFFFFFF;
+					}
 				}
 				if( entity.puppetMe ) {
 					entity.puppetMe.puppet(entity.spriteList);
@@ -492,7 +506,18 @@ class ViewMap extends ViewObserver {
 			let wy = (this.observer.y-this.sd);
 			let x = xWorld - wx;
 			let y = yWorld - wy;
+			let doTint = false;
+			let doGrey = false;
 			let light = x>=0 && y>=0 && x<this.d && y<this.d ? this.drawListCache[y][x][0] : 0;
+			if( light == HACK_MEMORY_FLAG ) {	// HACK! This flags 
+				doTint = true;
+				light = 3;
+			}
+			else {
+				if( darkVision ) {
+					doGrey = true;
+				}
+			}
 
 			if( entity.isTileType && !entity.isPosition ) {
 				entity.spriteList = this.observer.map.tileSprite[yWorld][xWorld];
@@ -500,7 +525,7 @@ class ViewMap extends ViewObserver {
 
 			let imgGet = this.imageRepo.imgGet[entity.typeId];
 			let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
-			make.call(this,x*TILE_DIM,y*TILE_DIM,entity,imgGet,lightAfterGlow);
+			make.call(this,x*TILE_DIM,y*TILE_DIM,entity,imgGet,lightAfterGlow,doTint,doGrey);
 
 			if( entity.isTileType && !entity.isPosition ) {
 				this.observer.map.tileSprite[yWorld][xWorld] = this.staticTileEntity.spriteList;
@@ -538,7 +563,6 @@ class ViewMap extends ViewObserver {
 			child.y = ((child.y-(oldDim/2)) / oldDim) * TILE_DIM + TILE_DIM/2;
 			child.transform.scale.set( child.baseScale );
 		}
-		this.observer.senseVis = MaxVis;
 	}
 
 	message(msg,payload) {
@@ -551,12 +575,12 @@ class ViewMap extends ViewObserver {
 			this.worldOverlayRemoveFn( a => a.group==payload.group );
 		}
 		if( msg == 'overlayAdd' ) {
-			this.worldOverlayAddFn(payload.group,payload.x,payload.y,payload.img);	
+			this.worldOverlayAddFn(payload.group,payload.x,payload.y,payload.areaId,payload.img);	
 		}
 		if( msg == 'show' ) {
 			if( !payload.isItemType || (payload.owner && payload.owner.isMap) ) {
 				this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
-				this.worldOverlayAddFn('guiSelect', payload.x,payload.y, StickerList.selectBox.img);	
+				this.worldOverlayAddFn('guiSelect', payload.x, payload.y, payload.area.id, StickerList.selectBox.img);	
 			}
 			this.render();
 		}
@@ -608,7 +632,7 @@ class ViewMap extends ViewObserver {
 					{
 						let imgGet = this.imageRepo.imgGet[entity.typeId];
 						if( imgGet ) {
-							spriteMakeInWorld(entity,wx+x,wy+y);
+							spriteMakeInWorld(entity,wx+x,wy+y,this.observer.darkVision);
 						}
 						else {
 							debugger;

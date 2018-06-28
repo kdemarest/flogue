@@ -11,27 +11,21 @@ function getCastableSpellList(entity) {
 
 class ViewObserver {
 	constructor() {
-		this.observerStack = [];
+		this.observerDefault = null;
 		this.observerOverride = null;
 	}
 	get observer() {
-		return this.observerOverride || this.observerStack[0];
+		return this.observerOverride || this.observerDefault;
 	}
 	get trueObserver() {
-		return this.observerStack[0];
+		return this.observerDefault;
 	}
 	override(observer) {
 		this.observerOverride = observer;
 	}
-	push(observer) {
-		this.observerStack.unshift(observer);
-	}
-	pop(observer) {
-		this.observerStack.shift(observer);
-	}
 	message(msg,payload) {
 		if( msg == 'observer' && payload !== this.observer ) {
-			this.push(payload);
+			this.observerDefault = payload;
 		}
 	}
 }
@@ -115,7 +109,7 @@ class ViewSpells extends ViewObserver {
 			let spell = spellList.all[i];
 			let pct = Math.floor( (1 - ( (spell.rechargeLeft||0) / (spell.rechargeTime||10) )) * 10 )*10;
 			let img = '<img class="spellRecharge" src="tiles/'+StickerList['slice'+pct].img+'">';
-			let text = 'F'+(i+1)+' '+spell.effect.name+'\n';
+			let text = 'F'+(i+1)+' '+String.capitalize(spell.effect.name)+'\n';
 			let lit = observer.commandItem == spell && spell.isRecharged();
 			let unlit = !spell.isRecharged();
 			$('#'+this.spellDivId).append('<div class="spell'+(unlit?' unlit':(lit?' lit':''))+'">'+img+text+'</div>');
@@ -364,10 +358,10 @@ class ViewInfo extends ViewObserver {
 		test(entity.senseItems,'treas');
 		test(entity.senseLife,'bat');
 		test(entity.regenerate>MonsterTypeList[entity.typeId].regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
-		s += conditionList.join(',')+'<br>';
-		s += entity.resist ? "Resist: "+entity.resist+'<br>' : '';
-		s += entity.immune ? "Immune: "+entity.immune+'<br>' : '';
-		s += entity.vuln ? "Vulnerable: "+entity.vuln+'<br>' : '';
+		s += conditionList.join(', ')+'<br>';
+		s += entity.resist ? "Resist: "+entity.resist.split(',').join(', ')+'<br>' : '';
+		s += entity.immune ? "Immune: "+entity.immune.split(',').join(', ')+'<br>' : '';
+		s += entity.vuln ? "Vulnerable: "+entity.vuln.split(',').join(', ')+'<br>' : '';
 		if( entity.isUser() ) {
 			s += "Gold: "+Math.floor(entity.coinCount||0)+"<br>";
 		}
@@ -457,7 +451,6 @@ class ViewMiniMap extends ViewObserver {
 		this.divId = divId;
 		this.captionDivId = captionDivId;
 		this.caption = '';
-		this.mapMemoryFn = null;
 		this.imageRepo = imageRepo;
 		this.drawn = [];
 	}
@@ -481,12 +474,14 @@ class ViewMiniMap extends ViewObserver {
 	}
 	setArea(area) {
 		this.caption = String.capitalize(area.name)+' (Depth '+area.depth+')';
-		this.mapMemoryFn = ()=>area.mapMemory;
 		this.create(area);
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
 		if( msg == 'setArea' ) {
+			this.setArea(payload);
+		}
+		if( msg == 'resetMiniMap' ) {
 			this.setArea(payload);
 		}
 	}
@@ -504,7 +499,7 @@ class ViewMiniMap extends ViewObserver {
 		}
 
 		let self = this;
-		function draw(c,entity,x,y,scale) {
+		function draw(c,entity,x,y,scale,ctr) {
 			let imgGet = self.imageRepo.imgGet[entity.typeId];
 			if( !imgGet ) debugger;
 			if( imgGet ) {
@@ -512,7 +507,14 @@ class ViewMiniMap extends ViewObserver {
 				if( !entity ) debugger;
 				let resource = self.imageRepo.get(imgPath);
 				if( resource ) {
-					c.drawImage( resource.texture.baseTexture.source, x*self.scale-(self.scale/2), y*self.scale-(self.scale/2), scale,scale );
+					let image = resource.texture.baseTexture.source;
+					if( ctr ) {
+						x -= (scale/self.scale)/2;
+						y -= (scale/self.scale)/2;
+					}
+					//let width = image.width * self.scale;
+					//let height = image.height * self.scale;
+					c.drawImage( image, x*self.scale, y*self.scale, scale,scale );
 				}
 				else {
 					console.log( "Unable to find image for "+entity.typeId+" img "+imgPath );
@@ -533,7 +535,7 @@ class ViewMiniMap extends ViewObserver {
 
 		observer.entityList.forEach( entity => {
 			if( entity.brainMaster && entity.brainMaster.id==observer.id ) {
-				drawLate.push({entity:StickerList.friendProxy,x:entity.x,y:entity.y,scale:this.scale*2});
+				drawLate.push({entity:StickerList.friendProxy,x:entity.x,y:entity.y,scale:this.scale*2,ctr:true});
 				return;
 			}
 			if( observer.senseLife ) {
@@ -543,21 +545,19 @@ class ViewMiniMap extends ViewObserver {
 			}
 		});
 
-		let mapMemory = this.mapMemoryFn();
+		let mapMemory = observer.mapMemory;
 		for( let y=0 ; y<this.yLen ; ++y ) {
-			if( !mapMemory[y] ) {
-				continue;
-			}
 			for( let x=0 ; x<this.xLen ; ++x ) {
-				let entity = mapMemory[y][x];
+				let mPos = y*this.xLen+x;
+				if( x==observer.x && y==observer.y ) {
+					drawLate.push({entity:StickerList.observerProxy,x:x,y:y,scale:this.scale*4,ctr:true});
+					continue;
+				}
+				let entity = mapMemory[mPos];
 				if( entity ) {
-					if( x==observer.x && y==observer.y ) {
-						drawLate.push({entity:StickerList.observerProxy,x:x,y:y,scale:this.scale*4});
-						continue;
-					}
 					if( entity.gateDir !== undefined ) {
 						let gate = StickerList[entity.gateDir>0 ? 'gateDownProxy' : 'gateProxy'];
-						drawLate.push({entity:gate,x:x,y:y,scale:this.scale*3});
+						drawLate.push({entity:gate,x:x,y:y,scale:this.scale*3,ctr:true});
 						continue;
 					}
 				}
@@ -578,7 +578,7 @@ class ViewMiniMap extends ViewObserver {
 		}
 		while( drawLate.length ) {
 			let d = drawLate.pop();
-			draw(c1,d.entity,d.x,d.y,d.scale);
+			draw(c1,d.entity,d.x,d.y,Math.min(d.scale,20),d.ctr);
 		}
 	}
 }
@@ -680,11 +680,12 @@ class ViewRange extends ViewObserver {
 	drawRange(map,sx,sy,tx,ty) {
 		let self = this;
 		this.isShotClear = true;
+		let areaId = this.observer.area.id;
 		function test(x,y) {
 			return map.tileTypeGet(x,y).mayFly;
 		}
 		function add(x,y,ok) {
-			guiMessage(null,'overlayAdd',{ group: 'guiCrosshair', x:x, y:y, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
+			guiMessage(null,'overlayAdd',{ group: 'guiCrosshair', x:x, y:y, areaId:areaId, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
 			self.isShotClear = self.isShotClear && ok;
 		}
 		shootRange(sx,sy,tx,ty,test,add);

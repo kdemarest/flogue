@@ -2,14 +2,14 @@ let ConfigList = {};
 
 ConfigList.ken = () => {
 	ScapeList.kenCave = theme => ({
-		dim: 				30,
+		dim: 				20,
 		architecture: 		"cave",
 		floorDensity: 		0.88,
 		seedPercent: 		0.20,
 		passageWander: 		0,
 	});
 	ScapeList.kenRooms = theme => ({
-		dim: 				40,
+		dim: 				20,
 		architecture: 		"rooms",
 		floorDensity: 		0.45,
 		circleChance: 		10,
@@ -53,21 +53,21 @@ ConfigList.ken = () => {
 	};
 
 	ThemeList.kenTheme = {
-		scapeId: 		'kenRooms',
-		rREQUIRED: 		'floodPit',
+		scapeId: 		'kenCave',
+		rREQUIRED: 		'floodPit, fontDeep',
 		placeDensity: 	0.20,
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
-		monsters: 		['isDemonHound','isSnail'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isDog'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.042,
-		friendDensity: 	0.022,
+		enemyDensity:  	0.0001,
+		friendDensity: 	0.002,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('boots.eOdorless, stuff.lumpOfMeat, 3x stuff.snailSlime, 3x potion.eCurePoison, potion.eOdorless, potion.eStink, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
-	MonsterTypeList.player.inventoryWear = 'cloak.eInvisibility, ring.eBloodhound, weapon.pickaxe, stuff.oilLamp, shield.eAbsorb';
+	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, spell.ePossess, bow, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
+	MonsterTypeList.player.inventoryWear = 'armor, helm, boots, bracers, stuff.oilLamp';
 	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
@@ -77,8 +77,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 15,
-		themeId: 'dwarfTown'
+		startingDepth: 5,
+		themeId: 'kenTheme'
 	}
 }
 

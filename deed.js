@@ -18,7 +18,10 @@ class Deed {
 	}
 	applyEffect() {
 		if( this.handler ) {
-			this.handler();
+			let endNow = this.handler() === false;
+			if( endNow ) {
+				this.end();
+			}
 			return;
 		}
 		let target = this.target;
@@ -72,7 +75,7 @@ class Deed {
 			return false;
 		}
 		if( this.onEnd ) {
-			this.onEnd(this.target,this.data);
+			this.onEnd.call(this);
 		}
 		this.killMe = true;
 		return true;
@@ -91,9 +94,12 @@ class Deed {
 		else
 		{
 			if( this.handler ) {
-				this.handler(dt);
+				let endNow = this.handler(dt) === false;
+				if( endNow ) {
+					this.end();
+				}
 			}
-			if( this.onTick ) {
+			if( this.onTick && !this.killMe ) {
 				this.onTick(this.target,dt,this.data);
 			}
 		}
@@ -265,6 +271,12 @@ let effectApplyTo = function(effect,target,source,item) {
 	// Now we can change the value inside it without metting up the origin effect.
 	effect = Object.assign( {}, effect, { target:target, source: source, item: item });
 
+	if( effect.effectFilter ) {
+		if( !effect.effectFilter(effect) ) {
+			return;
+		}
+	}
+
 	if( !effect.op ) {
 		// This is an inert effect. Do nothing.
 		return false;
@@ -296,8 +308,7 @@ let effectApplyTo = function(effect,target,source,item) {
 			source.rangeDuration = rangeDuration;
 			effect.rangeDuration = rangeDuration;
 			new Anim({
-				x: 			source.x,
-				y: 			source.y,
+				at: 		source,
 				img: 		effect.icon,
 				duration: 	rangeDuration,
 				onInit: 		a => { a.create(1); },
@@ -429,4 +440,18 @@ DeedManager.addHandler('teleport',function() {
 });
 DeedManager.addHandler('strip',function() {
 	this.target.stripDeeds(this.stripFn);
+});
+DeedManager.addHandler('possess',function() {
+	if( this.source.isPossessing ) {
+		return;
+	}
+	let success = this.target.takeBePossessed(this,true);
+	if( success ) {
+		this.onEnd = function() {
+			this.target.takeBePossessed(this,false);
+		}
+	}
+	if( !success ) {
+		return false;
+	}
 });

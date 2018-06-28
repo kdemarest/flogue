@@ -21,12 +21,14 @@ class Gui {
 	}
 
 	create(onItemChoose) {
-		function worldOverlayAdd(group,x,y,img) {
+		function worldOverlayAdd(group,x,y,areaId,img) {
+			console.assert( x!==undefined && y!==undefined && areaId !==undefined && img !==undefined );
 //			console.log(group,x,y,img);
 			new Anim( {}, {
 				group: 		group,
 				x: 			x,
 				y: 			y,
+				areaId: 	areaId,
 				img: 		img,
 				duration: 	true
 			});
@@ -94,7 +96,7 @@ class Gui {
 		let area = this.getPlayer().area;
 		guiMessage( null, 'observer', this.spectator );
 
-		area.vis.cacheVis();
+		area.vis.populateLookup();	// This could be maintained progressively, but it hasn't mattered yet.
 
 		this.view.narrative.render();
 		this.view.sign.render();

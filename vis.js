@@ -6,29 +6,31 @@ function getTrueDistance(dx,dy) {
 class Vis {
 	constructor(getMapFn) {
 		this.getMapFn = getMapFn;
-		this.visCache = [];
-		this.cacheVis();
+		this.opacityLookup = [];
+		this.populateLookup();
 		this.shootCache = {};
 	}
-	cacheVis() {
+	populateLookup() {
 		let map = this.getMapFn();
 		console.assert(map);
 		map.traverse( (x,y) => {
 			this.visSet( map, x, y, map.tileTypeGet(x,y).opacity||0 );
 		});
-		map.itemList.forEach( item => this.visSet( map, item.x, item.y, Math.max( this.visGet(map,item.x,item.y), item.opacity||0 ) ) );
+		map.itemList.forEach( item => {
+			this.visSet( map, item.x, item.y, Math.max( this.visGet(map,item.x,item.y), item.opacity||0 ) );
+		});
 	}
 	visGet(map,x,y) {
 		if( !map.inBounds(x,y) ) {
 			return false;
 		}
-		return this.visCache[y*map.xLen+x];
+		return this.opacityLookup[y*map.xLen+x];
 	}
 	visSet(map,x,y,opacity) {
 		if( !map.inBounds(x,y) ) {
 			return false;
 		}
-		return this.visCache[y*map.xLen+x] = opacity;
+		return this.opacityLookup[y*map.xLen+x] = opacity;
 	}
 	shoot(px,py,sx,sy,tx,ty,spots) {
 		let map = this.getMapFn();
@@ -76,12 +78,12 @@ class Vis {
 	fast(px,py,spot) {
 		if( !spot.length ) return true;
 		let xLen = this.getMapFn().xLen;
-		let vc = this.visCache;;
+		let opacityLookup = this.opacityLookup;
 		let wallAmount = 0;
 		for( let i=0 ; i<spot.length ; i+=2 ) {
 			let x = (px+spot[i+0]);
 			let y = (py+spot[i+1]);
-			wallAmount += vc[y*xLen+x];
+			wallAmount += opacityLookup[y*xLen+x];
 			if( wallAmount >= 1 ) { return false; }
 		}
 		return true;
@@ -162,7 +164,7 @@ class Vis {
 		return proList;
 	}
 
-	calcVis(px,py,senseVis,blind,xray,cachedVis,mapMemory) {
+	calcVis(px,py,senseSight,blind,xray,cachedVis,mapMemory) {
 		let map = this.getMapFn();
 		let xLen = map.xLen;
 
@@ -181,11 +183,14 @@ class Vis {
 		}
 
 		let defaultValue = false; //xray && !blind;
-		map.traverse( (x,y) => { a[y] = a[y] || []; a[y][x] = defaultValue; } );
+		map.traverse( (x,y) => {
+			a[y] = a[y] || [];
+			a[y][x] = defaultValue;
+		});
 		a[py][px] = true;
 //		if( xray || blind ) return;
 
-		let vc = this.visCache;
+		let opacityLookup = this.opacityLookup;
 		let sweep = [];
 		let opacity = [];
 		for( let i=0 ; i<360 ; ++i ) {
@@ -198,7 +203,7 @@ class Vis {
 			if( done ) return;
 			let x = pro.x;
 			let y = pro.y;
-			if( x<-senseVis || y<-senseVis || x>senseVis || y>senseVis ) {
+			if( x<-senseSight || y<-senseSight || x>senseSight || y>senseSight ) {
 				done=true;
 				return;
 			}
@@ -221,17 +226,17 @@ class Vis {
 				}
 			}
 			if( mapMemory ) {
-				let item = q[y*map.xLen+x];
-				mapMemory[y] = mapMemory[y] || [];
-				mapMemory[y][x] = item ? item : map.tileTypeGet(x,y);
+				let pos = y*map.xLen+x;
+				let item = q[pos];
+				mapMemory[pos] = item ? item : map.tileTypeGet(x,y);
 			}
 			a[y][x] = true;
-			let opa = vc[y*xLen+x];
-			if( opa>0 ) {
+			let opacityHere = opacityLookup[y*xLen+x];
+			if( opacityHere>0 ) {
 				let i = pro.left;
 				while( i!=pro.right ) {
 					sweep[i] = Math.min(sweep[i],dist);
-					opacity[i] += opa;
+					opacity[i] += opacityHere;
 					i = (i+1) % 360;
 				}
 			}
