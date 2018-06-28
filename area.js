@@ -15,6 +15,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			entity.tether = entity.tether || 2+Math.floor(Math.sqrt(site.marks.length));
 			if( entity.team == Team.EVIL && entity.attitude==Attitude.AGGRESSIVE ) {
 				entity.attitude = Attitude.AWAIT;
+				entity.attitudeBase = Attitude.AWAIT;
 			}
 		}
 

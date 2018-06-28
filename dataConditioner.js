@@ -75,6 +75,21 @@ class DataConditioner {
 				}
 			});
 		});
+
+		Object.each( ItemTypeList, item => {
+			if( item.ammoType ) {
+				if( !item.ammoSpec ) {
+					console.log( 'Item '+item.typeId+' needs an ammoSpec!' );
+					debugger;
+				}
+				else {
+					let type = picker.pickItem( item.ammoSpec, null, false );
+					if( !type ) {
+						console.log( 'Item '+item.typeId+' has illegal ammoSpec ['+item.ammoSpec+']' );
+					}
+				}
+			}
+		});
 	}
 
 	mergePlaceTypesToGlobals() {

@@ -39,10 +39,12 @@ class SimpleMap {
 	pickPosBy(xa,ya,xb,yb,fn) {
 		let x;
 		let y;
+		let reps = 1000;
 		do {
 			x = Math.randInt(0+xa,this.xLen-xb)
 			y = Math.randInt(0+ya,this.yLen-yb);
-		} while( !fn(x,y,this.tileTypeGet(x,y)) );
+		} while( reps-- && !fn(x,y,this.tileTypeGet(x,y)) );
+		if( !reps ) return false;
 		return [x,y];
 	}
 
@@ -67,9 +69,11 @@ class SimpleMap {
 				m[ty][tx] = c;
 				if( injectOld[''+x+','+y] ) {
 					inject[''+tx+','+ty] = injectOld[''+x+','+y];
+					delete injectOld[''+x+','+y];
 				}
 			}
 		}
+		Object.each( injectOld, (val,key) => inject[key] = val );
 		if( cw == 1 || cw == 3 ) {
 			this.setDimensions(this.yLen,this.xLen);
 		}

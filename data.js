@@ -119,6 +119,7 @@ const StickerList = {
 	bloodYellow: { img: "dc-misc/bloodYellow.png" },
 	bloodBlack: { img: "dc-misc/bloodBlack.png" },
 	bloodWhite: { img: "dc-misc/bloodYellow.png" },
+	glowRed: { img: "effect/glowRed.png" },
 	showImmunity: { img: 'gui/icons/eImmune.png' },
 	showResistance: { img: 'gui/icons/eResist.png' },
 	showVulnerability: { img: 'gui/icons/eVuln.png' },
@@ -126,6 +127,7 @@ const StickerList = {
 	showEat: { img: 'gui/icons/activityEat.png' },
 	eGeneric: { img: "gui/icons/eGeneric.png" },
 	ePoof: { img: "gui/icons/ePoof.png" },
+	alert: { img: "gui/icons/alert.png" },
 	selectBox: { img: "gui/selectBox.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
@@ -222,6 +224,8 @@ let EffectTypeList = {
 	ePanic: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 1.0, icon: 'gui/icons/eFear.png' },
 	eRage: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1, durationMod: 0.5, icon: 'gui/icons/eAttitude.png' },
 	ePossess: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'possess', durationMod: 5.0, icon: 'gui/icons/ePossess.png' },
+	eDrain: 		{ isDeb: 1, level:  0, rarity: 0.40, op: 'drain', value: 'all', icon: 'gui/icons/eDrain.png' },
+
 // Healing
 	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
 	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, xPrice: 1.5, icon: 'gui/icons/eHeal.png' },
@@ -434,7 +438,7 @@ const ArmorList = Fab.add( '', {
 	"scale": 		{ level:  4, rarity: 1.0, armorMultiplier: 0.95, ingredientId: 'iron ingot', img: 'item/armour/scale_mail1.png' },
 	"chain": 		{ level: 10, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'iron ingot', img: 'item/armour/chain_mail1.png' },
 	"steelPlate": 	{ level: 15, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'iron ingot', img: 'item/armour/plate_mail1.png' },
-	"trollHideArmor": 	{ level: 20, rarity: 1.0, armorMultiplier: 1.20, ingredientId: 'troll hide', img: 'item/armour/troll_leather_armour.png' },
+	"trollHideArmor": { level: 20, rarity: 1.0, armorMultiplier: 1.20, ingredientId: 'troll hide', img: 'item/armour/troll_leather_armour.png' },
 	"elven": 		{ level: 30, rarity: 1.0, armorMultiplier: 1.30, ingredientId: 'chitin', img: 'item/armour/chain_mail2.png' },
 	"chitin": 		{ level: 35, rarity: 1.0, armorMultiplier: 1.00, ingredientId: 'chitin', img: 'item/armour/elven_leather_armor.png' },
 	"dwarven": 		{ level: 45, rarity: 1.0, armorMultiplier: 1.10, ingredientId: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
@@ -766,7 +770,8 @@ const ItemTypeList = {
 				isDecor: true, img: "dc-dngn/dngn_blue_fountain.png" },
 	"fontSolar":{ symbol: 'S', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "solar font",
 				light: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontSolar.png" },
-	"fontDeep": { symbol: 'D', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "deep font", rechargeTime: 4, xDamage: 0.3, damageType: DamageType.ROT, 
+	"fontDeep": { symbol: 'D', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "deep font",
+				rechargeTime: 4, effectDrain: EffectTypeList.eDrain, xDamage: 0.3, effectPeriodic: EffectTypeList.eRot,
 				dark: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontDeep.png" },
 // ORE VEINS
 	"oreVein":    {
@@ -988,14 +993,15 @@ function launcher(obj) {
 }
 
 let BrainMindset = {
-	sentient: 		'alert,fleeWhenHurt,pack',
-	simpleton: 		'',
-	demon: 			'',
-	canine:   		'alert,fleeWhenHurt,pack',
-	animal:   		'fleeWhenHurt',
-	animalHunter:   '',
-	animalHerd:   	'fleeWhenAttacked,pack',
-	undead: 		'',
+	sentient: 		'alert,fleeWhenHurt,lep,pack',
+	simpleton: 		'lep',
+	demon: 			'lep',
+	canine:   		'alert,fleeWhenHurt,lep,pack',
+	animal:   		'fleeWhenHurt,lep',
+	animalHunter:   'lep',
+	animalHerd:   	'fleeWhenAttacked,lep,pack',
+	undead: 		'lep',
+	undeadDumb: 	'',
 	hivemind: 		'alert,pack',
 }
 
@@ -1008,6 +1014,7 @@ let BrainAbility = {
 	animalHunter:   '',
 	animalHerd: 	'',
 	undead: 		'open,pickup,shoot,throw',
+	undeadDumb: 	'open,pickup,shoot,throw',
 	hivemind: 		'gaze,open,pickup,shoot,talk,throw',
 }
 
@@ -1192,7 +1199,7 @@ const MonsterTypeList = {
 		vuln: 'glass'
 	},
 	"ghoul": {
-		core: [ SYM, 39, '1:2', 'evil', 'rot', 'undead', 'humanoid', 'dc-mon/undead/ghoul.png', 'it' ],
+		core: [ SYM, 39, '1:2', 'evil', 'rot', 'undeadDumb', 'humanoid', 'dc-mon/undead/ghoul.png', 'it' ],
 		attitude: Attitude.HUNT,
 		immune: UndeadImmunity,
 		dark: 2,
@@ -1327,7 +1334,7 @@ const MonsterTypeList = {
 		vuln: ['silver',DamageType.SMITE].join(',')
 	},
 	"skeleton": {
-		core: [ SYM, 19, '2:10', 'evil', 'claw', 'undead', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		core: [ SYM, 19, '2:10', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		isUndead: true,
@@ -1336,7 +1343,7 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonArcher": {
-		core: [ SYM, 29, '2:10', 'evil', 'claw', 'undead', 'humanoid', 'dc-mon/undead/skeletonArcher.png', 'it' ],
+		core: [ SYM, 29, '2:10', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletonArcher.png', 'it' ],
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		inventoryLoot: [{ typeFilter:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow', fake: true }],
@@ -1346,7 +1353,7 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonLg": {
-		core: [ SYM, 59, '2:8', 'evil', 'claw', 'undead', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
+		core: [ SYM, 59, '2:8', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
 		name: 'ogre skeleton',
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
@@ -1784,15 +1791,21 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 }
 
 ItemTypeList.fontDeep.onTick = function(dt) {
-	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).nearMe(2);
+	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).nearMe(4);
 	let self = this;
 	nearby.process( entity => {
-		entity.inventory.forEach( item => item.resetRecharge() );
+		let effect = new Picker(entity.area.depth).assignEffect(this.effectDrain,this,this.rechargeTime);
+		effect.chargeless = true;
+		effect.showOnset = false;
+		effectApply(effect,entity,this,null);
 	});
 	if( this.isRecharged() ) {
 		nearby.process( entity => {
-			let damage = new Picker(self.area.depth).pickDamage(self.area.depth,self.rechargeTime,self);
-			entity.takeDamagePassive( null, self, damage, self.damageType || DamageType.ROT );
+			let effect = new Picker(entity.area.depth).assignEffect(this.effectPeriodic,this,this.rechargeTime);
+			effect.icon = StickerList.glowRed.img;
+			//this.command = Command.CAST;
+			effectApply(effect,entity,this,null);
+			animHoming(entity,self,45,6,1,5,effect.icon);
 		});
 		this.resetRecharge();
 	}

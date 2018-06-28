@@ -112,6 +112,9 @@ class Item {
 		return ItemTypeList[this.typeId];
 	}
 
+	hasRecharge() {
+		return !!this.rechargeTime;
+	}
 	isRecharged() {
 		return this.rechargeTime === undefined || !this.rechargeLeft;
 	}
@@ -157,6 +160,7 @@ class Item {
 				this.effect.rangeDuration = rangeDuration;
 			}
 			spriteMakeInWorld(this,this.owner.x,this.owner.y);
+			// Show the item flying to its new location
 			new Anim({
 				at: 		this.owner,
 				duration: 	rangeDuration,

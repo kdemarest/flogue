@@ -1246,7 +1246,7 @@ xxxxx
 	flags: { rotate: true },
 	symbols: {
 		x: 'wall',
-		T: 'troll',
+		T: 'troll', //{ typeFilter: 'troll', attitude: Attitude.AWAIT, tooClose: 2 },
 		':': 'pit'
 	},
 	inject: {

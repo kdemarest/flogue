@@ -113,15 +113,17 @@ let DeedManager = (new class {
 	}
 	// The origin should ALWAYS be an item, unless intrinsic to a monster.
 	add(effect) {
+		let success = true;
 		effect.handler = this.handler[effect.op];
 		let deed = new Deed(effect);
 		if( deed.isInstant ) {
-			deed.handler(false);
+			success = deed.handler(false);
 			deed.end();
 		}
 		else {
 			this.deedList.push( deed );
 		}
+		return success;
 	}
 	addHandler(op,handlerFn) {
 		this.handler[op] = handlerFn;
@@ -203,30 +205,72 @@ let DeedManager = (new class {
 	}
 }());
 
+function makeFilledCircle(x0, y0, radius, fn) {
+
+	function strip(sx,ex,y) {
+		console.assert(sx<=ex);
+		while( sx <= ex ) {
+			count += fn(sx,y) ? 1 : 0;
+			sx++;
+		}
+	}
+	let self = this;
+	let count = 0;
+	var x = radius;
+	var y = 0;
+	var radiusError = 1 - x;
+
+	while (x >= y) {
+		strip( x0-x, x0+x, y0-y );
+		strip( x0-x, x0+x, y0+y );
+		strip( x0-y, x0+y, y0-x );
+		strip( x0-y, x0+y, y0+x );
+		y++;
+		if (radiusError < 0) {
+			radiusError += 2 * y + 1;
+		}
+		else {
+			x--;
+			radiusError+= 2 * (y - x + 1);
+		}
+	}
+	return count;
+}
+
+
 let effectApply = function(effect,target,source,item) {
 	let effectShape = effect.effectShape || EffectShape.SINGLE;
 	if( effectShape == EffectShape.SINGLE ) {
 		return effectApplyTo(effect,target,source,item);
 	}
-	let dist = 0;
+	let radius = 0;
+	let shape = '';
 	if( effectShape == EffectShape.BLAST3 ) {
-		dist = 1;
+		radius = 1;
+		shape = 'circle';
 	}
 	if( effectShape == EffectShape.BLAST5 ) {
-		dist = 2;
+		radius = 2;
+		shape = 'circle';
 	}
 	if( effectShape == EffectShape.BLAST7 ) {
-		dist = 3;
+		radius = 3;
+		shape = 'circle'
 	}
-	if( dist ) {
-		let area = target.area;
-		for( let y=-dist ; y<=dist ; ++y ) {
-			for( let x=-dist ; x<=dist ; ++x ) {
-				let targetList = new Finder(area.entityList).at(target.x+x,target.y+y);
-				targetList.process( t => {
-					effectApplyTo(effect,t,source,item);
-				});
-			}
+	if( radius ) {
+		if( shape == 'circle' ) {
+			let area = target.area;
+			makeFilledCircle(target.x,target.y,radius, (x,y) => {
+				let reached = shootRange(target.x,target.y,x,y, (x,y) => area.map.tileTypeGet(x,y).mayFly);
+				if( reached ) {
+					animFly( target.x, target.y, x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
+					//animAt( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
+					let targetList = new Finder(area.entityList).at(x,y);
+					targetList.process( t => {
+						effectApplyTo(effect,t,source,item);
+					});
+				}
+			});
 		}
 		return;
 	}
@@ -239,32 +283,6 @@ let effectApply = function(effect,target,source,item) {
 // effect.value
 // effect.duration
 // effect.isResist
-
-function animFloatUp(target,icon,delay,duration=0.4) {
-	if( icon !== false ) {
-		new Anim( {}, {
-			follow: 	target,
-			img: 		icon || StickerList.bloodBlue.img,
-			duration: 	0.4,
-			delay: 		delay || 0,
-			onInit: 		a => { a.create(1); },
-			onSpriteMake: 	s => { s.sVelTo(0,-1,0.4).sScaleSet(0.75); },
-			onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sAlpha(1-Math.max(0,(2*s.elapsed/s.duration-1))); }
-		});
-	}
-}
-
-function animOver(target,icon,delay) {
-	new Anim( {}, {
-		follow: 	target,
-		img: 		icon,
-		duration: 	0.2,
-		delay: 		delay || 0,
-		onInit: 		a => { a.create(1); },
-		onSpriteMake: 	s => { s.sScaleSet(0.75); },
-		onSpriteTick: 	s => { }
-	});
-}
 
 let effectApplyTo = function(effect,target,source,item) {
 
@@ -298,24 +316,22 @@ let effectApplyTo = function(effect,target,source,item) {
 		Math.max(1,(effect.duration || DEFAULT_EFFECT_DURATION) * (effect.durationMod||1))
 	));
 
-	if( effect.icon !== false ) {
-		if( source && source.command == Command.CAST ) {
-			// Icon flies to the target
-			let dx = target.x-source.x;
-			let dy = target.y-source.y;
-			let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / 15);
-			if( item ) item.rangeDuration = rangeDuration;
-			source.rangeDuration = rangeDuration;
-			effect.rangeDuration = rangeDuration;
-			new Anim({
-				at: 		source,
-				img: 		effect.icon,
-				duration: 	rangeDuration,
-				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sScaleSet(0.6); },
-				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
-			});
-		}
+	if( source && target && source.command == Command.CAST && effect.icon !== false) {
+		// Icon flies to the target
+		let dx = target.x-source.x;
+		let dy = target.y-source.y;
+		let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / 15);
+		if( item ) item.rangeDuration = rangeDuration;
+		source.rangeDuration = rangeDuration;
+		effect.rangeDuration = rangeDuration;
+		new Anim({
+			at: 		source,
+			img: 		effect.icon,
+			duration: 	rangeDuration,
+			onInit: 		a => { a.create(1); },
+			onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sScaleSet(0.6); },
+			onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+		});
 	}
 
 	if( effect.op == 'damage' ) {
@@ -364,39 +380,39 @@ let effectApplyTo = function(effect,target,source,item) {
 		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
 	}
 
-	if( effect.icon !== false ) {
-		animFloatUp(target,effect.icon || StickerList.eGeneric.img,effect.rangeDuration);
-	}
-
 	effect.value = rollDice(effect.value);
 
+	let success;
 	if( target.isPosition ) {
 		if( !effect.onTargetPosition ) {
 			return false;
 		}
 		target.map.toEntity(target.x,target.y,target);
-		effect.onTargetPosition(target.map,target.x,target.y)
+		success = effect.onTargetPosition(target.map,target.x,target.y)
 	}
 	else {
 		// Remember that by this point the effect has the target, source and item already inside it.
-		DeedManager.add(effect);
+		success = DeedManager.add(effect);
+	}
+	if( success !== false && effect.icon !== false && effect.showOnset!==false ) {
+		animFloatUp(target,effect.icon || StickerList.eGeneric.img,effect.rangeDuration);
 	}
 
 	// Note that rechargeTime CAN NOT be in the effect, because we're only dealing with a
 	// copy of the effect. There is no way for the change to rechargeTime to get back to the original effect instance.
 	if( item && item.ammoOf ) {
 		let weapon = item.ammoOf;
-		if( weapon && weapon.rechargeTime !== undefined ) {
+		if( weapon && weapon.rechargeTime !== undefined && !effect.chargeless) {
 			weapon.rechargeLeft = weapon.rechargeTime;
 		}
 		item.ammoOf = null;
 	}
 
-	if( item && item.rechargeTime !== undefined ) {
+	if( item && item.rechargeTime !== undefined  && !effect.chargeless) {
 		item.rechargeLeft = item.rechargeTime;
 	}
 	else
-	if( source && source.rechargeTime !== undefined ) {
+	if( source && source.rechargeTime !== undefined  && !effect.chargeless) {
 		source.rechargeLeft = source.rechargeTime;
 	}
 
@@ -433,13 +449,13 @@ DeedManager.addHandler('damage',function() {
 	this.target.takeDamage(attacker,this.item,this.value,this.damageType,this.onAttack);
 });
 DeedManager.addHandler('shove',function() {
-	this.target.takeShove(this.source,this.item,this.value);
+	return this.target.takeShove(this.source,this.item,this.value);
 });
 DeedManager.addHandler('teleport',function() {
-	this.target.takeTeleport(this.source,this.item);
+	return this.target.takeTeleport(this.source,this.item);
 });
 DeedManager.addHandler('strip',function() {
-	this.target.stripDeeds(this.stripFn);
+	return !!this.target.stripDeeds(this.stripFn);
 });
 DeedManager.addHandler('possess',function() {
 	if( this.source.isPossessing ) {
@@ -454,4 +470,18 @@ DeedManager.addHandler('possess',function() {
 	if( !success ) {
 		return false;
 	}
+});
+DeedManager.addHandler('drain',function() {
+	let entity = this.target;
+	let anyDrained = false;
+	entity.inventory.forEach( item => {
+		if( item.hasRecharge() && item.isRecharged() ) {
+			item.resetRecharge() 
+			anyDrained = true;
+		}
+	});
+	if( anyDrained ) {
+		animFloatUp(this.target,this.icon || StickerList.eGeneric.img);
+	}
+	return anyDrained;
 });

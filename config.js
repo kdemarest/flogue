@@ -54,7 +54,7 @@ ConfigList.ken = () => {
 
 	ThemeList.kenTheme = {
 		scapeId: 		'kenCave',
-		rREQUIRED: 		'floodPit, fontDeep',
+		rREQUIRED: 		'floodPit, fontDeep, trollBridge',
 		placeDensity: 	0.20,
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
