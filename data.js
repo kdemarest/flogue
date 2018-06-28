@@ -1805,7 +1805,7 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 			effect.icon = StickerList.glowRed.img;
 			//this.command = Command.CAST;
 			effectApply(effect,entity,this,null);
-			animHoming(entity,self,45,6,1,5,effect.icon);
+			animHoming(entity,self,45,6,0.5,5,effect.icon);
 		});
 		this.resetRecharge();
 	}

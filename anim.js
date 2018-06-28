@@ -489,14 +489,14 @@ function animAt(x,y,area,icon,delay) {
 	});
 }
 
-function animAbove(target,icon,delay) {
+function animAbove(target,icon,delay=0) {
 	return new Anim( {}, {
 		follow: 	target,
 		img: 		icon,
 		duration: 	0.2,
 		delay: 		delay || 0,
-		onInit: 		a => { a.create(1); a.y -= TILE_DIM; },
-		onSpriteMake: 	s => { s.sScaleSet(0.75); },
+		onInit: 		a => { a.create(1); },
+		onSpriteMake: 	s => { s.sScaleSet(0.75).sPos(0,-1); },
 		onSpriteTick: 	s => { }
 	});
 }
