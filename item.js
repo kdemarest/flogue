@@ -111,6 +111,14 @@ class Item {
 	get baseType() {
 		return ItemTypeList[this.typeId];
 	}
+	isAt(x,y,area) {
+		console.assert(area);
+		return this.x==x && this.y==y && this.area.id==area.id;
+	}
+	isAtTarget(target) {
+		console.assert(target && target.area);
+		return this.isAt(target.x,target.y,target.area);
+	}
 
 	hasRecharge() {
 		return !!this.rechargeTime;
@@ -194,10 +202,15 @@ class Item {
 		}
 	}
 	destroy() {
+		if( this.dead ) {
+			debugger;
+			return false;
+		}
 		this.owner._itemRemove(this);
 		// Now the item should be simply gone.
 		spriteDeathCallback(this.spriteList);
 		this.dead = true;
+		return true;
 	}
 
 	trigger(target,source,command) {

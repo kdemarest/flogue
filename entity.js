@@ -927,6 +927,37 @@ class Entity {
 		return false;
 	}
 
+	thinkGreedy() {
+		let greedField = this.greedField || 'isGem';
+		let greedDist = this.greedDist || (this.senseSight!==undefined ? this.senseSight : STANDARD_MONSTER_SIGHT_DISTANCE);
+		let desire = new Finder(this.map.itemList,this).nearMe(greedDist).filter( item=>item[greedField] ).byDistanceFromMe().first;
+		if( !desire && this.destination && this.destination.isGreed ) {
+			delete this.destination;
+		}
+		if( desire ) {
+			if( this.isAtTarget(desire) ) {
+				this.commandItem = desire;
+				return desire.isEdible || desire.isCorpse ? Command.EAT : Command.PICKUP;
+			}
+			if( !this.destination || !desire.isAtTarget(this.destination) ) {
+				this.destination = {
+					isDestination: true,
+					isGreed: true,
+					area: desire.area,
+					x: desire.x,
+					y: desire.y,
+					site: null,
+					closeEnough: 0,
+					stallLimit: 2,
+					name: desire.name,
+					id: 'DEST.'+desire.name+'.'+GetTimeBasedUid()
+				};
+			}
+			return this.thinkApproachTarget(this.destination);
+		}
+		return false;
+	}
+
 	beyondTether() {
 		return this.tether && !this.nearTarget(this.origin,this.tether);
 	}
@@ -1044,7 +1075,7 @@ class Entity {
 				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
 				let enemyList = this.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
 
-				if( enemyList.count && this.mindset('lep') ) {
+				if( this.mindset('lep') && enemyList.count ) {
 					let e = enemyList.first;
 					this.record('set lep ('+e.x+','+e.y+')',true);
 					this.lastEnemyPosition = { isLEP: true, x:e.x, y:e.y, area:e.map.area, name: e.name };
@@ -1163,6 +1194,11 @@ class Entity {
 
 				if( this.attitude == Attitude.HUNT && this.tether ) {
 					delete this.tether;
+				}
+
+				if( this.mindset('greedy') ) {
+					let c = this.thinkGreedy();
+					if( c ) return c;
 				}
 
 				if( flee ) {
@@ -1924,7 +1960,7 @@ class Entity {
 			inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
 			this.inventoryTake( inventory, corpse, false );
 			item.destroy();
-			return;
+			return true;
 		}
 		tell(mSubject,this,' ',mVerb,'pick',' up ',mObject|mBold,item,'.');
 		return true;
@@ -2072,6 +2108,39 @@ class Entity {
 			ammo.destroy();
 		}
 		return true;
+	}
+
+	eat(food) {
+		let provider = food.ownerOfRecord;
+		console.assert(food && (food.isEdible || food.isCorpse));
+		tell(mSubject,this,' ',mVerb,'begin',' to eat ',mObject,food,' (4 turns)');
+		food.giveTo(this,this.x,this.y);
+		this.busy = {
+			turns: 4,
+			icon: StickerList.showEat.img,
+			description: 'eating',
+			onDone: () => {
+				if( food.isCorpse ) {
+					let corpse = food.usedToBe;
+					let inventory = new Finder(corpse.inventory).isReal().all || [];
+					inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
+					this.inventoryTake( inventory, corpse, false );
+					food.destroy();
+					return;
+				}
+				if( !food.isCorpse && food.isEdible && this.isPet && provider && provider.team==this.team ) {
+					this.brainMaster = provider;
+					//this.watch = true;
+					this.brainPath = true;
+					tell(mSubject,this,' ',mVerb,'recognize',' ',mObject|mBold,this.brainMaster,' as ',mObject|mPossessive|mPronoun,this,' new master! ',this.attitude);
+				}
+				if( this.eatenFoodToInventory ) {
+				}
+				else {
+					food.destroy();
+				}
+			}
+		};
 	}
 
 	setPosition(x,y,area) {
@@ -2324,30 +2393,12 @@ class Entity {
 				break;
 			}
 			case Command.EAT: {
-				let food = this.commandItem;
-				let provider = food.ownerOfRecord;
-				console.assert(food && food.isEdible);
-				tell(mSubject,this,' ',mVerb,'begin',' to eat ',mObject,food,' (4 turns)');
-				food.giveTo(this,this.x,this.y);
-				this.busy = {
-					turns: 4,
-					icon: StickerList.showEat.img,
-					description: 'eating',
-					onDone: () => {
-						if( this.isPet && provider && provider.team==this.team ) {
-							this.brainMaster = provider;
-							//this.watch = true;
-							this.brainPath = true;
-							tell(mSubject,this,' ',mVerb,'recognize',' ',mObject|mBold,this.brainMaster,' as ',mObject|mPossessive|mPronoun,this,' new master! ',this.attitude);
-						}
-						if( this.eatenFoodToInventory ) {
-						}
-						else {
-							food.destroy();
-						}
-					}
-				};
+				this.eat(this.commandItem);
 				this.commandItem = null;
+				break;
+			}
+			case Command.PICKUP: {
+				this.pickup(this.commandItem);
 				break;
 			}
 			case Command.DEBUGTEST: {

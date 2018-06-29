@@ -317,7 +317,7 @@ function nop() {}
 		if( mapLevel < entityLevel ) {
 			return 0;
 		}
-		let span = 10;
+		let span = Math.max(3,DEPTH_SPAN/10);
 		let x = (entityLevel+span)-mapLevel;
 		let n = 1-Math.abs(x/span);
 		return Math.clamp( n, 0.1, 1.0 );
