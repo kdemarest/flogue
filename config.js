@@ -63,7 +63,7 @@ ConfigList.ken = () => {
 		monsters: 		['isDog'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
 		enemyDensity:  	0.0001,
-		friendDensity: 	0.002,
+		friendDensity: 	0.00002,
 	}
 
 	MonsterTypeList.player.inventoryLoot.push('stuff.lumpOfMeat, spell.ePossess, bow, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');

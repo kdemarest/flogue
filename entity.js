@@ -86,6 +86,7 @@ class Entity {
 	}
 
 	record(s,pending) {
+		$('<div>'+s+'</div>').prependTo('#guiPathDebug');
 		if( pending ) {
 			this.historyPending.push(s);
 			return;
@@ -106,8 +107,13 @@ class Entity {
 		if( this.area && this.area.id == area.id ) {
 			return;
 		}
-		let hadNoArea = !this.area;
 		console.assert( x!==undefined && y!==undefined );
+
+		if( this.isUser() ) {
+			this.userControllingMe.onAreaChange( area );
+		}
+
+		let hadNoArea = !this.area;
 		this.setPosition(x,y,area);
 		let c = this.findFirstCollider(this.travelMode,x,y,this);
 		if( c ) {
@@ -124,7 +130,7 @@ class Entity {
 	findAliveOthersNearby(entityList = this.entityList) {
 		let list = [];
 		for( let e of entityList ) {
-			if( !e.isDead() && this.getDistance(e.x,e.y)<=MaxVis && e.id!=this.id ) {
+			if( !e.isDead() && this.nearTarget(e,MaxVis) && e.id!=this.id ) {
 				list.push(e);
 			}
 		}
@@ -187,6 +193,7 @@ class Entity {
 		if( this.onDeath ) {
 			this.onDeath();
 		}
+		return true;
 	}
 
 	isDead() {
@@ -354,7 +361,7 @@ class Entity {
 		else {
 			// Calc vis if I am near the user, that it, I might be interacting with him!
 			let user = this.entityList.find( e => e.isUser() );
-			doVis = user && this.getDistance(user.x,user.y) < MaxVis;
+			doVis = user && this.nearTarget(user,MaxVis);
 		}
 
 		if( doVis ) {
@@ -375,14 +382,13 @@ class Entity {
 		return this.visCache;
 	}
 
-	canSeePosition(x,y) {
+	canSeePosition(x,y,area) {
 		if( x===undefined || y===undefined ) {
 			debugger;
 		}
 		let visCache = this.visCache;
 		if( !visCache ) {
-			let d = this.getDistance(x,y);
-			return d <= (this.senseSight!==undefined ? this.senseSight : STANDARD_MONSTER_SIGHT_DISTANCE);
+			return this.near( x, y, area, (this.senseSight!==undefined ? this.senseSight : STANDARD_MONSTER_SIGHT_DISTANCE) );
 		}
 		if( typeof visCache[y]==='undefined' || typeof visCache[y][x]==='undefined' ) {
 			return false;
@@ -403,6 +409,9 @@ class Entity {
 		// You can always target yourself.
 		if( this.id == entity.id ) {
 			return true;
+		}
+		if( entity.area && entity.area.id !== this.area.id ) {
+			return false;
 		}
 		// Magic might be helping you see things
 		if( (entity.isMonsterType && this.senseLife) || (entity.isItemType && this.senseItems) ) {
@@ -425,22 +434,11 @@ class Entity {
 			return false;
 		}
 		// Otherwise, you can target an entity in any position you can see.
-		return this.canSeePosition(entity.x,entity.y);
+		return this.canSeePosition(entity.x,entity.y,entity.area);
 	}
 
 	canPerceiveEntity(entity) {
 		return this.canTargetEntity(entity);
-	}
-
-	canTargetPosition(x,y) {
-		if( x===undefined || y===undefined ) {
-			debugger;
-		}
-		let visCache = this.visCache;
-		if( typeof this.visCache[y]==='undefined' || typeof this.visCache[y][x]==='undefined' ) {
-			return false;
-		}
-		return this.visCache[y][x];
 	}
 
 	get naturalMeleeWeapon() {
@@ -506,6 +504,25 @@ class Entity {
 		return this.findAliveOthersAt(x,y).isMyEnemy();
 	}
 
+	nearTarget(target,targetDist) {
+		console.assert( validCoords(target) );
+		if( !this.inArea(target.area) ) {
+			return false;
+		}
+		let dist = this.getDistance(target.x,target.y);
+		return dist <= targetDist;
+	}
+
+	near(x,y,area,targetDist) {
+		if( !this.inArea(area) ) {
+			return false;
+		}
+		let dist = this.getDistance(x,y);
+		return dist <= targetDist;
+	}
+
+
+
 	getDistance(x,y) {
 		return Math.max(Math.abs(x-this.x),Math.abs(y-this.y));
 	}
@@ -517,6 +534,10 @@ class Entity {
 	isAt(x,y,area) {
 		console.assert(area);
 		return this.x==x && this.y==y && this.area.id==area.id;
+	}
+	isAtTarget(target) {
+		console.assert(target && target.area);
+		return this.isAt(target.x,target.y,target.area);
 	}
 /*
 	at(x,y) {
@@ -666,17 +687,23 @@ class Entity {
 		return Prob.NONE;
 	}
 
-	thinkApproach(x,y,target) {
+	thinkApproachTarget(target) {
+		return this.thinkApproach(target.x,target.y,target.area,target);
+	}
+
+	thinkApproach(x,y,area,target) {
 		if( target && target.area.id !== this.area.id ) {
 			let gate = new Finder(this.map.itemList,this).filter( gate=>gate.toAreaId==target.area.id ).closestToMe().first;
-			if( gate ) {
-				x = gate.x;
-				y = gate.y;
-				target = gate;
-				if( x==this.x && y==this.y ) {
-					this.commandItem = gate;
-					return Command.ENTERGATE;
-				}
+			if( !gate ) {
+				// This only happens if the target teleported and left no gate behind.
+				return Command.WAIT;
+			}
+			x = gate.x;
+			y = gate.y;
+			target = gate;
+			if( this.isAtTarget(gate) ) {
+				this.commandItem = gate;
+				return Command.ENTERGATE;
 			}
 		}
 
@@ -761,10 +788,10 @@ class Entity {
 	}
 
 	thinkTetherReturn(tetherMagnet=70) {
-		let returnChance = this.beyondTether() ? tetherMagnet : ( !this.isAt(this.xOrigin,this.yOrigin,this.areaOrigin) ? tetherMagnet/2 : 0 );
+		let returnChance = this.beyondTether() ? tetherMagnet : ( !this.isAtTarget(this.origin) ? tetherMagnet/2 : 0 );
 		if( Math.chance(returnChance) ) {
 			this.record('wander return', true);
-			let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+			let c = this.thinkApproachTarget(this.origin);
 			if( c ) return c;
 		}
 		return false;
@@ -820,7 +847,7 @@ class Entity {
 		let pack = this.findAliveOthersNearby().isMyPack().isMySuperior().farFromMe(howClose).byDistanceFromMe().first;
 		if( pack ) {
 			this.record('back to superior pack member',true);
-			return this.thinkApproach(pack.x,pack.y,pack);
+			return this.thinkApproachTarget(pack);
 		}
 		return false;
 	}
@@ -845,7 +872,7 @@ class Entity {
 				// Go towards your master or pack animal if possible.
 				let dirToFriend = this.dirToEntityPredictable(friend);
 				if( dirToFriend == dirAwayPerfect || dirToFriend == dirLeft || dirToFriend == dirRight ) {
-					return this.thinkApproach(friend.x,friend.y,friend);
+					return this.thinkApproachTarget(friend);
 				}
 			}
 		}
@@ -857,14 +884,14 @@ class Entity {
 		if( !this.beyondOrigin() ) {
 			return Command.WAIT;
 		}
-		let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+		let c = this.thinkApproachTarget(this.origin);
 		return c || Command.WAIT;
 	}
 
 
 	thinkWorshipF(enemyDist) {
 		if( this.beyondOrigin() ) {
-			let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+			let c = this.thinkApproachTarget(this.origin);
 			if( c ) return c;
 		}
 		return Command.PRAY;
@@ -872,7 +899,7 @@ class Entity {
 
 	thinkStayNear(friend) {
 		this.record('stay near '+friend.id,true);
-		return this.thinkApproach(friend.x,friend.y,friend);
+		return this.thinkApproachTarget(friend);
 	}
 
 	thinkBumpF() {
@@ -888,23 +915,23 @@ class Entity {
 
 	thinkHunger(foodDist=2) {
 		let foodList = new Finder(this.map.itemList,this).filter(item=>item.isEdible).canPerceiveEntity().nearMe(foodDist).byDistanceFromMe();
-		if( foodList.first && foodList.first.x==this.x && foodList.first.y==this.y ) {
+		if( foodList.first && this.isAtTarget(foodList.first) ) {
 			this.record('found some food. eating.',true);
 			this.commandItem = foodList.first;
 			return Command.EAT;
 		}
 		if( foodList.first ) {
 			this.record('head towards food',true);
-			return this.thinkApproach(foodList.first.x,foodList.first.y,foodList.first);
+			return this.thinkApproachTarget(foodList.first);
 		}
 		return false;
 	}
 
 	beyondTether() {
-		return this.tether && this.getDistance(this.xOrigin,this.yOrigin) > this.tether;
+		return this.tether && !this.nearTarget(this.origin,this.tether);
 	}
 	beyondOrigin() {
-		return this.getDistance(this.xOrigin,this.yOrigin) > 0;
+		return !this.isAtTarget(this.origin);
 	}
 
 	setDestination(x,y,area,closeEnough,stallLimit,name,site) {
@@ -978,6 +1005,13 @@ class Entity {
 			if( this.loseTurn || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
 				useAiTemporarily = true;
 			}
+			if( !useAiTemporarily && this.command == Command.WAIT ) {
+				let gate = this.map.findItemAt(this.x,this.y).filter( item => item.gateDir!==undefined ).first;
+				if( gate ) {
+					this.command = Command.ENTERGATE;
+					this.commandItem = gate;
+				}
+			}
 		}
 
 		if( this.control == Control.EMPTY ) {
@@ -1009,6 +1043,13 @@ class Entity {
 
 				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
 				let enemyList = this.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
+
+				if( enemyList.count && this.mindset('lep') ) {
+					let e = enemyList.first;
+					this.record('set lep ('+e.x+','+e.y+')',true);
+					this.lastEnemyPosition = { isLEP: true, x:e.x, y:e.y, area:e.map.area, name: e.name };
+				}
+
 				let wasSmell = false;
 				if( !enemyList.count && this.senseSmell ) {
 					let smelled = this.map.scentGetEntity(this.x,this.y,this.senseSmell,this.id);
@@ -1026,11 +1067,28 @@ class Entity {
 				// Keep pursuing and check the lep if it is closer than any other enemy. My target might have
 				// simply vanished around a corner.
 				let wasLEP = false;
-				if( !wasSmell && this.lastEnemyPosition && !this.isAt(this.lastEnemyPosition.x,this.lastEnemyPosition.y,this.lastEnemyPosition.area) ) {
-					if( !enemyList.count || this.getDistance(this.lastEnemyPosition.x,this.lastEnemyPosition.y) < this.getDistance(enemyList.first.x,enemyList.first.y) ) {
-						enemyList.prepend(this.lastEnemyPosition);
+				let lep = this.lastEnemyPosition;
+				if( lep ) {
+					this.record('me=('+this.x+','+this.y+') lep=('+lep.x+','+lep.y+')',true);
+				}
+				if( lep && !wasSmell && (!enemyList.count || this.getDistance(lep.x,lep.y) < this.getDistance(enemyList.first.x,enemyList.first.y)) ) {
+					if( !this.isAtTarget(lep) ) {
+						this.record('prepend lep',true);
+						enemyList.prepend(lep);
 						wasLEP = true;
-						console.assert( !(this.x == this.lastEnemyPosition.x && this.y == this.lastEnemyPosition.y) );
+					}
+					else {
+						this.record('on the lep!',true);
+					}
+				}
+
+				if( lep && this.isAtTarget(lep) ) {
+					this.record('at lep ('+lep.x+','+lep.y+')',true);
+					let gate = this.map.findItemAt(this.x,this.y).filter( item=>item.isGate ).first;
+					if( gate ) {
+						this.record('enter gate',true);
+						this.commandItem = gate;
+						return Command.ENTERGATE;
 					}
 				}
 
@@ -1038,10 +1096,6 @@ class Entity {
 				let personalEnemy = enemyList.includesId(this.personalEnemy);
 				let distanceToNearestEnemy = enemyList.count ? this.getDistance(theEnemy.x,theEnemy.y) : false;
 				let hurt = this.healthPercent()<30;
-
-				if( !wasSmell && !wasLEP && theEnemy && this.mindset('lep') ) {
-					this.lastEnemyPosition = { isLEP: true, x:theEnemy.x, y:theEnemy.y, area:theEnemy.map.area, name: theEnemy.name };
-				}
 
 				if( this.attitude == Attitude.CONFUSED ) {
 					return this.thinkStumbleF(50);
@@ -1053,7 +1107,7 @@ class Entity {
 				}
 
 				if( this.attitude == Attitude.ENRAGED ) {
-					if( theEnemy ) return this.thinkApproach(theEnemy);
+					if( theEnemy ) return this.thinkApproachTarget(theEnemy);
 					return this.thinkWanderF();
 				}
 
@@ -1067,7 +1121,7 @@ class Entity {
 
 				let farFromMaster = this.brainMaster && (
 					(this.brainMaster.area.id!==this.area.id) ||
-					(enemyList.count<=0 && this.getDistance(this.brainMaster.x,this.brainMaster.y)>2)
+					(enemyList.count<=0 && !this.nearTarget(this.brainMaster,2) )
 				);
 
 				let flee = theEnemy && (
@@ -1153,12 +1207,12 @@ class Entity {
 					if( !this.destination ) {
 						this.destination = this.pickRandomDestination();
 					}
-					if( this.x == this.destination.x && this.y == this.destination.y ) {
+					if( this.isAtTarget(this.destination) ) {
 						debugger;
 						delete this.destination;
 						return Command.WAIT;
 					}
-					let c = this.thinkApproach(this.destination.x, this.destination.y, this.destination);
+					let c = this.thinkApproachTarget(this.destination);
 					if( c ) return c;
 				}
 
@@ -1177,7 +1231,7 @@ class Entity {
 				if( wasLEP ) {
 					// We do get to simply approach the last known positon of our enemy, and see
 					// what we can see from there. But of course we can't attack it.
-					let c = this.thinkApproach(theEnemy.x,theEnemy.y,theEnemy);
+					let c = this.thinkApproachTarget(theEnemy);
 					return c || this.thinkWanderF();
 				}
 
@@ -1191,7 +1245,6 @@ class Entity {
 					this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
 					this.commandItem = weapon;
 					this.commandTarget = target;
-					let d = this.getDistance(target.x,target.y);
 					let temp = this.itemToAttackCommand(weapon);
 					if( temp !== Command.ATTACK ) {
 						return temp;
@@ -1200,7 +1253,7 @@ class Entity {
 				}
 
 //				if( this.beyondTether() && !this.brainDisengageFailed ) {
-//					let c = this.thinkApproach(this.xOrigin,this.yOrigin);
+//					let c = this.thinkApproachTarget(this.origin);
 //					if( c ) {
 //						this.brainDisengageAttempt = true;
 //						return c;
@@ -1224,7 +1277,7 @@ class Entity {
 					return this.thinkWanderF();
 				}
 
-				let c = this.thinkApproach(theEnemy.x,theEnemy.y,theEnemy);
+				let c = this.thinkApproachTarget(theEnemy);
 				if( c ) {
 					return c;
 				}
@@ -2026,7 +2079,7 @@ class Entity {
 			area = this.area;
 		}
 
-		if( this.x === x && this.y === y && this.area.id == area.id ) {
+		if( this.isAt(x,y,area) ) {
 			return;
 		}
 
@@ -2040,9 +2093,13 @@ class Entity {
 		}
 		if( this.inVoid ) {
 			console.assert( area );
-			this.areaOrigin = area;
-			this.xOrigin = x;
-			this.yOrigin = y;
+			this.origin = {
+				x: x,
+				y: y,
+				area: area,
+				isPosition: true,
+				name: 'origin'
+			};
 			this.inVoid = false;
 		}
 		this.x = x;
@@ -2242,10 +2299,20 @@ class Entity {
 				break;
 			}
 			case Command.ENTERGATE: {
+				let world = this.area.world;
 				let gate = this.map.findItemAt(this.x,this.y).filter( gate=>gate.gateDir!==undefined ).first;
-				if( gate && gate.toAreaId && gate.toPos ) {
-					let area = this.area.world.getAreaById(gate.toAreaId);
-					this.gateTo(area,gate.toPos.x,gate.toPos.y);
+				if( gate ) {
+					tell(mSubject,this,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
+					world.linkGatesAndCreateArea(gate);
+					console.assert(gate.toAreaId && gate.toPos );
+					let newArea = world.getAreaById(gate.toAreaId);
+					console.assert(newArea);
+
+					this.gateTo( newArea, gate.toPos.x, gate.toPos.y);
+
+					if( gate.killMeWhenDone ) {
+						gate.destroy();
+					}
 				}
 				break;
 			}
@@ -2284,8 +2351,6 @@ class Entity {
 				break;
 			}
 			case Command.DEBUGTEST: {
-				let gate = this.map.itemCreateByTypeId(this.x,this.y,'portal',{},{ toAreaId: "test" } );
-				this.area.world.setPending( gate );
 				break;
 			}
 			case Command.DEBUGKILL: {
@@ -2504,13 +2569,15 @@ class Entity {
 							themeId: stairs.themeId,
 							killMeWhenDone: true
 						});
-	 					this.area.world.setPending( gate );
+						this.command = Command.ENTERGATE;
+						this.commandItem = gate;
+						this.actOnCommand();
+						return;	// Short-circuit here, because the area change will wig future code out.
 	 				}
  				}
  				else {
  					this.deathPhrase = [mSubject,this,' ',mVerb,'vanish',' into the pit.'];
  					this.vanish = true;
-
  				}
 			}
 
@@ -2520,5 +2587,12 @@ class Entity {
 			}
 		}
 	}
+	clearCommands() {
+		this.commandLast = this.command;
+		this.commandItemLast = this.commandItem;
+		this.commandTargetLast = this.commandTarget;
+		this.command = Command.NONE;
+		this.commandItem = null;
+		this.commandTarget = null;
+	}
 }
-function isEntity(e) { return e instanceof Entity; }

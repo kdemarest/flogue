@@ -62,19 +62,6 @@ function adhoc(tileType,map,x,y) {
 }
 
 
-function clearCommands(entityList) {
-	entityList.forEach( entity => {
-		entity.commandLast = entity.command;
-		entity.commandItemLast = entity.commandItem;
-		entity.commandTargetLast = entity.commandTarget;
-		entity.command = Command.NONE;
-		entity.commandItem = null;
-		entity.commandTarget = null;
-	});
-}
-
-
-
 function main(levelName) {
 
 	let User = (new class {
@@ -97,6 +84,10 @@ function main(levelName) {
 			this.entity = newEntity;
 			this.entity.userControllingMe = this;
 		}
+		onAreaChange(area) {
+			guiMessage(null,'setArea',area);
+			this.priorArea = this.entity.area;
+		}
 	}())
 
 	function TickWorld(timePasses) {
@@ -104,7 +95,6 @@ function main(levelName) {
 		if( timePasses && User.priorArea && User.priorArea.id !== User.entity.area.id ) {
 			User.priorArea.tick( User.entity.speed );
 		}
-		world.areaChange();
 		gui.tick();
 		gui.render();
 		if( timePasses ) {
@@ -127,12 +117,6 @@ function main(levelName) {
 		//return false;
 	}
 
-	function onAreaChange(area,xPlayer,yPlayer) {
-		guiMessage(null,'setArea',area);
-		User.priorArea = User.entity.area;
-		User.entity.gateTo(area,xPlayer,yPlayer);
-	}
-
 	function startGame(user,onAssetsReady) {
 
 		let config = new Config('ken',{
@@ -150,13 +134,13 @@ function main(levelName) {
 		let keyMap = loadKeyMapping("default");
 		user.commandHandler = new UserCommandHandler(keyMap,gui.view.inventory,gui.view.range);
 
-		let world = new World( ()=>user.entity, onAreaChange );
+		let world = new World();
 		let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
 		let area = world.createArea(null,config.startingDepth,ThemeList[themeId],true,[]);
 		user.entity = new Entity( area.depth, MonsterTypeList.player, null, area.jobPicker );
 		user.entity.userControllingMe = user;
 		Gab.observer = user.entity;
-		world.gateTo(area.id,...area.map.pickPosToStartGame());
+		user.entity.gateTo(area,...area.map.pickPosToStartGame());
 		Narrative.addRecipient(
 			() => user.entity,
 			(observer,entity) => !observer ? true : observer.canPerceiveEntity(entity),

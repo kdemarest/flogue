@@ -457,6 +457,15 @@ let GetUniqueEntityId = (function() {
 
 })();
 
+
+function validCoords(target) {
+	let ok = true;
+	ok = ok && typeof target.x == 'number' && !isNaN(target.x);
+	ok = ok && typeof target.y == 'number' && !isNaN(target.y);
+	ok = ok && target.area && target.area.isArea;
+	return ok;
+}
+
 function pick(listRaw) {
 	let list = listRaw;
 	if( typeof list == 'object' && !Array.isArray(list) ) {

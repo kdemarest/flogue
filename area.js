@@ -278,9 +278,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	return area;
 }
 
-function tick(speed,map,entityList) {
+function tick(speed,map,entityListRaw) {
 
-	function orderByTurn() {
+	function orderByTurn(entityList) {
 		let list = [[],[],[]];	// players, pets, others
 		for( let entity of entityList ) {
 			let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
@@ -301,21 +301,26 @@ function tick(speed,map,entityList) {
 		}
 	}
 
-	function checkDeaths(entityList) {
-		Array.filterInPlace( entityList, entity => {
+	function checkDeaths(entityListNotAuthoritative) {
+		// This is complicated, as death always is. Anyone could have moved to a different area,
+		// so we have to prune the CORRECT entity list
+		entityListNotAuthoritative.forEach( entity => {
 			if( entity.isDead() ) {
-				entity.die();
-				return false;
+				let success = entity.die();
+				console.assert( success );
+				let killId = entity.id;
+				Array.filterInPlace( entity.entityList, entity => entity.id!=killId );
 			}
-			return true;
 		});
 	}
 
 	if( speed === false ) {
-		let player = entityList.find( entity => entity.isUser() );
+		let player = entityListRaw.find( entity => entity.isUser() );
+		player.calcVis();
 		player.act(false);
+		// Time is not passing, so do not tick items.
 		DeedManager.calc(player);
-		clearCommands(entityList);
+		player.clearCommands();
 		return;
 	}
 
@@ -324,7 +329,7 @@ function tick(speed,map,entityList) {
 //kind of deferred schedule... And then only tick the last level around the gate that
 //was used to get to the current level...
 
-	let entityListByTurnOrder = orderByTurn(entityList);
+	let entityListByTurnOrder = orderByTurn(entityListRaw);
 	let dt = 1 / speed;
 	for( let entity of entityListByTurnOrder ) {
 		DeedManager.tick(entity,dt);
@@ -333,19 +338,22 @@ function tick(speed,map,entityList) {
 			entity.calcVis();
 			entity.think();
 			entity.act();
-			tickItemList(entity.inventory,dt,map,entityList);
+			// DANGER! At this moment the entity might have changed areas!
+			tickItemList(entity.inventory,dt);
 			DeedManager.calc(entity);
 			entity.actionCount -= 1;
 		}
 	}
 	map.actionCount += 1 / speed;
 	while( map.actionCount >= 1 ) {
-		tickItemList(map.itemList,dt,map,entityList);
+		// WARNING! There is some risk that an item could tick twice here, or not at all, if an entity caused something to
+		// pop out of another entity's inventory. But the harm seems small. I hope.
+		tickItemList(map.itemList,dt);
 		map.actionCount -= 1;
 	}
 	DeedManager.cleanup();
-	checkDeaths(entityList);
-	clearCommands(entityList);
+	entityListByTurnOrder.forEach( entity => entity.clearCommands() );
+	checkDeaths(entityListByTurnOrder);
 }
 
 

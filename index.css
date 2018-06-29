@@ -477,4 +477,6 @@ table .inv tbody tr .ctr {
 #guiPathDebug {
 	white-space: pre;
 	font-family: "Courier New", monospace;
+    overflow-y: scroll;
+    height: 800px;
 }

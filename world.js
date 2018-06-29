@@ -1,17 +1,8 @@
 class World {
-	constructor(getPlayer,onAreaChange) {
-		this.getPlayer = getPlayer;
+	constructor() {
 		this.areaList = {};
-		this.pending = {
-			gate: null
-		};
-		this.onAreaChange = onAreaChange;
 		// Hack of convenience...
 		Gab.world = this;
-	}
-
-	get player() {
-		return this.getPlayer();
 	}
 
 	createArea(currentAreaId,depth,theme,isCore,gateList) {
@@ -35,7 +26,9 @@ class World {
 		area.build(tileQuota)
 		return area;
 	}
-	linkGatesAndCreateArea(gate,curArea,toArea) {
+	linkGatesAndCreateArea(gate) {
+		let curArea = gate.area;
+		let toArea = this.areaList[gate.toAreaId];
 		if( !toArea ) {
 			console.log( "Gate "+gate.id+" has no toAreaId" );
 			let isCore = curArea.isCore && gate.gateDir!=0;
@@ -84,53 +77,7 @@ class World {
 		console.assert( gate.toAreaId );
 		console.assert( gate.toGateId || gate.toPos );
 	}
-	setPending(gate) {
-		this.linkGatesAndCreateArea(gate,gate.area,this.areaList[gate.toAreaId]);
-		this.pending.gate = gate;
-	}
-	detectPlayerOnGate() {
-		// checking the commandToDirection means the player just moved, and isn't just standing there.
-		let player = this.player;
-		if( !player || player.commandLast!=Command.WAIT ) {
-			return;
-		}
-		let gateHere = player.map.findItemAt(player.x,player.y).filter( item => item.gateDir!==undefined );
-		if( !gateHere.first ) {
-			return;
-		}
-		let gate = gateHere.first;
-		if( player.area.depth == 0 && gate.gateDir<0 ) {
-			return;
-		}
-		this.setPending(gate)
-	}
 	getAreaById(areaId) {
 		return this.areaList[areaId];
 	}
-	gateTo(areaId,x,y) {
-		let area = this.getAreaById(areaId);
-		if( !area ) debugger;
-		this.onAreaChange(area,x,y);
-		return area;
-	}
-	areaChange() {
-		this.detectPlayerOnGate();
-
-		if( !this.pending.gate ) {
-			return;
-		}
-		let gate = this.pending.gate;
-		this.pending.gate = null;
-
-		tell(mSubject,this.player,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
-
-		// WARNING! Someday we will need to push the DeedList that is NOT the player into the old area.
-		// and resurrect the new area's deed list.
-		let newArea = this.gateTo(gate.toAreaId,gate.toPos.x,gate.toPos.y);
-		if( gate.killMeWhenDone ) {
-			gate.destroy();
-		}
-		return newArea;
-	}
-
 }
