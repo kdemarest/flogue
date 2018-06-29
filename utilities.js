@@ -66,6 +66,22 @@ function nop() {}
 		a.length = j;
 		return a;
 	}
+	Array.filterPairsInPlace = function(a, condition, thisArg) {
+		let j = 0;
+		let i = 0;
+		while( i < a.length ) {
+			if( condition.call(thisArg, a[i], a[i+1], i, a)) {
+				if (i!==j) {
+					a[j] = a[i]; 
+					a[j+1] = a[i+1];
+				} 
+			}
+			i += 2;
+		}
+
+		a.length = j;
+		return a;
+	}
 	Array.count = function(array,fn) {
 		let total = 0;
 		array.forEach( a => {

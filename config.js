@@ -4,7 +4,7 @@ ConfigList.ken = () => {
 	ScapeList.kenCave = theme => ({
 		dim: 				40,
 		architecture: 		"cave",
-		floorDensity: 		0.88,
+		floorDensity: 		0.48,
 		seedPercent: 		0.20,
 		passageWander: 		0,
 	});
@@ -52,9 +52,9 @@ ConfigList.ken = () => {
 
 	ThemeList.kenTheme = {
 		scapeId: 		'kenCave',
-		rREQUIRED: 		'kenPlace',
-		placeDensity: 	0.20,
-		rCOMMON: 		'kenPlace',
+//		rREQUIRED: 		'kenPlace',
+		placeDensity: 	0.10,
+		rCOMMON: 		'floodPit',
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
@@ -65,8 +65,8 @@ ConfigList.ken = () => {
 		friendDensity: 	0.0001,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('5x gem, stuff.lumpOfMeat, spell.ePossess, bow, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
-	MonsterTypeList.player.inventoryWear = 'armor, helm, boots, bracers, stuff.oilLamp';
+//	MonsterTypeList.player.inventoryLoot.push('5x gem, stuff.lumpOfMeat, spell.ePossess, bow, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
+//	MonsterTypeList.player.inventoryWear = 'armor, helm, boots, bracers, stuff.oilLamp';
 	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
@@ -76,8 +76,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 9,
-		themeId: 'kenTheme'
+//		startingDepth: 9,
+//		themeId: 'kenTheme'
 	}
 }
 

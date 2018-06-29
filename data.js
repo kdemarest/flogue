@@ -371,7 +371,7 @@ const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eInvisibilit
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eOdorless','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
 const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eAcid','eAcid3','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
-const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
+const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','ePossess','eRage','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const AmmoList = Fab.add( '', {
 	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
@@ -606,49 +606,49 @@ const GemList = Fab.add( '', {
 });
 
 const StuffList = Fab.add( '', {
-	"lantern": 			{ rarity: 0.2, slot: Slot.HIP, light: 14, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 14, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"oilLamp": 			{ rarity: 0.4, slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"candleLamp": 		{ rarity: 0.6, slot: Slot.HIP, light:  6, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"lantern": 			{ rarity: 0.2, slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"oilLamp": 			{ rarity: 0.4, slot: Slot.HIP, light:  8, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  8, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"candleLamp": 		{ rarity: 0.6, slot: Slot.HIP, light:  4, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  4, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"lumpOfMeat": 		{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/chunk.png" },
 	"trollHide": 		{ rarity: 0.5, img: "item/armour/troll_hide.png" },
 	"bone": 			{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: "item/food/bone.png" },
-	"antGrubMush": 		{ rarity: 0.8, mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/sultana.png" },
-	"viperVenom": 		{ rarity: 0.6, img: "UNUSED/other/acid_venom.png" },
-	"dogCollar": 		{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/collar.png' },
+	"antGrubMush": 		{ rarity: 0.8, isAntFood: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/sultana.png" },
+	"viperVenom": 		{ rarity: 0.6, isLiquid: true, img: "UNUSED/other/acid_venom.png" },
+	"dogCollar": 		{ rarity: 1.0, isJewelry: true, img: 'item/misc/collar.png' },
 	"skull": 			{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: 'item/misc/skull.png' },
 	"mushroomBread": 	{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/bread_ration.png'},
 	"demonScale": 		{ rarity: 0.2, img: 'item/misc/demonEye.png' },
-	"demonEye": 		{ rarity: 0.2, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/demonEye.png' },
+	"demonEye": 		{ rarity: 0.2, mayThrow: true, mayTargetPosition: true, isEdible: true, isGem: true, img: 'item/misc/demonEye.png' },
 	"ghoulFlesh": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/chunk_rotten.png' },
 	"pinchOfEarth": 	{ rarity: 1.0, img: 'item/weapon/ranged/rock.png' },
 	"impBrain": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"ogreDrool": 		{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
-	"redOozeSlime": 	{ rarity: 0.2, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/redOozeSlime.png' },
+	"ogreDrool": 		{ rarity: 1.0, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
+	"redOozeSlime": 	{ rarity: 0.2, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/redOozeSlime.png' },
 	"scarabCarapace": 	{ rarity: 1.0, },
 	"darkEssence": 		{ rarity: 0.1, },
-	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true },
+	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
 	"sunCrystal":   	{ rarity: 0.6, mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "gems/sunCrystal.png", mayTargetPosition: true,
 						effect: { name: 'radiance', op: 'damage', valueDamage: 1.0, effectShape: EffectShape.BLAST5, effectFilter: eff=>eff.target.team==Team.EVIL, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
 						},
-	"trollBlood": 		{ rarity: 0.6, },
+	"trollBlood": 		{ rarity: 0.6, isLiquid: true },
 	"spinneret": 		{ rarity: 0.4, },
 	"chitin": 			{ rarity: 1.0, },
 	"poisonGland": 		{ rarity: 0.4, },
-	"snailTrail": 		{ rarity: 0.4, alpha: 0.3, img: 'dc-misc/snailSlime.png', isSnailSlime: true, mayPickup: false, },
-	"snailSlime": 		{ rarity: 0.4, alpha: 0.5, img: 'dc-misc/snailSlime.png', isSnailSlime: true, },
+	"snailTrail": 		{ rarity: 0.4, isLiquid: true, alpha: 0.3, img: 'dc-misc/snailSlime.png', isSnailSlime: true, mayPickup: false, },
+	"snailSlime": 		{ rarity: 0.4, isLiquid: true, alpha: 0.5, img: 'dc-misc/snailSlime.png', isSnailSlime: true, },
 	"lunarEssence": 	{ rarity: 0.6, },
 	"batWing": 			{ rarity: 1.0, },
 	"frogSpine": 		{ rarity: 0.8, },
-	"wool": 			{ rarity: 1.0, },
-	"ingotIron": 		{ rarity: 1.0, },
-	"ingotCopper": 		{ rarity: 0.9, },
-	"ingotSilver": 		{ rarity: 0.8, },
-	"ingotGold": 		{ rarity: 0.7, },
-	"ingotTin": 		{ rarity: 1.0, },
-	"ingotMalachite": 	{ rarity: 0.6, },
-	"ingotLunarium": 	{ rarity: 0.5, },
-	"ingotSolarium": 	{ rarity: 0.4, },
-	"ingotDeepium": 	{ rarity: 0.3, },
+	"wool": 			{ rarity: 1.0, isFabricIngredient: true },
+	"ingotIron": 		{ rarity: 1.0, isMetal: true },
+	"ingotCopper": 		{ rarity: 0.9, isMetal: true },
+	"ingotSilver": 		{ rarity: 0.8, isMetal: true },
+	"ingotGold": 		{ rarity: 0.7, isMetal: true },
+	"ingotTin": 		{ rarity: 1.0, isMetal: true },
+	"ingotMalachite": 	{ rarity: 0.6, isMetal: true },
+	"ingotLunarium": 	{ rarity: 0.5, isMetal: true },
+	"ingotSolarium": 	{ rarity: 0.4, isMetal: true },
+	"ingotDeepium": 	{ rarity: 0.3, isMetal: true },
 
 });
 
@@ -762,7 +762,7 @@ const ItemTypeList = {
 					imgChoices: { head: {img:'decor/bedHead.png'}, foot: {img:'decor/bedFoot.png'} },
 					imgGet: (self,img) => img || self.img },
 	"barrel": 		{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "barrel", mayPickup: false, isDecor: true,
-					inventoryLoot: '3x 50% any', hasInventory: true, img: 'decor/barrel.png' },
+					inventoryLoot: '3x 20% any', hasInventory: true, img: 'decor/barrel.png' },
 	"chest": 		{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "chest", mayPickup: false, isDecor: true,
 					state: 'shut',
 					imgChoices: { shut: { img: 'decor/chestShut.png' }, open: { img: 'decor/chestOpen.png' }, empty: { img: 'decor/chestEmpty.png' } },
@@ -882,7 +882,7 @@ const ItemTypeList = {
 				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
 				img: "UNUSED/armour/glove4.png", icon: 'gloves.png' },
 	"ring": 	{ symbol: 'r', isTreasure: 1, xPrice: 6.0, namePattern: "{material} {variety} ring{+plus}{?effect}", materials: RingMaterialList, varieties: RingList,
-				effects: RingEffects, slot: Slot.FINGERS, isRing: true,
+				effects: RingEffects, slot: Slot.FINGERS, isRing: true, isJewelry: true,
 				effectChance: 0.50,
 				useVerb: 'wear', triggerOnUse: true, effectOverride: { duration: true },
 				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList, icon: 'ring.png' },
@@ -1382,6 +1382,8 @@ const MonsterTypeList = {
 	"soldierAnt": {
 		core: [ SYM, 1, '2:12', 'evil', 'bite', 'hivemind', 'multiped', 'dc-mon/animals/soldier_ant.png', 'it' ],
 		name: "soldier ant",
+		brainMindset: 'greedy',
+		greedField: 'isAntFood',
 		loot: '10% potion, 20% facetedEye, 10% antGrubMush',
 		isAnimal: true,
 		isSmall: true,
@@ -1707,9 +1709,22 @@ TileTypeList.ghostStone.onTouch = function(toucher,self) {
 }
 
 ItemTypeList.altar.onTouch = function(toucher,self) {
-	if( toucher.isChosenOne && ( !toucher.deathReturn || !toucher.isAt(self.x,self.y,self.area) ) ) {
+	if( toucher.isChosenOne && ( !toucher.deathReturn || !toucher.isAtTarget(toucher.deathReturn) ) ) {
 		tell(mSubject|mCares,toucher,' will return here upon death.');
-		toucher.deathReturn = { x:self.x, y:self.y, area:self.area };
+		toucher.deathReturn = {
+			x:self.x,
+			y:self.y,
+			px: toucher.x,
+			py: toucher.y,
+			area:self.area,
+			name: 'death return'
+		};
+		toucher.onDeath = entity => {
+			entity.gateTo( entity.deathReturn.area, entity.deathReturn.px, entity.deathReturn.py);
+			entity.vanish = false;
+			entity.health = entity.healthMax;
+			entity.dead = false;
+		};
 	}
 
 	if( toucher.isMonsterType && toucher.experience!==undefined ) {

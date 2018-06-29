@@ -109,35 +109,43 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		});
 	}
 
-	function populateAmong(map,floorList,count,safeToMakeFn,makeFn,criteriaFn) {
-		floorList = [].concat(floorList);
+	function populateAmong(map,preferList,floorList,count,safeToMakeFn,makeFn,criteriaFn) {
 		//console.assert( count <= floorList.length/2 );
 		//console.assert( floorList.length );
 		let madeList = [];
-		while( floorList.length && madeList.length<count ) {
-			let index = Math.randInt(0,floorList.length/2)*2;
-			let x = floorList[index+0];
-			let y = floorList[index+1];
+
+		function tryMake(list,index) {
+			let x = list[index+0];
+			let y = list[index+1];
 			if( safeToMakeFn(map,x,y) ) {
 				let e = makeFn(null,x,y,null,null,criteriaFn);
 				if( e ) madeList.push(e);
 			}
-			floorList.splice(index,2);
+			list.splice(index,2);
+		}
+
+		while( preferList.length && madeList.length<count ) {
+			tryMake(preferList,Math.randInt(0,preferList.length/2)*2);
+		}
+
+		while( floorList.length && madeList.length<count ) {
+			tryMake(floorList,Math.randInt(0,floorList.length/2)*2);
 		}
 		return madeList;
 	}
 
-	function populate(map,count,safeToMakeFn,makeFn,criteriaFn) {
+	function populate(map,preferFn,count,safeToMakeFn,makeFn,criteriaFn) {
 		let floorList = [];
 		map.traverse( (x,y,type) => {
 			if( type.isFloor && safeToMakeFn(map,x,y) ) {
 				floorList.push(x,y);
 			}
 		});
-		return populateAmong( map, floorList, count, safeToMakeFn, makeFn, criteriaFn );
+		let preferList = preferFn(map,floorList);
+		return populateAmong( map, preferList, floorList, count, safeToMakeFn, makeFn, criteriaFn );
 	}
 
-	function populateInRooms( siteList, map, count, safeToMakeFn, makeFn, criteriaFn, includeFn ) {
+	function populateInRooms( siteList, map, preferFn, count, safeToMakeFn, makeFn, criteriaFn, includeFn ) {
 		let countOriginal = count;
 		let nearList = [];
 		//console.log('Sites: '+(siteList.filter(site=>site.isPlace||site.isRoom).length));
@@ -145,10 +153,12 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			if( !includeFn(site) ) {
 				return;
 			}
-			if( site.isPlace || site.isRoom ) {
+			if( (site.isPlace || site.isRoom) && includeFn(site) ) {
 				if( count > 0 ) {
 					let toMake = 1;
-					let madeList = populateAmong( map, site.marks, toMake, safeToMakeFn, makeFn, criteriaFn );
+					let floorList = [].concat(site.marks);
+					let preferList = preferFn(map,floorList);
+					let madeList = populateAmong( map, preferList, floorList, toMake, safeToMakeFn, makeFn, criteriaFn );
 					if( madeList.length < toMake ) {
 						nearList.push( site.id );
 					}
@@ -160,7 +170,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			let site = siteList.find( site=>site.isNear==siteId && includeFn(site) );
 			if( site && count > 0 ) {
 				let toMake = 1;
-				let madeList = populateAmong( site.marks, toMake, safeToMakeFn, makeFn );
+				let floorList = [].concat(site.marks);
+				let preferList = preferFn(map,floorList);
+				let madeList = populateAmong( map, preferList, floorList, toMake, safeToMakeFn, makeFn, criteriaFn );
 				count -= madeList.length;
 			}
 		});
@@ -190,6 +202,23 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			new Finder( entity.inventory ).process( item => {
 			});
 		});
+	}
+
+	function preferNone(map,floorList) {
+		return [];
+	}
+
+	function preferAlcoves(map,floorList) {
+		let preferList = [];
+		Array.filterPairsInPlace( floorList, (x,y) => {
+			let c = map.count8( x, y, (x,y,tile)=>tile.isWall );
+			if( c >= 5 ) {
+				preferList.push(x,y);
+				return false;
+			}
+			return true;
+		});
+		return preferList;
 	}
 
 	let injectList = [];
@@ -237,15 +266,15 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	console.log( "Friends: ("+totalFloor+"x"+theme.friendDensity+")="+owedFriends+"-"+totalFriends+"="+(owedFriends-totalFriends)+" friends owed" );
 	console.log( "Items  : ("+totalFloor+"x"+theme.itemDensity+")="+owedItems+"-"+totalItems+"="+(owedItems-totalItems)+" items owed" );
 
-	totalEnemies += populateInRooms( area.siteList, area.map, owedEnemies-totalEnemies, safeToMake, makeMonster, isEnemyFn, site => {
+	totalEnemies += populateInRooms( area.siteList, area.map, preferNone, owedEnemies-totalEnemies, safeToMake, makeMonster, isEnemyFn, site => {
 		return !(site.isPlace && (site.place.comesWithMonsters || site.place.forbidEnemies));
 	});
 
-	totalFriends += populateInRooms( area.siteList, area.map, owedFriends-totalFriends, safeToMake, makeMonster, isFriendFn, site => {
+	totalFriends += populateInRooms( area.siteList, area.map, preferNone, owedFriends-totalFriends, safeToMake, makeMonster, isFriendFn, site => {
 		return !(site.isPlace && site.place.comesWithMonsters);
 	});
 
-	totalItems += populateInRooms( area.siteList, area.map, owedItems-totalItems, safeToMake, makeItem, e=>e.isTreasure, site => {
+	totalItems += populateInRooms( area.siteList, area.map, preferAlcoves, owedItems-totalItems, safeToMake, makeItem, e=>e.isTreasure, site => {
 		return !(site.isPlace && (site.place.comesWithItems || site.place.forbidTreasure));
 	});
 
@@ -253,15 +282,15 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	console.log( "Friends: ("+totalFloor+"x"+theme.friendDensity+")="+owedFriends+"-"+totalFriends+"="+(owedFriends-totalFriends)+" friends owed" );
 	console.log( "Items  : ("+totalFloor+"x"+theme.itemDensity+")="+owedItems+"-"+totalItems+"="+(owedItems-totalItems)+" items owed" );
 
-	populate( area.map, Math.max(0,owedEnemies-totalEnemies), (map,x,y) => {
+	populate( area.map, preferNone, Math.max(0,owedEnemies-totalEnemies), (map,x,y) => {
 		let site = area.getSiteAt(x,y);
 		if( site && site.place && site.place.forbidEnemies ) {
 			return false;
 		}
 		return safeToMake(map,x,y);
 	}, makeMonster, isEnemyFn );
-	populate( area.map, Math.max(0,owedFriends-totalFriends), safeToMake, makeMonster, isFriendFn );
-	populate( area.map, Math.max(0,owedItems-totalItems), (map,x,y) => {
+	populate( area.map, preferNone, Math.max(0,owedFriends-totalFriends), safeToMake, makeMonster, isFriendFn );
+	populate( area.map, preferAlcoves, Math.max(0,owedItems-totalItems), (map,x,y) => {
 		let site = area.getSiteAt(x,y);
 		if( site && site.place && site.place.forbidTreasure ) {
 			return false;
@@ -316,10 +345,11 @@ function tick(speed,map,entityListRaw) {
 		// so we have to prune the CORRECT entity list
 		entityListNotAuthoritative.forEach( entity => {
 			if( entity.isDead() ) {
-				let success = entity.die();
-				console.assert( success );
-				let killId = entity.id;
-				Array.filterInPlace( entity.entityList, entity => entity.id!=killId );
+				let died = entity.die();
+				if( died ) {
+					let killId = entity.id;
+					Array.filterInPlace( entity.entityList, entity => entity.id!=killId );
+				}
 			}
 		});
 	}

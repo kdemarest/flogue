@@ -173,7 +173,7 @@ let ThemeDefault = () => ({
 	placeDensity: 	0.40,
 	seedPercent: 	0.10,
 
-	jobPick: 		{ layman: 10, brewer: 1, peddler: 1 },
+	jobPick: 		{ layman: 10, brewer: 1, peddler: 1, grocer: 1 },
 
 	enemyDensity: 	0.08,
 	friendDensity: 	0.00,
@@ -214,7 +214,7 @@ ThemeList.refugeeCamp = {
 	rRARE: 		'den_dog, camp_goblin',
 	monsters: 	['isSunChild','isPet','isLivestock'],
 	sign: 		'Bring your own supplies. We won\'t feed you.',
-	jobPick: 	{ layman: 10, brewer: 1, cobbler: 1, peddler: 1, sentry: 4, evangelist: 1 },
+	jobPick: 	{ layman: 10, bowyer: 1, grocer: 1, brewer: 1, cobbler: 1, peddler: 1, sentry: 4, evangelist: 1 },
 	enemyDensity: 	0.00,
 	friendDensity: 	0.15,
 	itemDensity:    0.0001,
@@ -229,7 +229,7 @@ ThemeList.refugeeCampSlaughter = {
 	rRARE: 		'den_dog',
 	monsters: 	['isSunChild','isPet','isEarthChild'],
 	sign: 		'Refugee Camp "Prosperous Tranquility" Ahead',
-	jobPick: 	{ layman: 10, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
+	jobPick: 	{ layman: 10, bowyer: 1, grocer: 1, clothier: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
 	enemyDensity: 	0.08,
 	friendDensity: 	0.08,
 }
@@ -245,7 +245,7 @@ ThemeList.dwarfTown = {
 	rCOMMON: 	'floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall',
 	rUNCOMMON: 	'floodPit, dwarfHouse, barrelStorage',
 	rRARE: 		'firePit, floodWater',
-	jobPick: 	{ layman: 10, sentry: 3, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
+	jobPick: 	{ layman: 10, sentry: 3, grocer: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
 	prefer: 	['pit'],
 	monsters: 	['isDwarf'],
 	enemyDensity: 	0.00,
@@ -508,13 +508,14 @@ PlaceTypeList.gateUpMinimal = {
 `
 #####
 #b..#
-#.U.+
+#U..+
 #b..#
 #####
 `,
 	rarity: rUNCOMMON,
 	isUtility: true,
 	forbidEnemies: true,
+	forbidTreasure: true,
 	flags: { rotate: false },
 	symbols: {
 		U: 'stairsUp',
@@ -534,6 +535,7 @@ PlaceTypeList.gateUpChamber = {
 	rarity: rUNCOMMON,
 	isUtility: true,
 	forbidEnemies: true,
+	forbidTreasure: true,
 	flags: { rotate: false },
 	symbols: {
 		U: 'stairsUp',
@@ -549,6 +551,8 @@ PlaceTypeList.gateDown = {
 `,
 	rarity: rUNCOMMON,
 	isUtility: true,
+	forbidEnemies: true,
+	forbidTreasure: true,
 	flags: { rotate: false },
 	symbols: {
 		D: 'stairsDown',
@@ -568,6 +572,8 @@ PlaceTypeList.gateDownChamber = {
 `,
 	rarity: rUNCOMMON,
 	isUtility: true,
+	forbidEnemies: true,
+	forbidTreasure: true,
 	flags: { rotate: false },
 	symbols: {
 		D: 'stairsDown',
@@ -585,6 +591,8 @@ ppp
 `,
 	rarity: rUNCOMMON,
 	isUtility: true,
+	forbidEnemies: true,
+	forbidTreasure: true,
 	flags: { rotate: false },
 	symbols: {
 		G: 'gateway',
@@ -601,6 +609,8 @@ PlaceTypeList.gatePortal = {
 `,
 	rarity: rUNCOMMON,
 	isUtility: true,
+	forbidEnemies: true,
+	forbidTreasure: true,
 	flags: { rotate: false },
 	symbols: {
 		P: 'portal',
@@ -616,6 +626,8 @@ g..
 `,
 	rarity: rUNCOMMON,
 	isUtility: true,
+	forbidEnemies: true,
+	forbidTreasure: true,
 	flags: { rotate: true },
 	symbols: {
 		S: 'fontSolar',
@@ -632,6 +644,8 @@ PlaceTypeList.fontDeep = {
 `,
 	rarity: rUNCOMMON,
 	isUtility: true,
+	forbidEnemies: true,
+	forbidTreasure: true,
 	flags: { rotate: false },
 	symbols: {
 		D: 'fontDeep',
@@ -826,8 +840,8 @@ PlaceTypeList.surfaceSunTemple = {
 		A: "altar",
 		b: "brazier",
 		S: "stairsDown",
-		w: "weapon.dagger",
-		a: "armor",
+		w: "weapon.dagger.eInert",
+		a: "armor.eInert",
 		s: "spell.eFire",
 		p: "potion.eHealing",
 		d: "dog"

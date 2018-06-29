@@ -9,7 +9,7 @@ let mBold = 128;
 let mVerb = 256;
 let mCares = 512;
 
-let IrregularVerbs = [['are','is'],['have','has'],['go','goes']];
+let IrregularVerbs = [['are','is'],['have','has'],['go','goes'],['do','does']];
 
 let SentenceReusableArray = [];
 class Sentence {

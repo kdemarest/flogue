@@ -86,7 +86,7 @@ class Entity {
 	}
 
 	record(s,pending) {
-		$('<div>'+s+'</div>').prependTo('#guiPathDebug');
+//		$('<div>'+s+'</div>').prependTo('#guiPathDebug');
 		if( pending ) {
 			this.historyPending.push(s);
 			return;
@@ -167,13 +167,6 @@ class Entity {
 		if( this.dead ) {
 			debugger;
 		}
-		if( this.corpse && !this.vanish ) {
-			let mannerOfDeath = Gab.damagePast[this.takenDamageType||DamageType.BITE];
-			if( !mannerOfDeath ) {
-				debugger;
-			}
-			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{},{ usedToBe: this, mannerOfDeath: mannerOfDeath, isCorpse: true } );
-		}
 		let deathPhrase = this.deathPhrase;
 		if( !deathPhrase ) {
 			deathPhrase = [mSubject,this,' ',mVerb,this.vanish?'vanish':'die','!'];
@@ -182,18 +175,30 @@ class Entity {
 			deathPhrase.unshift(mCares,this.brainMaster);
 		}
 		tell(...deathPhrase);
-		spriteDeathCallback(this.spriteList);
-		this.dead = true;
 
 		if( this.oldMe ) {
 			let deed = this.findFirstDeed( deed => deed.op=='possess' );
 			deed.end();
 		}
 
+		this.dead = true;
 		if( this.onDeath ) {
-			this.onDeath();
+			this.onDeath.call(this,this);
 		}
-		return true;
+
+		if( this.dead && this.corpse && !this.vanish ) {
+			let mannerOfDeath = Gab.damagePast[this.takenDamageType||DamageType.BITE];
+			if( !mannerOfDeath ) {
+				debugger;
+			}
+			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{},{ usedToBe: this, mannerOfDeath: mannerOfDeath, isCorpse: true } );
+		}
+
+		if( this.dead ) {
+			spriteDeathCallback(this.spriteList);
+		}
+
+		return this.dead;
 	}
 
 	isDead() {
@@ -209,13 +214,12 @@ class Entity {
 		return (this.experience || 0) / this.experienceForLevel(this.level+1)
 	}
 	levelUp() {
-		debugger;
 		if( this.experience === undefined ) return;
 		if( this.experience < this.experienceForLevel(this.level+1) ) {
 			return;
 		}
-		this.level += 1;
 		this.experience -= this.experienceForLevel(this.level+1);
+		this.level += 1;
 		DeedManager.end( deed => deed.stat && deed.stat=='healthMax' );
 		let add = Rules.playerHealth(this.level)-Rules.playerHealth(this.level-1);
 		this.healthMax += add;
@@ -1075,7 +1079,10 @@ class Entity {
 				if( this.mindset('lep') && enemyList.count ) {
 					let e = enemyList.first;
 					this.record('set lep ('+e.x+','+e.y+')',true);
-					this.lastEnemyPosition = { isLEP: true, x:e.x, y:e.y, area:e.map.area, name: e.name };
+					this.lastEnemyPosition = { isLEP: true, x:e.x, y:e.y, area:e.map.area, entity: e, name: e.name };
+				}
+				if( this.lastEnemyPosition && this.lastEnemyPosition.entity.isDead() ) {
+					delete this.lastEnemyPosition;
 				}
 
 				let wasSmell = false;
@@ -2518,9 +2525,14 @@ class Entity {
 				console.assert( seller.id == item.owner.id );
 				console.assert( new Finder(seller.inventory).isId(item.id).count );
 				let price = new Picker(this.area.depth).pickPrice('buy',item);
-				this.coinCount = (this.coinCount||0) - price;
-				seller.coinCount = (seller.coinCount||0) + price;
-				item.giveTo(this,this.x,this.y);
+				if( price <= this.coinCount ) {
+					this.coinCount = (this.coinCount||0) - price;
+					seller.coinCount = (seller.coinCount||0) + price;
+					item.giveTo(this,this.x,this.y);
+				}
+				else {
+					tell(mSubject,this,' ',mVerb,'do',' not have enough coin.');
+				}
 				break;
 			}
 			case Command.SELL: {

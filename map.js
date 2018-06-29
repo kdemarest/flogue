@@ -113,6 +113,19 @@ class SimpleMap {
 		this.traverse( (x,y,type) => c += fn(x,y,type) );
 		return c;
 	}
+	count8(cx,cy,fn) {
+		let c = 0;
+		for( let dir=0 ; dir<8 ; ++dir ) {
+			let x = cx+DirectionAdd[dir].x;
+			let y = cy+DirectionAdd[dir].y;
+			if( !this.inBounds(x,y) ) continue;
+			let tile = this.tileTypeGet(x,y);
+			if( fn(x,y,tile) ) {
+				c++;
+			}
+		}
+		return c;
+	}
 	dirChoose(x,y,ratingFn) {
 		let bestDir = false;
 		let bestRating = null;

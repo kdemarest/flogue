@@ -402,10 +402,10 @@ class Picker {
 		if( item.coinCount ) {
 			return item.coinCount;
 		}
-		let base = item.level + item.depth;
+		let base = item.level + item.depth + 1;
 		let xPrice = ItemCalc(item,item,'xPrice','*');
 		let mult = (buySell=='buy' ? PRICE_MULT_BUY : PRICE_MULT_SELL);
-		return Math.floor(base * xPrice * mult);
+		return Math.max(1,Math.floor(base * xPrice * mult));
 	}
 
 	// picks it, but doesn't give it to anyone.
