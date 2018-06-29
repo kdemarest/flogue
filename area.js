@@ -37,6 +37,10 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		}
 
 		let item = area.map.itemCreateByType(x,y,type,presets,inject);
+		if( item.isTreasure && Math.chance(theme.barrelChance||0) ) {
+			let barrel = area.map.itemCreateByType(x,y,ItemTypeList.barrel,{},{});
+			item.giveTo(barrel,x,y);
+		}
 		if( type.gateDir !== undefined ) {
 //			console.log( "Gate "+type.typeId+" at ("+x+","+y+") leads to "+(!inject ? 'TBD' : inject.toAreaId+' / '+inject.toGateId) );
 //			console.log( "The item says "+item.toAreaId+' / '+item.toGateId );
@@ -216,7 +220,13 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	let totalFloor    = area.map.count( (x,y,type) => type.isFloor && safeToMake(area.map,x,y) ? 1 : 0);
 	let totalEnemies  = Array.count( area.entityList, isEnemyFn );
 	let totalFriends  = Array.count( area.entityList, isFriendFn );
-	let totalItems    = Array.count( area.map.itemList, item => item.isTreasure );
+	let totalItems    = Array.count( area.map.itemList, item => {
+		let n = item.isTreasure ? 1 : 0;
+		if( item.inventory ) {
+			n += Array.count( item.inventory, item => item.isTreasure );
+		}
+		return n;
+	});
 
 	let owedEnemies   = Math.round( (totalFloor*theme.enemyDensity) );
 	let owedFriends   = Math.round( (totalFloor*theme.friendDensity) );

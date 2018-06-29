@@ -52,11 +52,11 @@ class Entity {
 		if( this.inventoryLoot ) {
 			this.lootTake( this.inventoryLoot, this.level, null, true );
 		}
-		console.assert( this.inventory.length >= 1 );
+		console.assert( this.inventory.length >= 1 );	// 1 due to the natural melee weapon.
 
 		if( this.inventoryWear ) {
 			this.lootTake( this.inventoryWear, this.level, null, true, item => {
-				if( item.slot && !item.inSlot ) { this.don(item,item.slot); }
+				if( this.mayDon(item) ) { this.don(item,item.slot); }
 			});
 		}
 
@@ -492,11 +492,8 @@ class Entity {
 			item.destroy();
 			return;
 		}
-		if( item.autoEquip && item.slot && this.bodySlots ) {
-			let itemsInSlot = this.getItemsInSlot(item.slot);
-			if( itemsInSlot.count < this.bodySlots[item.slot] ) {
-				this.don(item,item.slot);
-			}
+		if( item.autoEquip && this.mayDon(item) ) {
+			this.don(item,item.slot);
 		}
 	}
 
@@ -1901,7 +1898,9 @@ class Entity {
 	}
 	inventoryTake(inventory, originatingEntity, quiet, onEach) {
 		let found = [];
-		Object.each( inventory, item => {
+		let inventoryTemp = inventory.slice();	// because the inventory could chage out from under us!
+		Object.each( inventoryTemp, item => {
+			if( !item.isTreasure && !item.isNatural ) debugger;
 			item.giveTo( this, this.x, this.y);
 			if( onEach ) { onEach(item); }
 			found.push(mObject|mA|mList|mBold,item);
@@ -1911,7 +1910,7 @@ class Entity {
 				mSubject,this,' ',mVerb,'find',' '
 			].concat( 
 				found.length ? found : ['nothing'],
-				originatingEntity ? [' on ',mObject,originatingEntity] : [''],
+				originatingEntity ? [' ',originatingEntity.isItemType?'in':'on',' ',mObject,originatingEntity] : [''],
 				'.'
 			);
 			tell(...description);
@@ -2499,11 +2498,16 @@ class Entity {
 				}
 				else
 				if( item.slot && this.bodySlots ) {
-					let itemToRemove = this.getItemsInSlot(item.slot);
-					if( itemToRemove.count >= this.bodySlots[item.slot] ) {
-						this.doff(itemToRemove.first);
+					if( !this.bodySlots[item.slot] ) {
+						tell( mSubject,this,' ',mVerb,'has',' no way to use the ',mObject,item );
 					}
-					this.don(item,item.slot);
+					else {
+						while( this.getItemsInSlot(item.slot).count >= this.bodySlots[item.slot] ) {
+							let itemToRemove = this.getItemsInSlot(item.slot);
+							this.doff(itemToRemove.first);
+						}
+						this.don(item,item.slot);
+					}
 				}
 				break;
 			}
@@ -2535,6 +2539,9 @@ class Entity {
 				}
 			}
 		};
+	}
+	mayDon(item) {
+		return item.slot && this.bodySlots && this.bodySlots[item.slot] && this.getItemsInSlot(item.slot).count < this.bodySlots[item.slot];
 	}
 	getItemsInSlot(slot) {
 		return new Finder(this.inventory).filter( i => i.inSlot==slot);

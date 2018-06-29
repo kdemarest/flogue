@@ -546,15 +546,15 @@ function animHoming(entity,target,offAngle=45,num=40,duration=2,velocity=3,img) 
 	});
 }
 
-function animBlam(target, fromDeg, arc, img, delay ) {
+function animBlam(target, scale=0.20, num=10, duration=0.2, fromDeg=0, arc=45, mag0=4, mag1=10, grav=10, rot=0, img, delay=0 ) {
 	return new Anim({},{
 		follow: 	target,
 		img: 		img,
 		delay: 		delay,
-		duration: 	0.2,
-		onInit: 		a => { a.create(4+Math.floor(7*mag)); },
-		onSpriteMake: 	s => { s.sScaleSet(0.20+0.10*mag).sVel(Math.rand(deg-arc,deg+arc),4+Math.rand(0,3+7*mag)); },
-		onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+		duration: 	duration,
+		onInit: 		a => { a.create(num); },
+		onSpriteMake: 	s => { s.sScaleSet(scale).sVel(Math.rand(fromDeg-arc,fromDeg+arc),Math.rand(mag0,mag1)); },
+		onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sGrav(grav); s.rotation += rot*s.delta; }
 	});
 }
 

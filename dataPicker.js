@@ -417,11 +417,12 @@ class Picker {
 		let list = [];
 		makeList.process( make => {
 			let any = (''+make.typeFilter).toLowerCase()==='any';
-			let type = this.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ') );
+			let type = this.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ').trim() );
 			if( !type ) {
 				debugger;
 				return;
 			}
+			if( any && !type.isTreasure ) debugger;
 
 			let inject = Object.assign( {}, make );
 			delete inject.count;

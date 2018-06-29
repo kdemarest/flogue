@@ -68,7 +68,10 @@ function nop() {}
 	}
 	Array.count = function(array,fn) {
 		let total = 0;
-		array.forEach( a => total += fn(a) ? 1 : 0 );
+		array.forEach( a => {
+			let n = fn(a);
+			total += n===true ? 1 : (typeof n == 'number' ? n : 0);
+		});
 		return total;
 	}
 	Array.shuffle = function(array) {

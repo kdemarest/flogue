@@ -112,7 +112,7 @@ function monsterPreProcess(typeId,m) {
 	m.brainMindset = String.combine(',',m.brainMindset,BrainMindset[brain]);
 	m.brainAbility = String.combine(',',m.brainAbility,BrainAbility[brain]);
 	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[body]);
-	m.bodySlots    = (m.bodySlots || []).concat( BodySlots[body] );
+	m.bodySlots    = Object.assign( m.bodySlots || {}, BodySlots[body] );
 
 	let blood = {
 		isPlanar: 	'bloodYellow',
@@ -130,7 +130,7 @@ function monsterPreProcess(typeId,m) {
 		}
 	}
 	m.bloodId = m.bloodId || 'bloodRed';
-	if( m.isAnimal ) {
+	if( !m.isSunChild ) {
 		m.darkVision = m.darkVision || DEFAULT_MONSTER_DARK_VISION;
 	}
 

@@ -2,7 +2,7 @@ let ConfigList = {};
 
 ConfigList.ken = () => {
 	ScapeList.kenCave = theme => ({
-		dim: 				20,
+		dim: 				40,
 		architecture: 		"cave",
 		floorDensity: 		0.88,
 		seedPercent: 		0.20,
@@ -22,15 +22,13 @@ ConfigList.ken = () => {
 	PlaceTypeList.kenPlace = {
 		map:
 			`
-			.X..d....
-			.ffffff..
-			.f....f..
-			.f..f.f..
-			.f..f.f..
-			.ffff.f..
+			.c.
+			..b
 			`,
 		flags: { rotate: true },
 		symbols: {
+			c: 'chest',
+			b: 'barrel',
 			X: { typeFilter: 'marker', playerStartHere: true },
 			x: 'brazier',
 			p: 'pit',
@@ -54,15 +52,16 @@ ConfigList.ken = () => {
 
 	ThemeList.kenTheme = {
 		scapeId: 		'kenCave',
-		rREQUIRED: 		'floodPit, trollBridge',
+		rREQUIRED: 		'kenPlace',
 		placeDensity: 	0.20,
+		rCOMMON: 		'kenPlace',
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
 		monsters: 		['isGoblinMinion','isGhoul'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.03,
+		enemyDensity:  	0.001,
 		friendDensity: 	0.0001,
 	}
 

@@ -295,6 +295,7 @@ class ImageRepo {
 		// variation of imgChoices. It is the responsibilty of the type to implement this properly.
 		for( let symbol in SymbolToType ) {
 			let type = SymbolToType[symbol];
+			console.assert( this.imgGet[type.typeId] === undefined );
 			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
 			if( type.imgGet && !type.imgChoices ) debugger;
 			if( type.imgChoices ) {
@@ -412,6 +413,9 @@ class ViewMap extends ViewObserver {
 		};
 
 		spriteCreate = function(spriteList,imgPath,mayReuse) {
+			if( !imgPath ) {
+				debugger;
+			}
 			let resource = self.imageRepo.get(imgPath);
 			if( !resource ) {
 				debugger;
@@ -458,7 +462,12 @@ class ViewMap extends ViewObserver {
 
 				for( let i=0 ; i<(entity.spriteCount || 1) ; ++i ) {
 					if( !entity.spriteList[i] ) {
-						let sprite = spriteCreate( entity.spriteList, imgGet(entity) );
+						let img = imgGet(entity);
+						if( !img ) {
+							debugger;
+							imgGet(entity);	//helps with debugging.
+						}
+						let sprite = spriteCreate( entity.spriteList, img );
 						sprite.keepAcrossAreas = entity.isUser && entity.isUser();
 						sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
 						sprite.baseScale = entity.scale || TILE_DIM/sprite.width;

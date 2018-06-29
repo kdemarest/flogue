@@ -90,6 +90,20 @@ class Item {
 		if( this.isCoin )		this.coinCount  	= picker.pickCoinCount();
 		if( this.effect ) 		this.effect 		= picker.assignEffect(this.effect,this,this.rechargeTime);
 
+		if( this.hasInventory ) {
+			this.inventory = [];
+		}
+
+		if( this.inventoryLoot ) {
+			console.assert(this.hasInventory);
+			this.lootTake( this.inventoryLoot, this.level );
+			this.inventory.forEach( item => {
+				if( !item.isTreasure ) {
+					debugger
+				}
+			});
+		}
+
 		console.assert( !this.isArmor || this.armor >= 0 );
 		console.assert( !this.isShield || this.armor >= 0 );
 		console.assert( !this.isWeapon || this.damage >= 0 );
@@ -131,6 +145,20 @@ class Item {
 			this.rechargeLeft = this.rechargeTime;
 		}
 	}
+	lootGenerate( lootSpec, level ) {
+		let itemList = [];
+		new Picker(level).pickLoot( lootSpec, item=>{
+			itemList.push(item);
+		});
+		return itemList;
+	}
+
+	lootTake( lootSpec, level ) {
+		let itemList = this.lootGenerate( lootSpec, level );
+		itemList.forEach( item => item.giveTo(this,this.x,this.y) );
+		return itemList;
+	}
+
 	calcReduction(damageType) {
 		if( !this.isArmor && !this.isShield ) {
 			debugger;
@@ -146,7 +174,7 @@ class Item {
 	}
 	giveTo(entity,x,y) {
 		let hadNoOwner = !this.owner;
-		if( this.owner && this.owner.isMap && entity.isUser() ) {
+		if( this.owner && this.owner.isMap && entity.isUser && entity.isUser() ) {
 			// Item flies to your gui sidebar...
 			new Anim({},{
 				at: 		this,
@@ -174,14 +202,14 @@ class Item {
 				duration: 	rangeDuration,
 				onInit: 		a => { a.puppet(this.spriteList); },
 				onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
-				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); },
+				onSpriteDone: 	s => { if( !entity.isMap ) { spriteDeathCallback(this.spriteList); } }
 			});
 
 		}
 		if( this.owner ) {
 			this.owner._itemRemove(this);
 		}
-		if( entity.isItemType && !entity.isPosition ) debugger;
 		if( (x===undefined || y===undefined) && entity.isMap ) debugger;
 		this.x = x;
 		this.y = y;
@@ -201,6 +229,22 @@ class Item {
 			this.ownerOfRecord = entity;
 		}
 	}
+	_itemRemove(item) {
+		if( !this.inventory.includes(item) ) {
+			debugger;
+		}
+		Array.filterInPlace(this.inventory, i => i.id!=item.id );
+	}
+	_itemTake(item,x,y) {
+		if( this.inventory.includes(item) ) {
+			debugger;
+		}
+		this.inventory.push(item);
+		item.x = this.x;
+		item.y = this.y;
+		if( x!==item.x || y!==item.y ) debugger;
+	}
+
 	destroy() {
 		if( this.dead ) {
 			debugger;

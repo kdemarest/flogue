@@ -58,9 +58,8 @@ class DataConditioner {
 	}
 
 	validateLoot() {
-		let picker = new Picker(0);
-		Object.each( MonsterTypeList, m => {
-			let supplyMixed = Array.supplyConcat( m.inventoryLoot, m.inventoryWear );
+
+		function checkSupply(supplyMixed,typeId) {
 			let supplyArray = Array.supplyParse(supplyMixed);		
 			for( let i=0 ; i<supplyArray.length ; ++i ) {
 				supplyArray[i].chance = 100;
@@ -68,15 +67,27 @@ class DataConditioner {
 			let makeList = new Finder( Array.supplyToMake(supplyArray) );
 			makeList.process( make => {
 				let any = (''+make.typeFilter).toLowerCase()==='any';
-				let type = picker.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' '), null, false );
+				let type = picker.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ').trim(), null, false );
+				if( any && type && !type.isTreasure ) {
+					debugger;
+				}
 				if( !type ) {
-					console.log( 'Monster '+m.typeId+' has illegal loot '+make.typeFilter );
+					console.log( 'Type '+typeId+' has illegal loot '+make.typeFilter );
 					debugger;
 				}
 			});
+		}
+
+		let picker = new Picker(0);
+		Object.each( MonsterTypeList, m => {
+			let supplyMixed = Array.supplyConcat( m.inventoryLoot, m.inventoryWear );
+			checkSupply(supplyMixed,m.typeId);
 		});
 
 		Object.each( ItemTypeList, item => {
+			if( item.inventoryLoot ) {
+				checkSupply(item.inventoryLoot,item.typeId);
+			}
 			if( item.ammoType ) {
 				if( !item.ammoSpec ) {
 					console.log( 'Item '+item.typeId+' needs an ammoSpec!' );

@@ -125,6 +125,7 @@ const StickerList = {
 	showVulnerability: { img: 'gui/icons/eVuln.png' },
 	showDodge: { img: 'gui/icons/iDodge.png' },
 	showEat: { img: 'gui/icons/activityEat.png' },
+	coinSingle: { img: 'item/misc/coinOne.png' },
 	eGeneric: { img: "gui/icons/eGeneric.png" },
 	ePoof: { img: "gui/icons/ePoof.png" },
 	alert: { img: "gui/icons/alert.png" },
@@ -761,9 +762,12 @@ const ItemTypeList = {
 					imgChoices: { head: {img:'decor/bedHead.png'}, foot: {img:'decor/bedFoot.png'} },
 					imgGet: (self,img) => img || self.img },
 	"barrel": 		{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "barrel", mayPickup: false, isDecor: true,
-					hasInventory: true, img: 'decor/barrel.png' },
+					inventoryLoot: '3x 50% any', hasInventory: true, img: 'decor/barrel.png' },
 	"chest": 		{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "chest", mayPickup: false, isDecor: true,
-					hasInventory: true, img: 'decor/chest.png' },
+					state: 'shut',
+					imgChoices: { shut: { img: 'decor/chestShut.png' }, open: { img: 'decor/chestOpen.png' }, empty: { img: 'decor/chestEmpty.png' } },
+					imgGet: (self,img) => img || self.imgChoices[self.state].img,
+					inventoryLoot: '5x 50% any', hasInventory: true },
 	"altar":    { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
 				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.\nTouch it to level up.",
 				effect: { op: 'heal', valueDamage: 6.00, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
@@ -1779,6 +1783,59 @@ ItemTypeList.sign.imgChoose = function(map,x,y) {
 		return;
 	}
 	this.img = this.imgChoices.standing.img;
+}
+
+ItemTypeList.chest.onTouch = function(toucher,self) {
+	if( self.state == 'shut' ) {
+		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
+	}
+	else {
+		if( self.inventory && self.inventory.length > 0 ) {
+			let delay = 0;
+			toucher.inventoryTake(self.inventory, self, false, item => {
+				new Anim({},{
+					at: 		self,
+					img: 		item.imgGet ? item.imgGet(item) : item.img,
+					delay: 		delay,
+					duration: 	0.6,
+					onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
+					onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
+				});
+				delay += 0.3;
+			});
+			animFountain(self,20,1.0,4,StickerList.coinSingle.img);
+		}
+		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
+	}
+	spriteDeathCallback(self.spriteList);
+}
+
+ItemTypeList.barrel.onTouch = function(toucher,self) {
+	if( self.inventory && self.inventory.length > 0 ) {
+		let delay = 0;
+		toucher.inventoryTake(self.inventory, self, false, item => {
+			new Anim({},{
+				at: 		self,
+				img: 		item.imgGet ? item.imgGet(item) : item.img,
+				delay: 		delay,
+				duration: 	0.6,
+				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
+				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
+			});
+			delay += 0.3;
+		});
+	}
+
+	new Anim({},{
+		follow: 	self,
+		img: 		self.img,
+		duration: 	0.6,
+		onInit: 		a => { a.create(5); },
+		onSpriteMake: 	s => { let deg=Math.rand(0-60,0+60); s.sScaleSet(0.7).sVel(deg,Math.rand(5,7)); s.rot = deg/60*Math.PI; },
+		onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sGrav(20); s.rotation += s.rot*s.delta; }
+	});
+
+	self.destroy();
 }
 
 ItemTypeList.fontSolar.onTick = function(dt) {

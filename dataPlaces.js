@@ -178,6 +178,8 @@ let ThemeDefault = () => ({
 	enemyDensity: 	0.08,
 	friendDensity: 	0.00,
 	itemDensity: 	0.03,
+
+	barrelChance: 	50
 });
 
 ThemeList.surface = {
@@ -241,7 +243,7 @@ ThemeList.dwarfTown = {
 				'gatewayFromDwarves, 2x dwarfHouseSmall, 2x dwarfHouse, '+
 				'70% dwarfTemple, 30% den_dog, 10% camp_human',
 	rCOMMON: 	'floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall',
-	rUNCOMMON: 	'floodPit, dwarfHouse',
+	rUNCOMMON: 	'floodPit, dwarfHouse, barrelStorage',
 	rRARE: 		'firePit, floodWater',
 	jobPick: 	{ layman: 10, sentry: 3, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
 	prefer: 	['pit'],
@@ -274,7 +276,7 @@ ThemeList.coreBridges = {
 
 ThemeList.coreMaze = {
 	scapeId: 	'caveMazeLike',
-	rCOMMON: 	'demonNest, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom',
+	rCOMMON: 	'demonNest, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom, barrelStorage',
 	rUNCOMMON: 	'floodPit, camp_goblin, den_kobold, nest_bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'camp_human, goblinGathering, portal, circle, ruin, swamp, firePit, floodOre, floodWater',
 	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
@@ -299,7 +301,7 @@ ThemeList.coreCavernSomewhatOpen = {
 	scapeId: 	'caveBroadWinding',
 	rCOMMON: 	'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre, barrelStorage',
 	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
 }
@@ -865,14 +867,15 @@ PlaceTypeList.circle = {
 ...xxx...
 ..xxxxx..
 .xx...xx.
-.xx......
+.xx.c....
 .xx...xx.
 ..xxxxx..
 ...xxx...
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: { pick: ['pit','flames','lava','water','mist','mud','forcefield'] }
+		x: { pick: ['pit','flames','lava','water','mist','mud','forcefield'] },
+		c: 'chest',
 	}
 }
 
@@ -880,7 +883,7 @@ PlaceTypeList.ruin = {
 	map:
 `
 .o...
-.s..a
+.sb.a
 a.o..
 ..*a.
 .a...
@@ -889,7 +892,8 @@ a.o..
 	symbols: {
 		s: 'shadow',
 		o: 'columnBroken',
-		a: 'columnStump'
+		a: 'columnStump',
+		b: 'barrel',
 	}
 }
 
@@ -898,12 +902,13 @@ PlaceTypeList.tinyRoom = {
 `
 .....
 .#+#.
-.+.+.
+.+c+.
 .#+#.
 .....
 `,
 	flags: { rotate: false },
 	symbols: {
+		c: 'chest',
 	}
 }
 
@@ -933,6 +938,21 @@ PlaceTypeList.collonade = {
 	flags: { rotate: true },
 	symbols: {
 		o: { pick: ['columnBroken','columnStump'] }
+	}
+}
+
+PlaceTypeList.barrelStorage = {
+	map:
+`
+xxxxx
+xbbbx
+xbbbx
+x...x
+xx+xx
+`,
+	flags: { rotate: true },
+	symbols: {
+		b: 'barrel'
 	}
 }
 
@@ -1032,8 +1052,8 @@ PlaceMany( 'nest', ['blueScarab','redScarab','viper'], VARIETY => ({
 	map:
 `
 .x-x.
-x-.-x
--yyy-
+x-y-x
+-ycy-
 x-.-x
 .x-x.
 `,
@@ -1041,6 +1061,7 @@ x-.-x
 	symbols: {
 		x: 'wall',
 		'-': 'mud',
+		c: 'chest',
 		y: VARIETY
 	},
 	inject: {
@@ -1076,12 +1097,13 @@ PlaceMany( 'den', ['dog','kobold'], VARIETY => ({
  xxxxxx
 xxy*.yx
 xy.....
-x.*yxxx
+x.byxxx
 xxxxx  
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
 		x: "wall",
+		b: 'barrel',
 		y: VARIETY
 	},
 	inject: {
@@ -1114,7 +1136,7 @@ mmwwwfmmwwwmm
 mwwwwwwwwmwmm
 mmwwwfmwmwwmm
 mwwww*mmwmfmm
-mmmwmwmwwwmmm
+mmmwcwmwwwmmm
 mfwwwmwfmwwmm
 mmfwwf*wwwwmm
 mmwmmwmwwmwmm
@@ -1127,7 +1149,8 @@ mmwmwwmmwwwwm
 	symbols: {
 		m: "mud",
 		w: "water",
-		f: "spinyFrog"
+		f: "spinyFrog",
+		c: 'chest',
 	},
 	inject: {
 		spinyFrog: { attitude: Attitude.WANDER, tether: 3, tooClose: 3 },
@@ -1188,7 +1211,7 @@ PlaceTypeList.balgursChamber = {
 ###########
 #LLDDDDDLL#
 #L..DDD.iL#
-#.f..a..f.#
+#cf..a..fc#
 #..i..f...#
 #.......i.#
 #.i.f...f.#
@@ -1205,6 +1228,7 @@ PlaceTypeList.balgursChamber = {
 		D: 'demon',
 		i: 'imp',
 		a: 'avatarOfBalgur',
+		c: 'chest',
 	}
 }
 PlaceTypeList.portal = {
@@ -1213,9 +1237,9 @@ PlaceTypeList.portal = {
   MMMMM  
  MM,,,MM 
 MM,,,,,MM
-M,,~*~,,M
-M,,*P*,,e
-M,,~*~,,M
+M,,~c~,,M
+M,,,P,,,e
+M,,~c~,,M
 MM,,,,,MM
  MM,,,MM 
   MMMMM  
@@ -1227,7 +1251,8 @@ MM,,,,,MM
 		'~': 'water',
 		M: "mist",
 		P: "portal",
-		e: 'ethermite'
+		e: 'ethermite',
+		c: 'chest',
 	},
 	inject: {
 		portal: { themeId: 'hellscape' }
@@ -1259,14 +1284,15 @@ PlaceTypeList.trollPit = {
 `
   ::::::
 ::::...:
-..T..*.:
+..T..c.:
 ::::...:
   ::::::
 `,
 	flags: { rotate: true },
 	symbols: {
 		T: 'troll',
-		':': 'pit'
+		':': 'pit',
+		c: 'chest',
 	},
 	inject: {
 		troll: { attitude: Attitude.AWAIT, tooClose: 2 }
@@ -1329,9 +1355,9 @@ PlaceTypeList.handoutStand = {
 	map:
 		`
 		     xxxxx
-		.....,,,*x
-		rrrrrp,,*x
-		.....,,,*x
+		.....,,,bx
+		rrrrrp,,bx
+		.....,,,bx
 		.....x,,,x
 		 ....xxpxx
 		   ....... 
@@ -1342,6 +1368,7 @@ PlaceTypeList.handoutStand = {
 		p: "philanthropist",
 		',': "tileStoneFloor",
 		x: "tileStoneWall",
+		b: 'barrel',
 	},
 	inject: {
 		philanthropist: { attitude: Attitude.AWAIT, tether: 0 },
@@ -1401,7 +1428,7 @@ PlaceTypeList.dwarfTemple = {
 	map:
 `
  xxxxxxx 
- xf.A.fx 
+ xfcAcfx 
 xx.....xx
 xb..d..bx
 x.......x
@@ -1418,6 +1445,7 @@ xxxs+xxxx
 		A: "altar",
 		b: "brazier",
 		f: "fountain",
+		c: 'chest',
 		d: { typeFilter: 'dwarf', name: "dwarf cleric", jobId: 'priest' },
 		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'tileStoneWall' } ]
 	}
@@ -1427,7 +1455,7 @@ PlaceTypeList.dwarfHouse = {
 	map:
 `
 xxxxxxxxx
-x.b.b.b.x
+xcbcbcb.x
 x.b.b.b.x
 x.......x
 xxxxxx+xx
@@ -1444,6 +1472,7 @@ xxxx+xxxx
 		x: "tileStoneWall",
 		t: 'table',
 		b: 'bed',
+		c: 'chest',
 		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 3, jobId: 'isSentry'  },
 		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'tileStoneWall' } ]
 	}
@@ -1453,7 +1482,7 @@ PlaceTypeList.dwarfHouseSmall = {
 	map:
 `
 xxxxxxx
-x.....x
+xttt.bx
 x..d..x
 x.....x
 x.....x
@@ -1466,6 +1495,8 @@ xxxx+xx
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
 		d: "dwarf",
+		t: 'table',
+		b: 'barrel'
 	},
 	inject: {
 		dwarf: { attitude: Attitude.WANDER, tether: 6, jobId: 'isLayman'  }
@@ -1476,8 +1507,8 @@ PlaceTypeList.dwarfHouseL = {
 	map:
 `
 xxxxxxxxxxx
-x.........x
-x..d......x
+x......ttbx
+x..d.....bx
 x.....xx+xx
 x.....x
 x.....x
@@ -1489,6 +1520,8 @@ xxxx+xx
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
 		d: "dwarf",
+		t: 'table',
+		b: 'barrel',
 	},
 	inject: {
 		dwarf: { attitude: Attitude.WANDER, tether: 6, jobId: 'isLayman' }
@@ -1519,7 +1552,7 @@ PlaceTypeList.shopSmall = {
 	map:
 `
 xxxxx
-x.d.x
+xcd.x
 bs..b
 .....
 `,
@@ -1529,6 +1562,7 @@ bs..b
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
 		b: 'brazier',
+		c: 'chest',
 		d: { typeFilter: 'dwarf', jobId: 'isMidsize' },
 		s: { typeFilter: 'sign', sign: 'BYJOB' }
 	},
@@ -1556,7 +1590,7 @@ PlaceTypeList.shopLarge = {
 	map:
 `
 xxxxxxx
-x..d..x
+xcbd..x
 xtttttx
 x.....x
 x.....x
@@ -1569,6 +1603,8 @@ xxsx+xx
 		'.': "tileStoneFloor",
 		x: "tileStoneWall",
 		t: 'table',
+		c: 'chest',
+		b: 'barrel',
 		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 2, jobId: 'isMajor' },
 		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'tileStoneWall'}]
 	},
