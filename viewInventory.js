@@ -103,30 +103,22 @@ class ViewInventory extends ViewObserver {
 			this.inventoryRaw.filter( item => ItemFilterGroup[filterId].includes(item.typeId) );
 		}
 
+		this.inventory = new Finder(this.inventoryRaw.all);
 /*
-		this.inventoryRaw.all.sort( function(a,b) { 
-			let as = order(a.typeId)+' '+a.name;
-			let bs = order(b.typeId)+' '+b.name;
-			if( as < bs ) return -1;
-			if( as > bs ) return 1;
-			return 0;
-		});
-*/
-		this.inventory = new Finder([]);
 		this.inventoryRaw.process( item => {
 			let sid = item.name+'&'+item.inSlot;
 			if( !item.inSlot ) {
 				let other = this.inventory.find( item => item._sid==sid );
 				if( other ) {
-					other._count++;
+					other.bunch++;
 					return;
 				}
 			}
 			item._sid = sid;
-			item._count = 1;
+			item.bunch = 1;
 			this.inventory.all.push(item);
 		});
-
+*/
 		let self = this;
 		$(this.div).empty();
 

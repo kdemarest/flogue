@@ -37,9 +37,12 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		}
 
 		let item = area.map.itemCreateByType(x,y,type,presets,inject);
+		if( item.bunchSize ) {
+			item.bunch = item.bunchSize;
+		}
 		if( item.isTreasure && Math.chance(theme.barrelChance||0) ) {
 			let barrel = area.map.itemCreateByType(x,y,ItemTypeList.barrel,{},{});
-			item.giveTo(barrel,x,y);
+			item = item.giveTo(barrel,x,y);
 		}
 		if( type.gateDir !== undefined ) {
 //			console.log( "Gate "+type.typeId+" at ("+x+","+y+") leads to "+(!inject ? 'TBD' : inject.toAreaId+' / '+inject.toGateId) );
@@ -50,7 +53,10 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		let site = area.getSiteAt(x,y);
 		if( site ) {
 //			if( site.place && site.place.forbidTreasure ) debugger;
-			site.treasureList.push(item);
+			if( !site.treasureList.find( i=>i.id==item.id ) ) {
+				// Check id because it might have been aggregated!
+				site.treasureList.push(item);
+			}
 		}
 
 		return item;
@@ -329,10 +335,13 @@ function tick(speed,map,entityListRaw) {
 		return [].concat(list[0],list[1],list[2]);
 	}
 
-	function tickItemList(itemList,dt) {
+	function tickItemList(itemList,dt,rechargeRate) {
+		console.assert(rechargeRate);
 		for( let item of itemList ) {
+			let list = item.owner.itemList || item.owner.inventory;
+			console.assert( list.find( i => i.id == item.id ) );
 			if( item.rechargeLeft > 0 ) {
-				item.rechargeLeft = Math.max(0,item.rechargeLeft-1);
+				item.rechargeLeft = Math.max(0,item.rechargeLeft-rechargeRate);
 			}
 			if( item.onTick ) {
 				item.onTick.call(item,dt);
@@ -379,7 +388,7 @@ function tick(speed,map,entityListRaw) {
 			entity.think();
 			entity.act();
 			// DANGER! At this moment the entity might have changed areas!
-			tickItemList(entity.inventory,dt);
+			tickItemList(entity.inventory,dt,entity.rechargeRate||1);
 			DeedManager.calc(entity);
 			entity.actionCount -= 1;
 		}
@@ -388,7 +397,7 @@ function tick(speed,map,entityListRaw) {
 	while( map.actionCount >= 1 ) {
 		// WARNING! There is some risk that an item could tick twice here, or not at all, if an entity caused something to
 		// pop out of another entity's inventory. But the harm seems small. I hope.
-		tickItemList(map.itemList,dt);
+		tickItemList(map.itemList,dt,1);
 		map.actionCount -= 1;
 	}
 	DeedManager.cleanup();

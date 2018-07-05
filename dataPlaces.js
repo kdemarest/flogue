@@ -160,7 +160,7 @@ let ThemeDefault = () => ({
 
 	floor: 			TileTypeList.floor.symbol,
 	wall:  			TileTypeList.wall.symbol,
-	door:  			TileTypeList.door.symbol,
+	door:  			ItemTypeList.door.symbol,
 	fillFloor:  	TileTypeList.floor.symbol,
 	fillWall:  		TileTypeList.wall.symbol,
 	outlineWall:  	TileTypeList.wall.symbol,
@@ -198,6 +198,7 @@ ThemeList.surface = {
 ThemeList.coreCavernRooms = {
 	scapeId: 		'caveRoomsNarrowlyConnected', //'caveRoomsWellConnected',
 	placeDensity: 	0.70,
+	rREQUIRED: 		'goblinGathering,camp_ogre',
 	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
@@ -781,23 +782,10 @@ PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt) {
 		let f = new Finder(this.area.entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).near(this.x,this.y,6);
 		if( f.count ) {
 			let entity = pick(f.all);
-			let amount = entity.healthMax - entity.health;
+			let amount = Math.floor(entity.healthMax/2 - entity.health);
 			entity.takeHealing(this,amount,DamageType.ROT,true);
 			tell( mSubject,this,' ',mVerb,'imbue',' ',mObject,entity,' with dark power.');
-/*
-			let dx = this.x - entity.x;
-			let dy = this.y - entity.y;
-			let deg = deltaToDeg(dx,dy);
-
-			new Anim({
-				follow: 	this,
-				img: 		stickerList.darkPower.img,
-				duration: 	1,
-				onInit: 		a => { a.create(12); },
-				onSpriteMake: 	s => { s.sVel(Math.rand(deg-90,deg+90),Math.rand(5,10)); s.delay=Math.rand(0,0.5); },
-				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sVelTo(dx,dy); }
-			});
-*/
+			animHoming(this,entity,StickerList.bloodGreen.img,45,6,0.5,5);
 			this.rechargeLeft = this.rechargeTime;
 		}
 	}
@@ -816,11 +804,11 @@ PlaceTypeList.surfaceSunTemple = {
  ##.................##
  #...................#
 ##...................##
-#.....................#
+#.......1.2.3.4.5.....#
 #.....................########
-#.....................+..d...#
-#...b......F..X..1A...#.pwasS#
-#.....................+......#
+#.....................#..d...#
+#...b......FX.....A...D...L.S#
+#.....................#......#
 #.....................########
 #.....................#
 ##...................##
@@ -834,8 +822,59 @@ PlaceTypeList.surfaceSunTemple = {
 `,
 	flags: { rotate: true, hasWall: true, isUnique: true },
 	symbols: {
-		1: 'stuff.oilLamp',
+		'1': [{
+			typeFilter: 'chest',
+			label: 'starterChest',
+			sign: 'Legacy of Hathgar the mighty.',
+			inventoryLoot: [
+				'weapon.sword.eHoly, armor.eInert, 2x potion.eHealing',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onOpen: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+		}],
+		'2': [{
+			typeFilter: 'chest',
+			label: 'starterChest',
+			sign: 'Legacy of Ozymandius the mystic.',
+			inventoryLoot: [
+				'spell.eFire, spell.ePanic, cloak.eRechargeFast, 2x potion.eHealing',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onOpen: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+		}],
+		'3': [{
+			typeFilter: 'chest',
+			label: 'starterChest',
+			sign: 'Legacy of Slyndero the clever.',
+			inventoryLoot: [
+				'weapon.dagger, spell.eTeleport, cloak.eInvisibility, 2x potion.eHealing',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onOpen: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+		}],
+		'4': [{
+			typeFilter: 'chest',
+			label: 'starterChest',
+			sign: 'Legacy of Duramure the steadfast.',
+			inventoryLoot: [
+				'weapon.hammer.eInert, armor.eInert, shield.eInert, 2x potion.eHealing',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onOpen: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+		}],
+		'5': [{
+			typeFilter: 'chest',
+			label: 'starterChest',
+			sign: 'Legacy of Arithern the accurate.',
+			inventoryLoot: [
+				'armor.eInert, weapon.bow.eHoly, 50x ammo.arrow, 5x ammo.dart, 2x potion.eHealing',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onOpen: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+		}],
+		L: 'stuff.candleLamp',
 		X: { typeFilter: 'marker', playerStartHere: true },
+		D: { typeFilter: 'door', state: 'locked', keyId: 'Solar Temple door' },
 		F: "fontSolar",
 		A: "altar",
 		b: "brazier",

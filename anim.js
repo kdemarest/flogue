@@ -529,7 +529,7 @@ function animFountain(entity,num=40,duration=2,velocity=3,img) {
 	});
 }
 
-function animHoming(entity,target,offAngle=45,num=40,duration=2,velocity=3,img) {
+function animHoming(entity,target,img,offAngle=45,num=40,duration=2,velocity=3) {
 	let dx = target.x - entity.x ;
 	let dy = target.y - entity.y;
 	let deg = deltaToDeg(dx,dy);
@@ -564,7 +564,7 @@ function animationAdd(anim) {
 	return anim;
 }
 function animationRemove(fn) {
-	animationList.map( anim => { if( fn(anim) ) anim.die(); } );
+	animationList.forEach( anim => { if( fn(anim) ) anim.die(); } );
 }
 function animationTick(delta) {
 	animationList.map( anim => anim.tick(delta) );

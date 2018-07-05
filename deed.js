@@ -1,3 +1,48 @@
+
+class Effect {
+	constructor( depth, effectRaw, item=null, rechargeTime=0 ) {
+		console.assert( depth !== undefined && typeof depth == 'number' );
+		console.assert( typeof effectRaw == 'object' && effectRaw !== null);
+
+		if( effectRaw.isInert ) return;
+		if( effectRaw.basis ) console.assert(EffectTypeList[effectRaw.basis]);
+		let basis = effectRaw.basis ? EffectTypeList[effectRaw.basis] : null;
+		let effect = Object.assign({},basis,effectRaw);
+		effect.effectShape = effect.effectShape || EffectShape.SINGLE;
+
+		if( effect.valueDamage ) {
+			effect.value = Math.max(1,Math.floor(Rules.pickDamage(depth,rechargeTime||0) * effect.valueDamage));
+
+			console.assert( !isNaN(effect.value) );
+
+			if( item && (item.isWeapon || item.isArmor || item.isShield) ) {
+				effect.chanceOfEffect = effect.chanceOfEffect || ( item.isWeapon ? WEAPON_EFFECT_CHANCE_TO_FIRE : ARMOR_EFFECT_CHANCE_TO_FIRE );
+				
+				if( WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
+					effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+					console.assert( !isNaN(effect.value) );
+					effect.chanceOfEffect = 100;
+				}
+			}
+		}
+		if( effect.valuePick ) {
+			effect.value = effect.valuePick();
+		}
+		if( item && item.effectOverride ) {
+			Object.assign( effect, item.effectOverride );
+		}
+		// Always last so that all member vars are available to the namePattern.
+		effect.name = effect.name || String.tokenReplace(effect.namePattern || 'nameless effect',effect);
+
+		Object.assign( this, effect );
+		return this;
+	}
+	trigger( target, source, item ) {
+		return effectApply(this,target,source,item);
+	}
+}
+
+
 // DEED
 
 class Deed {
@@ -239,9 +284,18 @@ function makeFilledCircle(x0, y0, radius, fn) {
 
 
 let effectApply = function(effect,target,source,item) {
+	if( !(effect instanceof Effect) ) {
+		effect = new Effect(
+			item ? item.depth : target.area.depth,
+			effect,
+			item,
+			item ? item.rechargeTime : 0
+		);
+	}
+
 	let effectShape = effect.effectShape || EffectShape.SINGLE;
 	if( effectShape == EffectShape.SINGLE ) {
-		return effectApplyTo(effect,target,source,item);
+		return _effectApplyTo(effect,target,source,item);
 	}
 	let radius = 0;
 	let shape = '';
@@ -267,7 +321,7 @@ let effectApply = function(effect,target,source,item) {
 					//animAt( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
 					let targetList = new Finder(area.entityList).at(x,y);
 					targetList.process( t => {
-						effectApplyTo(effect,t,source,item);
+						_effectApplyTo(effect,t,source,item);
 					});
 				}
 			});
@@ -284,9 +338,11 @@ let effectApply = function(effect,target,source,item) {
 // effect.duration
 // effect.isResist
 
-let effectApplyTo = function(effect,target,source,item) {
+let _effectApplyTo = function(effect,target,source,item) {
 
-	// Now we can change the value inside it without metting up the origin effect.
+	// Now we can change the value inside it without messing up the origin effect.
+	// This is critically important, because each affected target needs its OWN effect
+	// set upon it - for internal counters or whatever.
 	effect = Object.assign( {}, effect, { target:target, source: source, item: item });
 
 	if( effect.effectFilter ) {
@@ -310,10 +366,9 @@ let effectApplyTo = function(effect,target,source,item) {
 	}
 
 	// Note that spells with a duration must last at least 1 turn!
-	// This should almost certainly move the DEFAULT_EFFECT_DURATION usage into the Picker.
 	effect.duration = (effect.isInstant || effect.duration===0 ? 0 :
 		((item && item.inSlot) || effect.duration==true ? true :
-		Math.max(1,(effect.duration || DEFAULT_EFFECT_DURATION) * (effect.durationMod||1))
+		Math.max(1,(effect.duration || Rules.DEFAULT_EFFECT_DURATION) * (effect.durationMod||1))
 	));
 
 	if( source && target && source.command == Command.CAST && effect.icon !== false) {
@@ -484,4 +539,14 @@ DeedManager.addHandler('drain',function() {
 		animFloatUp(this.target,this.icon || StickerList.eGeneric.img);
 	}
 	return anyDrained;
+});
+
+DeedManager.addHandler('killLabel',function() {
+	let f = new Finder( this.target.itemList, this.source ).excludeMe().filter( item => item.label == this.value );
+	let count = f.count;
+	f.process( item => {
+		animFloatUp( item, StickerList.ePoof.img );
+		item.destroy()
+	});
+	return count;
 });

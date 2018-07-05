@@ -484,7 +484,7 @@ class ViewMap extends ViewObserver {
 						sprite.x 		= x+(TILE_DIM/2);
 						sprite.y 		= y+(TILE_DIM/2);
 						sprite.transform.scale.set( sprite.baseScale );
-						sprite.alpha 	= (entity.alpha||1) * LightAlpha[light];
+						sprite.alpha 	= (entity.alpha||1) * LightAlpha[Math.floor(light)];
 						//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 					}
 					if( doTint ) {

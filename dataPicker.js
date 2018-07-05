@@ -66,7 +66,7 @@ class Picker {
 		let killIs = [];
 		let keepId = {};
 		let killId = {};
-		filterString.replace( /\s*(!)*(is)*(\S+|\S+)/g, function( whole, not, is, token ) {
+		filterString.replace( /\s*(!)*(is|may)*(\S+|\S+)/g, function( whole, not, is, token ) {
 			if( is ) {
 				(not ? killIs.push(is+token) : keepIs.push(is+token));
 			}
@@ -114,6 +114,7 @@ class Picker {
 		let depth = this.depth;
 		let count = 0;
 		let one = { nothing: { skip:1, level: 0, rarity: 1 } };	// be sure effectChance is undefined in here!!
+		let oneInert = { typeId: 'eInert', name: 'inert', level: 0, rarity: 0, isInert: 1 };
 		let l0 = { level: 0 };
 		let r1 = { rarity: 1 };
 		let done = {};
@@ -144,18 +145,20 @@ class Picker {
 					if( logging ) console.log( item.typeId+' killed for being '+vi );
 					continue;
 				}
-				for( let mi in item.materials || one ) {
+				let materialHash = v.materials || item.materials || one;
+				for( let mi in materialHash ) {
 					if( filter.killId[mi] ) {
 						if( logging ) console.log( item.typeId+' killed for being '+mi );
 						continue;
 					}
-					let m = (item.materials || one)[mi];
-					for( let qi in item.qualities || one ) {
+					let m = materialHash[mi];
+					let qualityHash = v.qualities || m.qualities || item.qualities || one;
+					for( let qi in qualityHash ) {
 						if( filter.killId[qi] ) {
 							if( logging ) console.log( item.typeId+' killed for being '+qi );
 							continue;
 						}
-						let q = (item.qualities || one)[qi];
+						let q = qualityHash[qi];
 
 						if( !filter.testMembers(item) && !filter.testMembers(v) && !filter.testMembers(m) && !filter.testMembers(q) ) {
 							if( logging ) console.log( item.typeId+' lacks member' );
@@ -169,7 +172,7 @@ class Picker {
 						}
 						if( !effectArray[0].skip ) {
 							Array.filterInPlace( effectArray, e=>e.typeId!='eInert' );
-							effectArray.push( { typeId: 'eInert', name: 'inert', level: 0, rarity: 0, isInert: 1 } );
+							effectArray.push( oneInert );
 						}
 
 						// Order here MUST be the same as in Item constructor.
@@ -333,39 +336,6 @@ class Picker {
 		return choice;
 	}
 
-	assignEffect(effectRaw,item,rechargeTime) {
-		if( effectRaw.isInert ) return;
-		if( effectRaw.basis ) console.assert(EffectTypeList[effectRaw.basis]);
-		let basis = effectRaw.basis ? EffectTypeList[effectRaw.basis] : null;
-		let effect = Object.assign({},basis,effectRaw);
-		effect.effectShape = effect.effectShape || EffectShape.SINGLE;
-
-		if( effect.valueDamage ) {
-			effect.value = Math.max(1,Math.floor(this.pickDamage(rechargeTime||0) * effect.valueDamage));
-
-			console.assert( !isNaN(effect.value) );
-
-			if( item && (item.isWeapon || item.isArmor || item.isShield) ) {
-				effect.chanceOfEffect = effect.chanceOfEffect || ( item.isWeapon ? WEAPON_EFFECT_CHANCE_TO_FIRE : ARMOR_EFFECT_CHANCE_TO_FIRE );
-				
-				if( WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
-					effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
-					console.assert( !isNaN(effect.value) );
-					effect.chanceOfEffect = 100;
-				}
-			}
-		}
-		if( effect.valuePick ) {
-			effect.value = effect.valuePick();
-		}
-		if( item && item.effectOverride ) {
-			Object.assign( effect, item.effectOverride );
-		}
-		// Always last so that all member vars are available to the effect.
-		effect.name = effect.name || String.tokenReplace(effect.namePattern || 'nameless effect',effect);
-		return effect;
-	}
-
 	pickRechargeTime(level,item) {
 		let xRecharge = ItemCalc(item,item,'xRecharge','*');
 		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/DEPTH_SPAN)*10);
@@ -388,12 +358,6 @@ class Picker {
 		console.assert(mc>=0 && level>=0);
 		return mc;
 	}
-	pickDamage(level,rechargeTime,item) {
-		let dm = ItemCalc(item,item,'xDamage','*');
-		let mult = (rechargeTime||0)>1 ? 1+(rechargeTime-1)*DEFAULT_DAMAGE_BONUS_FOR_RECHARGE : 1;
-		let damage = Rules.playerDamage(level) * mult * dm;
-		return Math.max(1,Math.floor(damage));
-	}
 	pickCoinCount() {
 		let base = Math.max(1,this.depth);
 		return base;
@@ -404,7 +368,7 @@ class Picker {
 		}
 		let base = item.level + item.depth + 1;
 		let xPrice = ItemCalc(item,item,'xPrice','*');
-		let mult = (buySell=='buy' ? PRICE_MULT_BUY : PRICE_MULT_SELL);
+		let mult = (buySell=='buy' ? Rules.PRICE_MULT_BUY : Rules.PRICE_MULT_SELL);
 		return Math.max(1,Math.floor(base * xPrice * mult));
 	}
 

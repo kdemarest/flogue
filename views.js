@@ -590,15 +590,16 @@ function itemExplain(item,buySell) {
 	function icon(file) {
 		return file ? '<img src="tiles/gui/icons/'+file+'">' : '';
 	}
+	let name = item.name.replace(/\$/,'');
 	return {
 		item: 			item,
 		typeId: 		item.typeId,
 		level: 			item.level,
 		typeOrder: 		order(item.typeId),
 		icon: 			icon(item.icon),
-		description: 	((item._count||0)>1 ? item._count+'x ' : '')+String.capitalize(item.name),
-		count: 			((item._count||0)>1 ? item._count+'x ' : ''),
-		name: 			String.capitalize(item.name),
+		description: 	((item.bunch||0)>1 ? item.bunch+'x ' : '')+String.capitalize(name),
+		bunch: 			((item.bunch||0)>1 ? item.bunch+'x ' : ''),
+		name: 			String.capitalize(name),
 		damage: 		item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : ''),
 		damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
 		armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUTS,item.isShield) : '',

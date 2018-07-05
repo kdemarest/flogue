@@ -21,6 +21,10 @@ function nop() {}
 		let span = (max-min)/3;
 		return min + Math.random()*span + Math.random()*span + Math.random()*span;
 	}
+	Math.triangular = function(n) {
+		// 1, 3, 6, 10, 15, 21, 28 etc.
+		return (n*(n+1))/2;
+	}
 	Math.chance = function(percent) {
 		return Math.rand(0,100) < percent;
 	}
@@ -35,6 +39,15 @@ function nop() {}
 		let n = '            '+Math.floor(value*p);
 		n = n.substr(0,n.length-decimals)+(decimals>0 ? '.'+n.substr(n.length-decimals) : '');
 		return n.substr(-(3+decimals));
+	}
+	String.splice = function(str, start, delCount, newSubStr) {
+        return str.slice(0, start) + newSubStr + str.slice(start + Math.abs(delCount));
+    }
+	String.insert = function (str, index, string) {
+		if (index > 0)
+			return str.substring(0, index) + string + str.substring(index, str.length);
+		else
+			return string + str;
 	}
 	String.capitalize = function(s) {
 	    return s.charAt(0).toUpperCase() + s.slice(1);
@@ -305,7 +318,9 @@ function nop() {}
 		return '';
 	}
 	String.tokenReplace = function(s,obj) {
-		return s.replace(/{([%]*)([?]*)([+]*)(\w+)}/g,function(whole,pct,hasQ,plus,key) {
+		return s.replace(/{([%]*)([?]*)([+]*)(\w+)}|([\w\s]+)/g,function(whole,pct,hasQ,plus,key,words) {
+			if( words !== undefined ) return words;
+
 			let isPercent = pct=='%';
 			let isPlus = plus=='+';
 			let useOf = hasQ=='?';
@@ -325,12 +340,15 @@ function nop() {}
 				return obj[key].join(',');
 			}
 			if( typeof obj[key] == 'object' ) {
-				if( obj[key] ) return (useOf && obj[key].name ? ' of ' : '')+(obj[key].name || 'NONAME');
+				if( obj[key] ) return (useOf && obj[key].name ? ' of ' : '')+(obj[key].name || 'NONAME ['+key+']');
 			}
 			debugger;
 			return 'UNKNOWN '+key;
 		});
 	}
+
+//let qqq = String.tokenReplace("{material} arrow{+plus}", {material:{name:'frog'},plus:2});
+//debugger;
 
 	Math.chanceToAppearSimple = function(entityLevel,mapLevel) {
 		if( mapLevel < entityLevel ) {
@@ -405,34 +423,6 @@ function nop() {}
 		return chance;
 	}
 
-	window.Rules = new class {
-		constructor() {
-
-		}
-		 playerHealth(playerLevel) {
-		 	return 90+(10*playerLevel);
-		 }
-		 playerArmor(playerLevel) {
-		 	let armorAtLevelMin = 0.30;
-		 	let armorAtLevelMax = 0.80;
-		 	let armor = armorAtLevelMin+((playerLevel-1)/DEPTH_SPAN)*(armorAtLevelMax-armorAtLevelMin);
-		 	return Math.clamp(armor,0.0,1.0);
-		 }
-		 playerDamage(playerLevel) {
-		 	// Always just 1/10th of the player's hit points at this level. Monster health will scale to it.
-		 	let damage = this.playerHealth(playerLevel)/10;
-		 	return Math.max(1,Math.floor(damage));
-		 }
-		 monsterHealth(monsterLevel,hitsToKillMonster=3) {
-		 	if( !hitsToKillMonster ) debugger;
-		 	return Math.max(1,Math.floor(this.playerDamage(monsterLevel)*hitsToKillMonster));
-		 }
-		 monsterDamage(monsterLevel,hitsToKillPlayer=10) {
-		 	if( !hitsToKillPlayer ) debugger;
-		 	let damage = this.playerHealth(monsterLevel)/(hitsToKillPlayer*(1-this.playerArmor(monsterLevel)));
-		 	return Math.max(1,Math.floor(damage));
-		 }
-	};
 })();
 
 let GetTimeBasedUid = (function() {

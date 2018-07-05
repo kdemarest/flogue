@@ -145,13 +145,34 @@ class Sentence {
 				let isPossessed = m[i] & mPossessed;
 				let who = m[++i];
 				let specifier = 'the ';
+				let pluralize = false;
+				if( who.bunch !== undefined && who.bunch > 1 ) {
+					specifier = who.bunch+' ';
+					pluralize = true;
+				}
+				else
 				if( useA ) {
 					specifier = vowels.indexOf(who.name.charAt(0))>=0 ? 'an ': 'a ';
 				}
 				if( isPossessed || numbers.indexOf(who.name.charAt(0))>=0 ) {
 					specifier = '';
 				}
-				let thing = (who.properNoun ? '' : specifier)+who.name;
+				let name = who.name;
+				if( pluralize ) {
+					let pluralIndex = name.indexOf('$');
+					if( pluralIndex >= 0 ) {
+						let lastTwo = name.substr(pluralIndex-2,2);
+						let affix = (lastTwo=='sh' || lastTwo=='ch' ? 'es' : 's');
+						name = String.splice(name,pluralIndex,1,affix);
+					}
+				}
+				else {
+					let pluralIndex = name.indexOf('$');
+					if( pluralIndex >= 0 ) {
+						name = String.splice(name,pluralIndex,1,'');
+					}
+				}
+				let thing = (who.properNoun ? '' : specifier)+name;
 				let a = SentenceReusableArray;
 				a[0] = {you:'you',he:thing,she:thing,it:thing};
 				a[mPronoun] = {you:'you',he:'he',she:'she',it:'it'};

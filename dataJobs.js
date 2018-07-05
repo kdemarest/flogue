@@ -51,14 +51,14 @@ let JobTypeList = {
 		buyTest: item => item.isArmor || item.isShield || item.isOre || item.isMetal,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Come back safe and sound!",
-		inventoryLoot: '20x armor, 5x helm, 5x bracers, 20x 50% armor'
+		inventoryLoot: '15x armor, 5x helm, 5x bracers, 3x shield, 20x 50% armor'
 	},
 	clothier: {
 		isMerchant: true,
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isCloak || item.isGloves || item.isFabricIngredient,
-		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,bonus:1,charges:1,price:1},
 		sign: "The finest clothes and cloaks!",
 		inventoryLoot: '10x cloak, 5x gloves, 10x 50% stuff isFabricIngredient'
 	},
@@ -80,7 +80,7 @@ let JobTypeList = {
 		buyTest: item => item.isBow || item.isAmmo || item.mayThrow,
 		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Shoot from a distance to triumph safely!",
-		inventoryLoot: '10x weapon isBow, 20x ammo, 10x weapon mayThrow, 20x 50% weapon, 20x 50% ammo'
+		inventoryLoot: '10x weapon.bow, 20x ammo, 10x weapon mayThrow, 20x 50% weapon, 20x 50% ammo'
 	},
 	cobbler: {
 		isMerchant: true,

@@ -48,16 +48,10 @@ function deltasToDirNatural(dx,dy) {
 	return deltasToDirPredictable(dx,dy);
 }
 
-let DEPTH_MIN = 0;
-let DEPTH_MAX = 19;
-let DEPTH_SPAN = (DEPTH_MAX-DEPTH_MIN)+1;
 // If you change this, you must also chance the .css class .tile
 let TILE_DIM = 48;
 let MapVis = 8;		// The vision distance used when actually drawing your map display, casting light etc.
 let MaxVis = 8;		// The vision distance max any monster can see
-let DEFAULT_MONSTER_DARK_VISION = 6;
-
-let STANDARD_MONSTER_SIGHT_DISTANCE = 6;
 let TILE_UNKNOWN = ' ';		// reserved so that map creation can look sane.
 let SymbolToType = {};
 let TypeIdToSymbol = {};
@@ -73,13 +67,13 @@ let Prob = {
 	WALL:  800000.0,
 	DEATH: 900000.0
 }
-let SCENT_AGE_LIMIT = 100000;
 
 let ZOrder = {
 	TILE: 10,
 	GATE: 20,
 	DECOR: 22,
 	TABLE: 24,
+	CORPSE: 25,
 	ITEM: 26,
 	SIGN: 28,
 	MONSTER: 30,
@@ -87,9 +81,6 @@ let ZOrder = {
 	MIST: 50,
 	ANIM: 100
 };
-
-let PRICE_MULT_BUY  = 10;
-let PRICE_MULT_SELL = 3;
 
 let MONSTER_SCALE_VARIANCE_MIN = 0.75;
 let MONSTER_SCALE_VARIANCE_MAX = 1.00;
@@ -120,6 +111,7 @@ const StickerList = {
 	bloodBlack: { img: "dc-misc/bloodBlack.png" },
 	bloodWhite: { img: "dc-misc/bloodYellow.png" },
 	glowRed: { img: "effect/glowRed.png" },
+	glowGold: { img: "effect/glowGold.png" },
 	showImmunity: { img: 'gui/icons/eImmune.png' },
 	showResistance: { img: 'gui/icons/eResist.png' },
 	showVulnerability: { img: 'gui/icons/eVuln.png' },
@@ -129,6 +121,9 @@ const StickerList = {
 	eGeneric: { img: "gui/icons/eGeneric.png" },
 	ePoof: { img: "gui/icons/ePoof.png" },
 	alert: { img: "gui/icons/alert.png" },
+	locked: { img: "gui/icons/locked.png" },
+	unlock: { img: "gui/icons/unlock.png" },
+	open: { img: "gui/icons/open.png" },
 	selectBox: { img: "gui/selectBox.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
@@ -151,9 +146,6 @@ const StickerList = {
 
 // Probably should do this at some point.
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
-const RANGED_WEAPON_DEFAULT_RANGE = 7;
-let DEFAULT_DAMAGE_BONUS_FOR_RECHARGE = 0.05;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
-let DEFAULT_EFFECT_DURATION = 10;
 let ARMOR_SCALE = 100;
 
 const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
@@ -185,6 +177,7 @@ let EffectTypeList = {
 	eInert: 		{ level:  0, isInert: 1 },	// this is special, used in the picker effect proxy! Do not change!
 	eWater: 		{ level:  0, rarity: 1.00, isWater: 1 },
 	eBlank: 		{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
+	eKillLabel: 	{ level:  0, rarity: 1.00, op: 'killLabel', isInstant: 1, icon: false },	
 // Tactical
 	eLuminari: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'light', value: 3, durationMod: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
 //	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },
@@ -211,6 +204,7 @@ let EffectTypeList = {
 	eInvisibility: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible, durationMod: 3.0, icon: 'gui/icons/eInvisible.png' },
 	eIgnore: 		{ isBuf: 1, level:  0, rarity: 1.00, op: 'add', stat: 'immune',
 					valuePick: () => pick(PickIgnore), isHelp: 1, namePattern: 'ignore {value}', icon: 'gui/icons/eImmune.png' },
+	eRechargeFast: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'max', stat: 'rechargeRate', value: 1.3, isHelp: 1, durationMod: 3.0, icon: 'gui/icons/eMagic.png' },
 // Debuff/Control
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
 	eStun: 			{ isDeb: 1, level:  0, rarity: 0.50, op: 'set', stat: 'loseTurn', value: true, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eShove.png' },
@@ -233,24 +227,24 @@ let EffectTypeList = {
 	eCurePoison: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isPoison || deed.damageType==DamageType.POISON, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
 	eCureDisease: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isDisease, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
 // Damage
-	eFire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
+	eFire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
 	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.50, isHarm: 1, isPoison: 1,
 					duration: 10, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
 	ePoisonForever: { isDmg: 1, level:  0, rarity: 0.01, op: 'damage', valueDamage: 0.05, isHarm: 1, isPoison: 1,
 					duration: true, damageType: DamageType.POISON, name: 'mortal poison', icon: 'gui/icons/ePoison.png' },
-	eCold: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
-	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.60, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
-	eAcid3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
-	eHoly: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eHoly3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 1.50, effectShape: EffectShape.BLAST3, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eHoly5: 		{ isDmg: 1, level:  0, rarity: 0.20, op: 'damage', valueDamage: 1.20, effectShape: EffectShape.BLAST5, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eHoly7: 		{ isDmg: 1, level:  0, rarity: 0.05, op: 'damage', valueDamage: 1.00, effectShape: EffectShape.BLAST7, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 2.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
+	eCold: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
+	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.90, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
+	eAcid3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 0.50, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
+	eHoly: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 0.70, effectShape: EffectShape.BLAST3, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly5: 		{ isDmg: 1, level:  0, rarity: 0.20, op: 'damage', valueDamage: 0.60, effectShape: EffectShape.BLAST5, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly7: 		{ isDmg: 1, level:  0, rarity: 0.05, op: 'damage', valueDamage: 0.50, effectShape: EffectShape.BLAST7, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
 };
 
 for( let key in EffectTypeList ) {
 	// all effect bearing items have a bigger price.
-	EffectTypeList[key].xPrice = 1.3 * 1/(EffectTypeList[key].rarity||1.0);
+	EffectTypeList[key].xPrice = Rules.effectPriceMultiplierByRarity(EffectTypeList[key].rarity);
 }
 
 EffectTypeList.eFire.onTargetPosition = function(map,x,y) {
@@ -284,8 +278,6 @@ const TileTypeList = {
 	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", isFloor: true },
 	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", isWall: true },
 	"pit":        { symbol: ':', mayWalk: true, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, wantsBridge: true, img: "dc-dngn/pit.png" },
-	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 1, name: "locked door", isDoor: 1, img: "dc-dngn/dngn_open_door.png" },
-	"lockedDoor": { symbol: '±', mayWalk: false, mayFly: false, opacity: 1, name: "door", isDoor: 1, img: "dc-dngn/dngn_closed_door.png" },
 	"bridge":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "bridge", isBridge: true, img: "dc-dngn/bridgeNS.png", imgChoices: ImgBridges, imgGet: (self,img) => img || self.img },
 	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, isWater: true, opacity: 0, mayJump: true, wantsBridge: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
 	"grass":      { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
@@ -362,41 +354,125 @@ const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eCureDisease','eCur
 const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['ePossess','eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
 	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRot','eRage','ePanic','eConfusion','eShove'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBloodhound','eOdorless','eRegeneration','eResistance','eGreed'].includes(k) );
-const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove'].includes(k) );
+const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove','eHoly'].includes(k) );
 const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eHoly','eHoly3','eHoly5','eHoly7','ePoison','eFire','eCold','eBlindness','eSlow','eConfusion'].includes(k) );
 const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eResistance'].includes(k) );
 const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari'].includes(k) );
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
-const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eInvisibility', 'eOdorless'].includes(k) );
+const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eInvisibility', 'eOdorless', 'eRechargeFast'].includes(k) );
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eOdorless','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
+const BowEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eFire','eCold','eAcid','ePoison','eHoly','eStun','eSlow'].includes(k) );
 const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eAcid','eAcid3','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','ePossess','eRage','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
+const WeaponMaterialList = Fab.add( '', {
+	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot'},
+	"silver": 		{ level:  5, toMake: 'silver ingot' },
+	"ice": 			{ level: 25, toMake: 'ice block' },
+	"glass": 		{ level: 40, toMake: 'malachite' },
+	"lunarium": 	{ level: 55, toMake: 'lunarium ingot' },
+	"deepium": 		{ level: 70, toMake: 'deepium ingot' },
+	"solarium": 	{ level: 85, toMake: 'solarium ingot' },
+});
+
+const BowMaterialList = Fab.add( '', {
+	"ash": 			{ level:  0 /* very important this be zero!*/ },
+	"oak": 			{ level:  5 },
+	"maple": 		{ level: 25 },
+	"yew": 			{ level: 40 },
+	"lunarium": 	{ level: 55 },
+	"deepium": 		{ level: 70 },
+	"solarium": 	{ level: 85 },
+});
+
+const ArrowMaterialList = Fab.add( '', {
+	"ash": 			{ level:  0 /* very important this be zero!*/ },
+	"oak": 			{ level:  5 },
+	"maple": 		{ level: 25 },
+	"yew": 			{ level: 40 },
+	"lunarium": 	{ level: 55 },
+	"deepium": 		{ level: 70 },
+	"solarium": 	{ level: 85 },
+});
+
+
 const AmmoList = Fab.add( '', {
-	"arrow":     	{ level:  0, rarity: 1.0, damageType: DamageType.STAB, quick: 0, slot: Slot.AMMO, isArrow: true, breakChance: 60, attackVerb: 'shoot', img: 'UNUSED/spells/components/bolt.png' },
-	"rock":     	{ level:  0, rarity: 1.0, xDamage: 0.50, damageType: DamageType.BASH, isRock: true, quick: 2,
-					mayThrow: true, range: RANGED_WEAPON_DEFAULT_RANGE, attackVerb: 'throw',
-					effectChance: 0.0001,
-					img: 'item/weapon/ranged/rock2.png' },
-	"dart":     	{ level:  0, rarity: 0.5, xDamage: 0.20, damageType: DamageType.STAB, quick: 2,
-					effectChance: 0.80,
-					chanceOfEffect: 100,
-					slot: false,
-					effects: DartEffects,
-					mayThrow: true,
-					range: 10,
-					attackVerb: 'strike', 
-					img: 'UNUSED/spells/components/bolt.png' },
+	"arrow":     	{
+		level:  0,
+		rarity: 1.0,
+		attackVerb: 'shoot',
+		bunchSize: 8,
+		breakChance: 20,
+		damageType: DamageType.STAB,
+		isArrow: true,
+		materials: ArrowMaterialList,
+		namePattern: '{material} arrow${+plus}',
+		quick: 0,
+		slot: Slot.AMMO,
+		img: 'UNUSED/spells/components/bolt.png'
+	},
+	"rock":     	{
+		level:  0,
+		rarity: 1.0,
+		bunchSize: 4,
+		xDamage: 0.50,
+		damageType: DamageType.BASH,
+		isRock: true,
+		quick: 2,
+		namePattern: 'rock${+plus}',
+		mayThrow: true,
+		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
+		attackVerb: 'throw',
+		effectChance: 0.0001,
+		img: 'item/weapon/ranged/rock2.png'
+	},
+	"dart":     	{
+		level:  0,
+		rarity: 0.5,
+		xDamage: 0.20,
+		damageType: DamageType.STAB,
+		quick: 2,
+		namePattern: 'dart${+plus}{?effect}',
+		effectChance: 0.80,
+		chanceOfEffect: 100,
+		slot: false,
+		effects: DartEffects,
+		mayThrow: true,
+		range: 10,
+		attackVerb: 'strike', 
+		img: 'effect/dart2.png'
+	},
 });
 
 const WeaponList = Fab.add( '', {
-	"bow": 	    	{ level:  0, rarity: 1.0, xDamage: 1.00, quick: 0, effectChance: 0.80, effects: DartEffects, damageType: DamageType.STAB,
-					mayShoot: true, range: RANGED_WEAPON_DEFAULT_RANGE, ammoType: 'isArrow', ammoSpec: 'ammo.arrow.eInert',
-					conveyEffectToAmmo: true, conveyDamageToAmmo: true, attackVerb: 'shoot', img: 'item/weapon/ranged/bow1.png' },
+	// Bows are interesting because they take on the damage type of their effect. That makes
+	// them large typed damage dealers, similar to spells, but with instant recharge and less
+	// damage.
+	"bow": {
+		level:  0,
+		rarity: 1.0,
+		xDamage: 1.00,
+		quick: 0,
+		effectChance: 0.80,
+		materials: BowMaterialList,
+		effects: BowEffects,
+		takeOnDamageTypeOfEffect: true,
+		damageType: DamageType.STAB,
+		mayShoot: true,
+		isBow: true,
+		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
+		ammoType: 'isArrow',
+		ammoSpec: 'ammo.arrow.eInert',
+		conveyEffectToAmmo: 	true,
+		conveyDamageToAmmo: 	true,
+		conveyDamageTypeToAmmo: true,
+		attackVerb: 'shoot',
+		img: 'item/weapon/ranged/bow1.png'
+	},
 	"dagger":   	{ level:  3, rarity: 0.5, xDamage: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, 
 					chanceOfEffect: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
-	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
+	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: Rules.RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
 	"solKnife":   	{ level:900, rarity: 0.0001, xDamage: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
 	"pickaxe":   	{ level:  0, rarity: 0.01, xDamage: 0.70, damageType: DamageType.STAB, quick: 0, 
 					attackVerb: 'strike', mineSpeed: 1.0, img: 'item/weapon/pickaxe.png' },
@@ -409,16 +485,6 @@ const WeaponList = Fab.add( '', {
 	"spear": 		{ level:  8, rarity: 0.9, xDamage: 0.70, damageType: DamageType.STAB, quick: 1, reach: 2, mayThrow: true, range: 6, attackVerb: 'strike', img: 'item/weapon/spear2.png' },
 	"pike": 		{ level: 12, rarity: 0.7, xDamage: 0.90, damageType: DamageType.STAB, quick: 0, reach: 2, img: 'item/weapon/bardiche1.png' },
 	"pitchfork": 	{ level: 20, rarity: 0.5, xDamage: 1.20, damageType: DamageType.STAB, quick: 0, reach: 2, mayThrow: true, range: 4, img: 'item/weapon/trident1.png' },
-});
-
-const WeaponMaterialList = Fab.add( '', {
-	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot'},
-	"silver": 		{ level:  5, toMake: 'silver ingot' },
-	"ice": 			{ level: 25, toMake: 'ice block' },
-	"glass": 		{ level: 40, toMake: 'malachite' },
-	"lunarium": 	{ level: 55, toMake: 'lunarium ingot' },
-	"deepium": 		{ level: 70, toMake: 'deepium ingot' },
-	"solarium": 	{ level: 85, toMake: 'solarium ingot' },
 });
 
 const ShieldList = Fab.add( '', {
@@ -526,11 +592,11 @@ const BootList = Fab.add( '', {
 const GloveList = Fab.add( '', {
 	"furGloves": 		{ level:  0, rarity: 1.0 },
 	"leatherGloves": 	{ level:  1, rarity: 1.0 },
-	"trollHideGloves": 	{ level:  2, rarity: 1.0, name: 'troll hide gloves',
+	"studdedGloves": 	{ level:  9, rarity: 1.0 },
+	"trollHideGloves": 	{ level: 14, rarity: 1.0, name: 'troll hide gloves',
 							effect: { op: 'add', stat: 'immune', value: 'frogSpine' } },
-	"studdedGloves": 	{ level:  3, rarity: 1.0 },
-	"scale": 			{ level:  4, rarity: 1.0 },
-	"chain": 			{ level: 10, rarity: 1.0 }
+	"scale": 			{ level: 24, rarity: 1.0 },
+	"chain": 			{ level: 34, rarity: 1.0 }
 });
 
 
@@ -670,29 +736,6 @@ StuffList.snailSlime.onTick = function() {
 	}
 }
 
-
-
-/* RING IMG NAMES
-	"agate"
-	"brass"
-	"bronze"
-	"clay"
-	"copper"
-	"coral"
-	"diamond"
-	"emerald"
-	"glass"
-	"gold"
-	"granite"
-	"iron"
-	"ivory"
-	"jade"
-	"silver"
-	"steel"
-	"wooden"
-*/
-
-
 const RingMaterialList = Fab.add( '', {
 	"brass": 	{ level: 0, img: 'brass' },
 	"copper": 	{ level: 1, img: 'bronze' },
@@ -715,10 +758,25 @@ const CoinStacks = Fab.add( '', {
 	coinTen: 	{ img: "coinTen" },
 	coinMany: 	{ img: "coinPile" },
 });
-let coinImgFn = (self,img) => {
+let CoinImgFn = (self,img) => {
 	let c = self ? self.coinCount : null;
 	let cs = CoinStacks;
 	return "item/misc/"+(img || (c<=1 ? cs.coinOne : (c<=4 ? cs.coinThree : (c<=10 ? cs.coinTen : cs.coinMany))).img)+".png";
+};
+
+const DoorStates = {
+	open:   {
+		img: 'dc-dngn/dngn_open_door.png',
+		mayWalk: true, mayFly: true, opacity: 0,
+	},
+	shut:   {
+		img: 'dc-dngn/dngn_closed_door.png',
+		mayWalk: false, mayFly: false, opacity: 1,
+	},
+	locked: {
+		img: 'dc-dngn/dngn_locked_door.png',
+		mayWalk: false, mayFly: false, opacity: 1,
+	}
 };
 
 const NulImg = { img: '' };
@@ -732,21 +790,26 @@ let Tweak = {
 	effectChance: 1.0
 };
 
-const ARMOR_EFFECT_CHANCE_TO_FIRE = 10;
-const ARMOR_EFFECT_DAMAGE_PERCENT = 10;
-
-const WEAPON_EFFECT_CHANCE_TO_FIRE = 10;
-const WEAPON_EFFECT_OP_ALWAYS = ['damage'];	// Weapons with this op will ALWAYS fire their special effect
-const WEAPON_EFFECT_DAMAGE_PERCENT = 20;	// Damage done is that case should be only x% of regular damage.
 
 const ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
 // GATEWAYS
-	"stairsDown": { symbol: '>', name: "stairs down", 	rarity: 1, isGate: 1, gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
-	"stairsUp":   { symbol: '<', name: "stairs up", 	rarity: 1, isGate: 1, gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
-	"gateway":    { symbol: '=', name: "gateway", 		rarity: 1, isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
-	"portal":     { symbol: '0', name: "portal", 		rarity: 1, isGate: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
-	"pitDrop": 	  { symbol: SYM, name: "pit drop", 		rarity: 1, isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
+	"stairsDown": { symbol: '>', name: "stairs down", 	isGate: 1, gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
+	"stairsUp":   { symbol: '<', name: "stairs up", 	isGate: 1, gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
+	"gateway":    { symbol: 'O', name: "gateway", 		isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
+	"portal":     { symbol: '0', name: "portal", 		isGate: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
+	"pitDrop": 	  { symbol: SYM, name: "pit drop", 		isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
+// DOOR
+	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 0,
+					namePattern: "{state} door",
+					isDoor: 1,
+					mayPickup: false,
+					keyId: false,
+					state: 'open',
+					states: DoorStates,
+					imgChoices: DoorStates,
+					imgGet: (self,img) => img || self.imgChoices[self.state].img
+				},
 // MARKERS
 	"marker": 	  { symbol: SYM, name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
 // DECOR
@@ -765,7 +828,11 @@ const ItemTypeList = {
 					inventoryLoot: '3x 20% any', hasInventory: true, img: 'decor/barrel.png' },
 	"chest": 		{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "chest", mayPickup: false, isDecor: true,
 					state: 'shut',
-					imgChoices: { shut: { img: 'decor/chestShut.png' }, open: { img: 'decor/chestOpen.png' }, empty: { img: 'decor/chestEmpty.png' } },
+					imgChoices: {
+						shut: { img: 'decor/chestShut.png' },
+						open: { img: 'decor/chestOpen.png' },
+						empty: { img: 'decor/chestEmpty.png' }
+					},
 					imgGet: (self,img) => img || self.imgChoices[self.state].img,
 					inventoryLoot: '5x 50% any', hasInventory: true },
 	"altar":    { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
@@ -796,45 +863,94 @@ const ItemTypeList = {
 // FAKE
 	"fake":   	{ symbol: SYM, namePattern: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // CORPSE
-	"corpse":   { symbol: SYM, namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1, isCorpse: true,
+	"corpse":   { symbol: SYM, namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1,
+				isCorpse: true,
+				zOrder: ZOrder.CORPSE,
 				img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
+// KEYS
+	"key": {
+		symbol: 		'k',
+		namePattern: 	'key to {keyId}',
+		isTreasure: 	1,
+		isKey: 			true,
+		noSell: 		true,
+		img: 			"UNUSED/other/key.png",
+		icon: 			'key.png'
+	},
 // TREASURE
-	"coin": 	{ symbol: '$', xPrice: 1.0, namePattern: '{coinCount} gold', coinCount: 0, coinVariance: 0.30, isCoin: true, isTreasure: 1,
-				imgGet: coinImgFn, imgChoices: CoinStacks, icon: 'coin.png' },
-	"potion":   { symbol: 'p', isTreasure: 1, xPrice: 1.0, namePattern: 'potion{?effect}{+plus}', charges: 1, light: 3, glow: true, attackVerb: 'splash',
-				effectChance: 1.0, isPotion: true, range: RANGED_WEAPON_DEFAULT_RANGE,
-				effects: PotionEffects, mayThrow: true, destroyOnLastCharge: true,
-				imgGet: (self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png", imgChoices: ImgPotion, icon: 'potion.png' },
-	"spell":    { symbol: 's', isTreasure: 1, xPrice: 3.0, namePattern: 'spell{?effect}{+plus}', rechargeTime: 10, effects: SpellEffects,
-				effectChance: 1.0, mayCast: true, isSpell: true, range: RANGED_WEAPON_DEFAULT_RANGE,
-				img: "item/scroll/scroll.png", icon: 'spell.png' },
-	"ore": 		{ symbol: 'o', isTreasure: 1, xPrice: 0.1, namePattern: '{variety}', varieties: OreList, isOre: true,
-				imgGet: (self,img) => "ore/"+(img || self.variety.img || "ore")+".png", imgChoices: OreList, icon: 'ore.png' },
+	"coin": 	{
+		symbol: 		'$',
+		namePattern: 	'{coinCount} gold',
+		coinCount: 		0,
+		coinVariance: 	0.30,
+		isCoin: 		true,
+		isTreasure: 	1,
+		imgGet: 		CoinImgFn,
+		imgChoices: 	CoinStacks,
+		icon: 			'coin.png'
+	},
+	"potion":   {
+		symbol: 		'p',
+		isTreasure: 	1,
+		namePattern: 	'potion${?effect}{+plus}',
+		charges: 		1,
+		xDamage: 		2.0,
+		light: 			3,
+		glow: 			true,
+		attackVerb: 	'splash',
+		isPotion: 		true,
+		range: 			Rules.RANGED_WEAPON_DEFAULT_RANGE,
+		effects: 		PotionEffects,
+		mayThrow: 		true,
+		destroyOnLastCharge: true,
+		imgGet: 		(self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png",
+		imgChoices: 	ImgPotion,
+		icon: 			'potion.png'
+	},
+	"spell":    {
+		symbol: 		's',
+		isTreasure: 	1,
+		namePattern: 	'spell${?effect}{+plus}',
+		rechargeTime: 	Rules.SPELL_RECHARGE_TIME,
+		effects: 		SpellEffects,
+		mayCast: 		true,
+		isSpell: 		true,
+		range: 			Rules.RANGED_WEAPON_DEFAULT_RANGE,
+		img: 			"item/scroll/scroll.png",
+		icon: 			'spell.png'
+	},
+	"ore": 		{
+		symbol: 		'o',
+		isTreasure: 	1,
+		namePattern: 	'{variety}',
+		varieties: 		OreList,
+		isOre: 			true,
+		imgGet: 		(self,img) => "ore/"+(img || self.variety.img || "ore")+".png",
+		imgChoices: 	OreList,
+		icon: 			'ore.png'
+	},
 	"gem": 		{
-		symbol: "g",
-		isTreasure: 1,
-		xPrice: 1.5,
-		namePattern: '{quality} {variety}{+plus}{?effect}',
-		qualities: GemQualityList,
-		varieties: GemList,
-		effects: GemEffects,
-		isGem: true,
-		effectChance: 0.30,
-		mayThrow: 1,
-		mayGaze: 1,
-		range: RANGED_WEAPON_DEFAULT_RANGE,
+		symbol: 		"g",
+		isTreasure: 	1,
+		namePattern: 	'{quality} {variety}${+plus}{?effect}',
+		qualities: 		GemQualityList,
+		varieties: 		GemList,
+		effects: 		GemEffects,
+		isGem: 			true,
+		mayThrow: 		1,
+		mayGaze: 		1,
+		range: 			Rules.RANGED_WEAPON_DEFAULT_RANGE,
 		mayTargetPosition: 1,
-		autoCommand: Command.USE,
-		imgGet: (self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png",
-		imgChoices: GemList,
-		scale:0.3,
-		icon: 'gem.png'
+		autoCommand: 	Command.USE,
+		imgGet: 		(self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png",
+		imgChoices: 	GemList,
+		scale: 			0.3,
+		icon: 			'gem.png'
 	},
 	"weapon": 	{
 		symbol: 'w',
 		isTreasure: 1,
-		xPrice: 4.0,
-		namePattern: '{material} {variety}{+plus}{?effect}',
+		namePattern: '{material} {variety}${+plus}{?effect}',
 		materials: WeaponMaterialList,
 		varieties: WeaponList,
 		effects: WeaponEffects,
@@ -842,56 +958,183 @@ const ItemTypeList = {
 		isWeapon: true,
 		useVerb: 'weild',
 		mayTargetPosition: true,
-		effectChance: 0.15,
 		img: "item/weapon/dagger.png",
 		icon: 'weapon.png'
 	},
-	"ammo": 	{ symbol: 'm', isTreasure: 1, xPrice: 0.1, namePattern: '{material} {variety}{+plus}{?effect}', materials: WeaponMaterialList, varieties: AmmoList, effects: AmmoEffects, slot: Slot.AMMO, isWeapon: true,
-				useVerb: 'ready', effectChance: 0.30, img: "item/weapon/dagger.png", icon: 'weapon.png' },
-	"shield": 	{ symbol: 'x', isTreasure: 1, xPrice: 3.0, namePattern: "{variety} shield{+plus}{?effect}", varieties: ShieldList, effects: ShieldEffects, slot: Slot.SHIELD, isShield: true,
-				effectChance: 0.25,
-				armorMultiplier: 0.50,
-				useVerb: 'hold', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				img: "item/armour/shields/shield3_round.png", icon: 'shield.png' },
-	"cloak": 	{ symbol: 'c', isTreasure: 1, xPrice: 8.0, namePattern: "{variety}{+plus}{?effect}", varieties: CloakList, effects: CloakEffects, slot: Slot.ARMOR, isArmor: true,
-				effectChance: 0.20, isCloak: true,
-				armorMultiplier: 0.01,
-				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				imgGet: (self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"), imgChoices: CloakList, icon: 'armor.png' },
-	"helm": 	{ symbol: 'h', isTreasure: 1, xPrice: 2.5, namePattern: "{variety} helm{+plus}{?effect}", varieties: HelmList, effects: HelmEffects, slot: Slot.HEAD, isHelm: true, isArmor: true,
-				effectChance: 0.15,
-				armorMultiplier: 0.15,
-				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				img: "item/armour/headgear/helmet2_etched.png", icon: 'helm.png' },
-	"armor": 	{ symbol: 'a', isTreasure: 1, xPrice: 8.0, namePattern: "{variety} armor{+plus}{?effect}", varieties: ArmorList, effects: ArmorEffects, slot: Slot.ARMOR, isArmor: true,
-				effectChance: 0.10,
-				armorMultiplier: 0.60,
-				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				imgGet: (self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"), imgChoices: ArmorList, icon: 'armor.png' },
-	"bracers": 	{ symbol: 'b', isTreasure: 1, xPrice: 3.5, namePattern: "{variety} bracers{+plus}{?effect}", varieties: BracerList, effects: BracersEffects, slot: Slot.ARMS, isBracers: true, isArmor: true,
-				effectChance: 0.15,
-				armorMultiplier: 0.15,
-				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				img: "UNUSED/armour/gauntlet1.png", icon: 'bracers.png' },
-	"boots": 	{ symbol: 'k', isTreasure: 1, xPrice: 1.8, namePattern: "{variety} boots{+plus}{?effect}", varieties: BootList, slot: Slot.FEET, isBoots: true, isArmor: true, effects: BootsEffects,
-				effectChance: 0.15,
-				armorMultiplier: 0.10,
-				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				img: "item/armour/boots2_jackboots.png", icon: 'boots.png' },
-	"gloves": 	{ symbol: 'l', isTreasure: 1, xPrice: 1.0, namePattern: "{variety}", varieties: GloveList, slot: Slot.HANDS, isGloves: true,
-				useVerb: 'wear', triggerOnUseIfHelp: true, effectOverride: { duration: true },
-				img: "UNUSED/armour/glove4.png", icon: 'gloves.png' },
-	"ring": 	{ symbol: 'r', isTreasure: 1, xPrice: 6.0, namePattern: "{material} {variety} ring{+plus}{?effect}", materials: RingMaterialList, varieties: RingList,
-				effects: RingEffects, slot: Slot.FINGERS, isRing: true, isJewelry: true,
-				effectChance: 0.50,
-				useVerb: 'wear', triggerOnUse: true, effectOverride: { duration: true },
-				imgGet: (self,img) => "item/ring/"+(img || self.material.img || 'gold')+".png", imgChoices: RingMaterialList, icon: 'ring.png' },
-// INGREDIENTS
-	"stuff": 	{ symbol: 't', isTreasure: 1, isStuff: 1, xPrice: 0.4, namePattern: "{variety}{?effect}", varieties: StuffList,
-				imgGet: (self,img) => (img || (self?self.variety.img:'') || 'item/misc/misc_rune.png'), imgChoices: StuffList, icon: 'stuff.png' },
-
+	"ammo": 	{
+		symbol: 'm',
+		isTreasure: 1,
+		namePattern: '{material} {variety}${+plus}{?effect}',
+		varieties: AmmoList,
+		donBunches: true,
+		isWeapon: true,
+		isAmmo: true,
+		slot: Slot.AMMO,
+		useVerb: 'ready',
+		img: "item/weapon/dagger.png",
+		icon: 'ammo.png'
+	},
+	"shield": {
+		symbol: 'x',
+		isTreasure: 1,
+		namePattern: "{variety} shield${+plus}{?effect}",
+		varieties: ShieldList,
+		effects: ShieldEffects,
+		slot: Slot.SHIELD,
+		isShield: true,
+		armorMultiplier: 0.50,
+		useVerb: 'hold',
+		triggerOnUseIfHelp: true,
+		effectOverride: {
+			duration: true
+		},
+		img: "item/armour/shields/shield3_round.png",
+		icon: 'shield.png'
+	},
+	"helm": {
+		symbol: 'h',
+		isTreasure: 1,
+		namePattern: "{variety} helm${+plus}{?effect}",
+		varieties: HelmList,
+		effects: HelmEffects,
+		slot: Slot.HEAD,
+		isHelm: true,
+		isArmor: true,
+		armorMultiplier: 0.15,
+		useVerb: 'wear',
+		triggerOnUseIfHelp: true,
+		effectOverride: {
+			duration: true
+		},
+		img: "item/armour/headgear/helmet2_etched.png",
+		icon: 'helm.png'
+	},
+	"armor": {
+		symbol: 'a',
+		isTreasure: 1,
+		namePattern: "{variety} armor${+plus}{?effect}",
+		varieties: ArmorList,
+		effects: ArmorEffects,
+		slot: Slot.ARMOR,
+		isArmor: true,
+		armorMultiplier: 0.60,
+		useVerb: 'wear',
+		triggerOnUseIfHelp: true,
+		effectOverride: {
+			duration: true
+		},
+		imgGet: (self, img) => (img || self.variety.img || "item/armour/chain_mail1.png"),
+		imgChoices: ArmorList,
+		icon: 'armor.png'
+	},
+	"cloak": {
+		symbol: 'c',
+		isTreasure: 1,
+		namePattern: "{variety}${+plus}{?effect}",
+		varieties: CloakList,
+		effects: CloakEffects,
+		slot: Slot.ARMOR,
+		isArmor: true,
+		isCloak: true,
+		armorMultiplier: 0.01,
+		useVerb: 'wear',
+		triggerOnUseIfHelp: true,
+		effectOverride: { duration: true },
+		imgGet: (self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"),
+		imgChoices: CloakList,
+		icon: 'armor.png'
+	},
+	"bracers": {
+		symbol: 'b',
+		isTreasure: 1,
+		namePattern: "{variety} bracers{+plus}{?effect}",
+		varieties: BracerList,
+		effects: BracersEffects,
+		slot: Slot.ARMS,
+		isBracers: true,
+		isArmor: true,
+		armorMultiplier: 0.15,
+		useVerb: 'wear',
+		triggerOnUseIfHelp: true,
+		effectOverride: { duration: true },
+		img: "UNUSED/armour/gauntlet1.png",
+		icon: 'bracers.png'
+	},
+	"gloves": {
+		symbol: 'l',
+		isTreasure: 1,
+		namePattern: "{variety}$",
+		varieties: GloveList,
+		slot: Slot.HANDS,
+		isGloves: true,
+		useVerb: 'wear',
+		triggerOnUseIfHelp: true,
+		effectOverride: { duration: true },
+		img: "UNUSED/armour/glove4.png",
+		icon: 'gloves.png'
+	},
+	"boots": {
+		symbol: 'z',
+		isTreasure: 1,
+		namePattern: "{variety} boots{+plus}{?effect}",
+		varieties: BootList,
+		slot: Slot.FEET,
+		isBoots: true,
+		isArmor: true,
+		effects: BootsEffects,
+		armorMultiplier: 0.10,
+		useVerb: 'wear',
+		triggerOnUseIfHelp: true,
+		effectOverride: {
+			duration: true
+		},
+		img: "item/armour/boots2_jackboots.png",
+		icon: 'boots.png'
+	},
+	"ring": {
+		symbol: 'r',
+		isTreasure: 1,
+		namePattern: "{material} {variety} ring${+plus}{?effect}",
+		materials: RingMaterialList,
+		varieties: RingList,
+		effects: RingEffects,
+		slot: Slot.FINGERS,
+		isRing: true,
+		isJewelry: true,
+		useVerb: 'wear',
+		triggerOnUse: true,
+		effectOverride: { duration: true },
+		imgGet: (self, img) => "item/ring/" + (img || self.material.img || 'gold') + ".png",
+		imgChoices: RingMaterialList,
+		icon: 'ring.png'
+	},
+	// INGREDIENTS
+	"stuff": {
+		symbol: 't',
+		isTreasure: 1,
+		isStuff: 1,
+		namePattern: "{variety}${?effect}",
+		varieties: StuffList,
+		imgGet: (self, img) => (img || (self ? self.variety.img : '') || 'item/misc/misc_rune.png'),
+		imgChoices: StuffList,
+		icon: 'stuff.png'
+	},
 };
-const ItemSortOrder = ['weapon','ammo','helm','armor','cloak','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff'];
+
+(function() {
+	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
+	for( let typeId in ItemTypeList ) {
+		let itemType = ItemTypeList[typeId];
+		if( !itemType.isTreasure ) continue;
+		console.assert( !itemType.xPrice && !itemType.effectChance );
+		console.assert( ItemBag[typeId] );
+		ItemTypeList[typeId].xPrice 		= ItemBag[typeId].xPrice;
+		ItemTypeList[typeId].effectChance	= ItemBag[typeId].cEff;
+	}
+})();
+
+
+const ItemSortOrder = ['weapon','ammo','helm','armor','cloak','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff','key'];
 const ItemFilterOrder = ['','weapon','armor','shield','potion','spell','ring','gem','ore','stuff'];
 const ItemFilterGroup = {
 	weapon: ['weapon','ammo'],
@@ -902,39 +1145,11 @@ const ItemFilterGroup = {
 	gem:    ['gem'],
 	ore:    ['ore'],
 	spell:  ['spell'],
-	stuff:  ['stuff']
+	stuff:  ['stuff','key']
 };
 
-// ItemBag is the top level item probability and price manager.
-// gen = the chance to generate the item. Themes can tweak this number
-// eff = the change that the generated item has an effect of some kind. Rises by (area.depth*0.30)
-// price = how much you have to pay to buy this thing. Multiplied by the level of the variety/material/quality
-// basis = how you calculate the value and rarity
-let ItemBag = (function() {
-	let raw = {
-		// 			cGen 	cEff	price	basis
-		coin: 	[	28.0, 	  0.0,	  1.0,	[], ],
-		potion: [	10.0, 	100.0,	 10.0,	['effect'], ],
-		spell: 	[	 1.0, 	100.0,	 50.0,	['effect'], ],
-		ore: 	[	 5.0, 	  0.0,	  1.0,	['variety'], ],
-		gem: 	[	 4.0,	 20.0,	 20.0,	['material','quality','effect'], ],
-		weapon: [	15.0, 	  5.0,	 40.0,	['material','effect','variety'], ],
-		ammo: 	[	 5.0, 	  5.0,	 40.0,	['material','effect','variety'], ],
-		helm: 	[	 2.5, 	  5.0,	 30.0,	['variety','effect'], ],
-		armor: 	[	 7.0, 	  5.0,	 30.0,	['variety','effect'], ],
-		cloak: 	[	 2.0, 	  5.0,	 30.0,	['variety','effect'], ],
-		bracers:[	 2.0, 	  5.0,	 30.0,	['variety','effect'], ],
-		gloves: [	 0.5, 	  5.0,	 30.0,	['variety','effect'], ],
-		boots: 	[	 2.0, 	  5.0,	 30.0,	['variety','effect'], ],
-		ring: 	[	 1.0, 	 10.0,	 90.0,	['material','effect'], ],
-		stuff: 	[	15.0, 	  0.0,	  4.0,	['variety'], ]
-	};
-	return Object.convert(raw,(row,key) => { let a={}; a[key] = { cGen: row[0], cEff: row[1], price: row[2], basis: row[3] }; return a; });
-})();
 
 const Control = { AI: "ai", USER: "user", EMPTY: "empty" };
-let MaxLightValue = 15;
-let LightFullBrightDistance = 7;
 
 const MonsterTypeDefaults = {
 	level: 0, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
@@ -956,6 +1171,9 @@ const MonsterTypeDefaults = {
 	//debug only
 	observeDistantEvents: false
 };
+
+let MaxLightValue = 15;
+let LightFullBrightDistance = 7;
 
 let LightAlpha = [];
 // This makes the assumption that a 
@@ -1034,7 +1252,7 @@ let BodyAbility = {
 }
 
 let BodySlots = {
-	humanoid: 		{ head: 1, neck: 1, arms: 1, hands: 1, fingers: 2, waist: 1, hip: 1, feet: 1, armor: 1, weapon: 1, shield: 1 },
+	humanoid: 		{ head: 1, neck: 1, arms: 1, hands: 1, fingers: 2, waist: 1, hip: 1, feet: 1, armor: 1, weapon: 1, ammo: 1, shield: 1 },
 	quadruped: 		{ head: 1, neck: 1, waist: 1, hip: 1, feet: 2, armor: 1 },
 	multiped: 		{ head: 1, neck: 1, waist: 1, hip: 1, fingers: 2, feet: 2, armor: 1 },
 	wingedBiped: 	{ head: 1, neck: 1, feet: 1 },
@@ -1061,6 +1279,7 @@ const MonsterTypeList = {
 		light: 4,
 		neverPick: true,
 		regenerate: 0.01,
+		rechargeRate: 1,
 		senseSight: MaxVis,
 		strictAmmo: true
 	},
@@ -1087,6 +1306,7 @@ const MonsterTypeList = {
 		isDwarf: true,
 		isNamed: true,
 		jobId: 'isLayman',
+		light: 6,
 		properNoun: true,
 		brainPackAnimal: true
 	},
@@ -1109,6 +1329,7 @@ const MonsterTypeList = {
 		attitude: Attitude.CALM,
 		isSunChild: true,
 		isNamed: true,
+		light: 4,
 		loot: '30% mushroomBread, 30% coin, 10% potion.eHealing',
 		rarity: 0.10,
 	},
@@ -1117,6 +1338,7 @@ const MonsterTypeList = {
 		attitude: Attitude.CALM,
 		isSunChild: true,
 		isNamed: true,
+		light: 4,
 		loot: '30% mushroomBread, 50% coin, 10% potion.eHealing',
 		rarity: 0.10,
 		sayPrayer: 'Get in line! Come to the left window for donations!'
@@ -1126,6 +1348,7 @@ const MonsterTypeList = {
 		attitude: Attitude.FEARFUL,
 		isSunChild: true,
 		isNamed: true,
+		light: 3,
 		loot: '10% bone, 5% dogCollar, 3x 10% stuff',
 		rarity: 0.40,
 		sayPrayer: "Oh god... What I wouldn't give for a steak."
@@ -1293,7 +1516,7 @@ const MonsterTypeList = {
 		isEarthChild: true,
 		isOgre: true,
 		isLarge: true,
-		inventoryLoot: launcher({ ammoType: 'isRock', ammoSpec: 'ammo.rock.eInert', rechargeTime: 2, hitsToKillPlayer: 3, name: "rock" }),
+		inventoryLoot: launcher({ ammoType: 'isRock', ammoSpec: 'ammo.rock', rechargeTime: 2, hitsToKillPlayer: 3, name: "rock" }),
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speed: 0.5,
@@ -1493,13 +1716,6 @@ const MonsterTypeList = {
 })();
 
 
-TileTypeList['lockedDoor'].onTouch = function(entity,self) {
-	if( entity.able('open') ) {
-		entity.map.tileSymbolSet( self.x, self.y, TileTypeList.door.symbol );
-		tell(mSubject,entity,' ',mVerb,'open',' the ',mObject,self);
-	}
-}
-
 TileTypeList.obelisk.onTouch = function(toucher,self) {
 	if( !toucher.senseBlind ) {
 		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,'.');
@@ -1559,7 +1775,7 @@ TileTypeList.flames.isProblem = function(entity,self) {
 		return Prob.NONE;
 	}
 	let valueDamage = self.effect.valueDamage;
-	let damage = Math.max(1,Math.floor(new Picker(entity.area.depth).pickDamage(entity.area.depth,self.rechargeTime) * valueDamage))
+	let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,self.rechargeTime) * valueDamage))
 	let ratio = damage/entity.health;
 	if( ratio <= 0.3 ) return Prob.MILD;
 	if( ratio <= 0.7 ) return Prob.HARSH;
@@ -1570,7 +1786,7 @@ TileTypeList.flames.onTouch = function(toucher,self) {
 	// We could pass in an onDamage that would also catch you on fire...
 	let valueDamage = self.effect.valueDamage;
 	let effect = Object.assign( {}, self.effect, { valueDamage: valueDamage } );
-	effect = new Picker(toucher.area.depth).assignEffect(effect);
+	effect = new Effect( toucher.area.depth, effect );
 	effectApply( effect, toucher, null, self );
 }
 
@@ -1587,7 +1803,7 @@ TileTypeList.lava.isProblem = function(entity,self) {
 		return Prob.NONE;
 	}
 	let valueDamage = self.effect.valueDamage;
-	let damage = Math.max(1,Math.floor(new Picker(entity.area.depth).pickDamage(entity.area.depth,0) * valueDamage))
+	let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,0) * valueDamage))
 	let ratio = damage/entity.health;
 	if( ratio <= 0.3 ) return Prob.MILD;
 	if( ratio <= 0.7 ) return Prob.HARSH;
@@ -1597,7 +1813,7 @@ TileTypeList.lava.isProblem = function(entity,self) {
 TileTypeList.lava.onTouch = function(toucher,self) {
 	// We could pass in an onDamage that would also catch you on fire...
 	if( toucher.travelMode == "walk" && !toucher.jump ) {
-		let effect = new Picker(toucher.area.depth).assignEffect(self.effect);
+		let effect = new Effect(toucher.area.depth,self.effect);
 		effectApply( effect, toucher, null, self );
 	}
 }
@@ -1800,12 +2016,54 @@ ItemTypeList.sign.imgChoose = function(map,x,y) {
 	this.img = this.imgChoices.standing.img;
 }
 
+ItemTypeList.door.onTouch = function(entity,self) {
+	if( self.state == 'open' ) {
+		return;
+	}
+	if( !entity.able('open') ) {
+		return false;
+	}
+	if( self.state == 'shut' ) {
+		self.setState('open');
+		spriteDeathCallback(self.spriteList);
+		tell(mSubject,entity,' ',mVerb,'open',' the ',mObject,self);
+		animFloatUp(self,StickerList.open.img);
+		return true;
+	}
+	if( self.state == 'locked' ) {
+		let key = new Finder(entity.inventory).filter(item=>self.keyId && item.keyId==self.keyId).first;
+		let hasKey = self.keyId===undefined || key;
+		if( hasKey ) {
+			self.setState('shut');
+			spriteDeathCallback(self.spriteList);
+			tell(mSubject,entity,' ',mVerb,'unlock',' the ',mObject,self);
+			animFloatUp(self,StickerList.unlock.img);
+			if( key && key.name.indexOf('(used)') < 0 ) {
+				key.name += ' (used)';
+			}
+			return true;
+		}
+		tell(mSubject,self,' requires a specific key to unlock.');
+		animFloatUp(self,StickerList.locked.img);		
+		return false;
+	}
+	debugger;
+}
+
 ItemTypeList.chest.onTouch = function(toucher,self) {
 	if( self.state == 'shut' ) {
+		if( self.onOpen ) {
+			let allow = self.onOpen(self,toucher);
+			if( allow === false ) return;
+		}
 		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
 	}
 	else {
 		if( self.inventory && self.inventory.length > 0 ) {
+			if( self.onLoot ) {
+				let allow = self.onLoot(self,toucher);
+				if( allow === false ) return;
+			}
 			let delay = 0;
 			toucher.inventoryTake(self.inventory, self, false, item => {
 				new Anim({},{
@@ -1827,6 +2085,10 @@ ItemTypeList.chest.onTouch = function(toucher,self) {
 
 ItemTypeList.barrel.onTouch = function(toucher,self) {
 	if( self.inventory && self.inventory.length > 0 ) {
+		if( self.onLoot ) {
+			let allow = self.onLoot(self,toucher);
+			if( allow === false ) return;
+		}
 		let delay = 0;
 		toucher.inventoryTake(self.inventory, self, false, item => {
 			new Anim({},{
@@ -1854,16 +2116,32 @@ ItemTypeList.barrel.onTouch = function(toucher,self) {
 }
 
 ItemTypeList.fontSolar.onTick = function(dt) {
-	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).nearMe(1);
+	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).clearShot().nearMe(3);
 	let self = this;
 	nearby.process( entity => {
 		let deed = DeedManager.findFirst( d=>d.target && d.target.id==entity.id && d.isSolarRegen );
 		if( deed ) {
-			deed.timeLeft = 4;
+			deed.timeLeft = 2;
 		}
 		else {
-			let effect = self.area.picker.assignEffect({ isSolarRegen: true, op: 'add', stat: 'regenerate', value: 0.05, duration: 4, icon: EffectTypeList.eRegeneration.icon });
+			let glowAnim = new Anim( {}, {
+				follow: 	entity,
+				img: 		StickerList.glowGold.img,
+				duration: 	true,
+				onInit: 		a => { a.create(1); },
+				onSpriteMake: 	s => { s.sScaleSet(0.30).sPos(0,-0.7); },
+			});
+			let effect = new Effect(this.area.depth,{
+				isSolarRegen: true,
+				op: 'add',
+				stat: 'regenerate',
+				value: 0.05,
+				duration: 4,
+				icon: EffectTypeList.eRegeneration.icon,
+				onEnd: () => glowAnim.die()
+			});
 			effectApply(effect,entity,null,self);
+			animHoming(self,entity,StickerList.glowGold.img,45,6,0.5,5);
 		}
 		let f = new Finder(entity.inventory).filter( item => item.rechargeTime && item.rechargeLeft > 0 );
 		if( f.count ) {
@@ -1875,21 +2153,21 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 }
 
 ItemTypeList.fontDeep.onTick = function(dt) {
-	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).nearMe(4);
+	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).clearShot().nearMe(4);
 	let self = this;
 	nearby.process( entity => {
-		let effect = new Picker(entity.area.depth).assignEffect(this.effectDrain,this,this.rechargeTime);
+		let effect = new Effect(entity.area.depth,this.effectDrain,this,this.rechargeTime);
 		effect.chargeless = true;
 		effect.showOnset = false;
 		effectApply(effect,entity,this,null);
 	});
 	if( this.isRecharged() ) {
 		nearby.process( entity => {
-			let effect = new Picker(entity.area.depth).assignEffect(this.effectPeriodic,this,this.rechargeTime);
+			let effect = new Effect(entity.area.depth,this.effectPeriodic,this,this.rechargeTime);
 			effect.icon = StickerList.glowRed.img;
 			//this.command = Command.CAST;
 			effectApply(effect,entity,this,null);
-			animHoming(entity,self,45,6,0.5,5,effect.icon);
+			animHoming(entity,self,effect.icon,45,6,0.5,5);
 		});
 		this.resetRecharge();
 	}

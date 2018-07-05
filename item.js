@@ -1,23 +1,3 @@
-function ItemCalc(item,presets,field,op) {
-	function calc(piece) {
-		let a = piece ? (piece[field] || def) : def;
-		if( isNaN(a) ) debugger;
-		n = (op=='*' ? n*a : n+a);
-		if( isNaN(n) ) debugger;
-	}
-
-	let def = op=='*' ? 1 : 0;
-	let n = def;
-	calc(item);
-	if( presets ) {
-		calc(presets.quality);
-		calc(presets.material);
-		calc(presets.variety);
-		calc(presets.effect);
-	}
-	return n;
-}
-
 // ITEM
 class Item {
 	constructor(depth,itemType,presets,inject) {
@@ -28,7 +8,7 @@ class Item {
 			// ERROR: you should do your own item picking, and provide presets!
 			debugger;
 		}
-		let ignoreFields = { level:1, rarity:1, armorMultiplier:1, blockChance: 1, xDamage:1, name:1, namePattern:1, ingredientId:1, type:1, typeId:1 };
+		let ignoreFields = { level:1, rarity:1, name: 1, armorMultiplier:1, blockChance: 1, xDamage:1, ingredientId:1, type:1, typeId:1 };
 
 		let levelRaw = ItemCalc(this,presets,'level','+');
 		let level = levelRaw >= depth ? levelRaw : Math.randInt(levelRaw,depth+1);
@@ -84,11 +64,20 @@ class Item {
 			this.blockChance 	= adjust( 15, level, L=>picker.pickBlockChance(L,this), 100 );
 		}
 		if( this.isWeapon ) {
-			this.damage 		= adjust( 5, level, L=>picker.pickDamage(L,this.rechargeTime,this) );
+			this.damage 		= adjust( 5, level, L=>Rules.pickDamage(L,this.rechargeTime,this) );
 		}
-
-		if( this.isCoin )		this.coinCount  	= picker.pickCoinCount();
-		if( this.effect ) 		this.effect 		= picker.assignEffect(this.effect,this,this.rechargeTime);
+		if( this.isCoin ) {
+			this.coinCount  	= picker.pickCoinCount();
+		}
+		if( this.effect && this.effect.isInert ) {
+			delete this.effect;
+		}
+		if( this.effect ) {
+			this.effect 		= new Effect( this.depth, this.effect, this, this.rechargeTime );
+			if( this.takeOnDamageTypeOfEffect && this.effect.damageType ) {
+				this.damageType = this.effect.damageType;
+			}
+		}
 
 		if( this.hasInventory ) {
 			this.inventory = [];
@@ -112,7 +101,12 @@ class Item {
 		if( this.x !== null || this.y !== null || this.owner !== null ) {
 			debugger;
 		}
+
+		if( this.state ) {
+			this.setState(this.state);
+		}
 		// Always do this last so that as many member vars as possible will be available to the namePattern!
+		//if( this.namePattern.indexOf('arrow') >=0 ) debugger;
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
 	}
 	get area() {
@@ -145,6 +139,13 @@ class Item {
 			this.rechargeLeft = this.rechargeTime;
 		}
 	}
+	setState(newState) {
+		this.state = newState;
+		if( this.states ) {
+			console.assert(this.states[newState]);
+			Object.assign(this,this.states[newState]);
+		}
+	}
 	lootGenerate( lootSpec, level ) {
 		let itemList = [];
 		new Picker(level).pickLoot( lootSpec, item=>{
@@ -156,7 +157,7 @@ class Item {
 	lootTake( lootSpec, level ) {
 		let itemList = this.lootGenerate( lootSpec, level );
 		itemList.forEach( item => item.giveTo(this,this.x,this.y) );
-		return itemList;
+		return null;
 	}
 
 	calcReduction(damageType) {
@@ -171,6 +172,38 @@ class Item {
 			return 0;
 		}
 		return this.armor;
+	}
+	bunchId() {
+		if( (this.inSlot && !this.donBunches) || !this.isTreasure || this.noBunch ) {
+			return this.id;
+		}
+		let b = '';
+		let fieldList = { name:1, level:1, depth:1, armor: 1, damage:1, rechargeTime:1 };
+		if( this.owner && this.owner.isMap ) {
+			fieldList.x = 1;
+			fieldList.y = 1;
+		}
+		for( let fieldId in fieldList ) {
+			let value = this[fieldId];
+			if( value !== undefined ) {
+				b += '&'+value;
+			}
+		}
+		return b;
+	}
+	giveToSingly(entity,x,y) {
+		let temp = this.noBunch;
+		this.noBunch = true;
+		let oldId = this.id;
+		let result = this.giveTo(entity,x,y);
+		console.assert( result.id == oldId && this.id == oldId );
+		if( temp === undefined ) {
+			delete this.noBunch;
+		}
+		else {
+			this.noBunch = temp;
+		}
+		return result;
 	}
 	giveTo(entity,x,y) {
 		let hadNoOwner = !this.owner;
@@ -221,13 +254,43 @@ class Item {
 		if( this.gateDir !== undefined && !this.themeId ) {
 			this.themeId = Plan.determineTheme(this.area.depth+this.gateDir,this.gateDir ? this.area.isCore : false);
 		}
-		this.owner._itemTake(this,x,y);
-		if( entity.isMonsterType ) {
-			// NOTICE! The ownerOfRecord is the last entity that operated or held the item. Never the map.
-			// That means we can hold the ownerOfRecord "responsible" for thing the item does, whether it
-			// was thrown, or left as a bomb, or whatever. That is, even if the MAP is the CURRENT owner.
-			this.ownerOfRecord = entity;
+		let result = this.owner._itemTake(this,x,y);
+		// WARNING! At this point the item could be destroyed.
+		return result;
+	}
+	single() {
+		if( !this.bunch || this.bunch <= 1 ) {
+			return this;
 		}
+		let item = this._unbunch(1);
+		return item;
+	}
+	_unbunch(amount=1) {
+		console.assert( this.bunch !== undefined && amount < this.bunch );
+		console.assert( this.owner );
+		let list = this.owner.itemList || this.owner.inventory;
+		let item = Object.assign( {}, this );
+		Object.setPrototypeOf( item, Item.prototype );
+		item.owner = null;
+		item.bunch = amount;
+		item.id = GetUniqueEntityId(item.typeId,item.depth);
+		item.spriteList = [];
+		this.bunch = this.bunch - amount;
+		item.giveToSingly(this.owner,this.x,this.y);
+		return item;
+	}
+	_addToList(list) {
+		// list could be an inventory, or a map's itemList
+		//if( this.typeId == 'ammo' ) debugger;
+		let bunchId = this.bunchId();
+		let f = new Finder(list).filter( item => item.bunchId() == bunchId );
+		if( f.first ) {
+			f.first.bunch = (f.first.bunch || 1) + (this.bunch || 1);
+			this.destroy('duringAggregation');
+			return f.first;
+		}
+		list.push(this);
+		return this;
 	}
 	_itemRemove(item) {
 		if( !this.inventory.includes(item) ) {
@@ -239,18 +302,21 @@ class Item {
 		if( this.inventory.includes(item) ) {
 			debugger;
 		}
-		this.inventory.push(item);
+		item = item._addToList(this.inventory);
 		item.x = this.x;
 		item.y = this.y;
 		if( x!==item.x || y!==item.y ) debugger;
+		return item;
 	}
 
-	destroy() {
+	destroy(special) {
 		if( this.dead ) {
 			debugger;
 			return false;
 		}
-		this.owner._itemRemove(this);
+		if( special !== 'duringAggregation' ) {
+			this.owner._itemRemove(this);
+		}
 		// Now the item should be simply gone.
 		spriteDeathCallback(this.spriteList);
 		this.dead = true;

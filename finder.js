@@ -63,6 +63,9 @@ class Finder {
 	far(x,y,rectDist=1) {
 		return this.filter( e => (Math.abs(e.x-x)>rectDist || Math.abs(e.y-y)>rectDist) );
 	}
+	clearShot() {
+		return this.filter( e => shootRange(this.me.x,this.me.y,e.x,e.y, (x,y) => this.me.map.tileTypeGet(x,y).mayFly) );
+	}
 	closest(x,y) {
 		if( !this.result.length ) return this;
 		let c = [];

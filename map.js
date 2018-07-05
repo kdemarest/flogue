@@ -422,7 +422,7 @@ class Map extends SimpleMap {
 			}
 		}
 		let item = new Item( this.area.depth, type, presets, inject );
-		item.giveTo(this,x,y);
+		item = item.giveTo(this,x,y);
 		return item;
 	}
 	itemCreateByTypeId(x,y,typeId,presets,inject) {
@@ -498,15 +498,20 @@ class Map extends SimpleMap {
 		if( this.itemList.includes(item) ) {
 			debugger;
 		}
-		this.itemList.push(item);
-		let lPos = y*this.xLen+x;
-		this.itemLookup[lPos] = (this.itemLookup[lPos] || []);
-		this.itemLookup[lPos].push(item);
+		// NUANCE! You must set the item's x,y in order for _addToList to bunch properly.
 		item.x = x;
 		item.y = y;
+		item = item._addToList(this.itemList);
+		let lPos = y*this.xLen+x;
+		this.itemLookup[lPos] = (this.itemLookup[lPos] || []);
+		if( !this.itemLookup[lPos].find( i=>i.id==item.id ) ) {
+			// we have to try to find this because _addToList might have aggregated it!
+			this.itemLookup[lPos].push(item);
+		}
 		this.calcWalkable(x,y);
 		this.scentLeave(x,y,item);
 		//this.tileSymbolSet(item.x,item.y,item.symbol);
+		return item;
 	}
 }
 

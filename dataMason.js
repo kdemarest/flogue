@@ -64,10 +64,10 @@
 		return tile !== T.Unknown && SymbolToType[tile].isBridge;
 	}
 	function isBlocking(tile) {
-		return tile !== T.Unknown && !(SymbolToType[tile].mayWalk || SymbolToType[tile].isMonsterType);
+		return tile !== T.Unknown && !(SymbolToType[tile].mayWalk || SymbolToType[tile].isDoor || SymbolToType[tile].isMonsterType);
 	}
 	function isWalkable(tile) {
-		return tile !== T.Unknown && (SymbolToType[tile].mayWalk || SymbolToType[tile].isMonsterType);
+		return tile !== T.Unknown && (SymbolToType[tile].mayWalk  || SymbolToType[tile].isDoor || SymbolToType[tile].isMonsterType);
 	}
 	function isBlockingOrUnknown(tile) {
 		return isUnknown(tile) || isBlocking(tile);

@@ -131,7 +131,7 @@ function monsterPreProcess(typeId,m) {
 	}
 	m.bloodId = m.bloodId || 'bloodRed';
 	if( !m.isSunChild ) {
-		m.darkVision = m.darkVision || DEFAULT_MONSTER_DARK_VISION;
+		m.darkVision = m.darkVision || Rules.MONSTER_DARK_VISION;
 	}
 
 	m.inventoryLoot = m.inventoryLoot || [];

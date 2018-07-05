@@ -54,7 +54,7 @@ CmdTable[Command.CAST] = {
 	needsItem: true,
 	itemFilter: observer => () => getCastableSpellList(observer),
 	needsTarget: true,
-	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
+	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
 	criteriaToExecute: (cmd,observer) => {
 		if( !cmd.commandItem.isRecharged() ) {
 			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject|mPossessed,cmd.commandItem,' is still charging.');
@@ -68,7 +68,7 @@ CmdTable[Command.THROW] = {
 	needsItem: true,
 	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayThrow ),
 	needsTarget: true,
-	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
+	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
 	passesTimeOnExecution: true
 };
 CmdTable[Command.SHOOT] = {
@@ -83,14 +83,14 @@ CmdTable[Command.SHOOT] = {
 	},
 	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayShoot ),
 	needsTarget: true,
-	targetRange: (item) => item.range || RANGED_WEAPON_DEFAULT_RANGE,
+	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
 	criteriaToExecute: (cmd,observer) => {
 		if( !cmd.commandItem.isRecharged() ) {
 			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject|mPossessed,cmd.commandItem,' is still charging.');
 			return false;
 		}
 		let weapon = cmd.commandItem;
-		let ammo   = observer.pickAmmo(weapon);
+		let ammo   = observer.hasAmmo(weapon);
 		if( !ammo ) {
 			tell(mSubject,observer,' ',mVerb,'has',' no suitable ammunition.');
 			return false;
