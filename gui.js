@@ -5,8 +5,8 @@ class Gui {
 		this.imageRepo.load();
 		this.view = {};
 		let self = this;
-		window.guiMessage = function(target,message,payload) {
-			self.message(target,message,payload);
+		window.guiMessage = function(message,payload,target) {
+			self.message(message,payload,target);
 		}
 	}
 
@@ -78,7 +78,8 @@ class Gui {
 		delete player.guiViewCreator;
 		return true;
 	}
-	message(target,message,payload) {
+	message(message,payload,target) {
+		console.log( "guiMessage: "+message );
 		if( target && !this.view[target] ) {
 			console.log( "Error: Message target "+target+" does not exist." );
 			return;
@@ -94,7 +95,7 @@ class Gui {
 
 	render() {
 		let area = this.getPlayer().area;
-		guiMessage( null, 'observer', this.spectator );
+		guiMessage( 'observer', this.spectator );
 
 		area.vis.populateLookup();	// This could be maintained progressively, but it hasn't mattered yet.
 

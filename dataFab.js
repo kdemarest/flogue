@@ -49,7 +49,7 @@ let Fab = (function() {
 			Object.each( list.typeList, type => {
 				if( type.level !== undefined ) {
 					console.assert(!type.levelAdjusted);
-					type.level = Math.floor(type.level*DEPTH_SPAN/100);
+					type.level = Math.floor(type.level/100*DEPTH_SPAN);
 					type.levelAdjusted = true;
 				}
 			});

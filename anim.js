@@ -159,7 +159,7 @@ let sPursuit = function(turnRateDeg) {
 	}
 
 	vrad = radNorm(vrad+drad);
-	console.log(vrad,drad);
+	//console.log(vrad,drad);
 	let rad = vrad;
 
 	this.xVel = Math.cos(rad)*speed;

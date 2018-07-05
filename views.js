@@ -56,11 +56,12 @@ class ViewSign extends ViewObserver {
 	constructor(divId) {
 		super();
 		this.divId = divId;
+		this.lastSignId = '';
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
 		if( msg=='clearSign' ) {
-			guiMessage( null, 'hide' );
+			guiMessage( 'hide' );
 			this.observer.lastBumpedId = null;
 		}
 	}
@@ -83,14 +84,20 @@ class ViewSign extends ViewObserver {
 			// Any item adjacent to me
 			signList = new Finder(observer.map.itemList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
 		}
-		if( !signList.first ) {
-			$('#'+this.divId).hide();
-			guiMessage( null, 'hide' );
-		}
-		else {
-			let sign = typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
-			$('#'+this.divId).show().html(sign);
-			guiMessage( null, 'show', signList.first );
+
+		let signId = signList.first ? signList.first.id : '';
+		if( signId !== this.lastSignId ) {
+			if( !signList.first ) {
+				$('#'+this.divId).hide();
+				guiMessage( 'hide' );
+			}
+			else {
+				let sign = typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
+				$('#'+this.divId).show().html(sign);
+				console.log( 'ViewSign render' );
+				guiMessage( 'show', signList.first );
+			}
+			this.lastSignId = signId;
 		}
 	}
 }
@@ -121,7 +128,7 @@ class ViewZoom {
 	constructor(divId) {
 		let myDiv = $('<img class="guiButton" src="tiles/gui/icons/magnify.png">').appendTo($(divId));
 		myDiv.click( function() {
-			guiMessage('map','zoom',null);
+			guiMessage('zoom',null,'map');
 		});
 	}
 }
@@ -272,11 +279,14 @@ class ViewInfo extends ViewObserver {
 			return;
 		}
 
-		function itemSummarize(you,item,comp) {
+		function itemSummarize(you,item,comp,header=true) {
 			let mine = you.inventory.find(i=>i.id==item.id)
 			let ex = itemExplain(item);
-			let s = ex.icon+'<br>';
-			s += ex.description+'<br>';
+			let s = '';
+			if( header ) {
+				s += ex.icon+'<br>';
+				s += ex.description+'<br>';
+			}
 			let dam='',arm='';
 			if( ex.damage ) {
 				dam = ex.damage+' '+ex.damageType+' damage'+(ex.aoe ? ' '+ex.aoe : '');
@@ -305,12 +315,37 @@ class ViewInfo extends ViewObserver {
 		if( entity.isItemType ) {
 			let you = this.trueObserver;
 			let item = entity;
-			let s = itemSummarize(you,item);
-			if( item.slot && !you.inventory.find(i=>i.id==item.id) ) {
-				let f = you.getItemsInSlot(item.slot);
-				if( f.count ) { s += '<hr>'; }
-				f.process( i=>{ s += '<br>'+itemSummarize(you,i,item); });
+			let s = '<div class="monColor">';
+			if( you.senseBlind && !you.nearTarget(item,1) ) {
+				s += "You are blind and that is too far away.";
 			}
+			else {
+				s += itemSummarize(you,item,false,!item.inventory && item.isTreasure);
+				if( item.slot && !you.inventory.find(i=>i.id==item.id) ) {
+					let f = you.getItemsInSlot(item.slot);
+					if( f.count ) { s += '<hr>'; }
+					f.process( i=>{ s += '<br>'+itemSummarize(you,i,item); });
+				}
+				if( item.inventory ) {
+					s += '<div class="invList">';
+					if( item.state == 'shut' ) {
+						s += 'Contents unknown';
+					}
+					else {
+						let any = false;
+						item.inventory.forEach( item => {
+							let ex = itemExplain(item);
+							s += (any ? ', ' : '')+'<span>'+ex.description+'</span>';
+							any=true;
+						});
+						if( !any ) {
+							s += 'Empty';
+						}
+					}
+					s += '</div>';
+				}
+			}
+			s += "</div>";
 			$('#'+this.infoDivId).show().html(s);
 			return;
 		}
@@ -332,19 +367,28 @@ class ViewInfo extends ViewObserver {
 				}
 			}
 		});
+		let tRow = function(a,b) {
+			return '<tr><td>'+a+'</td><td>'+b+'</td></tr>';
+		}
+		s += '<table>';
 		if( poisonMax ) {
-			s += 'Health: <span class="poison">&nbsp;POISONED ('+(poisonMax===true ? 'FOREVER' : poisonMax)+')&nbsp;</span><br>';
+			s += tRow( 'Health:', '<span class="poison">&nbsp;POISONED ('+(poisonMax===true ? 'FOREVER' : poisonMax)+')&nbsp;</span>' );
 		}
 		else {
-			s += "Health: "+Math.ceil(entity.health)+" of "+Math.ceil(entity.healthMax)+" ("+entity.x+","+entity.y+")<br>";
+			s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+' ('+entity.x+','+entity.y+')' );
 		}
 		if( entity.isUser() ) {
-			s += "Armor: "+entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R<br>";
 			let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
-			s += "Shield: "+(entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block<br>";
 			let weapon = entity.calcDefaultWeapon();
-			s += "Damage: "+Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick]+"<br>";
+			let ammo = entity.getFirstItemInSlot(Slot.AMMO);
+			let ex = itemExplain(ammo);
+			s += tRow( "Armor:", entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R" );
+			s += tRow( "Shield:", (entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block" );
+			s += tRow( "Damage:", Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick] );
+			s += tRow( "Ammo:", ex ? ex.description : 'none ready' );
+			s += tRow( "Gold:", Math.floor(entity.coinCount||0) );
 		}
+		s += '</table>';
 		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
 
 		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+'<br>';
@@ -362,9 +406,6 @@ class ViewInfo extends ViewObserver {
 		s += entity.resist ? "Resist: "+entity.resist.split(',').join(', ')+'<br>' : '';
 		s += entity.immune ? "Immune: "+entity.immune.split(',').join(', ')+'<br>' : '';
 		s += entity.vuln ? "Vulnerable: "+entity.vuln.split(',').join(', ')+'<br>' : '';
-		if( entity.isUser() ) {
-			s += "Gold: "+Math.floor(entity.coinCount||0)+"<br>";
-		}
 		if( !entity.isUser() ) {
 			s += (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'');
 //			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');
@@ -424,10 +465,10 @@ class ViewStatus extends ViewObserver {
 				.appendTo('#'+self.divId)
 				.show()
 				.mouseover( function() {
-					guiMessage(null,'show',entity);
+					guiMessage('show',entity);
 				})
 				.mouseout( function() {
-					guiMessage(null,'hide');
+					guiMessage('hide');
 				});
 				div.entityId = entity.id;
 				div.entityLastHealth = entity.health;
@@ -489,7 +530,7 @@ class ViewMiniMap extends ViewObserver {
 		let observer = this.observer;
 		let site = observer.area.getSiteAt(observer.x,observer.y);
 		$('#'+this.captionDivId).show().html(
-			this.caption + (site ? '<br>'+site.id+'<br>'+site.denizenList.map( entity=>entity.name ).join(',') : '')
+			this.caption // + (site ? '<br>'+site.id+'<br>'+site.denizenList.map( entity=>entity.name ).join(',') : '')
 		);
 
 		var canvas0 = document.getElementById(this.divId+'Canvas0');
@@ -590,6 +631,7 @@ function itemExplain(item,buySell) {
 	function icon(file) {
 		return file ? '<img src="tiles/gui/icons/'+file+'">' : '';
 	}
+	if( !item ) return false;
 	let name = item.name.replace(/\$/,'');
 	return {
 		item: 			item,
@@ -624,7 +666,7 @@ class ViewRange extends ViewObserver {
 	clear() {
 		this.xOfs = 0;
 		this.yOfs = 0;
-		guiMessage(null,'overlayRemove',{group: 'guiCrosshair'});
+		guiMessage('overlayRemove',{group: 'guiCrosshair'});
 		this.isShotClear = false;
 	}
 	move(xAdd,yAdd) {
@@ -644,7 +686,7 @@ class ViewRange extends ViewObserver {
 			if( observer.canSeePosition(x,y) ) {
 				let entity = new Finder(area.entityList,observer).canPerceiveEntity().at(x,y).first || new Finder(area.map.itemList,observer).canPerceiveEntity().at(x,y).first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
 				console.log( "viewRange is showing "+entity.name );
-				guiMessage(null,'show',entity);
+				guiMessage('show',entity);
 			}
 		}
 	}
@@ -686,7 +728,7 @@ class ViewRange extends ViewObserver {
 			return map.tileTypeGet(x,y).mayFly;
 		}
 		function add(x,y,ok) {
-			guiMessage(null,'overlayAdd',{ group: 'guiCrosshair', x:x, y:y, areaId:areaId, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
+			guiMessage('overlayAdd',{ group: 'guiCrosshair', x:x, y:y, areaId:areaId, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
 			self.isShotClear = self.isShotClear && ok;
 		}
 		shootRange(sx,sy,tx,ty,test,add);
@@ -694,11 +736,11 @@ class ViewRange extends ViewObserver {
 
 	render() {
 		let observer = this.observer;
-		guiMessage( null, 'overlayRemove', { group: 'guiCrosshair' } );
+		guiMessage( 'overlayRemove', { group: 'guiCrosshair' } );
 		this.active = this.visibleFn && this.visibleFn();
 		if( !this.active && this.activeLast ) {
 			// sadly this is the only way to know that we're no longer showing the range...
-			guiMessage(null,'hide');
+			guiMessage('hide');
 		}
 		if( this.active ) {
 			//console.log("crosshair at "+(observer.x+this.xOfs)+','+(observer.y+this.yOfs));

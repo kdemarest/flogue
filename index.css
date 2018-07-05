@@ -8,6 +8,11 @@ body {
 	display: none;
 	background-color: black;
 }
+
+#guiMain tbody tr td {
+	vertical-align: top;
+}
+
 #guiLoading {
 	display: block;
 }
@@ -47,6 +52,21 @@ body {
 }
 .worse {
 	color: #f93b3b;
+}
+
+#guiInfo.invList {
+	font-size: 10px;
+}
+
+#guiInfo span {
+	white-space: nowrap;
+}
+
+#guiInfo table tr td {
+    color: #d2d2d2;
+    font-family: 'Raleway', sans-serif;
+    font-size: 14px;
+    padding-right: 6px;
 }
 
 #guiNarrative {
@@ -136,7 +156,7 @@ body {
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
-#guiInfo.healthWarn {
+#guiInfo.healthWarn, #guiInfo.healthWarn table tr td {
 	background-color: yellow;
 	color: black;
 }
@@ -165,6 +185,7 @@ body {
 	border: 1px solid white;
 	font-size: 10px;
 	margin: 0px 0px;
+	margin-left: 12px;
 	overflow-y: hidden;
 	overflow-x: hidden;
 	position: relative;
@@ -185,6 +206,7 @@ body {
 	font-family: "Ariel", serif;
 	overflow-y: hidden;
 	overflow-x: hidden;
+	margin-left: 12px;
 }
 .spell {
 }

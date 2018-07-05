@@ -49,6 +49,7 @@ class Item {
 			return value;
 		}.bind(this);
 
+//		if( this.isLauncher ) debugger;
 
 		let picker = new Picker(this.depth);
 		if( this.rechargeTime ) {
@@ -308,7 +309,14 @@ class Item {
 		if( x!==item.x || y!==item.y ) debugger;
 		return item;
 	}
-
+	unhide() {
+		Array.filterInPlace(this.map.itemListHidden, i => i.id!=this.id );
+		let map = this.owner;
+		console.assert( map.isMap );
+		this.owner = null;
+		delete this.isHidden;
+		this.giveTo( map, this.x, this.y );
+	}
 	destroy(special) {
 		if( this.dead ) {
 			debugger;

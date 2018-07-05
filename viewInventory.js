@@ -238,10 +238,11 @@ class ViewInventory extends ViewObserver {
 				this.onItemChoose(event);
 			})
 			.mouseover( event => {
-				guiMessage(null,'show',item);
+				console.log( 'ViewInventory mouseover' );
+				guiMessage( 'show', item );
 			})
 			.mouseout( event => {
-				guiMessage(null,'hide');
+				guiMessage( 'hide' );
 			});
 		}
 		if( !this.inventory.count ) {

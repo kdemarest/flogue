@@ -86,7 +86,7 @@ class Entity {
 	}
 
 	record(s,pending) {
-		$('<div>'+s+'</div>').prependTo('#guiPathDebug');
+		//$('<div>'+s+'</div>').prependTo('#guiPathDebug');
 		if( pending ) {
 			this.historyPending.push(s);
 			return;
@@ -1740,7 +1740,7 @@ class Entity {
 			source.isPossessing = false;
 			tell(mSubject,source,' ',mVerb,'leave',' the mind of ',mObject,this,'.');
 			if( source.isUser() ) {
-				guiMessage(null,'resetMiniMap',source.area);
+				guiMessage('resetMiniMap',source.area);
 			}
 			return true;
 		}
@@ -1759,7 +1759,7 @@ class Entity {
 		source.visCache = null;
 		source.name = 'Mindless husk';
 		if( this.isUser() ) {
-			guiMessage(null,'resetMiniMap',this.area);
+			guiMessage('resetMiniMap',this.area);
 		}
 		return true;
 	}

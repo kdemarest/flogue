@@ -40,7 +40,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		if( item.bunchSize ) {
 			item.bunch = item.bunchSize;
 		}
-		if( item.isTreasure && Math.chance(theme.barrelChance||0) ) {
+		if( item.isTreasure && !item.isHidden && Math.chance(theme.barrelChance||0) ) {
 			let barrel = area.map.itemCreateByType(x,y,ItemTypeList.barrel,{},{});
 			item = item.giveTo(barrel,x,y);
 		}

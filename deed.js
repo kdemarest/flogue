@@ -10,8 +10,10 @@ class Effect {
 		let effect = Object.assign({},basis,effectRaw);
 		effect.effectShape = effect.effectShape || EffectShape.SINGLE;
 
-		if( effect.valueDamage ) {
-			effect.value = Math.max(1,Math.floor(Rules.pickDamage(depth,rechargeTime||0) * effect.valueDamage));
+		if( effect.xDamage ) {
+			// WARNING! This could be healing as well as damaging...
+			let xDamage = item ? ItemCalc(item,item,'xDamage','*') : effect.xDamage;
+			effect.value = Math.max(1,Math.floor(Rules.pickDamage(depth,rechargeTime||0) * xDamage));
 
 			console.assert( !isNaN(effect.value) );
 

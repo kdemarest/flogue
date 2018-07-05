@@ -222,24 +222,24 @@ let EffectTypeList = {
 	eDrain: 		{ isDeb: 1, level:  0, rarity: 0.40, op: 'drain', value: 'all', icon: 'gui/icons/eDrain.png' },
 
 // Healing
-	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', valueDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
+	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', xDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
 	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, durationMod: 2.0, xPrice: 1.5, icon: 'gui/icons/eHeal.png' },
 	eCurePoison: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isPoison || deed.damageType==DamageType.POISON, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
 	eCureDisease: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isDisease, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
 // Damage
-	eFire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
-	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.50, isHarm: 1, isPoison: 1,
+	eFire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
+	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.50, isHarm: 1, isPoison: 1,
 					duration: 10, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
-	ePoisonForever: { isDmg: 1, level:  0, rarity: 0.01, op: 'damage', valueDamage: 0.05, isHarm: 1, isPoison: 1,
+	ePoisonForever: { isDmg: 1, level:  0, rarity: 0.01, op: 'damage', xDamage: 0.05, isHarm: 1, isPoison: 1,
 					duration: true, damageType: DamageType.POISON, name: 'mortal poison', icon: 'gui/icons/ePoison.png' },
-	eCold: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
-	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 0.90, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
-	eAcid3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 0.50, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
-	eHoly: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eHoly3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', valueDamage: 0.70, effectShape: EffectShape.BLAST3, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eHoly5: 		{ isDmg: 1, level:  0, rarity: 0.20, op: 'damage', valueDamage: 0.60, effectShape: EffectShape.BLAST5, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eHoly7: 		{ isDmg: 1, level:  0, rarity: 0.05, op: 'damage', valueDamage: 0.50, effectShape: EffectShape.BLAST7, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
-	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', valueDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
+	eCold: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
+	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.90, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
+	eAcid3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', xDamage: 0.50, effectShape: EffectShape.BLAST3, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
+	eHoly: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', xDamage: 0.70, effectShape: EffectShape.BLAST3, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly5: 		{ isDmg: 1, level:  0, rarity: 0.20, op: 'damage', xDamage: 0.60, effectShape: EffectShape.BLAST5, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eHoly7: 		{ isDmg: 1, level:  0, rarity: 0.05, op: 'damage', xDamage: 0.50, effectShape: EffectShape.BLAST7, isHarm: 1, isInstant: 1, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' },
+	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
 };
 
 for( let key in EffectTypeList ) {
@@ -284,9 +284,9 @@ const TileTypeList = {
 	"glass":      { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
 	"shaft":      { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "shaft", mayJump: true, img: "dc-dngn/dngn_trap_shaft.png" },
 	"flames":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.26, isFire: true, name: "flames", light: 9, glow:1,
-					effect: { op: 'damage', valueDamage: 4.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "dc-mon/nonliving/fire_elemental.png" },
+					effect: { op: 'damage', xDamage: 4.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "dc-mon/nonliving/fire_elemental.png" },
 	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, opacity: 0, isFire: true, mayJump: true, name: "lava", light: 5, glow:1, 
-					effect: { op: 'damage', valueDamage: 8.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
+					effect: { op: 'damage', xDamage: 8.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
 	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.34, name: "mist", zOrder: ZOrder.MIST, img: "effect/cloud_grey_smoke.png", layer: 3 },
 	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, mayJump: true, name: "mud", img: "dc-dngn/floor/dirt0.png" },
 	"ghostStone": { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
@@ -430,7 +430,7 @@ const AmmoList = Fab.add( '', {
 	"dart":     	{
 		level:  0,
 		rarity: 0.5,
-		xDamage: 0.20,
+		xDamage: 0.70,
 		damageType: DamageType.STAB,
 		quick: 2,
 		namePattern: 'dart${+plus}{?effect}',
@@ -472,8 +472,26 @@ const WeaponList = Fab.add( '', {
 	},
 	"dagger":   	{ level:  3, rarity: 0.5, xDamage: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, 
 					chanceOfEffect: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
-	"launcher":   	{ level:900, rarity: 0.0001, isTreasure: false, range: Rules.RANGED_WEAPON_DEFAULT_RANGE, name: "launcher", img: 'item/weapon/elven_dagger.png' },
-	"solKnife":   	{ level:900, rarity: 0.0001, xDamage: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
+
+	// To make a launcher, you must specify the 
+	// 	ammoType: 'isRock',
+	// 	ammoSpec: 'ammo.rock',
+	// 	rechargeTime: 2,
+	// 	conveyDamageToAmmo: true,	// optional, but gives you lots of control over the damage.
+	//	hitsToKillPlayer: 6,		// optional. You can just use xDamage or leave it alone too.
+	// 	name: "rock"				// needed to help describe what happened.
+
+	"launcher":   	{
+		level:  0,
+		rarity: 0.00001,
+		isTreasure: false,
+		isLauncher: true,
+		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
+		name: "launcher",
+		img: 'item/weapon/elven_dagger.png'
+	},
+
+	"solKnife":   	{ level:  0, rarity: 0.00001, xDamage: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
 	"pickaxe":   	{ level:  0, rarity: 0.01, xDamage: 0.70, damageType: DamageType.STAB, quick: 0, 
 					attackVerb: 'strike', mineSpeed: 1.0, img: 'item/weapon/pickaxe.png' },
 	"club":   		{ level:  0, rarity: 1.0, xDamage: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
@@ -694,7 +712,7 @@ const StuffList = Fab.add( '', {
 	"darkEssence": 		{ rarity: 0.1, },
 	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
 	"sunCrystal":   	{ rarity: 0.6, mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "gems/sunCrystal.png", mayTargetPosition: true,
-						effect: { name: 'radiance', op: 'damage', valueDamage: 1.0, effectShape: EffectShape.BLAST5, effectFilter: eff=>eff.target.team==Team.EVIL, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
+						effect: { name: 'radiance', op: 'damage', xDamage: 1.0, effectShape: EffectShape.BLAST5, effectFilter: eff=>eff.target.team==Team.EVIL, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
 						},
 	"trollBlood": 		{ rarity: 0.6, isLiquid: true },
 	"spinneret": 		{ rarity: 0.4, },
@@ -813,39 +831,171 @@ const ItemTypeList = {
 // MARKERS
 	"marker": 	  { symbol: SYM, name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
 // DECOR
-	"columnBroken": { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "broken column", isDecor: true, img: "dc-dngn/crumbled_column.png" },
-	"columnStump":  { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, name: "column stump", isDecor: true, img: "dc-dngn/granite_stump.png" },
-	"brazier":    	{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "brazier", light: 6, glow:1, img: "spells/fire/sticky_flame.png" },
-	"table":    	{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "table", isDecor: true, isTable: true, zOrder: ZOrder.TABLE,
-					img: "decor/tableSmall.png", imgChoices: ImgTables, imgGet: (self,img) => img || self.img },
-	"sign":    		{ symbol: SYM, mayWalk: true, mayFly: true,  opacity: 0, name: "sign", mayPickup: false, zOrder: ZOrder.SIGN, isDecor: true, isSign: true,
-					allowPlacementOnBlocking: true, img: "decor/sign.png", imgChoices: ImgSigns,
-					imgGet: (self,img) => img || self.img },
-	"bed": 			{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "wooden bed", mayPickup: false, isDecor: true, isBed: true,
-					imgChoices: { head: {img:'decor/bedHead.png'}, foot: {img:'decor/bedFoot.png'} },
-					imgGet: (self,img) => img || self.img },
-	"barrel": 		{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "barrel", mayPickup: false, isDecor: true,
-					inventoryLoot: '3x 20% any', hasInventory: true, img: 'decor/barrel.png' },
-	"chest": 		{ symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, name: "chest", mayPickup: false, isDecor: true,
-					state: 'shut',
-					imgChoices: {
-						shut: { img: 'decor/chestShut.png' },
-						open: { img: 'decor/chestOpen.png' },
-						empty: { img: 'decor/chestEmpty.png' }
-					},
-					imgGet: (self,img) => img || self.imgChoices[self.state].img,
-					inventoryLoot: '5x 50% any', hasInventory: true },
-	"altar":    { symbol: SYM, mayWalk: false, mayFly: false, rarity: 1, name: "golden altar", mayPickup: false, light: 4, glow:true,
-				isDecor: true, rechargeTime: 12, healMultiplier: 3.0, sign: "This golden alter to Solarus glows faintly.\nTouch it to level up.",
-				effect: { op: 'heal', valueDamage: 6.00, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
-				img: "dc-dngn/altars/dngn_altar_shining_one.png" },
-	"fountain": { symbol: SYM, mayWalk: false, mayFly: true, rarity: 1, mayPickup: false, name: "fountain",
-				isDecor: true, img: "dc-dngn/dngn_blue_fountain.png" },
-	"fontSolar":{ symbol: 'S', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "solar font",
-				light: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontSolar.png" },
-	"fontDeep": { symbol: 'D', mayWalk: true, mayFly: true, rarity: 1, mayPickup: false, name: "deep font",
-				rechargeTime: 4, effectDrain: EffectTypeList.eDrain, xDamage: 0.3, effectPeriodic: EffectTypeList.eRot,
-				dark: 10, glow: 1, isDecor: true, img: "dc-dngn/mana/fontDeep.png" },
+	"columnBroken": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: false,
+		rarity: 1,
+		name: "broken column",
+		isDecor: true,
+		img: "dc-dngn/crumbled_column.png"
+	},
+	"columnStump": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: true,
+		rarity: 1,
+		name: "column stump",
+		isDecor: true,
+		img: "dc-dngn/granite_stump.png"
+	},
+	"brazier": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: true,
+		opacity: 0,
+		name: "brazier",
+		light: 6,
+		glow: 1,
+		img: "spells/fire/sticky_flame.png"
+	},
+	"table": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: true,
+		opacity: 0,
+		name: "table",
+		isDecor: true,
+		isTable: true,
+		zOrder: ZOrder.TABLE,
+		img: "decor/tableSmall.png",
+		imgChoices: ImgTables,
+		imgGet: (self, img) => img || self.img
+	},
+	"sign": {
+		symbol: SYM,
+		mayWalk: true,
+		mayFly: true,
+		opacity: 0,
+		name: "sign",
+		mayPickup: false,
+		zOrder: ZOrder.SIGN,
+		isDecor: true,
+		isSign: true,
+		allowPlacementOnBlocking: true,
+		img: "decor/sign.png",
+		imgChoices: ImgSigns,
+		imgGet: (self, img) => img || self.img
+	},
+	"bed": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: true,
+		opacity: 0,
+		name: "wooden bed",
+		mayPickup: false,
+		isDecor: true,
+		isBed: true,
+		imgChoices: {
+			head: {
+				img: 'decor/bedHead.png'
+			},
+			foot: {
+				img: 'decor/bedFoot.png'
+			}
+		},
+		imgGet: (self, img) => img || self.img
+	},
+	"barrel": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: true,
+		opacity: 0,
+		name: "barrel",
+		mayPickup: false,
+		isDecor: true,
+		state: 'shut',	// This is required to stop the user from "seeing inside" with mouse hover.
+		inventoryLoot: '3x 20% any',
+		hasInventory: true,
+		img: 'decor/barrel.png'
+	},
+	"chest": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: true,
+		opacity: 0,
+		name: "chest",
+		mayPickup: false,
+		isDecor: true,
+		state: 'shut',
+		imgChoices: {
+			shut: { img: 'decor/chestShut.png' },
+			open: { img: 'decor/chestOpen.png' },
+			empty: { img: 'decor/chestEmpty.png' }
+		},
+		imgGet: (self,img) => img || self.imgChoices[self.state].img,
+		inventoryLoot: '5x 50% any',
+		hasInventory: true
+	},
+	"altar": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: false,
+		rarity: 1,
+		name: "golden altar",
+		mayPickup: false,
+		light: 4,
+		glow: true,
+		isDecor: true,
+		rechargeTime: 12,
+		healMultiplier: 3.0,
+		sign: "This golden alter to Solarus glows faintly.\nTouch it to heal or level up.",
+		effect: {
+			op: 'heal',
+			xDamage: 6.00,
+			healingType: DamageType.SMITE,
+			icon: 'gui/icons/eHeal.png'
+		},
+		img: "dc-dngn/altars/dngn_altar_shining_one.png"
+	},
+	"fountain": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: true,
+		rarity: 1,
+		mayPickup: false,
+		name: "fountain",
+		isDecor: true,
+		img: "dc-dngn/dngn_blue_fountain.png"
+	},
+	"fontSolar": {
+		symbol: 'S',
+		mayWalk: true,
+		mayFly: true,
+		rarity: 1,
+		mayPickup: false,
+		name: "solar font",
+		light: 10,
+		glow: 1,
+		isDecor: true,
+		img: "dc-dngn/mana/fontSolar.png"
+	},
+	"fontDeep": {
+		symbol: 'D',
+		mayWalk: true,
+		mayFly: true,
+		rarity: 1,
+		mayPickup: false,
+		name: "deep font",
+		rechargeTime: 4,
+		effectDrain: EffectTypeList.eDrain,
+		xDamage: 0.3,
+		effectPeriodic: EffectTypeList.eRot,
+		dark: 10,
+		glow: 1,
+		isDecor: true,
+		img: "dc-dngn/mana/fontDeep.png"
+	},
 // ORE VEINS
 	"oreVein":    {
 		symbol: 'v',
@@ -894,7 +1044,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		namePattern: 	'potion${?effect}{+plus}',
 		charges: 		1,
-		xDamage: 		2.0,
+		xDamage: 		1.5,	// Single use, so more damage.
 		light: 			3,
 		glow: 			true,
 		attackVerb: 	'splash',
@@ -1208,7 +1358,7 @@ let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE].j
 function launcher(obj) {
 	// Use this as a convenience to make launchers for anything to be thrown or shot
 	return Object.assign({
-		typeFilter: 'weapon.launcher',
+		typeFilter: 'weapon.launcher.eInert',
 		fake: true,
 		mayShoot: true,
 		damageType: DamageType.STAB,
@@ -1502,7 +1652,7 @@ const MonsterTypeList = {
 		senseSmell: 200,
 	},
 	"ogreKid": { 
-		core: [ SYM, 39, '10:10', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
+		core: [ SYM, 39, '6:8', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
 		name: "ogre child",
 		isEarthChild: true,
 		inventoryLoot: 'ammo.rock',
@@ -1512,11 +1662,18 @@ const MonsterTypeList = {
 		stink: 0.6,
 	},
 	"ogre": {
-		core: [ SYM, 69, '10:10', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
+		core: [ SYM, 69, '5:5', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
 		isEarthChild: true,
 		isOgre: true,
 		isLarge: true,
-		inventoryLoot: launcher({ ammoType: 'isRock', ammoSpec: 'ammo.rock', rechargeTime: 2, hitsToKillPlayer: 3, name: "rock" }),
+		inventoryLoot: launcher({
+			ammoType: 'isRock',
+			ammoSpec: 'ammo.rock',
+			rechargeTime: 2,
+			conveyDamageToAmmo: true,
+			hitsToKillPlayer: 6,
+			name: "rock"
+		}),
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speed: 0.5,
@@ -1774,8 +1931,8 @@ TileTypeList.flames.isProblem = function(entity,self) {
 	if( entity.isImmune(self.damageType) ) {
 		return Prob.NONE;
 	}
-	let valueDamage = self.effect.valueDamage;
-	let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,self.rechargeTime) * valueDamage))
+	let xDamage = ItemCalc(self,self,'xDamage','*');
+	let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,self.rechargeTime) * xDamage))
 	let ratio = damage/entity.health;
 	if( ratio <= 0.3 ) return Prob.MILD;
 	if( ratio <= 0.7 ) return Prob.HARSH;
@@ -1784,8 +1941,8 @@ TileTypeList.flames.isProblem = function(entity,self) {
 
 TileTypeList.flames.onTouch = function(toucher,self) {
 	// We could pass in an onDamage that would also catch you on fire...
-	let valueDamage = self.effect.valueDamage;
-	let effect = Object.assign( {}, self.effect, { valueDamage: valueDamage } );
+	let xDamage = ItemCalc(self,self,'xDamage','*');
+	let effect = Object.assign( {}, self.effect, { xDamage: xDamage } );
 	effect = new Effect( toucher.area.depth, effect );
 	effectApply( effect, toucher, null, self );
 }
@@ -1802,8 +1959,8 @@ TileTypeList.lava.isProblem = function(entity,self) {
 	if( entity.isImmune(self.damageType) || entity.travelMode !== 'walk' ) {
 		return Prob.NONE;
 	}
-	let valueDamage = self.effect.valueDamage;
-	let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,0) * valueDamage))
+	let xDamage = ItemCalc(self,self,'xDamage','*');
+	let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,0) * xDamage))
 	let ratio = damage/entity.health;
 	if( ratio <= 0.3 ) return Prob.MILD;
 	if( ratio <= 0.7 ) return Prob.HARSH;
@@ -1925,7 +2082,17 @@ TileTypeList.ghostStone.onTouch = function(toucher,self) {
 }
 
 ItemTypeList.altar.onTouch = function(toucher,self) {
-	if( toucher.isChosenOne && ( !toucher.deathReturn || !toucher.isAtTarget(toucher.deathReturn) ) ) {
+	if( self.unhide ) {
+		let label = self.unhide;
+		let hidList = [].concat( self.map.itemListHidden );
+		hidList.forEach( item => {
+			item.unhide();
+			animFloatUp( item, StickerList.ePoof.img );
+		});
+		delete self.unhide;
+	}
+
+	if( toucher.isChosenOne && ( !toucher.deathReturn || !self.isAtTarget(toucher.deathReturn) ) ) {
 		tell(mSubject|mCares,toucher,' will return here upon death.');
 		toucher.deathReturn = {
 			x:self.x,
@@ -1941,6 +2108,7 @@ ItemTypeList.altar.onTouch = function(toucher,self) {
 			entity.health = entity.healthMax;
 			entity.dead = false;
 		};
+		return;
 	}
 
 	if( toucher.isMonsterType && toucher.experience!==undefined ) {
@@ -2060,6 +2228,7 @@ ItemTypeList.chest.onTouch = function(toucher,self) {
 	}
 	else {
 		if( self.inventory && self.inventory.length > 0 ) {
+			guiMessage( 'hide' );
 			if( self.onLoot ) {
 				let allow = self.onLoot(self,toucher);
 				if( allow === false ) return;

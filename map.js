@@ -210,6 +210,7 @@ class Map extends SimpleMap {
 		this.actionCount = 0;
 		this.tileEntity = [];
 		this.itemList = itemList || [];
+		this.itemListHidden = [];
 		this.itemLookup = [];
 		this.itemLookupStaticNop = [];
 		this.itemList.forEach( item => {
@@ -501,6 +502,10 @@ class Map extends SimpleMap {
 		// NUANCE! You must set the item's x,y in order for _addToList to bunch properly.
 		item.x = x;
 		item.y = y;
+		if( item.isHidden ) {
+			this.itemListHidden.push(item);
+			return item;
+		}
 		item = item._addToList(this.itemList);
 		let lPos = y*this.xLen+x;
 		this.itemLookup[lPos] = (this.itemLookup[lPos] || []);

@@ -10,7 +10,7 @@ class ViewMerchant extends ViewInventory {
 		this.mode = null;
 		$(document).on( 'keydown.ViewMerchant', null, this.onKeyDown.bind(this) );
 
-		guiMessage(null,'clearSign');
+		guiMessage('clearSign');
 	}
 	onKeyDown(e) {
 		if( e.key == 'Escape' ) {

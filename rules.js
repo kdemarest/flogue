@@ -15,7 +15,10 @@ function ItemCalc(item,presets,field,op) {
 	function calc(piece) {
 		let a = piece ? (piece[field] || def) : def;
 		if( isNaN(a) ) debugger;
-		n = (op=='*' ? n*a : n+a);
+		switch( op ) {
+			case '*': n=n*a; break;
+			case '+': n=n+a; break;
+		};
 		if( isNaN(n) ) debugger;
 	}
 
@@ -30,6 +33,26 @@ function ItemCalc(item,presets,field,op) {
 	}
 	return n;
 }
+
+function ItemFirstValue(item,presets,field) {
+	if( presets && presets.quality && presets.quality[field] !== undefined ) {
+		return presets.quality[field];
+	}
+	if( presets && presets.material && presets.material[field] !== undefined ) {
+		return presets.material[field];
+	}
+	if( presets && presets.variety && presets.variety[field] !== undefined ) {
+		return presets.variety[field];
+	}
+	if( presets && presets.effect && presets.effect[field] !== undefined ) {
+		return presets.effect[field];
+	}
+	if( item && item[field] !== undefined ) {
+		return item[field];
+	}
+	return;	// undefined
+}
+
 
 let Rules = new class {
 	constructor() {
@@ -68,6 +91,11 @@ let Rules = new class {
 	 }
 
 	pickDamage(level,rechargeTime,item) {
+		let h2k = ItemFirstValue(item,item,'hitsToKillPlayer');
+		if( h2k !== undefined ) {
+			// This just short-circuits everything and cuts to the chase.
+			return this.monsterDamage(level,h2k);
+		}
 		let dm = ItemCalc(item,item,'xDamage','*');
 		let mult = (rechargeTime||0)>1 ? 1+(rechargeTime-1)*this.DAMAGE_BONUS_FOR_RECHARGE : 1;
 		let damage = this.playerDamage(level) * mult * dm;

@@ -104,7 +104,7 @@ function main(levelName) {
 			this.entity.userControllingMe = this;
 		}
 		onAreaChange(area) {
-			guiMessage(null,'setArea',area);
+			guiMessage('setArea',area);
 			this.priorArea = this.entity.area;
 		}
 	}())
@@ -163,7 +163,7 @@ function main(levelName) {
 		Narrative.addRecipient(
 			() => user.entity,
 			(observer,entity) => !observer ? true : observer.canPerceiveEntity(entity),
-			(message,history) => guiMessage('narrative','receive',history)
+			(message,history) => guiMessage('receive',history,'narrative')
 		);
 
 		let handle = setInterval(function() {
@@ -201,7 +201,6 @@ function main(levelName) {
 		</td><td>
 			<div id="guiControls"></div>
 		</td><td>
-			<div id="guiPathDebugSummary"></div>
 		</td></tr>
 		<tr>
 			<td>
@@ -216,10 +215,11 @@ function main(levelName) {
 				<div id="guiSpells"></div>
 				<div id="guiExperience"></div>
 				<div id="guiInfo"></div>
-				<div id="guiMiniMap"></div>
-				<div id="guiMiniMapCaption"></div>
 			</td>
 			<td>
+				<div id="guiMiniMap"></div>
+				<div id="guiMiniMapCaption"></div>
+				<div id="guiPathDebugSummary"></div>
 				<div id="guiPathDebug"></div>
 			</td>
 		</tr>

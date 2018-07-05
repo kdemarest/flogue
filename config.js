@@ -54,14 +54,14 @@ ConfigList.ken = () => {
 		scapeId: 		'kenCave',
 //		rREQUIRED: 		'kenPlace',
 		placeDensity: 	0.10,
-		rCOMMON: 		'floodPit',
+		rCOMMON: 		'camp_ogre',
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
-		monsters: 		['isGoblinMinion','isGhoul'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isOgre'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.001,
+		enemyDensity:  	0.04,
 		friendDensity: 	0.0001,
 	}
 
@@ -76,7 +76,7 @@ ConfigList.ken = () => {
 
 
 	return {
-//		startingDepth: 9,
+//		startingDepth: 1,
 //		themeId: 'kenTheme'
 	}
 }

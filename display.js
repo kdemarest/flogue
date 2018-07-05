@@ -362,31 +362,36 @@ class ViewMap extends ViewObserver {
 	hookEvents() {
 		let self = this;
 		$('#'+this.divId+' canvas').mousemove( function(e) {
+
 			let offset = $(this).offset(); 
 			let mx = Math.floor((e.pageX - offset.left)/TILE_DIM);
 			let my = Math.floor((e.pageY - offset.top)/TILE_DIM);
 
-			if( self.observer ) {
-				let observer = self.observer;
-				let area = observer.area;
-				let x = (observer.x-self.sd) + mx;
-				let y = (observer.y-self.sd) + my;
-				guiMessage( null, 'hide' );
-				if( observer.canSeePosition(x,y) ) {
-					let entity = new Finder(area.entityList,observer).at(x,y).canPerceiveEntity().first || new Finder(area.map.itemList,observer).at(x,y).canPerceiveEntity().first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
-					if( entity ) {
-						//console.log( x,y,entity.name);
-						guiMessage( null, 'show', entity );
-						guiMessage( null, 'pick', { xOfs: x-observer.x, yOfs: y-observer.y } );
-						if( entity.isMonsterType ) {
-							console.log( entity.history.join('\n') );
-						}
-					}
-				}
+			if( !self.observer ) {
+				return;
+			}
+			let observer = self.observer;
+			let area = observer.area;
+			let x = (observer.x-self.sd) + mx;
+			let y = (observer.y-self.sd) + my;
+			console.log( "ViewMap mousemove detected ("+x+','+y+')' );
+			guiMessage( 'hide' );
+			if( !observer.canSeePosition(x,y) ) {
+				return;
+			}
+			let entity = new Finder(area.entityList,observer).at(x,y).canPerceiveEntity().first || new Finder(area.map.itemList,observer).at(x,y).canPerceiveEntity().first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
+			if( !entity ) {
+				return;
+			}
+			//console.log( x,y,entity.name);
+			guiMessage( 'show', entity );
+			guiMessage( 'pick', { xOfs: x-observer.x, yOfs: y-observer.y } );
+			if( entity.isMonsterType ) {
+				console.log( entity.history.join('\n') );
 			}
 		});
 		$('#'+this.divId+' canvas').mouseout( function(e) {
-			guiMessage(null,'hide',null);
+			guiMessage('hide');
 			//console.log('mouse out of canvas');
 		});
 		$('#'+this.divId+' canvas').click( function(e) {
