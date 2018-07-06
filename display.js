@@ -374,7 +374,7 @@ class ViewMap extends ViewObserver {
 			let area = observer.area;
 			let x = (observer.x-self.sd) + mx;
 			let y = (observer.y-self.sd) + my;
-			console.log( "ViewMap mousemove detected ("+x+','+y+')' );
+			//console.log( "ViewMap mousemove detected ("+x+','+y+')' );
 			guiMessage( 'hide' );
 			if( !observer.canSeePosition(x,y) ) {
 				return;

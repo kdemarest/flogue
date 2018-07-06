@@ -79,7 +79,7 @@ class Gui {
 		return true;
 	}
 	message(message,payload,target) {
-		console.log( "guiMessage: "+message );
+		//console.log( "guiMessage: "+message );
 		if( target && !this.view[target] ) {
 			console.log( "Error: Message target "+target+" does not exist." );
 			return;

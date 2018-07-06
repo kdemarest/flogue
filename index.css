@@ -160,14 +160,14 @@ body {
 	background-color: yellow;
 	color: black;
 }
-#guiInfo.healthCritical {
+#guiInfo.healthCritical, #guiInfo.healthCritical table tr td {
 	background-color: red;
 	color: black;
 }
 
 #guiInfo {
 	width: 240px;
-	height: 180px;
+	height: 360px;
 	padding-top: 10px;
 	padding-bottom: 10px;
 	white-space: normal;

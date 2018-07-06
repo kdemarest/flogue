@@ -65,8 +65,8 @@ ConfigList.ken = () => {
 		friendDensity: 	0.0001,
 	}
 
-//	MonsterTypeList.player.inventoryLoot.push('5x gem, stuff.lumpOfMeat, spell.ePossess, bow, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
-//	MonsterTypeList.player.inventoryWear = 'armor, helm, boots, bracers, stuff.oilLamp';
+	MonsterTypeList.player.inventoryLoot.push('5x gem, stuff.lumpOfMeat, spell.eShove, spell.ePossess, bow, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
+	MonsterTypeList.player.inventoryWear = 'armor, helm, boots.eFlight, bracers, stuff.oilLamp';
 //	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
@@ -76,7 +76,7 @@ ConfigList.ken = () => {
 
 
 	return {
-//		startingDepth: 1,
+		startingDepth: 7,
 //		themeId: 'kenTheme'
 	}
 }

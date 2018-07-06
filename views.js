@@ -94,7 +94,7 @@ class ViewSign extends ViewObserver {
 			else {
 				let sign = typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
 				$('#'+this.divId).show().html(sign);
-				console.log( 'ViewSign render' );
+				//console.log( 'ViewSign render' );
 				guiMessage( 'show', signList.first );
 			}
 			this.lastSignId = signId;
@@ -387,6 +387,9 @@ class ViewInfo extends ViewObserver {
 			s += tRow( "Damage:", Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick] );
 			s += tRow( "Ammo:", ex ? ex.description : 'none ready' );
 			s += tRow( "Gold:", Math.floor(entity.coinCount||0) );
+		}
+		else {
+			s += '<img style="width:96px" src="tiles/'+entity.img+'"><br>';
 		}
 		s += '</table>';
 		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
@@ -685,7 +688,7 @@ class ViewRange extends ViewObserver {
 			y = observer.y + y;
 			if( observer.canSeePosition(x,y) ) {
 				let entity = new Finder(area.entityList,observer).canPerceiveEntity().at(x,y).first || new Finder(area.map.itemList,observer).canPerceiveEntity().at(x,y).first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
-				console.log( "viewRange is showing "+entity.name );
+				//console.log( "viewRange is showing "+entity.name );
 				guiMessage('show',entity);
 			}
 		}

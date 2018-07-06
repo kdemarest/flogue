@@ -203,7 +203,7 @@ ThemeList.coreCavernRooms = {
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isDemon'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
@@ -261,7 +261,7 @@ ThemeList.corePits = {
 	rUNCOMMON: 	'camp_human, antHive, tinyRoom, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, floodWater',
 	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
 }
 
 ThemeList.coreBridges = {
@@ -272,7 +272,7 @@ ThemeList.coreBridges = {
 	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'goblinGathering, tinyRoom, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
 }
 
 ThemeList.coreMaze = {
@@ -280,7 +280,7 @@ ThemeList.coreMaze = {
 	rCOMMON: 	'demonNest, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom, barrelStorage',
 	rUNCOMMON: 	'floodPit, camp_goblin, den_kobold, nest_bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'camp_human, goblinGathering, portal, circle, ruin, swamp, firePit, floodOre, floodWater',
-	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
 }
 
 ThemeList.dwarfGoblinBattle = {
@@ -304,7 +304,7 @@ ThemeList.coreCavernSomewhatOpen = {
 	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre, barrelStorage',
 	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
 }
 
 ThemeList.coreSea = {
@@ -318,7 +318,7 @@ ThemeList.coreSea = {
 	fillWall: 			'floor',
 	rREQUIRED: 			'floodWater',
 	rCOMMON: 			'floodWaterSmall',
-	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
 }
 
 ThemeList.coreSwamp = {
@@ -331,7 +331,7 @@ ThemeList.coreSwamp = {
 	outlineWall: 		'mud',
 	fillWall: 			'mud',
 	rCOMMON: 			'floodMud',
-	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
+	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
 }
 
 ThemeList.coreRooms = {
@@ -350,7 +350,7 @@ ThemeList.coreRooms = {
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isDemon'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
@@ -370,7 +370,7 @@ ThemeList.coreMorphousRooms = {
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isDemon'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
@@ -390,7 +390,7 @@ ThemeList.coreMixedRooms = {
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal'],
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isDemon'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
@@ -805,11 +805,11 @@ PlaceTypeList.surfaceSunTemple = {
   #...................#
  ##...................##
  #.....................#
- #....b.........1.2.3..########
-##.....................#..d...#
+ #....b.......1.2.3....########
+##.....................#..d..##
 #F...b....X.A..........D...L.S#
-##.....................#......#
- #....b.........4.5....########
+##.....................#.....##
+ #....b.......4.5.6....########
  #.....................#
  ##...................##
   #...................#
@@ -873,6 +873,17 @@ PlaceTypeList.surfaceSunTemple = {
 			sign: 'Legacy of Arithern the accurate.',
 			inventoryLoot: [
 				'armor.eInert, weapon.bow.eHoly, 50x ammo.arrow, 5x ammo.dart, 2x potion.eHealing',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+		}],
+		'6': [{
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Legacy of Berthold the blessed.',
+			inventoryLoot: [
+				'armor.eInert, spell.eHoly, shield.eAbsorbRot, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)

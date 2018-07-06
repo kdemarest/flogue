@@ -64,8 +64,8 @@ class DataConditioner {
 			for( let i=0 ; i<supplyArray.length ; ++i ) {
 				supplyArray[i].chance = 100;
 			}
-			let makeList = new Finder( Array.supplyToMake(supplyArray) );
-			makeList.process( make => {
+			let makeList = Array.supplyToMake(supplyArray);
+			makeList.forEach( make => {
 				let any = (''+make.typeFilter).toLowerCase()==='any';
 				let type = picker.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ').trim(), null, false );
 				if( any && type && !type.isTreasure ) {

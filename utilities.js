@@ -357,7 +357,7 @@ function nop() {}
 		let span = Math.max(3,DEPTH_SPAN/10);
 		let x = (entityLevel+span)-mapLevel;
 		let n = 1-Math.abs(x/span);
-		return Math.clamp( n, 0.1, 1.0 );
+		return Math.clamp( n, 0.02, 1.0 );
 	}
 
 	Math.chanceToAppearRamp = function(entityLevel,mapLevel) {
