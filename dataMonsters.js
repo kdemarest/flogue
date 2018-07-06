@@ -183,6 +183,21 @@ const MonsterTypeList = {
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
+	"ghostScorpion": {
+		// make it so this goes insubstantial from time to time.
+		core: [ SYM, 39, '6:8', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/boneScorpion48.png', 'it' ],
+		alpha: 0.35,
+		attitude: Attitude.AWAIT,
+		tooClose: 5,
+		isInsect: true,
+		isScorpion: true,
+		loot: '70% poisonGland',
+		naturalWeapon: { chanceOfEffect: 64, effect: EffectTypeList.ePoison },
+		immune: DamageType.POISON+',slow',
+		reach: 3,
+		resist: [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(','),
+		vuln: DamageType.FREEZE,
+	},
 	"demon": {
 		core: [ SYM, 49, '3:5', 'evil', 'burn', 'sentient', 'humanoid', 'player/base/draconian_red_f.png', 'it' ],
 		immune: DemonImmunity,

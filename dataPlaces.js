@@ -197,13 +197,13 @@ ThemeList.surface = {
 
 ThemeList.coreCavernRooms = {
 	scapeId: 		'caveRoomsNarrowlyConnected', //'caveRoomsWellConnected',
-	placeDensity: 	0.70,
+	placeDensity: 	0.50,
 	rREQUIRED: 		'goblinGathering',
 	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isDemon'],
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
@@ -261,7 +261,7 @@ ThemeList.corePits = {
 	rUNCOMMON: 	'camp_human, antHive, tinyRoom, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, floodWater',
 	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreBridges = {
@@ -272,7 +272,7 @@ ThemeList.coreBridges = {
 	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'goblinGathering, tinyRoom, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreMaze = {
@@ -280,7 +280,7 @@ ThemeList.coreMaze = {
 	rCOMMON: 	'demonNest, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom, barrelStorage',
 	rUNCOMMON: 	'floodPit, camp_goblin, den_kobold, nest_bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'camp_human, goblinGathering, portal, circle, ruin, swamp, firePit, floodOre, floodWater',
-	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
+	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.dwarfGoblinBattle = {
@@ -304,7 +304,7 @@ ThemeList.coreCavernSomewhatOpen = {
 	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre, barrelStorage',
 	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
+	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreSea = {
@@ -318,7 +318,7 @@ ThemeList.coreSea = {
 	fillWall: 			'floor',
 	rREQUIRED: 			'floodWater',
 	rCOMMON: 			'floodWaterSmall',
-	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
+	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreSwamp = {
@@ -331,7 +331,7 @@ ThemeList.coreSwamp = {
 	outlineWall: 		'mud',
 	fillWall: 			'mud',
 	rCOMMON: 			'floodMud',
-	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild','isDemon']
+	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreRooms = {
@@ -350,7 +350,7 @@ ThemeList.coreRooms = {
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isDemon'],
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
@@ -370,7 +370,7 @@ ThemeList.coreMorphousRooms = {
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isDemon'],
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
@@ -390,7 +390,7 @@ ThemeList.coreMixedRooms = {
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isDemon'],
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
@@ -407,7 +407,7 @@ ThemeList.coreHellscape = {
 	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
 	rRARE: 			'etherHive',
 	prefer: 		['flames','mud'],
-	monsters: 		['isDemon','isPlanar'],
+	monsters: 		['isDemon','isPlanar','isInsect'],
 	enemyDensity: 	0.10,
 	friendDensity: 	0.05,
 }
@@ -428,7 +428,7 @@ ThemeList.coreFinalLevel = {
 	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
 	rRARE: 			'etherHive',
 	prefer: 		['flames','mud'],
-	monsters: 		['isDemon','isPlanar'],
+	monsters: 		['isDemon','isPlanar','isInsect'],
 	enemyDensity: 	0.20,
 	friendDensity: 	0.05,
 }
