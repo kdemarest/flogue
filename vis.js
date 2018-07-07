@@ -225,7 +225,7 @@ class Vis {
 					return;
 				}
 			}
-			if( mapMemory ) {
+			if( mapMemory && map.getLightAt(x,y,0) > 0 ) {
 				let pos = y*map.xLen+x;
 				let item = q[pos];
 				mapMemory[pos] = item ? item : map.tileTypeGet(x,y);

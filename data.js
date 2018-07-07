@@ -148,6 +148,9 @@ const StickerList = {
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
 let ARMOR_SCALE = 100;
 
+const MiscImmunity = { SPEED: "speed", LOSETURN: "loseTurn", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField" };
+
+
 const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
 const EffectShape = { SINGLE: "single", BLAST3: "blast3", BLAST5: "blast5", BLAST7: "blast7" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH];
@@ -179,7 +182,8 @@ let EffectTypeList = {
 	eBlank: 		{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
 	eKillLabel: 	{ level:  0, rarity: 1.00, op: 'killLabel', isInstant: 1, icon: false },	
 // Tactical
-	eLuminari: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'light', value: 3, durationMod: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
+	eLuminari: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'light', value: 6, durationMod: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
+	eDarkness: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'dark', value: 12, durationMod: 5.0, isPlayerOnly: 1, name: 'darkness', icon: 'gui/icons/eLuminari.png' },
 //	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },
 	eGreed: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseItems', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'greed', icon: 'gui/icons/eVision.png' },
 	eEcholoc: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseLife', value: true, durationMod: 5.0, isPlayerOnly: 1, name: 'bat sense', icon: 'gui/icons/eVision.png' },
@@ -207,6 +211,8 @@ let EffectTypeList = {
 	eIgnore: 		{ isBuf: 1, level:  0, rarity: 1.00, op: 'add', stat: 'immune',
 					valuePick: () => pick(PickIgnore), isHelp: 1, namePattern: 'ignore {value}', icon: 'gui/icons/eImmune.png' },
 	eRechargeFast: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'max', stat: 'rechargeRate', value: 1.3, isHelp: 1, durationMod: 3.0, icon: 'gui/icons/eMagic.png' },
+	eMobility: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'immune', value: 'eImmobilize',
+					isHelp: 1, namePattern: 'mobility', icon: 'gui/icons/eImmune.png' },
 // Debuff/Control
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
 	eStun: 			{ isDeb: 1, level:  0, rarity: 0.50, op: 'set', stat: 'loseTurn', value: true, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eShove.png' },
@@ -216,12 +222,13 @@ let EffectTypeList = {
 	eVulnerability: { isDeb: 1, level:  0, rarity: 1.00, op: 'add', stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
 					valuePick: () => pick(PickVuln), isHarm: 1, durationMod: 2.0, namePattern: 'vulnerability to {value}', icon: 'gui/icons/eVuln.png' },
 	eSlow: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'sub', stat: 'speed', value: 0.5, isHarm: 1, durationMod: 0.3, requires: e=>e.speed>0.5 },
-	eBlindness: 	{ isDeb: 1, level:  0, rarity: 0.30, op: 'set', stat: 'senseBlind', value: true, isHarm: 1, durationMod: 0.25, requires: e=>!e.blind, icon: 'gui/icons/eBlind.png' },
+	eBlindness: 	{ isDeb: 1, level:  0, rarity: 0.30, op: 'set', stat: 'senseBlind', value: true, isHarm: 1, durationMod: 0.25, requires: e=>!e.senseBlind, icon: 'gui/icons/eBlind.png' },
 	eConfusion: 	{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.CONFUSED, isHarm: 1, durationMod: 0.3, icon: 'gui/icons/eAttitude.png' },
 	ePanic: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, durationMod: 1.0, icon: 'gui/icons/eFear.png' },
 	eRage: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat: 'attitude', value: Attitude.ENRAGED, isHarm: 1, durationMod: 0.5, icon: 'gui/icons/eAttitude.png' },
 	ePossess: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'possess', durationMod: 5.0, icon: 'gui/icons/ePossess.png' },
 	eDrain: 		{ isDeb: 1, level:  0, rarity: 0.40, op: 'drain', value: 'all', icon: 'gui/icons/eDrain.png' },
+	eImmobilize: 	{ isDeb: 1, level:  0, rarity: 0.40, op: 'set', stat: 'immobile', value: 1, requires: e=>!e.immobile, icon: 'gui/icons/eImmobile.png' },
 
 // Healing
 	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', xDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
@@ -355,7 +362,7 @@ const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eCureDisease','eCur
 	'eRegeneration','eFire','ePoison','eCold','eAcid'].includes(k) );
 const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['ePossess','eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
 	'eGreed','eSlow','eHealing','ePoison','eFire','eCold','eHoly','eRot','eRage','ePanic','eConfusion','eShove'].includes(k) );
-const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBloodhound','eOdorless','eRegeneration','eResistance','eGreed'].includes(k) );
+const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBloodhound','eOdorless','eRegeneration','eResistance','eGreed','eMobility'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eFire','eCold','eBlindness','eSlow','ePanic','eConfusion','eShove','eHoly'].includes(k) );
 const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eHoly','eHoly3','eHoly5','eHoly7','ePoison','eFire','eCold','eBlindness','eSlow','eConfusion'].includes(k) );
 const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eAbsorbRot','eResistance'].includes(k) );
@@ -390,7 +397,7 @@ const BowMaterialList = Fab.add( '', {
 
 const ArrowMaterialList = Fab.add( '', {
 	"ash": 			{ level:  0 /* very important this be zero!*/ },
-	"oak": 			{ level:  5 },
+	"oak": 			{ level: 15 },
 	"maple": 		{ level: 25 },
 	"yew": 			{ level: 40 },
 	"lunarium": 	{ level: 55 },
@@ -455,6 +462,7 @@ const WeaponList = Fab.add( '', {
 		level:  0,
 		rarity: 1.0,
 		xDamage: 1.00,
+		xPrice: 1.4,
 		quick: 0,
 		effectChance: 0.80,
 		materials: BowMaterialList,
@@ -472,8 +480,19 @@ const WeaponList = Fab.add( '', {
 		attackVerb: 'shoot',
 		img: 'item/weapon/ranged/bow1.png'
 	},
-	"dagger":   	{ level:  3, rarity: 0.5, xDamage: 0.70, damageType: DamageType.STAB, quick: 2, effectChance: 0.30, 
-					chanceOfEffect: 50, mayThrow: true, range: 4, attackVerb: 'strike', img: 'item/weapon/dagger.png' },
+	"dagger": {
+		level: 3,
+		rarity: 0.5,
+		xDamage: 0.70,
+		damageType: DamageType.STAB,
+		quick: 2,
+		effectChance: 0.30,
+		chanceOfEffect: 50,
+		mayThrow: true,
+		range: 4,
+		attackVerb: 'strike',
+		img: 'item/weapon/dagger.png'
+	},
 
 	// To make a launcher, you must specify the 
 	// 	ammoType: 'isRock',
@@ -493,19 +512,117 @@ const WeaponList = Fab.add( '', {
 		img: 'item/weapon/elven_dagger.png'
 	},
 
-	"solKnife":   	{ level:  0, rarity: 0.00001, xDamage: 0.60, damageType: DamageType.CUT , quick: 2, attackVerb: 'carve', isTreasure: false, isSoulCollector: true, name: "sol knife", img: 'item/weapon/elven_dagger.png' },
-	"pickaxe":   	{ level:  0, rarity: 0.01, xDamage: 0.70, damageType: DamageType.STAB, quick: 0, 
-					attackVerb: 'strike', mineSpeed: 1.0, img: 'item/weapon/pickaxe.png' },
-	"club":   		{ level:  0, rarity: 1.0, xDamage: 0.70, damageType: DamageType.BASH, quick: 1, attackVerb: 'smash', img: 'item/weapon/club.png' },
-	"sword": 		{ level:  1, rarity: 1.0, xDamage: 1.00, damageType: DamageType.CUT, quick: 2, img: 'item/weapon/long_sword1.png' },
-	"greatsword": 	{ level:  5, rarity: 0.3, xDamage: 1.20, damageType: DamageType.CUT, quick: 0, img: 'item/weapon/long_sword2.png' },
-	"mace": 		{ level:  3, rarity: 1.0, xDamage: 0.90, damageType: DamageType.BASH, quick: 1, img: 'item/weapon/mace1.png' },
-	"hammer": 		{ level:  4, rarity: 0.4, xDamage: 1.40, damageType: DamageType.BASH, quick: 0, img: 'item/weapon/hammer2.png' },
-	"axe": 			{ level:  2, rarity: 0.6, xDamage: 1.00, damageType: DamageType.CUT, quick: 1, mayThrow: true, range: 5, attackVerb: 'strike', img: 'item/weapon/battle_axe1.png' },
-	"spear": 		{ level:  8, rarity: 0.9, xDamage: 0.70, damageType: DamageType.STAB, quick: 1, reach: 2, mayThrow: true, range: 6, attackVerb: 'strike', img: 'item/weapon/spear2.png' },
-	"pike": 		{ level: 12, rarity: 0.7, xDamage: 0.90, damageType: DamageType.STAB, quick: 0, reach: 2, img: 'item/weapon/bardiche1.png' },
-	"pitchfork": 	{ level: 20, rarity: 0.5, xDamage: 1.20, damageType: DamageType.STAB, quick: 0, reach: 2, mayThrow: true, range: 4, img: 'item/weapon/trident1.png' },
-});
+	"solarBlade": {
+		level: 0,
+		rarity: 0.0000001,
+		xDamage: 0.20,	// This must be low to offset the fact that it is solarium.
+		damageType: DamageType.SMITE,
+		glow: 1,
+		light: 3,
+		quick: 2,
+		attackVerb: 'carve',
+		isSoulCollector: true,
+		isUnique: true,
+		isPlot: true,
+		name: "blade",
+		materials: [WeaponMaterialList.solarium],
+		effects: [EffectTypeList.eInert],
+		img: 'item/weapon/solariumBlade48.png'
+	},
+	"pickaxe": {
+		level: 0,
+		rarity: 0.01,
+		xDamage: 0.70,
+		damageType: DamageType.STAB,
+		quick: 0,
+		attackVerb: 'strike',
+		mineSpeed: 1.0,
+		img: 'item/weapon/pickaxe.png'
+	},
+	"club": {
+		level: 0,
+		rarity: 1.0,
+		xDamage: 0.70,
+		damageType: DamageType.BASH,
+		quick: 1,
+		attackVerb: 'smash',
+		img: 'item/weapon/club.png'
+	},
+	"sword": {
+		level: 1,
+		rarity: 1.0,
+		xDamage: 1.00,
+		damageType: DamageType.CUT,
+		quick: 2,
+		img: 'item/weapon/long_sword1.png'
+	},
+	"greatsword": {
+		level: 5,
+		rarity: 0.3,
+		xDamage: 1.20,
+		damageType: DamageType.CUT,
+		quick: 0,
+		img: 'item/weapon/long_sword2.png'
+	},
+	"mace": {
+		level: 3,
+		rarity: 1.0,
+		xDamage: 0.90,
+		damageType: DamageType.BASH,
+		quick: 1,
+		img: 'item/weapon/mace1.png'
+	},
+	"hammer": {
+		level: 4,
+		rarity: 0.4,
+		xDamage: 1.40,
+		damageType: DamageType.BASH,
+		quick: 0,
+		img: 'item/weapon/hammer2.png'
+	},
+	"axe": {
+		level: 2,
+		rarity: 0.6,
+		xDamage: 1.00,
+		damageType: DamageType.CUT,
+		quick: 1,
+		mayThrow: true,
+		range: 5,
+		attackVerb: 'strike',
+		img: 'item/weapon/battle_axe1.png'
+	},
+	"spear": {
+		level: 8,
+		rarity: 0.9,
+		xDamage: 0.70,
+		damageType: DamageType.STAB,
+		quick: 1,
+		reach: 2,
+		mayThrow: true,
+		range: 6,
+		attackVerb: 'strike',
+		img: 'item/weapon/spear2.png'
+	},
+	"pike": {
+		level: 12,
+		rarity: 0.7,
+		xDamage: 0.90,
+		damageType: DamageType.STAB,
+		quick: 0,
+		reach: 2,
+		img: 'item/weapon/bardiche1.png'
+	},
+	"pitchfork": {
+		level: 20,
+		rarity: 0.5,
+		xDamage: 1.20,
+		damageType: DamageType.STAB,
+		quick: 0,
+		reach: 2,
+		mayThrow: true,
+		range: 4,
+		img: 'item/weapon/trident1.png'
+	},});
 
 const ShieldList = Fab.add( '', {
 	// We should consider making shields not just useful at range, but also maybe they have a chance to intercept incoming
@@ -692,9 +809,11 @@ const GemList = Fab.add( '', {
 });
 
 const StuffList = Fab.add( '', {
-	"lantern": 			{ rarity: 0.2, slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"oilLamp": 			{ rarity: 0.4, slot: Slot.HIP, light:  8, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  8, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"candleLamp": 		{ rarity: 0.6, slot: Slot.HIP, light:  4, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  4, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"lantern": 			{ rarity: 0.2, xPrice: 10, slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"oilLamp": 			{ rarity: 0.4, xPrice: 10, slot: Slot.HIP, light:  8, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  8, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"candleLamp": 		{ rarity: 0.6, xPrice: 10, slot: Slot.HIP, light:  4, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  4, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
+	"voidCandle": 		{ rarity: 0.2, xPrice: 10, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 4, name: 'shroud', icon: EffectTypeList.eDarkness.icon }, useVerb: 'clip on', img: "item/misc/darkLantern48.png" },
+	"voidLamp": 		{ rarity: 0.1, xPrice: 10, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 6, name: 'shroud', icon: EffectTypeList.eDarkness.icon }, useVerb: 'clip on', img: "item/misc/darkLantern48.png" },
 	"lumpOfMeat": 		{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/chunk.png" },
 	"trollHide": 		{ rarity: 0.5, img: "item/armour/troll_hide.png" },
 	"bone": 			{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: "item/food/bone.png" },
@@ -948,6 +1067,7 @@ const ItemTypeList = {
 		mayPickup: false,
 		light: 4,
 		glow: true,
+		hasInventory: true,
 		isDecor: true,
 		rechargeTime: 12,
 		healMultiplier: 3.0,
@@ -1301,31 +1421,8 @@ const ItemFilterGroup = {
 };
 
 
-const Control = { AI: "ai", USER: "user", EMPTY: "empty" };
-
-const MonsterTypeDefaults = {
-	level: 0, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
-	attitude: Attitude.AGGRESSIVE,
-	light: 0,
-	senseBlind: false, senseXray: false, senseItems: false, senseLife: false,
-	invisible: false, senseInvisible: false,
-	control: Control.AI,
-	corpse: 'corpse',
-	immune: '', resist: '', vuln: '',
-	loseTurn: false,
-	personalEnemy: '',
-	reach: 1,
-	regenerate: 0,
-	speed: 1,
-	travelMode: 'walk', mayWalk: false, mayFly: false,
-	type: null, typeId: null,
-
-	//debug only
-	observeDistantEvents: false
-};
-
 let MaxLightValue = 15;
-let LightFullBrightDistance = 7;
+let LightFullBrightDistance = 7;	// how many squares light casts.
 
 let LightAlpha = [];
 // This makes the assumption that a 
@@ -1437,7 +1534,7 @@ TileTypeList.lava.onTouch = function(toucher,self) {
 }
 
 TileTypeList.mud.isProblem = function(entity,self) {
-	if( entity.travelMode == "walk" ) {
+	if( !entity.isImmune(self.typeId) && entity.travelMode == "walk" ) {
 		return Prob.HARSH;
 	}
 	return Prob.NONE;
@@ -1543,12 +1640,21 @@ TileTypeList.ghostStone.onTouch = function(toucher,self) {
 }
 
 ItemTypeList.altar.onTouch = function(toucher,self) {
+	let delay = 0;
+	if( self.inventory && self.inventory.length ) {
+		toucher.inventoryTake( self.inventory, self, false, item => {
+			delay += 0.2;
+		});
+	}
+
 	if( self.unhide ) {
+		delay += 1.0;
 		let label = self.unhide;
 		let hidList = [].concat( self.map.itemListHidden );
 		hidList.forEach( item => {
 			item.unhide();
-			animFloatUp( item, StickerList.ePoof.img );
+			animFloatUp( item, StickerList.ePoof.img, delay );
+			delay += 0.2;
 		});
 		delete self.unhide;
 	}
@@ -1694,18 +1800,18 @@ ItemTypeList.chest.onTouch = function(toucher,self) {
 				let allow = self.onLoot(self,toucher);
 				if( allow === false ) return;
 			}
-			let delay = 0;
-			toucher.inventoryTake(self.inventory, self, false, item => {
-				new Anim({},{
-					at: 		self,
-					img: 		item.imgGet ? item.imgGet(item) : item.img,
-					delay: 		delay,
-					duration: 	0.6,
-					onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
-					onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
-				});
-				delay += 0.3;
-			});
+//			let delay = 0;
+			toucher.inventoryTake(self.inventory, self, false); //, item => {
+//				new Anim({},{
+//					at: 		self,
+//					img: 		item.imgGet ? item.imgGet(item) : item.img,
+//					delay: 		delay,
+//					duration: 	0.6,
+//					onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
+//					onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
+//				});
+//				delay += 0.3;
+//			});
 			animFountain(self,20,1.0,4,StickerList.coinSingle.img);
 		}
 		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
@@ -1719,18 +1825,18 @@ ItemTypeList.barrel.onTouch = function(toucher,self) {
 			let allow = self.onLoot(self,toucher);
 			if( allow === false ) return;
 		}
-		let delay = 0;
-		toucher.inventoryTake(self.inventory, self, false, item => {
-			new Anim({},{
-				at: 		self,
-				img: 		item.imgGet ? item.imgGet(item) : item.img,
-				delay: 		delay,
-				duration: 	0.6,
-				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
-				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
-			});
-			delay += 0.3;
-		});
+//		let delay = 0;
+		toucher.inventoryTake(self.inventory, self, false ); //, item => {
+//			new Anim({},{
+//				at: 		self,
+//				img: 		item.imgGet ? item.imgGet(item) : item.img,
+//				delay: 		delay,
+//				duration: 	0.6,
+//				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
+//				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
+//			});
+//			delay += 0.3;
+//		});
 	}
 
 	new Anim({},{

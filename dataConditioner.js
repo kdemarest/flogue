@@ -6,6 +6,7 @@ class DataConditioner {
 		this.determinePlaceSymbolHash();
 		this.validateAndConditionThemeData();
 		this.validateLoot();
+		this.validateResistances();
 	}
 
 	// Within any category of rarity, like rCOMMON, you can give a chance that further alters the probability,
@@ -55,6 +56,31 @@ class DataConditioner {
 				pt.validate(JobTypeList);
 			}
 		}
+	}
+
+	validateResistances() {
+		let hash = {};
+		Object.assign(hash,DamageType);
+		Object.assign(hash,DeedOp);
+		Object.assign(hash,Attitude);
+		Object.assign(hash,MiscImmunity);
+		Object.assign(hash,EffectTypeList);
+		Object.assign(hash,WeaponMaterialList);
+		Object.assign(hash,BowMaterialList);
+
+		function check(irv) {
+			if( !irv ) return;
+			let a = String.arSplit(irv);
+			a.forEach( imm => {
+				console.assert( hash[imm] || hash[imm.toUpperCase()] );
+			});
+		}
+
+		Object.each( MonsterTypeList, m => {
+			check( m.immune );
+			check( m.resist );
+			check( m.vuln );
+		});
 	}
 
 	validateLoot() {
@@ -117,6 +143,9 @@ class DataConditioner {
 				for( let typeId in typeList ) {
 					console.assert( !targetList[typeId] );
 					let type = typeList[typeId];
+					if( type.basis ) {
+						console.assert( targetList[type.basis] || typeList[type.basis] );
+					}
 
 					targetList[typeId] = Object.assign(
 						{},
@@ -124,11 +153,12 @@ class DataConditioner {
 						type
 					);
 					typeList[typeId] = targetList[typeId];
-				}
-			}
 
-			for( let typeId in place.monsterTypes ) {
-				monsterPreProcess(typeId,place.monsterTypes[typeId]);
+					if( targetList[typeId].isMonsterType ) {
+						// Do this AFTER any merge due to "basis", notably for the body slots.
+						monsterPreProcess(typeId,targetList[typeId]);
+					}
+				}
 			}
 
 			mergeSimple( DamageType,	place.damageType);

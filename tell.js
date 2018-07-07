@@ -27,7 +27,7 @@ let Narrative = (new class {
 				return;
 			}
 			let cp = recipient.canPerceiveEntityFn(observer,sentence.subject);
-			if( sentence.object ) {
+			if( sentence.object && !sentence.object.isEffect ) {
 				cp = cp || recipient.canPerceiveEntityFn(observer,sentence.object);
 			}
 

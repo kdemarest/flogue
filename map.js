@@ -225,6 +225,7 @@ class Map extends SimpleMap {
 		// walking around for a while, so we should make fake prior-stink trails for everything. But ya know.
 		this.scentLookup = [];
 		this.siteLookup = [];
+		this.lightCache = [];
 		
 		this.initSprites();
 	}
@@ -409,6 +410,15 @@ class Map extends SimpleMap {
 			return false;
 		}
 		return this.siteLookup[y*this.xLen+x];
+	}
+
+	getLightAt(x,y,defaultValue=0) {
+		if( !this.inBounds(x,y) ) {
+			return defaultValue;
+		}
+		let lPos = y*this.xLen+x;
+		let light = this.lightCache[lPos];	// note, this should NEVER have MEMORY_MAP_FLAG inside it.
+		return light === undefined ? defaultValue : light;
 	}
 
 	itemCreateByType(x,y,type,presets,inject) {

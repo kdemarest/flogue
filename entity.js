@@ -169,12 +169,22 @@ class Entity {
 		}
 		let deathPhrase = this.deathPhrase;
 		if( !deathPhrase ) {
-			deathPhrase = [mSubject,this,' ',mVerb,this.vanish?'vanish':'die','!'];
+			deathPhrase = [mSubject,this,' ',mVerb,this.vanish?'vanish':'die'];
+			if( this.oldMe ) {
+				deathPhrase.push( ' in the body of ',mObject|mA,this.oldMe );
+			}
+			deathPhrase.push('!');
 		}
 		if( this.brainMaster ) {
 			deathPhrase.unshift(mCares,this.brainMaster);
 		}
 		tell(...deathPhrase);
+
+		// Halt all deeds that this entity originated. For example, the ambligryp's immobilizing
+		// grip.
+		DeedManager.end( deed => {
+			return deed.source && deed.source.id == this.id;
+		});
 
 		if( this.oldMe ) {
 			let deed = this.findFirstDeed( deed => deed.op=='possess' );
@@ -303,7 +313,7 @@ class Entity {
 		if( this.attitude == Attitude.ENRAGED ) {
 			return true;
 		}
-		if( this.attitude == Attitude.FEARFUL && entity.team !== this.team ) {
+		if( this.attitude == Attitude.FEARFUL && (entity.teamApparent || entity.team) !== this.team ) {
 			return true;
 		}
 		if( entity.id == this.personalEnemy ) {
@@ -312,10 +322,10 @@ class Entity {
 		if( (this.brainMaster && entity.id == this.brainMaster.id) || (entity.brainMaster && this.id == entity.brainMaster.id) ) {
 			return false;
 		}
-		if( entity.team == Team.NEUTRAL ) {
+		if( (entity.teamApparent || entity.team) == Team.NEUTRAL ) {
 			return false;
 		}
-		return entity.team != this.team;
+		return (entity.teamApparent || entity.team) != this.team;
 	}
 	isMyFriend(entity) {
 		if( entity.id == this.id ) {
@@ -324,7 +334,7 @@ class Entity {
 		if( this.attitude == Attitude.ENRAGED ) {
 			return false;
 		}
-		if( this.attitude == Attitude.FEARFUL && entity.team !== this.team ) {
+		if( this.attitude == Attitude.FEARFUL && (entity.teamApparent || entity.team) !== this.team ) {
 			return false;
 		}
 		if( entity.id == this.personalEnemy ) {
@@ -333,7 +343,7 @@ class Entity {
 		if( (this.brainMaster && entity.id == this.brainMaster.id) || (entity.brainMaster && this.id == entity.brainMaster.id) ) {
 			return true;
 		}
-		return entity.team == this.team;
+		return (entity.teamApparent || entity.team) == this.team;
 	}
 	isMyNeutral(entity) {
 		if( entity.id == this.id ) {
@@ -342,7 +352,7 @@ class Entity {
 		if( this.attitude == Attitude.ENRAGED ) {
 			return false;
 		}
-		if( this.attitude == Attitude.FEARFUL && entity.team !== this.team ) {
+		if( this.attitude == Attitude.FEARFUL && (entity.teamApparent || entity.team) !== this.team ) {
 			return false;
 		}
 		if( entity.id == this.personalEnemy ) {
@@ -351,7 +361,7 @@ class Entity {
 		if( (this.brainMaster && entity.id == this.brainMaster.id) || (entity.brainMaster && this.id == entity.brainMaster.id) ) {
 			return false;
 		}
-		return this.team != Team.NEUTRAL && entity.team == Team.NEUTRAL;
+		return this.team != Team.NEUTRAL && (entity.teamApparent || entity.team) == Team.NEUTRAL;
 	}
 	healthPercent() {
 		return Math.floor((this.health/this.healthMax)*100);
@@ -392,12 +402,13 @@ class Entity {
 		}
 		let visCache = this.visCache;
 		if( !visCache ) {
-			return this.near( x, y, area, (this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE) );
+			let sightDistance = (this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE);
+			return this.near( x, y, area, sightDistance );
 		}
 		if( typeof visCache[y]==='undefined' || typeof visCache[y][x]==='undefined' ) {
 			return false;
 		}
-		return visCache[y][x];
+		return visCache[y][x] && this.map.getLightAt(x,y,0) > 0; //(this.darkVision || this.map.getLightAt(x,y,0) > 0);
 	}
 
 	canTargetEntity(entity) {
@@ -1038,9 +1049,6 @@ class Entity {
 		if( this.isDead() ) {
 			return;
 		}
-		if( this.typeId == 'demonHound' ) {
-			this.watch=1;
-		}
 
 		let useAiTemporarily = false;
 		if( this.control == Control.USER ) {
@@ -1347,14 +1355,14 @@ class Entity {
 		return rollDice(damageString);
 	}
 
-	isImmune(damageType) {
-		return String.arIncludes(this.immune,damageType);
+	isImmune(immunityType) {
+		return String.arIncludes(this.immune,immunityType);
 	}
-	isVuln(damageType) {
-		return String.arIncludes(this.vuln,damageType);
+	isVuln(immunityType) {
+		return String.arIncludes(this.vuln,immunityType);
 	}
-	isResist(damageType) {
-		return String.arIncludes(this.resist,damageType);
+	isResist(immunityType) {
+		return String.arIncludes(this.resist,immunityType);
 	}
 
 	takeHealing(healer,amount,healingType,quiet=false,allowOverage=false) {
@@ -1367,12 +1375,13 @@ class Entity {
 			quiet = this.onHeal(healer,this,amount,healingType);
 		}
 		if( !quiet ) {
-			let result = (amount ? [' healed by ',mObject,healer,' for '+amount+' health.'] : [' already at full health.']);
+			let result = (amount ? [' healed by ',mObject,healer,' for '+Math.floor(amount)+' health.'] : [' already at full health.']);
 			tell(mSubject,this,' ',mVerb,'is',...result);
 		}
 	}
 
 	calcShieldBlockChance(damageType,isRanged,shieldBonus) {
+		console.assert(damageType);
 		if( !isRanged ) return 0;
 		let shield = this.getFirstItemInSlot(Slot.SHIELD);
 		if( !shield ) return 0;
@@ -1381,6 +1390,7 @@ class Entity {
 	}
 
 	calcReduction(damageType,isRanged) {
+		console.assert(damageType);
 		let is = (isRanged ? 'isShield' : 'isArmor');
 		let f = new Finder(this.inventory).filter( item=>item.inSlot && item[is] );
 		let armor = 0;
@@ -1725,10 +1735,12 @@ class Entity {
 	}
 
 	takeBePossessed(effect,toggle) {
-		let fieldsToTransfer = { control:1, name:1, team:1, brainMindset: 1, brainAbility: 1, visCache: 1, experience: 1, isChosenOne: 1, strictAmmo: true };
+		let fieldsToTransfer = { control:1, name:1, team: 1, brainMindset: 1, brainAbility: 1, visCache: 1, experience: 1, isChosenOne: 1, strictAmmo: true };
 
 		let source = effect.source;
 		console.assert(source);
+
+		// Remove possession.
 		if( !toggle ) {
 			console.assert( source.isPossessing );
 			if( this.userControllingMe ) {
@@ -1736,6 +1748,7 @@ class Entity {
 			}
 			Object.copySelected( source, this, fieldsToTransfer );
 			Object.copySelected( this, this.oldMe, fieldsToTransfer );
+			delete this.teamApparent;
 			delete this.oldMe;
 			source.isPossessing = false;
 			tell(mSubject,source,' ',mVerb,'leave',' the mind of ',mObject,this,'.');
@@ -1744,12 +1757,15 @@ class Entity {
 			}
 			return true;
 		}
+
+		// Start possession
 		if( this.isMindless || this.isUndead || source.id == this.id || source.isPossessing || this.oldMe ) {
 			tell(mSubject,this,' ',mVerb,'is',' impossible to possess!');
 			return false;
 		}
 		tell(mSubject,source,' ',mVerb,'enter',' the mind of ',mObject,this,'.');
 		this.oldMe = Object.copySelected( {}, this, fieldsToTransfer );
+		this.teamApparent = this.team;
 		Object.copySelected( this, source, fieldsToTransfer );
 		if( source.userControllingMe ) {
 			source.userControllingMe.takeControlOf(this);
@@ -1787,7 +1803,7 @@ class Entity {
 			op: 		'damage',
 			isInstant: 	true,
 			value: 		src && src.conveyDamageToAmmo ? src.damage : weapon.damage,
-			damageType: src && src.conveyDamageTypeToAmmo ? src.damageType : (weapon.damageType || DamageType.CUTS),
+			damageType: src && src.conveyDamageTypeToAmmo ? src.damageType : (weapon.damageType || DamageType.CUT),
 			icon: 		false,
 			name: 		weapon.name
 		};
@@ -1975,7 +1991,8 @@ class Entity {
 		if( item.isCorpse ) {
 			let corpse = item.usedToBe;
 			if( !corpse || !corpse.loot ) {
-				tell(mSubject,this,' ',mVerb,'find',' ',mObject|mA,item);
+				tell(mSubject,this,' ',mVerb,'find',' nothing on ',mObject|mA,item);
+				item.destroy();
 				return;
 			}
 			// Prune out any fake items like natural weapons.
@@ -2164,7 +2181,7 @@ class Entity {
 					food.destroy();
 					return;
 				}
-				if( !food.isCorpse && food.isEdible && this.isPet && provider && provider.team==this.team ) {
+				if( !food.isCorpse && food.isEdible && this.isPet && provider && (provider.teamApparent || provider.team)==this.team ) {
 					this.brainMaster = provider;
 					//this.watch = true;
 					this.brainPath = true;
@@ -2237,13 +2254,13 @@ class Entity {
 		}
 	}
 
-	moveDir(dir,weapon) {
+	moveDir(dir,weapon,voluntaryMotion) {
 		let x = this.x + DirectionAdd[dir].x;
 		let y = this.y + DirectionAdd[dir].y;
-		return this.moveTo(x,y,true,weapon);
+		return this.moveTo(x,y,true,weapon,voluntaryMotion);
 	}
 	// Returns false if the move fails. Very important for things like takeShove().
-	moveTo(x,y,attackAllowed=true,weapon=null) {
+	moveTo(x,y,attackAllowed=true,weapon=null,voluntaryMotion=false) {
 		if( !this.map.inBounds(x,y) ) {
 			return;
 		}
@@ -2278,7 +2295,15 @@ class Entity {
 			wantToAttack = false;
 		}
 
-		if( f.count && attackAllowed && wantToAttack ) {
+		let doAttack = f.count && attackAllowed && wantToAttack;
+
+		if( !doAttack && voluntaryMotion && this.immobile ) {
+			animFloatUp( this, EffectTypeList.eImmobilize.icon );
+			tell(mSubject,this,' ',mVerb,'is',' immobilized!');
+			return false;
+		}
+
+		if( doAttack ) {
 			weapon = weapon || this.calcDefaultWeapon();
 			if( weapon.mayShoot ) {
 				return this.shoot(weapon,f.first) ? 'shoot' : 'miss';
@@ -2494,6 +2519,10 @@ class Entity {
 			case Command.DROP: {
 				this.shieldBonus = 'stand';
 				let item = this.commandItem;
+				if( item.isPlot ) {
+					tell( mSubject,this,' ',mVerb,'may',' not drop the ',mObject,item,'.' );
+					break;
+				}
 				let type = this.findFirstCollider('walk',this.x,this.y);
 				if( type !== null ) {
 					tell(mSubject,this,' may not drop anything here.');
@@ -2579,7 +2608,7 @@ class Entity {
 				break;
 			}
 			case Command.SELL: {
-				if( this.commandItem.noSell ) return;
+				if( this.commandItem.noSell || this.commandItem.isPlot ) return;
 				let item = this.commandItem.single();
 				this.commandItem = null;
 				let buyer = this.commandTarget;
@@ -2647,7 +2676,7 @@ class Entity {
 		}
 
 		if( commandToDirection(this.command) !== false ) {
-			this.moveDir(dir,this.commandItem);
+			this.moveDir(dir,this.commandItem,true);
 		}
 		else {
 			this.actOnCommand();

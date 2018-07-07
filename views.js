@@ -221,7 +221,7 @@ class ViewExperience extends ViewObserver {
 		if( !entity ) return;
 
 		if( entity.isTileType || entity.isItemType || (entity.isMonsterType && !entity.isUser()) ) {
-			let s = String.capitalize(entity.name);
+			let s = String.capitalize(entity.name.replace(/\$/,''));
 			if( entity.jobId ) {
 				s += ' the '+String.capitalize(entity.jobId);
 			}
@@ -284,7 +284,8 @@ class ViewInfo extends ViewObserver {
 			let ex = itemExplain(item);
 			let s = '';
 			if( header ) {
-				s += ex.icon+'<br>';
+				s += item.isUnique ? '<img style="width:96px" src="tiles/'+item.img+'"><br>' :
+					ex.icon+'<br>';
 				s += ex.description+'<br>';
 			}
 			let dam='',arm='';
@@ -382,7 +383,7 @@ class ViewInfo extends ViewObserver {
 			let weapon = entity.calcDefaultWeapon();
 			let ammo = entity.getFirstItemInSlot(Slot.AMMO);
 			let ex = itemExplain(ammo);
-			s += tRow( "Armor:", entity.calcReduction(DamageType.CUTS,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R" );
+			s += tRow( "Armor:", entity.calcReduction(DamageType.CUT,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R" );
 			s += tRow( "Shield:", (entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block" );
 			s += tRow( "Damage:", Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick] );
 			s += tRow( "Ammo:", ex ? ex.description : 'none ready' );
@@ -396,15 +397,18 @@ class ViewInfo extends ViewObserver {
 
 		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+'<br>';
 		let conditionList = [];
-		test(entity.attitude==Attitude.ENRAGED,'<b>enraged</b>');
-		test(entity.attitude==Attitude.CONFUSED,'<b>confused</b>');
-		test(entity.attitude==Attitude.PANICKED,'<b>panicked</b>');
-		test(entity.invisible,'invis');
-		test(entity.senseBlind,'blind');
-		test(entity.senseXray,'xray');
-		test(entity.senseItems,'treas');
-		test(entity.senseLife,'bat');
-		test(entity.regenerate>MonsterTypeList[entity.typeId].regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
+		test( entity.attitude==Attitude.ENRAGED,'<b>enraged</b>');
+		test( entity.attitude==Attitude.CONFUSED,'<b>confused</b>');
+		test( entity.attitude==Attitude.PANICKED,'<b>panicked</b>');
+		test( entity.map.getLightAt(entity.x,entity.y,1) <= 0,		'shrouded');
+		test( entity.immobile,		'immobile');
+		test( entity.invisible,		'invis');
+		test( entity.senseBlind,	'blind');
+		test( entity.senseSmell,	'scent');
+		test( entity.senseXray,		'xray');
+		test( entity.senseItems,	'treas');
+		test( entity.senseLife,		'bat');
+		test( entity.regenerate>MonsterTypeList[entity.typeId].regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
 		s += conditionList.join(', ')+'<br>';
 		s += entity.resist ? "Resist: "+entity.resist.split(',').join(', ')+'<br>' : '';
 		s += entity.immune ? "Immune: "+entity.immune.split(',').join(', ')+'<br>' : '';
@@ -647,7 +651,7 @@ function itemExplain(item,buySell) {
 		name: 			String.capitalize(name),
 		damage: 		item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : ''),
 		damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
-		armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUTS,item.isShield) : '',
+		armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUT,item.isShield) : '',
 		aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? ' ('+item.effect.effectShape+')' : '',
 		bonus: 			item.isArmor && item.effect ? item.effect.name : (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:''),
 		recharge: 		item.rechargeTime ? item.rechargeTime : '',
@@ -698,9 +702,15 @@ class ViewRange extends ViewObserver {
 		this.visibleFn = visibleFn;
 		this.rangeLimit = rangeLimit;
 		if( !this.active ) {
-			let f = entity.findAliveOthersNearby().isId(entity.lastAttackTargetId).canPerceiveEntity().canTargetEntity().nearMe(this.rangeLimit);
-			if( !f.first ) {
-				f = entity.findAliveOthersNearby().isNotMyFriend().canPerceiveEntity().canTargetEntity().nearMe(this.rangeLimit).byDistanceFromMe();
+			let f;
+			if( entity.commandItem && entity.commandItem.effect && uentity.commandItem.effect.isHelp ) {
+				f = new Finder([entity]);
+			}
+			else {
+				f = entity.findAliveOthersNearby().isId(entity.lastAttackTargetId).canPerceiveEntity().canTargetEntity().nearMe(this.rangeLimit);
+				if( !f.first ) {
+					f = entity.findAliveOthersNearby().isNotMyFriend().canPerceiveEntity().canTargetEntity().nearMe(this.rangeLimit).byDistanceFromMe();
+				}
 			}
 			if( f.first ) {
 				this.xOfs = f.first.x-entity.x;

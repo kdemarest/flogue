@@ -111,6 +111,9 @@ Gab = (new function(priorGab) {
 		regenerate: function(subj,obj,oldValue,newValue) {
 			return [mSubject|mPossessive,subj,' body ',newValue==0 ? 'stops regenerating.' : (newValue<oldValue ? 'regenerates a bit less.' : 'begins to knit itself back together.')];
 		},
+		immobile: function(subj,obj,oldValue,newValue) {
+			return [mSubject,subj,' ',mVerb,'become',' '+(newValue ? 'immobile' : 'mobile again')+'.'];
+		},
 		immune: function(subj,obj,oldValue,newValue) {
 			return [mSubject|mPossessive,subj,' ',mVerb,'is',' ',!oldValue ? 'now immune to '+newValue : 'no longer immune to '+oldValue,'s.'];
 		},

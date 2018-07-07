@@ -4,13 +4,37 @@
 // onTouch - fires if somebody steps into you but doesn't attack you. Like when confused.
 // onHeal - fires when you get healing. return true to suppress the auto-generated message about healing.
 
-let UndeadImmunity = [DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'blind'].join(',');
-let SkeletonImmunity = UndeadImmunity+[DamageType.CUT,DamageType.STAB].join(',');
+const Control = { AI: "ai", USER: "user", EMPTY: "empty" };
+
+const MonsterTypeDefaults = {
+	level: 0, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
+	attitude: Attitude.AGGRESSIVE,
+	light: 0,
+	senseBlind: false, senseXray: false, senseItems: false, senseLife: false,
+	invisible: false, senseInvisible: false,
+	control: Control.AI,
+	corpse: 'corpse',
+	immune: '', resist: '', vuln: '',
+	loseTurn: false,
+	personalEnemy: '',
+	reach: 1,
+	regenerate: 0,
+	speed: 1,
+	travelMode: 'walk', mayWalk: false, mayFly: false,
+	type: null, typeId: null,
+
+	//debug only
+	observeDistantEvents: false
+};
+
+
+let UndeadImmunity = [DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'eBlindness'].join(',');
+let SkeletonImmunity = [UndeadImmunity,DamageType.CUT,DamageType.STAB].join(',');
 let UndeadResistance = [DamageType.CUT,DamageType.STAB].join(',');
 let UndeadVulnerability = ['silver',DamageType.SMITE,DamageType.BURN].join(',');
 let ShadowImmunity = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.CORRODE,DamageType.POISON,DamageType.ROT].join(',');
 
-let OozeImmunity = ['eShove','eBlind',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
+let OozeImmunity = ['eShove','eBlindness',DamageType.CORRODE,DamageType.STAB,DamageType.BASH,DamageType.POISON,Attitude.PANICKED].join(',');
 let OozeResistance = [DamageType.CUT,Attitude.ENRAGED,Attitude.CONFUSED].join(',');
 let OozeVulnerability = ['ice','glass',DamageType.FREEZE].join(',');
 
@@ -92,7 +116,7 @@ const MonsterTypeList = {
 		isSunChild: true,
 		isNamed: false,
 		jumpMax: 1,
-		light: 4,
+		light: 2,			// This is intentionally low, to allow dark lamps to work, but also non-zero in case the player really does run out of light sources.
 		neverPick: true,
 		regenerate: 0.01,
 		rechargeRate: 1,
@@ -183,17 +207,28 @@ const MonsterTypeList = {
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
+	"ambligryp": {
+		// make it so this goes insubstantial from time to time.
+		core: [ SYM, 29, '4:20', 'evil', 'bash', 'animalHunter', 'multiped', 'mon/ambligryp48.png', 'it' ],
+		attitude: Attitude.HUNT,
+		gripChance: 25,
+		isInsect: true,
+		isAmbligryp: true,
+		resist: 'poison,eSlow,stab,bite,bash,cut,burn',
+		senseSight: 3,
+		senseSmell: 400,
+		vuln: 'freeze,corrode',
+	},
 	"ghostScorpion": {
 		// make it so this goes insubstantial from time to time.
 		core: [ SYM, 39, '6:8', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/boneScorpion48.png', 'it' ],
-		alpha: 0.35,
 		attitude: Attitude.AWAIT,
 		tooClose: 5,
 		isInsect: true,
 		isScorpion: true,
 		loot: '70% poisonGland',
 		naturalWeapon: { chanceOfEffect: 64, effect: EffectTypeList.ePoison },
-		immune: DamageType.POISON+',slow',
+		immune: DamageType.POISON+',eSlow',
 		reach: 3,
 		resist: [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(','),
 		vuln: DamageType.FREEZE,
@@ -208,7 +243,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Hail Balgur, ruler of the deep!',
 		vuln: DemonVulnerability,
 	},
-	"demonHound": {
+	"daihundt": {
 		core: [ SYM, 15, '3:7', 'evil', 'bite', 'canine', 'quadruped', 'dc-mon/animals/hell_hound.png', 'it' ],
 		attitude: Attitude.HUNT,
 		brainMindset: 'ravenous',
@@ -477,10 +512,12 @@ const MonsterTypeList = {
 	},
 	"goblinWar": { 
 		core: [ SYM, 49, '3:8', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
+		attitude: Attitude.HUNT,
 		name: 'goblin warrior',
 		brainMindset: 'greedy',
 		greedField: 'isGem',
 		isGoblin: true,
+		isWarGoblin: true,
 		isEarthChild: true,
 		lootInventory: 'weapon.axe',
 		loot: '50% coin, 80% weapon.sword, 20% weapon.club, 30% pinchOfEarth',
@@ -764,7 +801,8 @@ MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
 			if( e.attitude == Attitude.HESITANT || e.attitude == Attitude.WANDER || e.attacker == Attitude.AWAIT ) {
 				e.changeAttitude( Attitude.AGGRESSIVE );
 			}
-			e.team = (attacker.team == Team.EVIL || attacker.team == Team.NEUTRAL) ? Team.GOOD : Team.EVIL;
+			let attackerTeam = (attacker.teamApparent || attacker.team);
+			e.team = (attackerTeam == Team.EVIL || attackerTeam == Team.NEUTRAL) ? Team.GOOD : Team.EVIL;
 			numAlerted++;
 		});
 		if( this.isAlive() && numAlerted ) {
@@ -772,6 +810,22 @@ MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
 		}
 	}
 }
+
+MonsterTypeList.ambligryp.onAttack = function(target) {
+	let isGripping = DeedManager.findFirst( deed => deed.source && deed.source.id == this.id && deed.stat == 'immobile' );
+	if( !isGripping && Math.chance(this.gripChance) ) {
+		let effect = Object.assign( {}, EffectTypeList.eImmobilize, { name: 'the ambligryp\'s pincer grip' } );
+		effectApply( effect, target, this, null );
+	}
+}
+
+MonsterTypeList.ambligryp.onMove = function(x,y,xOld,yOld) {
+	// Remove my grip on any victim.
+	DeedManager.end( deed => {
+		return deed.source && deed.source.id == this.id && deed.stat == 'immobile';
+	});
+}
+
 
 MonsterTypeList.blueScarab.onAttack = function(target) {
 	let effect = Object.assign({},EffectTypeList.eVulnerability,{value: DamageType.FREEZE});
@@ -853,7 +907,6 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 		};
 	}
 }
-
 
 (function() {
 	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],

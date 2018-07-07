@@ -109,6 +109,9 @@ function monsterPreProcess(typeId,m) {
 	console.assert( !brain || (BrainMindset[brain]!==undefined && BrainAbility[brain]!==undefined) );
 	console.assert( !body  || (BodyAbility[body]!==undefined && BodySlots[body]!==undefined) );
 
+	// OK, this sucks, but I set isMonsterType here AS WELL AS in fab, because the merge
+	// of monsters from places requires it.
+	m.isMonsterType = true;
 	m.brainMindset = String.combine(',',m.brainMindset,BrainMindset[brain]);
 	m.brainAbility = String.combine(',',m.brainAbility,BrainAbility[brain]);
 	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[body]);
@@ -144,7 +147,7 @@ function monsterPreProcess(typeId,m) {
 		fake: true,
 		quick: 2,
 		reach: m.reach || 1,
-		damageType: m.damageType || DamageType.CUTS,
+		damageType: m.damageType || DamageType.CUT,
 		name: m.damageType
 	}, m.naturalWeapon );
 	m.inventoryLoot.push( natWeapon );

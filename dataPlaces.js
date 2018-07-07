@@ -20,7 +20,7 @@ PlaceTypeList.uniqueIdentity = {
 	symbols: {
 		A: 'typeId'
 		B: { typeFilter: 'weapon.sword', isSpecial: true },
-		C: [ 'floor, 5x weapon.arrow, 50% potion', { chance: 20, typeFilter: 'weapon.dart', hasMagicTip: true }, ...]
+		C: [ 'floor, 5x weapon.arrow, 50% potion', { chance: 20, typeFilter: 'ammo.dart', hasMagicTip: true }, ...]
 	},
 	stickers: {
 	},
@@ -809,7 +809,7 @@ PlaceTypeList.surfaceSunTemple = {
 ##.....................#..d..##
 #F...b....X.A..........D...L.S#
 ##.....................#.....##
- #....b.......4.5.6....########
+ #....b.......4.5.6.7..########
  #.....................#
  ##...................##
   #...................#
@@ -883,7 +883,19 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Berthold the blessed.',
 			inventoryLoot: [
-				'armor.eInert, spell.eHoly, shield.eAbsorbRot, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
+				'armor.eInert, spell.eHealing, spell.eHoly, shield.eAbsorbRot, stuff.oilLamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+		}],
+		'7': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Legacy of Gadriin the mindshaper.',
+			inventoryLoot: [
+				'spell.ePossess, spell.eConfusion, stuff.voidCandle, 4x ammo.dart.eStartle, 2x potion.eHealing, 3x gem, 3x stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
@@ -892,7 +904,7 @@ PlaceTypeList.surfaceSunTemple = {
 		X: { typeFilter: 'marker', playerStartHere: true },
 		D: { typeFilter: 'door', state: 'locked', keyId: 'Solar Temple door' },
 		F: "fontSolar",
-		A: { typeFilter: 'altar', unhide: 'starterChest' },
+		A: { typeFilter: 'altar', unhide: 'starterChest', inventoryLoot: 'weapon.solarBlade' },
 		b: "brazier",
 		S: "stairsDown",
 		d: "dog"

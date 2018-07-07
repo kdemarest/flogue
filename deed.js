@@ -124,7 +124,12 @@ class Deed {
 		if( this.onEnd ) {
 			this.onEnd.call(this);
 		}
+		// WARNING! This must happen before the recalc, or this stat chance will remain in force!
 		this.killMe = true;
+		if( this.stat && this.target ) {
+			// WARNING: A forward declared call. Should be illegal, but JS singletons...
+			DeedManager.calcStat( this.target, this.stat );
+		}
 		return true;
 	}
 	tick(dt) {
@@ -169,8 +174,11 @@ let DeedManager = (new class {
 		}
 		else {
 			this.deedList.push( deed );
+			if( deed.stat ) {
+				this.calcStat( deed.target, deed.stat );
+			}
 		}
-		return success;
+		return success ? deed : false;
 	}
 	addHandler(op,handlerFn) {
 		this.handler[op] = handlerFn;
@@ -394,12 +402,12 @@ let _effectApplyTo = function(effect,target,source,item) {
 	if( effect.op == 'damage' ) {
 		let tile = target.map.tileTypeGet(target.x,target.y);
 		if( tile.isWater && effect.damageType == DamageType.BURN ) {
-			tell(mSubject,target,' can not be effected by '+effect.damageType+'s while in ',mObject,tile);
+			tell(mSubject,target,' can not be affected by '+effect.damageType+'s while in ',mObject,tile);
 			animFloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
 			return false;
 		}
 		if( tile.isFire && effect.damageType == DamageType.FREEZE ) {
-			tell(mSubject,target,' can not be effected by '+effect.damageType+'s while in ',mObject,tile);
+			tell(mSubject,target,' can not be affected by '+effect.damageType+'s while in ',mObject,tile);
 			animFloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
 			return false;
 		}
@@ -411,7 +419,7 @@ let _effectApplyTo = function(effect,target,source,item) {
 	isImmune = isImmune || (target.isImmune && target.isImmune(effect.op));
 	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
 	if( isImmune ) {
-		tell(mSubject,target,' is immune to ',mObject,effect);
+		tell(mSubject,target,' ',mVerb,'is',' immune to ',mObject,effect,'.');
 		animOver( target, StickerList.showImmunity.img, effect.rangeDuration || 0 );
 		return false;
 	}
@@ -426,13 +434,13 @@ let _effectApplyTo = function(effect,target,source,item) {
 	effect.isResist = isResist;
 
 	if( isResist && effect.isInstant && Math.chance(50) ) {
-		tell(mSubject,target,' resists the effects of ',mObject,effect);
+		tell(mSubject,target,' ',mVerb,'resist',' the effects of ',mObject,effect,'.');
 		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
 		return false;
 	}
 
 	if( isResist && !effect.isInstant && effect.duration !== true ) {
-		tell(mSubject,target,' seems partially affected by ',mObject,effect);
+		tell(mSubject,target,' ',mVerb,'seem',' partially affected by ',mObject,effect,'.');
 		effect.duration = effect.duration * 0.50;
 		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
 	}
@@ -492,10 +500,21 @@ let deedTell = function(target,stat,oldValue,newValue ) {
 	tell(...content);
 }
 
-DeedManager.addHandler('heal',function() {
+let DeedOp = {
+	HEAL: 		'heal',
+	DAMAGE: 	'damage',
+	SHOVE: 		'shove',
+	TELEPORT: 	'teleport',
+	STRIP: 		'strip',
+	POSSESS: 	'possess',
+	DRAIN: 		'drain',
+	KILLLABEL: 	'killLabel'
+}
+
+DeedManager.addHandler(DeedOp.HEAL,function() {
 	this.target.takeHealing(this.source,this.value,this.healingType);
 });
-DeedManager.addHandler('damage',function() {
+DeedManager.addHandler(DeedOp.DAMAGE,function() {
 	let attacker = this.source;
 	if( this.duration === true || this.duration > 0 ) {
 		// for non-instant damaging effects, we don't want the attacker to be conveyed, because it will
@@ -505,16 +524,16 @@ DeedManager.addHandler('damage',function() {
 
 	this.target.takeDamage(attacker,this.item,this.value,this.damageType,this.onAttack);
 });
-DeedManager.addHandler('shove',function() {
+DeedManager.addHandler(DeedOp.SHOVE,function() {
 	return this.target.takeShove(this.source,this.item,this.value);
 });
-DeedManager.addHandler('teleport',function() {
+DeedManager.addHandler(DeedOp.TELEPORT,function() {
 	return this.target.takeTeleport(this.source,this.item);
 });
-DeedManager.addHandler('strip',function() {
+DeedManager.addHandler(DeedOp.STRIP,function() {
 	return !!this.target.stripDeeds(this.stripFn);
 });
-DeedManager.addHandler('possess',function() {
+DeedManager.addHandler(DeedOp.POSSESS,function() {
 	if( this.source.isPossessing ) {
 		return;
 	}
@@ -528,7 +547,7 @@ DeedManager.addHandler('possess',function() {
 		return false;
 	}
 });
-DeedManager.addHandler('drain',function() {
+DeedManager.addHandler(DeedOp.DRAIN,function() {
 	let entity = this.target;
 	let anyDrained = false;
 	entity.inventory.forEach( item => {
@@ -543,7 +562,7 @@ DeedManager.addHandler('drain',function() {
 	return anyDrained;
 });
 
-DeedManager.addHandler('killLabel',function() {
+DeedManager.addHandler(DeedOp.KILLLABEL,function() {
 	let f = new Finder( this.target.itemList, this.source ).excludeMe().filter( item => item.label == this.value );
 	let count = f.count;
 	f.process( item => {

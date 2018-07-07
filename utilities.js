@@ -284,7 +284,7 @@ function nop() {}
 		return result;
 	}
 
-	function betterSplit(s,delim) {
+	String.arSplit = function(s,delim=',') {
 		let temp = s.split(delim);
 		if( temp.length==1 && temp[0]=='' ) {
 			temp.length=0;
@@ -292,12 +292,12 @@ function nop() {}
 		return temp;
 	}
 	String.arAdd = function(str,add) {
-		let temp = betterSplit(str,',');
+		let temp = String.arSplit(str,',');
 		temp.push(add);
 		return temp.join(',');
 	}
 	String.arSub = function(str,add) {
-		let temp = betterSplit(str,',');
+		let temp = String.arSplit(str,',');
 		let index = temp.find(add);
 		if( index !== undefined ) {
 			temp.splice(index,1);
@@ -305,11 +305,11 @@ function nop() {}
 		return temp.join(',');
 	}
 	String.arIncludes = function(str,find) {
-		return betterSplit(str,',').includes(find);
+		return String.arSplit(str,',').includes(find);
 	}
 	String.arExtra = function(base,comp) {
-		base = betterSplit(base,',');
-		comp = betterSplit(comp,',');
+		base = String.arSplit(base,',');
+		comp = String.arSplit(comp,',');
 		for( let i=0 ; i<base.length ; ++i ) {
 			if( !comp.includes(base[i]) ) {
 				return base[i];

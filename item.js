@@ -208,15 +208,22 @@ class Item {
 	}
 	giveTo(entity,x,y) {
 		let hadNoOwner = !this.owner;
-		if( this.owner && this.owner.isMap && entity.isUser && entity.isUser() ) {
+		if( this.owner && (this.owner.isMap || (this.owner.isItemType && this.owner.owner.isMap)) && entity.isUser && entity.isUser() ) {
 			// Item flies to your gui sidebar...
+			let where = this;
+			if( where.x == undefined && this.owner.isItemType ) {
+				where = this.owner;
+			}
+			animationTimer.giveDelay = (animationTimer.giveDelay||0);
 			new Anim({},{
-				at: 		this,
+				at: 		where,
 				img: 		this.imgGet ? this.imgGet(this) : this.img,
-				duration: 	0.3,
-				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.3); },
+				delay: 		animationTimer.giveDelay,
+				duration: 	0.6,
+				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
 			});
+			animationTimer.giveDelay += 0.3;
 		}
 		this.rangeDuration = 0;
 		if( this.owner && !this.owner.isMap && (x!=this.owner.x || y!=this.owner.y)  ) {

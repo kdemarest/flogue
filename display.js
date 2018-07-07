@@ -1,5 +1,5 @@
 
-let HACK_MEMORY_FLAG = 2.5;
+let MapMemoryLight = 3;
 let GlobalRenderCache = [];
 function createDrawList(observer,map,entityList,asType) {
 
@@ -48,7 +48,8 @@ function createDrawList(observer,map,entityList,asType) {
 			let ty = y-(py-d);
 			a[ty][tx] = a[ty][tx] || [];
 			a[ty][tx][0] = 0;
-			a[ty][tx].length = 1;
+			a[ty][tx][1] = false;
+			a[ty][tx].length = 2;
 		}
 	}
 
@@ -127,7 +128,6 @@ function createDrawList(observer,map,entityList,asType) {
 
 
 	let visId = {};
-	let mapMemoryLight = HACK_MEMORY_FLAG; //2.5; //15; //2;
 	let revealLight = 7;		// Assumes max light is about 10.
 	let mapMemory = observer.mapMemory;
 
@@ -173,17 +173,18 @@ function createDrawList(observer,map,entityList,asType) {
 
 			if( inPane && inBounds ) {
 				let aa = a[ty][tx];
-				if( !visible ) {
+				console.assert( aa.length >= 2 );
+				if( !visible || aa[0] <= 0 ) {
 					//dChar = 'i';
-					aa[0] = mapMemoryLight;
 					let mPos = y*map.xLen+x;
 					if( mapMemory && mapMemory[mPos] ) {
-						aa[1] = mapMemory[mPos];
-						aa.length = 2;
+						aa[1] = true;
+						aa[2] = mapMemory[mPos];
+						aa.length = 3;
 					}
-					else {
-						aa.length = 1;
-					}
+					//else {
+					//	aa.length = 2;
+					//}
 					if( itemFind.count && observer.senseItems ) {
 						itemFind.process( item => {
 							if( item.isTreasure ) {
@@ -199,6 +200,7 @@ function createDrawList(observer,map,entityList,asType) {
 				}
 				else {
 					//dChar = 'T';
+					console.assert( aa.length >= 2 );
 					aa.push(tile);
 					if( itemFind.count ) {
 						itemFind.process( item => {
@@ -206,7 +208,10 @@ function createDrawList(observer,map,entityList,asType) {
 							visId[item.id] = item;
 						});
 					}
-					if( entity ) { aa.push(entity); visId[entity.id] = entity; }
+					if( entity ) {
+						aa.push(entity);
+						visId[entity.id] = entity;
+					}
 				}
 			}
 			//else
@@ -242,6 +247,15 @@ function createDrawList(observer,map,entityList,asType) {
 			a[ty][tx].push(anim);
 		}
 	}
+
+	map.traverseNear( px, py, d, (x,y) => {
+		let ty = y-(py-d);
+		let tx = x-(px-d);
+		if( a[ty][tx].length < 1 ) return;
+		let light = a[ty][tx][0];
+		let lPos = y*map.xLen+x;
+		map.lightCache[lPos] = light;
+	});
 
 	GlobalRenderCache = a;
 	return a;
@@ -523,14 +537,14 @@ class ViewMap extends ViewObserver {
 			let doTint = false;
 			let doGrey = false;
 			let light = x>=0 && y>=0 && x<this.d && y<this.d ? this.drawListCache[y][x][0] : 0;
-			if( light == HACK_MEMORY_FLAG ) {	// HACK! This flags 
+			let isMemory = x>=0 && y>=0 && x<this.d && y<this.d ? this.drawListCache[y][x][1] : false;
+			if( isMemory ) {
 				doTint = true;
-				light = 3;
+				light = MapMemoryLight;
 			}
-			else {
-				if( darkVision ) {
-					doGrey = true;
-				}
+			else
+			if( darkVision ) {
+				doGrey = true;
 			}
 
 			if( entity.isTileType && !entity.isPosition ) {
@@ -634,7 +648,9 @@ class ViewMap extends ViewObserver {
 					continue;
 				}
 				let tile = this.drawListCache[y][x];
-				for( let i=1 ; i<tile.length ; ++i ) {
+				// Start at 2 because 0 is reserved for light values, 
+				// and 1 is reserved for the mapMemory flag.
+				for( let i=2 ; i<tile.length ; ++i ) {
 					let entity = tile[i];
 					if( !entity ) continue;
 					if( typeof entity !== 'object' ) debugger;

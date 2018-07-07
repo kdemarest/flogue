@@ -111,6 +111,7 @@ function main(levelName) {
 	}())
 
 	function TickWorld(timePasses) {
+		animationTimer = {};
 		User.entity.area.tick( timePasses ? User.entity.speed : false );
 		if( timePasses && User.priorArea && User.priorArea.id !== User.entity.area.id ) {
 			User.priorArea.tick( User.entity.speed );

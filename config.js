@@ -23,13 +23,14 @@ ConfigList.ken = () => {
 		map:
 			`
 			.c.
-			..b
+			V.b
 			`,
 		flags: { rotate: true },
 		symbols: {
 			c: 'chest',
 			b: 'barrel',
 			X: { typeFilter: 'marker', playerStartHere: true },
+			V: { typeFilter: 'stuff.voidLamp' },
 			x: 'brazier',
 			p: 'pit',
 			f: 'flames',
@@ -59,14 +60,14 @@ ConfigList.ken = () => {
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
-		monsters: 		['isOgre'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isWarGoblin'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.04,
+		enemyDensity:  	0.01,
 		friendDensity: 	0.0001,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('5x gem, stuff.lumpOfMeat, spell.eShove, spell.ePossess, bow, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, stuff.sunCrystal');
-	MonsterTypeList.player.inventoryWear = 'armor, helm, boots.eFlight, bracers, stuff.oilLamp';
+//	MonsterTypeList.player.inventoryLoot.push('stuff.voidCandle, 5x gem, stuff.lumpOfMeat, spell.eShove, spell.ePossess, bow, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, boots.eFlight, stuff.sunCrystal');
+//	MonsterTypeList.player.inventoryWear = 'ring.eMobility, armor, helm, bracers, stuff.oilLamp';
 //	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
@@ -76,7 +77,7 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 9,
+//		startingDepth: 9,
 //		themeId: 'kenTheme'
 	}
 }
