@@ -291,6 +291,10 @@ class Entity {
 			// you are never superior to your master.
 			return false;
 		}
+		if( entity.brainMaster && this.id == entity.brainMaster.id ) {
+			// you are always superior to your slave.
+			return true;
+		}
 		return entity.id > this.id;
 	}
 	isMyInferior(entity) {
@@ -1198,7 +1202,7 @@ class Entity {
 
 				let farFromMaster = this.brainMaster && (
 					(this.brainMaster.area.id!==this.area.id) ||
-					(enemyList.count<=0 && !this.nearTarget(this.brainMaster,2) )
+					( (enemyList.count<=0 || wasLEP || wasSmell) && !this.nearTarget(this.brainMaster,2) )
 				);
 
 				let flee = theEnemy && (
