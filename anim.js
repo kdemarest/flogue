@@ -559,6 +559,7 @@ function animBlam(target, scale=0.20, num=10, duration=0.2, fromDeg=0, arc=45, m
 }
 
 let animationList = [];
+let animationTimer = {};
 function animationAdd(anim) {
 	animationList.push(anim);
 	return anim;
