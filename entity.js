@@ -289,16 +289,16 @@ class Entity {
 		}
 		if( this.brainMaster && entity.id == this.brainMaster.id ) {
 			// you are never superior to your master.
-			return false;
+			return true;
 		}
 		if( entity.brainMaster && this.id == entity.brainMaster.id ) {
 			// you are always superior to your slave.
-			return true;
+			return false;
 		}
 		return entity.id > this.id;
 	}
 	isMyInferior(entity) {
-		return !this.isMySuperior(entity);
+		return !entity.isMySuperior(this);
 	}
 
 	isMyPack(entity) {
@@ -2370,7 +2370,7 @@ class Entity {
 		}
 		else
 		// Switch with friends, else bonk!				// used to be isMyFriend()
-		if( f.count && (!this.isUser() || !f.first.isMerchant) && !this.isMyEnemy(f.first) && this.isMyInferior(f.first) ) {
+		if( f.count && (!this.isUser() || !f.first.isMerchant) && !this.isMyEnemy(f.first) && !this.isMySuperior(f.first) ) {
 			// swap places with allies
 			allyToSwap = f.first;
 		}
