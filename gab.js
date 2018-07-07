@@ -135,10 +135,10 @@ Gab = (new function(priorGab) {
 		senseXray: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' can '+(newValue?'':'no longer')+' see through walls!'];
 		},
-		senseItems: function(subj,obj,oldValue,newValue) {
+		senseTreasure: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' treasure!'];
 		},
-		senseLife: function(subj,obj,oldValue,newValue) {
+		senseLiving: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' '+(newValue?'':'no longer '),mVerb,'sense',' living creatures!'];
 		},
 		senseSmell: function(subj,obj,oldValue,newValue) {

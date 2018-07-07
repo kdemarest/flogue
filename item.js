@@ -147,6 +147,15 @@ class Item {
 			Object.assign(this,this.states[newState]);
 		}
 	}
+	getQuick() {
+		if( this.effectOnAttack && this.effectOnAttack.quick !== undefined ) {
+			return this.effectOnAttack.quick;
+		}
+		if( this.quick !== undefined ) {
+			return this.quick;
+		}
+		return 1;
+	}
 	lootGenerate( lootSpec, level ) {
 		let itemList = [];
 		new Picker(level).pickLoot( lootSpec, item=>{

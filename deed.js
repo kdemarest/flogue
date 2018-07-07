@@ -378,7 +378,7 @@ let _effectApplyTo = function(effect,target,source,item) {
 	// Note that spells with a duration must last at least 1 turn!
 	effect.duration = (effect.isInstant || effect.duration===0 ? 0 :
 		((item && item.inSlot) || effect.duration==true ? true :
-		Math.max(1,(effect.duration || Rules.DEFAULT_EFFECT_DURATION) * (effect.durationMod||1))
+		Math.max(1,(effect.duration || Rules.DEFAULT_EFFECT_DURATION) * (effect.xDuration||1))
 	));
 
 	if( source && target && source.command == Command.CAST && effect.icon !== false) {
@@ -522,7 +522,11 @@ DeedManager.addHandler(DeedOp.DAMAGE,function() {
 		attacker = null;
 	}
 
-	this.target.takeDamage(attacker,this.item,this.value,this.damageType,this.onAttack);
+	let result = this.target.takeDamage(attacker,this.item,this.value,this.damageType,this.onAttack);
+	if( this.isLeech && result.amount > 0 ) {
+		this.source.takeHealing(this.source,result.amount,this.healingType);
+	}
+	return result.amount > 0;
 });
 DeedManager.addHandler(DeedOp.SHOVE,function() {
 	return this.target.takeShove(this.source,this.item,this.value);

@@ -136,6 +136,9 @@ function monsterPreProcess(typeId,m) {
 	if( !m.isSunChild ) {
 		m.darkVision = m.darkVision || Rules.MONSTER_DARK_VISION;
 	}
+	if( m.isLiving === undefined ) {
+		m.isLiving = !m.isUndead;
+	}
 
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];

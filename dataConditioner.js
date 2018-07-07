@@ -3,7 +3,7 @@ class DataConditioner {
 		this.mergePlaceTypesToGlobals();
 		this.fabAllData();
 		this.determinePlaceLevels();
-		this.determinePlaceSymbolHash();
+		this.determineAndValidatePlaceSymbolHash();
 		this.validateAndConditionThemeData();
 		this.validateLoot();
 		this.validateResistances();
@@ -83,36 +83,40 @@ class DataConditioner {
 		});
 	}
 
-	validateLoot() {
-
-		function checkSupply(supplyMixed,typeId) {
-			let supplyArray = Array.supplyParse(supplyMixed);		
-			for( let i=0 ; i<supplyArray.length ; ++i ) {
-				supplyArray[i].chance = 100;
-			}
-			let makeList = Array.supplyToMake(supplyArray);
-			makeList.forEach( make => {
-				let any = (''+make.typeFilter).toLowerCase()==='any';
-				let type = picker.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ').trim(), null, false );
-				if( any && type && !type.isTreasure ) {
-					debugger;
-				}
-				if( !type ) {
-					console.log( 'Type '+typeId+' has illegal loot '+make.typeFilter );
-					debugger;
-				}
-			});
+	checkSupply(supplyMixed,sourceId,allowTilesAndMonsters) {
+		let picker = new Picker(0);
+		let supplyArray = Array.supplyParse(supplyMixed);		
+		for( let i=0 ; i<supplyArray.length ; ++i ) {
+			supplyArray[i].chance = 100;
 		}
+		let makeList = Array.supplyToMake(supplyArray);
+		makeList.forEach( make => {
+			if( allowTilesAndMonsters && TypeIdToSymbol[make.typeFilter] ) {
+				return;
+			}
+			let any = (''+make.typeFilter).toLowerCase()==='any';
+			let type = picker.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ').trim(), null, false );
+			if( any && type && !type.isTreasure ) {
+				debugger;
+			}
+			if( !type ) {
+				console.log( 'Type '+sourceId+' has illegal loot '+make.typeFilter );
+				debugger;
+			}
+		});
+	}
+
+	validateLoot() {
 
 		let picker = new Picker(0);
 		Object.each( MonsterTypeList, m => {
 			let supplyMixed = Array.supplyConcat( m.inventoryLoot, m.inventoryWear );
-			checkSupply(supplyMixed,m.typeId);
+			this.checkSupply(supplyMixed,m.typeId);
 		});
 
 		Object.each( ItemTypeList, item => {
 			if( item.inventoryLoot ) {
-				checkSupply(item.inventoryLoot,item.typeId);
+				this.checkSupply(item.inventoryLoot,item.typeId);
 			}
 			if( item.ammoType ) {
 				if( !item.ammoSpec ) {
@@ -215,7 +219,7 @@ class DataConditioner {
 		}
 	}
 
-	determinePlaceSymbolHash() {
+	determineAndValidatePlaceSymbolHash() {
 		Object.each( PlaceTypeList, place => {
 			let symbolHash = {};
 			function add(typeId) {
@@ -226,12 +230,16 @@ class DataConditioner {
 			}
 
 			Object.each( place.symbols, option => {
+				this.checkSupply( option, place.typeId, true );
 				let supplyArray = Array.supplyParse(option);
 				supplyArray.forEach( supply => {
 					if( supply.pick ) {
 						supply.pick.forEach( typeFilter => add( typeFilter.split('.')[0] ) );
 					}
 					else {
+						if( supply.inventoryLoot ) {
+							this.checkSupply( supply.inventoryLoot, place.typeId+':'+supply.typeFilter );
+						}
 						add( supply.typeFilter.split('.')[0] );
 					}
 				});

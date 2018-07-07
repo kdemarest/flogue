@@ -266,9 +266,10 @@ class ViewInfo extends ViewObserver {
 		}
 	}
 	render() {
+		let you = this.trueObserver;
 		let entity = this.observer;
 
-		function test(t,text) {
+		function test(conditionList,t,text) {
 			if( t ) {
 				conditionList.push(text);
 			}
@@ -277,6 +278,22 @@ class ViewInfo extends ViewObserver {
 		$('#'+this.infoDivId).empty().removeClass('monColor healthWarn healthCritical');
 		if( entity.isTileType ) {
 			return;
+		}
+
+		let specialMessage = '';
+		if( entity.id !== you.id ) {
+			if( you.senseBlind ) {
+				specialMessage = you.nearTarget(entity,1) ? 'Some kind of '+(entity.isMonsterType ? 'creature' : 'item')+'.' : 'You are blind.';
+			}
+			else
+			if( entity.invisible && !you.senseInvisible ) {
+				specialMessage = you.nearTarget(entity,1) ? 'An invisible '+(entity.isMonsterType ? 'creature' : 'item')+'.' : 'Unknown.';
+			}
+			if( specialMessage ) {
+				let s = '<div class="monColor">'+specialMessage+'</div>';
+				$('#'+this.infoDivId).show().html(s);
+				return;
+			}
 		}
 
 		function itemSummarize(you,item,comp,header=true) {
@@ -314,37 +331,31 @@ class ViewInfo extends ViewObserver {
 		}
 
 		if( entity.isItemType ) {
-			let you = this.trueObserver;
 			let item = entity;
 			let s = '<div class="monColor">';
-			if( you.senseBlind && !you.nearTarget(item,1) ) {
-				s += "You are blind and that is too far away.";
+			s += itemSummarize(you,item,false,!item.inventory && item.isTreasure);
+			if( item.slot && !you.inventory.find(i=>i.id==item.id) ) {
+				let f = you.getItemsInSlot(item.slot);
+				if( f.count ) { s += '<hr>'; }
+				f.process( i=>{ s += '<br>'+itemSummarize(you,i,item); });
 			}
-			else {
-				s += itemSummarize(you,item,false,!item.inventory && item.isTreasure);
-				if( item.slot && !you.inventory.find(i=>i.id==item.id) ) {
-					let f = you.getItemsInSlot(item.slot);
-					if( f.count ) { s += '<hr>'; }
-					f.process( i=>{ s += '<br>'+itemSummarize(you,i,item); });
+			if( item.inventory ) {
+				s += '<div class="invList">';
+				if( item.state == 'shut' ) {
+					s += 'Contents unknown';
 				}
-				if( item.inventory ) {
-					s += '<div class="invList">';
-					if( item.state == 'shut' ) {
-						s += 'Contents unknown';
+				else {
+					let any = false;
+					item.inventory.forEach( item => {
+						let ex = itemExplain(item);
+						s += (any ? ', ' : '')+'<span>'+ex.description+'</span>';
+						any=true;
+					});
+					if( !any ) {
+						s += 'Empty';
 					}
-					else {
-						let any = false;
-						item.inventory.forEach( item => {
-							let ex = itemExplain(item);
-							s += (any ? ', ' : '')+'<span>'+ex.description+'</span>';
-							any=true;
-						});
-						if( !any ) {
-							s += 'Empty';
-						}
-					}
-					s += '</div>';
 				}
+				s += '</div>';
 			}
 			s += "</div>";
 			$('#'+this.infoDivId).show().html(s);
@@ -385,7 +396,12 @@ class ViewInfo extends ViewObserver {
 			let ex = itemExplain(ammo);
 			s += tRow( "Armor:", entity.calcReduction(DamageType.CUT,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R" );
 			s += tRow( "Shield:", (entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block" );
-			s += tRow( "Damage:", Math.floor(weapon.damage)+" "+weapon.damageType+[' (clumsy)','',' (quick)'][weapon.quick] );
+			s += tRow( "Damage:", 
+				Math.floor(weapon.damage)+" "+weapon.damageType+
+				[' (clumsy)','',' (quick)'][weapon.getQuick()] +
+				( (entity.sneakAttackMult||2)<=2 ? '' : ', Sneak x'+Math.floor(entity.sneakAttackMult) )
+			);
+
 			s += tRow( "Ammo:", ex ? ex.description : 'none ready' );
 			s += tRow( "Gold:", Math.floor(entity.coinCount||0) );
 		}
@@ -397,19 +413,23 @@ class ViewInfo extends ViewObserver {
 
 		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+'<br>';
 		let conditionList = [];
-		test( entity.attitude==Attitude.ENRAGED,'<b>enraged</b>');
-		test( entity.attitude==Attitude.CONFUSED,'<b>confused</b>');
-		test( entity.attitude==Attitude.PANICKED,'<b>panicked</b>');
-		test( entity.map.getLightAt(entity.x,entity.y,1) <= 0,		'shrouded');
-		test( entity.immobile,		'immobile');
-		test( entity.invisible,		'invis');
-		test( entity.senseBlind,	'blind');
-		test( entity.senseSmell,	'scent');
-		test( entity.senseXray,		'xray');
-		test( entity.senseItems,	'treas');
-		test( entity.senseLife,		'bat');
-		test( entity.regenerate>MonsterTypeList[entity.typeId].regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
+		let senseList = [];
+		test( conditionList, entity.attitude==Attitude.ENRAGED,'<b>enraged</b>');
+		test( conditionList, entity.attitude==Attitude.CONFUSED,'<b>confused</b>');
+		test( conditionList, entity.attitude==Attitude.PANICKED,'<b>panicked</b>');
+		test( conditionList, entity.map.getLightAt(entity.x,entity.y,1) <= 0,		'shrouded');
+		test( conditionList, entity.immobile,				'immobile');
+		test( conditionList, entity.invisible,				'invis');
+		test( conditionList, (entity.rechargeRate||1)>1,	'manaUp');
+		test( conditionList, entity.regenerate>MonsterTypeList[entity.typeId].regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
+		test( senseList, entity.senseBlind,		'blind');
+		test( senseList, entity.senseSmell,		'scent');
+		test( senseList, entity.senseXray,		'xray');
+		test( senseList, entity.senseInvisible,	'invis');
+		test( senseList, entity.senseTreasure,	'treasure');
+		test( senseList, entity.senseLiving,	'living');
 		s += conditionList.join(', ')+'<br>';
+		s += senseList.length ? "Senses: "+senseList.join(', ')+'<br>' : '';
 		s += entity.resist ? "Resist: "+entity.resist.split(',').join(', ')+'<br>' : '';
 		s += entity.immune ? "Immune: "+entity.immune.split(',').join(', ')+'<br>' : '';
 		s += entity.vuln ? "Vulnerable: "+entity.vuln.split(',').join(', ')+'<br>' : '';
@@ -586,7 +606,7 @@ class ViewMiniMap extends ViewObserver {
 				drawLate.push({entity:StickerList.friendProxy,x:entity.x,y:entity.y,scale:this.scale*2,ctr:true});
 				return;
 			}
-			if( observer.senseLife ) {
+			if( observer.senseLiving ) {
 				let sticker = observer.isMyEnemy(entity) ? StickerList.enemyProxy : StickerList.friendProxy;
 				drawLate.push({entity:sticker,x:entity.x,y:entity.y,scale:this.scale});
 				return;
@@ -690,31 +710,33 @@ class ViewRange extends ViewObserver {
 			let area = observer.area;
 			x = observer.x + x;
 			y = observer.y + y;
-			if( observer.canSeePosition(x,y) ) {
-				let entity = new Finder(area.entityList,observer).canPerceiveEntity().at(x,y).first || new Finder(area.map.itemList,observer).canPerceiveEntity().at(x,y).first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
+			if( observer.canTargetPosition(x,y) ) {
+				let entity = 
+					new Finder(area.entityList,observer).canTargetEntity().at(x,y).first || 
+					new Finder(area.map.itemList,observer).canTargetEntity().at(x,y).first || 
+					adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
 				//console.log( "viewRange is showing "+entity.name );
 				guiMessage('show',entity);
 			}
 		}
 	}
-	prime(rangeLimit,visibleFn) {
+	prime(rangeLimit,cmd,visibleFn) {
 		let entity = this.observer;
 		this.visibleFn = visibleFn;
 		this.rangeLimit = rangeLimit;
 		if( !this.active ) {
-			let f;
-			if( entity.commandItem && entity.commandItem.effect && uentity.commandItem.effect.isHelp ) {
-				f = new Finder([entity]);
+			let target;
+			if( cmd.commandItem && cmd.commandItem.effect && cmd.commandItem.effect.isHelp ) {
+				target = entity;
 			}
 			else {
-				f = entity.findAliveOthersNearby().isId(entity.lastAttackTargetId).canPerceiveEntity().canTargetEntity().nearMe(this.rangeLimit);
-				if( !f.first ) {
-					f = entity.findAliveOthersNearby().isNotMyFriend().canPerceiveEntity().canTargetEntity().nearMe(this.rangeLimit).byDistanceFromMe();
-				}
+				target =
+					entity.findAliveOthersNearby().isId(entity.lastAttackTargetId).canTargetEntity().nearMe(this.rangeLimit).first ||
+					entity.findAliveOthersNearby().isNotMyFriend().canTargetEntity().nearMe(this.rangeLimit).byDistanceFromMe().first;
 			}
-			if( f.first ) {
-				this.xOfs = f.first.x-entity.x;
-				this.yOfs = f.first.y-entity.y;
+			if( target ) {
+				this.xOfs = target.x-entity.x;
+				this.yOfs = target.y-entity.y;
 			}
 			else {
 				this.xOfs = 0;

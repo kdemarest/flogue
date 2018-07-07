@@ -67,7 +67,7 @@ class Entity {
 			naturalMeleeWeapon.damage = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
 		}
 		else {
-			let hitsToKillPlayer = monsterType.power.split(':')[1];
+			let hitsToKillPlayer = parseFloat( monsterType.power.split(':')[1] );
 			naturalMeleeWeapon.damage = Rules.monsterDamage(level,hitsToKillPlayer);
 		}
 
@@ -181,9 +181,10 @@ class Entity {
 		tell(...deathPhrase);
 
 		// Halt all deeds that this entity originated. For example, the ambligryp's immobilizing
-		// grip.
+		// grip. BUT ypu want to keep any effects from worn objects, so if you are the target
+		// just leave the deed in place.
 		DeedManager.end( deed => {
-			return deed.source && deed.source.id == this.id;
+			return deed.source && deed.source.id == this.id && deed.target.id !== this.id;
 		});
 
 		if( this.oldMe ) {
@@ -396,22 +397,41 @@ class Entity {
 		return this.visCache;
 	}
 
-	canSeePosition(x,y,area) {
+	canTargetPosition(x,y,area) {
 		if( x===undefined || y===undefined ) {
 			debugger;
 		}
+		// Never in a different area.
+		if( area && this.area.id !== area.id ) {
+			return false;
+		}
 		let visCache = this.visCache;
+		let d = this.getDistance(x,y);
+		// You can always target adjacent to yourself.
+		if( d <= 1 ) {
+			return true;
+		}
+		// If you are not close enough to a user to have a vis cache, then just guess at your
+		// ability to target the position.
 		if( !visCache ) {
 			let sightDistance = (this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE);
 			return this.near( x, y, area, sightDistance );
 		}
+		// If the location has never been processed by the vis cache (rare) then assume
+		// it is hidden behind a wall or something.
 		if( typeof visCache[y]==='undefined' || typeof visCache[y][x]==='undefined' ) {
 			return false;
 		}
-		return visCache[y][x] && this.map.getLightAt(x,y,0) > 0; //(this.darkVision || this.map.getLightAt(x,y,0) > 0);
+		// The spot must be both visible and have enough light to see, except see above
+		// for the exception of targetting adjacent things.
+		return visCache[y][x] && this.map.getLightAt(x,y,0) > 0;
 	}
 
-	canTargetEntity(entity) {
+	canTargetEntity(entity,isPerceiving) {
+		// Some special rules if you are perceiving vs targetting. There are many things
+		// you can not see, but if you are right next to things you are blind to then
+		// you're allowed to take a shot at them.
+
 		if( entity.inVoid ) {
 			return false;
 		}
@@ -425,11 +445,12 @@ class Entity {
 		if( this.id == entity.id ) {
 			return true;
 		}
+		// Not in the same area, so nope.
 		if( entity.area && entity.area.id !== this.area.id ) {
 			return false;
 		}
 		// Magic might be helping you see things
-		if( (entity.isMonsterType && this.senseLife) || (entity.isItemType && this.senseItems) ) {
+		if( (entity.isMonsterType && entity.senseLiving && this.isLiving) || (entity.isItemType && entity.isTreasure && this.senseTreasure) ) {
 			return true;
 		}
 //		if( entity.ownerOfRecord ) {
@@ -440,20 +461,20 @@ class Entity {
 		if( d <= 1 && (entity.stink || (this.senseSmell && !entity.scentReduce)) ) {
 			return true;
 		}
-		// blind can not target
-		if( this.senseBlind ) {
+		// blind can not target. WARNING! Check this AFTER any smell tests and senseLiving or senseTreasure
+		if( this.senseBlind && (isPerceiving || d>1) ) {
 			return false;
 		}
 		// You can't target invisible unless you can see invisible (but see scent above)
-		if( entity.invisible && !this.senseInvisible ) {
+		if( entity.invisible && !this.senseInvisible && (isPerceiving || d>1) ) {
 			return false;
 		}
 		// Otherwise, you can target an entity in any position you can see.
-		return this.canSeePosition(entity.x,entity.y,entity.area);
+		return this.canTargetPosition(entity.x,entity.y,entity.area);
 	}
 
 	canPerceiveEntity(entity) {
-		return this.canTargetEntity(entity);
+		return this.canTargetEntity(entity,true);
 	}
 
 	get naturalMeleeWeapon() {
@@ -1204,10 +1225,16 @@ class Entity {
 				if( tooClose && isAggressor ) {
 					if( this.attitude!==Attitude.AGGRESSIVE ) {
 						this.record( 'enemy too close! Go aggressive.', true );
-						if( this.attacker !== Attitude.HUNT || this.attitude !== Attitude.PATROL ) {
-							tell(mCares,theEnemy,mSubject,this,' ',mVerb,'think',' ',mObject,theEnemy,' ',mVerb|mObject,'is',' too close!');
+
+						// WARNING: THis isn't exactly right. It test whether the OBSERVER
+						// can perceive me, not theEnemy. However in practice it is probably
+						// OK as a hack for now.
+						if( theEnemy.canPerceiveEntity(this) ) {
+							if( this.attacker !== Attitude.HUNT || this.attitude !== Attitude.PATROL ) {
+								tell(mCares,theEnemy,mSubject,this,' ',mVerb,'think',' ',mObject,theEnemy,' ',mVerb|mObject,'is',' too close!');
+							}
+							animAbove(this,StickerList.alert.img,0);
 						}
-						animAbove(this,StickerList.alert.img,0);
 						this.changeAttitude( Attitude.AGGRESSIVE );
 					}
 				}
@@ -1460,7 +1487,9 @@ class Entity {
 	takeDamage(attacker,item,amount,damageType,callback,noBacksies) {
 		let quiet = false;
 
-		if( attacker && attacker.invisible && !this.senseInvisible ) {
+		let isSneak = false;
+		if( attacker && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=2 ) {
+			isSneak = true;
 			amount *= (attacker.sneakAttackMult || 2);
 		}
 
@@ -1496,10 +1525,6 @@ class Entity {
 			}
 		}
 
-		if( attacker && attacker.invisible ) {
-			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: false };
-			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
-		}
 		if( attacker && attacker.isMonsterType && (!this.brainMaster || this.brainMaster.id !=attacker.id) ) {
 //			if( attacker.team == Team.NEUTRAL || this.team == Team.NEUTRAL ) debugger;
 			// Remember that neutrals with brainFleeCombat DO want a personal enemy, not to attack, but to flee from.
@@ -1658,9 +1683,10 @@ class Entity {
 		}
 		if( !quiet && attacker ) {
 			let attackVerb = item && item.attackVerb ? item.attackVerb : damageType;
-			tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!' );
+			tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!'+(isSneak?' Sneak attack!' : '') );
 		}
 
+		let isRetaliation = 0;
 		if( !noBacksies && attacker && attacker.isMonsterType && this.inventory ) {
 			let is = isRanged ? 'isShield' : 'isArmor';
 			let retaliationEffects = new Finder(this.inventory).filter( item => item.inSlot && item[is] );
@@ -1669,9 +1695,30 @@ class Entity {
 					let fireEffect = Math.chance(item.chanceOfEffect || 100);
 					if( fireEffect ) {
 						item.trigger( attacker, this, Command.NONE );
+						isRetaliation++;
 					}
 				}
 			});
+		}
+
+		// This should be last so that your sneak attacks can function properly.
+		if( attacker && attacker.invisible ) {
+			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: false };
+			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
+		}
+
+		return {
+			amount: 	amount,
+			damageType: damageType,
+			isRanged: 	isRanged,
+			reduction: 	reduction,
+			isSneak: 	isSneak,
+			isShielded: isShielded,
+			isImmune: 	isImmune,
+			isResist: 	isResist,
+			isVuln: 	isVuln,
+			isRetaliation: isRetaliation,
+			killed: 	this.health <= 0,
 		}
 	}
 
@@ -1804,6 +1851,7 @@ class Entity {
 			isInstant: 	true,
 			value: 		src && src.conveyDamageToAmmo ? src.damage : weapon.damage,
 			damageType: src && src.conveyDamageTypeToAmmo ? src.damageType : (weapon.damageType || DamageType.CUT),
+			quick: 		src && src.conveyQuickToAmmo ? src.getQuick() : weapon.getQuick(),
 			icon: 		false,
 			name: 		weapon.name
 		};
@@ -1877,13 +1925,13 @@ class Entity {
 		this.lastAttackTargetId = target.id;	// Set this early, despite blindness!
 		this.inCombat = true;
 
-		if( (this.senseBlind && !this.baseType.senseBlind) || (target.invisible && !this.senseInvisible) ) {
-			if( !this.senseLife && Math.chance(50) ) {
+		if( (this.senseBlind && !this.baseType.senseBlind) || (target.invisible && !this.senseInvisible) || !this.canPerceiveEntity(target) ) {
+			if( !this.senseLiving && Math.chance(50) ) {
 				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,target,' but in the wrong direction!');
 				return;
 			}
 		}
-		let quick = weapon && weapon.quick>=0 ? weapon.quick : 1;
+		let quick = weapon ? weapon.getQuick() : 1
 		let dodge = target.dodge>=0 ? target.dodge : 0;
 		if( dodge > quick ) {
 			tell( mSubject,target,' '+(dodge==2 ? 'nimbly ' : ''),mVerb,'dodge',' ',mObject|mPossessive|mCares,this,(quick==0 ? ' clumsy' : '')+' '+(weapon?weapon.name.replace(/\$/,''):'attack') );
@@ -2479,13 +2527,13 @@ class Entity {
 				break;
 			}
 			case Command.DEBUGVIEW: {
-				if( !this.senseItems ) {
-					this.senseItems = true;
-					this.senseLife = true;
+				if( !this.senseTreasure ) {
+					this.senseTreasure = true;
+					this.senseLiving = true;
 				}
 				else {
-					this.senseItems = false;
-					this.senseLife = false;
+					this.senseTreasure = false;
+					this.senseLiving = false;
 				}
 				this.map.traverse( (x,y) => {
 					let mapMemory = this.mapMemory;

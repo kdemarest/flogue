@@ -185,7 +185,7 @@ function createDrawList(observer,map,entityList,asType) {
 					//else {
 					//	aa.length = 2;
 					//}
-					if( itemFind.count && observer.senseItems ) {
+					if( itemFind.count && observer.senseTreasure ) {
 						itemFind.process( item => {
 							if( item.isTreasure ) {
 								aa.push(item);
@@ -193,7 +193,7 @@ function createDrawList(observer,map,entityList,asType) {
 							}
 						});
 					}
-					if( entity && observer.senseLife && !entity.isUndead ) {
+					if( entity && observer.senseLiving && entity.isLiving ) {
 						aa.push(entity);
 						aa[0] = revealLight;
 					}
@@ -390,10 +390,13 @@ class ViewMap extends ViewObserver {
 			let y = (observer.y-self.sd) + my;
 			//console.log( "ViewMap mousemove detected ("+x+','+y+')' );
 			guiMessage( 'hide' );
-			if( !observer.canSeePosition(x,y) ) {
+			if( !observer.canTargetPosition(x,y) ) {
 				return;
 			}
-			let entity = new Finder(area.entityList,observer).at(x,y).canPerceiveEntity().first || new Finder(area.map.itemList,observer).at(x,y).canPerceiveEntity().first || adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
+			let entity =
+				new Finder(area.entityList,observer).at(x,y).canTargetEntity().first ||
+				new Finder(area.map.itemList,observer).at(x,y).canTargetEntity().first ||
+				adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
 			if( !entity ) {
 				return;
 			}

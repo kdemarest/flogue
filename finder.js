@@ -145,8 +145,8 @@ class Finder {
 	canTargetEntity(x,y) {
 		return this.filter( e => this.me.canTargetEntity(e) );
 	}
-	canSeePosition(x,y) {
-		return this.filter( e => this.me.canSeePosition(x,y) );
+	canTargetPosition(x,y) {
+		return this.filter( e => this.me.canTargetPosition(x,y) );
 	}
 	canPerceiveEntity() {
 		return this.filter( e => this.me.canPerceiveEntity(e) );

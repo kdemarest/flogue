@@ -200,7 +200,7 @@ ThemeList.coreCavernRooms = {
 	placeDensity: 	0.50,
 	rREQUIRED: 		'goblinGathering',
 	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
-	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rUNCOMMON: 		'hoard_shade, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
@@ -226,7 +226,7 @@ ThemeList.refugeeCampSlaughter = {
 	placeDensity: 	0.70,
 	rREQUIRED: 	'camp_refugee, camp_refugee, camp_goblin, camp_ogre, floodOre',
 	rCOMMON: 	'camp_refugee, camp_goblin',
-	rUNCOMMON: 	'pen_sheep, floodPit, pitEncircle, veil, ruin, den_kobold, camp_ogre',
+	rUNCOMMON: 	'hoard_shade, pen_sheep, floodPit, pitEncircle, veil, ruin, den_kobold, camp_ogre',
 	rRARE: 		'den_dog',
 	monsters: 	['isSunChild','isPet','isEarthChild'],
 	sign: 		'Refugee Camp "Prosperous Tranquility" Ahead',
@@ -257,7 +257,7 @@ ThemeList.dwarfTown = {
 ThemeList.corePits = {
 	scapeId: 	'caveBroadWinding',
 	rREQUIRED: 	'floodPitLarge, 4x floodPit',
-	rCOMMON: 	'floodPit, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold',
+	rCOMMON: 	'floodPit, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold',
 	rUNCOMMON: 	'camp_human, antHive, tinyRoom, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, floodWater',
 	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
@@ -268,7 +268,7 @@ ThemeList.coreBridges = {
 	outlineWall:'pit',
 	fillWall: 	'pit',
 	scapeId: 	'caveMazeLike',
-	rCOMMON: 	'floodPit, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodWater',
+	rCOMMON: 	'floodPit, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodWater',
 	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'goblinGathering, tinyRoom, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
@@ -277,7 +277,7 @@ ThemeList.coreBridges = {
 
 ThemeList.coreMaze = {
 	scapeId: 	'caveMazeLike',
-	rCOMMON: 	'demonNest, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom, barrelStorage',
+	rCOMMON: 	'demonNest, hoard_shade, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom, barrelStorage',
 	rUNCOMMON: 	'floodPit, camp_goblin, den_kobold, nest_bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'camp_human, goblinGathering, portal, circle, ruin, swamp, firePit, floodOre, floodWater',
 	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
@@ -300,7 +300,7 @@ ThemeList.dwarfGoblinBattle = {
 
 ThemeList.coreCavernSomewhatOpen = {
 	scapeId: 	'caveBroadWinding',
-	rCOMMON: 	'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rCOMMON: 	'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre, barrelStorage',
 	rEPIC: 		'graveYard, lunarEmbassy',
@@ -346,7 +346,7 @@ ThemeList.coreRooms = {
 	passageWidth3: 		0,
 	placeDensity: 		0.35,
 	passageWander: 		20,
-	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rCOMMON: 		'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
@@ -366,7 +366,7 @@ ThemeList.coreMorphousRooms = {
 	passageWidth2: 		0,
 	passageWidth3: 		0,
 	placeDensity: 		0.35,
-	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rCOMMON: 		'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
@@ -386,7 +386,7 @@ ThemeList.coreMixedRooms = {
 	passageWidth2: 		10,
 	passageWidth3: 		0,
 	placeDensity: 		0.35,
-	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rCOMMON: 		'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
@@ -403,7 +403,7 @@ ThemeList.coreHellscape = {
 	passageWander: 		50,
 	passageWidth2: 		50,
 	placeDensity: 		0.05,
-	rCOMMON: 		'demonNest, firePit',
+	rCOMMON: 		'hoard_shade, demonNest, firePit',
 	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
 	rRARE: 			'etherHive',
 	prefer: 		['flames','mud'],
@@ -805,11 +805,11 @@ PlaceTypeList.surfaceSunTemple = {
   #...................#
  ##...................##
  #.....................#
- #....b.......1.2.3....########
+ #....b.......1.2.3...b########
 ##.....................#..d..##
 #F...b....X.A..........D...L.S#
 ##.....................#.....##
- #....b.......4.5.6.7..########
+ #....b.......4.5.6.7.b########
  #.....................#
  ##...................##
   #...................#
@@ -827,6 +827,7 @@ PlaceTypeList.surfaceSunTemple = {
 			label: 'starterChest',
 			isHidden: true,
 			sign: 'Legacy of Hathgar the mighty.',
+			name: 'Hathgar\'s Chest',
 			inventoryLoot: [
 				'weapon.sword.eHoly, armor.eInert, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
@@ -837,9 +838,10 @@ PlaceTypeList.surfaceSunTemple = {
 			typeFilter: 'chest',
 			label: 'starterChest',
 			isHidden: true,
-			sign: 'Legacy of Ozymandius the mystic.',
+			sign: 'Legacy of Ozymandius the destroyer.',
+			name: 'Ozymandius\' Chest',
 			inventoryLoot: [
-				'spell.eFire, spell.ePanic, cloak.eRechargeFast, 2x potion.eHealing',
+				'spell.eFire, spell.eShock3, cloak.eRechargeFast, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
@@ -849,8 +851,9 @@ PlaceTypeList.surfaceSunTemple = {
 			label: 'starterChest',
 			isHidden: true,
 			sign: 'Legacy of Slyndero the clever.',
+			name: 'Slyndero\'s Chest',
 			inventoryLoot: [
-				'weapon.dagger, spell.eTeleport, cloak.eInvisibility, 2x potion.eHealing',
+				'gloves.assassinGloves, spell.eTeleport, spell.eInvisibility, potion.eOdorless, gem.eSeeInvisible, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
@@ -860,6 +863,7 @@ PlaceTypeList.surfaceSunTemple = {
 			label: 'starterChest',
 			isHidden: true,
 			sign: 'Legacy of Duramure the steadfast.',
+			name: 'Duramure\'s Chest',
 			inventoryLoot: [
 				'weapon.hammer.eInert, armor.eInert, shield.eInert, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
@@ -871,6 +875,7 @@ PlaceTypeList.surfaceSunTemple = {
 			label: 'starterChest',
 			isHidden: true,
 			sign: 'Legacy of Arithern the accurate.',
+			name: 'Arithern\'s Chest',
 			inventoryLoot: [
 				'armor.eInert, weapon.bow.eHoly, 50x ammo.arrow, 5x ammo.dart, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
@@ -882,6 +887,7 @@ PlaceTypeList.surfaceSunTemple = {
 			label: 'starterChest',
 			isHidden: true,
 			sign: 'Legacy of Berthold the blessed.',
+			name: 'Berthold\'s Chest',
 			inventoryLoot: [
 				'armor.eInert, spell.eHealing, spell.eHoly, shield.eAbsorbRot, stuff.oilLamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
@@ -894,6 +900,7 @@ PlaceTypeList.surfaceSunTemple = {
 			label: 'starterChest',
 			isHidden: true,
 			sign: 'Legacy of Gadriin the mindshaper.',
+			name: 'Gadriin\'s Chest',
 			inventoryLoot: [
 				'spell.ePossess, spell.eConfusion, stuff.voidCandle, 4x ammo.dart.eStartle, 2x potion.eHealing, 3x gem, 3x stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
@@ -1104,6 +1111,22 @@ PlaceTypeList.lunarEmbassy = {
 		l: 'lunarOne',
 	}
 }
+
+PlaceMany( 'hoard', ['shade'], VARIETY => ({
+	map:
+`
+mm
+mm
+`,
+	flags: { rotate: true },
+	symbols: {
+		m: VARIETY,
+	},
+	inject: {
+		shade: { attitude: Attitude.HUNT },
+	}
+
+}));
 
 PlaceMany( 'camp', ['ogre','human','refugee','goblin'], VARIETY => ({
 	map:

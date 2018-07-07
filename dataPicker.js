@@ -338,7 +338,7 @@ class Picker {
 
 	pickRechargeTime(level,item) {
 		let xRecharge = ItemCalc(item,item,'xRecharge','*');
-		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/DEPTH_SPAN)*10);
+		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/DEPTH_SPAN)*Rules.EXTRA_RECHARGE_AT_DEPTH_MAX);
 	}
 
 	pickArmorRating(level,item) {

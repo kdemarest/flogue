@@ -64,6 +64,7 @@ let Rules = new class {
 		this.MONSTER_DARK_VISION 			= 6;
 		this.MONSTER_SIGHT_DISTANCE 		= 6;
 		this.SPELL_RECHARGE_TIME 			= 10;
+		this.EXTRA_RECHARGE_AT_DEPTH_MAX    = 10;
 
 	}
 	 playerHealth(playerLevel) {
