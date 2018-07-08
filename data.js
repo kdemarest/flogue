@@ -257,10 +257,12 @@ let EffectTypeList = {
 					duration: true, damageType: DamageType.POISON, name: 'mortal poison', icon: 'gui/icons/ePoison.png' },
 	eLeech: 		{ isDmg: 1, level:  0, rarity: 0.30, op: 'damage', xDamage: 0.70, isHarm: 1, isInstant: 1, isLeech: 1, damageType: DamageType.ROT, healingType: DamageType.SMITE, icon: 'gui/icons/eLeech.png' },
 };
+let ETL = EffectTypeList;
 
 for( let key in EffectTypeList ) {
 	// all effect bearing items have a bigger price.
 	EffectTypeList[key].xPrice = Rules.effectPriceMultiplierByRarity(EffectTypeList[key].rarity);
+	EffectTypeList[key].isEffect = true;
 }
 
 EffectTypeList.eFire.onTargetPosition = function(map,x,y) {

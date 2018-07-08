@@ -94,7 +94,7 @@ class Finder {
 		return this;
 	}
 	isReal() {
-		return this.filter( e=>!e.fake );
+		return this.filter( e=>!e.isFake );
 	}
 	keepTop(n) {
 		this.result.length = Math.min(this.result.length,n);

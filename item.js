@@ -215,7 +215,12 @@ class Item {
 		}
 		return result;
 	}
-	giveTo(entity,x,y) {
+	giveTo(entity,x,y,assureWalkableDrop) {
+
+		if( assureWalkableDrop && entity.isMap ) {
+			[x,y] = entity.spiralFind( x, y, (x,y,tile) => tile && tile.mayWalk );
+		}
+
 		let hadNoOwner = !this.owner;
 		if( this.owner && (this.owner.isMap || (this.owner.isItemType && this.owner.owner.isMap)) && entity.isUser && entity.isUser() ) {
 			// Item flies to your gui sidebar...

@@ -10,10 +10,16 @@ class Effect {
 		let effect = Object.assign({},basis,effectRaw);
 		effect.effectShape = effect.effectShape || EffectShape.SINGLE;
 
+		// Only write into the value if you must. Otherwise, let the world builder or
+		// other systems (like 'power' in entity natural attacks) control.
+		let needsValue = (effect.value === undefined);
 		if( effect.xDamage ) {
 			// WARNING! This could be healing as well as damaging...
 			let xDamage = item ? ItemCalc(item,item,'xDamage','*') : effect.xDamage;
-			effect.value = Math.max(1,Math.floor(Rules.pickDamage(depth,rechargeTime||0) * xDamage));
+
+			if( needsValue ) {
+				effect.value = Math.max(1,Math.floor(Rules.pickDamage(depth,rechargeTime||0) * xDamage));
+			}
 
 			console.assert( !isNaN(effect.value) );
 
@@ -21,13 +27,15 @@ class Effect {
 				effect.chanceOfEffect = effect.chanceOfEffect || ( item.isWeapon ? WEAPON_EFFECT_CHANCE_TO_FIRE : ARMOR_EFFECT_CHANCE_TO_FIRE );
 				
 				if( WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
-					effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+					if( needsValue ) {
+						effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+					}
 					console.assert( !isNaN(effect.value) );
 					effect.chanceOfEffect = 100;
 				}
 			}
 		}
-		if( effect.valuePick ) {
+		if( effect.valuePick && needsValue ) {
 			effect.value = effect.valuePick();
 		}
 		if( item && item.effectOverride ) {
@@ -381,7 +389,8 @@ let _effectApplyTo = function(effect,target,source,item) {
 		Math.max(1,(effect.duration || Rules.DEFAULT_EFFECT_DURATION) * (effect.xDuration||1))
 	));
 
-	if( source && target && source.command == Command.CAST && effect.icon !== false) {
+	let flyingIcon = effect.flyingIcon || effect.icon;
+	if( source && target && (source.command == Command.CAST || source.command == Command.ATTACK) && flyingIcon !== false) {
 		// Icon flies to the target
 		let dx = target.x-source.x;
 		let dy = target.y-source.y;
@@ -391,7 +400,7 @@ let _effectApplyTo = function(effect,target,source,item) {
 		effect.rangeDuration = rangeDuration;
 		new Anim({
 			at: 		source,
-			img: 		effect.icon,
+			img: 		flyingIcon,
 			duration: 	rangeDuration,
 			onInit: 		a => { a.create(1); },
 			onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sScaleSet(0.6); },
@@ -516,17 +525,29 @@ DeedManager.addHandler(DeedOp.HEAL,function() {
 });
 DeedManager.addHandler(DeedOp.DAMAGE,function() {
 	let attacker = this.source;
-	if( this.duration === true || this.duration > 0 ) {
+	let isOngoing = false;
+
+	if( this.damageResult && (this.duration === true || this.duration > 1) ) {
 		// for non-instant damaging effects, we don't want the attacker to be conveyed, because it will
 		// result in effects that make it appear you were jsut attacked, for example by a dead guy, or at range
 		attacker = null;
+		isOngoing = true;
 	}
 
-	let result = this.target.takeDamage(attacker,this.item,this.value,this.damageType,this.onAttack);
-	if( this.isLeech && result.amount > 0 ) {
-		this.source.takeHealing(this.source,result.amount,this.healingType);
+	this.damageResult = this.target.takeDamage(
+		attacker,
+		this.item,
+		this.value,
+		this.damageType,
+		this.onAttack,
+		isOngoing,
+		isOngoing
+	);
+
+	if( this.isLeech && this.damageResult.amount > 0 ) {
+		this.source.takeHealing(this.source,this.damageResult.amount,this.healingType);
 	}
-	return result.amount > 0;
+	return this.damageResult.amount > 0;
 });
 DeedManager.addHandler(DeedOp.SHOVE,function() {
 	return this.target.takeShove(this.source,this.item,this.value);

@@ -142,16 +142,17 @@ function monsterPreProcess(typeId,m) {
 
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];
+	if( typeof m.DamageType !== 'string' ) {
+	}
 	let natWeapon = Object.assign({
 		typeFilter: 'fake',
 		isNatural: true,
 		isMelee: true,
 		isWeapon: true,
-		fake: true,
 		quick: 2,
 		reach: m.reach || 1,
-		damageType: m.damageType || DamageType.CUT,
-		name: m.damageType
+		damageType: m.damageType || m.naturalWeapon.damageType || m.naturalWeapon.effectOnAttack.damageType || DamageType.CUT,
+		name: m.damageType || m.naturalWeapon.damageType || m.naturalWeapon.effectOnAttack.damageType || DamageType.CUT,
 	}, m.naturalWeapon );
 	m.inventoryLoot.push( natWeapon );
 	delete m.naturalWeapon;

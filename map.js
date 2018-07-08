@@ -388,6 +388,11 @@ class Map extends SimpleMap {
 		let span = 0.5;
 		let remain = span;
 		let reps = 4*this.getSurfaceArea();	// mult by 4 because you might have started in a corner
+		let tile = this.tileTypeGet(x,y);
+		if( tile && fn(x,y,tile) ) {
+			return [x,y];
+		}
+
 		do {
 			x += DirectionAdd[dir].x;
 			y += DirectionAdd[dir].y;

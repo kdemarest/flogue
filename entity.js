@@ -69,6 +69,9 @@ class Entity {
 		else {
 			let hitsToKillPlayer = parseFloat( monsterType.power.split(':')[1] );
 			naturalMeleeWeapon.damage = Rules.monsterDamage(level,hitsToKillPlayer);
+			if( naturalMeleeWeapon.effectOnAttack ) {
+				naturalMeleeWeapon.effectOnAttack.value = naturalMeleeWeapon.damage;
+			}
 		}
 
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
@@ -197,12 +200,34 @@ class Entity {
 			this.onDeath.call(this,this);
 		}
 
-		if( this.dead && this.corpse && !this.vanish ) {
-			let mannerOfDeath = Gab.damagePast[this.takenDamageType||DamageType.BITE];
-			if( !mannerOfDeath ) {
-				debugger;
+		// make sure that if this critter is carrying an .isPlot item that it gets dropped SOMEWHERE useful!
+		if( this.dead ) {
+			if( this.vanish || this.corpse === false ) {
+				let itemList = this.lootGenerate( this.loot, this.level );
+				if( this.inventory ) {
+					itemList = itemList.concat(this.inventory);
+				}
+				let self = this;
+				itemList.forEach( item => {
+					if( (!item.isFake && !this.vanish) || item.isPlot ) {
+						let lx = self.x;
+						let ly = self.y;
+						if( this.lootFling ) {
+							let dir = Math.randInt(0,8);
+							lx += DirectionAdd[dir].x*this.lootFling;
+							ly += DirectionAdd[dir].y*this.lootFling;
+						}
+						item.giveTo(this.map,lx,ly,true)
+					}
+				});
 			}
-			this.map.itemCreateByTypeId(this.x,this.y,this.corpse,{},{ usedToBe: this, mannerOfDeath: mannerOfDeath, isCorpse: true } );
+			else {
+				let mannerOfDeath = Gab.damagePast[this.takenDamageType||DamageType.BITE];
+				if( !mannerOfDeath ) {
+					debugger;
+				}
+				this.map.itemCreateByTypeId(this.x,this.y,this.corpse || 'corpse',{},{ usedToBe: this, mannerOfDeath: mannerOfDeath, isCorpse: true } );
+			}
 		}
 
 		if( this.dead ) {
@@ -1331,14 +1356,14 @@ class Entity {
 				// Attack if I am within reach, and aggressive or sometimes if hesitant
 				let weapon = this.calcBestWeapon(enemyList.first);
 				let distLimit = weapon.reach || weapon.range || 1;
-				let inRange = new Finder(enemyList.all,this).nearMe(distLimit);
-				if( inRange.count ) {
+				let inRange = new Finder(enemyList.all,this).nearMe(distLimit).clearShot();
+				if( !weapon.rechargeLeft && inRange.count ) {
 					let target = personalEnemy && inRange.includesId(personalEnemy.id) ? personalEnemy : inRange.first;	// For now, always just attack closest.
 					this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
 					this.commandItem = weapon;
 					this.commandTarget = target;
 					let temp = this.itemToAttackCommand(weapon);
-					if( temp !== Command.ATTACK ) {
+					if( temp !== Command.ATTACK || !this.nearTarget(target,1) ) {
 						return temp;
 					}
 					return directionToCommand(this.dirToEntityPredictable(target));
@@ -1406,8 +1431,19 @@ class Entity {
 			quiet = this.onHeal(healer,this,amount,healingType);
 		}
 		if( !quiet ) {
-			let result = (amount ? [' healed by ',mObject,healer,' for '+Math.floor(amount)+' health.'] : [' already at full health.']);
-			tell(mSubject,this,' ',mVerb,'is',...result);
+			let isSelf = healer && healer.id == this.id;
+			if( isSelf && amount > 0 ) {
+				tell(mSubject,this,' ',mVerb,'heal',' '+Math.floor(amount)+' health.');
+			}
+			else {
+				let result = (amount ? [' healed by ',mObject,healer,' for '+Math.floor(amount)+' health.'] : [' already at full health.']);
+				let sub = mSubject;
+				if( !amount && healer && healer.id == this.id ) {
+					// Special case: if you are healing yourself, you're the only one who cares if you're already at full health.
+					sub |= mCares;
+				}
+				tell(sub,this,' ',mVerb,'is',...result);
+			}
 		}
 	}
 
@@ -1488,17 +1524,17 @@ class Entity {
 	}
 
 
-	takeDamage(attacker,item,amount,damageType,callback,noBacksies) {
+	takeDamage(attacker,item,amount,damageType,callback,noBacksies,isOngoing) {
 		let quiet = false;
 
 		let isSneak = false;
-		if( attacker && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=2 ) {
+		if( !isOngoing && attacker && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=2 ) {
 			isSneak = true;
 			amount *= (attacker.sneakAttackMult || 2);
 		}
 
 		// Deal with armor first...
-		let isRanged = (attacker && this.getDistance(attacker.x,attacker.y) > 1) || (item && item.rangeDuration);
+		let isRanged = !isOngoing && ( (attacker && this.getDistance(attacker.x,attacker.y) > 1) || (item && item.rangeDuration) );
 		let reduction = this.calcReduction(damageType,isRanged)/ARMOR_SCALE;
 
 		reduction = Math.min(0.8,reduction);
@@ -1506,7 +1542,7 @@ class Entity {
 
 		let shield = this.getFirstItemInSlot(Slot.SHIELD);
 		let isShielded = false;
-		let blockChance = this.calcShieldBlockChance(damageType,isRanged,this.shieldBonus);
+		let blockChance = isOngoing ? 0 : this.calcShieldBlockChance(damageType,isRanged,this.shieldBonus);
 		if( Math.chance(blockChance*100) ) {
 			amount = 0;
 			isShielded = true;			
@@ -1529,7 +1565,7 @@ class Entity {
 			}
 		}
 
-		if( attacker && attacker.isMonsterType && (!this.brainMaster || this.brainMaster.id !=attacker.id) ) {
+		if( !isOngoing && attacker && attacker.isMonsterType && (!this.brainMaster || this.brainMaster.id !=attacker.id) ) {
 //			if( attacker.team == Team.NEUTRAL || this.team == Team.NEUTRAL ) debugger;
 			// Remember that neutrals with brainFleeCombat DO want a personal enemy, not to attack, but to flee from.
 			this.personalEnemy = attacker.id;
@@ -1602,7 +1638,7 @@ class Entity {
 			}
 		}
 
-		if( isShielded ) {
+		if( !isOngoing && isShielded ) {
 			quiet = true;
 			tell(mSubject,this,' ',mVerb,'catch',' that blow with ',mSubject|mPossessive,this,' ',mObject|mPossessed,shield);
 			new Anim( {}, {
@@ -1661,12 +1697,14 @@ class Entity {
 		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
 		this.health -= amount;
-		this.takenDamage = amount;
-		this.takenDamageType = damageType;
-		this.takenDamageFromId = attacker ? attacker.id : 'nobody';
-		this.inCombat = true;
+		if( !isOngoing ) {
+			this.takenDamage = amount;
+			this.takenDamageType = damageType;
+			this.takenDamageFromId = attacker ? attacker.id : 'nobody';
+			this.inCombat = true;
+		}
 
-		if( amount > 0 ) {
+		if( !isOngoing && amount > 0 ) {
 			if( this.brainDisengageAttempt ) {
 				this.brainDisengageFailed = true;
 			}
@@ -1678,20 +1716,20 @@ class Entity {
 			}
 		}
 
-		if( callback ) {
+		if( !isOngoing && callback ) {
 			callback(attacker,this,amount,damageType);	
 		}
 
-		if( this.onAttacked && !noBacksies ) {
+		if( !isOngoing && this.onAttacked && !noBacksies ) {
 			quiet = this.onAttacked.call(this,attacker,amount,damageType);
 		}
-		if( !quiet && attacker ) {
+		if( !isOngoing && !quiet && attacker ) {
 			let attackVerb = item && item.attackVerb ? item.attackVerb : damageType;
 			tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!'+(isSneak?' Sneak attack!' : '') );
 		}
 
 		let isRetaliation = 0;
-		if( !noBacksies && attacker && attacker.isMonsterType && this.inventory ) {
+		if( !isOngoing && !noBacksies && attacker && attacker.isMonsterType && this.inventory ) {
 			let is = isRanged ? 'isShield' : 'isArmor';
 			let retaliationEffects = new Finder(this.inventory).filter( item => item.inSlot && item[is] );
 			retaliationEffects.process( item => {
@@ -1706,7 +1744,7 @@ class Entity {
 		}
 
 		// This should be last so that your sneak attacks can function properly.
-		if( attacker && attacker.invisible ) {
+		if( !isOngoing && attacker && attacker.invisible ) {
 			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: false };
 			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
 		}
@@ -1810,8 +1848,16 @@ class Entity {
 		}
 
 		// Start possession
-		if( this.isMindless || this.isUndead || source.id == this.id || source.isPossessing || this.oldMe ) {
-			tell(mSubject,this,' ',mVerb,'is',' impossible to possess!');
+		if( this.isMindless || this.isUndead ) {
+			tell(mSubject,this,' ',mVerb,'is',' has no mind to possess!');
+			return false;
+		}
+		if( this.isImmune('ePossess') ) {
+			tell(mSubject,this,' ',mVerb,'is',' immune to possession!');
+			return false;
+		}
+		if( source.id == this.id || source.isPossessing || this.oldMe ) {
+			tell(mSubject,this,' ',mVerb,'is',' already possessing!');
 			return false;
 		}
 		tell(mSubject,source,' ',mVerb,'enter',' the mind of ',mObject,this,'.');
@@ -1896,6 +1942,8 @@ class Entity {
 			return !isImmune;
 		});
 		// remove any ranged weapon or reach weapon with an obstructed shot
+		// WARNING! For the naturalWeapon this gets ignored, because once all weapons are
+		// eliminated the natural weapon is the fallback.
 		weaponList.filter( item => {
 			if( Math.chance(this.brainIgnoreClearShots||0) ) return false;
 			let r = ( item.range || item.reach || 1 );
@@ -1914,7 +1962,7 @@ class Entity {
 		if( !weapon ) {
 			weapon = this.naturalMeleeWeapon;
 		}
-		console.assert( !weapon.rechargeLeft );
+		console.assert( !weapon.rechargeLeft || weapon.isNatural );
 //		console.log( this.typeId+' picked '+(weapon.typeId || weapon.name)+' with recharge '+weapon.rechargeLeft );
 
 		if( weapon.isWeapon ) {
@@ -1923,7 +1971,7 @@ class Entity {
 		return weapon;
 	}
 
-	attack(target,weapon,isRanged) {
+	attack(target,weapon) {
 		console.assert(weapon);
 		console.assert(weapon.isWeapon);
 		this.lastAttackTargetId = target.id;	// Set this early, despite blindness!
@@ -2079,7 +2127,7 @@ class Entity {
 		item = item.giveToSingly(this.map,target.x,target.y);
 		if( item.isWeapon && !target.isPosition ) {
 			this.generateEffectOnAttack(item);
-			this.attack(target,item,true);
+			this.attack(target,item);
 		}
 		else {
 			if( !target.isPosition ) {	// indicates it is not an (x,y) array
@@ -2200,7 +2248,7 @@ class Entity {
 		tell(mSubject,this,' ',mVerb,ammo.attackVerb || 'shoot',' ',mObject,item,' at ',mObject,target,'.');
 		if( ammo.damage && !target.isPosition ) {
 			this.lastAttackTargetId = target.id;
-			this.attack(target,ammo,true);
+			this.attack(target,ammo);
 			if( item.rechargeTime ) {
 				// HACK! All attacks should REALLY go through .trigger... but they don't yet.
 				item.rechargeLeft = item.rechargeTime;
@@ -2366,7 +2414,7 @@ class Entity {
 			if( weapon.mayThrow && (!weapon.inSlot || weapon.inSlot==Slot.AMMO) ) {
 				return this.throwItem(weapon,f.first) ? 'throw' : 'miss';
 			}
-			return this.attack(f.first,weapon,false) ? 'attack' : 'miss';
+			return this.attack(f.first,weapon) ? 'attack' : 'miss';
 		}
 		else
 		// Switch with friends, else bonk!				// used to be isMyFriend()
@@ -2598,6 +2646,12 @@ class Entity {
 				let item = this.commandItem.single();
 				this.commandItem = null;
 				this.gaze(item);
+				break;
+			}
+			case Command.ATTACK: {
+				let target = this.commandTarget;
+				let weapon = this.commandItem;
+				this.attack(target,weapon);
 				break;
 			}
 			case Command.THROW: {
