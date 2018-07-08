@@ -358,7 +358,7 @@ const MonsterTypeList = {
 		isDemon: true,
 		isDaiacrid: true,
 		lootInventory: '',
-		loot: '3x 70% acidSlime, 8x acidTrail',
+		loot: '2x 70% acidSlime, 4x acidTrail',
 		lootFling: 1,
 		resist: DemonResistance,
 		trail: 'stuff.acidTrail',
