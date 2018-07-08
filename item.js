@@ -140,6 +140,14 @@ class Item {
 			this.rechargeLeft = this.rechargeTime;
 		}
 	}
+	isVariety(typeFilter) {
+		let parts = typeFilter.split('.');
+		console.assert( parts.length );
+		if( parts.length == 1 ) {
+			return parts[0] == this.typeId || (this.variety && parts[0] == this.variety.typeId);
+		}
+		return parts[0] == this.typeId && this.variety && parts[1] == this.variety.typeId;
+	}
 	setState(newState) {
 		this.state = newState;
 		if( this.states ) {
@@ -351,7 +359,22 @@ class Item {
 		this.dead = true;
 		return true;
 	}
-
+	tick( dt, rechargeRate = 1) {
+		let list = this.owner.itemList || this.owner.inventory;
+		console.assert( list.find( i => i.id == this.id ) );
+		if( this.rechargeLeft > 0 ) {
+			this.rechargeLeft = Math.max(0,this.rechargeLeft-rechargeRate);
+		}
+		if( this.onTick ) {
+			this.onTick.call(this,dt);
+		}
+		if( this.existenceLeft ) {
+			this.existenceLeft -= 1;
+			if( this.existenceLeft <= 0 ) {
+				this.destroy();
+			}
+		}
+	}
 	trigger(target,source,command) {
 		if( this.effect===false || this.effect===undefined ) {
 			return false;

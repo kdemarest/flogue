@@ -17,7 +17,7 @@ function pWalk(map) {
 		let tile = map.tileTypeGet(x,y);
 		if( !tile.mayWalk ) return Prob.WALL;
 		let itemProblem = map.findChosenItemAt( x, y, item => item.isProblem );
-		if( itemProblem ) return item;
+		if( itemProblem ) return itemProblem;
 		if( tile.isProblem ) return tile;
 		return Prob.NONE;
 	}

@@ -40,8 +40,10 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		if( item.bunchSize ) {
 			item.bunch = item.bunchSize;
 		}
-		if( item.isTreasure && !item.isHidden && Math.chance(theme.barrelChance||0) ) {
-			let barrel = area.map.itemCreateByType(x,y,ItemTypeList.barrel,{},{});
+		// NOTE: We want to count gaps here because we don't want barrels blocking up passageways.
+		if( item.isTreasure && !item.isHidden && Math.chance(theme.containerChance||0) && area.map.countGaps(x,y)<=1 ) {
+			let containerId = Math.chance(50) ? 'barrel' : 'chest';
+			let barrel = area.map.itemCreateByType(x,y,ItemTypeList[containerId],{},{});
 			item = item.giveTo(barrel,x,y);
 		}
 		if( type.gateDir !== undefined ) {
@@ -335,17 +337,11 @@ function tick(speed,map,entityListRaw) {
 		return [].concat(list[0],list[1],list[2]);
 	}
 
-	function tickItemList(itemList,dt,rechargeRate) {
+	function tickItemList(_itemList,dt,rechargeRate) {
 		console.assert(rechargeRate);
+		let itemList = _itemList.slice();	// Any item might get destroyed during this process.
 		for( let item of itemList ) {
-			let list = item.owner.itemList || item.owner.inventory;
-			console.assert( list.find( i => i.id == item.id ) );
-			if( item.rechargeLeft > 0 ) {
-				item.rechargeLeft = Math.max(0,item.rechargeLeft-rechargeRate);
-			}
-			if( item.onTick ) {
-				item.onTick.call(item,dt);
-			}
+			item.tick(dt,rechargeRate);
 		}
 	}
 
@@ -420,6 +416,7 @@ class Area {
 		this.siteList = null;
 		this.picker = new Picker(depth);
 
+		// NOTE: Move this into the areaBuild() at some point.
 		if( theme.jobPick ) {
 			this.jobPickTable = new PickTable().scanKeys(theme.jobPick);
 			this.jobPicker = (filter) => {

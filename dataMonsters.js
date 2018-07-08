@@ -1,7 +1,8 @@
 // Monster Events
 // onAttacked - fired when the monster gets attacked, even if damage nets to zero.
 // onAttack - fires when ever the monster attacks, so you can pile on extra effects.
-// onTouch - fires if somebody steps into you but doesn't attack you. Like when confused.
+// onBump - fires if somebody steps into you but doesn't attack you. Like when confused.
+// onTouch - fires if somebody is over/upon you.
 // onHeal - fires when you get healing. return true to suppress the auto-generated message about healing.
 
 const Control = { AI: "ai", USER: "user", EMPTY: "empty" };
@@ -353,13 +354,14 @@ const MonsterTypeList = {
 		senseSight: 8,
 		tooClose: 7,
 		corpse: false,
-		immune: DemonImmunity,
+		immune: DemonImmunity+','+DamageType.CORRODE,
 		isDemon: true,
 		isDaiacrid: true,
 		lootInventory: '',
 		loot: '3x 70% acidSlime',
 		lootFling: 1,
 		resist: DemonResistance,
+		trail: 'stuff.acidTrail',
 		vuln: DemonVulnerability,
 	},
 	"daitoxue": {	// (poison)
@@ -909,17 +911,6 @@ MonsterTypeList.redOoze.onMove = function(x,y) {
 
 		f.first.destroy();
 	}
-}
-
-MonsterTypeList.giantSnail.onMove = function(x,y,xOld,yOld) {
-	if( this.map.findItemAt(x,y).filter( item=>item.isSnailSlime ).count ) {
-		return;
-	}
-	let slimeList = this.lootGenerate( this.trail, this.level );
-	console.assert( slimeList.length == 1 );
-	let slime = slimeList[0];
-	slime.timeUntilDestruction = 10;
-	slime.giveTo( this.map, xOld, yOld );
 }
 
 MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {

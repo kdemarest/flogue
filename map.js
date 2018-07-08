@@ -126,6 +126,19 @@ class SimpleMap {
 		}
 		return c;
 	}
+	countGaps(x,y) {
+		let swaps = 0;
+		let tile = this.tileTypeGet(x+DirectionAdd[7].x,y+DirectionAdd[7].y);
+		let lastWalkable = tile !== false && tile.mayWalk;
+		for( let dir=0 ; dir < 8 ; ++dir ) {
+			let tile = this.tileTypeGet(x+DirectionAdd[dir].x,y+DirectionAdd[dir].y);
+			let walkable = tile !== false && tile.mayWalk;
+			if( walkable != lastWalkable ) ++swaps;
+			lastWalkable = walkable;
+		}
+		return swaps / 2;
+	}
+
 	dirChoose(x,y,ratingFn) {
 		let bestDir = false;
 		let bestRating = null;

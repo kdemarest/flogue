@@ -546,7 +546,7 @@ const StuffList = Fab.add( '', {
 	"impBrain": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true },
 	"ogreDrool": 		{ rarity: 1.0, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
 	"redOozeSlime": 	{ rarity: 0.2, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/redSlime96.png' },
-	"acidSlime": 		{ rarity: 0.2, alpha: 0.5, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/acidSlime96.png' },
+	"poisonSlime": 		{ rarity: 0.2, alpha: 0.5, scale: 0.3, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/poisonSlime96.png' },
 	"scarabCarapace": 	{ rarity: 1.0, },
 	"darkEssence": 		{ rarity: 0.1, },
 	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
@@ -557,8 +557,11 @@ const StuffList = Fab.add( '', {
 	"spinneret": 		{ rarity: 0.4, },
 	"chitin": 			{ rarity: 1.0, },
 	"poisonGland": 		{ rarity: 0.4, },
-	"snailTrail": 		{ rarity: 0.4, isLiquid: true, alpha: 0.3, img: 'dc-misc/snailSlime.png', isSnailSlime: true, mayPickup: false, },
+	"snailTrail": 		{ rarity: 0.4, isLiquid: true, alpha: 0.3, img: 'dc-misc/snailSlime.png', isSnailSlime: true, mayPickup: false, existenceTime: 10 },
 	"snailSlime": 		{ rarity: 0.4, isLiquid: true, alpha: 0.5, img: 'dc-misc/snailSlime.png', isSnailSlime: true, },
+	"acidTrail": 		{ rarity: 0.2, isLiquid: true, alpha: 0.3, scale: 0.3, mayThrow: true, isAcidSlime: true,
+						img: 'item/misc/acidSlime96.png', mayPickup: false, existenceTime: 10, damageType: DamageType.CORRODE },
+	"acidSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.3, mayThrow: true, isAcidSlime: true, img: 'item/misc/acidSlime96.png' },
 	"lunarEssence": 	{ rarity: 0.6, },
 	"batWing": 			{ rarity: 1.0, },
 	"frogSpine": 		{ rarity: 0.8, },
@@ -575,15 +578,10 @@ const StuffList = Fab.add( '', {
 
 });
 
+
 StuffList.snailTrail.onTick = function() {
 	if( this.owner.isMap ) {
 		this.map.scentClear(this.x,this.y);
-	}
-	if( this.timeUntilDestruction ) {
-		this.timeUntilDestruction -= 1;
-		if( this.timeUntilDestruction <= 0 ) {
-			this.destroy();
-		}
 	}
 }
 
@@ -592,6 +590,9 @@ StuffList.snailSlime.onTick = function() {
 		this.map.scentClear(this.x,this.y);
 	}
 }
+
+StuffList.acidTrail.isProblem = TouchDamage.isProblem;
+StuffList.acidTrail.onTouch 	= TouchDamage.onTouchWalk;
 
 const RingMaterialList = Fab.add( '', {
 	"brass": 	{ level: 0, img: 'brass' },
@@ -1139,7 +1140,7 @@ const ItemFilterGroup = {
 };
 
 
-ItemTypeList.oreVein.onTouch = function(entity,self) {
+ItemTypeList.oreVein.onBump = function(entity,self) {
 	let tool = entity.getFirstItemInSlot(Slot.WEAPON);
 	if( !tool || !tool.mineSpeed ) {
 		tell(mSubject,entity,' ',mVerb,'need',' a pickaxe to mine this ore.');
@@ -1187,7 +1188,7 @@ ItemTypeList.oreVein.onTouch = function(entity,self) {
 }
 
 
-ItemTypeList.altar.onTouch = function(toucher,self) {
+ItemTypeList.altar.onBump = function(toucher,self) {
 	let delay = 0;
 	if( self.inventory && self.inventory.length ) {
 		toucher.inventoryTake( self.inventory, self, false, item => {
@@ -1287,7 +1288,7 @@ ItemTypeList.sign.imgChoose = function(map,x,y) {
 	this.img = this.imgChoices.standing.img;
 }
 
-ItemTypeList.door.onTouch = function(entity,self) {
+ItemTypeList.door.onBump = function(entity,self) {
 	if( self.state == 'open' ) {
 		return;
 	}
@@ -1321,7 +1322,7 @@ ItemTypeList.door.onTouch = function(entity,self) {
 	debugger;
 }
 
-ItemTypeList.chest.onTouch = function(toucher,self) {
+ItemTypeList.chest.onBump = function(toucher,self) {
 	if( self.state == 'shut' ) {
 		if( self.onOpen ) {
 			let allow = self.onOpen(self,toucher);
@@ -1355,7 +1356,7 @@ ItemTypeList.chest.onTouch = function(toucher,self) {
 	spriteDeathCallback(self.spriteList);
 }
 
-ItemTypeList.barrel.onTouch = function(toucher,self) {
+ItemTypeList.barrel.onBump = function(toucher,self) {
 	if( self.inventory && self.inventory.length > 0 ) {
 		if( self.onLoot ) {
 			let allow = self.onLoot(self,toucher);

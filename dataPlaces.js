@@ -179,7 +179,7 @@ let ThemeDefault = () => ({
 	friendDensity: 	0.00,
 	itemDensity: 	0.03,
 
-	barrelChance: 	50
+	containerChance: 50
 });
 
 ThemeList.surface = {

@@ -1,6 +1,7 @@
 
 class Effect {
 	constructor( depth, effectRaw, item=null, rechargeTime=0 ) {
+		console.assert( effectRaw );
 		console.assert( depth !== undefined && typeof depth == 'number' );
 		console.assert( typeof effectRaw == 'object' && effectRaw !== null);
 

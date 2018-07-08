@@ -719,7 +719,7 @@ class Entity {
 			let abort = false;
 			g.process( item => {
 				if( !item.isProblem ) return;
-				let problem = item.isProblem(entity);
+				let problem = item.isProblem(this,item);
 				if( problem > problemTolerance ){
 					abort = true;
 				}
@@ -2427,7 +2427,7 @@ class Entity {
 			let entity = f.first;
 			console.assert(entity.isMonsterType);
 			bump(entity,true);
-			(entity.onTouch || bonk)(this,entity);
+			(entity.onBump || bonk)(this,entity);
 			return false;
 		}
 
@@ -2441,7 +2441,7 @@ class Entity {
 				let e = this.findAliveOthersAt(bx,by).first;
 				if( e ) bump(e,false);
 			}
-			(collider.onTouch || bonk)(this,adhoc(collider,this.map,x,y));
+			(collider.onBump || bonk)(this,adhoc(collider,this.map,x,y));
 			return false;
 		}
 
@@ -2485,6 +2485,17 @@ class Entity {
 
 		if( this.findAliveOthersAt(x,y).count ) {
 			debugger;
+		}
+
+		if( this.trail ) {
+			if( this.map.findItemAt(x,y).filter( item=>item.isVariety(this.trail) ).count ) {
+				return;
+			}
+			let trailList = this.lootGenerate( this.trail, this.level );
+			console.assert( trailList.length == 1 );
+			let trail = trailList[0];
+			trail.existenceLeft = trail.existenceTime || 10;
+			trail.giveTo( this.map, xOld, yOld );
 		}
 
 		if( this.onMove ) {
@@ -2835,6 +2846,11 @@ class Entity {
 			if( tileType.onTouch ) {
 				tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
 			}
+			this.map.findItemAt(this.x,this.y).process( item => {
+				if( item.onTouch ) {
+					item.onTouch( this, item );
+				}
+			});
 		}
 
 		this.inventory.forEach( item => {

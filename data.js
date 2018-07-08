@@ -142,6 +142,19 @@ const StickerList = {
 	slice80: { img: 'gui/slice80.png' },
 	slice90: { img: 'gui/slice90.png' },
 	slice100: { img: 'gui/sliceReady.png' },
+	// WARNING - these names are direct equivalents to the damage type names, and must align/
+	cutIcon: { img: 'gui/icons/damageCut.png' },
+	stabIcon:  { img: 'gui/icons/damageStab.png' },
+	biteIcon: { img: 'gui/icons/damageBite.png' },
+	clawIcon: { img: 'gui/icons/damageClaw.png' },
+	bashIcon: { img: 'gui/icons/damageBash.png' },
+	burnIcon: { img: 'gui/icons/eFire.png' },
+	freezeIcon: { img: 'gui/icons/eCold.png' },
+	shockIcon: { img: 'gui/icons/eShock.png' },
+	corrodeIcon: { img: 'gui/icons/eCorrode.png' },
+	poisonIcon: { img: 'gui/icons/ePoison.png' },
+	smiteIcon: { img: 'gui/icons/eSmite.png' },
+	rotIcon: { img: 'gui/icons/eRot.png' },
 };
 
 // Probably should do this at some point.
@@ -151,6 +164,7 @@ let ARMOR_SCALE = 100;
 const MiscImmunity = { SPEED: "speed", LOSETURN: "loseTurn", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField" };
 
 
+// WARNING: the damage type names are re-used in their icon names in StickerList. Maintain both.
 const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
 const PhysicalDamage = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(',');
 const EffectShape = { SINGLE: "single", BLAST3: "blast3", BLAST5: "blast5", BLAST7: "blast7" };
@@ -281,8 +295,8 @@ const ImgBridges = {
 
 
 // Item Events
-// onTouch - fires each round a monster is standing on a tile, and ALSO when you bonk into a non-passable tile.
-//			 also fires when you WAIT or LOSE TURN upon a tile.
+// onTouch - fires each round a monster is standing on a tile. Also fires when you WAIT or LOSE TURN upon a tile.
+// onBump - fires when you bonk into a non-passable tile.
 // onDepart - fires every single time you leave this tile, whether you're heading into another similar tile or not
 //				return false to stop the movement.
 // onDepartType - fires when you are leaving this tile type, like stepping out of fire or mud or water.
@@ -327,7 +341,7 @@ for( let i=-MaxLightValue-20 ; i<MaxLightValue+20 ; ++i ) {
 }
 
 
-TileTypeList.obelisk.onTouch = function(toucher,self) {
+TileTypeList.obelisk.onBump = function(toucher,self) {
 	if( !toucher.senseBlind ) {
 		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,'.');
 		effectApply( self.effect, toucher, null, self );
@@ -337,7 +351,7 @@ TileTypeList.obelisk.onTouch = function(toucher,self) {
 	}
 }
 
-TileTypeList.crystal.onTouch = function(entity,self) {
+TileTypeList.crystal.onBump = function(entity,self) {
 	if( entity.speed <= 1 ) {
 		tell(mSubject,entity,' ',mVerb,'touch',' ',mObject,self,' and ',mSubject|mVerb,'blur',' with speed!');
 		effectApply( self.effect, toucher, null, self );
@@ -381,25 +395,43 @@ TileTypeList.flames.getDamage = function(toucher,self) {
 	return value
 }
 
-TileTypeList.flames.isProblem = function(entity,self) {
-	if( entity.isImmune(self.damageType) ) {
-		return Prob.NONE;
+// TouchDamage
+// To use this convenience function, assign your type a damageType and optionally an xDamage
+// and those will be used automagically. 
+// NOTE: We need to turn this into a 'bundle', so that post-processing can assign everything
+// automatically, like Object.each( BundleType[this.bundle], (value,key) => this[key] = value );
+//
+let TouchDamage = {
+	isProblem: function(entity,self) {
+		if( entity.isImmune(self.damageType) ) {
+			return Prob.NONE;
+		}
+		let xDamage = ItemCalc(self,self,'xDamage','*');
+		let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,self.rechargeTime) * xDamage))
+		let ratio = damage/entity.health;
+		if( ratio <= 0.3 ) return Prob.MILD;
+		if( ratio <= 0.7 ) return Prob.HARSH;
+		return Prob.DEATH;
+	},
+	onTouch: function(toucher,self) {
+		// We could pass in an onDamage that would also catch you on fire...
+		let xDamage = ItemCalc(self,self,'xDamage','*');
+		let effectDefault = { op: 'damage', damageType: self.damageType, isInstant: 1, icon: StickerList[self.damageType+'Icon'].img }
+		let effect = Object.assign( {}, self.effect || effectDefault, { xDamage: xDamage } );
+		effect = new Effect( toucher.area.depth, effect );
+		effectApply( effect, toucher, null, self );
+	},
+	onTouchWalk: function(toucher,self) {
+		if( toucher.travelMode != "walk" || toucher.jump ) {
+			return;
+		}
+		return TouchDamage.onTouch(toucher,self);
 	}
-	let xDamage = ItemCalc(self,self,'xDamage','*');
-	let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,self.rechargeTime) * xDamage))
-	let ratio = damage/entity.health;
-	if( ratio <= 0.3 ) return Prob.MILD;
-	if( ratio <= 0.7 ) return Prob.HARSH;
-	return Prob.DEATH;
-}
 
-TileTypeList.flames.onTouch = function(toucher,self) {
-	// We could pass in an onDamage that would also catch you on fire...
-	let xDamage = ItemCalc(self,self,'xDamage','*');
-	let effect = Object.assign( {}, self.effect, { xDamage: xDamage } );
-	effect = new Effect( toucher.area.depth, effect );
-	effectApply( effect, toucher, null, self );
-}
+};
+
+TileTypeList.flames.isProblem 	= TouchDamage.isProblem;
+TileTypeList.flames.onTouch 	= TouchDamage.onTouch;
 
 TileTypeList.lava.onEnterType = function(entity,self) {
 	tell( mSubject|mCares,entity,' ',mVerb,'enter',' ',mObject,self,'.' );
@@ -409,25 +441,8 @@ TileTypeList.lava.onDepartType = function(entity,self) {
 	tell( mSubject|mCares,entity,' ',mVerb,'leave',' ',mObject,self,'.' );
 }
 
-TileTypeList.lava.isProblem = function(entity,self) {
-	if( entity.isImmune(self.damageType) || entity.travelMode !== 'walk' ) {
-		return Prob.NONE;
-	}
-	let xDamage = ItemCalc(self,self,'xDamage','*');
-	let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,0) * xDamage))
-	let ratio = damage/entity.health;
-	if( ratio <= 0.3 ) return Prob.MILD;
-	if( ratio <= 0.7 ) return Prob.HARSH;
-	return Prob.DEATH;
-}
-
-TileTypeList.lava.onTouch = function(toucher,self) {
-	// We could pass in an onDamage that would also catch you on fire...
-	if( toucher.travelMode == "walk" && !toucher.jump ) {
-		let effect = new Effect(toucher.area.depth,self.effect);
-		effectApply( effect, toucher, null, self );
-	}
-}
+TileTypeList.lava.isProblem = TouchDamage.isProblem;
+TileTypeList.lava.onTouch 	= TouchDamage.onTouchWalk;
 
 TileTypeList.mud.isProblem = function(entity,self) {
 	if( !entity.isImmune(self.typeId) && entity.travelMode == "walk" ) {
@@ -478,7 +493,7 @@ TileTypeList.forcefield.onEnterType = function(entity,self) {
 	}
 }
 
-TileTypeList.ghostStone.onTouch = function(toucher,self) {
+TileTypeList.ghostStone.onBump = function(toucher,self) {
 	if( !toucher.invisible ) {
 		tell( mSubject,toucher,' ',mVerb,['touch','touches'],' ',mObject,self,'.' );
 		effectApply( this.effect, toucher, null, self );
