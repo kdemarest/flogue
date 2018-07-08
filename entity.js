@@ -2494,6 +2494,8 @@ class Entity {
 			let trailList = this.lootGenerate( this.trail, this.level );
 			console.assert( trailList.length == 1 );
 			let trail = trailList[0];
+			// Although this is set in item constructor, setting it here allows trails to not specify their
+			// exstence time and still work.
 			trail.existenceLeft = trail.existenceTime || 10;
 			trail.giveTo( this.map, xOld, yOld );
 		}

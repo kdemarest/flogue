@@ -66,7 +66,7 @@ ConfigList.ken = () => {
 		friendDensity: 	0.00001,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('stuff.voidCandle, gem.eSeeInvisible, 5x gem, stuff.lumpOfMeat, spell.eShove, spell.ePossess, bow, 10x stuff.lumpOfMeat, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, boots.eFlight, stuff.sunCrystal');
+	MonsterTypeList.player.inventoryLoot.push('stuff.voidCandle, 4x potion.eHealing, 10x stuff.poisonSlime, gem.eSeeInvisible, 5x gem, stuff.lumpOfMeat, spell.eShove, spell.ePossess, bow, 10x stuff.lumpOfMeat, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, boots.eFlight, stuff.sunCrystal');
 	MonsterTypeList.player.inventoryWear = 'ring.eMobility, armor, helm, bracers, stuff.oilLamp';
 //	MonsterTypeList.player.experience = 100;
 

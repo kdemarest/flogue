@@ -33,18 +33,19 @@ class Item {
 		Object.merge(this,this.material,ignoreFields);
 		Object.merge(this,this.variety,ignoreFields);
 
-		let adjust = function(cap,level,calc,mult=1) {
+		let adjust = function(cap,levelGoal,calc,mult=1) {
 			let reps = 100;
-			let done = false;
 			let valueRaw = calc(levelRaw);
-			let plus, value;
-			while( !done && --reps) {
+			let value = valueRaw;
+			let plus = 0;
+			// To make sure we arrive at the exact same plus the exact same way every time
+			let level = levelRaw;
+			while( level <= levelGoal && plus < cap && --reps ) {
 				value = calc(level);
 				plus = Math.max(0,(value-valueRaw)*mult);
-				done = plus <= cap;
-				if( !done ) --level;
+				level++;
 			}
-			console.assert( done );
+			console.assert( reps > 0 );
 			this.plus = Math.round(plus);
 			return value;
 		}.bind(this);
@@ -53,19 +54,19 @@ class Item {
 
 		let picker = new Picker(this.depth);
 		if( this.rechargeTime ) {
-			this.rechargeTime 	= adjust( 10, level, L=>picker.pickRechargeTime(L,this) );
+			this.rechargeTime 	= adjust( 10, level, level=>picker.pickRechargeTime(level,this) );
 		}
 		if( this.isArmor ) {
-			this.armor 			= adjust( 5, level, L=>picker.pickArmorRating(L,this) );
+			this.armor 			= adjust(  5, level, level=>picker.pickArmorRating(level,this) );
 		}
 		if( this.isShield ) {
-			this.armor 			= adjust( 5, level, L=>picker.pickArmorRating(L,this) );
+			this.armor 			= adjust(  5, level, level=>picker.pickArmorRating(level,this) );
 		}
 		if( this.isShield ) {
-			this.blockChance 	= adjust( 15, level, L=>picker.pickBlockChance(L,this), 100 );
+			this.blockChance 	= adjust( 15, level, level=>picker.pickBlockChance(level,this), 100 );
 		}
 		if( this.isWeapon ) {
-			this.damage 		= adjust( 5, level, L=>Rules.pickDamage(L,this.rechargeTime,this) );
+			this.damage 		= adjust(  5, level, level=>Rules.pickDamage(level,this.rechargeTime,this) );
 		}
 		if( this.isCoin ) {
 			this.coinCount  	= picker.pickCoinCount();
@@ -106,6 +107,11 @@ class Item {
 		if( this.state ) {
 			this.setState(this.state);
 		}
+
+		if( this.existenceTime ) {
+			this.existenceLeft = this.existenceTime;
+		}
+
 		// Always do this last so that as many member vars as possible will be available to the namePattern!
 		//if( this.namePattern.indexOf('arrow') >=0 ) debugger;
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
@@ -192,11 +198,11 @@ class Item {
 		return this.armor;
 	}
 	bunchId() {
-		if( (this.inSlot && !this.donBunches) || !this.isTreasure || this.noBunch ) {
+		if( (this.inSlot && !this.donBunches) || !this.isTreasure || this.noBunch || this.isFake || this.inventory ) {
 			return this.id;
 		}
 		let b = '';
-		let fieldList = { name:1, level:1, depth:1, armor: 1, damage:1, rechargeTime:1 };
+		let fieldList = { name:1, armor: 1, damage:1, damageType:1, blockChance:1, rechargeTime:1 };
 		if( this.owner && this.owner.isMap ) {
 			fieldList.x = 1;
 			fieldList.y = 1;
@@ -205,6 +211,15 @@ class Item {
 			let value = this[fieldId];
 			if( value !== undefined ) {
 				b += '&'+value;
+			}
+		}
+		if( this.effect ) {
+			let fieldList = { name:1, op: 1, stat: 1, value:1, duration:1, damageType:1, healingType:1, xDuration:1, xRecharge:1, xDamage:1, effectShape:1, isInstant:1 };
+			for( let fieldId in fieldList ) {
+				let value = this.effect[fieldId];
+				if( value !== undefined ) {
+					b += '&'+value;
+				}
 			}
 		}
 		return b;
@@ -226,7 +241,7 @@ class Item {
 	giveTo(entity,x,y,assureWalkableDrop) {
 
 		if( assureWalkableDrop && entity.isMap ) {
-			[x,y] = entity.spiralFind( x, y, (x,y,tile) => tile && tile.mayWalk );
+			[x,y] = entity.spiralFind( x, y, (x,y,tile) => tile && tile.mayWalk && !tile.isProblem );
 		}
 
 		let hadNoOwner = !this.owner;

@@ -545,8 +545,6 @@ const StuffList = Fab.add( '', {
 	"pinchOfEarth": 	{ rarity: 1.0, img: 'item/weapon/ranged/rock.png' },
 	"impBrain": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true },
 	"ogreDrool": 		{ rarity: 1.0, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
-	"redOozeSlime": 	{ rarity: 0.2, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/redSlime96.png' },
-	"poisonSlime": 		{ rarity: 0.2, alpha: 0.5, scale: 0.3, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/poisonSlime96.png' },
 	"scarabCarapace": 	{ rarity: 1.0, },
 	"darkEssence": 		{ rarity: 0.1, },
 	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
@@ -559,9 +557,13 @@ const StuffList = Fab.add( '', {
 	"poisonGland": 		{ rarity: 0.4, },
 	"snailTrail": 		{ rarity: 0.4, isLiquid: true, alpha: 0.3, img: 'dc-misc/snailSlime.png', isSnailSlime: true, mayPickup: false, existenceTime: 10 },
 	"snailSlime": 		{ rarity: 0.4, isLiquid: true, alpha: 0.5, img: 'dc-misc/snailSlime.png', isSnailSlime: true, },
-	"acidTrail": 		{ rarity: 0.2, isLiquid: true, alpha: 0.3, scale: 0.3, mayThrow: true, isAcidSlime: true,
-						img: 'item/misc/acidSlime96.png', mayPickup: false, existenceTime: 10, damageType: DamageType.CORRODE },
-	"acidSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.3, mayThrow: true, isAcidSlime: true, img: 'item/misc/acidSlime96.png' },
+	"redOozeSlime": 	{ rarity: 0.2, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/redSlime96.png' },
+	"poisonSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.25, mayThrow: true, mayTargetPosition: true, img: 'item/misc/poisonSlime96.png',
+						damageType: DamageType.POISON },
+	"acidTrail": 		{ rarity: 0.2, isLiquid: true, alpha: 0.2, scale: 0.35, mayThrow: true, isAcidSlime: true, img: 'item/misc/acidSlime96.png',
+						damageType: DamageType.CORRODE, mayPickup: false, existenceTime: 10 },
+	"acidSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.25, mayThrow: true, mayTargetPosition: true, img: 'item/misc/acidSlime96.png',
+						damageType: DamageType.CORRODE },
 	"lunarEssence": 	{ rarity: 0.6, },
 	"batWing": 			{ rarity: 1.0, },
 	"frogSpine": 		{ rarity: 0.8, },
@@ -591,8 +593,13 @@ StuffList.snailSlime.onTick = function() {
 	}
 }
 
-StuffList.acidTrail.isProblem = TouchDamage.isProblem;
+StuffList.acidTrail.isProblem 	= TouchDamage.isProblem;
 StuffList.acidTrail.onTouch 	= TouchDamage.onTouchWalk;
+StuffList.acidSlime.isProblem 	= TouchDamage.isProblem;
+StuffList.acidSlime.onTouch 	= TouchDamage.onTouchWalk;
+StuffList.poisonSlime.isProblem = TouchDamage.isProblem;
+StuffList.poisonSlime.onTouch 	= TouchDamage.onTouchWalk;
+
 
 const RingMaterialList = Fab.add( '', {
 	"brass": 	{ level: 0, img: 'brass' },
