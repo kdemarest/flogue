@@ -295,6 +295,7 @@ const MonsterTypeList = {
 		light: 2,
 		immune: DemonImmunity,
 		isDemon: true,
+		isDaispine: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		resist: DemonResistance,

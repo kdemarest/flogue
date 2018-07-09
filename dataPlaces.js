@@ -321,6 +321,7 @@ ThemeList.coreSea = {
 	rUNCOMMON: 			'floodWall',
 	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon'],
 	enemyDensity: 		0.005,
+	itemDensity: 		0.005,
 }
 
 ThemeList.coreSwamp = {
