@@ -434,7 +434,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daitraum": {	// (stun)
-		core: [ SYM, 59, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daispine48.png', 'it' ],
+		core: [ SYM, 59, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -465,7 +465,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daisteria": {	// (panic)
-		core: [ SYM, 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daispine48.png', 'it' ],
+		core: [ SYM, 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -475,7 +475,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiffury": {	// (enrage)
-		core: [ SYM, 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daispine48.png', 'it' ],
+		core: [ SYM, 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -485,7 +485,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiphant": {	// (slow)
-		core: [ SYM, 84, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daispine48.png', 'it' ],
+		core: [ SYM, 84, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -495,7 +495,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"dailess": {	// (blind)
-		core: [ SYM, 89, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daispine48.png', 'it' ],
+		core: [ SYM, 89, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -505,7 +505,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"dairain": {	// (drain)
-		core: [ SYM, 94, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daispine48.png', 'it' ],
+		core: [ SYM, 94, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',

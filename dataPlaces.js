@@ -318,6 +318,7 @@ ThemeList.coreSea = {
 	fillWall: 			'floor',
 	rREQUIRED: 			'floodWater',
 	rCOMMON: 			'floodWaterSmall',
+	rUNCOMMON: 			'floodWall',
 	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon'],
 	enemyDensity: 		0.005,
 }
@@ -694,6 +695,15 @@ PlaceTypeList.floodIsland = {
 	sparkDensity: 1.00
 
 }
+
+PlaceTypeList.floodWall = {
+	floodId: 'wall',
+	tilePercent: 0.10,
+	sparkId: 'floor',
+	sparkLimit: 2,
+	sparkDensity: 0.3
+}
+
 
 
 PlaceTypeList.floodMist = {
