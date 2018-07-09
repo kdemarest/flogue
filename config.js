@@ -77,7 +77,7 @@ ConfigList.ken = () => {
 
 
 	return {
-//		startingDepth: 14,
+		startingDepth: 6,
 //		themeId: 'kenTheme'
 	}
 }

@@ -310,15 +310,16 @@ ThemeList.coreCavernSomewhatOpen = {
 ThemeList.coreSea = {
 	dim: 				90,
 	architecture: 		"cave",
-	floorDensity: 		0.88,
+	floorDensity: 		0.58,
 	seedPercent: 		0.40,
-	placeDensity: 		0.70,
+	placeDensity: 		0.50,
 	passageWander: 		100,
 	outlineWall: 		'water',
 	fillWall: 			'floor',
 	rREQUIRED: 			'floodWater',
 	rCOMMON: 			'floodWaterSmall',
-	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
+	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon'],
+	enemyDensity: 		0.005,
 }
 
 ThemeList.coreSwamp = {
