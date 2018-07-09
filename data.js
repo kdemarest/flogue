@@ -69,7 +69,9 @@ let Prob = {
 }
 
 let ZOrder = {
-	TILE: 10,
+	FLOOR: 6,
+	TILE: 8,
+	WALL: 10,
 	GATE: 20,
 	DECOR: 22,
 	TABLE: 24,
@@ -112,6 +114,7 @@ const StickerList = {
 	bloodWhite: { img: "dc-misc/bloodYellow.png" },
 	glowRed: { img: "effect/glowRed.png" },
 	glowGold: { img: "effect/glowGold.png" },
+	cloudPoison: { img: "effect/cloudPoison96.png" },
 	showImmunity: { img: 'gui/icons/eImmune.png' },
 	showResistance: { img: 'gui/icons/eResist.png' },
 	showVulnerability: { img: 'gui/icons/eVuln.png' },
@@ -161,11 +164,11 @@ const StickerList = {
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
 let ARMOR_SCALE = 100;
 
-const MiscImmunity = { SPEED: "speed", LOSETURN: "loseTurn", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField" };
+const MiscImmunity = { SPEED: "speed", LOSETURN: "loseTurn", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField", HEALING: "healing" };
 
 
 // WARNING: the damage type names are re-used in their icon names in StickerList. Maintain both.
-const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
+const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", WATER: "water", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
 const PhysicalDamage = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(',');
 const EffectShape = { SINGLE: "single", BLAST3: "blast3", BLAST5: "blast5", BLAST7: "blast7" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH];
@@ -307,8 +310,15 @@ const ImgBridges = {
 
 
 const TileTypeList = {
-	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "dc-dngn/floor/pebble_brown0.png", isFloor: true },
-	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", img: "dc-dngn/wall/brick_brown0.png", isWall: true },
+	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "decor/floorSlate96p2.png", isFloor: true }, //dc-dngn/floor/pebble_brown0.png
+	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", 
+					imgChoices: {
+						0: { img: "decor/boulder1b96p.png" },
+						1: { img: "decor/boulder2b96p.png" },
+						2: { img: "decor/boulder3b96p.png" },
+						3: { img: "decor/boulder4b96p.png" },
+					},
+					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true }, // dc-dngn/wall/brick_brown0.png
 	"pit":        { symbol: ':', mayWalk: true, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, wantsBridge: true, img: "dc-dngn/pit.png" },
 	"bridge":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "bridge", isBridge: true, img: "dc-dngn/bridgeNS.png", imgChoices: ImgBridges, imgGet: (self,img) => img || self.img },
 	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, isWater: true, opacity: 0, mayJump: true, wantsBridge: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },

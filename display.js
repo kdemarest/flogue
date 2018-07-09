@@ -94,7 +94,7 @@ function createDrawList(observer,map,entityList,asType) {
 		}
 	}
 	
-	animationRemove( anim=>anim.group=='scent' );
+	animationRemove( anim=>anim.groupId=='scent' );
 
 	if( observer.senseSmell) {
 		for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
@@ -114,7 +114,7 @@ function createDrawList(observer,map,entityList,asType) {
 				if( !alpha ) continue;
 
 				new Anim( {}, {
-					group: 			'scent',
+					groupId: 		'scent',
 					x: 				x,
 					y: 				y,
 					areaId: 		observer.area.id,
@@ -201,6 +201,9 @@ function createDrawList(observer,map,entityList,asType) {
 				else {
 					//dChar = 'T';
 					console.assert( aa.length >= 2 );
+					if( tile.isWall ) {
+						aa.push(TileTypeList.floor);
+					}
 					aa.push(tile);
 					if( itemFind.count ) {
 						itemFind.process( item => {
@@ -478,13 +481,13 @@ class ViewMap extends ViewObserver {
 
 		spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision) {
 
-			function make(x,y,entity,imgGet,light,doTint,doGrey) {
+			function make(x,y,entity,imgGet,light,doTint,doGrey,numSeed) {
 
 				entity.spriteList = entity.spriteList || [];
 
 				for( let i=0 ; i<(entity.spriteCount || 1) ; ++i ) {
 					if( !entity.spriteList[i] ) {
-						let img = imgGet(entity);
+						let img = imgGet(entity,null,numSeed);
 						if( !img ) {
 							debugger;
 							imgGet(entity);	//helps with debugging.
@@ -500,7 +503,7 @@ class ViewMap extends ViewObserver {
 					let sprite = entity.spriteList[i];
 					spriteOnStage(sprite,true);
 					if( sprite.refs == 1 ) {	// I must be the only controller, so...
-						let zOrder = entity.zOrder || (entity.isTileType ? ZOrder.TILE : (entity.isItemType ? (entity.isGate ? ZOrder.GATE : (entity.isDecor ? ZOrder.DECOR : ZOrder.ITEM)) : (entity.isMonsterType ? ZOrder.MONSTER : ZOrder.OTHER)));
+						let zOrder = entity.zOrder || (entity.isWall ? ZOrder.WALL : (entity.isFloor ? ZOrder.FLOOR : (entity.isTileType ? ZOrder.TILE : (entity.isItemType ? (entity.isGate ? ZOrder.GATE : (entity.isDecor ? ZOrder.DECOR : ZOrder.ITEM)) : (entity.isMonsterType ? ZOrder.MONSTER : ZOrder.OTHER)))));
 						sprite.zOrder 	= zOrder;
 						sprite.visible 	= true;
 						sprite.x 		= x+(TILE_DIM/2);
@@ -556,7 +559,7 @@ class ViewMap extends ViewObserver {
 
 			let imgGet = this.imageRepo.imgGet[entity.typeId];
 			let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
-			make.call(this,x*TILE_DIM,y*TILE_DIM,entity,imgGet,lightAfterGlow,doTint,doGrey);
+			make.call(this,x*TILE_DIM,y*TILE_DIM,entity,imgGet,lightAfterGlow,doTint,doGrey,xWorld+yWorld);
 
 			if( entity.isTileType && !entity.isPosition ) {
 				this.observer.map.tileSprite[yWorld][xWorld] = this.staticTileEntity.spriteList;
@@ -566,7 +569,7 @@ class ViewMap extends ViewObserver {
 
 		this.app.ticker.add(function(delta) {
 			// but only if real time is not stopped.
-			animationTick(delta/60);
+			animationTickRealtime(delta/60);
 		});
 	}
 
@@ -603,20 +606,20 @@ class ViewMap extends ViewObserver {
 			this.render();
 		}
 		if( msg == 'overlayRemove' ) {
-			this.worldOverlayRemoveFn( a => a.group==payload.group );
+			this.worldOverlayRemoveFn( a => a.groupId==payload.groupId );
 		}
 		if( msg == 'overlayAdd' ) {
-			this.worldOverlayAddFn(payload.group,payload.x,payload.y,payload.areaId,payload.img);	
+			this.worldOverlayAddFn(payload.groupId,payload.x,payload.y,payload.areaId,payload.img);	
 		}
 		if( msg == 'show' ) {
 			if( !payload.isItemType || (payload.owner && payload.owner.isMap) ) {
-				this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
+				this.worldOverlayRemoveFn( a => a.groupId=='guiSelect' );
 				this.worldOverlayAddFn('guiSelect', payload.x, payload.y, payload.area.id, StickerList.selectBox.img);	
 			}
 			this.render();
 		}
 		if( msg == 'hide' ) {
-			this.worldOverlayRemoveFn( a => a.group=='guiSelect' );
+			this.worldOverlayRemoveFn( a => a.groupId=='guiSelect' );
 			//console.log('ViewMap hide');
 			this.render();
 		}

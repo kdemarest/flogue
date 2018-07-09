@@ -333,14 +333,21 @@ function nop() {}
 				let p = isPlus && obj[key] ? ' +' : '';
 				return p+(obj[key] * (isPercent?100:1))+(isPercent?'%':'');
 			}
+			if( obj[key] === false ) {
+				return '';
+			}
 			if( typeof obj[key] == 'string' ) {
+				if( obj[key] === '' ) return '';
 				return (useOf && obj[key] ? ' of ' : '')+obj[key];
 			}
 			if( Array.isArray(obj[key]) ) {
 				return obj[key].join(',');
 			}
 			if( typeof obj[key] == 'object' ) {
-				if( obj[key] ) return (useOf && obj[key].name ? ' of ' : '')+(obj[key].name || 'NONAME ['+key+']');
+				if( obj[key] ) {
+					if( obj[key].name === false || obj[key].name === '' ) return '';
+					return (useOf && obj[key].name ? ' of ' : '')+(obj[key].name || 'NONAME ['+key+']');
+				}
 			}
 			debugger;
 			return 'UNKNOWN '+key;

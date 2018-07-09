@@ -43,7 +43,12 @@ class Effect {
 			Object.assign( effect, item.effectOverride );
 		}
 		// Always last so that all member vars are available to the namePattern.
-		effect.name = effect.name || String.tokenReplace(effect.namePattern || 'nameless effect',effect);
+		if( effect.name === false ) {
+			effect.name = '';
+		}
+		else {
+			effect.name = effect.name || String.tokenReplace(effect.namePattern || 'nameless effect',effect);
+		}
 
 		Object.assign( this, effect );
 		return this;
@@ -262,7 +267,7 @@ let DeedManager = (new class {
 		// This makes sure that any deeds added while ticking do NOT actually tick this round.
 		this.deedList.map( deed => deed.doTick=true );
 		for( let deed of this.deedList ) {
-			if( deed.target.id == target.id ) {
+			if( (target === null && deed.target.isPosition) || (target && deed.target.id == target.id) ) {
 				deed.tick(dt);
 			}
 		}
@@ -336,7 +341,12 @@ let effectApply = function(effect,target,source,item) {
 			makeFilledCircle(target.x,target.y,radius, (x,y) => {
 				let reached = shootRange(target.x,target.y,x,y, (x,y) => area.map.tileTypeGet(x,y).mayFly);
 				if( reached ) {
-					animFly( target.x, target.y, x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
+					if( effect.isCloud ) {
+						animCloud( x, y, area, source.id, effect.iconCloud || StickerList.ePoof.img );
+					}
+					else {
+						animFly( target.x, target.y, x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
+					}
 					//animAt( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
 					let targetList = new Finder(area.entityList).at(x,y);
 					targetList.process( t => {
@@ -377,6 +387,14 @@ let _effectApplyTo = function(effect,target,source,item) {
 	if( target.isTileType && !target.isPosition ) {
 		debugger;
 	}
+
+	//Some effects are "singular" meaning you can't have more than one of it upon you.
+	if( effect.singularId ) {
+		if( DeedManager.findFirst( deed => deed.target.id == target.id && deed.singularId == effect.singularId ) ) {
+			return false;
+		}
+	}
+
 
 	//Some effects will NOT start unless their requirements are met. EG, no invis if you're already invis.
 	if( effect.requires && !effect.requires(target,effect) ) {
@@ -430,7 +448,9 @@ let _effectApplyTo = function(effect,target,source,item) {
 	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
 	if( isImmune ) {
 		tell(mSubject,target,' ',mVerb,'is',' immune to ',mObject,effect,'.');
-		animOver( target, StickerList.showImmunity.img, effect.rangeDuration || 0 );
+		if( !source || source.id!==target.id ) {
+			animOver( target, StickerList.showImmunity.img, effect.rangeDuration || 0 );
+		}
 		return false;
 	}
 
@@ -458,10 +478,7 @@ let _effectApplyTo = function(effect,target,source,item) {
 	effect.value = rollDice(effect.value);
 
 	let success;
-	if( target.isPosition ) {
-		if( !effect.onTargetPosition ) {
-			return false;
-		}
+	if( target.isPosition && effect.onTargetPosition ) {
 		target.map.toEntity(target.x,target.y,target);
 		success = effect.onTargetPosition(target.map,target.x,target.y)
 	}
@@ -517,6 +534,7 @@ let DeedOp = {
 	TELEPORT: 	'teleport',
 	STRIP: 		'strip',
 	POSSESS: 	'possess',
+	SUMMON: 	'summon',
 	DRAIN: 		'drain',
 	KILLLABEL: 	'killLabel'
 }
@@ -572,6 +590,48 @@ DeedManager.addHandler(DeedOp.POSSESS,function() {
 	if( !success ) {
 		return false;
 	}
+});
+DeedManager.addHandler(DeedOp.SUMMON,function() {
+	if( this.hasSummoned ) {
+		if( this.summonedEntity && this.summonedEntity.isDead() ) {
+			return false;
+		}
+		return;
+	}
+	let target = this.target;
+	let area = target.area;
+	let typeFilter = this.value;
+	let inject = {};
+	if( this.isServant && this.source ) {
+		inject.brainMaster = this.source;
+		inject.brainPath = true;
+		inject.team = this.source.team;
+	}
+
+	let type = MonsterTypeList[typeFilter];
+	if( !type ) {
+		debugger;
+		return false;
+	}
+	// NOTE: We always make the entity at the lower of its level or the depth you summoned it on.
+	// The intent is to prevent super-over-powered killings
+	let level = Math.min( type.level, area.depth );
+	let entity = new Entity( level, type, inject, area.jobPicker );
+	entity.gateTo(area,target.x,target.y);
+	if( this.item ) {
+		entity.deathPhrase = [mSubject,entity,' ',mVerb,'revert',' to ',mObject|mA,this.item,'.'];
+	}
+	this.summonedEntity = entity;
+	if( this.item ) {
+		this.item.giveTo(entity,entity.x,entity.y);
+	}
+	this.onEnd = () => {
+		this.item.giveTo(entity.map,entity.x,entity.y,true);
+		animFloatUp(entity,StickerList.ePoof.img);
+		entity.vanish = true;
+	}
+	this.hasSummoned = true;
+	return true;
 });
 DeedManager.addHandler(DeedOp.DRAIN,function() {
 	let entity = this.target;

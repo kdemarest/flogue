@@ -53,20 +53,20 @@ ConfigList.ken = () => {
 
 	ThemeList.kenTheme = {
 		scapeId: 		'kenCave',
-//		rREQUIRED: 		'kenPlace',
+		rREQUIRED: 		'floodPit',
 		placeDensity: 	0.10,
 //		rCOMMON: 		'hoard_shade',
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
-		monsters: 		['isDaiacrid'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isDailectra'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.008,
+		enemyDensity:  	0.004,
 		friendDensity: 	0.00001,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('stuff.voidCandle, 4x potion.eHealing, 10x stuff.poisonSlime, gem.eSeeInvisible, 5x gem, stuff.lumpOfMeat, spell.eShove, spell.ePossess, bow, 10x stuff.lumpOfMeat, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, boots.eFlight, stuff.sunCrystal');
+	MonsterTypeList.player.inventoryLoot.push('stuff.viperFigurine, stuff.dogFigurine, 2x stuff.centurionFigurine, stuff.voidCandle, 4x potion.eHealing, 10x stuff.poisonSlime, gem.eSeeInvisible, 5x gem, stuff.lumpOfMeat, spell.eShove, spell.ePossess, bow, 10x stuff.lumpOfMeat, 6x ammo.arrow, stuff.snailSlime, 3x potion.eCurePoison, weapon.sword.eCold, weapon.hammer, spell.eTeleport, spell.eFire, boots.eFlight, stuff.sunCrystal');
 	MonsterTypeList.player.inventoryWear = 'ring.eMobility, armor, helm, bracers, stuff.oilLamp';
 //	MonsterTypeList.player.experience = 100;
 
@@ -77,7 +77,7 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 10,
+		startingDepth: 14,
 		themeId: 'kenTheme'
 	}
 }

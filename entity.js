@@ -185,9 +185,9 @@ class Entity {
 
 		// Halt all deeds that this entity originated. For example, the ambligryp's immobilizing
 		// grip. BUT ypu want to keep any effects from worn objects, so if you are the target
-		// just leave the deed in place.
+		// just leave the deed in place. You also want ongoing damage to continue.
 		DeedManager.end( deed => {
-			return deed.source && deed.source.id == this.id && deed.target.id !== this.id;
+			return deed.source && deed.op !== 'damage' && deed.source.id == this.id && deed.target.id !== this.id;
 		});
 
 		if( this.oldMe ) {
@@ -1422,6 +1422,10 @@ class Entity {
 	}
 
 	takeHealing(healer,amount,healingType,quiet=false,allowOverage=false) {
+		if( this.isImmune( MiscImmunity.HEALING ) ) {
+			tell(mSubject,this,' can not be healed.');
+			return false;
+		}
 		// This allows prior health bonuses that might have cause health to exceed helthMax to exist.
 		if( !allowOverage ) {
 			amount = Math.max(0,Math.min( amount, this.healthMax-this.health ));
@@ -1655,43 +1659,49 @@ class Entity {
 		if( isVuln ) {
 			quiet = true;
 			tell(mSubject,this,' ',mVerb,'is',' vulnerable to '+isVuln+', and ',mVerb,'take',' '+amount+' damage!');
-			new Anim( {}, {
-				follow: 	this,
-				img: 		StickerList.showVulnerability.img,
-				duration: 	0.2,
-				delay: 		item ? item.rangeDuration || 0 : 0,
-				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sScaleSet(0.75); },
-				onSpriteTick: 	s => { }
-			});
+			if( !attacker || attacker.id!==this.id ) {
+				new Anim( {}, {
+					follow: 	this,
+					img: 		StickerList.showVulnerability.img,
+					duration: 	0.2,
+					delay: 		item ? item.rangeDuration || 0 : 0,
+					onInit: 		a => { a.create(1); },
+					onSpriteMake: 	s => { s.sScaleSet(0.75); },
+					onSpriteTick: 	s => { }
+				});
+			}
 		}
 		else
 		if( isImmune ) {
 			quiet = true;
 			tell(mCares,attacker,mSubject,this,' ',mVerb,'is',' immune to '+isImmune);
-			new Anim( {}, {
-				follow: 	this,
-				img: 		StickerList.showImmunity.img,
-				duration: 	0.2,
-				delay: 		item ? item.rangeDuration || 0 : 0,
-				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sScaleSet(0.75); },
-				onSpriteTick: 	s => { }
-			});
+			if( !attacker || attacker.id!==this.id ) {
+				new Anim( {}, {
+					follow: 	this,
+					img: 		StickerList.showImmunity.img,
+					duration: 	0.2,
+					delay: 		item ? item.rangeDuration || 0 : 0,
+					onInit: 		a => { a.create(1); },
+					onSpriteMake: 	s => { s.sScaleSet(0.75); },
+					onSpriteTick: 	s => { }
+				});
+			}
 		}
 		else
 		if( isResist ) {
 			quiet = true;
 			tell(mSubject,this,' ',mVerb,'resist',' '+isResist+', but ',mVerb,'take',' '+amount+' damage.');
-			new Anim( {}, {
-				follow: 	this,
-				img: 		StickerList.showResistance.img,
-				duration: 	0.2,
-				delay: 		item ? item.rangeDuration || 0 : 0,
-				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sScaleSet(0.75); },
-				onSpriteTick: 	s => { }
-			});
+			if( !attacker || attacker.id!==this.id ) {
+				new Anim( {}, {
+					follow: 	this,
+					img: 		StickerList.showResistance.img,
+					duration: 	0.2,
+					delay: 		item ? item.rangeDuration || 0 : 0,
+					onInit: 		a => { a.create(1); },
+					onSpriteMake: 	s => { s.sScaleSet(0.75); },
+					onSpriteTick: 	s => { }
+				});
+			}
 		}
 
 		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
@@ -2853,6 +2863,10 @@ class Entity {
 					item.onTouch( this, item );
 				}
 			});
+
+			if( this.onTick ) {
+				this.onTick.call(this);
+			}
 		}
 
 		this.inventory.forEach( item => {

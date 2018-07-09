@@ -28,6 +28,11 @@ const MonsterTypeDefaults = {
 };
 
 
+let MentalAttack = [Attitude.ENRAGED, Attitude.CONFUSED, Attitude.PANICKED].join(',');
+let ConstructImmunity = [MentalAttack,DamageType.ROT,DamageType.POISON,MiscImmunity.HEALING].join(',');
+let ConstructResistance = PhysicalDamage;
+let ConstructVulnerability = [DamageType.SHOCK,DamageType.FREEZE,DamageType.CORRODE].join(',');
+
 let UndeadImmunity = [DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'eBlindness'].join(',');
 let SkeletonImmunity = [UndeadImmunity,DamageType.CUT,DamageType.STAB].join(',');
 let UndeadResistance = [DamageType.CUT,DamageType.STAB].join(',');
@@ -105,7 +110,7 @@ const MonsterTypeList = {
 
 // GOOD TEAM
 	"player": {
-		core: [ '@', 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'player.png', 'he' ],
+		core: [ '@', 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'mon/playerThick96p.png', 'he' ],
 		attitude: Attitude.CALM,
 		brainMindset: 'pickup',
 		control: Control.USER,
@@ -193,6 +198,23 @@ const MonsterTypeList = {
 		rarity: 0.40,
 		sayPrayer: "Oh god... What I wouldn't give for a steak."
 	},
+	"solarCenturion": {
+		core: [ SYM, 44, '4:20', 'good', 'stab', 'sentient', 'humanoid', 'mon/solarCenturion96p.png', 'he'  ],
+		attitude: Attitude.AGGRESIVE,
+		brainPath: true,
+		corpse: false,
+		immune: [ConstructImmunity,DamageType.BURN].join(','),
+		isMindless: true,
+		isConstruct: true,
+		isPlanar: true,
+		isSummoned: true,
+		rarity: 0,
+		reach: 2,
+		resist: ConstructResistance,
+		senseSight: MaxVis,
+		travelMode: 'fly',
+		vuln:[ConstructVulnerability,'water'].join(','),
+	},
 
 // EVIL TEAM
 	"avatarOfBalgur": {
@@ -264,6 +286,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		resist: DemonResistance,
+		travelMode: 'fly',
 		vuln: DemonVulnerability,
 	},
 	"daispine": {	// (stab)
@@ -275,6 +298,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		resist: DemonResistance,
+		travelMode: 'fly',
 		vuln: DemonVulnerability,
 	},
 	"daifahng": {	// (bite)
@@ -284,6 +308,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		resist: DemonResistance,
+		travelMode: 'fly',
 		vuln: DemonVulnerability,
 	},
 	"daicolasp": {	// (claw)
@@ -336,7 +361,7 @@ const MonsterTypeList = {
 		corpse: false,
 		glow: true,
 		light: 12,
-		immune: DemonImmunity,
+		immune: DemonImmunity+','+DamageType.SHOCK,
 		isDemon: true,
 		isDailectra: true,
 		lootInventory: '',
@@ -349,7 +374,7 @@ const MonsterTypeList = {
 		naturalWeapon: {
 			reach: 6,
 			rechargeTime: 2,
-			effectOnAttack: { isDmg: 1, op: 'damage', xDamage: 1, isHarm: 1, duration: 5, damageType: DamageType.CORRODE, name: 'demon acid', flyingIcon: 'item/misc/acidSlime96.png', icon: 'gui/icons/eCorrode.png' }
+			effectOnAttack: { op: 'damage', xDamage: 1, isHarm: 1, duration: 5, damageType: DamageType.CORRODE, name: 'demon acid', flyingIcon: 'item/misc/acidSlime96.png', icon: 'gui/icons/eCorrode.png' }
 		},
 		senseSight: 8,
 		tooClose: 7,
@@ -364,24 +389,48 @@ const MonsterTypeList = {
 		trail: 'stuff.acidTrail',
 		vuln: DemonVulnerability,
 	},
-	"daitoxue": {	// (poison)
-		core: [ SYM, 49, '3:5', 'evil', 'poison', 'demon', 'wingedBiped', 'mon/demon/daispine48.png', 'it' ],
-		immune: DemonImmunity,
+	"daitox": {	// (poison)
+		core: [ SYM, 49, '3:20', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daitox96.png', 'it' ],
+		immune: DemonImmunity+',poison',
 		isDemon: true,
+		isDaitox: true,
+		effectOngoing: {
+			isCloud: true,
+			op: 'damage',
+			xDamage: 1,
+			isInstant: 1,
+			effectShape: EffectShape.BLAST5,
+			damageType: DamageType.POISON,
+			name: 'poison cloud',
+			icon: EffectTypeList.ePoison.icon,
+			iconCloud: StickerList.cloudPoison.img,
+		},
 		lootInventory: '',
-		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.ePoison },
+		loot: '3x 30% demonEye',
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
-	"daikaee": {	// (rot)
-		core: [ SYM, 54, '3:5', 'evil', 'rot', 'demon', 'wingedBiped', 'mon/demon/daispine48.png', 'it' ],
+	"daikay": {	// (rot)
+		core: [ SYM, 54, '3:30', 'evil', null, 'demon', 'noped', 'mon/demon/daikay96.png', 'it' ],
+		naturalWeapon: {
+			effectOnAttack: {
+				op: 'damage',
+				singularId: 'putridRot',	// Will not re-infect if already impacting...
+				xDamage: 1,
+				isHarm: 1,
+				duration: 30,
+				damageType: DamageType.ROT,
+				name: 'putrid rotting',
+				icon: 'gui/icons/eRot.png'
+			}
+		},
 		immune: DemonImmunity,
 		isDemon: true,
+		isDaikay: true,
 		lootInventory: '',
-		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eRot },
+		loot: '3x 30% stuff.bone',
 		resist: DemonResistance,
+		travelMode: 'fly',
 		vuln: DemonVulnerability,
 	},
 	"daitraum": {	// (stun)
@@ -390,7 +439,7 @@ const MonsterTypeList = {
 		isDemon: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eStun },
+		naturalWeapon: { chanceOfEffect: 15, effect: Object.assign( {}, EffectTypeList.eStun, {xDuration: 0.2} ) },
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
@@ -412,6 +461,7 @@ const MonsterTypeList = {
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eConfusion },
 		resist: DemonResistance,
+		travelMode: 'fly',
 		vuln: DemonVulnerability,
 	},
 	"daisteria": {	// (panic)
@@ -483,7 +533,7 @@ const MonsterTypeList = {
 		isInsect: true,
 		isSpider: true,
 		loot: '30% spinneret, 70% poisonGland',
-		naturalWeapon: { chanceOfEffect: 34, effect: EffectTypeList.ePoisonForever },
+		naturalWeapon: { attackVerb: 'sting', chanceOfEffect: 34, effect: EffectTypeList.ePoisonForever },
 		resist: DamageType.POISON,
 		senseLiving: true,
 		vuln: DamageType.BASH,
@@ -911,6 +961,11 @@ MonsterTypeList.redOoze.onMove = function(x,y) {
 
 		f.first.destroy();
 	}
+}
+
+MonsterTypeList.daitox.onTick = function() {
+	let tile = adhoc(this.map.tileTypeGet(this.x,this.y),this.map,this.x,this.y);
+	effectApply(this.effectOngoing,tile,this);
 }
 
 MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {

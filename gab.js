@@ -6,6 +6,10 @@ Gab = (new function(priorGab) {
 	let cityNameList = Array.shuffle(['Gunderhite','Thurmulna','Kurstifal','Unkruzia']);
 	let areaId2CityName = {};
 
+	this.setObserver = function(entity) {
+		observer = entity;
+	}
+
 	function getCityName(areaId) {
 		if( !areaId2CityName[areaId] ) {
 			areaId2CityName[areaId] = cityNameList.pop();

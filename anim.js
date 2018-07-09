@@ -349,6 +349,10 @@ class Anim {
 		let sprite = spriteCreate(this.spriteList,img,true);
 		this.spriteInit(sprite);
 		this.spriteBind(sprite);
+		if( this.alpha !== undefined ) {
+			sprite.alpha = this.alpha;
+			sprite.alphaChanged = true;
+		}
 		sprite.anchor.set(0.5,0.5);
 		sprite.zOrder = 100;
 		sprite.visible = false;
@@ -475,6 +479,22 @@ function animOver(target,icon,delay) {
 	});
 }
 
+function animCloud(x,y,area,groupId,icon) {
+	return new Anim( {}, {
+		x: 			x,
+		y: 			y,
+		areaId: 	area.id,
+		groupId: 	groupId,
+		alpha: 		0.2,
+		img: 		icon,
+		deathTime: 	Time.simTime+2,
+		duration: 	(self) => Time.simTime >= self.deathTime ? 'die' : '',
+		onInit: 		a => { a.create(1); },
+		onSpriteMake: 	s => { s.sScaleSet(0.75); },
+		onSpriteTick: 	s => { }
+	});
+}
+
 function animAt(x,y,area,icon,delay) {
 	return new Anim( {}, {
 		x: 			x,
@@ -567,7 +587,7 @@ function animationAdd(anim) {
 function animationRemove(fn) {
 	animationList.forEach( anim => { if( fn(anim) ) anim.die(); } );
 }
-function animationTick(delta) {
+function animationTickRealtime(delta) {
 	animationList.map( anim => anim.tick(delta) );
 	Array.filterInPlace( animationList, anim => !anim.dead );
 }

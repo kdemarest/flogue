@@ -367,6 +367,7 @@ class ViewInfo extends ViewObserver {
 			s += '['+(this.lastDirAttempt||'-')+'] ';
 			s += entity.attitude+' '+(entity.bumpCount||'')+'<br>';
 		}
+/*
 		let poisonMax = 0;
 		entity.traverseDeeds( deed => {
 			if( poisonMax === true ) return;
@@ -379,16 +380,17 @@ class ViewInfo extends ViewObserver {
 				}
 			}
 		});
+*/
 		let tRow = function(a,b) {
 			return '<tr><td>'+a+'</td><td>'+b+'</td></tr>';
 		}
 		s += '<table>';
-		if( poisonMax ) {
-			s += tRow( 'Health:', '<span class="poison">&nbsp;POISONED ('+(poisonMax===true ? 'FOREVER' : poisonMax)+')&nbsp;</span>' );
-		}
-		else {
+//		if( poisonMax ) {
+//			s += tRow( 'Health:', '<span class="poison">&nbsp;POISONED ('+(poisonMax===true ? 'FOREVER' : poisonMax)+')&nbsp;</span>' );
+//		}
+//		else {
 			s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+' ('+entity.x+','+entity.y+')' );
-		}
+//		}
 		if( entity.isUser() ) {
 			let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
 			let weapon = entity.calcDefaultWeapon();
@@ -414,6 +416,11 @@ class ViewInfo extends ViewObserver {
 		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+'<br>';
 		let conditionList = [];
 		let senseList = [];
+		DeedManager.traverseDeeds( entity, deed => {
+			if( deed.op == 'damage' ) {
+				conditionList.push('<b>'+deed.name+' '+(typeof deed.timeLeft == 'number' ? deed.timeLeft : '')+'</b>');
+			}
+		});
 		test( conditionList, entity.attitude==Attitude.ENRAGED,'<b>enraged</b>');
 		test( conditionList, entity.attitude==Attitude.CONFUSED,'<b>confused</b>');
 		test( conditionList, entity.attitude==Attitude.PANICKED,'<b>panicked</b>');
@@ -658,6 +665,12 @@ function itemExplain(item,buySell) {
 	function icon(file) {
 		return file ? '<img src="tiles/gui/icons/'+file+'">' : '';
 	}
+	function rechargeImg() {
+		if( !item.rechargeTime ) return '';
+		let pct = Math.floor( (1 - ( (item.rechargeLeft||0) / (item.rechargeTime||10) )) * 10 )*10;
+		return '<img class="spellRecharge" src="tiles/'+StickerList['slice'+pct].img+'">';
+	}
+
 	if( !item ) return false;
 	let name = item.name.replace(/\$/,'');
 	return {
@@ -675,6 +688,7 @@ function itemExplain(item,buySell) {
 		aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? ' ('+item.effect.effectShape+')' : '',
 		bonus: 			item.isArmor && item.effect ? item.effect.name : (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:''),
 		recharge: 		item.rechargeTime ? item.rechargeTime : '',
+		rechargeLeft: 	rechargeImg(),
 		price: 			new Picker(item.area.depth).pickPrice(buySell,item),
 		priceWithCommas: (new Picker(item.area.depth).pickPrice(buySell,item)).toLocaleString(),
 	};
@@ -693,7 +707,7 @@ class ViewRange extends ViewObserver {
 	clear() {
 		this.xOfs = 0;
 		this.yOfs = 0;
-		guiMessage('overlayRemove',{group: 'guiCrosshair'});
+		guiMessage('overlayRemove',{groupId: 'guiCrosshair'});
 		this.isShotClear = false;
 	}
 	move(xAdd,yAdd) {
@@ -763,7 +777,7 @@ class ViewRange extends ViewObserver {
 			return map.tileTypeGet(x,y).mayFly;
 		}
 		function add(x,y,ok) {
-			guiMessage('overlayAdd',{ group: 'guiCrosshair', x:x, y:y, areaId:areaId, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
+			guiMessage('overlayAdd',{ groupId: 'guiCrosshair', x:x, y:y, areaId:areaId, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
 			self.isShotClear = self.isShotClear && ok;
 		}
 		shootRange(sx,sy,tx,ty,test,add);
@@ -771,7 +785,7 @@ class ViewRange extends ViewObserver {
 
 	render() {
 		let observer = this.observer;
-		guiMessage( 'overlayRemove', { group: 'guiCrosshair' } );
+		guiMessage( 'overlayRemove', { groupId: 'guiCrosshair' } );
 		this.active = this.visibleFn && this.visibleFn();
 		if( !this.active && this.activeLast ) {
 			// sadly this is the only way to know that we're no longer showing the range...

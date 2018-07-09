@@ -47,6 +47,11 @@ body {
 	color: cyan; /* #dc9a38; */
 	border-color: cyan;
 }
+#guiInfo b {
+    color: black;
+    background-color: #ff7777;
+}
+
 .better {
 	color: #3bf93b
 }

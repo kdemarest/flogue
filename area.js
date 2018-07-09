@@ -389,6 +389,7 @@ function tick(speed,map,entityListRaw) {
 			entity.actionCount -= 1;
 		}
 	}
+	DeedManager.tick(null,dt);	// this ticks the positions...
 	map.actionCount += 1 / speed;
 	while( map.actionCount >= 1 ) {
 		// WARNING! There is some risk that an item could tick twice here, or not at all, if an entity caused something to

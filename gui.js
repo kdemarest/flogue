@@ -21,11 +21,11 @@ class Gui {
 	}
 
 	create(onItemChoose) {
-		function worldOverlayAdd(group,x,y,areaId,img) {
+		function worldOverlayAdd(groupId,x,y,areaId,img) {
 			console.assert( x!==undefined && y!==undefined && areaId !==undefined && img !==undefined );
-//			console.log(group,x,y,img);
+//			console.log(groupId,x,y,img);
 			new Anim( {}, {
-				group: 		group,
+				groupId: 	groupId,
 				x: 			x,
 				y: 			y,
 				areaId: 	areaId,
@@ -95,6 +95,7 @@ class Gui {
 
 	render() {
 		let area = this.getPlayer().area;
+		Gab.setObserver( this.spectator );
 		guiMessage( 'observer', this.spectator );
 
 		area.vis.populateLookup();	// This could be maintained progressively, but it hasn't mattered yet.

@@ -545,6 +545,15 @@ const StuffList = Fab.add( '', {
 	"pinchOfEarth": 	{ rarity: 1.0, img: 'item/weapon/ranged/rock.png' },
 	"impBrain": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true },
 	"ogreDrool": 		{ rarity: 1.0, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
+	"centurionFigurine":{ level: 44, rarity: 0.1, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/solarCenturionFigurine96p.png',
+						effect: { op: 'summon', value: 'solarCenturion', isServant: true, xDuration: 5.0, name: false }
+						},
+	"dogFigurine": 		{ level: 0, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/figurine96p.png',
+						effect: { op: 'summon', value: 'dog', isServant: true, xDuration: 5.0, name: false }
+						},
+	"viperFigurine": 	{ level: 24, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/figurine96p.png',
+						effect: { op: 'summon', value: 'viper', isServant: true, xDuration: 5.0, name: false }
+						},
 	"scarabCarapace": 	{ rarity: 1.0, },
 	"darkEssence": 		{ rarity: 0.1, },
 	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
