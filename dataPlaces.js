@@ -805,7 +805,7 @@ PlaceTypeList.surfaceSunTemple = {
   #...................#
  ##...................##
  #.....................#
- #....b.......1.2.3...b########
+ #....b.......1.2.3.8.b########
 ##.....................#..d..##
 #F...b....X.A..........D...L.S#
 ##.....................#.....##
@@ -903,6 +903,19 @@ PlaceTypeList.surfaceSunTemple = {
 			name: 'Gadriin\'s Chest',
 			inventoryLoot: [
 				'spell.ePossess, spell.eConfusion, stuff.voidCandle, 4x ammo.dart.eStartle, 2x potion.eHealing, 3x gem, 3x stuff.lumpOfMeat',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+		}],
+		'8': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Legacy of Beowulf the bear.',
+			name: 'Beowulf\'s Chest',
+			inventoryLoot: [
+				'2x stuff.bearFigurine, weapon.sword, 2x potion.eHealing, 4x stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)

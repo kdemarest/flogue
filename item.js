@@ -202,7 +202,7 @@ class Item {
 			return this.id;
 		}
 		let b = '';
-		let fieldList = { name:1, armor: 1, damage:1, damageType:1, blockChance:1, rechargeTime:1 };
+		let fieldList = { name:1, armor: 1, damage:1, damageType:1, blockChance:1, rechargeTime:1, rechargeLeft:1 };
 		if( this.owner && this.owner.isMap ) {
 			fieldList.x = 1;
 			fieldList.y = 1;

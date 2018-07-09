@@ -280,7 +280,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daibelade": {	// (cut)
-		core: [ SYM,  4, '3:5', 'evil', 'cut', 'demon', 'wingedBiped', 'mon/demon/daibelade48.png', 'it' ],
+		core: [ SYM,  4, '3:5', 'evil', 'cut', 'demon', 'wingedBiped', 'mon/demon/daibelade96.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -290,7 +290,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daispine": {	// (stab)
-		core: [ SYM,  9, '3:5', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daispine48.png', 'it' ],
+		core: [ SYM,  9, '3:5', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daispine96p.png', 'it' ],
 		glow: 1,
 		light: 2,
 		immune: DemonImmunity,
@@ -770,6 +770,17 @@ const MonsterTypeList = {
 		isSpinyFrog: 1,
 		loot: '50% frogSpine',
 		stink: 0.8,
+	},
+	"bear": {
+		core: [ SYM, 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/bear96p.png', 'it' ],
+		name: "bear",
+		attitude: Attitude.WANDER,
+		tooClose: 3,
+		isAnimal: true,
+		isLarge: true,
+		isBear: true,
+		loot: '50% lumpOfMeat',
+		senseSmell: 200
 	},
 	"troll": {
 		core: [ SYM, 49, '5:4', 'evil', 'claw', 'animalHunter', 'humanoid', 'dc-mon/troll.png', '*' ],

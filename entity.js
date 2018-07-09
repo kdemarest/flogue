@@ -120,7 +120,9 @@ class Entity {
 		this.setPosition(x,y,area);
 		let c = this.findFirstCollider(this.travelMode,x,y,this);
 		if( c ) {
-			[x,y] = this.map.spiralFind( this.x, this.y, (x,y) => !this.findFirstCollider(this.travelMode,x,y,this) );
+			[x,y] = this.map.spiralFind( this.x, this.y, (x,y,tile) => {
+				return tile && tile.mayWalk && !tile.isProblem && !this.findFirstCollider(this.travelMode,x,y,this);
+			});
 			console.assert( x!==false );
 			this.setPosition(x,y);
 		}

@@ -548,6 +548,9 @@ const StuffList = Fab.add( '', {
 	"centurionFigurine":{ level: 44, rarity: 0.1, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/solarCenturionFigurine96p.png',
 						effect: { op: 'summon', value: 'solarCenturion', isServant: true, xDuration: 5.0, name: false }
 						},
+	"bearFigurine": 	{ level: 9, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/figurine96p.png',
+						effect: { op: 'summon', value: 'bear', isServant: true, xDuration: 5.0, name: false }
+						},
 	"dogFigurine": 		{ level: 0, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/figurine96p.png',
 						effect: { op: 'summon', value: 'dog', isServant: true, xDuration: 5.0, name: false }
 						},
