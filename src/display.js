@@ -284,7 +284,7 @@ class ImageRepo {
 			if( !imgPath ) {
 				return;
 			}
-			imgPath = 'tiles/'+imgPath;
+			imgPath = '../tiles/'+imgPath;
 			if( !exists[imgPath] ) {
 				imageList.push(imgPath);
 				exists[imgPath] = true;
@@ -345,7 +345,7 @@ class ImageRepo {
 
 	}
 	get(imgPath) {
-		let resource = this.loader.resources['tiles/'+imgPath];
+		let resource = this.loader.resources['../tiles/'+imgPath];
 		if( !resource ) debugger;
 		return resource;
 	}
