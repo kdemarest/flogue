@@ -182,13 +182,13 @@ class Vis {
 			this.proList = this.generateProList();
 		}
 
-		let defaultValue = false; //xray && !blind;
+		let defaultValue = xray && !blind;
 		map.traverse( (x,y) => {
 			a[y] = a[y] || [];
 			a[y][x] = defaultValue;
 		});
 		a[py][px] = true;
-//		if( xray || blind ) return;
+		if( xray || blind ) return a;
 
 		let opacityLookup = this.opacityLookup;
 		let sweep = [];

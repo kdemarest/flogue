@@ -11,6 +11,8 @@ FilterSpec = {
 	"mon/demon/daishulk.png": 		{ shadow: { yRatio: 0.4, xRatio: 0.3 } },
 	"mon/demon/daiskorsh.png": 		{ outline: false, shadow: false, edgeFade: 4 },
 	"mon/demon/daisteria.png": 		{ brightness: -0.5, shadow: false },
+	"mon/demon/daifury.png": 		{ shadow: false },
+	"mon/demon/daiphant.png": 		{ brightness: 0, normalize: false, shadow: false },
 	"mon/human/solarPriest.png": 	{ strip: 0xA0 },
 	"item/stuff/darkLantern.png": 	{ shadow: { xRatio: 0.8 } },
 	"decor/boulder1.png": 			decorWall,
