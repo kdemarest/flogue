@@ -196,6 +196,10 @@ let sRot = function(deg) {
 	this.rotation += (deg/360*2*Math.PI)*this.delta;
 	return this;
 }
+let sRotSet = function(deg) {
+	this.rotation = (deg/360*2*Math.PI);
+	return this;
+}
 let sSine = function(pct,scale) {
 	return (1+Math.sin( (270/360*2*Math.PI) + pct*2*Math.PI ))/2*scale;
 }
@@ -340,6 +344,7 @@ class Anim {
 		sprite.sArrived = sArrived.bind(sprite);
 		sprite.sGrav 	= sGrav.bind(sprite);
 		sprite.sRot 	= sRot.bind(sprite);
+		sprite.sRotSet 	= sRotSet.bind(sprite);
 		sprite.sPct 	= sPct.bind(sprite);
 		sprite.sSine 	= sSine.bind(sprite);
 		sprite.sAlpha 	= sAlpha.bind(sprite);

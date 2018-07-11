@@ -110,7 +110,7 @@ const MonsterTypeList = {
 
 // GOOD TEAM
 	"player": {
-		core: [ '@', 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'mon/playerThick96p.png', 'he' ],
+		core: [ '@', 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'mon/human/solarPriest.png', 'he' ],
 		attitude: Attitude.CALM,
 		brainMindset: 'pickup',
 		control: Control.USER,
@@ -199,7 +199,7 @@ const MonsterTypeList = {
 		sayPrayer: "Oh god... What I wouldn't give for a steak."
 	},
 	"solarCenturion": {
-		core: [ SYM, 44, '4:20', 'good', 'stab', 'sentient', 'humanoid', 'mon/solarCenturion96p.png', 'he'  ],
+		core: [ SYM, 44, '4:20', 'good', 'stab', 'sentient', 'humanoid', 'mon/solarCenturion.png', 'he'  ],
 		attitude: Attitude.AGGRESIVE,
 		brainPath: true,
 		corpse: false,
@@ -231,7 +231,7 @@ const MonsterTypeList = {
 	},
 	"ambligryp": {
 		// make it so this goes insubstantial from time to time.
-		core: [ SYM, 29, '4:20', 'evil', 'bash', 'animalHunter', 'multiped', 'mon/ambligryp48.png', 'it' ],
+		core: [ SYM, 29, '4:20', 'evil', 'bash', 'animalHunter', 'multiped', 'mon/ambligryp.png', 'it' ],
 		attitude: Attitude.HUNT,
 		gripChance: 25,
 		isInsect: true,
@@ -243,7 +243,7 @@ const MonsterTypeList = {
 	},
 	"ghostScorpion": {
 		// make it so this goes insubstantial from time to time.
-		core: [ SYM, 39, '6:8', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/boneScorpion48.png', 'it' ],
+		core: [ SYM, 39, '6:8', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/boneScorpion.png', 'it' ],
 		attitude: Attitude.AWAIT,
 		tooClose: 5,
 		isInsect: true,
@@ -280,7 +280,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daibelade": {	// (cut)
-		core: [ SYM,  4, '3:5', 'evil', 'cut', 'demon', 'wingedBiped', 'mon/demon/daibelade96.png', 'it' ],
+		core: [ SYM,  4, '3:5', 'evil', 'cut', 'demon', 'wingedBiped', 'mon/demon/daibelade.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -290,7 +290,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daispine": {	// (stab)
-		core: [ SYM,  9, '3:5', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daispine96p.png', 'it' ],
+		core: [ SYM,  9, '3:5', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daispine.png', 'it' ],
 		glow: 1,
 		light: 2,
 		immune: DemonImmunity,
@@ -303,7 +303,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daifahng": {	// (bite)
-		core: [ SYM, 14, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifahng48.png', 'it' ],
+		core: [ SYM, 14, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifahng.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -313,7 +313,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daicolasp": {	// (claw)
-		core: [ SYM, 19, '3:5', 'evil', 'claw', 'demon', 'wingedBiped', 'mon/demon/daicolasp48.png', 'it' ],
+		core: [ SYM, 19, '3:5', 'evil', 'claw', 'demon', 'wingedBiped', 'mon/demon/daicolasp.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -322,19 +322,20 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daimaul": {	// (bash)
-		core: [ SYM, 24, '3:5', 'evil', 'bash', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
+		core: [ SYM, 24, '3:5', 'evil', 'bash', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		glow: 1,
 		light: 1,
 		immune: DemonImmunity,
 		isDemon: true,
+		isDaimaul: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		resist: DemonResistance,
-		scale: 1.3,
+		scale: 0.65,
 		vuln: DemonVulnerability,
 	},
 	"daiskorsh": {	// (burn)
-		core: [ SYM, 29, '3:5', 'evil', 'burn', 'demon', 'wingedBiped', 'mon/demon/daiskorsh48.png', 'it' ],
+		core: [ SYM, 29, '3:5', 'evil', 'burn', 'demon', 'wingedBiped', 'mon/demon/daiskorsh.png', 'it' ],
 		immune: DemonImmunity,
 		glow: 1,
 		light: 7,
@@ -345,7 +346,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daileesh": {	// (leech)
-		core: [ SYM, 34, '4:10', 'evil', null, 'demon', 'wingedBiped', 'mon/demon/daileesh96.png', 'it' ],
+		core: [ SYM, 34, '4:10', 'evil', null, 'demon', 'wingedBiped', 'mon/demon/daileesh.png', 'it' ],
 		attitude: Attitude.HUNT,
 		naturalWeapon: { effectOnAttack: ETL.eLeech },
 		immune: DemonImmunity,
@@ -358,7 +359,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"dailectra": {	// (shock)
-		core: [ SYM, 39, '3:5', 'evil', 'shock', 'demon', 'wingedBiped', 'mon/demon/dailectra96.png', 'it' ],
+		core: [ SYM, 39, '3:5', 'evil', 'shock', 'demon', 'wingedBiped', 'mon/demon/dailectra.png', 'it' ],
 		corpse: false,
 		glow: true,
 		light: 12,
@@ -371,11 +372,11 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiacrid": {	// (corrode)
-		core: [ SYM, 44, '3:16', 'evil', null, 'demon', 'quadruped', 'mon/demon/daiacrid96.png', 'it' ],
+		core: [ SYM, 44, '3:16', 'evil', null, 'demon', 'quadruped', 'mon/demon/daiacrid.png', 'it' ],
 		naturalWeapon: {
 			reach: 6,
 			rechargeTime: 2,
-			effectOnAttack: { op: 'damage', xDamage: 1, isHarm: 1, duration: 5, damageType: DamageType.CORRODE, name: 'demon acid', flyingIcon: 'item/misc/acidSlime96.png', icon: 'gui/icons/eCorrode.png' }
+			effectOnAttack: { op: 'damage', xDamage: 1, isHarm: 1, duration: 5, damageType: DamageType.CORRODE, name: 'demon acid', flyingIcon: 'item/misc/acidSlime.png', icon: 'gui/icons/eCorrode.png' }
 		},
 		senseSight: 8,
 		tooClose: 7,
@@ -391,7 +392,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daitox": {	// (poison)
-		core: [ SYM, 49, '3:20', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daitox96.png', 'it' ],
+		core: [ SYM, 49, '3:20', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daitox.png', 'it' ],
 		immune: DemonImmunity+',poison',
 		isDemon: true,
 		isDaitox: true,
@@ -412,7 +413,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daikay": {	// (rot)
-		core: [ SYM, 54, '3:30', 'evil', null, 'demon', 'noped', 'mon/demon/daikay96.png', 'it' ],
+		core: [ SYM, 54, '3:30', 'evil', null, 'demon', 'noped', 'mon/demon/daikay.png', 'it' ],
 		naturalWeapon: {
 			effectOnAttack: {
 				op: 'damage',
@@ -435,7 +436,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daitraum": {	// (stun)
-		core: [ SYM, 59, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
+		core: [ SYM, 59, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -445,7 +446,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daishulk": {	// (shove)
-		core: [ SYM, 64, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daishulk48.png', 'it' ],
+		core: [ SYM, 64, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daishulk.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -455,7 +456,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daibozle": {	// (confuse)
-		core: [ SYM, 69, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daibozle48.png', 'it' ],
+		core: [ SYM, 69, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daibozle.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -466,7 +467,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daisteria": {	// (panic)
-		core: [ SYM, 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
+		core: [ SYM, 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -476,7 +477,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiffury": {	// (enrage)
-		core: [ SYM, 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
+		core: [ SYM, 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -486,7 +487,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiphant": {	// (slow)
-		core: [ SYM, 84, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
+		core: [ SYM, 84, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -496,7 +497,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"dailess": {	// (blind)
-		core: [ SYM, 89, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
+		core: [ SYM, 89, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -506,7 +507,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"dairain": {	// (drain)
-		core: [ SYM, 94, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul48.png', 'it' ],
+		core: [ SYM, 94, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -554,7 +555,7 @@ const MonsterTypeList = {
 		vuln: 'glass'
 	},
 	"shade": {
-		core: [ SYM, 4, '1.5:16', 'evil', 'rot', 'undeadDumb', 'humanoid', 'mon/shade48.png', '*' ],
+		core: [ SYM, 4, '1.5:16', 'evil', 'rot', 'undeadDumb', 'humanoid', 'mon/shade.png', '*' ],
 		attitude: Attitude.HUNT,
 		immune: UndeadImmunity,
 		invisible: true,
@@ -773,7 +774,7 @@ const MonsterTypeList = {
 		stink: 0.8,
 	},
 	"bear": {
-		core: [ SYM, 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/bear96p.png', 'it' ],
+		core: [ SYM, 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/bear.png', 'it' ],
 		name: "bear",
 		attitude: Attitude.WANDER,
 		tooClose: 3,

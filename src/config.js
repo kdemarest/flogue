@@ -4,6 +4,12 @@ ConfigList.ken = () => {
 	ScapeList.kenCave = theme => ({
 		dim: 				40,
 		architecture: 		"cave",
+		floor: 			TileTypeList.floorDirt.symbol,
+		wall:  			TileTypeList.wallJagged.symbol,
+		fillFloor:  	TileTypeList.floorDirt.symbol,
+		fillWall:  		TileTypeList.wallJagged.symbol,
+		outlineWall:  	TileTypeList.wallJagged.symbol,
+		passageFloor: 	TileTypeList.floorDirt.symbol,
 		floorDensity: 		0.48,
 		seedPercent: 		0.20,
 		passageWander: 		0,
@@ -60,9 +66,9 @@ ConfigList.ken = () => {
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
-		monsters: 		['isDaispine','isBear'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isDaimaul'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.004,
+		enemyDensity:  	0.02,
 		friendDensity: 	0.00001,
 	}
 

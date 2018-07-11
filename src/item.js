@@ -267,23 +267,35 @@ class Item {
 			// Show item flying to the target location
 			let dx = x-this.owner.x;
 			let dy = y-this.owner.y;
-			let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / 10);
+			let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / (this.flyingSpeed || 10));
 			this.rangeDuration = rangeDuration;
 			this.owner.rangeDuration = rangeDuration;
 			if( this.effect ) {
 				this.effect.rangeDuration = rangeDuration;
 			}
-			spriteMakeInWorld(this,this.owner.x,this.owner.y);
-			// Show the item flying to its new location
-			new Anim({
-				at: 		this.owner,
-				duration: 	rangeDuration,
-				onInit: 		a => { a.puppet(this.spriteList); },
-				onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
-				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); },
-				onSpriteDone: 	s => { if( !entity.isMap ) { spriteDeathCallback(this.spriteList); } }
-			});
-
+			if( this.flyingImg ) {
+				let deg = this.flyingRot ? deltaToDeg(dx,dy) : 0;
+				new Anim({
+					at: 		this.owner,
+					img: 		this.flyingImg,
+					duration: 	rangeDuration,
+					onInit: 		a => { a.create(1); },
+					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sRotSet(deg).sScaleSet(this.flyingScale||1); },
+					onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); },
+				});
+			}
+			else {
+				spriteMakeInWorld(this,this.owner.x,this.owner.y);
+				// Show the item flying to its new location
+				new Anim({
+					at: 		this.owner,
+					duration: 	rangeDuration,
+					onInit: 		a => { a.puppet(this.spriteList); },
+					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
+					onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); },
+					onSpriteDone: 	s => { if( !entity.isMap ) { spriteDeathCallback(this.spriteList); } }
+				});
+			}
 		}
 		if( this.owner ) {
 			this.owner._itemRemove(this);

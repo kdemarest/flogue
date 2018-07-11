@@ -52,6 +52,15 @@ body {
     background-color: #ff7777;
 }
 
+#guiInfo img.itemImage {
+	width:96px;
+}
+
+#guiInfo img.monsterImage {
+	width:96px;
+	background-color: gray;
+}
+
 .better {
 	color: #3bf93b
 }

@@ -2,11 +2,12 @@ function isItem(e) { return e instanceof Item; }
 
 // MAP
 class SimpleMap {
-	constructor(tileRaw) {
+	constructor(tileRaw,removeBlanks,padSymbol) {
 		this.isMap = true;
 		if( TILE_UNKNOWN != ' ' ) debugger;
 		
-		this.tile = tileRaw.replace(/ /g,TileTypeList.floor.symbol).split('\n');
+		let temp = removeBlanks ? tileRaw.replace(/ /g,padSymbol) : tileRaw;
+		this.tile = temp.split('\n');
 		while( this.tile[this.tile.length-1].trim() == '' ) {
 			this.tile.length -= 1;
 		}
@@ -19,7 +20,7 @@ class SimpleMap {
 		// Make all rows the same length.
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			while( this.tile[y].length < this.xLen ) {
-				this.tile[y] += TileTypeList.wall.symbol;
+				this.tile[y] += padSymbol;
 			}
 		}
 	}
@@ -162,7 +163,8 @@ class SimpleMap {
 		}
 		this.tile[y] = this.tile[y].substr(0,x)+symbol+this.tile[y].substr(x+1);
 	}
-	tileSymbolSetFloor(x,y) {
+	tileSymbolSetFloor(x,y,defaultFloorSymbol) {
+		console.assert( defaultFloorSymbol );
 		if( !this.inBounds(x,y) ) {
 			debugger;
 		}
@@ -181,7 +183,7 @@ class SimpleMap {
 				}
 			}
 		}
-		let symbol = best || TileTypeList.floor.symbol;
+		let symbol = best || defaultFloorSymbol;
 		this.tileSymbolSet(x,y,symbol);
 	}
 	tileSymbolGet(x,y) {
@@ -218,7 +220,7 @@ class SimpleMap {
 
 class Map extends SimpleMap {
 	constructor(area,tileRaw,itemList) {
-		super(tileRaw);
+		super(tileRaw,true,TileTypeList.wallCave.symbol);
 		this.area = area;
 		this.actionCount = 0;
 		this.tileEntity = [];

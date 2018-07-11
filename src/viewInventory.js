@@ -64,7 +64,7 @@ class ViewInventory extends ViewObserver {
 		}
 
 		function icon(file) {
-			return '<img src="../tiles/gui/icons/'+file+'">';
+			return '<img src="'+IMG_BASE+'gui/icons/'+file+'">';
 		}
 
 		function colJoin( colFilter, colList, afterFn ) {
@@ -178,7 +178,7 @@ class ViewInventory extends ViewObserver {
 
 
 		let table = $( '<table class="inv"></table>' ).appendTo(this.div);
-		let sortIcon = '<img src="../tiles/'+StickerList[this.sortAscending?'sortAscending':'sortDescending'].img+'">';
+		let sortIcon = '<img src="'+IMG_BASE+StickerList[this.sortAscending?'sortAscending':'sortDescending'].img+'">';
 
 		let tHead = $('<thead><tr>'+colJoin(this.colFilter,colHead,colId=>self.sortColId==colId ? sortIcon : '')+'</tr></thead>' )
 			.appendTo(table)

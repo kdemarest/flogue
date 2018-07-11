@@ -135,6 +135,9 @@ function createDrawList(observer,map,entityList,asType) {
 	// that shine light will do so in this loop.
 	//let dChar = '';
 	//let debug = '';
+	console.assert( map.area.theme.floor );
+	let lastFloor = SymbolToType[map.area.theme.floor];
+	console.assert( lastFloor );
 	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
 		let ty = y-(py-d);
 		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
@@ -149,6 +152,9 @@ function createDrawList(observer,map,entityList,asType) {
 
 			if( inBounds ) {
 				tile =		map.tileTypeGet(x,y);
+				if( tile.isFloor ) {
+					lastFloor = tile;
+				}
 				console.assert(tile);
 				itemFind =  map.findItemAt(x,y);
 				entity =    p[y*map.xLen+x];
@@ -202,7 +208,7 @@ function createDrawList(observer,map,entityList,asType) {
 					//dChar = 'T';
 					console.assert( aa.length >= 2 );
 					if( tile.isWall ) {
-						aa.push(TileTypeList.floor);
+						aa.push(lastFloor);
 					}
 					aa.push(tile);
 					if( itemFind.count ) {
@@ -284,7 +290,7 @@ class ImageRepo {
 			if( !imgPath ) {
 				return;
 			}
-			imgPath = '../tiles/'+imgPath;
+			imgPath = IMG_BASE+imgPath;
 			if( !exists[imgPath] ) {
 				imageList.push(imgPath);
 				exists[imgPath] = true;
@@ -345,7 +351,7 @@ class ImageRepo {
 
 	}
 	get(imgPath) {
-		let resource = this.loader.resources['../tiles/'+imgPath];
+		let resource = this.loader.resources[IMG_BASE+imgPath];
 		if( !resource ) debugger;
 		return resource;
 	}
@@ -369,6 +375,10 @@ class ViewMap extends ViewObserver {
 		this.desaturateFilter.desaturate();
 		this.resetFilter = new PIXI.filters.ColorMatrixFilter();
 		this.resetFilter.reset();
+		this.randList = [];
+		for( let i=0 ; i<256 ; ++i ) {
+			this.randList.push( Math.randInt( 0, 1023 ) );
+		}
 
 		document.getElementById(this.divId).appendChild(this.app.view);
 		this.setDimensions();
@@ -559,7 +569,17 @@ class ViewMap extends ViewObserver {
 
 			let imgGet = this.imageRepo.imgGet[entity.typeId];
 			let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
-			make.call(this,x*TILE_DIM,y*TILE_DIM,entity,imgGet,lightAfterGlow,doTint,doGrey,xWorld+yWorld);
+			make.call(
+				this,
+				x*TILE_DIM,
+				y*TILE_DIM,
+				entity,
+				imgGet,
+				lightAfterGlow,
+				doTint,
+				doGrey,
+				this.randList[xWorld&0xFF]+7+this.randList[yWorld&0xFF]
+			);
 
 			if( entity.isTileType && !entity.isPosition ) {
 				this.observer.map.tileSprite[yWorld][xWorld] = this.staticTileEntity.spriteList;
@@ -681,7 +701,7 @@ class ViewMap extends ViewObserver {
 
 		//console.log(debug);
 
-		this.app.stage.children.sort( (a,b) => a.zOrder-b.zOrder );
+		this.app.stage.children.sort( (a,b) => (a.zOrder*100000+a.x)-(b.zOrder*100000+b.x) );
 	}
 	render() {
 		//var focused =  $( document.activeElement ) ;

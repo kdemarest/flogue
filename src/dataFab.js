@@ -6,7 +6,7 @@ let Fab = (function() {
 	let getUnusedSymbol = (function() {
 		let sIndex = 32+1;
 		return function() {
-			while( SymbolToType[String.fromCharCode(sIndex)] ) {
+			while( SymbolToType[String.fromCharCode(sIndex)] || SymbolForbidden[String.fromCharCode(sIndex)] ) {
 				++sIndex;
 			}
 			return String.fromCharCode(sIndex);

@@ -370,7 +370,7 @@ A test case, above, can have the following:
 function solve(source,caseId) {
 	let mapSource = source.map.trim().replace(/\t/g,'')
 	let sx,sy,ex,ey;
-	let raw = new SimpleMap(mapSource);
+	let raw = new SimpleMap(mapSource,true,TILE_UNKNOWN);
 	document.getElementById('caseId').innerHTML = caseId;
 	document.getElementById('mapOriginal').innerHTML = raw.tile.join('\n');
 

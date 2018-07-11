@@ -111,7 +111,11 @@ const AmmoList = Fab.add( '', {
 		namePattern: '{material} arrow${+plus}',
 		quick: 0,
 		slot: Slot.AMMO,
-		img: 'UNUSED/spells/components/bolt.png'
+		img: 'UNUSED/spells/components/bolt.png',
+		flyingImg: StickerList.arrowInFlight.img,
+		flyingRot: true,
+		flyingScale: 1.0,
+		flyingSpeed: 15,
 	},
 	"rock":     	{
 		level:  0,
@@ -243,7 +247,7 @@ const WeaponList = Fab.add( '', {
 		name: "blade",
 		materials: [WeaponMaterialList.solarium],
 		effects: [EffectTypeList.eInert],
-		img: 'item/weapon/solariumBlade48.png'
+		img: 'item/weapon/solariumBlade.png'
 	},
 	"pickaxe": {
 		level: 0,
@@ -529,15 +533,15 @@ const StuffList = Fab.add( '', {
 	"lantern": 			{ rarity: 0.2, xPrice: 10, slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"oilLamp": 			{ rarity: 0.4, xPrice: 10, slot: Slot.HIP, light:  8, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  8, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"candleLamp": 		{ rarity: 0.6, xPrice: 10, slot: Slot.HIP, light:  4, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  4, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
-	"voidCandle": 		{ rarity: 0.2, xPrice: 10, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 4, name: 'shroud', icon: EffectTypeList.eDarkness.icon }, useVerb: 'clip on', img: "item/misc/darkLantern48.png" },
-	"voidLamp": 		{ rarity: 0.1, xPrice: 10, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 6, name: 'shroud', icon: EffectTypeList.eDarkness.icon }, useVerb: 'clip on', img: "item/misc/darkLantern48.png" },
+	"voidCandle": 		{ rarity: 0.2, xPrice: 10, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 4, name: 'shroud', icon: EffectTypeList.eDarkness.icon }, useVerb: 'clip on', img: "item/stuff/darkLantern.png" },
+	"voidLamp": 		{ rarity: 0.1, xPrice: 10, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 6, name: 'shroud', icon: EffectTypeList.eDarkness.icon }, useVerb: 'clip on', img: "item/stuff/darkLantern.png" },
 	"lumpOfMeat": 		{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/chunk.png" },
 	"trollHide": 		{ rarity: 0.5, img: "item/armour/troll_hide.png" },
 	"bone": 			{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: "item/food/bone.png" },
 	"antGrubMush": 		{ rarity: 0.8, isAntFood: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/sultana.png" },
 	"viperVenom": 		{ rarity: 0.6, isLiquid: true, img: "UNUSED/other/acid_venom.png" },
 	"dogCollar": 		{ rarity: 1.0, isJewelry: true, img: 'item/misc/collar.png' },
-	"skull": 			{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: 'item/misc/skull.png' },
+	"skull": 			{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: 'item/stuff/skull.png' },
 	"mushroomBread": 	{ rarity: 1.0, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/bread_ration.png'},
 	"demonScale": 		{ rarity: 0.2, img: 'item/misc/demonEye.png' },
 	"demonEye": 		{ rarity: 0.2, mayThrow: true, mayTargetPosition: true, isEdible: true, isGem: true, img: 'item/misc/demonEye.png' },
@@ -545,36 +549,36 @@ const StuffList = Fab.add( '', {
 	"pinchOfEarth": 	{ rarity: 1.0, img: 'item/weapon/ranged/rock.png' },
 	"impBrain": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true },
 	"ogreDrool": 		{ rarity: 1.0, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
-	"centurionFigurine":{ level: 44, rarity: 0.1, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/solarCenturionFigurine96p.png',
+	"centurionFigurine":{ level: 44, rarity: 0.1, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/solarCenturionFigurine.png',
 						effect: { op: 'summon', value: 'solarCenturion', isServant: true, xDuration: 5.0, name: false }
 						},
-	"bearFigurine": 	{ level: 9, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/figurine96p.png',
+	"bearFigurine": 	{ level: 9, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
 						effect: { op: 'summon', value: 'bear', isServant: true, xDuration: 5.0, name: false }
 						},
-	"dogFigurine": 		{ level: 0, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/figurine96p.png',
+	"dogFigurine": 		{ level: 0, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
 						effect: { op: 'summon', value: 'dog', isServant: true, xDuration: 5.0, name: false }
 						},
-	"viperFigurine": 	{ level: 24, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/misc/figurine96p.png',
+	"viperFigurine": 	{ level: 24, rarity: 1.0, mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
 						effect: { op: 'summon', value: 'viper', isServant: true, xDuration: 5.0, name: false }
 						},
 	"scarabCarapace": 	{ rarity: 1.0, },
 	"darkEssence": 		{ rarity: 0.1, },
 	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
-	"sunCrystal":   	{ rarity: 0.6, mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "gems/sunCrystal.png", mayTargetPosition: true,
+	"sunCrystal":   	{ rarity: 0.6, mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "item/stuff/sunCrystal.png", mayTargetPosition: true,
 						effect: { name: 'radiance', op: 'damage', xDamage: 1.0, effectShape: EffectShape.BLAST5, effectFilter: eff=>eff.target.team==Team.EVIL, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
 						},
 	"trollBlood": 		{ rarity: 0.6, isLiquid: true },
 	"spinneret": 		{ rarity: 0.4, },
 	"chitin": 			{ rarity: 1.0, },
 	"poisonGland": 		{ rarity: 0.4, },
-	"snailTrail": 		{ rarity: 0.4, isLiquid: true, alpha: 0.3, img: 'dc-misc/snailSlime.png', isSnailSlime: true, mayPickup: false, existenceTime: 10 },
-	"snailSlime": 		{ rarity: 0.4, isLiquid: true, alpha: 0.5, img: 'dc-misc/snailSlime.png', isSnailSlime: true, },
-	"redOozeSlime": 	{ rarity: 0.2, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/redSlime96.png' },
-	"poisonSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.25, mayThrow: true, mayTargetPosition: true, img: 'item/misc/poisonSlime96.png',
+	"snailTrail": 		{ rarity: 0.4, isLiquid: true, alpha: 0.3, img: 'item/stuff/snailSlime.png', isSnailSlime: true, mayPickup: false, existenceTime: 10 },
+	"snailSlime": 		{ rarity: 0.4, isLiquid: true, alpha: 0.5, img: 'item/stuff/snailSlime.png', isSnailSlime: true, },
+	"redOozeSlime": 	{ rarity: 0.2, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/stuff/redSlime.png' },
+	"poisonSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.25, mayThrow: true, mayTargetPosition: true, img: 'item/stuff/poisonSlime.png',
 						damageType: DamageType.POISON },
-	"acidTrail": 		{ rarity: 0.2, isLiquid: true, alpha: 0.2, scale: 0.35, mayThrow: true, isAcidSlime: true, img: 'item/misc/acidSlime96.png',
+	"acidTrail": 		{ rarity: 0.2, isLiquid: true, alpha: 0.2, scale: 0.35, mayThrow: true, isAcidSlime: true, img: 'item/stuff/acidSlime.png',
 						damageType: DamageType.CORRODE, mayPickup: false, existenceTime: 10 },
-	"acidSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.25, mayThrow: true, mayTargetPosition: true, img: 'item/misc/acidSlime96.png',
+	"acidSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.25, mayThrow: true, mayTargetPosition: true, img: 'item/stuff/acidSlime.png',
 						damageType: DamageType.CORRODE },
 	"lunarEssence": 	{ rarity: 0.6, },
 	"batWing": 			{ rarity: 1.0, },
@@ -1195,7 +1199,7 @@ ItemTypeList.oreVein.onBump = function(entity,self) {
 	entity.timeDelay = Math.max(entity.timeDelay||0,0.10);
 	if( entity.swings >= self.mineSwings/tool.mineSpeed ) {
 		entity.swings = 0;
-		entity.map.tileSymbolSetFloor( self.x, self.y );
+		entity.map.tileSymbolSetFloor( self.x, self.y, entity.area.theme.floor );
 		if( self.mineId ) {
 			let picker = new Picker(entity.area.depth);
 			picker.pickLoot( self.mineId, loot=>{

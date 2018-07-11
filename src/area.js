@@ -96,7 +96,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 				if( MonsterTypeList[typeId] ) {
 					if( !tileSet ) {
 						if( m.underMe ) map.tileSymbolSet(x,y,TypeIdToSymbol[m.underMe]);
-						else map.tileSymbolSetFloor(x,y);
+						else map.tileSymbolSetFloor(x,y,theme.floor);
 						tileSet=true;
 					}
 					makeMonsterFn( m, x, y, null, make, null );
@@ -105,7 +105,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 				let i = ItemTypeList[typeId];
 				if( !tileSet ) {
 					if( i.underMe ) map.tileSymbolSet(x,y,TypeIdToSymbol[i.underMe]);
-					else map.tileSymbolSetFloor(x,y);
+					else map.tileSymbolSetFloor(x,y,theme.floor);
 					tileSet=true;
 				}
 				// If you want a random item, use the item type "random" which is hard-coded to select a

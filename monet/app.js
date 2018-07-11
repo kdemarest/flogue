@@ -12,7 +12,71 @@ localhost:3000/tiles/mon/frog.png
 const util 		= require('util');
 const fs 		= require('fs');
 const express 	= require('express');
+const jimp 		= require('jimp');
+const watch     = require('node-watch');
 
+const DirAdd = [
+	{ x:0,  y:-1 },
+	{ x:1,  y:-1 },
+	{ x:1,  y:0 },
+	{ x:1,  y:1 },
+	{ x:0,  y:1 },
+	{ x:-1, y:1 },
+	{ x:-1, y:0 },
+	{ x:-1, y:-1 }
+];
+
+let DirSpec = {};
+let FilterSpec = {};
+let LastFilterSent = {};
+let FilterDefault = {};
+
+Object.deepAssign = function(target,...args) {
+
+	function merge( target, source ) {
+		for( let key in source ) {
+			let value = source[key];
+			if( typeof value == 'object' && value !== null ) {
+				if( typeof target[key] !== 'object' || target[key] === null ) {
+					target[key] = {};
+				}
+				merge( target[key], value );
+				continue;
+			}
+			target[key] = value;
+		}
+	}
+
+	//console.log( 'TARGET', target );
+	for( let i=0 ; i <args.length ; ++i ) {
+		let src = args[i];
+		//console.log( 'SRC', src );
+		if( !src || typeof src != 'object' || src == null ) continue;
+		merge( target, src );
+	}
+	//console.log( 'RESULT', target );
+	return target;
+}
+
+Object.each = function(obj,fn) {
+	for( let key in obj ) {
+		fn(obj[key],key);
+	}
+}
+
+function colorToHex(str) {
+	let strHex = str.replace('#','');
+	let color = parseInt( strHex, 16 );
+	return color;
+}
+
+function getSourcePath(fileName) {
+	return '../tsrc/'+fileName;
+}
+
+function getTargetPath(fileName) {
+	return '../tiles/'+fileName;
+}
 
 function delay(ms) {
 	let promise = new Promise( function( resolve, reject ) {
@@ -31,28 +95,294 @@ async function getFileTimeMs(path) {
 	let promise = new Promise( function(resolve,reject) {
 		fs.stat( path, function( err, stats ) {
 			if( err ) reject(err);
-			resolve(stats.mtimeMs);
+			else resolve(stats.mtimeMs);
 		});
 	});
 	return promise;
 }
 
 async function testTimestamps(fileName,outOfDateAction) {
-	let sourcePath = '../tsrc/'+fileName;
-	let targetPath = '../tiles/'+fileName;
+	let sourcePath = getSourcePath(fileName);
+	let targetPath = getTargetPath(fileName);
 
 	if( !fs.existsSync(sourcePath) ) {
-		return throwError( 'Source file not found ['+sourcePath+']' );
+		throw {
+			benign: true,
+			details: 'Source file not found ['+sourcePath+']'
+		};
 	}
 
 	let sourceTimeMs = await getFileTimeMs(sourcePath);
 	let targetExists = fs.existsSync(targetPath);
-	let targetTimeMs = targetExists ? 0 : await getFileTimeMs(targetPath);
+	let targetTimeMs = !targetExists ? 0 : await getFileTimeMs(targetPath);
 
 	return targetTimeMs < sourceTimeMs;
 }
 
-async function fetchAndProcess(fileName) {
+async function jimpRead(filePath) {
+	let promise = new Promise( function( resolve, reject ) {
+		jimp.read( filePath, function( err, image ) {
+			if( err ) reject(err);
+			else resolve(image);
+		});
+	});
+	return promise;
+}
+
+async function jimpWrite(filePath,image) {
+	let promise = new Promise( function( resolve, reject ) {
+		image.write( filePath, function( err ) {
+			if( err ) reject(err);
+			else resolve();
+		});
+	});
+	return promise;
+}
+
+function fileNameAlter(name,fn) {
+	let parts = name.split('/');
+	let fname = parts[parts.length-1].split('.');
+	fname[0] = fn(fname[0]);
+	parts[parts.length-1] = fname.join('.');
+	return parts.join('/');
+}
+
+function sumData(data) {
+	let total = 0;
+	for( let i=0 ; i<data.length ; i+=4 ) {
+		total += data.readUInt32BE(i);
+	}
+	return total;
+}
+
+class ImageProxy {
+	constructor(image) {
+		this.image = image;
+		this.data = this.image.bitmap.data;
+		this.xLen = this.image.bitmap.width;
+		this.yLen = this.image.bitmap.height;
+	}
+
+	getPixel(x,y) {
+		let idx = (this.xLen * y + x) << 2;
+		let hex = this.data.readUInt32BE(idx);
+		return hex;
+	}
+	setPixel(x,y,hex) {
+		let idx = (this.xLen * y + x) << 2;
+		this.data.writeUInt32BE(hex, idx);
+	}
+	inBounds(x,y) {
+		return x>=0 && x<this.xLen && y>=0 && y<this.yLen;
+	}
+	traverse8(x,y,testFn) {
+		for( let dir=0 ; dir<DirAdd.length ; ++dir ) {
+			testFn(x+DirAdd[dir].x,y+DirAdd[dir].y);
+		}
+	}
+	count8(x,y,testFn) {
+		let count = 0;
+		for( let dir=0 ; dir<DirAdd.length ; ++dir ) {
+			if( testFn(x+DirAdd[dir].x,y+DirAdd[dir].y) ) {
+				++count;
+			}
+		}
+		return count;
+	}
+	gather(inset,fn) {
+		let list = [];
+		this.image.scan( 0+inset, 0+inset, this.xLen-inset*2, this.yLen-inset*2, function(x,y,i) {
+			if( fn(x,y,i) ) {
+				list.push(x,y);
+			}
+		});
+		return list;
+	}
+	blit(a) {
+		for( let i=0 ; i<a.length ; i+=3 ) {
+			this.setPixel( a[i+0], a[i+1], a[i+2] );
+		}		
+	}
+	strip(threshold) {
+		console.log( 'Stripping '+threshold );
+		let count = 0;
+		this.gather( 0, (x,y,i) => {
+			let a = this.getPixel( x, y ) & 0xFF;
+			if( a <= threshold ) {
+				this.setPixel( x, y, 0x00000000 );
+				++count;
+			}
+		});
+		console.log( count+' stripped' );
+	}
+
+	edgeFade(thickness,threshold) {
+		let result = [];
+		let isDone = [];
+		let isOpaque = (x,y,i) => {
+			if( !this.inBounds(x,y) || isDone[y*this.xLen+x] ) {
+				return false;
+			}
+			let a = this.getPixel(x,y) & 0xFF;
+			return a>threshold;
+		}
+		let layer = 0;
+		while( layer < thickness ) {
+			let edges = this.gather( 0, (x,y,i) => isOpaque(x,y) && this.count8(x,y,isOpaque)<8 );
+			for( let i=0 ; i<edges.length ; i+=2 ) {
+				let x = edges[i+0];
+				let y = edges[i+1];
+				let hex = this.getPixel(x,y);
+				let a = Math.floor( (hex & 0xFF) * ((layer+1)/(thickness+1)) );
+				hex = ((hex & ~0xFF) | (a&0xFF)) >>> 0;
+				result.push( x, y, hex );
+				isDone[y*this.xLen+x] = 1;
+			}
+			++layer;
+		}
+		return result;
+	}
+
+	outline(thickness,threshold,color,glow) {
+		let result = [];
+		let hasPixel = [];
+		let isOpaque = (x,y,i) => {
+			if( !this.inBounds(x,y) ) {
+				return false;
+			}
+			let a = this.getPixel(x,y) & 0xFF;
+			return a>threshold || hasPixel[y*this.xLen+x];
+		}
+		let totalThickness = thickness;
+		while( thickness>0 ) {
+			let hex = colorToHex(color);
+			if( glow ) {
+				let a = Math.floor( (hex & 0xFF) * (thickness / totalThickness) );
+				hex = ((hex & ~0xFF) | (a&0xFF)) >>> 0;
+			}
+			let edges = this.gather( 0, (x,y,i) => !isOpaque(x,y) && this.count8(x,y,isOpaque)>0 );
+			for( let i=0 ; i<edges.length ; i+=2 ) {
+				let x = edges[i+0];
+				let y = edges[i+1];
+				result.push( x, y, hex );
+				hasPixel[y*this.xLen+x] = 1;
+			}
+			--thickness;
+		}
+		return result;
+	}
+
+/*
+Floor height should be two pixels below the lowest pixel,
+unless this thing is flying. We can take a guess at that maybe.
+
+the pixel's distance above the floor scales both the x and y distances
+
+y = py - heightAboveFloor/2;
+x = px + heightAboveFloor/2;
+*/
+
+	shadow(threshold,flying,xRatio,yRatio,color) {
+		let result = [];
+		let isOpaque = (x,y,i) => {
+			let a = this.getPixel(x,y) & 0xFF;
+			return a>threshold;
+		}
+
+		let hex = colorToHex(color);
+		console.assert( hex & 0xFF );
+
+		let body = this.gather( 0, (x,y,i) => isOpaque(x,y) );
+		//console.log( 'Shadow found '+body.length+' shadow-casting pixels.' );
+		let floor = 0;
+		for( let i=0 ; i<body.length ; i+=2 ) {
+			floor = Math.max( floor, body[i+1] );
+		}
+		floor += 2;
+		floor = Math.min( this.yLen-1, floor );
+		let yOffset = flying ? (this.yLen-1-floor) : 0;
+		let countOut = 0;
+		let countCovered = 0;
+		let countShadow = 0;
+		for( let i=0 ; i<body.length ; i+=2 ) {
+			let x = body[i+0];
+			let y = body[i+1];
+			let height = floor-y;
+			let dxPct = 1 - (x/(this.xLen-1));
+			let dyPct = 1 - (y/(this.yLen-1));
+			let sx = x + Math.floor(height * xRatio * dxPct);
+			let sy = yOffset + floor - Math.floor(height * yRatio);
+			if( !this.inBounds(sx,sy) ) {
+				countOut++;
+				continue;
+			}			
+			if( (this.getPixel(sx,sy) & 0xFF) > threshold ) {
+				countCovered++;
+				continue;
+			}
+			result.push( sx, sy, hex );
+			countShadow++;
+		}
+		//console.log( 'Shadow: '+countOut+' out, '+countCovered+' covered, '+countShadow+' shadows.' );
+		return result;
+	}
+}
+
+
+async function filterImageInPlace(image,filter) {
+	//console.log( "The image is "+image.bitmap.width+'x'+image.bitmap.height );
+
+	let dim = Math.max(image.bitmap.width,image.bitmap.height);
+	image.resize(dim,dim);
+	image.scaleToFit(96,96,jimp.RESIZE_HERMITE);
+
+	if( filter.flying ) { filter.outline.flying = filter.flying; } 
+	if( filter.glow ) 	{ filter.shadow = false; filter.outline.glow = true; filter.outline.color = filter.glow; } 
+
+	if( filter.normalize ) {
+		image.normalize();
+	}
+	if( filter.brightness ) {
+		image.brightness( filter.brightness );
+	}
+	if( filter.contrast ) {
+		image.brightness( filter.contrast );
+	}
+	if( filter.desaturate ) {
+		image.color([
+			{ apply: 'desaturate', params: [ Math.floor( filter.desaturate * 100 ) ] }
+		]);
+	}
+	if( filter.recolor ) {
+		image.color( filter.recolor );
+	}
+
+	let proxy = new ImageProxy(image);
+
+	if( filter.strip ) {
+		proxy.strip( filter.strip );
+	}
+
+
+	let blits = [];
+	if( filter.edgeFade ) {
+		blits.push( proxy.edgeFade( filter.edgeFade, 0x20 ) );
+	}
+	let shadow = filter.shadow;
+	if( shadow ) {
+		blits.push( proxy.shadow( shadow.threshold, shadow.flying, shadow.xRatio, shadow.yRatio, shadow.color ) );
+	}
+	let outline = filter.outline;
+	if( outline ) {
+		blits.push( proxy.outline( outline.thickness, outline.threshold, outline.color, outline.glow ) );
+	}
+	while( blits.length ) {
+		let blitList = blits.shift();
+		proxy.blit( blitList );
+	}
+}
+
+async function processAsNeeded(fileName) {
 
 	while( fileLocks[fileName] ) {
 		console.log('Waiting on locked file '+fileName);
@@ -60,54 +390,93 @@ async function fetchAndProcess(fileName) {
 	}
 	fileLocks[fileName] = (fileLocks[fileName]||0)+1;
 
+	let image = null;
 	try {
-		let isOutOfDate = await testTimestamps(fileName);
+		let filter = Object.deepAssign( {}, FilterDefault, FilterSpec[fileName] );
+		let filterString = JSON.stringify(filter);
+
+		let isOutOfDate = filterString !== LastFilterSent[fileName] || await testTimestamps(fileName);
 		if( isOutOfDate ) {
-			await process(fileName);
+			let sourcePath = getSourcePath(fileName);
+			let image = await jimpRead(sourcePath);
+			console.log( 'Filtering '+sourcePath );
+			console.log( filterString );
+			await filterImageInPlace(image,filter);
+			let targetPath = getTargetPath(fileName);
+			console.log( 'Writing to '+targetPath );
+			await jimpWrite( targetPath, image );
+			LastFilterSent[fileName] = filterString;
 		}
-		fetch(fileName);
 	}
-	catch( e ) {
-		console.log("Error "+util.inspect(e));
+	catch( e ) {		
+		if( e.benign || e.errno==-2 ) {
+			console.log( 'Allow '+e.details );
+		}
+		else {
+			console.log( 'Error '+util.inspect(e) );
+		}
 	}
 
 	console.assert( fileLocks[fileName] !== undefined && fileLocks[fileName]>0 );
 	fileLocks[fileName] = fileLocks[fileName] - 1;
+	return image;
 }
 
-async function main() {
-	console.log( "starting." );
-	await fetchAndProcess( "mon/daispine.png" );
-	console.log( "done." );
+async function loadFilterSpec(filePath) {
+	fs.readFile(filePath, 'utf8', function(err, data) {  
+		if (err) throw err;
+		eval( data );
+	});
 }
 
-main();
+function shouldFilter(fileName) {
+	let doFilter = false;
+	Object.each( DirSpec, (value,dir) => {
+		if( fileName.startsWith(dir) ) {
+			doFilter = value;
+		}
+	});
+	return doFilter;
+}
+
+async function run() {
+
+	let filterFilePath = 'filters.js';
+	await loadFilterSpec(filterFilePath);
+
+	const app = express();
+	app.cwd = process.cwd().replace( '/monet', '' );
+
+	watch( filterFilePath, {}, async function(evt,name) {
+		console.log( 'Reload '+filterFilePath );
+		await loadFilterSpec(filterFilePath);
+		console.log( 'Done reloading '+filterFilePath );
+	});
+
+	app.use(function(req, res, next) {
+		res.header("Access-Control-Allow-Origin", "*");
+		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+		next();
+	});
 
 
-/*
+	app.get('/tiles/*', async (req, res, next) => {
+		try {
+			let fileName = req.params[0];
+			if( shouldFilter(fileName) ) {
+				await processAsNeeded(fileName);
+			}
+			let filePath = app.cwd+'/tiles/'+fileName;
+			console.log( "sending "+filePath );
+			res.sendFile( filePath );
+		} catch(e) {
+			next(e);
+		}
+	});
 
-const app 		= express();
 
-app.get('/', (req, res) => {
-	res.send('Hello World!');
-});
+	let port = 3000;
+	app.listen(port, () => console.log('Monet listening on port '+port+'.'))
+}
 
-
-let port = 3000;
-app.listen(port, () => console.log('Monet listening on port '+port+'.'))
-*/
-
-/*
-var Jimp = require("jimp");
-
-let tileDir = '../tiles/';
-
-// open a file called "lenna.png"
-Jimp.read( tileDir + "mon/demon/daispine96p.png", function (err, lenna) {
-    if (err) throw err;
-    lenna.resize(256, 256)            // resize
-         .quality(60)                 // set JPEG quality
-         .greyscale()                 // set greyscale
-         .write("lena-small-bw.jpg"); // save
-});
-*/
+run();

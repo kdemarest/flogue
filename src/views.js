@@ -115,7 +115,7 @@ class ViewSpells extends ViewObserver {
 		for( let i=0 ; i<spellList.all.length && i<this.MAX_SLOTS ; ++i ) {
 			let spell = spellList.all[i];
 			let pct = Math.floor( (1 - ( (spell.rechargeLeft||0) / (spell.rechargeTime||10) )) * 10 )*10;
-			let img = '<img class="spellRecharge" src="../tiles/'+StickerList['slice'+pct].img+'">';
+			let img = '<img class="spellRecharge" src="'+IMG_BASE+StickerList['slice'+pct].img+'">';
 			let text = 'F'+(i+1)+' '+String.capitalize(spell.effect.name)+'\n';
 			let lit = observer.commandItem == spell && spell.isRecharged();
 			let unlit = !spell.isRecharged();
@@ -126,7 +126,7 @@ class ViewSpells extends ViewObserver {
 
 class ViewZoom {
 	constructor(divId) {
-		let myDiv = $('<img class="guiButton" src="../tiles/gui/icons/magnify.png">').appendTo($(divId));
+		let myDiv = $('<img class="guiButton" src="'+IMG_BASE+'gui/icons/magnify.png">').appendTo($(divId));
 		myDiv.click( function() {
 			guiMessage('zoom',null,'map');
 		});
@@ -139,7 +139,7 @@ class ViewFull {
 		this.isFull = false;
 		this.image = ['screenExpand.png','screenContract.png']
 		let self = this;
-		let myDiv = $('<img class="guiButton" src="../tiles/gui/icons/'+this.image[0]+'">').appendTo($(divId));
+		let myDiv = $('<img class="guiButton" src="'+IMG_BASE+'gui/icons/'+this.image[0]+'">').appendTo($(divId));
 		myDiv
 		.show()
 		.click( function(e) {
@@ -301,7 +301,7 @@ class ViewInfo extends ViewObserver {
 			let ex = itemExplain(item);
 			let s = '';
 			if( header ) {
-				s += item.isUnique ? '<img style="width:96px" src="../tiles/'+item.img+'"><br>' :
+				s += item.isUnique ? '<img class="itemImage" src="'+IMG_BASE+item.img+'"><br>' :
 					ex.icon+'<br>';
 				s += ex.description+'<br>';
 			}
@@ -408,7 +408,7 @@ class ViewInfo extends ViewObserver {
 			s += tRow( "Gold:", Math.floor(entity.coinCount||0) );
 		}
 		else {
-			s += '<img style="width:96px" src="../tiles/'+entity.img+'"><br>';
+			s += '<img class="monsterImage" src="'+IMG_BASE+entity.img+'"><br>';
 		}
 		s += '</table>';
 		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
@@ -663,12 +663,12 @@ function itemExplain(item,buySell) {
 		return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
 	}
 	function icon(file) {
-		return file ? '<img src="../tiles/gui/icons/'+file+'">' : '';
+		return file ? '<img src="'+IMG_BASE+'gui/icons/'+file+'">' : '';
 	}
 	function rechargeImg() {
 		if( !item.rechargeTime ) return '';
 		let pct = Math.floor( (1 - ( (item.rechargeLeft||0) / (item.rechargeTime||10) )) * 10 )*10;
-		return '<img class="spellRecharge" src="../tiles/'+StickerList['slice'+pct].img+'">';
+		return '<img class="spellRecharge" src="'+IMG_BASE+StickerList['slice'+pct].img+'">';
 	}
 
 	if( !item ) return false;

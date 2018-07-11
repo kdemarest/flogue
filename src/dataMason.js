@@ -16,8 +16,8 @@
 
 	let TileType = {
 		Unknown: ' ',
-		Floor: '.',
-		Wall: '#',
+		Floor: TILE_FLOOR,
+		Wall: TILE_WALL,
 		Door: '+'
 	};
 	let T = TileType;
@@ -806,6 +806,10 @@
 			for( let y=0 ; y<placeMap.yLen ; ++y ) {
 				for( let x=0 ; x<placeMap.xLen ; ++x ) {
 					let pSym = placeMap.tileSymbolGet(x,y);
+					if( pSym == TILE_UNKNOWN ) {
+						// This is allwed.
+						continue;
+					}
 					if( pSym === undefined ) {
 						debugger;
 					}
@@ -1152,7 +1156,7 @@
 				place = jQuery.extend(true, new Place(), place, {isPrepared: true});
 
 //				console.log("Trying to place "+place.typeId);
-				place.generateMap();
+				place.generateMap(T.Floor,T.Wall);
 				place.rotateIfNeeded(rotation);
 			}
 			return place;
@@ -1570,7 +1574,7 @@
 	function paletteCommit(palette) {
 		let tileTypes = ['floor','wall','door','fillFloor','fillWall','outlineWall','passageFloor','bridge','entrance','exit','unknown'];
 		for( let tileType of tileTypes ) {
-			let TileType = String.capitalize(tileType);	// Floor
+			let TileType = String.capitalize(tileType);	// eg Floor
 			if( palette[tileType] && palette[tileType].length > 1 ) {
 				palette[tileType] = TypeIdToSymbol[palette[tileType]];
 			}
@@ -1602,6 +1606,7 @@
 			onStep(s);
 		}
 
+		// Temporary just for easier masonry!
 		TileTypeList.pit.mayWalk = false;
 
 		paletteCommit( theme );

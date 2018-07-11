@@ -48,11 +48,17 @@ function deltasToDirNatural(dx,dy) {
 	return deltasToDirPredictable(dx,dy);
 }
 
+
+let IMG_BASE = 'http://localhost:3000/tiles/';
+
 // If you change this, you must also chance the .css class .tile
 let TILE_DIM = 48;
 let MapVis = 8;		// The vision distance used when actually drawing your map display, casting light etc.
 let MaxVis = 8;		// The vision distance max any monster can see
 let TILE_UNKNOWN = ' ';		// reserved so that map creation can look sane.
+let TILE_FLOOR   = '.';		// reserved so that map creation can look sane.
+let TILE_WALL    = '#';		// reserved so that map creation can look sane.
+let SymbolForbidden = { ' ': 1, '.': 1, '#': 1 };
 let SymbolToType = {};
 let TypeIdToSymbol = {};
 let SYM = 111;
@@ -134,6 +140,7 @@ const StickerList = {
 	crosshairNo:  { img: "dc-misc/travel_exclusion.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
 	sortAscending: { img: 'gui/sortAscending.png' },
 	sortDescending: { img: 'gui/sortDescending.png' },
+	arrowInFlight: { img: 'effect/arrowInFlight.png' },
 	slice0: { img: 'gui/sliceEmpty.png' },
 	slice10: { img: 'gui/slice10.png' },
 	slice20: { img: 'gui/slice20.png' },
@@ -310,15 +317,38 @@ const ImgBridges = {
 
 
 const TileTypeList = {
-	"floor":      { symbol: '.', mayWalk: true,  mayFly: true,  opacity: 0, name: "floor", img: "decor/floorSlate96p2.png", isFloor: true }, //dc-dngn/floor/pebble_brown0.png
-	"wall":       { symbol: '#', mayWalk: false, mayFly: false, opacity: 1, name: "wall", 
-					imgChoices: {
-						0: { img: "decor/boulder1b96p.png" },
-						1: { img: "decor/boulder2b96p.png" },
-						2: { img: "decor/boulder3b96p.png" },
-						3: { img: "decor/boulder4b96p.png" },
+	"floorCave":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "cave floor",
+					img: "decor/floorSlate.png",
+					isFloor: true },
+	"floorDirt":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "dirt floor",
+					img: "decor/floorDirt.png",
+					isFloor: true },
+	"floorSlate":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "slate floor",
+					img: "decor/floorSlate.png",
+					isFloor: true },
+	"floorStone":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "stone floor",
+					img: "dc-dngn/floor/rect_gray1.png", isFloor: true
 					},
-					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true }, // dc-dngn/wall/brick_brown0.png
+	"wallCave":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "cave wall", 
+					imgChoices: {
+						0: { img: "decor/boulder1.png" },
+						1: { img: "decor/boulder2.png" },
+						2: { img: "decor/boulder3.png" },
+						3: { img: "decor/boulder4.png" },
+					},
+					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true },
+	"wallJagged":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "jagged wall", 
+					imgChoices: {
+						0: { img: "decor/jagged1.png" },
+						1: { img: "decor/jagged2.png" },
+						2: { img: "decor/jagged3.png" },
+						3: { img: "decor/jagged4.png" },
+					},
+					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true, scale: 0.7 },
+	"wallStone":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall",
+					img: "dc-dngn/floor/pedestal_full.png", isWall: true, wantsDoor: true
+					},
+
 	"pit":        { symbol: ':', mayWalk: true, mayFly: true,  opacity: 0, name: "pit", mayJump: true, isPit: true, wantsBridge: true, img: "dc-dngn/pit.png" },
 	"bridge":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "bridge", isBridge: true, img: "dc-dngn/bridgeNS.png", imgChoices: ImgBridges, imgGet: (self,img) => img || self.img },
 	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, isWater: true, opacity: 0, mayJump: true, wantsBridge: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },

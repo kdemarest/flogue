@@ -4,7 +4,7 @@ class Place {
 		Object.assign( this, place );
 		this.inject = this.inject || {};
 	}
-	generateStringMap() {
+	generateStringMap(DefaultFloor,DefaultWall) {
 
 		function containsAnyFieldExcept(obj,fieldList) {
 			for( let key in obj ) {
@@ -64,13 +64,19 @@ class Place {
 				if( !s ) {
 					debugger;
 					console.log('ERROR: Place '+this.id+' uses unknown type '+typeId);
-					map += TileTypeList.floor.symbol;
+					map += TileTypeList.floorCave.symbol;
 					continue;
 				}
 			}
+			if( s == TILE_FLOOR ) {
+				s = DefaultFloor;
+			}
+			if( s == TILE_WALL ) {
+				s = DefaultWall;
+			}
 			if( !SymbolToType[s] && s!==TILE_UNKNOWN ) {
 				console.log('ERROR: unknown symbol ['+s+']');
-				map += TileTypeList.floor.symbol;
+				map += TileTypeList.floorCave.symbol;
 				debugger;	// By now we should have resolved what this symbol maps to
 				continue;
 			}
@@ -78,13 +84,13 @@ class Place {
 		}
 		return map;
 	}
-	generateMap() {
+	generateMap(DefaultFloor,DefaultWall) {
 		if( !this.map && !this.floodId ) debugger;
 		if( !this.map ) {
 			return;
 		}
-		let mapString = this.generateStringMap();
-		this.map = new SimpleMap(mapString);
+		let mapString = this.generateStringMap(DefaultFloor,DefaultWall);
+		this.map = new SimpleMap(mapString,false,TILE_UNKNOWN);
 	}
 	rotateIfNeeded(rotation) {
 		if( this.flags && this.flags.rotate && this.map ) {

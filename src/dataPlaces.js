@@ -158,13 +158,13 @@ ScapeList.snowyPlains = () => ({
 let ThemeDefault = () => ({
 	isUnique: 		false,
 
-	floor: 			TileTypeList.floor.symbol,
-	wall:  			TileTypeList.wall.symbol,
+	floor: 			TileTypeList.floorCave.symbol,
+	wall:  			TileTypeList.wallCave.symbol,
 	door:  			ItemTypeList.door.symbol,
-	fillFloor:  	TileTypeList.floor.symbol,
-	fillWall:  		TileTypeList.wall.symbol,
-	outlineWall:  	TileTypeList.wall.symbol,
-	passageFloor: 	TileTypeList.floor.symbol,
+	fillFloor:  	TileTypeList.floorCave.symbol,
+	fillWall:  		TileTypeList.wallCave.symbol,
+	outlineWall:  	TileTypeList.wallCave.symbol,
+	passageFloor: 	TileTypeList.floorCave.symbol,
 	bridge: 		TileTypeList.bridge.symbol,
 	unknown: 		TILE_UNKNOWN,
 
@@ -197,6 +197,12 @@ ThemeList.surface = {
 
 ThemeList.coreCavernRooms = {
 	scapeId: 		'caveRoomsNarrowlyConnected', //'caveRoomsWellConnected',
+	floor: 			TileTypeList.floorDirt.symbol,
+	wall:  			TileTypeList.wallCave.symbol,
+	fillFloor:  	TileTypeList.floorDirt.symbol,
+	fillWall:  		TileTypeList.wallCave.symbol,
+	outlineWall:  	TileTypeList.wallCave.symbol,
+	passageFloor: 	TileTypeList.floorDirt.symbol,
 	placeDensity: 	0.50,
 	rREQUIRED: 		'goblinGathering',
 	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
@@ -238,7 +244,7 @@ ThemeList.refugeeCampSlaughter = {
 ThemeList.dwarfTown = {
 	isDwarfish: true,
 	isTown: 	true,
-	passageFloor: 'tileStoneFloor',
+	passageFloor: 'floorStone',
 	scapeId: 	'caveTown',
 	rREQUIRED: 	'dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
 				'gatewayFromDwarves, 2x dwarfHouseSmall, 2x dwarfHouse, '+
@@ -698,7 +704,7 @@ PlaceTypeList.floodIsland = {
 }
 
 PlaceTypeList.floodWall = {
-	floodId: 'wall',
+	floodId: 'wallCave',
 	tilePercent: 0.10,
 	sparkId: 'floor',
 	sparkLimit: 2,
@@ -960,7 +966,7 @@ M...B..M.....
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: "wall",
+		x: "wallStone",
 		M: "mist",
 		F: "crystal",
 		B: "obelisk",
@@ -1074,7 +1080,7 @@ PlaceTypeList.fountain1 = {
 `,
 	flags: { rotate: true },
 	symbols: {
-		'.': 'tileStoneFloor',
+		'.': 'floorStone',
 		F: 'fountain',
 	}
 }
@@ -1129,7 +1135,7 @@ PlaceTypeList.lunarEmbassy = {
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'#': 'tileStoneWall',
+		'#': 'wallStone',
 		g: 'gem',
 		s: 'spell',
 		A: 'altar',
@@ -1184,7 +1190,7 @@ x-.-x
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		x: 'wall',
+		x: 'wallCave',
 		'-': 'mud',
 		c: 'chest',
 		y: VARIETY
@@ -1227,7 +1233,7 @@ xxxxx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		x: "wall",
+		x: "wallCave",
 		b: 'barrel',
 		y: VARIETY
 	},
@@ -1247,7 +1253,7 @@ PlaceMany( 'pen', ['sheep'], VARIETY => ({
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		x: "wall",
+		x: "wallCave",
 		s: { typeFilter: VARIETY, attitude: Attitude.WANDER, tether: 2, tooClose: 1 },
 	}
 }));
@@ -1292,7 +1298,7 @@ xx..x
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: "wall",
+		x: "wallCave",
 		e: 'ethermite',
 	}
 }
@@ -1371,7 +1377,6 @@ MM,,,,,MM
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: "wall",
 		',': 'grass',
 		'~': 'water',
 		M: "mist",
@@ -1395,7 +1400,7 @@ xxxxx
 `,
 	flags: { rotate: true },
 	symbols: {
-		x: 'wall',
+		x: 'wallCave',
 		T: 'troll', //{ typeFilter: 'troll', attitude: Attitude.AWAIT, tooClose: 2 },
 		':': 'pit'
 	},
@@ -1450,8 +1455,8 @@ xxxxxxxxxxx...........
 `,
 	flags: { rotate: false, hasWall: true },
 	symbols: {
-		'.': 'tileStoneFloor',
-		x: "tileStoneWall",
+		'.': 'floorStone',
+		x: "wallStone",
 		u: 'brazier',
 		S: 'masterStatue',
 		K: 'kingStatue',
@@ -1469,8 +1474,6 @@ xxxxxxxxxxx...........
 		p: 'potion',
 	},
 	tileTypes: {
-		tileStoneFloor:      { mayWalk: true,  mayFly: true,  opacity: 0, name: "tile stone floor", img: "dc-dngn/floor/rect_gray1.png", isFloor: true },
-		tileStoneWall:       { mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall", img: "dc-dngn/floor/pedestal_full.png", isWall: true, wantsDoor: true },
 		masterStatue:    { mayWalk: false, mayFly: true, opacity: 0, name: "master statue", img: "dc-mon/statues/silver_statue.png"},
 		kingStatue:    { mayWalk: false, mayFly: true, opacity: 0, name: "king statue", img: "dc-mon/statues/wucad_mu_statue.png"},
 	}
@@ -1491,8 +1494,8 @@ PlaceTypeList.handoutStand = {
 	symbols: {
 		r: "refugee",
 		p: "philanthropist",
-		',': "tileStoneFloor",
-		x: "tileStoneWall",
+		',': "floorStone",
+		x: "wallStone",
 		b: 'barrel',
 	},
 	inject: {
@@ -1515,8 +1518,8 @@ xxx+xxx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
-		x: "tileStoneWall",
+		'.': "floorStone",
+		x: "wallStone",
 		G: "gateway",
 		b: "brazier",
 		d: "dwarf",
@@ -1540,9 +1543,9 @@ ww...ww
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
-		x: "tileStoneWall",
-		w: "wall",
+		'.': "floorStone",
+		x: "wallStone",
+		w: "wallCave",
 		G: "gateway",
 		b: "brazier",
 		d: "dwarf",
@@ -1565,14 +1568,14 @@ xxxs+xxxx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
-		x: "tileStoneWall",
+		'.': "floorStone",
+		x: "wallStone",
 		A: "altar",
 		b: "brazier",
 		f: "fountain",
 		c: 'chest',
 		d: { typeFilter: 'dwarf', name: "dwarf cleric", jobId: 'priest' },
-		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'tileStoneWall' } ]
+		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'wallStone' } ]
 	}
 }
 
@@ -1593,13 +1596,13 @@ xxxx+xxxx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
-		x: "tileStoneWall",
+		'.': "floorStone",
+		x: "wallStone",
 		t: 'table',
 		b: 'bed',
 		c: 'chest',
 		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 3, jobId: 'isSentry'  },
-		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'tileStoneWall' } ]
+		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'wallStone' } ]
 	}
 }
 
@@ -1617,8 +1620,8 @@ xxxx+xx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
-		x: "tileStoneWall",
+		'.': "floorStone",
+		x: "wallStone",
 		d: "dwarf",
 		t: 'table',
 		b: 'barrel'
@@ -1642,8 +1645,8 @@ xxxx+xx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
-		x: "tileStoneWall",
+		'.': "floorStone",
+		x: "wallStone",
 		d: "dwarf",
 		t: 'table',
 		b: 'barrel',
@@ -1666,7 +1669,7 @@ stt.tts
 	forbidTreasure: true,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
+		'.': "floorStone",
 		t: 'table',
 		d: { typeFilter: 'dwarf', jobId: 'isMerchant' },
 		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' } ]
@@ -1684,8 +1687,8 @@ bs..b
 	forbidTreasure: true,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
-		x: "tileStoneWall",
+		'.': "floorStone",
+		x: "wallStone",
 		b: 'brazier',
 		c: 'chest',
 		d: { typeFilter: 'dwarf', jobId: 'isMidsize' },
@@ -1704,7 +1707,7 @@ PlaceTypeList.shopOpenAir = {
 	forbidTreasure: true,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
+		'.': "floorStone",
 		t: 'table',
 		d: { typeFilter: 'dwarf', jobId: 'isMinor' },
 		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' }]
@@ -1725,13 +1728,13 @@ xxsx+xx
 	forbidTreasure: true,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
-		x: "tileStoneWall",
+		'.': "floorStone",
+		x: "wallStone",
 		t: 'table',
 		c: 'chest',
 		b: 'barrel',
 		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 2, jobId: 'isMajor' },
-		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'tileStoneWall'}]
+		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'wallStone'}]
 	},
 }
 
@@ -1748,11 +1751,11 @@ PlaceTypeList.dwarfSmithy = {
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
-		x: "tileStoneWall",
+		'.': "floorStone",
+		x: "wallStone",
 		d: { typeFilter: 'dwarf', jobId: 'smith' },
 		f: "flames",
-		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'tileStoneWall'}]
+		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'wallStone'}]
 	}
 }
 
@@ -1768,7 +1771,7 @@ PlaceTypeList.dwarfPlaza = {
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
-		'.': "tileStoneFloor",
+		'.': "floorStone",
 		f: "fountain",
 		d: { typeFilter: 'dwarf', jobId: 'evangelist' }
 	}
