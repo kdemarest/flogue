@@ -1033,6 +1033,24 @@ class Entity {
 		return false;
 	}
 
+	thinkAttack(enemyList,personalEnemy) {
+		let weapon = this.calcBestWeapon(enemyList.first);
+		let distLimit = weapon.reach || weapon.range || 1;
+		let inRange = new Finder(enemyList.all,this).nearMe(distLimit).clearShot();
+		if( !weapon.rechargeLeft && inRange.count ) {
+			let target = personalEnemy && inRange.includesId(personalEnemy.id) ? personalEnemy : inRange.first;	// For now, always just attack closest.
+			this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
+			this.commandItem = weapon;
+			this.commandTarget = target;
+			let temp = this.itemToAttackCommand(weapon);
+			if( temp !== Command.ATTACK || !this.nearTarget(target,1) ) {
+				return temp;
+			}
+			return directionToCommand(this.dirToEntityPredictable(target));
+		}
+	}
+
+
 	beyondTether() {
 		return this.tether && !this.nearTarget(this.origin,this.tether);
 	}
@@ -1215,7 +1233,14 @@ class Entity {
 				}
 
 				if( this.attitude == Attitude.ENRAGED ) {
-					if( theEnemy ) return this.thinkApproachTarget(theEnemy);
+					console.assert( theEnemy.id !== this.id );
+					if( theEnemy && !wasSmell && !wasLEP ) {
+						theEnemy = enemyList.shuffle().byDistanceFromMe();
+					}
+					if( theEnemy ) {
+						let c = this.thinkAttack(enemyList,personalEnemy);
+						return c || this.thinkApproachTarget(enemyList.first);
+					}
 					return this.thinkWanderF();
 				}
 
@@ -1356,20 +1381,8 @@ class Entity {
 
 				// AGGRESSIVE
 				// Attack if I am within reach, and aggressive or sometimes if hesitant
-				let weapon = this.calcBestWeapon(enemyList.first);
-				let distLimit = weapon.reach || weapon.range || 1;
-				let inRange = new Finder(enemyList.all,this).nearMe(distLimit).clearShot();
-				if( !weapon.rechargeLeft && inRange.count ) {
-					let target = personalEnemy && inRange.includesId(personalEnemy.id) ? personalEnemy : inRange.first;	// For now, always just attack closest.
-					this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
-					this.commandItem = weapon;
-					this.commandTarget = target;
-					let temp = this.itemToAttackCommand(weapon);
-					if( temp !== Command.ATTACK || !this.nearTarget(target,1) ) {
-						return temp;
-					}
-					return directionToCommand(this.dirToEntityPredictable(target));
-				}
+				let c0 = this.thinkAttack(enemyList,personalEnemy);
+				if( c0 ) return c0;
 
 //				if( this.beyondTether() && !this.brainDisengageFailed ) {
 //					let c = this.thinkApproachTarget(this.origin);

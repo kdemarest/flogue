@@ -467,9 +467,10 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daisteria": {	// (panic)
-		core: [ SYM, 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
+		core: [ SYM, 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daisteria.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
+		isDaisteria: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.ePanic },
@@ -477,9 +478,10 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiffury": {	// (enrage)
-		core: [ SYM, 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
+		core: [ SYM, 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifury.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
+		isDaifury: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eRage },
