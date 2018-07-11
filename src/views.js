@@ -384,6 +384,9 @@ class ViewInfo extends ViewObserver {
 		let tRow = function(a,b) {
 			return '<tr><td>'+a+'</td><td>'+b+'</td></tr>';
 		}
+
+		s += '<div class="monsterImageBackground"><img class="monsterImage" src="'+IMG_BASE+entity.img+'"></div><br>';
+
 		s += '<table>';
 //		if( poisonMax ) {
 //			s += tRow( 'Health:', '<span class="poison">&nbsp;POISONED ('+(poisonMax===true ? 'FOREVER' : poisonMax)+')&nbsp;</span>' );
@@ -406,9 +409,6 @@ class ViewInfo extends ViewObserver {
 
 			s += tRow( "Ammo:", ex ? ex.description : 'none ready' );
 			s += tRow( "Gold:", Math.floor(entity.coinCount||0) );
-		}
-		else {
-			s += '<img class="monsterImage" src="'+IMG_BASE+entity.img+'"><br>';
 		}
 		s += '</table>';
 		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');

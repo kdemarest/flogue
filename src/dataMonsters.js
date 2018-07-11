@@ -511,9 +511,10 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"dairain": {	// (drain)
-		core: [ SYM, 94, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
+		core: [ SYM, 94, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/dairain.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
+		isDairain: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eDrain },
