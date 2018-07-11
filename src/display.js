@@ -701,7 +701,7 @@ class ViewMap extends ViewObserver {
 
 		//console.log(debug);
 
-		this.app.stage.children.sort( (a,b) => (a.zOrder*100000+a.x)-(b.zOrder*100000+b.x) );
+		this.app.stage.children.sort( (a,b) => (a.zOrder*10000000+a.y*100000+a.x)-(b.zOrder*10000000+b.y*100000+b.x) );
 	}
 	render() {
 		//var focused =  $( document.activeElement ) ;
