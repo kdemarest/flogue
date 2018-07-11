@@ -141,6 +141,7 @@ const StickerList = {
 	sortAscending: { img: 'gui/sortAscending.png' },
 	sortDescending: { img: 'gui/sortDescending.png' },
 	arrowInFlight: { img: 'effect/arrowInFlight.png' },
+	dartInFlight: { img: 'effect/dartInFlight.png' },
 	slice0: { img: 'gui/sliceEmpty.png' },
 	slice10: { img: 'gui/slice10.png' },
 	slice20: { img: 'gui/slice20.png' },

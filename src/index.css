@@ -70,6 +70,11 @@ body {
     padding-top: 20px;
 }
 
+#guiInfo .monDetail {
+	display: inline-block;
+	width: 70px;
+}
+
 .better {
 	color: #3bf93b
 }

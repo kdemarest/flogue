@@ -266,6 +266,7 @@ class ViewInfo extends ViewObserver {
 		}
 	}
 	render() {
+		let debug = false;
 		let you = this.trueObserver;
 		let entity = this.observer;
 
@@ -363,7 +364,7 @@ class ViewInfo extends ViewObserver {
 		}
 
 		let s = "";
-		if( !entity.isUser() ) {
+		if( debug && !entity.isUser() ) {
 			s += '['+(this.lastDirAttempt||'-')+'] ';
 			s += entity.attitude+' '+(entity.bumpCount||'')+'<br>';
 		}
@@ -392,7 +393,7 @@ class ViewInfo extends ViewObserver {
 //			s += tRow( 'Health:', '<span class="poison">&nbsp;POISONED ('+(poisonMax===true ? 'FOREVER' : poisonMax)+')&nbsp;</span>' );
 //		}
 //		else {
-			s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+' ('+entity.x+','+entity.y+')' );
+			s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
 //		}
 		if( entity.isUser() ) {
 			let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
@@ -436,12 +437,12 @@ class ViewInfo extends ViewObserver {
 		test( senseList, entity.senseTreasure,	'treasure');
 		test( senseList, entity.senseLiving,	'living');
 		s += conditionList.join(', ')+'<br>';
-		s += senseList.length ? "Senses: "+senseList.join(', ')+'<br>' : '';
-		s += entity.resist ? "Resist: "+entity.resist.split(',').join(', ')+'<br>' : '';
-		s += entity.immune ? "Immune: "+entity.immune.split(',').join(', ')+'<br>' : '';
-		s += entity.vuln ? "Vulnerable: "+entity.vuln.split(',').join(', ')+'<br>' : '';
+		s += senseList.length ? '<div class="monDetail">Senses:</div>'+senseList.join(', ')+'<br>' : '';
+		s += entity.immune ? '<div class="monDetail">Immune:</div>'+entity.immune.split(',').join(', ')+'<br>' : '';
+		s += entity.resist ? '<div class="monDetail">Resist:</div>'+entity.resist.split(',').join(', ')+'<br>' : '';
+		s += entity.vuln ? '<div class="monDetail">Weak:</div>'+entity.vuln.split(',').join(', ')+'<br>' : '';
 		if( !entity.isUser() ) {
-			s += (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'');
+			s += debug ? (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'') : '';
 //			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');
 //			$('#guiPathDebug').html(entity.path ? entity.path.render().join('\n') : '');
 			$('#'+this.infoDivId).addClass('monColor');

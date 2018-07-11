@@ -373,8 +373,10 @@ class ViewMap extends ViewObserver {
 		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
 		this.desaturateFilter = new PIXI.filters.ColorMatrixFilter();
 		this.desaturateFilter.desaturate();
+		this.desaturateFilterArray = [this.desaturateFilter];
 		this.resetFilter = new PIXI.filters.ColorMatrixFilter();
 		this.resetFilter.reset();
+		this.resetFilterArray = [this.resetFilter];
 		this.randList = [];
 		for( let i=0 ; i<256 ; ++i ) {
 			this.randList.push( Math.randInt( 0, 1023 ) );
@@ -523,16 +525,16 @@ class ViewMap extends ViewObserver {
 						//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 					}
 					if( doTint ) {
-						sprite.filters = [this.desaturateFilter];
+						sprite.filters = this.desaturateFilterArray;
 						sprite.tint = 0xAAAAFF;
 					}
 					else
 					if( doGrey ) {
-						sprite.filters = [this.desaturateFilter];
+						sprite.filters = this.desaturateFilterArray;
 						sprite.tint = 0xFFFFFF;
 					}
 					else {
-						sprite.filters = [this.resetFilter];
+						sprite.filters = this.resetFilterArray;
 						sprite.tint = 0xFFFFFF;
 					}
 				}
@@ -701,7 +703,8 @@ class ViewMap extends ViewObserver {
 
 		//console.log(debug);
 
-		this.app.stage.children.sort( (a,b) => (a.zOrder*10000000+a.y*100000+a.x)-(b.zOrder*10000000+b.y*100000+b.x) );
+		this.app.stage.children.forEach( sprite => sprite.sortKey = sprite.zOrder*10000000+sprite.y*100000+sprite.x );
+		this.app.stage.children.sort( (a,b) => a.sortKey-b.sortKey );
 	}
 	render() {
 		//var focused =  $( document.activeElement ) ;

@@ -146,7 +146,11 @@ const AmmoList = Fab.add( '', {
 		mayThrow: true,
 		range: 10,
 		attackVerb: 'strike', 
-		img: 'effect/dart2.png'
+		img: 'effect/dart2.png',
+		flyingImg: StickerList.dartInFlight.img,
+		flyingRot: true,
+		flyingScale: 1.0,
+		flyingSpeed: 15,
 	},
 });
 
