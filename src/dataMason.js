@@ -1153,12 +1153,88 @@
 			return 0;
 		}
 
+		function generateMaze(inject,xLen,yLen,floorSymbol,wallSymbol,makeWalled,supply) {
+			function mayGo(x,y) {
+				return x>=0+edge && y>=0+edge && x<xLen-edge && y<yLen-edge && 
+					map.tileTypeGet(x,y).isWall && 
+					map.count8(x,y,(x,y,tile)=>tile.isWall) >=5 &&
+					map.countGaps(x,y)==1;
+			}
+			let edge = makeWalled ? 1 : 0;
+			if( floorSymbol == TILE_FLOOR ) { floorSymbol = T.Floor };
+			if( wallSymbol == TILE_WALL ) { wallSymbol = T.Wall };
+			console.assert( xLen>2 && yLen>2 && floorSymbol && wallSymbol );
+			let map = new SimpleMap(FillTextMap(xLen,yLen,wallSymbol));
+			console.assert( map.xLen == xLen && map.yLen == yLen );
+			let deadEnds = [];
+			let stack = [];
+			let sx = Math.randInt(0+1,xLen-1*2);
+			let sy = 0;
+			let lastDir = 4;
+			map.tileSymbolSet(sx,sy,floorSymbol);
+			stack.push(sx,sy);
+			let reps = xLen*yLen;
+			let freshPop = true;
+			while( stack.length && --reps ) {
+				let options = [];
+				let hasLastDir = false;
+				for( let dir=0 ; dir<8 ; dir+=2 ) {
+					if( mayGo(sx+DirAdd[dir].x,sy+DirAdd[dir].y) ) {
+						options.push(dir);
+						hasLastDir = hasLastDir || (dir==lastDir);
+					}
+				}
+				if( !options.length ) {
+					if( freshPop ) {
+						deadEnds.push(sx,sy);
+					}
+					sy = stack.pop();
+					sx = stack.pop();
+					freshPop = false;
+					continue;
+				}
+				freshPop = true;
+				let dir = hasLastDir && Math.chance(50) ? lastDir : options[Math.randInt(0,options.length)];
+				sx += DirAdd[dir].x;
+				sy += DirAdd[dir].y;
+				map.tileSymbolSet(sx,sy,floorSymbol);
+				stack.push(sx,sy);
+				lastDir = dir;
+			}
+
+			if( supply ) {
+				let supplyArray = Array.supplyParse( supply );
+				let makeArray   = Array.supplyToMake(supplyArray);
+				makeArray.forEach( make => {
+					let i = Math.randInt(0,deadEnds.length/2) * 2;
+					let x = deadEnds[i+0];
+					let y = deadEnds[i+1];
+					let pPos = ''+x+','+y;
+					inject[pPos] = inject[pPos] || [];
+					inject[pPos].push(make);
+				});
+			}
+
+			return map.renderToString();
+		}
+
 		function placePrepare(place,rotation) {
 			if( !place.isPrepared ) {
 				// WARNING! Important for this to be a DEEP copy.
 				place = jQuery.extend(true, new Place(), place, {isPrepared: true});
 
 //				console.log("Trying to place "+place.typeId);
+				if( place.isMaze ) {
+					place.map = generateMaze(
+						place.inject,
+						place.xLen,
+						place.yLen,
+						place.floorSymbol || T.Floor,
+						place.wallSymbol || T.Wall,
+						place.makeWalled,
+						place.supply
+					);
+				}
 				place.generateMap(T.Floor,T.Wall);
 				place.rotateIfNeeded(rotation);
 			}

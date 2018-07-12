@@ -15,7 +15,7 @@ ConfigList.ken = () => {
 		passageWander: 		0,
 	});
 	ScapeList.kenRooms = theme => ({
-		dim: 				20,
+		dim: 				60,
 		architecture: 		"rooms",
 		floorDensity: 		0.45,
 		circleChance: 		10,
@@ -26,20 +26,15 @@ ConfigList.ken = () => {
 		passageWidth3: 		0
 	});
 	PlaceTypeList.kenPlace = {
-		map:
-			`
-			xxx
-			xc.
-			xxx
-			`,
+		isMaze: true,
+		xLen: 16,
+		yLen: 16,
+		makeWalled: false,
+		wallSymbol:  '#',
+		floorSymbol: '.',
+		supply: '8x gem',
 		flags: { rotate: true },
 		symbols: {
-			c: 'chest',
-			b: 'barrel',
-			d: 'door',
-			x: { typeFilter: 'wallCave', invisible: true, opacity: 0 },
-			X: { typeFilter: 'marker', playerStartHere: true },
-			V: { typeFilter: 'stuff.voidLamp' },
 		},
 		stickers: {
 		},
@@ -54,8 +49,8 @@ ConfigList.ken = () => {
 	};
 
 	ThemeList.kenTheme = {
-		scapeId: 		'kenCave',
-		rREQUIRED: 		'8x kenPlace',
+		scapeId: 		'kenRooms',
+		rREQUIRED: 		'4x kenPlace',
 		placeDensity: 	0.30,
 //		rCOMMON: 		'hoard_shade',
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',

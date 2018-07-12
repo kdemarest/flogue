@@ -186,8 +186,11 @@ class DataConditioner {
 			let NO_MONSTERS = -1;
 			let level = NO_MONSTERS;
 			let place = PlaceTypeList[placeId];
-			if( !place.map && !place.floodId ) {
+			if( !place.map && !place.floodId && !place.isMaze ) {
 				debugger;
+			}
+			if( place.isMaze ) {
+				place.tileCount = place.xLen * place.yLen;
 			}
 			if( place.map ) {
 				place.tileCount = 0;

@@ -1,4 +1,15 @@
-function isItem(e) { return e instanceof Item; }
+function FillTextMap(xLen,yLen,symbol) {
+	let s = '';
+	while( yLen-- ) {
+		let x = xLen;
+		while( x-- ) {
+			s += symbol;
+		}
+		s += '\n';
+	}
+	return s;
+}
+
 
 // MAP
 class SimpleMap {

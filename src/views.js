@@ -563,8 +563,36 @@ class ViewMiniMap extends ViewObserver {
 		if( msg == 'reveal' ) {
 			let target = payload;
 			this.drawn[target.y*this.xLen+target.x] = null;
+			if( target.isWall ) {
+				// Sadly this gets special-cased because of the way I use Wall Proxy...
+				var canvas0 = document.getElementById(this.divId+'Canvas0');
+				let c0 = canvas0.getContext("2d");
+				this.draw(c0,StickerList.wallProxy,target.x,target.y,this.scale);
+			}
 		}
 	}
+	draw( c, entity, x, y, scale, ctr ) {
+		let imgGet = this.imageRepo.imgGet[entity.typeId];
+		if( !imgGet ) debugger;
+		if( imgGet ) {
+			let imgPath = imgGet(entity);
+			if( !entity ) debugger;
+			let resource = this.imageRepo.get(imgPath);
+			if( resource ) {
+				let image = resource.texture.baseTexture.source;
+				if( ctr ) {
+					x -= (scale/this.scale)/2;
+					y -= (scale/this.scale)/2;
+				}
+				c.drawImage( image, x*this.scale, y*this.scale, scale,scale );
+			}
+			else {
+				console.log( "Unable to find image for "+entity.typeId+" img "+imgPath );
+				return false;
+			}
+		}
+	}
+
 	render() {
 		let observer = this.observer;
 		let site = observer.area.getSiteAt(observer.x,observer.y);
@@ -579,34 +607,12 @@ class ViewMiniMap extends ViewObserver {
 		}
 
 		let self = this;
-		function draw(c,entity,x,y,scale,ctr) {
-			let imgGet = self.imageRepo.imgGet[entity.typeId];
-			if( !imgGet ) debugger;
-			if( imgGet ) {
-				let imgPath = imgGet(entity);
-				if( !entity ) debugger;
-				let resource = self.imageRepo.get(imgPath);
-				if( resource ) {
-					let image = resource.texture.baseTexture.source;
-					if( ctr ) {
-						x -= (scale/self.scale)/2;
-						y -= (scale/self.scale)/2;
-					}
-					//let width = image.width * self.scale;
-					//let height = image.height * self.scale;
-					c.drawImage( image, x*self.scale, y*self.scale, scale,scale );
-				}
-				else {
-					console.log( "Unable to find image for "+entity.typeId+" img "+imgPath );
-				}
-			}
-		}
 
 		let unvisitedMap = StickerList.unvisitedMap;
 		let c0 = canvas0.getContext("2d");
 		let c1 = canvas1.getContext("2d");
 		if( !this.cleared ) {
-			draw(c0,unvisitedMap,0,0,2000);
+			this.draw(c0,unvisitedMap,0,0,2000);
 			this.cleared = true;
 		}
 		c1.clearRect(0,0,this.xLenCanvas,this.yLenCanvas);
@@ -657,12 +663,12 @@ class ViewMiniMap extends ViewObserver {
 					let show = !entity.invisible || observer.senseInvisible;
 					entity = show ? StickerList.wallProxy : defaultFloor;
 				}
-				draw(c0,entity,x,y,this.scale);
+				this.draw(c0,entity,x,y,this.scale);
 			}
 		}
 		while( drawLate.length ) {
 			let d = drawLate.pop();
-			draw(c1,d.entity,d.x,d.y,Math.min(d.scale,20),d.ctr);
+			this.draw(c1,d.entity,d.x,d.y,Math.min(d.scale,20),d.ctr);
 		}
 	}
 }
