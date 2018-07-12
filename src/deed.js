@@ -317,6 +317,10 @@ let effectApply = function(effect,target,source,item) {
 		);
 	}
 
+	if( effect.iconOver ) {
+		animOver( target, effect.iconOver, 0, effect.iconOverDuration || 0.4, effect.iconOverScale || 0.75 );
+	}
+
 	let effectShape = effect.effectShape || EffectShape.SINGLE;
 	if( effectShape == EffectShape.SINGLE ) {
 		return _effectApplyTo(effect,target,source,item);
@@ -345,7 +349,9 @@ let effectApply = function(effect,target,source,item) {
 						animCloud( x, y, area, source.id, effect.iconCloud || StickerList.ePoof.img );
 					}
 					else {
-						animFly( target.x, target.y, x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
+						if( !effect.iconOver ) {
+							animFly( target.x, target.y, x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
+						}
 					}
 					//animAt( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
 					let targetList = new Finder(area.entityList).at(x,y);

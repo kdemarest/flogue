@@ -66,7 +66,7 @@ ConfigList.ken = () => {
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
-		monsters: 		['isDailess'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isTinnamaton'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
 		enemyDensity:  	0.02,
 		friendDensity: 	0.00001,
@@ -83,7 +83,7 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 19,
+		startingDepth: 12,
 		themeId: 'kenTheme'
 	}
 }

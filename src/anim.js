@@ -472,14 +472,14 @@ function animFloatUp(target,icon,delay,duration=0.4) {
 	}
 }
 
-function animOver(target,icon,delay) {
+function animOver(target,icon,delay=0,duration=0.2,scale=0.75) {
 	return new Anim( {}, {
 		follow: 	target,
 		img: 		icon,
-		duration: 	0.2,
+		duration: 	duration,
 		delay: 		delay || 0,
 		onInit: 		a => { a.create(1); },
-		onSpriteMake: 	s => { s.sScaleSet(0.75); },
+		onSpriteMake: 	s => { s.sScaleSet(scale); },
 		onSpriteTick: 	s => { }
 	});
 }

@@ -569,7 +569,17 @@ const StuffList = Fab.add( '', {
 	"darkEssence": 		{ rarity: 0.1, },
 	"facetedEye": 		{ rarity: 0.4, mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
 	"sunCrystal":   	{ rarity: 0.6, mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "item/stuff/sunCrystal.png", mayTargetPosition: true,
-						effect: { name: 'radiance', op: 'damage', xDamage: 1.0, effectShape: EffectShape.BLAST5, effectFilter: eff=>eff.target.team==Team.EVIL, damageType: DamageType.SMITE, icon: 'gui/icons/eSmite.png' }
+							effect: {
+								name: 'radiance',
+								op: 'damage',
+								xDamage: 1.0,
+								effectShape: EffectShape.BLAST5,
+								effectFilter: eff=>eff.target.team==Team.EVIL,
+								damageType: DamageType.SMITE,
+								icon: 'gui/icons/eSmite.png',
+								iconOver: 'effect/lightRayCircle.png',
+								iconOverScale: 5.0,
+							}
 						},
 	"trollBlood": 		{ rarity: 0.6, isLiquid: true },
 	"spinneret": 		{ rarity: 0.4, },

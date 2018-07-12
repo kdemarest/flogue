@@ -29,7 +29,8 @@ FilterSpec = {
 	"decor/floorDirt.png": 			{ normalize: false, brightness: -0.6, desaturate: 0.2 },
 	"decor/floorSlate.png": 		decorFloor,
 	"effect/arrowInFlight.png": 	{ shadow: false },
-	"effect/dartInFlight.png": 	{ shadow: false },
+	"effect/dartInFlight.png": 		{ shadow: false },
+	"effect/lightRayCircle.png": 	{ normalize: false, shadow: false, outline: false },
 }
 
 DirSpec = {

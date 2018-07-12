@@ -69,6 +69,7 @@ let BrainMindset = {
 	animal:   		'fleeWhenHurt,lep',
 	animalHunter:   'lep',
 	animalHerd:   	'fleeWhenAttacked,lep,pack',
+	robot:  		'lep',
 	undead: 		'lep',
 	undeadDumb: 	'',
 	hivemind: 		'alert,pack',
@@ -82,6 +83,7 @@ let BrainAbility = {
 	animal:   		'',
 	animalHunter:   '',
 	animalHerd: 	'',
+	robot: 			'open,pickup,shoot,throw',
 	undead: 		'open,pickup,shoot,throw',
 	undeadDumb: 	'open,pickup,shoot,throw',
 	hivemind: 		'gaze,open,pickup,shoot,talk,throw',
@@ -94,6 +96,7 @@ let BodyAbility = {
 	wingedBiped: 	'gaze,open,pickup',
 	noped:    		'gaze',
 	blob:    		'open,pickup',
+	humanoidBot: 	'gaze,open,pickup,shoot,throw',
 }
 
 let BodySlots = {
@@ -103,6 +106,7 @@ let BodySlots = {
 	wingedBiped: 	{ head: 1, neck: 1, feet: 1 },
 	noped:  		{ head: 1 },
 	blob:  			{ },
+	humanoidBot: 	{ hip: 1, shield: 1 },
 }
 
 
@@ -230,7 +234,6 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"ambligryp": {
-		// make it so this goes insubstantial from time to time.
 		core: [ SYM, 29, '4:20', 'evil', 'bash', 'animalHunter', 'multiped', 'mon/ambligryp.png', 'it' ],
 		attitude: Attitude.HUNT,
 		gripChance: 25,
@@ -240,6 +243,32 @@ const MonsterTypeList = {
 		senseSight: 3,
 		senseSmell: 400,
 		vuln: 'freeze,corrode',
+	},
+	"tinnamaton": {
+		core: [ SYM, 29, '4:12', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/tinnamaton.png', 'it' ],
+		scale: 0.55,
+		attitude: Attitude.AWAIT,
+		tooClose: 2,
+		immune: ConstructImmunity,
+		isMindless: true,
+		isConstruct: true,
+		isTinnamaton: true,
+		resist: ConstructResistance,
+		senseSight: 8,
+		vuln: ConstructVulnerability,
+	},
+	"brassamaton": {
+		core: [ SYM, 59, '6:8', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/brassamaton.png', 'it' ],
+		scale: 0.8,
+		attitude: Attitude.AWAIT,
+		tooClose: 2,
+		immune: ConstructImmunity,
+		isMindless: true,
+		isConstruct: true,
+		isBrassamaton: true,
+		resist: ConstructResistance,
+		senseSight: 5,
+		vuln: ConstructVulnerability,
 	},
 	"ghostScorpion": {
 		// make it so this goes insubstantial from time to time.

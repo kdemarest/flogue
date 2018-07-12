@@ -297,18 +297,28 @@ class ImageRepo {
 			}
 		}
 
-		function scanIcon(typeList,member) {
-			for( let t in typeList ) {
-				if( typeList[t][member] ) {
-					add(typeList[t][member]);
+		function scan(typeId,type,member) {
+			if( type[member] ) {
+				if( typeId ) {
+					self.imgGet[typeId] = type.imgGet || DefaultImgGet;
 				}
+				add(type[member]);
 			}
 		}
-		function scan(typeList,member) {
+
+		function scanIcon(typeList,member) {
 			for( let t in typeList ) {
-				if( typeList[t][member] ) {
-					self.imgGet[t] = typeList[t].imgGet || DefaultImgGet;
-					add(typeList[t][member]);
+				scan(null,typeList[t],member);
+			}
+		}
+		function scanTypeList(typeList,member) {
+			for( let t in typeList ) {
+				let type = typeList[t];
+				scan( t, type, member );
+				if( type.effect ) {
+					scan( null, type.effect, 'icon' );
+					scan( null, type.effect, 'iconCloud' );
+					scan( null, type.effect, 'iconOver' );
 				}
 			}
 		}
@@ -336,9 +346,10 @@ class ImageRepo {
 		}
 
 		let self = this;
-		scan(StickerList,'img');
-		scan(AmmoList,'img');
-		scan(WeaponList,'img');
+		scanTypeList(StickerList,'img');
+		scanTypeList(AmmoList,'img');
+		scanTypeList(WeaponList,'img');
+		scanTypeList(StuffList,'img');
 		scanIcon(EffectTypeList,'icon');
 
 		function setup() {
