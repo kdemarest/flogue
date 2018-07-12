@@ -67,7 +67,7 @@
 		return tile !== T.Unknown && !(SymbolToType[tile].mayWalk || SymbolToType[tile].isDoor || SymbolToType[tile].isMonsterType);
 	}
 	function isWalkable(tile) {
-		return tile !== T.Unknown && (SymbolToType[tile].mayWalk  || SymbolToType[tile].isDoor || SymbolToType[tile].isMonsterType);
+		return tile !== T.Unknown && (SymbolToType[tile].mayWalk  || SymbolToType[tile].isDoor || SymbolToType[tile].isMonsterType || SymbolToType[tile].isItemType);
 	}
 	function isBlockingOrUnknown(tile) {
 		return isUnknown(tile) || isBlocking(tile);
@@ -1006,7 +1006,10 @@
 				let tile = this.getTile(x,y);
 				if( isDoor(tile) ) {
 					if( !this.twoOnlyOpposed(x,y,tile => {
-						return isWall(tile) || isUnknown(tile) ? 'W' : ( isFloor(tile) ? 'F' : 'X' );
+						// I think it makes the most sense to make all non-floor things (items and monsters)
+						// be considered floor, legitimizing the door.
+						let nonWallNonFloor = 'F';	// was 'X'
+						return isWall(tile) || isUnknown(tile) ? 'W' : ( isFloor(tile) ? 'F' : nonWallNonFloor );
 					}) ) {
 						let fn = this.countGaps(x,y) <= 1 ? isWall : isFloor;
 						console.log("Remove: "+fn);

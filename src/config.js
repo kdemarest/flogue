@@ -28,22 +28,18 @@ ConfigList.ken = () => {
 	PlaceTypeList.kenPlace = {
 		map:
 			`
-			.c.
-			V.b
+			xxx
+			xc.
+			xxx
 			`,
 		flags: { rotate: true },
 		symbols: {
 			c: 'chest',
 			b: 'barrel',
+			d: 'door',
+			x: { typeFilter: 'wallCave', invisible: true, opacity: 0 },
 			X: { typeFilter: 'marker', playerStartHere: true },
 			V: { typeFilter: 'stuff.voidLamp' },
-			x: 'brazier',
-			p: 'pit',
-			f: 'flames',
-			L: 'lava',
-			M: 'mud',
-			d: 'dog',
-			m: 'mist'
 		},
 		stickers: {
 		},
@@ -59,8 +55,8 @@ ConfigList.ken = () => {
 
 	ThemeList.kenTheme = {
 		scapeId: 		'kenCave',
-		rREQUIRED: 		'floodPit',
-		placeDensity: 	0.10,
+		rREQUIRED: 		'8x kenPlace',
+		placeDensity: 	0.30,
 //		rCOMMON: 		'hoard_shade',
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
@@ -68,7 +64,7 @@ ConfigList.ken = () => {
 //		rEPIC: 			'graveYard',
 		monsters: 		['isTinnamaton'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.02,
+		enemyDensity:  	0.00002,
 		friendDensity: 	0.00001,
 	}
 
@@ -83,7 +79,7 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 12,
+		startingDepth: 1,
 		themeId: 'kenTheme'
 	}
 }

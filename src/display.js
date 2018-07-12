@@ -4,7 +4,7 @@ let GlobalRenderCache = [];
 function createDrawList(observer,map,entityList,asType) {
 
 	// Recalc this here, just in case.
-	let visCache = observer.calcVis();
+	let visCache = observer.calculateVisbility();
 	let areaVis = observer.area.vis;
 
 	function spillLight(px,py,x,y,light) {
@@ -502,7 +502,7 @@ class ViewMap extends ViewObserver {
 			return sprite;
 		}
 
-		spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision) {
+		spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible) {
 
 			function make(x,y,entity,imgGet,light,doTint,doGrey,numSeed) {
 
@@ -524,7 +524,8 @@ class ViewMap extends ViewObserver {
 						}
 					}
 					let sprite = entity.spriteList[i];
-					spriteOnStage(sprite,true);
+					let onStage = !entity.invisible || senseInvisible;
+					spriteOnStage(sprite,onStage);
 					if( sprite.refs == 1 ) {	// I must be the only controller, so...
 						let zOrder = entity.zOrder || (entity.isWall ? ZOrder.WALL : (entity.isFloor ? ZOrder.FLOOR : (entity.isTileType ? ZOrder.TILE : (entity.isItemType ? (entity.isGate ? ZOrder.GATE : (entity.isDecor ? ZOrder.DECOR : ZOrder.ITEM)) : (entity.isMonsterType ? ZOrder.MONSTER : ZOrder.OTHER)))));
 						sprite.zOrder 	= zOrder;
@@ -701,7 +702,7 @@ class ViewMap extends ViewObserver {
 					{
 						let imgGet = this.imageRepo.imgGet[entity.typeId];
 						if( imgGet ) {
-							spriteMakeInWorld(entity,wx+x,wy+y,this.observer.darkVision);
+							spriteMakeInWorld(entity,wx+x,wy+y,this.observer.darkVision,this.observer.senseInvisible);
 						}
 						else {
 							debugger;

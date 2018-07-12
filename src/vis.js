@@ -164,7 +164,7 @@ class Vis {
 		return proList;
 	}
 
-	calcVis(px,py,senseSight,blind,xray,cachedVis,mapMemory) {
+	calcVis(px,py,senseSight,blind,xray,senseInvisible,cachedVis,mapMemory) {
 		let map = this.getMapFn();
 		let xLen = map.xLen;
 
@@ -226,9 +226,13 @@ class Vis {
 				}
 			}
 			if( mapMemory && map.getLightAt(x,y,0) > 0 ) {
+				let tile = map.tileTypeGet(x,y);
 				let pos = y*map.xLen+x;
 				let item = q[pos];
-				mapMemory[pos] = item ? item : map.tileTypeGet(x,y);
+				if( item && item.invisible && !senseInvisible ) {
+					item = null;
+				}
+				mapMemory[pos] = item ? item : tile;
 			}
 			a[y][x] = true;
 			let opacityHere = opacityLookup[y*xLen+x];

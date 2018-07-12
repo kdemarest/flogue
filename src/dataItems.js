@@ -794,6 +794,7 @@ const ItemTypeList = {
 		state: 'shut',	// This is required to stop the user from "seeing inside" with mouse hover.
 		inventoryLoot: '3x 20% any',
 		hasInventory: true,
+		scale: 0.40,
 		img: 'decor/barrel.png'
 	},
 	"chest": {

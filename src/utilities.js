@@ -146,6 +146,14 @@ function nop() {}
 		}
 		return true;
 	}
+	Object.countMembers= function(obj) {
+		let count = 0;
+		for(var key in obj) {
+			if(obj.hasOwnProperty(key))
+				++count;
+		}
+		return count;
+	}
 	Object.each = function(obj,fn) {
 		for( let key in obj ) {
 			fn(obj[key],key);

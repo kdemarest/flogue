@@ -560,6 +560,10 @@ class ViewMiniMap extends ViewObserver {
 		if( msg == 'resetMiniMap' ) {
 			this.setArea(payload);
 		}
+		if( msg == 'reveal' ) {
+			let target = payload;
+			this.drawn[target.y*this.xLen+target.x] = null;
+		}
 	}
 	render() {
 		let observer = this.observer;
@@ -622,6 +626,9 @@ class ViewMiniMap extends ViewObserver {
 		});
 
 		let mapMemory = observer.mapMemory;
+		let defaultFloor = SymbolToType[observer.area.theme.floor];
+		console.assert( observer.area.theme.floor );
+		console.assert( defaultFloor );
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {
 				let mPos = y*this.xLen+x;
@@ -631,7 +638,7 @@ class ViewMiniMap extends ViewObserver {
 				}
 				let entity = mapMemory[mPos];
 				if( entity ) {
-					if( entity.gateDir !== undefined ) {
+					if( entity.gateDir !== undefined && (!entity.invisible || observer.senseInvisible) ) {
 						let gate = StickerList[entity.gateDir>0 ? 'gateDownProxy' : 'gateProxy'];
 						drawLate.push({entity:gate,x:x,y:y,scale:this.scale*3,ctr:true});
 						continue;
@@ -647,7 +654,8 @@ class ViewMiniMap extends ViewObserver {
 					continue;
 				}
 				if( entity.isWall && !entity.mineId ) {
-					entity = StickerList.wallProxy;
+					let show = !entity.invisible || observer.senseInvisible;
+					entity = show ? StickerList.wallProxy : defaultFloor;
 				}
 				draw(c0,entity,x,y,this.scale);
 			}

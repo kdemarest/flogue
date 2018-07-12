@@ -596,3 +596,22 @@ function animationTickRealtime(delta) {
 	animationList.map( anim => anim.tick(delta) );
 	Array.filterInPlace( animationList, anim => !anim.dead );
 }
+
+/*
+Notes on fully data-driven animations:
+
+{
+	follow: 1,			// to follow whatever relevant
+	at: 1,				// to set position
+	puppet: true,		// grabs the entity's spritelist
+	img: url			// or stickerlist entry,
+	delay: 				// handled automatically in most cases
+	duration: 			// usually standard
+	scale:
+	alpha:
+	template:  // like animBlam, etc that take { params... } and use them in an onSprite, onSpriteTick, etc.
+}
+
+*/
+
+

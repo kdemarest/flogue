@@ -399,7 +399,7 @@ class Entity {
 		return Math.floor((this.health/this.healthMax)*100);
 	}
 
-	calcVis() {
+	calculateVisbility() {
 		let doVis = false;
 		if( this.isUser() ) {
 			doVis = true;
@@ -417,6 +417,7 @@ class Entity {
 				this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE,
 				this.senseBlind,
 				this.senseXray,
+				this.senseInvisible,
 				this.visCache,
 				this.mapMemory
 			);

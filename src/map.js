@@ -268,6 +268,10 @@ class Map extends SimpleMap {
 		if( !entity.isMonsterType && !entity.stink ) {
 			return false;
 		}
+		let tile = this.tileTypeGet(x,y);
+		if( tile.noScent ) {
+			return false;
+		}
 		let time = Time.simTime - timeReduction;
 		let lPos = (y*this.xLen+x)*2;
 		if( time >= (this.scentLookup[lPos+0] || 0) ) {

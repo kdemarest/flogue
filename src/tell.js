@@ -50,6 +50,11 @@ let Narrative = (new class {
 
 function bonk(entity,target) {
 	tell( mSubject|mCares, entity, ' ', mVerb, 'run', ' into ', mObject, target, '.' );
+	if( target.isWall && target.invisible && target.isPosition ) {
+//		target.wasBonked = true;
+		target.invisible = false;
+		guiMessage( 'reveal', target );
+	}
 }
 
 function tell() {

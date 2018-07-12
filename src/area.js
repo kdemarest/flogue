@@ -89,6 +89,12 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 				if( TileTypeList[typeId] ) {
 					//console.assert( !tileSet );
 					map.tileSymbolSet(x,y,TileTypeList[typeId].symbol);
+					// If this tile has more than just a spec for itself, then we better
+					// make it isPosition so that it can be given all the other member vars.
+					if( Object.countMembers(make) > 1 ) {
+						let entity = map.toEntity(x,y);
+						Object.assign( entity, make );
+					}
 					tileSet = true;
 					return;
 				}
@@ -361,7 +367,7 @@ function tick(speed,map,entityListRaw) {
 
 	if( speed === false ) {
 		let player = entityListRaw.find( entity => entity.isUser() );
-		player.calcVis();
+		player.calculateVisbility();
 		player.act(false);
 		// Time is not passing, so do not tick items.
 		DeedManager.calc(player);
@@ -380,7 +386,7 @@ function tick(speed,map,entityListRaw) {
 		DeedManager.tick(entity,dt);
 		entity.actionCount += entity.speed / speed;
 		while( entity.actionCount >= 1 ) {
-			entity.calcVis();
+			entity.calculateVisbility();
 			entity.think();
 			entity.act();
 			// DANGER! At this moment the entity might have changed areas!
