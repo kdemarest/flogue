@@ -210,6 +210,7 @@ const MonsterTypeList = {
 		immune: [ConstructImmunity,DamageType.BURN].join(','),
 		isMindless: true,
 		isConstruct: true,
+		isLiving: false,
 		isPlanar: true,
 		isSummoned: true,
 		rarity: 0,
@@ -252,6 +253,7 @@ const MonsterTypeList = {
 		immune: ConstructImmunity,
 		isMindless: true,
 		isConstruct: true,
+		isLiving: false,
 		isTinnamaton: true,
 		resist: ConstructResistance,
 		senseSight: 8,
@@ -265,6 +267,7 @@ const MonsterTypeList = {
 		immune: ConstructImmunity,
 		isMindless: true,
 		isConstruct: true,
+		isLiving: false,
 		isBrassamaton: true,
 		resist: ConstructResistance,
 		senseSight: 5,
@@ -929,7 +932,7 @@ MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
 	let f = this.findAliveOthers().includeMe().filter( e => e.typeId==this.typeId );
 	if( f.count ) {
 		let numAlerted = 0;
-		f.process( e => {
+		f.forEach( e => {
 			if( e.attitude == Attitude.HESITANT || e.attitude == Attitude.WANDER || e.attacker == Attitude.AWAIT ) {
 				e.changeAttitude( Attitude.AGGRESSIVE );
 			}

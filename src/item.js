@@ -154,6 +154,9 @@ class Item {
 		}
 		return parts[0] == this.typeId && this.variety && parts[1] == this.variety.typeId;
 	}
+	isContainable() {
+		return this.isTreasure && !this.isContainer && !this.isDecor && this.walkable && !this.isHidden;
+	}
 	setState(newState) {
 		this.state = newState;
 		if( this.states ) {
@@ -313,6 +316,10 @@ class Item {
 		}
 		let result = this.owner._itemTake(this,x,y);
 		// WARNING! At this point the item could be destroyed.
+		if( result && !result.dead && result.isContainer ) {
+			let itemList = this.map.findItemAt(x,y).isContainable();
+			itemList.forEach( item => item.giveTo(result,x,y) );
+		}
 		return result;
 	}
 	single() {

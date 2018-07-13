@@ -100,7 +100,7 @@ class Finder {
 		this.result.length = Math.min(this.result.length,n);
 		return this;
 	}
-	process(fn) {
+	forEach(fn) {
 		this.result.forEach(fn);
 		return this;
 	}
@@ -126,6 +126,9 @@ class Finder {
 	byRange() {
 		this.result.sort( (a,b) => (a.range || a.reach) - (b.range || b.reach) );
 		return this;
+	}
+	isContainable() {
+		return this.filter( e => e.isContainable() );
 	}
 
 // ME-oriented capabilities

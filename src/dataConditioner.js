@@ -44,6 +44,10 @@ class DataConditioner {
 			extractRarityHash(theme,rEPIC,theme.rEPIC);
 			extractRarityHash(theme,rLEGENDARY,theme.rLEGENDARY);
 
+			console.assert( theme.palette );
+			console.assert( !theme.palette.basis || PaletteList[theme.palette.basis] );
+			theme.palette = Object.assign( {}, PaletteList.DEFAULT, PaletteList[theme.palette.basis], theme.palette );
+
 			let supplyArray = Array.supplyParse( theme.rREQUIRED || '' );
 			Array.supplyValidate( supplyArray, PlaceTypeList );
 

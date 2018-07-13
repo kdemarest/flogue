@@ -355,7 +355,7 @@ let effectApply = function(effect,target,source,item) {
 					}
 					//animAt( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
 					let targetList = new Finder(area.entityList).at(x,y);
-					targetList.process( t => {
+					targetList.forEach( t => {
 						_effectApplyTo(effect,t,source,item);
 					});
 				}
@@ -657,7 +657,7 @@ DeedManager.addHandler(DeedOp.DRAIN,function() {
 DeedManager.addHandler(DeedOp.KILLLABEL,function() {
 	let f = new Finder( this.target.itemList, this.source ).excludeMe().filter( item => item.label == this.value );
 	let count = f.count;
-	f.process( item => {
+	f.forEach( item => {
 		animFloatUp( item, StickerList.ePoof.img );
 		item.destroy()
 	});

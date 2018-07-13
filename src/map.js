@@ -13,15 +13,13 @@ function FillTextMap(xLen,yLen,symbol) {
 
 // MAP
 class SimpleMap {
-	constructor(tileRaw,removeBlanks,padSymbol) {
+	constructor(tileRaw,replaceBlanks,padSymbol) {
 		this.isMap = true;
 		if( TILE_UNKNOWN != ' ' ) debugger;
 		
-		let temp = removeBlanks ? tileRaw.replace(/ /g,padSymbol) : tileRaw;
-		this.tile = temp.split('\n');
-		while( this.tile[this.tile.length-1].trim() == '' ) {
-			this.tile.length -= 1;
-		}
+		let temp = tileRaw.replace(/\t/g,'');;
+		temp = replaceBlanks ? temp.replace(/ /g,padSymbol) : temp;
+		this.tile = temp.split('\n').filter( line => line.trim().length > 0 );
 		this.yLen = this.tile.length;
 		let xLen = 0;
 		for( let y=0 ; y<this.yLen ; ++y ) {
@@ -108,6 +106,16 @@ class SimpleMap {
 		}
 		return this;
 	}
+	symbolFindPosition(symbol) {
+		let pos = null;
+		this.traverse( (x,y,tile) => {
+			if( tile.symbol == symbol ) {
+				pos = [x,y];
+				return false;
+			}
+		});
+		return pos;
+	}
 	traverseNear(cx,cy,dist,fn) {
 		let sy = Math.max(cy-dist,0);
 		let ey = Math.min(cy+dist,this.yLen-1);
@@ -138,15 +146,17 @@ class SimpleMap {
 		}
 		return c;
 	}
+	testPassable(x,y) {
+		let tile = this.tileTypeGet(x,y);
+		return tile !== false && (tile.mayWalk || tile.isRemovable !== false);
+	}
 	countGaps(x,y) {
 		let swaps = 0;
-		let tile = this.tileTypeGet(x+DirectionAdd[7].x,y+DirectionAdd[7].y);
-		let lastWalkable = tile !== false && tile.mayWalk;
+		let lastPassable = this.testPassable(x+DirectionAdd[7].x,y+DirectionAdd[7].y);
 		for( let dir=0 ; dir < 8 ; ++dir ) {
-			let tile = this.tileTypeGet(x+DirectionAdd[dir].x,y+DirectionAdd[dir].y);
-			let walkable = tile !== false && tile.mayWalk;
-			if( walkable != lastWalkable ) ++swaps;
-			lastWalkable = walkable;
+			let passable = this.testPassable(x+DirectionAdd[dir].x,y+DirectionAdd[dir].y);
+			if( passable != lastPassable ) ++swaps;
+			lastPassable = passable;
 		}
 		return swaps / 2;
 	}
@@ -206,6 +216,9 @@ class SimpleMap {
 			return false;
 		}
 		let symbol = this.tileSymbolGet(x,y);
+		if( symbol == TILE_UNKNOWN ) {
+			return false;
+		}
 		let type = SymbolToType[symbol];
 		console.assert(type);
 		return type;
@@ -258,11 +271,14 @@ class Map extends SimpleMap {
 	get entityList() {
 		return this.area.entityList;
 	}
+	get defaultFloorSymbol() {
+		return TypeIdToSymbol[this.area.theme.palette.floor];
+	}
 	initSprites() {
 		this.tileSprite = [];
 		this.traverse( (x,y) => {
 			this.tileSprite[y] = this.tileSprite[y] || [];
-			this.tileSprite[y][x] = [];
+			this.tileSprite[y][x] = {};
 		});
 	}
 	calcLookup(lookup,testFn) {
@@ -335,6 +351,12 @@ class Map extends SimpleMap {
 			return null;
 		}
 		return found;
+	}
+
+	testPassable(x,y) {
+		if( !super.testPassable(x,y) ) return false;
+		let impassableItems = this.findItemAt(x,y).filter( item => !item.mayWalk && item.isRemovable !== false );
+		return impassableItems.count <= 0;
 	}
 
 	calcWalkable(x,y) {

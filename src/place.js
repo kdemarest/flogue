@@ -21,7 +21,10 @@ class Place {
 		}
 		// Replace map symbols with allocated symbols
 		if( typeof this.map === 'string' ) {
-			this.mapOriginal = this.map.trim().replace(/\t/g,'');
+			let temp = this.map.replace(/\t/g,'');
+			let lines = temp.split('\n');
+			Array.filterInPlace( lines, line => line.trim().length > 0 );
+			this.mapOriginal = lines.join('\n');
 		}
 
 		let pickCache = {};

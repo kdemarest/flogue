@@ -135,8 +135,8 @@ function createDrawList(observer,map,entityList,asType) {
 	// that shine light will do so in this loop.
 	//let dChar = '';
 	//let debug = '';
-	console.assert( map.area.theme.floor );
-	let lastFloor = SymbolToType[map.area.theme.floor];
+	console.assert( map.defaultFloorSymbol );
+	let lastFloor = SymbolToType[map.defaultFloorSymbol];
 	console.assert( lastFloor );
 	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
 		let ty = y-(py-d);
@@ -192,7 +192,7 @@ function createDrawList(observer,map,entityList,asType) {
 					//	aa.length = 2;
 					//}
 					if( itemFind.count && observer.senseTreasure ) {
-						itemFind.process( item => {
+						itemFind.forEach( item => {
 							if( item.isTreasure ) {
 								aa.push(item);
 								aa[0] = revealLight;
@@ -212,7 +212,7 @@ function createDrawList(observer,map,entityList,asType) {
 					}
 					aa.push(tile);
 					if( itemFind.count ) {
-						itemFind.process( item => {
+						itemFind.forEach( item => {
 							aa.push(item);
 							visId[item.id] = item;
 						});
@@ -497,6 +497,9 @@ class ViewMap extends ViewObserver {
 			if( value == sprite.onStage ) {
 				return;
 			}
+			if( value && self.app.stage.children.find( s => s==sprite ) ) {
+				debugger;
+			}
 			self.app.stage[value?'addChild':'removeChild'](sprite);
 			sprite.onStage = value;
 			return sprite;
@@ -515,6 +518,7 @@ class ViewMap extends ViewObserver {
 							debugger;
 							imgGet(entity);	//helps with debugging.
 						}
+						console.log( "Create sprite "+entity.typeId,x/TILE_DIM,y/TILE_DIM);
 						let sprite = spriteCreate( entity.spriteList, img );
 						sprite.keepAcrossAreas = entity.isUser && entity.isUser();
 						sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
@@ -557,7 +561,7 @@ class ViewMap extends ViewObserver {
 			}
 			
 			let glowLight = MaxVis;
-			this.staticTileEntity = this.staticTileEntity || { isStaticTile: true };
+//			this.staticTileEntity = this.staticTileEntity || { isStaticTile: true };
 
 			// These are the world coordinate offsets
 			let wx = (this.observer.x-this.sd);
@@ -578,7 +582,7 @@ class ViewMap extends ViewObserver {
 			}
 
 			if( entity.isTileType && !entity.isPosition ) {
-				entity.spriteList = this.observer.map.tileSprite[yWorld][xWorld];
+				entity.spriteList = this.observer.map.tileSprite[yWorld][xWorld][entity.typeId];
 			}
 
 			let imgGet = this.imageRepo.imgGet[entity.typeId];
@@ -596,8 +600,9 @@ class ViewMap extends ViewObserver {
 			);
 
 			if( entity.isTileType && !entity.isPosition ) {
-				this.observer.map.tileSprite[yWorld][xWorld] = this.staticTileEntity.spriteList;
-				delete entity.spriteList;
+//				this.observer.map.tileSprite[yWorld][xWorld] = this.staticTileEntity.spriteList;
+				this.observer.map.tileSprite[yWorld][xWorld][entity.typeId] = entity.spriteList;
+//				delete entity.spriteList;
 			}
 		}.bind(this);
 

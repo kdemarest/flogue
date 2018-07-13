@@ -211,10 +211,10 @@ let EffectTypeList = {
 	eLuminari: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'light', value: 6, xDuration: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
 	eDarkness: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'dark', value: 12, xDuration: 5.0, isPlayerOnly: 1, name: 'darkness', icon: 'gui/icons/eLuminari.png' },
 //	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },
-	eGreed: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseTreasure', value: true, xDuration: 5.0, isPlayerOnly: 1, name: 'greed', icon: 'gui/icons/eVision.png' },
-	eEcholoc: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseLiving', value: true, xDuration: 5.0, isPlayerOnly: 1, name: 'bat sense', icon: 'gui/icons/eVision.png' },
+	eGreed: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseTreasure', value: true, xDuration: 5.0, isPlayerOnly: 1, name: 'sense items', icon: 'gui/icons/eVision.png' },
+	eEcholoc: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseLiving', value: true, xDuration: 5.0, isPlayerOnly: 1, name: 'sense life', icon: 'gui/icons/eVision.png' },
 	eSeeInvisible: 	{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, xDuration: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
-	eXray: 			{ isTac: 1, level:  0, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, xDuration: 5.0, isPlayerOnly: 1, name: 'earth vision', icon: 'gui/icons/eVision.png' },
+	eXray: 			{ isTac: 1, level:  0, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, xDuration: 5.0, isPlayerOnly: 1, name: 'xray vision', icon: 'gui/icons/eVision.png' },
 	eTeleport: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'teleport', isInstant: true, xRecharge: 2.0, isHelp: true, name: 'teleport', icon: 'gui/icons/eTeleport.png' },
 	eOdorless: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'scentReduce', value: SCENT_AGE_LIMIT, isHelp: true, name: 'no scent', icon: 'gui/icons/eFragrance.png' },
 	eStink: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'stink', value: 0.8, isHarm: true, name: 'stink', icon: 'gui/icons/eFragrance.png' },
@@ -349,26 +349,184 @@ const TileTypeList = {
 	"wallStone":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall",
 					img: "dc-dngn/floor/pedestal_full.png", isWall: true, wantsDoor: true
 					},
-
-	"pit":        { symbol: ':', mayWalk: true, mayFly: true,  opacity: 0, noScent: true, name: "pit", mayJump: true, isPit: true, wantsBridge: true, img: "dc-dngn/pit.png" },
-	"bridge":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "bridge", isBridge: true, img: "dc-dngn/bridgeNS.png", imgChoices: ImgBridges, imgGet: (self,img) => img || self.img },
-	"water":      { symbol: '~', mayWalk: true,  mayFly: true,  maySwim: true, noScent: true, isWater: true, opacity: 0, mayJump: true, wantsBridge: true, name: "water", img: "dc-dngn/water/dngn_shoals_shallow_water1.png" },
-	"grass":      { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "grass", img: "dc-dngn/floor/grass/grass_flowers_blue1.png", isFloor: true },
-	"glass":      { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "glass", img: "dc-dngn/wall/dngn_mirrored_wall.png", isWall: true },
-	"shaft":      { symbol: SYM, mayWalk: false, mayFly: true,  opacity: 0, noScent: true, name: "shaft", mayJump: true, img: "dc-dngn/dngn_trap_shaft.png" },
-	"flames":     { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.26, noScent: true, isFire: true, name: "flames", light: 9, glow:1,
-					effect: { op: 'damage', xDamage: 4.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "dc-mon/nonliving/fire_elemental.png" },
-	"lava":    	  { symbol: SYM, mayWalk: true, mayFly: true,  maySwim: true, noScent: true, opacity: 0, isFire: true, mayJump: true, name: "lava", light: 5, glow:1, 
-					effect: { op: 'damage', xDamage: 8.0, damageType: DamageType.BURN, isInstant: 1, icon: 'gui/icons/eFire.png' }, img: "UNUSED/features/dngn_lava.png" },
-	"mist":       { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0.34, name: "mist", zOrder: ZOrder.MIST, img: "effect/cloud_grey_smoke.png", layer: 3 },
-	"mud":        { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, noScent: true, mayJump: true, name: "mud", img: "dc-dngn/floor/dirt0.png" },
-	"ghostStone": { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "ghost stone", img: "dc-dngn/altars/dngn_altar_vehumet.png",
-					effect: { op: 'set', stat: 'invisible', value: true } },
-	"obelisk":    { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "obsidian obelisk", img: "dc-dngn/altars/dngn_altar_sif_muna.png",
-					effect: { op: 'set', stat: 'senseBlind', value: true } },
-	"crystal":    { symbol: SYM, mayWalk: false, mayFly: false, opacity: 0, name: "shimmering crystal", glow:1, img: "dc-dngn/altars/dngn_altar_beogh.png",
-					effect: { op: 'add', stat: 'speed', value: 3 } },
-	"forcefield": { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 1, name: "force field", light: 3, glow:1, img: "spells/air/static_discharge.png" },
+	"pit": {
+		symbol: ':',
+		mayWalk: true,
+		mayFly: true,
+		opacity: 0,
+		noScent: true,
+		name: "pit",
+		mayJump: true,
+		isPit: true,
+		// NOTE! Technically the pit isRemovable when you build bridges with a hammer. But
+		// that is for another day.
+		wantsBridge: true,
+		img: "dc-dngn/pit.png"
+	},
+	"bridge": {
+		symbol: SYM,
+		mayWalk: true,
+		mayFly: true,
+		opacity: 0,
+		name: "bridge",
+		isBridge: true,
+		// NOTE! Although the bridge isRemovable doing so turns it into PIT, and the isRemovable
+		// flag only means "can be removed in such a way as to be walked upon later.
+		img: "dc-dngn/bridgeNS.png",
+		imgChoices: ImgBridges,
+		imgGet: (self, img) => img || self.img
+	},
+	"water": {
+		symbol: '~',
+		mayWalk: true,
+		mayFly: true,
+		maySwim: true,
+		noScent: true,
+		isWater: true,
+		opacity: 0,
+		mayJump: true,
+		wantsBridge: true,
+		name: "water",
+		img: "dc-dngn/water/dngn_shoals_shallow_water1.png"
+	},
+	"grass": {
+		symbol: SYM,
+		mayWalk: true,
+		mayFly: true,
+		opacity: 0,
+		name: "grass",
+		img: "dc-dngn/floor/grass/grass_flowers_blue1.png",
+		isFloor: true
+	},
+	"glass": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: false,
+		opacity: 0,
+		name: "glass",
+		img: "dc-dngn/wall/dngn_mirrored_wall.png",
+		isWall: true
+	},
+	"shaft": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: true,
+		opacity: 0,
+		noScent: true,
+		name: "shaft",
+		mayJump: true,
+		img: "dc-dngn/dngn_trap_shaft.png"
+	},
+	"flames": {
+		symbol: SYM,
+		mayWalk: true,
+		mayFly: true,
+		opacity: 0.26,
+		noScent: true,
+		isFire: true,
+		name: "flames",
+		light: 9,
+		glow: 1,
+		effect: {
+			op: 'damage',
+			xDamage: 4.0,
+			damageType: DamageType.BURN,
+			isInstant: 1,
+			icon: 'gui/icons/eFire.png'
+		},
+		img: "dc-mon/nonliving/fire_elemental.png"
+	},
+	"lava": {
+		symbol: SYM,
+		mayWalk: true,
+		mayFly: true,
+		maySwim: true,
+		noScent: true,
+		opacity: 0,
+		isFire: true,
+		mayJump: true,
+		name: "lava",
+		light: 5,
+		glow: 1,
+		effect: {
+			op: 'damage',
+			xDamage: 8.0,
+			damageType: DamageType.BURN,
+			isInstant: 1,
+			icon: 'gui/icons/eFire.png'
+		},
+		img: "UNUSED/features/dngn_lava.png"
+	},
+	"mist": {
+		symbol: SYM,
+		mayWalk: true,
+		mayFly: true,
+		opacity: 0.34,
+		name: "mist",
+		zOrder: ZOrder.MIST,
+		img: "effect/cloud_grey_smoke.png",
+		layer: 3
+	},
+	"mud": {
+		symbol: SYM,
+		mayWalk: true,
+		mayFly: true,
+		opacity: 0,
+		noScent: true,
+		mayJump: true,
+		name: "mud",
+		img: "dc-dngn/floor/dirt0.png"
+	},
+	"ghostStone": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: false,
+		opacity: 0,
+		name: "ghost stone",
+		img: "dc-dngn/altars/dngn_altar_vehumet.png",
+		effect: {
+			op: 'set',
+			stat: 'invisible',
+			value: true
+		}
+	},
+	"obelisk": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: false,
+		opacity: 0,
+		name: "obsidian obelisk",
+		img: "dc-dngn/altars/dngn_altar_sif_muna.png",
+		effect: {
+			op: 'set',
+			stat: 'senseBlind',
+			value: true
+		}
+	},
+	"crystal": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: false,
+		opacity: 0,
+		name: "shimmering crystal",
+		glow: 1,
+		img: "dc-dngn/altars/dngn_altar_beogh.png",
+		effect: {
+			op: 'add',
+			stat: 'speed',
+			value: 3
+		}
+	},
+	"forcefield": {
+		symbol: SYM,
+		mayWalk: true,
+		mayFly: true,
+		opacity: 1,
+		name: "force field",
+		light: 3,
+		glow: 1,
+		img: "spells/air/static_discharge.png"
+	},
 };
 
 

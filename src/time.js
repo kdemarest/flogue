@@ -8,6 +8,13 @@ let Time = (new class {
 	simTimeInc() {
 		this.simTime++;
 	}
+	remaining(futureSimTime) {
+		return Math.max(0,futureSimTime - this.simTime);
+	}
+	elapsed(simTime) {
+		console.assert(simTime);
+		return Math.max(0,this.simTime - simTime);
+	}
 }());
 
 class SimTimer {
@@ -16,12 +23,12 @@ class SimTimer {
 		this.simTimeEnd = Time.simTime+duration;
 	}
 	get remaining() {
-		return this.simTimeEnd - Time.simTime;
+		return Time.remaining(this.simTimeEnd);
 	}
 	get elapsed() {
-		return Time.simTime - this.simTimeStart;
+		return Time.elapsed(this.simTimeStart);
 	}
 	get expired() {
-		return Time.simTime >= this.simTimeEnd;
+		return Time.remaining(this.simTimeEnd) <= 0;
 	}
 }

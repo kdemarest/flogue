@@ -407,6 +407,7 @@ function solve(source,caseId) {
 	let path = new Path(
 		map,
 		source.distLimit,
+		false,
 		source.test ? source.test(map) : null
 	);
 	path.findPath(

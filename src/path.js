@@ -44,11 +44,13 @@ function pVerySafe(map,fn) {
 
 
 class Path {
-	constructor(map,distLimit,testFn) {
+	constructor(map,distLimit,isOrtho,avoidMetric=10,testFn) {
 		this.map = map;
 		this.xLen = map.xLen;
 		this.yLen = map.yLen;
 		this.distLimit = distLimit === null ? xLen*yLen : distLimit;
+		this.isOrtho = isOrtho
+		this.avoidMetric = avoidMetric;
 		this.testFn = testFn || pWalkQuick(map);
 		this.grid = null;
 		this.sx = null;
@@ -142,10 +144,12 @@ class Path {
 
 		this.status = {};
 
-		let xLen = this.xLen;
-		let yLen = this.yLen;
-		let grid = this.grid;
-		let testFn = this.testFn;
+		let xLen 	= this.xLen;
+		let yLen 	= this.yLen;
+		let dirStep = this.isOrtho ? 2 : 1;
+		let avoidMetric = this.avoidMetric;
+		let grid 	= this.grid;
+		let testFn 	= this.testFn;
 		let distLimit = this.distLimit;
 
 		function flood() {
@@ -163,7 +167,7 @@ class Path {
 				if( v >= 1 ) {
 					return false;	// 1 or greater means you have already visited, or tht you will die/hit wall entering this square
 				}
-				let myDist = Math.floor(dist+1+v*10);
+				let myDist = Math.floor(dist+1+v*avoidMetric);
 				grid[lPos] = myDist;	// or if isProblem, more than 1
 				if( myDist > distLimit ) {
 					self.status.reachedLimit = 1;
@@ -201,7 +205,7 @@ class Path {
 
 					let testEdge = x<=0 || y<=0 || x>=xLen-1 || y>= yLen-1;
 
-					for( let dir=0; dir<8 ; dir += 1 ) {
+					for( let dir=0; dir<8 ; dir += dirStep ) {
 						let nx = x + DirectionAdd[dir].x;
 						let ny = y + DirectionAdd[dir].y;
 						if( testEdge && (nx<0 || ny<0 || nx>=xLen || ny>=yLen) ) continue;
@@ -244,7 +248,7 @@ class Path {
 				let bestDir = -1;
 				let bestValue = 999999;
 				let testEdge = x<=0 || y<=0 || x>=xLen-1 || y>= yLen-1;
-				for( let dir=0 ; dir<8 ; dir += 1 ) {
+				for( let dir=0 ; dir<8 ; dir += dirStep ) {
 					let nx = x + DirectionAdd[dir].x;
 					let ny = y + DirectionAdd[dir].y;
 					if( testEdge && (nx<0 || ny<0 || nx>=xLen || ny>=yLen) ) continue;

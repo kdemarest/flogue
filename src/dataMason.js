@@ -64,10 +64,12 @@
 		return tile !== T.Unknown && SymbolToType[tile].isBridge;
 	}
 	function isBlocking(tile) {
-		return tile !== T.Unknown && !(SymbolToType[tile].mayWalk || SymbolToType[tile].isDoor || SymbolToType[tile].isMonsterType);
+		let type = SymbolToType[tile];
+		return tile !== T.Unknown && !(type.mayWalk || (type.isItemType && type.isRemovable!==false)  || type.isDoor || type.isMonsterType);
 	}
 	function isWalkable(tile) {
-		return tile !== T.Unknown && (SymbolToType[tile].mayWalk  || SymbolToType[tile].isDoor || SymbolToType[tile].isMonsterType || SymbolToType[tile].isItemType);
+		let type = SymbolToType[tile];
+		return tile !== T.Unknown && (type.mayWalk || (type.isItemType && type.isRemovable!==false)  || type.isDoor || type.isMonsterType);
 	}
 	function isBlockingOrUnknown(tile) {
 		return isUnknown(tile) || isBlocking(tile);
@@ -109,8 +111,8 @@
 			this.tile = whoseGrid || [];
 
 		}
-		xLen() { return this.xMax-this.xMin+1; }
-		yLen() { return this.yMax-this.yMin+1; }
+		get xLen() { return this.xMax-this.xMin+1; }
+		get yLen() { return this.yMax-this.yMin+1; }
 		setDimensions(xLen,yLen) {
 			console.assert( typeof xLen == 'number' && !isNaN(xLen) );
 			if( yLen === undefined ) {
@@ -195,6 +197,7 @@
 			this.ext(x,y);
 			this.tile[y] = this.tile[y] || [];
 			this.tile[y][x] = this.tile[y][x] || {};
+			if( this.tile[y][x].hard ) debugger;
 			this.tile[y][x].tile = tileType;
 			this.tile[y][x].zoneId = zoneId;
 			return this;
@@ -209,11 +212,11 @@
 			return this;
 		}
 		area() {
-			return this.xLen() * this.yLen();
+			return this.xLen * this.yLen;
 		}
 		traverse(fn,xsInset=0,ysInset=0,xeInset=0,yeInset=0) {
-			if( xsInset+xeInset >= this.xLen() ) { debugger; }
-			if( ysInset+yeInset >= this.yLen() ) { debugger; }
+			if( xsInset+xeInset >= this.xLen ) { debugger; }
+			if( ysInset+yeInset >= this.yLen ) { debugger; }
 			// WARNING: Keep these intermediate variables here because otherwise you might endless loop
 			// if an operation expands the xMin and xMax.
 			let sy = this.yMin+ysInset;
@@ -322,7 +325,10 @@
 			return [x,y];
 		}
 		randPos4(xa=0,ya=0,xb=0,yb=0) {
-			return [Math.randInt(this.xMin+xa,this.xMax+1+xb),Math.randInt(this.yMin+ya,this.xMax+1+yb)];
+			return [
+				Math.randInt(this.xMin+xa,this.xMax+1+xb),
+				Math.randInt(this.yMin+ya,this.xMax+1+yb)
+			];
 		}
 
 		countAll(testFn) {
@@ -391,17 +397,13 @@
 			return this;
 
 		}
-		placeEntrance(tile) {
-			let amount = 1;
-			let reps = 100;
-			while( amount ) {
+		pickSafePos() {
+			let reps = this.xLen * this.yLen;
+			while( --reps ) {
 				let x,y;
 				[x,y] = this.randPos();
-				--reps;
-				if( reps<=0 && isFloor(this.getTile(x,y)) && this.count8(x,y,isFloor)>=3 && this.count8(x,y,isWall)>=1 ) {
-					this.setTile(x,y,tile);
-					--amount;
-					reps = 100;
+				if( isFloor(this.getTile(x,y)) && this.count8(x,y,isFloor)>=3  ) {
+					return [x,y];
 				}
 			}
 			return this;
@@ -548,10 +550,12 @@
 		}
 
 		findClosest(sx,sy,avoidZoneId,haltAtDist) {
+
+			// Create the prolist if we haven't already.
 			if( !this.proList ) {
 				this.proList = [];
-				for( let y=-this.yLen() ; y<this.yLen() ; ++y ) {
-					for( let x=-this.xLen() ; x<this.xLen() ; ++x ) {
+				for( let y=-this.yLen ; y<this.yLen ; ++y ) {
+					for( let x=-this.xLen ; x<this.xLen ; ++x ) {
 						if( x==0 && y==0 ) continue;
 						let dist = getTrueDistance(x,y);
 						this.proList.push({x:x,y:y,dist:dist});
@@ -579,7 +583,7 @@
 						return false;
 					}
 				}
-				if( zoneId != NO_ZONE && zoneId != avoidZoneId) {
+				if( zoneId != NO_ZONE && zoneId != avoidZoneId && !this.getAll(x,y).hard ) {
 					return {
 						x:sx, y:sy, zoneId:avoidZoneId,
 						tx:x, ty:y, tZoneId:zoneId,
@@ -613,6 +617,59 @@
 			return acted;
 		}
 
+		setPassageTileWideAndRemember(x,y,width,dir,zoneId,marks) {
+			console.assert( x!==undefined && y!==undefined );
+			console.assert( dir >=0 && dir < 8 );
+			console.assert( width >=1 && width <=3 );
+			if( width > 1 ) debugger;
+			// This 'width' business is to make cooridors wider when requested.
+			for( let rx=-Math.floor(width/2) ; rx<Math.ceil(width/2) ; ++rx ) {
+				for( let ry=-Math.floor(width/2) ; ry<Math.ceil(width/2) ; ++ry ) {
+					let px = x+rx;
+					let py = y+ry;
+					let acted = this.setPassageTile(px,py,dir,zoneId);
+					if( acted && marks ) {
+						// This intentionally misses the start and end points, which should already have sites.
+						marks.push(px,py);
+					}
+				}
+			}
+		}
+
+		zoneLinkByPath(x,y,tx,ty,zoneId,tZoneId,linkFn,marks,width) {
+			let path = new Path( this, this.area(), true, 30, (x,y) => {
+				let all = this.getAll(x,y);
+				if( !all.tile ) return 0.0;				// Unknown
+				if( all.hard ) return 0.9;				// Wall placed by a place
+				if( isBlocking(all.tile) ) return 0.1;	// Other walls or immobile items
+				return 0.0;								// All floor, items, monsters, etc.
+			});
+
+			let success = path.findPath(null,x,y,tx,ty);
+			if( !success ) {
+				debugger;
+			}
+			if( success ) {
+				let reps = path.path.length * 2;
+				while( --reps ) {
+					let dir = path.getDirFrom(x,y);
+					if( dir === false ) {
+						debugger;
+						return false;
+					}
+					x += DirAdd[dir].x;
+					y += DirAdd[dir].y;
+					if( x == tx && y == ty ) {
+						return true;
+					}
+					this.setPassageTileWideAndRemember(x,y,width,dir,zoneId,marks);					
+				}
+				if( !reps ) {
+					debugger;
+				}
+			}
+		}
+
 		zoneLink(x,y,tx,ty,zoneId,tZoneId,linkFn,marks,width) {
 			// to - from
 			let t = [];
@@ -625,26 +682,25 @@
 				if( x==tx && y==ty ) {
 					return;
 				}
-				for( let rx=-Math.floor(width/2) ; rx<Math.ceil(width/2) ; ++rx ) {
-					for( let ry=-Math.floor(width/2) ; ry<Math.ceil(width/2) ; ++ry ) {
-						let px = x+rx;
-						let py = y+ry;
-						let acted = this.setPassageTile(px,py,dir,zoneId);
-						if( acted && marks ) {
-							// This intentionally misses the start and end points, which should already have sites.
-							marks.push(px,py);
-						}
-					}
-				}
+				this.setPassageTileWideAndRemember(x,y,width,dir,zoneId,marks);
 			}
 			return false;
 		}
+
 		findProximity(zoneList) {
 			// Find the closest tile for every single tile in every zone, that is on the edge.
 			let proximity = [];
 			for( let zone of zoneList) {
-				let bestDist = 4*this.xLen()*this.yLen();
+				let bestDist = 4*this.xLen*this.yLen;
 				Array.traversePairs( zone.tiles, (x,y) => {
+					if( this.getAll(x,y).hard ) {
+						// Don't attempt to make paths connect to 'hard' walls, ie those
+						// put down by the places.
+						return;
+					}
+					if( isWall(this.getTile(x,y)) ) {
+						debugger;
+					}
 					let result = this.findClosest(x,y,zone.zoneId,bestDist);
 					if( result !== false ) {
 						proximity.push(result);
@@ -690,7 +746,8 @@
 
 				// Now, in order, make connections.
 				let link = {};
-				while( proximity.length ) {
+				let reps = 100;
+				while( proximity.length && --reps ) {
 					let p = proximity.shift();
 					let pair = Math.min(p.zoneId,p.tZoneId)+'-'+Math.max(p.zoneId,p.tZoneId);
 					if( link[pair] ) {
@@ -723,7 +780,8 @@
 					}
 					if( p.x!=p.tx || p.y!=p.ty ) {
 						let linkFn = Math.chance(passageWander) ? deltasToDirNaturalOrtho : deltasToDirStrict;
-						this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
+						//this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
+						this.zoneLinkByPath(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
 						let thruSite = {};
 						let bestId = '';
 						let tempMarks = [].concat(marks);
@@ -777,17 +835,6 @@
 			//console.log("Made "+doorCount+" passage doors.");
 		}
 
-		quotaMakePositioned(quota,injectList,mapOffset) {
-			quota.forEach( q => {
-				console.assert( !q.done );
-				if( q.putAnywhere ) {
-					return;
-				}
-				this.setTile(q.x+mapOffset.x,q.y+mapOffset.y,q.symbol);
-				injectMake( injectList, q.x+mapOffset.x, q.y+mapOffset.y, q.inject, "makePositioned" );
-				q.done = true;
-			});
-		}
 		fit(px,py,expand,placeMap) {
 			if( px<0 || py<0 || px+placeMap.xLen>this.xLen || py+placeMap.yLen>this.yLen ) {
 				return false;
@@ -817,8 +864,8 @@
 					if( mSym !== TILE_UNKNOWN ) {
 						debugger;
 					}
-					fn(x,y,px+x,py+y,pSym);
 					this.setTile(px+x,py+y,pSym);
+					fn(x,y,px+x,py+y,pSym);
 				}
 			}
 		}
@@ -949,7 +996,7 @@
 				// Drat, multiple sites exist in this zone. Outline them all until nothing is left.
 				let nearHash = {};
 				let anyFound;
-				let reps = 4*this.xLen()*this.yLen();
+				let reps = 4*this.xLen*this.yLen;
 				do {
 					anyFound = false;
 					let markHash = {};
@@ -1123,7 +1170,7 @@
 		}
 	}
 
-	function positionPlaces(depth,map,numPlaceTilesOriginal,quota,requiredPlaces,rarityHash,injectList,siteList) {
+	function positionPlaces(depth,map,numPlaceTilesOriginal,quota,requiredPlaces,rarityHash,injectList,siteList,mapOffset) {
 
 		class PlacePicker extends PickTable {
 			constructor() {
@@ -1255,9 +1302,10 @@
 			}
 
 			findRandomFit(place,fitReps=300) {
+				let inset = 2;	// This allows for doors facing the edges to get paths to them.
 				let x,y,fits;
 				do {
-					[x,y] = this.map.randPos4( 0, 0, place.map ? -place.map.xLen : 0, place.map ? -place.map.yLen : 0);
+					[x,y] = this.map.randPos4( 0+2, 0+2, place.map ? -(place.map.xLen+inset) : 0, place.map ? -(place.map.yLen+inset) : 0);
 					fits = this.testFit(x,y,place);
 				} while( !fits && --fitReps );
 				return { x:x, y:y, fits:fits };
@@ -1285,6 +1333,10 @@
 					siteMarks.push(x,y);
 					let type = SymbolToType[symbol];
 					if( !type ) debugger;
+					if( type.isWall && !place.softWalls ) {
+						map.getAll(x,y).hard = true;
+					}
+
 					let typeId = type.typeId;
 					if( place.inject && place.inject[typeId] ) {
 						//console.log(type.typeId+' at '+x+','+y+' will get ',place.inject[type.typeId]);
@@ -1336,6 +1388,22 @@
 			return siteMarks;
 		}
 
+		function makeAtSpecificPosition(placeRaw,rotation,symbol,symbolPos) {
+			let place = placePrepare(placeRaw,rotation);
+			let relPos = place.map.symbolFindPosition(symbol);
+			let fitter = new Fitter(map);
+			let pos = { x: symbolPos.x-relPos[0], y: symbolPos.y-relPos[1] };
+			if( !fitter.testFit(pos.x,pos.y,place) ) {
+				return false;
+			}
+
+			let siteMarks = placeMake(pos.x,pos.y,place);
+			if( siteMarks ) {
+				addSite( place, siteMarks );
+			}
+			return siteMarks;
+		}
+
 		function addRandomPlacesUntilFull(roster,placePicker) {
 			// IMPORTANT: This falls through if rarityTable is empty. This is permitted, that is, an area can have zero random places.
 			let reps = 1000;
@@ -1358,16 +1426,25 @@
 
 		function makeQuotaPlaces(placeSource, quota, reqRoster, rarityHash, forbiddenSymbols) {
 
-			function attemptToPlace(qPicker,description) {
+			function attemptToPlace(qPicker,constraint,description) {
 				let siteMarks = false;
 				while( !siteMarks && qPicker.total > 0 ) {
 					let place = qPicker.pick();
 					qPicker.forbidLast();
-					let rotation = Math.randInt(0,4);
-					siteMarks = makeAtRandomPosition( place, rotation );
-					if( siteMarks ) {
-						numPlaceTiles -= tileCount(place);
-						if( siteMarks ) console.log( "Quota placed "+place.typeId+" "+description );
+					let rotationList = Array.shuffle([0,1,2,3]);
+					for( let i=0 ; i<rotationList.length ; ++i ) {
+						let rotation = rotationList[i];
+						if( !constraint  ) {
+							siteMarks = makeAtRandomPosition( place, rotation );
+						}
+						else {
+							siteMarks = makeAtSpecificPosition( place, rotation, constraint.symbol, constraint.symbolPos );
+						}
+						if( siteMarks ) {
+							numPlaceTiles -= tileCount(place);
+							console.log( "Quota placed "+place.typeId+" "+description );
+							break;
+						}
 					}
 				}
 				return siteMarks;
@@ -1415,13 +1492,18 @@
 				console.assert(q.done);
 			}
 
-			quota.forEach( q => {
+			function fillQuota(q) {
 				if( q.done ) {
 					return;
 				}
 				if( scanForAndUseExisting(q) ) {
 					return;
 				}
+
+				let constraint = q.putAnywhere ? null : {
+					symbol: q.symbol,
+					symbolPos: { x: q.x+mapOffset.x, y: q.y+mapOffset.y }
+				};
 
 				let siteMarks;
 				if( reqRoster.length ) {
@@ -1431,7 +1513,7 @@
 						}
 					});
 					if( !qPickerReq.isEmpty() ) {
-						siteMarks = attemptToPlace(qPickerReq,q.symbol,'required');
+						siteMarks = attemptToPlace(qPickerReq,constraint,'required');
 					}
 				}
 				if( !siteMarks ) {
@@ -1441,14 +1523,39 @@
 						}
 					});
 					console.assert( !qPickerRarity.isEmpty() );
-					siteMarks = attemptToPlace(qPickerRarity,q.symbol, 'random');
+					siteMarks = attemptToPlace(qPickerRarity, constraint, 'random');
 				}
 
-				// We really need a way to make sure these things appear properly...
-				console.assert(siteMarks);
+				// If we can't place it in its specific spot, then degrade and just
+				// put it fearkin' anywhere.
+				if( !siteMarks && !q.putAnywhere ) {
+					q.putAnywhere = true;
+					return;
+				}
+
+				if( !siteMarks ) {
+					let x,y;
+					[x,y] = map.pickSafePos();
+					map.setTile(x,y,q.symbol);
+					injectMake( injectList, x, y, q.inject, "forceQuota" );
+					q.done = true;
+					return;
+				}
+
 				if( injectFromQuota(siteMarks,q) ) {
 				}
+			}
 
+			// HANDLE the ones with a non-random position requirement first!
+			quota.forEach( q => {
+				if( !q.putAnywhere ) {
+					fillQuota(q);
+				}
+			});
+
+
+			quota.forEach( q => {
+				fillQuota(q);
 			});
 		}
 
@@ -1478,7 +1585,25 @@
 			} while( !placePicker.isEmpty() && numPlaceTiles > 0 && --reps );
 			if( !reps ) debugger;
 		}
+/*
+		quotaMakePositioned(quota,injectList,mapOffset) {
+			quota.forEach( q => {
+				console.assert( !q.done );
+				if( q.putAnywhere ) {
+					return;
+				}
 
+
+
+				map.setTile(q.x+mapOffset.x,q.y+mapOffset.y,q.symbol);
+				injectMake( injectList, q.x+mapOffset.x, q.y+mapOffset.y, q.inject, "makePositioned" );
+				q.done = true;
+			});
+		}
+
+
+		quotaMakePositioned(quota,injectList,mapOffset);
+*/
 		let placeSource = {};
 		Object.each( PlaceTypeList, (place,placeId) => {
 			placeSource[placeId] = new Place( place );
@@ -1489,7 +1614,7 @@
 		let reqRoster = assembleRequiredPlaces(placeSource,requiredPlaces);
 
 		// Try to fill your quota of tiles, drawing from the requiredPlaces first, and then allowing randoms.
-		makeQuotaPlaces(placeSource,quota,reqRoster,rarityHash,forbiddenSymbols);
+		makeQuotaPlaces(placeSource,quota,reqRoster,rarityHash,forbiddenSymbols,mapOffset);
 
 		// Trim out any required place that is now forbidden due to quotas.
 		reqRoster = reqRoster.filter( place => !place.containsAny(forbiddenSymbols) );
@@ -1614,8 +1739,8 @@
 			}
 		}
 
-		let xLenMaxDefault = Math.clamp(Math.floor(map.xLen()/3.2),2,12);
-		let xLenMax = Math.min(xLenMaxDefault,map.xLen()-2);
+		let xLenMaxDefault = Math.clamp(Math.floor(map.xLen/3.2),2,12);
+		let xLenMax = Math.min(xLenMaxDefault,map.xLen-2);
 		let reps = map.area();
 		while( floorMade < floorToMake && --reps ) {
 			let circ = Math.chance(circleChance);
@@ -1623,8 +1748,8 @@
 			[x,y] = map.randPos(1);
 			let xLen = Math.floor(Math.randInt(2,xLenMax) / (circ?2:1));
 			let yLen = circ ? xLen : Math.randInt(Math.floor(Math.max(2,xLen/2)),Math.floor(Math.min(xLenMax,xLen*2)));
-			x = Math.min(x,map.xLen()-xLen);
-			y = Math.min(y,map.yLen()-yLen);
+			x = Math.min(x,map.xLen-xLen);
+			y = Math.min(y,map.yLen-yLen);
 			let overlap = circ ? map.fillCircle(x,y,xLen+1,overlapTest) : map.fillRect(x-1,y-1,xLen+1,yLen+1,overlapTest);
 			if( overlap && !Math.chance(overlapChance) ) continue;
 
@@ -1651,13 +1776,11 @@
 	}
 
 	function paletteCommit(palette) {
-		let tileTypes = ['floor','wall','door','fillFloor','fillWall','outlineWall','passageFloor','bridge','entrance','exit','unknown'];
+		let tileTypes = ['floor','wall','door','fillFloor','fillWall','outlineWall','passageFloor','bridge'];
 		for( let tileType of tileTypes ) {
 			let TileType = String.capitalize(tileType);	// eg Floor
-			if( palette[tileType] && palette[tileType].length > 1 ) {
-				palette[tileType] = TypeIdToSymbol[palette[tileType]];
-			}
-			T[TileType] = palette[tileType] || T[TileType];
+			console.assert( palette[tileType] );
+			T[TileType] = TypeIdToSymbol[palette[tileType]] || T[TileType];
 		}
 
 		if( T.Floor == T.Wall || T.Floor == T.Unknown || T.Wall == T.Unknown || T.Door == T.Unknown ) {
@@ -1688,16 +1811,14 @@
 		// Temporary just for easier masonry!
 		TileTypeList.pit.mayWalk = false;
 
-		paletteCommit( theme );
+		paletteCommit( theme.palette );
 
 		let mapOffset = { x: -1, y: -1 };	// this is merely a likely offset. The final sizeToExtent will really deal with it...
 		let map = new Mason();
 		map.setDimensions(theme.dim);
 
-		map.quotaMakePositioned(quota,injectList,mapOffset);
-
-		let numPlaceTiles = Math.floor(map.xLen()*map.yLen()*theme.floorDensity*theme.placeDensity);
-		positionPlaces(theme.depth,map,numPlaceTiles,quota,theme.rREQUIRED,theme.rarityHash,injectList,siteList);
+		let numPlaceTiles = Math.floor(map.xLen*map.yLen*theme.floorDensity*theme.placeDensity);
+		positionPlaces(theme.depth,map,numPlaceTiles,quota,theme.rREQUIRED,theme.rarityHash,injectList,siteList,mapOffset);
 
 		if( theme.architecture == 'cave' ) {
 			makeAmoeba(map,theme.floorDensity,theme.seedPercent,theme.mustConnect);

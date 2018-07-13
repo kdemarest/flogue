@@ -379,7 +379,7 @@ class Picker {
 		let supplyArray = Array.supplyParse(supplyMixed);		
 		let makeList = new Finder( Array.supplyToMake(supplyArray,Tweak.lootFrequency) );
 		let list = [];
-		makeList.process( make => {
+		makeList.forEach( make => {
 			let any = (''+make.typeFilter).toLowerCase()==='any';
 			let type = this.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ').trim() );
 			if( !type ) {

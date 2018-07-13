@@ -338,7 +338,7 @@ class ViewInfo extends ViewObserver {
 			if( item.slot && !you.inventory.find(i=>i.id==item.id) ) {
 				let f = you.getItemsInSlot(item.slot);
 				if( f.count ) { s += '<hr>'; }
-				f.process( i=>{ s += '<br>'+itemSummarize(you,i,item); });
+				f.forEach( i=>{ s += '<br>'+itemSummarize(you,i,item); });
 			}
 			if( item.inventory ) {
 				s += '<div class="invList">';
@@ -476,7 +476,7 @@ class ViewStatus extends ViewObserver {
 
 		// We both exclude and then prepend the observer to make sure the observer is first in the list.
 		let f = new Finder(entityList,observer).isAlive().exclude(observer).prepend(observer)
-				.canPerceiveEntity().filter(e=>e.id==observer.id || e.inCombat).byDistanceFromMe().keepTop(this.slotMax);
+				.canPerceiveEntity().filter(e=>e.id==observer.id || e.inCombat()).byDistanceFromMe().keepTop(this.slotMax);
 
 		// Remove unused slots.
 		Array.filterInPlace( this.slotList, slot => {
@@ -489,7 +489,7 @@ class ViewStatus extends ViewObserver {
 
 		// Add new slots
 		let self = this;
-		f.process( entity => {
+		f.forEach( entity => {
 			if( !self.slotList.find( div => div.entityId==entity.id ) ) {
 				let div = $(
 					'<div class="health-bar" data-total="1000" data-value="1000">'+
@@ -624,7 +624,7 @@ class ViewMiniMap extends ViewObserver {
 				drawLate.push({entity:StickerList.friendProxy,x:entity.x,y:entity.y,scale:this.scale*2,ctr:true});
 				return;
 			}
-			if( observer.senseLiving ) {
+			if( observer.senseLiving && entity.isLiving ) {
 				let sticker = observer.isMyEnemy(entity) ? StickerList.enemyProxy : StickerList.friendProxy;
 				drawLate.push({entity:sticker,x:entity.x,y:entity.y,scale:this.scale});
 				return;
@@ -632,8 +632,8 @@ class ViewMiniMap extends ViewObserver {
 		});
 
 		let mapMemory = observer.mapMemory;
-		let defaultFloor = SymbolToType[observer.area.theme.floor];
-		console.assert( observer.area.theme.floor );
+		let defaultFloor = SymbolToType[observer.map.defaultFloorSymbol];
+		console.assert( observer.map.defaultFloorSymbol );
 		console.assert( defaultFloor );
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {

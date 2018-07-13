@@ -309,6 +309,9 @@ class Entity {
 		return deltasToDirNatural(dx,dy);
 	}
 
+	inCombat() {
+		return this.inCombatTimer && Time.elapsed(this.inCombatTimer) < Rules.COMBAT_EXPIRATION;
+	}
 	isMySuperior(entity) {
 		if( entity.isUser() ) {
 			// User is superior to all.
@@ -720,7 +723,7 @@ class Entity {
 		let g = this.map.findItemAt(x,y);
 		if( g.count ) {
 			let abort = false;
-			g.process( item => {
+			g.forEach( item => {
 				if( !item.isProblem ) return;
 				let problem = item.isProblem(this,item);
 				if( problem > problemTolerance ){
@@ -812,7 +815,7 @@ class Entity {
 				// How hard should we try to get certain places? 
 				let distLimit = 10 + this.getDistance(x,y)*3;
 
-				this.path = new Path(this.map,distLimit);
+				this.path = new Path(this.map,distLimit,false,10);
 				let closeEnough = !target ? 0 : (target.isLEP ? 0 : (target.isMonsterType ? 1 : (target.isDestination ? target.closeEnough||0 : 0)));
 				let success = this.path.findPath(this,this.x,this.y,x,y,closeEnough);
 				if( success ) {
@@ -1081,7 +1084,7 @@ class Entity {
 		do {
 			// Doing it this way means that the smaller places get visited, which seldom happens if you just
 			// pick a random map location.
-			site = this.area.pickSite( site => site.isRoom || site.isPlace );
+			site = this.area.pickSite( site => (site.isRoom || site.isPlace) && site.marks.length );
 			console.assert( site.marks.length > 0 );
 			let i = Math.randInt(0,site.marks.length/2) * 2;
 			x = site.marks[i+0];
@@ -1105,7 +1108,7 @@ class Entity {
 	findSparsePack() {
 		let packHash = {};
 		let packSize = this.packSize || 4;
-		let f = new Finder(this.entityList).filter( e => e.typeId == this.typeId && e.packId ).process( e => {
+		let f = new Finder(this.entityList).filter( e => e.typeId == this.typeId && e.packId ).forEach( e => {
 			packHash[e.packId] = (packHash[e.packId]||0)+1;
 		});
 		let sparseHash = Object.filter( packHash, size => size<packSize );
@@ -1165,6 +1168,9 @@ class Entity {
 
 				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
 				let enemyList = this.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
+				if( enemyList.count ) {
+					this.enemyNearTimer = Time.simTime;
+				}
 
 				if( this.mindset('lep') && enemyList.count ) {
 					let e = enemyList.first;
@@ -1481,7 +1487,7 @@ class Entity {
 		let is = (isRanged ? 'isShield' : 'isArmor');
 		let f = new Finder(this.inventory).filter( item=>item.inSlot && item[is] );
 		let armor = 0;
-		f.process( item => { armor += item.calcReduction(damageType); });
+		f.forEach( item => { armor += item.calcReduction(damageType); });
 		return Math.floor(armor);
 	}
 
@@ -1496,7 +1502,7 @@ class Entity {
 		}
 		let numAlerted = 0;
 		let self=this;
-		friendList.process( entity => {
+		friendList.forEach( entity => {
 			if( entity.attitude == Attitude.WANDER || entity.attitude == Attitude.AWAIT ) {
 				entity.changeAttitude(Attitude.AGGRESSIVE);
 				if( tellAbout && !numAlerted && this.able('talk') ) {
@@ -1727,7 +1733,7 @@ class Entity {
 			this.takenDamage = amount;
 			this.takenDamageType = damageType;
 			this.takenDamageFromId = attacker ? attacker.id : 'nobody';
-			this.inCombat = true;
+			this.inCombatTimer = Time.simTime;
 		}
 
 		if( !isOngoing && amount > 0 ) {
@@ -1758,7 +1764,7 @@ class Entity {
 		if( !isOngoing && !noBacksies && attacker && attacker.isMonsterType && this.inventory ) {
 			let is = isRanged ? 'isShield' : 'isArmor';
 			let retaliationEffects = new Finder(this.inventory).filter( item => item.inSlot && item[is] );
-			retaliationEffects.process( item => {
+			retaliationEffects.forEach( item => {
 				if( item.effect && item.effect.isHarm ) {
 					let fireEffect = Math.chance(item.chanceOfEffect || 100);
 					if( fireEffect ) {
@@ -2001,10 +2007,10 @@ class Entity {
 		console.assert(weapon);
 		console.assert(weapon.isWeapon);
 		this.lastAttackTargetId = target.id;	// Set this early, despite blindness!
-		this.inCombat = true;
+		this.inCombatTimer = Time.simTime;
 
 		if( (this.senseBlind && !this.baseType.senseBlind) || (target.invisible && !this.senseInvisible) || !this.canPerceiveEntity(target) ) {
-			if( !this.senseLiving && Math.chance(50) ) {
+			if( !(this.senseLiving && target.isLiving) && Math.chance(50) ) {
 				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,target,' but in the wrong direction!');
 				return;
 			}
@@ -2148,7 +2154,6 @@ class Entity {
 		}
 
 		this.lastAttackTargetId = target.id;
-		this.inCombat = true;
 		item = item.single();
 		item = item.giveToSingly(this.map,target.x,target.y);
 		if( item.isWeapon && !target.isPosition ) {
@@ -2197,7 +2202,6 @@ class Entity {
 			return;
 		}
 		this.lastAttackTargetId = target.id;
-		this.inCombat = true;
 		item.x = this.x;
 		item.y = this.y;
 		tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');
@@ -2253,7 +2257,6 @@ class Entity {
 		}
 
 		this.lastAttackTargetId = target.id;
-		this.inCombat = true;
 		this.generateEffectOnAttack(item);
 
 		let ammo = this.pickOrGenerateSingleAmmo(item);
@@ -2874,7 +2877,7 @@ class Entity {
 			if( tileType.onTouch ) {
 				tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
 			}
-			this.map.findItemAt(this.x,this.y).process( item => {
+			this.map.findItemAt(this.x,this.y).forEach( item => {
 				if( item.onTouch ) {
 					item.onTouch( this, item );
 				}

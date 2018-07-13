@@ -40,11 +40,23 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		if( item.bunchSize ) {
 			item.bunch = item.bunchSize;
 		}
-		// NOTE: We want to count gaps here because we don't want barrels blocking up passageways.
-		if( item.isTreasure && !item.isHidden && Math.chance(theme.containerChance||0) && area.map.countGaps(x,y)<=1 ) {
-			let containerId = Math.chance(50) ? 'barrel' : 'chest';
-			let barrel = area.map.itemCreateByType(x,y,ItemTypeList[containerId],{},{});
-			item = item.giveTo(barrel,x,y);
+		let container = area.map.findChosenItemAt(x,y,item=>item.isContainer);
+		if( container && item.isContainer ) {
+//			debugger;
+			item.destroy();
+			return null;
+		}
+
+		// NOTE: We want to count gaps here because we don't want impassable containers  blocking up passageways.
+		// WARNING! What we really want is to do all this ad-hoc chest and barrel business AFTER
+		// scanning the entire level. That way they won't interfere with place-created containers.
+		if( !container && item.isContainable() && Math.chance(theme.containerChance||0) && area.map.countGaps(x,y)<=1 ) {
+			let containerTypeId = Math.chance(50) ? 'barrel' : 'chest';
+			container = area.map.itemCreateByType(x,y,ItemTypeList[containerTypeId],{},{});
+		}
+		if( container ) {
+			let itemList = area.map.findItemAt(x,y).isContainable();
+			itemList.forEach( item => item.giveTo(container,x,y) );
 		}
 		if( type.gateDir !== undefined ) {
 //			console.log( "Gate "+type.typeId+" at ("+x+","+y+") leads to "+(!inject ? 'TBD' : inject.toAreaId+' / '+inject.toGateId) );
@@ -102,7 +114,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 				if( MonsterTypeList[typeId] ) {
 					if( !tileSet ) {
 						if( m.underMe ) map.tileSymbolSet(x,y,TypeIdToSymbol[m.underMe]);
-						else map.tileSymbolSetFloor(x,y,theme.floor);
+						else map.tileSymbolSetFloor(x,y,map.defaultFloorSymbol);
 						tileSet=true;
 					}
 					makeMonsterFn( m, x, y, null, make, null );
@@ -111,7 +123,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 				let i = ItemTypeList[typeId];
 				if( !tileSet ) {
 					if( i.underMe ) map.tileSymbolSet(x,y,TypeIdToSymbol[i.underMe]);
-					else map.tileSymbolSetFloor(x,y,theme.floor);
+					else map.tileSymbolSetFloor(x,y,map.defaultFloorSymbol);
 					tileSet=true;
 				}
 				// If you want a random item, use the item type "random" which is hard-coded to select a
@@ -201,9 +213,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 				console.assert( typeof tile.img == 'string' );
 			}
 		});
-		new Finder( map.itemList ).process( item => {
+		new Finder( map.itemList ).forEach( item => {
 			if( item.isSign && item.sign=='BYJOB' ) {
-				new Finder(entityList,item).filter(entity=>entity.jobId).closestToMe().process( entity => {
+				new Finder(entityList,item).filter(entity=>entity.jobId).closestToMe().forEach( entity => {
 					item.sign = String.capitalize(JobTypeList[entity.jobId].name);
 				});
 			}
@@ -212,8 +224,8 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 				console.assert( typeof item.img == 'string' );
 			}
 		});
-		new Finder( entityList ).process( entity => {
-			new Finder( entity.inventory ).process( item => {
+		new Finder( entityList ).forEach( entity => {
+			new Finder( entity.inventory ).forEach( item => {
 			});
 		});
 	}
@@ -281,6 +293,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	console.log( "Items  : ("+totalFloor+"x"+theme.itemDensity+")="+owedItems+"-"+totalItems+"="+(owedItems-totalItems)+" items owed" );
 
 	totalEnemies += populateInRooms( area.siteList, area.map, preferNone, owedEnemies-totalEnemies, safeToMake, makeMonster, isEnemyFn, site => {
+//		console.log( 'pop room consider site '+(!site?'none':site.id) );
 		return !(site.isPlace && (site.place.comesWithMonsters || site.place.forbidEnemies));
 	});
 
@@ -301,6 +314,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		if( site && site.place && site.place.forbidEnemies ) {
 			return false;
 		}
+//		console.log( 'pop consider ('+x+','+y+') site='+(!site?'none':site.id) );
 		return safeToMake(map,x,y);
 	}, makeMonster, isEnemyFn );
 	populate( area.map, preferNone, Math.max(0,owedFriends-totalFriends), safeToMake, makeMonster, isFriendFn );

@@ -695,7 +695,7 @@ const ItemTypeList = {
 	"portal":     { symbol: '0', name: "portal", 		isGate: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
 	"pitDrop": 	  { symbol: SYM, name: "pit drop", 		isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
 // DOOR
-	"door":       { symbol: '+', mayWalk: true,  mayFly: true,  opacity: 0,
+	"door":       { symbol: '+', mayWalk: true,  mayFly: true, opacity: 0,
 					namePattern: "{state} door",
 					isDoor: 1,
 					mayPickup: false,
@@ -791,6 +791,7 @@ const ItemTypeList = {
 		name: "barrel",
 		mayPickup: false,
 		isDecor: true,
+		isContainer: true,
 		state: 'shut',	// This is required to stop the user from "seeing inside" with mouse hover.
 		inventoryLoot: '3x 20% any',
 		hasInventory: true,
@@ -805,6 +806,8 @@ const ItemTypeList = {
 		name: "chest",
 		mayPickup: false,
 		isDecor: true,
+		isContainer: true,
+		isRemovable: false,
 		state: 'shut',
 		imgChoices: {
 			shut: { img: 'decor/chestShut.png' },
@@ -1214,7 +1217,7 @@ ItemTypeList.oreVein.onBump = function(entity,self) {
 	entity.timeDelay = Math.max(entity.timeDelay||0,0.10);
 	if( entity.swings >= self.mineSwings/tool.mineSpeed ) {
 		entity.swings = 0;
-		entity.map.tileSymbolSetFloor( self.x, self.y, entity.area.theme.floor );
+		entity.map.tileSymbolSetFloor( self.x, self.y, entity.map.defaultFloorSymbol );
 		if( self.mineId ) {
 			let picker = new Picker(entity.area.depth);
 			picker.pickLoot( self.mineId, loot=>{
@@ -1429,7 +1432,7 @@ ItemTypeList.barrel.onBump = function(toucher,self) {
 ItemTypeList.fontSolar.onTick = function(dt) {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).clearShot().nearMe(3);
 	let self = this;
-	nearby.process( entity => {
+	nearby.forEach( entity => {
 		let deed = DeedManager.findFirst( d=>d.target && d.target.id==entity.id && d.isSolarRegen );
 		if( deed ) {
 			deed.timeLeft = 2;
@@ -1466,14 +1469,14 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 ItemTypeList.fontDeep.onTick = function(dt) {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).clearShot().nearMe(4);
 	let self = this;
-	nearby.process( entity => {
+	nearby.forEach( entity => {
 		let effect = new Effect(entity.area.depth,this.effectDrain,this,this.rechargeTime);
 		effect.chargeless = true;
 		effect.showOnset = false;
 		effectApply(effect,entity,this,null);
 	});
 	if( this.isRecharged() ) {
-		nearby.process( entity => {
+		nearby.forEach( entity => {
 			let effect = new Effect(entity.area.depth,this.effectPeriodic,this,this.rechargeTime);
 			effect.icon = StickerList.glowRed.img;
 			//this.command = Command.CAST;

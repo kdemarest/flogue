@@ -104,21 +104,6 @@ class ViewInventory extends ViewObserver {
 		}
 
 		this.inventory = new Finder(this.inventoryRaw.all);
-/*
-		this.inventoryRaw.process( item => {
-			let sid = item.name+'&'+item.inSlot;
-			if( !item.inSlot ) {
-				let other = this.inventory.find( item => item._sid==sid );
-				if( other ) {
-					other.bunch++;
-					return;
-				}
-			}
-			item._sid = sid;
-			item.bunch = 1;
-			this.inventory.all.push(item);
-		});
-*/
 		let self = this;
 		$(this.div).empty();
 
