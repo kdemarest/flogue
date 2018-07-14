@@ -42,7 +42,8 @@ class Gui {
 		this.view.zoom = new ViewZoom('#guiControls');
 		this.view.narrative = new ViewNarrative('guiNarrative');
 		this.view.sign = new ViewSign('guiSign');
-		this.view.spells = new ViewSpells('guiSpells');
+		this.view.favorites = new ViewFavorites('#guiFavorites',onItemChoose);
+		this.view.spells = new ViewSpells('#guiSpells');
 		this.view.range = new ViewRange();
 		this.view.experience = new ViewExperience('guiExperience')
 		this.view.info = new ViewInfo('guiInfo')
@@ -102,6 +103,7 @@ class Gui {
 
 		this.view.narrative.render();
 		this.view.sign.render();
+		this.view.favorites.render();
 		this.view.spells.render();
 		this.view.range.render();
 		this.view.experience.render();

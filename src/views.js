@@ -109,6 +109,9 @@ class ViewSpells extends ViewObserver {
 		this.spellDivId = spellDivId;
 	}
 	render() {
+		if( $(this.spellDivId).length <= 0 ) {
+			return;
+		}
 		let observer = this.observer;
 		$('#'+this.spellDivId).empty();
 		let spellList = getCastableSpellList(observer);
@@ -119,7 +122,93 @@ class ViewSpells extends ViewObserver {
 			let text = 'F'+(i+1)+' '+String.capitalize(spell.effect.name)+'\n';
 			let lit = observer.commandItem == spell && spell.isRecharged();
 			let unlit = !spell.isRecharged();
-			$('#'+this.spellDivId).append('<div class="spell'+(unlit?' unlit':(lit?' lit':''))+'">'+img+text+'</div>');
+			$(this.spellDivId).append('<div class="spell'+(unlit?' unlit':(lit?' lit':''))+'">'+img+text+'</div>');
+		}
+	}
+}
+
+class ViewFavorites extends ViewObserver {
+	constructor(divId,onItemChoose) {
+		super();
+		this.divId = divId;
+		this.onItemChoose = onItemChoose;
+		this.favoriteCandidate = null;
+	}
+	get user() {
+		return this.observer.userControllingMe;
+	}
+	message(msg,payload) {
+		super.message(msg,payload);
+		if( msg == 'favoriteCandidate' ) {
+			this.favoriteCandidate = payload;
+			if( payload ) {
+				this.user.suppressFavorites = true;
+				$(document).on( 'keydown.ViewFavoritesKeyCapture', null, (e) => {
+					if( e.key >= '0' && e.key <= '9' ) {
+						this.setFavorite(e)
+						e.stopPropagation();
+					}
+				});
+			}
+			else {
+				$(document).off( '.ViewFavoritesKeyCapture' );
+				this.user.suppressFavorites = false;
+			}
+		}
+	}
+	setFavorite(e) {
+		if( this.favoriteCandidate ) {
+			console.assert( this.user );
+			this.user.setFavorite( e.key, this.favoriteCandidate );
+			this.render();
+		}
+	}
+	render() {
+		let observer = this.observer;
+		$(this.divId).empty();
+		$(document).off( '.ViewFavorites' );
+
+		let keyList = '1234567890';
+		for( let i=0 ; i<keyList.length ; ++i ) {
+			let key = keyList.charAt(i);
+			let favorite = this.user.favoriteMap[key];
+
+			let item = favorite && favorite.itemId ? new Finder(observer.inventory).isId( favorite.itemId ).first : null;
+			let hotkey = '<b>'+key+'</b>';
+			let img = '<span class="itemRecharge"></span>';
+
+			if( !item ) {
+				$(img+hotkey).appendTo('<div class="item unlit">'+this.divId+'</div>');
+				return;
+			}
+
+			if( item.rechargeTime ) {
+				let pct = Math.floor( (1 - ( (item.rechargeLeft||0) / (item.rechargeTime||10) )) * 10 )*10;
+				img = '<img class="itemRecharge" src="'+IMG_BASE+StickerList['slice'+pct].img+'">';
+			}
+			if( item.slot ) {
+				img = '<img class="itemRecharge" src="'+IMG_BASE+'gui/icons/'+(item.inSlot?'marked':'unmarked')+'.png">';
+			}
+			let ex = itemExplain(item);
+			let text = ex.description;
+			let lit = observer.commandItem == item && item.isRecharged();
+			let unlit = !item.isRecharged();
+			let s = '<div class="item'+(unlit?' unlit':(lit?' lit':''))+'">'+img+hotkey+' '+text+'</div>';
+
+
+			$(s).appendTo(this.divId).on( 'click.view', null, event => {
+				event.key = favorite.key;
+				event.commandItem = item;
+				this.onItemChoose(event);
+			})
+			.on( 'mouseover.view', null, event => {
+				//console.log( 'ViewInventory mouseover' );
+				guiMessage( 'show', item );
+			})
+			.on( 'mouseout', null, event => {
+				guiMessage( 'hide' );
+			});
+
 		}
 	}
 }
@@ -359,6 +448,7 @@ class ViewInfo extends ViewObserver {
 				s += '</div>';
 			}
 			s += "</div>";
+			s += '<div id="favMessage"></div>';
 			$('#'+this.infoDivId).show().html(s);
 			return;
 		}
@@ -687,16 +777,16 @@ function itemExplain(item,buySell) {
 	}
 
 	if( !item ) return false;
-	let name = item.name.replace(/\$/,'');
+	let nameClean = item.name.replace(/\$/,'');
 	return {
 		item: 			item,
 		typeId: 		item.typeId,
 		level: 			item.level,
 		typeOrder: 		order(item.typeId),
 		icon: 			icon(item.icon),
-		description: 	((item.bunch||0)>1 ? item.bunch+'x ' : '')+String.capitalize(name),
+		description: 	((item.bunch||0)>1 ? item.bunch+'x ' : '')+String.capitalize(nameClean),
 		bunch: 			((item.bunch||0)>1 ? item.bunch+'x ' : ''),
-		name: 			String.capitalize(name),
+		name: 			String.capitalize(nameClean),
 		damage: 		item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : ''),
 		damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
 		armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUT,item.isShield) : '',

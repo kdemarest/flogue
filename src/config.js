@@ -98,8 +98,8 @@ ThemeList.dwarfTown2 = {
 
 
 	return {
-		startingDepth: 5,
-		themeId: 'dwarfVillage'
+		startingDepth: 10,
+//		themeId: 'dwarfVillage'
 	}
 }
 

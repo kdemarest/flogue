@@ -11,7 +11,8 @@ class Item {
 		let ignoreFields = { level:1, rarity:1, name: 1, armorMultiplier:1, blockChance: 1, xDamage:1, ingredientId:1, type:1, typeId:1 };
 
 		let levelRaw = ItemCalc(this,presets,'level','+');
-		let level = levelRaw >= depth ? levelRaw : Math.randInt(levelRaw,depth+1);
+		let noLevelVariance = ItemCalc(this,presets,'noLevelVariance','+');
+		let level = (noLevelVariance || (levelRaw >= depth)) ? levelRaw : Math.randInt(levelRaw,depth+1);
 
 		// Notice that the init overrides the typeId. This is to make sure that the inject doesn't do so with a dot 
 		// phrase, like weapon.dagger (which it definitely might!)

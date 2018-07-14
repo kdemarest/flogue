@@ -5,6 +5,28 @@ function castConvert(cmd,observer,index) {
 	cmd.commandItem = spellList.all[index];
 }
 
+function commandForItem(item) {
+	if( item.isPotion ) {
+		return item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
+	}
+	if( item.isGem ) {
+		return Command.GAZE;
+	}
+	if( item.isSpell ) {
+		return Command.CAST;
+	}
+	if( item.isCorpse ) {
+		return Command.LOOT;
+	}
+	if( item.slot ) {
+		return Command.USE;
+	}
+	if( item.mayThrow ) {
+		return Command.THROW;
+	}
+	return false;
+}
+
 //command
 //- immediatelyConvertsToAnotherCommand (cast1 through 5)
 //- needsItem (determine inventory)
@@ -18,24 +40,12 @@ CmdTable[Command.INVENTORY] = {
 	itemAllowFilter: true,
 	itemFilter: observer => () => new Finder(observer.inventory),
 	convertOnItemChosen: (cmd) => {
-		let command = cmd.command;
 		let item = cmd.commandItem;
-		if( item.isPotion ) {
-			return item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
-		}
-		if( item.isGem ) {
-			return Command.GAZE;
-		}
-		if( item.isSpell ) {
-			return Command.CAST;
-		}
-		if( item.isCorpse ) {
-			return Command.LOOT;
-		}
-		if( item.slot ) {
+		let command = commandForItem(item) || cmd.command;
+		if( command == Command.USE ) {
 			cmd.retain = command;
-			return Command.USE;
 		}
+
 		return command;
 	},
 	criteriaToExecute: (cmd,observer) => {
@@ -184,10 +194,10 @@ let keyENTER = "Enter";
 let keyESCAPE = "Escape";
 
 class UserCommandHandler {
-	constructor(keyToCommand,viewInventory,viewRange) {
+	constructor(user,viewInventory,viewRange) {
 		this.viewInventory = viewInventory;
 		this.viewRange = viewRange;
-		this.keyToCommand = keyToCommand;
+		this.user = user;
 		this.cmd = new Cmd(
 			() => {
 			},
@@ -237,15 +247,18 @@ class UserCommandHandler {
 
 		let cmd = this.cmd;
 
-		if( cmd.command == Command.NONE ) {
-			let command = this.keyToCommand[event.key] || Command.NONE;
-			if( !CmdTable[command] ) {
-				observer.command = command;
-				observer.commandItem = event.commandItem || null;
-				observer.commandTarget = event.commandTarget || null;
-				return command !== Command.NONE;
+		if( !cmd.command || cmd.command == Command.NONE ) {
+			Object.assign( cmd, this.user.keyToCommand(event.key) );
+			if( !cmd.command || cmd.command == Command.NONE ) {
+				return false;
 			}
-			cmd.command = command;
+			if( !CmdTable[cmd.command] ) {
+				observer.command 		= cmd.command;
+				observer.commandItem 	= cmd.commandItem || event.commandItem || null;
+				observer.commandTarget 	= cmd.commandTarget || event.commandTarget || null;
+				this.cmd.clear();
+				return observer.command !== Command.NONE;
+			}
 			if( cmd.convertToCommand ) {
 				cmd.convertToCommand(cmd,observer);
 			}
@@ -259,7 +272,7 @@ class UserCommandHandler {
 			if( !cmd.commandItem ) {
 				let keyEval = this.viewInventory.prime( cmd.itemFilter(observer), cmd.itemAllowFilter, () => cmd.needsItem && !cmd.commandItem );
 				if( keyEval ) {
-					if( this.keyToCommand[event.key] == Command.CANCEL ) {
+					if( this.user.keyToCommand(event.key).command == Command.CANCEL ) {
 						return cmd.cancel();
 					}
 					cmd.commandItem = this.viewInventory.getItemByKey(event.key);
@@ -297,7 +310,7 @@ class UserCommandHandler {
 				cmd.targetRange(cmd.commandItem),
 				cmd,
 				() => cmd.needsTarget && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) );
-			let result = this.pickTarget( this.keyToCommand[event.key], observer );
+			let result = this.pickTarget( this.user.keyToCommand(event.key).command, observer );
 			if( result !== undefined ) {
 				return result;
 			}

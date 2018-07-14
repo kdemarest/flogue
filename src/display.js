@@ -518,7 +518,7 @@ class ViewMap extends ViewObserver {
 							debugger;
 							imgGet(entity);	//helps with debugging.
 						}
-						console.log( "Create sprite "+entity.typeId,x/TILE_DIM,y/TILE_DIM);
+						//console.log( "Create sprite "+entity.typeId,x/TILE_DIM,y/TILE_DIM);
 						let sprite = spriteCreate( entity.spriteList, img );
 						sprite.keepAcrossAreas = entity.isUser && entity.isUser();
 						sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
@@ -719,8 +719,10 @@ class ViewMap extends ViewObserver {
 		}
 
 		//console.log(debug);
+		//$('#guiDebug2').html(this.app.stage.children.length);
 
-		this.app.stage.children.forEach( sprite => sprite.sortKey = sprite.zOrder*10000000+sprite.y*100000+sprite.x );
+//		this.app.stage.children.forEach( sprite => sprite.sortKey = sprite.zOrder*10000*10000+sprite.y*10000+sprite.x );
+		this.app.stage.children.forEach( sprite => sprite.sortKey = sprite.zOrder );
 		this.app.stage.children.sort( (a,b) => a.sortKey-b.sortKey );
 	}
 	render() {

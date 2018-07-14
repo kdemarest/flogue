@@ -97,6 +97,10 @@ body {
     padding-right: 6px;
 }
 
+#favMessage {
+	margin-top: 12px;
+}
+
 #guiNarrative {
 	display: inline-block;
 	white-space: pre-wrap;
@@ -166,10 +170,34 @@ body {
 	overflow-x: hidden;
 }
 #guiSpells img.spellRecharge {
-	block: inline-block;
-    height: 16px;
-    margin-right: 8px;
-    vertical-align:middle;
+	display: inline-block;
+	height: 16px;
+	margin-right: 8px;
+	vertical-align:middle;
+}
+
+#guiFavorites {
+	width: 240px;
+	height: 200px;
+	display: block;
+	white-space: pre;
+	font-family: 'Raleway', sans-serif;
+	font-size: 16px;
+	margin: 0px 0px;
+	overflow-y: hidden;
+	overflow-x: hidden;
+}
+#guiFavorites .itemRecharge {
+	display: inline-block;
+	height: 16px;
+	width: 16px;
+	margin-right: 8px;
+	vertical-align:middle;
+}
+
+#guiFavorites .item:hover {
+	background-color: rgb(110,110,110,0.73);
+	cursor: pointer;
 }
 
 #guiExperience {
@@ -235,8 +263,6 @@ body {
 	overflow-y: hidden;
 	overflow-x: hidden;
 	margin-left: 12px;
-}
-.spell {
 }
 .lit {
 	background-color: green;
@@ -309,7 +335,7 @@ body {
 	z-index: 10;
 	white-space: pre;
 	background-color: rgba(0,0,0,0.76);
-	width: 100%;
+	width: 98%;
 	height: 100%;
 	position: absolute;
 	top:0;
@@ -323,18 +349,18 @@ body {
 }
 
 .guiInventory::-webkit-scrollbar {
-	width: 20px;
+	width: 10px;
 }
 .guiInventory::-webkit-scrollbar-track {
-	box-shadow: inset 0 0 5px grey; 
-	border-radius: 10px;
+	box-shadow: inset 0 0 3px grey; 
+	border-radius: 5px;
 }
 .guiInventory::-webkit-scrollbar-thumb {
 	background: grey; 
-	border-radius: 10px;
+	border-radius: 5px;
 }
 .guiInventory::-webkit-scrollbar-thumb:hover {
-	background: #b30000; 
+	background: #b3b3b3;
 }
 
 table .inv tbody tr td.invSpacer {

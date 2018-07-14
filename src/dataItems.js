@@ -102,6 +102,7 @@ const AmmoList = Fab.add( '', {
 	"arrow":     	{
 		level:  0,
 		rarity: 1.0,
+		noLevelVariance: true,
 		attackVerb: 'shoot',
 		bunchSize: 8,
 		breakChance: 20,
@@ -181,10 +182,10 @@ const WeaponList = Fab.add( '', {
 		attackVerb: 'shoot',
 		img: 'item/weapon/ranged/bow1.png'
 	},
-	"stealthBow": {
+	"stealthBow": {		// Less damage but it can hit nimble creatures.
 		level:  0,
 		rarity: 0.5,
-		xDamage: 0.5,
+		xDamage: 0.6,
 		xPrice: 3.0,
 		quick: 2,
 		effectChance: 0.80,

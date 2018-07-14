@@ -58,6 +58,7 @@
 <script src="sentence.js" charset="utf-8"></script>
 <script src="finder.js" charset="utf-8"></script>
 <script src="gui.js" charset="utf-8"></script>
+<script src="user.js" charset="utf-8"></script>
 <script src="command.js" charset="utf-8"></script>
 <script src="area.js" charset="utf-8"></script>
 <script src="world.js" charset="utf-8"></script>
@@ -86,31 +87,7 @@ function adhoc(tileType,map,x,y) {
 
 function main(levelName) {
 
-	let User = (new class {
-		constructor() {
-			this.isHumanUser = true;
-			this.entity = null;
-			this.priorArea = null;
-			this.commandHandler = null;
-			this.areaMap = {};
-		}
-		getAreaMap(areaId) {
-			this.areaMap[areaId] = this.areaMap[areaId] || [];
-			return this.areaMap[areaId];
-		}
-		takeControlOf(newEntity) {
-			if( newEntity.area.id !== this.entity.area.id ) {
-				this.priorArea = this.entity.area;
-			}
-			this.entity.userControllingMe = null;
-			this.entity = newEntity;
-			this.entity.userControllingMe = this;
-		}
-		onAreaChange(area) {
-			guiMessage('setArea',area);
-			this.priorArea = this.entity.area;
-		}
-	}())
+	let User = new HumanUser();
 
 	function TickWorld(timePasses) {
 		animationTimer = {};
@@ -154,14 +131,12 @@ function main(levelName) {
 		gui.create(
 			(event) => { onUserEvent(event); }
 		);
-		let keyMap = loadKeyMapping("default");
-		user.commandHandler = new UserCommandHandler(keyMap,gui.view.inventory,gui.view.range);
+		user.commandHandler = new UserCommandHandler(user,gui.view.inventory,gui.view.range);
 
 		let world = new World();
 		let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
 		let area = world.createArea(null,config.startingDepth,ThemeList[themeId],true,[]);
-		user.entity = new Entity( area.depth, MonsterTypeList.player, null, area.jobPicker );
-		user.entity.userControllingMe = user;
+		user.takeControlOf( new Entity( area.depth, MonsterTypeList.player, null, area.jobPicker ) );
 		Gab.observer = user.entity;
 		user.entity.gateTo(area,...area.map.pickPosToStartGame());
 		Narrative.addRecipient(
@@ -205,6 +180,7 @@ function main(levelName) {
 		</td><td>
 			<div id="guiControls"></div>
 		</td><td>
+			<div id="guiDebug2"></div>
 		</td></tr>
 		<tr>
 			<td>
@@ -216,7 +192,7 @@ function main(levelName) {
 				</div>
 			</td><td class="alignTop">
 				<div id="guiStatus"></div>
-				<div id="guiSpells"></div>
+				<div id="guiFavorites"></div>
 				<div id="guiExperience"></div>
 				<div id="guiInfo"></div>
 			</td>

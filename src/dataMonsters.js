@@ -408,7 +408,7 @@ const MonsterTypeList = {
 		naturalWeapon: {
 			reach: 6,
 			rechargeTime: 2,
-			effectOnAttack: { op: 'damage', xDamage: 1, isHarm: 1, duration: 5, damageType: DamageType.CORRODE, name: 'demon acid', flyingIcon: 'item/misc/acidSlime.png', icon: 'gui/icons/eCorrode.png' }
+			effectOnAttack: { op: 'damage', xDamage: 1, isHarm: 1, duration: 5, damageType: DamageType.CORRODE, name: 'demon acid', flyingIcon: 'item/stuff/acidSlime.png', icon: 'gui/icons/eCorrode.png' }
 		},
 		senseSight: 8,
 		tooClose: 7,

@@ -197,7 +197,7 @@
 			this.ext(x,y);
 			this.tile[y] = this.tile[y] || [];
 			this.tile[y][x] = this.tile[y][x] || {};
-			if( this.tile[y][x].hard ) debugger;
+			//if( this.tile[y][x].hard ) debugger;
 			this.tile[y][x].tile = tileType;
 			this.tile[y][x].zoneId = zoneId;
 			return this;
@@ -647,26 +647,25 @@
 
 			let success = path.findPath(null,x,y,tx,ty);
 			if( !success ) {
-				debugger;
+				return false;
 			}
-			if( success ) {
-				let reps = path.path.length * 2;
-				while( --reps ) {
-					let dir = path.getDirFrom(x,y);
-					if( dir === false ) {
-						debugger;
-						return false;
-					}
-					x += DirAdd[dir].x;
-					y += DirAdd[dir].y;
-					if( x == tx && y == ty ) {
-						return true;
-					}
-					this.setPassageTileWideAndRemember(x,y,width,dir,zoneId,marks);					
-				}
-				if( !reps ) {
+
+			let reps = path.path.length * 2;
+			while( --reps ) {
+				let dir = path.getDirFrom(x,y);
+				if( dir === false ) {
 					debugger;
+					return false;
 				}
+				x += DirAdd[dir].x;
+				y += DirAdd[dir].y;
+				if( x == tx && y == ty ) {
+					return true;
+				}
+				this.setPassageTileWideAndRemember(x,y,width,dir,zoneId,marks);					
+			}
+			if( !reps ) {
+				debugger;
 			}
 		}
 
@@ -698,9 +697,9 @@
 						// put down by the places.
 						return;
 					}
-					if( isWall(this.getTile(x,y)) ) {
-						debugger;
-					}
+//					if( isWall(this.getTile(x,y)) ) {
+//						debugger;
+//					}
 					let result = this.findClosest(x,y,zone.zoneId,bestDist);
 					if( result !== false ) {
 						proximity.push(result);
@@ -780,8 +779,10 @@
 					}
 					if( p.x!=p.tx || p.y!=p.ty ) {
 						let linkFn = Math.chance(passageWander) ? deltasToDirNaturalOrtho : deltasToDirStrict;
-						//this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
-						this.zoneLinkByPath(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
+						let ok = this.zoneLinkByPath(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
+						if( !ok ) {
+							this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
+						}
 						let thruSite = {};
 						let bestId = '';
 						let tempMarks = [].concat(marks);
@@ -1097,8 +1098,7 @@
 			function strip(sx,ex,y) {
 				console.assert(sx<=ex);
 				while( sx <= ex ) {
-					let tile = self.getTile(sx,y);
-					count += fn(sx,y,tile) ? 1 : 0;
+					count += fn(sx,y) ? 1 : 0;
 					sx++;
 				}
 			}
@@ -1128,8 +1128,7 @@
 			let count = 0;
 			for( let y=0 ; y<yLen ; ++y ) {
 				for( let x=0 ; x<xLen ; ++x ) {
-					let tile = this.getTile(sx+x,sy+y);
-					count += fn(sx+x,sy+y,tile) ? 1 : 0
+					count += fn(sx+x,sy+y) ? 1 : 0
 				}
 			}
 			return count;
@@ -1726,14 +1725,16 @@
 			}
 		});
 
-		function weakFill(x,y,tile) {
+		function weakFill(x,y) {
+			let tile = map.getTile(x,y);
 			if( !tile || isUnknown(tile) ) {
 				map.setTile(x,y,T.FillFloor);
 				return true;
 			}
 		}
 
-		function overlapTest(x,y,tile) {
+		function overlapTest(x,y) {
+			let tile = map.getTile(x,y);
 			if( !isUnknown(tile) ) {
 				return true;
 			}

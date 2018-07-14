@@ -8,7 +8,7 @@ class ViewInventory extends ViewObserver {
 		this.onItemChoose = this.onItemChoose || onItemChoose;
 		this.inventory = null;
 		this.inventoryFn = null;
-		this.inventorySelector = '123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		this.inventorySelector = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		this.everSeen = {};
 		this.allowFilter = null;
 		this.filterId = '';
@@ -223,11 +223,14 @@ class ViewInventory extends ViewObserver {
 				this.onItemChoose(event);
 			})
 			.mouseover( event => {
-				console.log( 'ViewInventory mouseover' );
+				//console.log( 'ViewInventory mouseover' );
 				guiMessage( 'show', item );
+				guiMessage( 'favoriteCandidate', item );
+				$("#favMessage").html("Press 0-9 to favorite");
 			})
 			.mouseout( event => {
 				guiMessage( 'hide' );
+				guiMessage( 'favoriteCandidate', null );
 			});
 		}
 		if( !this.inventory.count ) {
