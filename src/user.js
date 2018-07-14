@@ -8,18 +8,60 @@ class HumanUser {
 		this.favoriteMap = {};
 		this.keyMap = loadKeyMapping();
 	}
-	setFavorite(key,item) {
+	clearFavorite(favorite) {
+		favorite.command = null;
+		favorite.itemId  = null;
+		favorite.autoSet = null;
+	}
+	setFavorite(key,item,autoSet) {
 		Object.each( this.favoriteMap, favorite => {
-			if( favorite.itemId == item.id ) {
-				favorite.command = null;
-				favorite.itemId  = null;
+			if( item && favorite.itemId == item.id ) {
+				this.clearFavorite(favorite);
 			}
 		});
-		this.favoriteMap[key] = {
-			key: key,
-			command: commandForItem(item) || Command.INVENTORY,
-			itemId: item.id
+		if( !item ) {
+			if( this.favoriteMap[key] ) {
+				this.clearFavorite( this.favoriteMap[key] );
+			}
 		}
+		else {
+			this.favoriteMap[key] = {
+				key: key,
+				command: commandForItem(item) || Command.INVENTORY,
+				itemId: item.id,
+				autoSet: autoSet
+			}
+		}
+	}
+	autoFavorite() {
+		let fav = function(key,getItemList,index=0) {
+			if( !this.favoriteMap[key] || !this.favoriteMap[key].command ) {
+				let item = getItemList().all[index];
+				if( !item || Object.find( this.favoriteMap, fav => fav.itemId == item.id ) ) {
+					return;
+				}
+				this.setFavorite(key,item,true);
+				return true;
+			}
+		}.bind(this);
+
+		Object.each( this.favoriteMap, favorite => {
+			if( favorite.autoSet ) {
+				this.clearFavorite(favorite);
+			}
+		});
+		let f = () => new Finder(this.entity.inventory);
+		fav( '1', () => f().filter(item=>item.isWeapon && !item.range && !item.isFake).byDamage('desc') );
+		fav( '2', () => f().filter(item=>item.isWeapon && item.range && !item.isFake).byDamage('desc') );
+		fav( '3', () => f().filter(item=>item.isPotion && item.effect && item.effect.op == 'heal' && !item.isFake ) );
+		let spellList = getCastableSpellList(this.entity);
+		let i = 0;
+		i += fav( '4', () => spellList, i ) ? 1 : 0;
+		i += fav( '5', () => spellList, i ) ? 1 : 0;
+		i += fav( '6', () => spellList, i ) ? 1 : 0;
+		i += fav( '7', () => spellList, i ) ? 1 : 0;
+		i += fav( '8', () => spellList, i ) ? 1 : 0;
+		i += fav( '9', () => spellList, i ) ? 1 : 0;
 	}
 	keyToCommand(key) {
 		if( !this.suppressFavorites ) {
@@ -54,5 +96,8 @@ class HumanUser {
 	onAreaChange(area) {
 		guiMessage('setArea',area);
 		this.priorArea = this.entity.area;
+	}
+	tick() {
+		this.autoFavorite();
 	}
 }

@@ -822,12 +822,14 @@ const MonsterTypeList = {
 		senseSmell: 200
 	},
 	"troll": {
-		core: [ SYM, 49, '5:4', 'evil', 'claw', 'animalHunter', 'humanoid', 'dc-mon/troll.png', '*' ],
+		core: [ SYM, 49, '5:4', 'evil', 'claw', 'animalHunter', 'humanoid', 'mon/troll.png', '*' ],
 		brainMindset: 'ravenous',
 		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
 		isLarge: true,
+		isTroll: true,
 		regenerate: 0.15,
+		scale: 0.6,
 		senseSight: 4,
 		stink: 0.4,
 		vuln: DamageType.BURN

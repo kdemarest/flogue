@@ -1,7 +1,7 @@
 function getCastableSpellList(entity) {
 	let hasId = {};
 	return new Finder(entity.inventory).filter( item=>{
-		if( item.isSpell && item.effect && item.effect.op && !item.effect.isBlank ) {
+		if( item.isSpell && item.effect && item.effect.op && !item.effect.isBlank  && !item.isFake) {
 			let ok = !hasId[item.effect.typeId];
 			hasId[item.effect.typeId] = 1;
 			return ok;
@@ -178,8 +178,9 @@ class ViewFavorites extends ViewObserver {
 			let img = '<span class="itemRecharge"></span>';
 
 			if( !item ) {
-				$(img+hotkey).appendTo('<div class="item unlit">'+this.divId+'</div>');
-				return;
+				let s = '<div class="item unlit">'+img+hotkey+'</div>';
+				$(s).appendTo(this.divId);
+				continue;
 			}
 
 			if( item.rechargeTime ) {

@@ -119,12 +119,24 @@ class Finder {
 	isAlive() {
 		return this.filter( e => !e.isDead() );
 	}
-	byHealth() {
-		this.result.sort( (a,b) => a.health-b.health );
+	byHealth(dir='asc') {
+		let d = dir=='asc' ? 1 : -1;
+		this.result.sort( (a,b) => (a.health-b.health)*d );
 		return this;
 	}
-	byRange() {
-		this.result.sort( (a,b) => (a.range || a.reach) - (b.range || b.reach) );
+	byRange(dir='asc') {
+		let d = dir=='asc' ? 1 : -1;
+		this.result.sort( (a,b) => ((a.range || a.reach) - (b.range || b.reach))*d );
+		return this;
+	}
+	byDamage(dir='asc') {
+		let d = dir=='asc' ? 1 : -1;
+		this.result.sort( (a,b) => (a.damage-b.damage)*d );
+		return this;
+	}
+	byArmor(dir='asc') {
+		let d = dir=='asc' ? 1 : -1;
+		this.result.sort( (a,b) => (a.armor-b.armor)*d );
 		return this;
 	}
 	isContainable() {

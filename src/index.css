@@ -43,7 +43,7 @@ body {
 	font-weight: 400;
 	margin-right: 16px;
 }
-#guiInfo.monColor, .monColor {
+#guiInfo.monColor, .monColor, #guiInfo.monColor table tbody tr td {
 	color: cyan; /* #dc9a38; */
 	border-color: cyan;
 }

@@ -76,14 +76,14 @@ ThemeList.dwarfTown2 = {
 		palette: 		{ basis: 'jaggedCave' },
 //		palette: 		{ basis: 'stoneRooms' },
 //		rREQUIRED: 		'4x kenPlace',
-		placeDensity: 	0.40,
-		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
-		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
-		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
-		rEPIC: 			'graveYard',
-//		monsters: 		['isTinnamaton'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		placeDensity: 	0.10,
+//		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
+//		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
+//		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+//		rEPIC: 			'graveYard',
+		monsters: 		['isTroll'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.00002,
+		enemyDensity:  	0.05,
 		friendDensity: 	0.00001,
 	}
 
@@ -99,7 +99,7 @@ ThemeList.dwarfTown2 = {
 
 	return {
 		startingDepth: 10,
-//		themeId: 'dwarfVillage'
+		themeId: 'kenTheme'
 	}
 }
 

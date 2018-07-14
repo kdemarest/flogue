@@ -191,6 +191,14 @@ function nop() {}
 		}
 		return result;
 	}
+	Object.find = function(obj,fn) {
+		for( let key in obj ) {
+			if( fn(obj[key],key) ) {
+				return obj[key];
+			}
+		}
+		return false;
+	}
 	// Converts an incoming object into another object. The fn should return an object that will be object assigned into the source object.
 	Object.convert = function(obj,fn) {
 		let result = {};

@@ -110,6 +110,7 @@ function main(levelName) {
 		}
 		User.entity.nowPrior = now;
 		User.entity.timeDelay = 0;
+		User.tick();
 		let timePasses = User.commandHandler.evalCommand(User.entity,event);
 		TickWorld(timePasses);
 		//event.stopPropagation();
@@ -157,6 +158,7 @@ function main(levelName) {
 
 	let world,gui;
 	[world,gui] = startGame( User, () => {
+		User.tick();
 		User.entity.area.tick( false );
 		gui.render();
 		tell([User.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
