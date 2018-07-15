@@ -72,6 +72,25 @@ class Item {
 		if( this.isCoin ) {
 			this.coinCount  	= picker.pickCoinCount();
 		}
+
+		// REALLY in the long term all effects should be uniquely named according to their
+		// time of use. For example:
+		// effectOnAttack
+		// effectOnShoot
+		// effectOnThrow
+		// effectOnCast
+		// effectOnDon / Doff
+		// effectOnGaze
+		// effectOnEat
+		// effectOnBlock
+		// effectOnMove
+		// effectOnTakeDamage
+		// effectOn... whatever. possession, getting a pet... the list is endless.
+		// We'll need a generic test that says
+		// for( fieldId in entity.fields ) { if startsWith('effectOn'
+		// and so on.
+
+
 		if( this.effect && this.effect.isInert ) {
 			delete this.effect;
 		}
@@ -80,7 +99,40 @@ class Item {
 			if( this.takeOnDamageTypeOfEffect && this.effect.damageType ) {
 				this.damageType = this.effect.damageType;
 			}
+			// NUANCE: When you equip almost everything their effects happen to you immediately.
+			// Most wearable items deal with this properly, but the Stuff effects sometimes
+			// do not, so to be friendly we set duration here.
+			if( this.slot && !this.isWeapon ) {
+				this.effect.duration = true;
+			}
+			// Weapon secondary effect, and that of armor, happens in carefully managed circumstances.
+			if( this.isWeapon || this.isArmor || this.isShield ) {
+				if( this.chanceOfEffect === undefined ) {
+					this.chanceOfEffect = this.isWeapon ? WEAPON_EFFECT_CHANCE_TO_FIRE : ARMOR_EFFECT_CHANCE_TO_FIRE;
+				}
+				
+				if( WEAPON_EFFECT_OP_ALWAYS.includes(this.effect.op) ) {
+					this.chanceOfEffect = 100;
+					this.effect.value = Math.max(1,Math.floor(this.effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+					console.assert( !isNaN(this.effect.value) );
+				}
+			}
+
 		}
+
+		if( this.isWeapon && !this.effectOnAttack ) {
+			this.effectOnAttack = new Effect( this.depth, {
+				op: 		'damage',
+				isHarm: 	true,
+				isInstant: 	true,
+				value: 		this.damage,
+				damageType: this.damageType || DamageType.CUT,
+				quick: 		this.getQuick(),
+				icon: 		false,
+				name: 		this.name
+			}, this, this.rechargeTime );
+		}
+
 
 		if( this.hasInventory ) {
 			this.inventory = [];
@@ -164,6 +216,8 @@ class Item {
 			console.assert(this.states[newState]);
 			Object.assign(this,this.states[newState]);
 		}
+		// we can just assume that the sprites will need regenerating.
+		spriteDeathCallback(this.spriteList);
 	}
 	getQuick() {
 		if( this.effectOnAttack && this.effectOnAttack.quick !== undefined ) {
@@ -186,6 +240,26 @@ class Item {
 		let itemList = this.lootGenerate( lootSpec, level );
 		itemList.forEach( item => item.giveTo(this,this.x,this.y) );
 		return null;
+	}
+
+	takeDamage( source, item, amount, damageType, callback, noBacksies, isOngoing) {
+		let result = {
+			status: 'damageItem',
+			success: false
+		}
+		if( damageType == DamageType.BURN ) {
+			if( this.states.lit ) {
+				this.setState('lit');
+				result.success = true;
+			}
+		}
+		if( damageType == DamageType.WATER || damageType == DamageType.FREEZE ) {
+			if( this.states.unlit ) {
+				this.setState('unlit');
+				result.success = true;
+			}
+		}
+		return result;
 	}
 
 	calcReduction(damageType) {
@@ -410,29 +484,36 @@ class Item {
 			}
 		}
 	}
-	trigger(target,source,command) {
-		if( this.effect===false || this.effect===undefined ) {
-			return false;
+	// It is kind of weird that you can send in an effect here, but items
+	// are allowed to have lots of them. Its just that we are triggering
+	// item.effect MOST of the time. In particular, ammo from bows does this...
+	trigger(target,source,context,effect=this.effect) {
+		if( effect===false || effect===undefined ) {
+			return {
+				status: 'triggerNothing',
+				success: false
+			}
 		}
 		if( !this.isRecharged() ) {
-			return false;
+			return {
+				status: 'triggerfNotRecharged',
+				success: false
+			}
 		}
-		if( source.command == Command.THROW && this.isPotion ) {
-			this.effect.effectShape = EffectShape.SPLASH;
+		if( context == Command.THROW && this.isPotion ) {
+			effect.effectShape = EffectShape.SPLASH;
 		}
 
 		// Here is where we should figure out the area of effect and hit all as needed.
-		let result = effectApply( this.effect, target, this.ownerOfRecord, this );
-		if( !result ) {
-			return false;
-		}
+		let result = effectApply( effect, target, source, this, context );
 
-		if( typeof this.charges =='number' ) {
+		if( result.success && typeof this.charges =='number' ) {
 			this.charges = Math.max(0,this.charges-1);
 			if( this.charges <= 0 && this.destroyOnLastCharge ) {
 				this.destroy();
+				result.destroyedItemAfterUse = true;
 			}
 		}
-		return true;
+		return result;
 	}
 }

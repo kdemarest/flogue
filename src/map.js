@@ -511,7 +511,7 @@ class Map extends SimpleMap {
 		return this.itemLookup[y*this.xLen+x];
 	}
 	findItemAt(x,y) {
-		if( !this.inBounds(x,y) ) return false;
+		if( !this.inBounds(x,y) ) return new Finder([]);
 		return new Finder(this.itemLookup[y*this.xLen+x] || this.itemLookupStaticNop);
 	}
 	findChosenItemAt(x,y,fn) {

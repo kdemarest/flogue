@@ -487,15 +487,21 @@ class ViewInfo extends ViewObserver {
 			s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
 //		}
 		if( entity.isUser() ) {
-			let bc = entity.calcShieldBlockChance(DamageType.STAB,true,entity.shieldBonus);
+			let bc = entity.calcShieldBlockChance(DamageType.CUT,true,entity.shieldBonus);
 			let weapon = entity.calcDefaultWeapon();
 			let ammo = entity.getFirstItemInSlot(Slot.AMMO);
 			let ex = itemExplain(ammo);
 			s += tRow( "Armor:", entity.calcReduction(DamageType.CUT,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R" );
-			s += tRow( "Shield:", (entity.shieldBonus?'<span class="shieldBonus">':'')+Math.floor(bc*100)+'%'+(entity.shieldBonus?'</span>':'')+" to block" );
+			s += tRow( "Shield:", 
+				(entity.shieldBonus?'<span class="shieldBonus">':'')+
+				Math.floor(bc*100)+'%'+
+				(entity.shieldBonus?'</span>':'')+
+				" to block"
+			);
 			s += tRow( "Damage:", 
 				Math.floor(weapon.damage)+" "+weapon.damageType+
 				[' (clumsy)','',' (quick)'][weapon.getQuick()] +
+				(weapon.reach >1 ? weapon.reach+' away' : '')+
 				( (entity.sneakAttackMult||2)<=2 ? '' : ', Sneak x'+Math.floor(entity.sneakAttackMult) )
 			);
 
@@ -506,13 +512,15 @@ class ViewInfo extends ViewObserver {
 		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
 
 		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+'<br>';
+		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
 		let conditionList = [];
 		let senseList = [];
 		DeedManager.traverseDeeds( entity, deed => {
 			if( deed.op == 'damage' ) {
-				conditionList.push('<b>'+deed.name+' '+(typeof deed.timeLeft == 'number' ? deed.timeLeft : '')+'</b>');
+				conditionList.push('<b>'+deed.name+' '+(typeof deed.timeLeft == 'number' ? Math.ceil(deed.timeLeft) : '')+'</b>');
 			}
 		});
+		test( conditionList, entity.stun,'<b>stunned</b>');
 		test( conditionList, entity.attitude==Attitude.ENRAGED,'<b>enraged</b>');
 		test( conditionList, entity.attitude==Attitude.CONFUSED,'<b>confused</b>');
 		test( conditionList, entity.attitude==Attitude.PANICKED,'<b>panicked</b>');
@@ -528,8 +536,9 @@ class ViewInfo extends ViewObserver {
 		test( senseList, entity.senseTreasure,	'treasure');
 		test( senseList, entity.senseLiving,	'living');
 		s += conditionList.join(', ')+'<br>';
+		s += shield ? '<div class="monDetail">Blocking:</div>'+shield.blocks.split(',').join(', ')+'<br>' : '';
 		s += senseList.length ? '<div class="monDetail">Senses:</div>'+senseList.join(', ')+'<br>' : '';
-		s += entity.immune ? '<div class="monDetail">Immune:</div>'+entity.immune.split(',').join(', ')+'<br>' : '';
+		s += entity.immune ? '<div class="monDetail">Immune:</div>'+entity.immune.split(',').filter( i=>i!==DamageType.WATER ).join(', ')+'<br>' : '';
 		s += entity.resist ? '<div class="monDetail">Resist:</div>'+entity.resist.split(',').join(', ')+'<br>' : '';
 		s += entity.vuln ? '<div class="monDetail">Weak:</div>'+entity.vuln.split(',').join(', ')+'<br>' : '';
 		if( !entity.isUser() ) {
@@ -788,12 +797,12 @@ function itemExplain(item,buySell) {
 		description: 	((item.bunch||0)>1 ? item.bunch+'x ' : '')+String.capitalize(nameClean),
 		bunch: 			((item.bunch||0)>1 ? item.bunch+'x ' : ''),
 		name: 			String.capitalize(nameClean),
-		damage: 		item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? item.effect.value : ''),
+		damage: 		item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? Math.max(1,Math.floor(item.effect.value)) : ''),
 		damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
 		armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUT,item.isShield) : '',
 		aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? ' ('+item.effect.effectShape+')' : '',
-		bonus: 			item.isArmor && item.effect ? item.effect.name : (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+item.effect.value+' '+item.effect.damageType:''),
-		recharge: 		item.rechargeTime ? item.rechargeTime : '',
+		bonus: 			item.isArmor && item.effect ? item.effect.name : (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+Math.floor(item.effect.value)+' '+item.effect.damageType:''),
+		recharge: 		item.rechargeTime ? Math.floor(item.rechargeTime) : '',
 		rechargeLeft: 	rechargeImg(),
 		price: 			new Picker(item.area.depth).pickPrice(buySell,item),
 		priceWithCommas: (new Picker(item.area.depth).pickPrice(buySell,item)).toLocaleString(),
@@ -852,6 +861,7 @@ class ViewRange extends ViewObserver {
 			else {
 				target =
 					entity.findAliveOthersNearby().isId(entity.lastAttackTargetId).canTargetEntity().nearMe(this.rangeLimit).first ||
+					entity.findAliveOthersNearby().isMyEnemy().canTargetEntity().nearMe(this.rangeLimit).byDistanceFromMe().first ||
 					entity.findAliveOthersNearby().isNotMyFriend().canTargetEntity().nearMe(this.rangeLimit).byDistanceFromMe().first;
 			}
 			if( target ) {

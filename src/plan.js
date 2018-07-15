@@ -13,6 +13,7 @@ let Plan = (new class {
 				1: {
 					themeId: 'coreCavernRooms',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'gateway', themeId: 'refugeeCamp' },
 						{ typeFilter: 'fontSolar' },
@@ -21,6 +22,7 @@ let Plan = (new class {
 				2: {
 					themeId: 'corePits',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'gateway', themeId: 'refugeeCampSlaughter' },
 						{ typeFilter: 'fontSolar' },
@@ -29,6 +31,7 @@ let Plan = (new class {
 				3: {
 					themeId: 'coreRooms',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'spooky' },
 						{ typeFilter: 'gateway', themeId: 'refugeeCampSlaughter' },
 						{ typeFilter: 'fontDeep' },
@@ -37,6 +40,7 @@ let Plan = (new class {
 				4: {
 					themeId: 'coreMaze',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'portal', themeId: 'hellscape'  },
 						{ typeFilter: 'fontSolar' },
@@ -45,6 +49,7 @@ let Plan = (new class {
 				5: {
 					themeId: 'coreBridges',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'dwarfGoblinBattle' },
 						{ typeFilter: 'fontDeep' },
 					]
@@ -52,6 +57,7 @@ let Plan = (new class {
 				6: {
 					themeId: 'coreSea',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
@@ -60,6 +66,7 @@ let Plan = (new class {
 				7: {
 					themeId: 'coreMorphousRooms',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
@@ -68,6 +75,7 @@ let Plan = (new class {
 				8: {
 					themeId: 'coreCavernRooms',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'spooky' },
 						{ typeFilter: 'fontSolar' },
 					]
@@ -75,14 +83,17 @@ let Plan = (new class {
 				9: {
 					themeId: 'coreMixedRooms',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'gateway', themeId: 'spooky' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
 					]
 				},
 				10: {
-					themeId: 'coreMixedRooms',
+					themeId: 'coreMorphousRooms',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
@@ -91,6 +102,8 @@ let Plan = (new class {
 				11: {
 					themeId: 'coreMixedRooms',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'gateway', themeId: 'spooky' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
@@ -99,14 +112,18 @@ let Plan = (new class {
 				12: {
 					themeId: 'coreMixedRooms',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'gateway', themeId: 'spooky' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
 					]
 				},
 				13: {
-					themeId: 'coreMixedRooms',
+					themeId: 'coreMorphousRooms',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'gateway', themeId: 'spooky' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
@@ -115,7 +132,8 @@ let Plan = (new class {
 				14: {
 					themeId: 'coreMixedRooms',
 					make: [
-						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
 					]
@@ -123,7 +141,8 @@ let Plan = (new class {
 				15: {
 					themeId: 'coreBridges',
 					make: [
-						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
 					]
@@ -131,7 +150,8 @@ let Plan = (new class {
 				16: {
 					themeId: 'coreMixedRooms',
 					make: [
-						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
 					]
@@ -139,7 +159,8 @@ let Plan = (new class {
 				17: {
 					themeId: 'coreMixedRooms',
 					make: [
-						{ typeFilter: 'gateway', themeId: 'spooky' },
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
+						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'fontSolar' },
 						{ typeFilter: 'fontDeep' },
 					]
@@ -147,6 +168,7 @@ let Plan = (new class {
 				18: {
 					themeId: 'coreHellscape',
 					make: [
+						{ typeFilter: 'gateway', themeId: 'wildlands' },
 						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
 						{ typeFilter: 'fontDeep' },
 						{ typeFilter: 'fontDeep' },

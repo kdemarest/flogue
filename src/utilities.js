@@ -301,6 +301,9 @@ function nop() {}
 	}
 
 	String.arSplit = function(s,delim=',') {
+		if( !s ) {
+			return [];
+		}
 		let temp = s.split(delim);
 		if( temp.length==1 && temp[0]=='' ) {
 			temp.length=0;

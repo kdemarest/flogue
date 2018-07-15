@@ -194,15 +194,17 @@ class Picker {
 							}
 
 							let rarity = (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
-							console.assert( rarity >= 0 );
+							if( v.rarity === 0 || m.rarity === 0 || q.rarity === 0 || e.rarity === 0 ) {
+								rarity = 0;
+							}
 
 							// Scale to depth...
-							if( rarity && rarity < 1.0 ) {
+							if( rarity > 0.0 && rarity < 1.0 ) {
 								let delta = 1.0 - rarity;
 								let pct = Math.clamp(depth/DEPTH_SPAN,0.0,1.0);
 								rarity = rarity + delta*pct;
+								console.assert( rarity >= 0 );
 							}
-							console.assert( rarity >= 0 );
 
 							//when a certian weapon has a GREATER effectChance, then its inert chance is SMALLER, meaning
 							//that OVERALL you see it less! So it is important for the CUMULATIVE chance of one thing to be the same
@@ -212,6 +214,9 @@ class Picker {
 								rarity *= effectChance / effectArray.length
 							}
 
+							// noneChance is specifically for ore to force there to be
+							// lots of ore that is normal. The regular ore gets the flag isNone
+							// so that this little piece of code can work.
 							let didNone = false;
 							if( noneChance && v.isNone ) {
 								didNone = true;

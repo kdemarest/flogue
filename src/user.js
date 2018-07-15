@@ -51,8 +51,8 @@ class HumanUser {
 			}
 		});
 		let f = () => new Finder(this.entity.inventory);
-		fav( '1', () => f().filter(item=>item.isWeapon && !item.range && !item.isFake).byDamage('desc') );
-		fav( '2', () => f().filter(item=>item.isWeapon && item.range && !item.isFake).byDamage('desc') );
+		fav( '1', () => f().filter(item=>item.isWeapon && item.slot == Slot.WEAPON && !item.isFake).byDamage('desc') );
+		fav( '2', () => f().filter(item=>item.mayShoot && item.ammoSpec && !item.isFake).byDamage('desc') );
 		fav( '3', () => f().filter(item=>item.isPotion && item.effect && item.effect.op == 'heal' && !item.isFake ) );
 		let spellList = getCastableSpellList(this.entity);
 		let i = 0;

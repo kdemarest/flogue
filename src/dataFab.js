@@ -139,6 +139,9 @@ function monsterPreProcess(typeId,m) {
 	if( m.isLiving === undefined ) {
 		m.isLiving = !m.isUndead && !m.isConstruct;
 	}
+	if( !String.arIncludes(m.vuln||'',DamageType.WATER) && !String.arIncludes(m.resist||'',DamageType.WATER) ) {
+		m.immune = String.arAdd(m.immune,DamageType.WATER);
+	}
 
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];

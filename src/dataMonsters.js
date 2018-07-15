@@ -15,7 +15,7 @@ const MonsterTypeDefaults = {
 	invisible: false, senseInvisible: false,
 	control: Control.AI,
 	immune: '', resist: '', vuln: '',
-	loseTurn: false,
+	stun: false,
 	personalEnemy: '',
 	reach: 1,
 	regenerate: 0,
@@ -30,8 +30,8 @@ const MonsterTypeDefaults = {
 
 let MentalAttack = [Attitude.ENRAGED, Attitude.CONFUSED, Attitude.PANICKED].join(',');
 let ConstructImmunity = [MentalAttack,DamageType.ROT,DamageType.POISON,MiscImmunity.HEALING].join(',');
-let ConstructResistance = PhysicalDamage;
-let ConstructVulnerability = [DamageType.SHOCK,DamageType.FREEZE,DamageType.CORRODE].join(',');
+let ConstructResistance = Damage.Physical;
+let ConstructVulnerability = [DamageType.WATER,DamageType.SHOCK,DamageType.FREEZE,DamageType.CORRODE].join(',');
 
 let UndeadImmunity = [DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'eBlindness'].join(',');
 let SkeletonImmunity = [UndeadImmunity,DamageType.CUT,DamageType.STAB].join(',');
@@ -52,10 +52,19 @@ let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE].j
 
 function launcher(obj) {
 	// Use this as a convenience to make launchers for anything to be thrown or shot
+	// To make a launcher, you must specify the 
+	// 	ammoType: 'isRock',
+	// 	ammoSpec: 'ammo.rock',
+	// 	rechargeTime: 2,
+	// 	conveyDamageToAmmo: true,	// optional, but gives you lots of control over the damage.
+	//	hitsToKillPlayer: 6,		// optional. You can just use xDamage or leave it alone too.
+	// 	name: "rock"				// needed to help describe what happened.
+
 	return Object.assign({
-		typeFilter: 'weapon.launcher.eInert',
-		isFake: true,
+		typeFilter: 'fake',
+		isLauncher: true,
 		mayShoot: true,
+		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
 		damageType: DamageType.STAB,
 		name: 'natural ranged weapon'
 	}, obj );
@@ -218,7 +227,7 @@ const MonsterTypeList = {
 		resist: ConstructResistance,
 		senseSight: MaxVis,
 		travelMode: 'fly',
-		vuln:[ConstructVulnerability,'water'].join(','),
+		vuln: ConstructVulnerability,
 	},
 
 // EVIL TEAM
@@ -601,7 +610,7 @@ const MonsterTypeList = {
 		loot: '20% gem.eSeeInvisible, 30% gem',
 		senseInvisible: true,
 		sneakAttackMult: 3,
-		resist: PhysicalDamage,
+		resist: Damage.Physical2,
 		vuln: DamageType.SMITE
 	},
 	"ghoul": {
@@ -828,9 +837,9 @@ const MonsterTypeList = {
 		isEarthChild: true,
 		isLarge: true,
 		isTroll: true,
-		regenerate: 0.15,
+		regenerate: 0.10,
 		scale: 0.6,
-		senseSight: 4,
+		senseSight: 3,
 		stink: 0.4,
 		vuln: DamageType.BURN
 	},
@@ -952,7 +961,7 @@ MonsterTypeList.ambligryp.onAttack = function(target) {
 	let isGripping = DeedManager.findFirst( deed => deed.source && deed.source.id == this.id && deed.stat == 'immobile' );
 	if( !isGripping && Math.chance(this.gripChance) ) {
 		let effect = Object.assign( {}, EffectTypeList.eImmobilize, { name: 'the ambligryp\'s pincer grip' } );
-		effectApply( effect, target, this, null );
+		effectApply( effect, target, this, null, 'onAttack' );
 	}
 }
 
@@ -966,12 +975,12 @@ MonsterTypeList.ambligryp.onMove = function(x,y,xOld,yOld) {
 
 MonsterTypeList.blueScarab.onAttack = function(target) {
 	let effect = Object.assign({},EffectTypeList.eVulnerability,{value: DamageType.FREEZE});
-	effectApply(effect,target,this,null);
+	effectApply(effect,target,this,null,'onAttack');
 }
 
 MonsterTypeList.redScarab.onAttack = function(target) {
 	let effect = Object.assign({},EffectTypeList.eVulnerability,{value: DamageType.BURN});
-	effectApply(effect,target,this,null);
+	effectApply(effect,target,this,null,'onAttack');
 }
 
 MonsterTypeList.redOoze.rescale = function() {
@@ -1017,7 +1026,7 @@ MonsterTypeList.redOoze.onMove = function(x,y) {
 
 MonsterTypeList.daitox.onTick = function() {
 	let tile = adhoc(this.map.tileTypeGet(this.x,this.y),this.map,this.x,this.y);
-	effectApply(this.effectOngoing,tile,this);
+	effectApply(this.effectOngoing,tile,this,null,'tick');
 }
 
 MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
@@ -1037,11 +1046,11 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 			}
 		};
 	}
-}
+};
 
-(function() {
+(() => {
 	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
 	for( let typeId in MonsterTypeList ) {
 		monsterPreProcess(typeId,MonsterTypeList[typeId]);
 	}
-}());
+})();

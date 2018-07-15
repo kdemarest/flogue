@@ -222,13 +222,27 @@ class UserCommandHandler {
 				tell(mSubject,observer,' ',mVerb,'lack',' a clear shot.');
 				return;
 			}
-			let target = observer.findAliveOthersOrSelfAt(observer.x+this.viewRange.xOfs,observer.y+this.viewRange.yOfs);
-			if( !target.count && !this.cmd.commandItem.mayTargetPosition && (!this.cmd.commandItem.effect || !this.cmd.commandItem.effect.mayTargetPosition) ) {
-				return this.cmd.cancel();
-			}
 			let x = observer.x+this.viewRange.xOfs;
 			let y = observer.y+this.viewRange.yOfs;
-			this.cmd.commandTarget = target.first || adhoc(observer.map.tileTypeGet(x,y),observer.map,x,y);
+
+			let target = observer.findAliveOthersOrSelfAt(x,y);
+			if( !target.count ) {
+				target = observer.map.findItemAt(x,y);
+			}
+			let item = this.cmd.commandItem;
+			let effect = item.effect;
+			let mayTargetPos = (
+				item.mayTargetPosition || 
+				(effect && effect.mayTargetPosition) || 
+				(effect && effect.effectShape!==undefined && effect.effectShape!==EffectShape.SINGLE)
+			);
+			if( !target.count ) {
+				if( !mayTargetPos ) {
+					return this.cmd.cancel();
+				}
+				target = new Finder( [adhoc(observer.map.tileTypeGet(x,y),observer.map,x,y)] );
+			}
+			this.cmd.commandTarget = target.first;
 			return this.cmd.enact();
 		}
 	}

@@ -3,6 +3,10 @@
 //
 class Entity {
 	constructor(depth,monsterType,inject,jobPickFn) {
+		let result = {
+			status: 'entityConstruct',
+			success: false
+		}
 		// BALANCE: Notice that monsters are created at LEAST at their native level, and if appearing on
 		// a deeper map level then they average their native level and the map's level.
 		let isPlayer = monsterType.control==Control.USER;
@@ -56,7 +60,9 @@ class Entity {
 
 		if( this.inventoryWear ) {
 			this.lootTake( this.inventoryWear, this.level, null, true, item => {
-				if( this.mayDon(item) ) { this.don(item,item.slot); }
+				if( this.mayDon(item) ) {
+					this.don(item,item.slot);
+				}
 			});
 		}
 
@@ -77,6 +83,11 @@ class Entity {
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) );
 		console.assert( this.x===undefined && this.y===undefined && this.area===undefined);
+
+		// WARNING! Not a deep copy.
+		result.entity = Object.assign( {}, this );
+		result.success = true;
+		this.constructionResult = result;
 	}
 	get map() {
 		return this.area.map;
@@ -108,7 +119,10 @@ class Entity {
 	}
 	gateTo(area,x,y) {
 		if( this.area && this.area.id == area.id ) {
-			return;
+			return {
+				status: 'alreadyInArea',
+				success: false
+			};
 		}
 		console.assert( x!==undefined && y!==undefined );
 
@@ -130,6 +144,13 @@ class Entity {
 			Gab.entityPostProcess(this);
 		}
 		tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
+		return {
+			status: 'gateTo',
+			area: area,
+			x: x,
+			y: y,
+			success: true
+		}
 	}
 
 	findAliveOthersNearby(entityList = this.entityList) {
@@ -467,7 +488,11 @@ class Entity {
 		// you can not see, but if you are right next to things you are blind to then
 		// you're allowed to take a shot at them.
 
-		if( entity.inVoid ) {
+		// You can always target yourself, even in the void.
+		if( this.id == entity.id ) {
+			return true;
+		}
+		if( entity.inVoid || entity.isMap ) {
 			return false;
 		}
 		if( entity.isItemType && entity.owner && !entity.owner.isMap ) {
@@ -475,10 +500,6 @@ class Entity {
 			// properly. That is, x and y are undefined, so we need to rely on who is holding the
 			// object.
 			return entity.owner.id == this.id;
-		}
-		// You can always target yourself.
-		if( this.id == entity.id ) {
-			return true;
 		}
 		// Not in the same area, so nope.
 		if( entity.area && entity.area.id !== this.area.id ) {
@@ -643,8 +664,12 @@ class Entity {
 		});
 		return found;
 	}
-	stripDeeds(testFn) {
-		return DeedManager.end( testFn ) > 0;
+	takeStripDeeds(testFn) {
+		let count = DeedManager.end( testFn );
+		return {
+			status: 'stripDeeds',
+			success: count > 0
+		}
 	}
 
 	dirToBestScent(x,y,targetId) {
@@ -1040,7 +1065,7 @@ class Entity {
 	thinkAttack(enemyList,personalEnemy) {
 		let weapon = this.calcBestWeapon(enemyList.first);
 		let distLimit = weapon.reach || weapon.range || 1;
-		let inRange = new Finder(enemyList.all,this).nearMe(distLimit).clearShot();
+		let inRange = new Finder(enemyList.all,this).nearMe(distLimit).shotClear();
 		if( !weapon.rechargeLeft && inRange.count ) {
 			let target = personalEnemy && inRange.includesId(personalEnemy.id) ? personalEnemy : inRange.first;	// For now, always just attack closest.
 			this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
@@ -1127,7 +1152,7 @@ class Entity {
 		let useAiTemporarily = false;
 		if( this.control == Control.USER ) {
 			// Placeholder, since the onPlayerKey already sets the command for us
-			if( this.loseTurn || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
+			if( this.stun || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
 				useAiTemporarily = true;
 			}
 			if( !useAiTemporarily && this.command == Command.WAIT ) {
@@ -1148,7 +1173,7 @@ class Entity {
 
 				if( this.typeId == window.debugEntity ) debugger;
 
-				if( this.loseTurn ) {
+				if( this.stun ) {
 					this.record('loseTurn',true);
 					return Command.LOSETURN;
 				}
@@ -1446,7 +1471,10 @@ class Entity {
 	takeHealing(healer,amount,healingType,quiet=false,allowOverage=false) {
 		if( this.isImmune( MiscImmunity.HEALING ) ) {
 			tell(mSubject,this,' can not be healed.');
-			return false;
+			return {
+				status: 'immune',
+				success: false
+			}
 		}
 		// This allows prior health bonuses that might have cause health to exceed helthMax to exist.
 		if( !allowOverage ) {
@@ -1471,13 +1499,22 @@ class Entity {
 				tell(sub,this,' ',mVerb,'is',...result);
 			}
 		}
+		return {
+			healed: amount,
+			status: 'healed',
+			success: true
+		}
 	}
 
-	calcShieldBlockChance(damageType,isRanged,shieldBonus) {
-		console.assert(damageType);
-		if( !isRanged ) return 0;
+	calcShieldBlockChance(what,isRanged,shieldBonus) {
+		if( !what ) return 0;
 		let shield = this.getFirstItemInSlot(Slot.SHIELD);
-		if( !shield ) return 0;
+		if( !shield || !isRanged ) {
+			return 0;
+		}
+		if( !String.arIncludes(shield.blocks,what) ) {
+			return 0;
+		}
 		let blockChance = shield.blockChance + (shieldBonus=='stand' ? 0.50 : 0);
 		return blockChance;
 	}
@@ -1566,33 +1603,24 @@ class Entity {
 		reduction = Math.min(0.8,reduction);
 		amount = Math.max(1,Math.floor(amount*(1.00-reduction)));
 
-		let shield = this.getFirstItemInSlot(Slot.SHIELD);
-		let isShielded = false;
-		let blockChance = isOngoing ? 0 : this.calcShieldBlockChance(damageType,isRanged,this.shieldBonus);
-		if( Math.chance(blockChance*100) ) {
-			amount = 0;
-			isShielded = true;			
-		}
-
-		// Now resistance.
+		// This is NOT as thorough as the testing in applyEffect(). We should probably
+		// figure out some way to merge all such tests together.
 		let isVuln='',isImmune='',isResist='';
-		if( !isShielded ) {
-			[isVuln,isImmune,isResist] = this.assessVIR(item,damageType);
-			if( isVuln ) {
-				amount *= 2;
-			}
-			else
-			if( isImmune ) {
-				amount = 0;
-			}
-			else
-			if( isResist ) {
-				amount = Math.max(1,Math.floor(amount*0.5));
-			}
+		[isVuln,isImmune,isResist] = this.assessVIR(item,damageType);
+		if( isVuln ) {
+			amount *= 2;
+		}
+		else
+		if( isImmune ) {
+			amount = 0;
+		}
+		else
+		if( isResist ) {
+			amount = Math.max(1,Math.floor(amount*0.5));
 		}
 
+		// 
 		if( !isOngoing && attacker && attacker.isMonsterType && (!this.brainMaster || this.brainMaster.id !=attacker.id) ) {
-//			if( attacker.team == Team.NEUTRAL || this.team == Team.NEUTRAL ) debugger;
 			// Remember that neutrals with brainFleeCombat DO want a personal enemy, not to attack, but to flee from.
 			this.personalEnemy = attacker.id;
 			// Stop remembering anyone else, because normally you target the lep if it is closer. So for example
@@ -1664,19 +1692,6 @@ class Entity {
 			}
 		}
 
-		if( !isOngoing && isShielded ) {
-			quiet = true;
-			tell(mSubject,this,' ',mVerb,'catch',' that blow with ',mSubject|mPossessive,this,' ',mObject|mPossessed,shield);
-			new Anim( {}, {
-				follow: 	this,
-				img: 		StickerList.showResistance.img,
-				duration: 	0.2,
-				delay: 		item ? item.rangeDuration || 0 : 0,
-				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sScaleSet(0.75); },
-				onSpriteTick: 	s => { }
-			});
-		}
 
 		if( isVuln ) {
 			quiet = true;
@@ -1782,12 +1797,13 @@ class Entity {
 		}
 
 		return {
+			status: 	isImmune ? 'immune' : 'damaged',
+			success: 	!isImmune,
 			amount: 	amount,
 			damageType: damageType,
 			isRanged: 	isRanged,
 			reduction: 	reduction,
 			isSneak: 	isSneak,
-			isShielded: isShielded,
 			isImmune: 	isImmune,
 			isResist: 	isResist,
 			isVuln: 	isVuln,
@@ -1805,7 +1821,10 @@ class Entity {
 		let dy = this.y-source.y;
 		if( dx==0 && dy==0 ) {
 			debugger;
-			return false;
+			return {
+				status: 'onOwnSquare',
+				success: false
+			}
 		}
 		let dist = Math.sqrt(dx*dx+dy*dy)
 
@@ -1824,11 +1843,17 @@ class Entity {
 		while( success && distanceRemaining-- ) {
 			fx += dx/dist;
 			fy += dy/dist;
-			success = this.moveTo(Math.round(fx),Math.round(fy),false,null);
+			success = this.moveTo(Math.round(fx),Math.round(fy),false,null).success;
 			if( !success ) { bonked = true; break; }
 		}
 		tell(mSubject,this,' ',mVerb,'is',' ',bonked ? 'shoved but blocked.' : (resisting ? 'heavy but moves.' : 'shoved.'));
-		this.loseTurn = true;
+		let effect = new Effect(this.area.depth, {
+			op: 'set',
+			stat: 'stun',
+			value: true,
+			isInstant: true,
+		});
+		effectApply( effect, this, attacker, item, 'shove' );
 
 		let ddx = this.x - sx;
 		let ddy = this.y - sy;
@@ -1843,19 +1868,34 @@ class Entity {
 			onSpriteMake: 	s => { s.sReset().sVelTo(ddx,ddy,duration); },
 			onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
 		});
-		return distance>0;
+		return {
+			status: 'shoved',
+			success: true,
+			distance: distance
+		}
 	}
 
 	takeTeleport(source,item) {
+		let xOld = this.x;
+		let yOld = this.y;
+
 		let safeSpot = pVerySafe(this.map);
 		let pos = this.map.pickPosBy(1,1,1,1,safeSpot);
 		if( pos !== false ) {
 			this.moveTo(pos[0],pos[1]);
 		}
-		return pos !== false;
+		return {
+			status: pos !== false ? 'teleported' : 'noteleport',
+			success: pos !== false,
+			xOld: xOld,
+			yOld: yOld,
+			x: this.x,
+			y: this.y
+		}
 	}
 
 	takeBePossessed(effect,toggle) {
+
 		let fieldsToTransfer = { control:1, name:1, team: 1, brainMindset: 1, brainAbility: 1, visCache: 1, experience: 1, isChosenOne: 1, strictAmmo: true };
 
 		let source = effect.source;
@@ -1876,21 +1916,33 @@ class Entity {
 			if( source.isUser() ) {
 				guiMessage('resetMiniMap',source.area);
 			}
-			return true;
+			return {
+				status: 'unpossessed',
+				success: true
+			}
 		}
 
 		// Start possession
 		if( this.isMindless || this.isUndead ) {
 			tell(mSubject,this,' ',mVerb,'is',' has no mind to possess!');
-			return false;
+			return {
+				status: 'nomind',
+				success: false
+			}
 		}
-		if( this.isImmune('ePossess') ) {
+		if( this.isImmune('ePossess') || this.isImmune('possess')) {
 			tell(mSubject,this,' ',mVerb,'is',' immune to possession!');
-			return false;
+			return {
+				status: 'immune',
+				success: false,
+			}
 		}
 		if( source.id == this.id || source.isPossessing || this.oldMe ) {
 			tell(mSubject,this,' ',mVerb,'is',' already possessing!');
-			return false;
+			return {
+				status: 'alreadypossessing',
+				success: false,
+			}
 		}
 		tell(mSubject,source,' ',mVerb,'enter',' the mind of ',mObject,this,'.');
 		this.oldMe = Object.copySelected( {}, this, fieldsToTransfer );
@@ -1906,7 +1958,10 @@ class Entity {
 		if( this.isUser() ) {
 			guiMessage('resetMiniMap',this.area);
 		}
-		return true;
+		return {
+			status: 'possessed',
+			success: true
+		}
 	}
 
 	itemToAttackCommand(weapon) {
@@ -1926,25 +1981,8 @@ class Entity {
 		return Command.SHOOT;
 	}
 
-	generateEffectOnAttack(weapon,src) {
-		console.assert(weapon.isWeapon);
-		weapon.effectOnAttack = weapon.effectOnAttack || {
-			op: 		'damage',
-			isInstant: 	true,
-			value: 		src && src.conveyDamageToAmmo ? src.damage : weapon.damage,
-			damageType: src && src.conveyDamageTypeToAmmo ? src.damageType : (weapon.damageType || DamageType.CUT),
-			quick: 		src && src.conveyQuickToAmmo ? src.getQuick() : weapon.getQuick(),
-			icon: 		false,
-			name: 		weapon.name
-		};
-		if( src && src.effect && src.conveyEffectToAmmo ) {
-			weapon.effect = weapon.effect || Object.assign({},src.effect);
-		}
-	}
-
 	calcDefaultWeapon() {
 		let weapon = new Finder(this.inventory).filter( item=>item.inSlot==Slot.WEAPON ).first || this.naturalMeleeWeapon;
-		this.generateEffectOnAttack(weapon);
 		return weapon;
 	}
 	
@@ -1995,69 +2033,10 @@ class Entity {
 			weapon = this.naturalMeleeWeapon;
 		}
 		console.assert( !weapon.rechargeLeft || weapon.isNatural );
+		console.assert( !weapon.isWeapon || weapon.effectOnAttack );
 //		console.log( this.typeId+' picked '+(weapon.typeId || weapon.name)+' with recharge '+weapon.rechargeLeft );
 
-		if( weapon.isWeapon ) {
-			this.generateEffectOnAttack(weapon);
-		}
 		return weapon;
-	}
-
-	attack(target,weapon) {
-		console.assert(weapon);
-		console.assert(weapon.isWeapon);
-		this.lastAttackTargetId = target.id;	// Set this early, despite blindness!
-		this.inCombatTimer = Time.simTime;
-
-		if( (this.senseBlind && !this.baseType.senseBlind) || (target.invisible && !this.senseInvisible) || !this.canPerceiveEntity(target) ) {
-			if( !(this.senseLiving && target.isLiving) && Math.chance(50) ) {
-				tell(mSubject,this,' ',mVerb,'attack',' ',mObject,target,' but in the wrong direction!');
-				return;
-			}
-		}
-		let quick = weapon ? weapon.getQuick() : 1
-		let dodge = target.dodge>=0 ? target.dodge : 0;
-		if( dodge > quick ) {
-			tell( mSubject,target,' '+(dodge==2 ? 'nimbly ' : ''),mVerb,'dodge',' ',mObject|mPossessive|mCares,this,(quick==0 ? ' clumsy' : '')+' '+(weapon?weapon.name.replace(/\$/,''):'attack') );
-
-			let dx = target.x - this.x;
-			let dy = target.y - this.y;
-			let deg = deltaToDeg(dx,dy)+Math.rand(-45,45);
-			let delay = (this.isUser() ? 0 : 0.2) + ( this.command == Command.THROW || this.command == Command.SHOOT ? this.rangeDuration : 0 );
-			// Show a dodging icon on the entity
-			new Anim( {}, {
-				follow: 	target,
-				img: 		StickerList.showDodge.img,
-				duration: 	0.2,
-				delay: 		delay,
-				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sScaleSet(0.75); },
-				onSpriteTick: 	s => { }
-			});
-			// Make the entity wiggle away a bit.
-			new Anim( {}, {
-				follow: 	target,
-				delay: 		delay,
-				duration: 	0.15,
-				onInit: 		a => { a.puppet(target.spriteList); },
-				onSpriteMake: 	s => { s.sPosDeg(deg,0.3); },
-				onSpriteDone: 	s => { s.sReset(); }
-			});
-			return;
-		}
-
-		effectApply( weapon.effectOnAttack, target, this, weapon );
-
-		// Trigger my weapon.
-		if( weapon && weapon.effect ) {
-			let fireWeaponEffect = Math.chance(weapon.chanceOfEffect || 100);
-			if( fireWeaponEffect ) {
-				weapon.trigger( target, this, Command.ATTACK );
-			}
-		}
-		if( this.onAttack ) {
-			this.onAttack(target);
-		}
 	}
 
 	itemCreateByType(type,presets,inject) {
@@ -2102,18 +2081,31 @@ class Entity {
 		this.inventoryTake(itemList, originatingEntity, quiet, onEach);
 		return itemList;
 	}
+
+	actAttack(target,weapon) {
+		console.assert(weapon);
+		console.assert(weapon.isWeapon);
+		let result = weapon.trigger( target, this, Command.ATTACK, weapon.effectOnAttack );
+		return result;
+	}
 	
-	pickup(item) {
+	actPickup(item) {
 		if( !item ) debugger;
 
 		if( !this.able('pickup') ) {
 			tell(mSubject,this,' ',mVerb,'attempt',' to pick something up, but can not!');
-			return;
+			return {
+				status: 'pickupUnable',
+				success: false
+			};
 		}
 
 		if( item.onPickup ) {
 			let allow = item.onPickup(this);
-			if( !allow ) return false;
+			if( !allow ) return {
+				status: 'itemDeniedPickup',
+				success: false
+			}
 		}
 
 		if( !item.isCorpse ) {
@@ -2125,7 +2117,10 @@ class Entity {
 			if( !corpse || !corpse.loot ) {
 				tell(mSubject,this,' ',mVerb,'find',' nothing on ',mObject|mA,item);
 				item.destroy();
-				return;
+				return {
+					status: 'nothingOnCorpse',
+					success: true
+				};
 			}
 			// Prune out any fake items like natural weapons.
 			if( this.experience !== undefined ) {
@@ -2135,10 +2130,18 @@ class Entity {
 			inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
 			this.inventoryTake( inventory, corpse, false );
 			item.destroy();
-			return true;
+			return {
+				status: 'pickup',
+				isCorpse: true,
+				success: true
+			}
 		}
 		item = item.giveTo(this,this.x,this.y);
-		return true;
+		return {
+			status: 'pickup',
+			item: item,
+			success: true
+		}
 	}
 
 	getAmmoName(ammoType) {
@@ -2147,65 +2150,76 @@ class Entity {
 		}).toLowerCase();
 	}
 
-	throwItem(item,target) {
+	actThrow(item,target) {
+		let result = {
+			status: 'throw',
+			success: false
+		}
 		if( !this.able('throw') ) {
 			tell(mSubject,this,' ',mVerb,'attempt',' to throw, but can not!');
-			return;
+			result.status = 'throwUnable';
+			return result;
 		}
 
 		this.lastAttackTargetId = target.id;
 		item = item.single();
 		item = item.giveToSingly(this.map,target.x,target.y);
-		if( item.isWeapon && !target.isPosition ) {
-			this.generateEffectOnAttack(item);
-			this.attack(target,item);
-		}
-		else {
-			if( !target.isPosition ) {	// indicates it is not an (x,y) array
-				tell(mSubject,item,' ',mVerb,item.attackVerb||'hit',' ',mObject,target);
-			}
-			else {
-				tell(mSubject,item,' ',mVerb,item.attackVerb||'hit');
-			}
-			let result = item.trigger(target,this,this.command);
-		}
+		let effect = item.isWeapon ? item.effectOnAttack : item.effect;
+		result = item.trigger( target, this, Command.THROW, effect );
+
 		if( item.dead ) {
 			// potions, for example, will be consumed.
 		}
 		else
 		if( item.breakChance && Math.chance(item.breakChance) ) {
 			item.destroy();
+			result.broke = true;
 		}
 		else {
 			// This will cause it to bunch up as needed.
 			item.giveTo( this.map, item.x, item.y );
 		}
+		return result;
 	}
 
-	gaze(item) {
+	actGaze(item) {
+		let result = {
+			status: 'gaze',
+			success: false
+		}
 		if( !this.able('gaze') ) {
 			tell(mSubject,this,' ',mVerb,'attempt',' to gaze, but can not!');
-			return;
+			status = 'gazeUnable';
+			return result;
 		}
 		this.shieldBonus = 'stand';
 		item.x = this.x;
 		item.y = this.y;
 		let shatter = Math.chance(33);
 		tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'.'+(shatter ? ' It shatters!' : ''));
-		item.trigger(this,this,this.command);
-		if( shatter ) { item.destroy(); }
+		let result = item.trigger(this,this,Command.Gaze);
+		if( shatter ) {
+			item.destroy();
+			result.shatter = true;
+		}
+		return result;
 	}
 
-	cast(item,target) {
+	actCast(item,target) {
+		let result = {
+			status: 'cast',
+			success: false
+		}
 		if( !this.able('cast') ) {
 			tell(mSubject,this,' ',mVerb,'attempt',' to cast, but can not!');
-			return;
+			result.status = 'castUnable';
+			return result;
 		}
 		this.lastAttackTargetId = target.id;
 		item.x = this.x;
 		item.y = this.y;
 		tell(mSubject,this,' ',mVerb,'cast',' '+item.effect.name+' at ',mObject,target,'.');
-		item.trigger(target,this,this.command);
+		return item.trigger(target,this,Command.CAST);
 	}
 
 	shotClear(sx,sy,tx,ty) {
@@ -2243,56 +2257,153 @@ class Entity {
 		return f.first.single();
 	}
 
-	shoot(item,target) {
+	actShoot(item,target) {
+		let result = {
+			status: 'shoot',
+			success: false
+		}
 		console.assert(item.ammoType);
 
 		if( !this.able('shoot') ) {
 			tell(mSubject,this,' ',mVerb,'attempt',' to shoot, but can not!');
-			return;
+			result.status = 'shootUnable';
+			return result;
 		}
 
 		if( !this.shotClear(this.x,this.y,target.x,target.y) ) {
 			tell(mSubject,this,' ',mVerb,'has',' no shot!');
-			return false;
+			result.status = 'noShot';
+			return result;
 		}
 
 		this.lastAttackTargetId = target.id;
-		this.generateEffectOnAttack(item);
 
 		let ammo = this.pickOrGenerateSingleAmmo(item);
 		if( ammo == false ) {
 			tell(mSubject,this,' ',mVerb,'lack',' any '+this.getAmmoName(item.ammoType)+'s to shoot!');
-			return false;
+			result.status = 'noAmmo';
+			return result;
 		}
 		if( ammo == true ) {
 			// This weapon uses no ammunition. It simply takes effect.
 			ammo = item.single();
+			result.ammoIsTheItem = true;
 		}
 		else {
 			ammo.ammoOf = item;
-			this.generateEffectOnAttack(ammo,item);
 			ammo = ammo.giveToSingly(this.map,target.x,target.y);
+			result.ammoMadeOrExists = true;
 		}
 
 		tell(mSubject,this,' ',mVerb,ammo.attackVerb || 'shoot',' ',mObject,item,' at ',mObject,target,'.');
-		if( ammo.damage && !target.isPosition ) {
-			this.lastAttackTargetId = target.id;
-			this.attack(target,ammo);
-			if( item.rechargeTime ) {
-				// HACK! All attacks should REALLY go through .trigger... but they don't yet.
-				item.rechargeLeft = item.rechargeTime;
+
+		let effect = ammo.isWeapon ? ammo.effectOnAttack : ammo.effect;
+		result.effectResult = ammo.trigger( target, this, this.command, effect, Command.SHOOT );
+
+		if( !ammo.dead ) {
+			if( ammo.id !== item.id && Math.chance(ammo.breakChance) ) {
+				ammo.destroy();
+				result.ammoDestroyed = true;
+			}
+			else {
+				// This will cause it to bunch appropriately.
+				ammo.giveTo( this.map, ammo.x, ammo.y );
 			}
 		}
-		else {
-			ammo.trigger(target,this,this.command);
+		result.success = true;
+		return result;
+	}
+	actUse(item) {
+		let result = {
+			status: 'use',
+			success: false
+		};
+		// Remove anything already worn or used.
+		if( item.inSlot ) {
+			this.doff(item);
+			result.doff   = item;
+			result.success = true;
 		}
-		if( ammo.id !== item.id && Math.chance(ammo.breakChance) ) {
-			ammo.destroy();
+		else
+		if( item.slot && this.bodySlots ) {
+			if( !this.bodySlots[item.slot] ) {
+				tell( mSubject,this,' ',mVerb,'has',' no way to use the ',mObject,item );
+				result.status = 'noWayToUse';
+			}
+			else {
+				result.doff = [];
+				while( this.getItemsInSlot(item.slot).count >= this.bodySlots[item.slot] ) {
+					let itemToRemove = this.getItemsInSlot(item.slot);
+					let doffResult = this.doff(itemToRemove.first);
+					result.doff.push(doffResult);
+				}
+				result.don = this.don(item,item.slot);
+				result.success = true;
+			}
 		}
-		return true;
+		return result;
 	}
 
-	eat(food) {
+	actBuy(item,seller) {
+		let result = {
+			status: 'buy',
+			success: false,
+			item: item,
+		}
+		console.assert( item.owner && !item.owner.isMap );
+		console.assert( seller.id == item.owner.id );
+		console.assert( new Finder(seller.inventory).isId(item.id).count );
+		let price = new Picker(this.area.depth).pickPrice('buy',item);
+		result.price = price;
+		if( price <= this.coinCount ) {
+			this.coinCount = (this.coinCount||0) - price;
+			seller.coinCount = (seller.coinCount||0) + price;
+			item = item.giveTo(this,this.x,this.y);
+			result.success = true;
+		}
+		else {
+			tell(mSubject,this,' ',mVerb,'do',' not have enough coin.');
+			result.notEnoughCoin = true;
+		}
+		return result;
+	}
+
+	actSell(item,buyer) {
+		let result = {
+			status: 'sell',
+			success: false,
+			item: item
+		}
+		if( item.noSell ) {
+			result.noSell = item.noSell;
+			return result;
+		}
+		if( item.isPlot ) {
+			result.isPlot = item.isPlot;
+			return result;
+		}
+		let price = new Picker(this.area.depth).pickPrice('sell',item);
+		console.assert( new Finder(this.inventory).isId(item.id).count );
+		buyer.coinCount = (buyer.coinCount||0) - price;
+		this.coinCount = (this.coinCount||0) + price;
+		item = item.giveTo(buyer,buyer.x,buyer.y);
+		result.itemFinal = item;
+		result.success = true;
+		return result;
+	}
+	actQuaff(item) {
+		this.shieldBonus = 'stand';
+		item.x = this.x;
+		item.y = this.y;
+		tell(mSubject,this,' ',mVerb,'quaff',' ',mObject,item);
+		return item.trigger(this,this,this.command);
+	}
+
+	actEat(food) {
+		let result = {
+			status: 'eat',
+			success: false
+		}
 		let provider = food.ownerOfRecord;
 		console.assert(food && (food.isEdible || food.isCorpse));
 		tell(mSubject,this,' ',mVerb,'begin',' to eat ',mObject,food,' (4 turns)');
@@ -2323,6 +2434,110 @@ class Entity {
 				}
 			}
 		};
+		result.status = true;
+		return result;
+	}
+
+	actLoot(item) {
+		let result = {
+			status: 'loot',
+			success: false
+		};
+		if( item.usedToBe ) {
+			result = this.lootTake(item.usedToBe.loot || '',item.usedToBe.level,item);
+		}
+		return result;
+	}
+
+	actDrop(item) {
+		let result = {
+			status: 'drop',
+			success: false
+		}
+		this.shieldBonus = 'stand';
+		if( item.isPlot ) {
+			tell( mSubject,this,' ',mVerb,'may',' not drop the ',mObject,item,'.' );
+			result.isPlot = true;
+			return result;
+		}
+		let type = this.findFirstCollider('walk',this.x,this.y);
+		if( type !== null ) {
+			tell(mSubject,this,' may not drop anything here.');
+			result.notAllowedHere = true;
+			return result;
+		}
+		item = item.giveTo(this.map,this.x,this.y);
+		result.success = true;
+		result.x = this.x;
+		result.y = this.y;
+		return result;
+	}
+
+	actLoseTurn() {
+		if( this.control !== Control.EMPTY ) {
+			tell(mSubject|mCares,this,' ',mVerb,'spend', ' time recovering.');
+		}
+		return {
+			status: 'loseturn',
+			success: true
+		}
+	}
+
+	actWait() {
+		this.shieldBonus = 'stand';
+		tell(mSubject|mCares,this,' ',mVerb,'wait','.');
+		return {
+			status: 'wait',
+			success: true
+		}
+	}
+
+	actEnterGate() {
+		let result = {
+			status: 'entergate',
+			success: false
+		};
+		let world = this.area.world;
+		let gate = this.map.findItemAt(this.x,this.y).filter( gate=>gate.gateDir!==undefined ).first;
+		if( gate ) {
+			tell(mSubject,this,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
+			world.linkGatesAndCreateArea(gate);
+			console.assert(gate.toAreaId && gate.toPos );
+			let newArea = world.getAreaById(gate.toAreaId);
+			console.assert(newArea);
+
+			result.gateResult = this.gateTo( newArea, gate.toPos.x, gate.toPos.y);
+
+			if( gate.killMeWhenDone ) {
+				result.killedGate = true;
+				gate.destroy();
+			}
+			result.success = true;
+		}
+		return result;
+	}
+
+	actBusy() {
+		let result = {
+			status: 'busy',
+			success: true
+		};
+		console.assert( this.busy.turns === true || (typeof this.busy.turns == 'number' && !isNaN(this.busy.turns)) );
+		if( typeof this.busy.turns == 'number' ) {
+			this.busy.turns--;
+			if( this.busy.turns <= 0 ) {
+				this.busy.onDone();
+				delete this.busy;
+				result.completedThisTurn = true;
+			}
+			else {
+				result.turnsRemaining = this.busy.turns;
+			}
+		}
+		if( this.busy && this.busy.icon ) {
+			animFloatUp(this,this.busy.icon);
+		}
+		return result;
 	}
 
 	setPosition(x,y,area) {
@@ -2391,7 +2606,10 @@ class Entity {
 	// Returns false if the move fails. Very important for things like takeShove().
 	moveTo(x,y,attackAllowed=true,weapon=null,voluntaryMotion=false) {
 		if( !this.map.inBounds(x,y) ) {
-			return;
+			return {
+				status: 'outOfBounds',
+				success: false
+			};
 		}
 
 		let bump = function(entity,incCount=true) {
@@ -2411,7 +2629,18 @@ class Entity {
 
 		// Move into monsters
 		//-------------------
+		weapon = weapon || this.calcDefaultWeapon();
 		let f = this.findAliveOthersAt(x,y);
+		if( attackAllowed && voluntaryMotion && this.getDistance(x,y) == 1 && weapon && weapon.reach > 1) {
+			let dx = x-this.x;
+			let dy = y-this.y;
+			for( let i=2 ; i<=weapon.reach ; ++i ) {
+				let g = this.findAliveOthersAt(this.x+dx*i,this.y+dy*i);
+				g.forEach( entity => f.append(entity) );
+			}
+		}
+
+
 		let allyToSwap = false;
 
 		// Attack enemies or neutrals
@@ -2429,21 +2658,23 @@ class Entity {
 		if( !doAttack && voluntaryMotion && this.immobile ) {
 			animFloatUp( this, EffectTypeList.eImmobilize.icon );
 			tell(mSubject,this,' ',mVerb,'is',' immobilized!');
-			return false;
+			return {
+				status: 'immobile',
+				success: false
+			}
 		}
 
 		if( doAttack ) {
-			weapon = weapon || this.calcDefaultWeapon();
 			if( weapon.mayShoot ) {
-				return this.shoot(weapon,f.first) ? 'shoot' : 'miss';
+				return this.actShoot(weapon,f.first);
 			}
 			if( weapon.mayCast ) {
-				return this.cast(weapon,f.first) ? 'cast' : 'miss';
+				return this.actCast(weapon,f.first);
 			}
 			if( weapon.mayThrow && (!weapon.inSlot || weapon.inSlot==Slot.AMMO) ) {
-				return this.throwItem(weapon,f.first) ? 'throw' : 'miss';
+				return this.actThrow(weapon,f.first);
 			}
-			return this.attack(f.first,weapon) ? 'attack' : 'miss';
+			return this.actAttack(f.first,weapon);
 		}
 		else
 		// Switch with friends, else bonk!				// used to be isMyFriend()
@@ -2456,8 +2687,13 @@ class Entity {
 			let entity = f.first;
 			console.assert(entity.isMonsterType);
 			bump(entity,true);
-			(entity.onBump || bonk)(this,entity);
-			return false;
+			let bumpResult = (entity.onBump || bonk)(this,entity);
+			return {
+				status: 'bumped',
+				entity: entity,
+				bumpResult: bumpResult,
+				success: false
+			}
 		}
 
 		// If we can not occupy the target tile, then touch it/bonk into it
@@ -2470,8 +2706,13 @@ class Entity {
 				let e = this.findAliveOthersAt(bx,by).first;
 				if( e ) bump(e,false);
 			}
-			(collider.onBump || bonk)(this,adhoc(collider,this.map,x,y));
-			return false;
+			let bumpResult = (collider.onBump || bonk)(this,adhoc(collider,this.map,x,y));
+			return {
+				status: 'bumped',
+				collider: collider,
+				bumpResult: bumpResult,
+				success: false
+			}
 		}
 
 		let xOld = this.x;
@@ -2484,27 +2725,46 @@ class Entity {
 		// Does this tile type always do something to you when you depart any single instance of it?
 		if( tileTypeHere.onDepart ) {
 			if( tileTypeHere.onDepart(this,adhoc(tileTypeHere,this.map,xOld,yOld)) === false ) {
-				return false;
+				return {
+					status: 'stoppedOnDepart',
+					success: false
+				}
 			}
 		}
 
 		// Are we leaving this TYPE of tile entirely? Like leaving water, fire or mud?
 		if( tileType.name != tileTypeHere.name && tileTypeHere.onDepartType ) {
 			if( tileTypeHere.onDepartType(this,adhoc(tileTypeHere,this.map,xOld,yOld),adhoc(tileType,this.map,x,y)) === false ) {
-				return false;
+				return {
+					status: 'stoppedOnDepartType',
+					success: false
+				}
 			}
 		}
 
 		// Are we entering a new tile TYPE?
 		if( tileType.name != tileTypeHere.name && tileType.onEnterType ) {
 			if( tileType.onEnterType(this,adhoc(tileType,this.map,x,y),tileTypeHere,xOld,yOld) === false ) {
-				return false;
+				return {
+					status: 'stoppedOnEnterType',
+					success: false
+				}
 			}
+		}
+
+		let result = {
+			status: 'moved',
+			success: true,
+			xOld: xOld,
+			yOld: yOld,
+			x: x,
+			y: y
 		}
 
 		if( allyToSwap ) {
 			console.log( this.name+" ally swap with "+allyToSwap.name );
 			allyToSwap.setPosition(this.x,this.y);
+			result.allyToSwap = allyToSwap;
 		}
 
 		//=======================
@@ -2516,10 +2776,7 @@ class Entity {
 			debugger;
 		}
 
-		if( this.trail ) {
-			if( this.map.findItemAt(x,y).filter( item=>item.isVariety(this.trail) ).count ) {
-				return;
-			}
+		if( this.trail && !this.map.findItemAt(x,y).filter( item=>item.isVariety(this.trail) ).count ) {
 			let trailList = this.lootGenerate( this.trail, this.level );
 			console.assert( trailList.length == 1 );
 			let trail = trailList[0];
@@ -2527,83 +2784,123 @@ class Entity {
 			// exstence time and still work.
 			trail.existenceLeft = trail.existenceTime || 10;
 			trail.giveTo( this.map, xOld, yOld );
+			result.trail = trail.typeId;
 		}
 
 		if( this.onMove ) {
-			this.onMove.call(this,x,y,xOld,yOld);
+			result.onMove = this.onMove.call(this,x,y,xOld,yOld);
 		}
 
 		if( this.mindset('pickup') && this.able('pickup') ) {
 			let f = this.map.findItemAt(x,y).filter( item => item.mayPickup!==false );
+			result.pickup = [];
 			for( let item of f.all ) {
-				this.pickup(item);
+				result.pickup.push( this.actPickup(item) );
 			}
 		}
-		return true;
+		return result;
 	}
 
 	actOnCommand() {
 		if( this.command == undefined ) debugger;
-		if( this.command == Command.BUSY ) {
-			console.assert( this.busy.turns === true || (typeof this.busy.turns == 'number' && !isNaN(this.busy.turns)) );
-			if( typeof this.busy.turns == 'number' ) {
-				this.busy.turns--;
-				if( this.busy.turns <= 0 ) {
-					this.busy.onDone();
-					delete this.busy;
-				}
-			}
-			if( this.busy && this.busy.icon ) {
-				animFloatUp(this,this.busy.icon);
-			}
-		}
 		switch( this.command ) {
+			case Command.BUSY: {
+				return this.actBusy();
+			}
 			case Command.LOSETURN: {
-				if( this.control !== Control.EMPTY ) {
-					tell(mSubject|mCares,this,' ',mVerb,'spend', ' time recovering.');
-				}
-				this.loseTurn = false;
-				break;
+				return this.actLoseTurn();
 			}
 			case Command.WAIT: {
-				this.shieldBonus = 'stand';
-				tell(mSubject|mCares,this,' ',mVerb,'wait','.');
-				break;
+				return this.actWait();
 			}
 			case Command.ENTERGATE: {
-				let world = this.area.world;
-				let gate = this.map.findItemAt(this.x,this.y).filter( gate=>gate.gateDir!==undefined ).first;
-				if( gate ) {
-					tell(mSubject,this,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
-					world.linkGatesAndCreateArea(gate);
-					console.assert(gate.toAreaId && gate.toPos );
-					let newArea = world.getAreaById(gate.toAreaId);
-					console.assert(newArea);
-
-					this.gateTo( newArea, gate.toPos.x, gate.toPos.y);
-
-					if( gate.killMeWhenDone ) {
-						gate.destroy();
-					}
-				}
-				break;
+				return this.actEnterGate();
 			}
 			case Command.EXECUTE: {
+				let result = {
+					status: 'execute',
+					success: false
+				};
 				let f = this.findAliveOthersNearby().filter( e=>e.id==this.lastBumpedId );
 				if( f.first && this.isUser() && f.first.isMerchant ) {
 					this.guiViewCreator = { entity: f.first };
+					success = true;
 				}
-				break;
+				return result;
 			}
 			case Command.EAT: {
-				this.eat(this.commandItem.single());
+				let result = this.actEat(this.commandItem.single());
 				this.commandItem = null;
-				break;
+				return result;
 			}
 			case Command.PICKUP: {
-				this.pickup(this.commandItem);
+				let result = this.actPickup(this.commandItem);
 				this.commandItem = null;
-				break;
+				return result;
+			}
+			case Command.LOOT: {
+				let item = this.commandItem;
+				return this.actLoot(item);
+			}
+			case Command.DROP: {
+				let item = this.commandItem;
+				return this.actDrop(item);
+			}
+			case Command.QUAFF: {
+				let item = this.commandItem.single();
+				this.commandItem = null;
+				return this.actQuaff(item);
+			}
+			case Command.GAZE: {
+				let item = this.commandItem.single();
+				this.commandItem = null;
+				return this.actGaze(item);
+			}
+			case Command.ATTACK: {
+				let target = this.commandTarget;
+				let weapon = this.commandItem;
+				return this.actAttack(target,weapon);
+			}
+			case Command.THROW: {
+				let item = this.commandItem;
+				this.commandItem = null;
+				return this.actThrow(item,this.commandTarget);
+			}
+			case Command.CAST: {
+				let item = this.commandItem;
+				this.commandItem = null;
+				return this.actCast(item,this.commandTarget);
+			}
+			case Command.SHOOT: {
+				let item = this.commandItem;
+				this.commandItem = null;
+				return this.actShoot(item,this.commandTarget);
+			}
+			case Command.USE: {
+				let item = this.commandItem;
+				this.commandItem = null;
+				return this.actUse(item);
+			}
+			case Command.BUY: {
+				let item = this.commandItem.single();
+				this.commandItem = null;
+				let seller = this.commandTarget;
+				return this.actBuy(item,seller);
+			}
+			case Command.SELL: {
+				let item = this.commandItem.single();
+				this.commandItem = null;
+				let buyer = this.commandTarget;
+				return this.actSell(item,buyer);
+			}
+			case Command.PRAY: {
+				if( Math.chance(15) ) {
+					tell(mSubject,this,': ',this.sayPrayer || '<praying...>');
+				}
+				return {
+					status: 'pray',
+					success: true
+				}
 			}
 			case Command.DEBUGTEST: {
 				break;
@@ -2650,127 +2947,6 @@ class Entity {
 				});
 
 				break;
-			}
-			case Command.LOOT: {
-				let item = this.commandItem;
-				if( item.usedToBe ) {
-					this.lootTake(item.usedToBe.loot || '',item.usedToBe.level,item);
-				}
-				break;
-			}
-			case Command.DROP: {
-				this.shieldBonus = 'stand';
-				let item = this.commandItem;
-				if( item.isPlot ) {
-					tell( mSubject,this,' ',mVerb,'may',' not drop the ',mObject,item,'.' );
-					break;
-				}
-				let type = this.findFirstCollider('walk',this.x,this.y);
-				if( type !== null ) {
-					tell(mSubject,this,' may not drop anything here.');
-				}
-				else {
-					item = item.giveTo(this.map,this.x,this.y);
-				}
-				break;
-			}
-			case Command.QUAFF: {
-				this.shieldBonus = 'stand';
-				let item = this.commandItem.single();
-				this.commandItem = null;
-				item.x = this.x;
-				item.y = this.y;
-				tell(mSubject,this,' ',mVerb,'quaff',' ',mObject,item);
-				item.trigger(this,this,this.command);
-				break;
-			}
-			case Command.GAZE: {
-				let item = this.commandItem.single();
-				this.commandItem = null;
-				this.gaze(item);
-				break;
-			}
-			case Command.ATTACK: {
-				let target = this.commandTarget;
-				let weapon = this.commandItem;
-				this.attack(target,weapon);
-				break;
-			}
-			case Command.THROW: {
-				let item = this.commandItem;
-				this.commandItem = null;
-				this.throwItem(item,this.commandTarget);
-				// the result tells whether an effect was applied to the target (entity or psition)
-				break;
-			}
-			case Command.CAST: {
-				let item = this.commandItem;
-				this.commandItem = null;
-				this.cast(item,this.commandTarget);
-				break;
-			}
-			case Command.SHOOT: {
-				let item = this.commandItem;
-				this.commandItem = null;
-				this.shoot(item,this.commandTarget);
-				break;
-			}
-			case Command.USE: {
-				let item = this.commandItem;
-				this.commandItem = null;
-				// Remove anything already worn or used.
-				if( item.inSlot ) {
-					this.doff(item);
-				}
-				else
-				if( item.slot && this.bodySlots ) {
-					if( !this.bodySlots[item.slot] ) {
-						tell( mSubject,this,' ',mVerb,'has',' no way to use the ',mObject,item );
-					}
-					else {
-						while( this.getItemsInSlot(item.slot).count >= this.bodySlots[item.slot] ) {
-							let itemToRemove = this.getItemsInSlot(item.slot);
-							this.doff(itemToRemove.first);
-						}
-						this.don(item,item.slot);
-					}
-				}
-				break;
-			}
-			case Command.BUY: {
-				let item = this.commandItem.single();
-				this.commandItem = null;
-				let seller = this.commandTarget;
-				console.assert( item.owner && !item.owner.isMap );
-				console.assert( seller.id == item.owner.id );
-				console.assert( new Finder(seller.inventory).isId(item.id).count );
-				let price = new Picker(this.area.depth).pickPrice('buy',item);
-				if( price <= this.coinCount ) {
-					this.coinCount = (this.coinCount||0) - price;
-					seller.coinCount = (seller.coinCount||0) + price;
-					item = item.giveTo(this,this.x,this.y);
-				}
-				else {
-					tell(mSubject,this,' ',mVerb,'do',' not have enough coin.');
-				}
-				break;
-			}
-			case Command.SELL: {
-				if( this.commandItem.noSell || this.commandItem.isPlot ) return;
-				let item = this.commandItem.single();
-				this.commandItem = null;
-				let buyer = this.commandTarget;
-				let price = new Picker(this.area.depth).pickPrice('sell',item);
-				console.assert( new Finder(this.inventory).isId(item.id).count );
-				buyer.coinCount = (buyer.coinCount||0) - price;
-				this.coinCount = (this.coinCount||0) + price;
-				item = item.giveTo(buyer,buyer.x,buyer.y);
-				break;
-			}
-			case Command.PRAY: {
-				if( Math.chance(15) ) {
-					tell(mSubject,this,': ',this.sayPrayer || '<praying...>');
-				}
 			}
 		};
 	}
@@ -2824,10 +3000,10 @@ class Entity {
 		}
 
 		if( commandToDirection(this.command) !== false ) {
-			this.moveDir(dir,this.commandItem,true);
+			this.commandResult = this.moveDir(dir,this.commandItem,true);
 		}
 		else {
-			this.actOnCommand();
+			this.commandResult = this.actOnCommand();
 		}
 
 		if( timePasses ) {
@@ -2863,13 +3039,14 @@ class Entity {
 						});
 						this.command = Command.ENTERGATE;
 						this.commandItem = gate;
-						this.actOnCommand();
+						this.commandResult.pitResult = this.actOnCommand();
 						return;	// Short-circuit here, because the area change will wig future code out.
 	 				}
  				}
  				else {
  					this.deathPhrase = [mSubject,this,' ',mVerb,'vanish',' into the pit.'];
  					this.vanish = true;
+ 					this.commandResult.vanish = true;
  				}
 			}
 

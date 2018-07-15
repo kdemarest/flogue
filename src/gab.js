@@ -26,8 +26,7 @@ Gab = (new function(priorGab) {
 			return  self.world.areaList[areaId].name;
 		}
 		let theme = ThemeList[themeId];
-		if( theme.name ) return theme.name;
-		return themeId;
+		return  theme && theme.name ? theme.name : themeId;
 	}
 
 //	function gateMakeName() {
@@ -95,6 +94,8 @@ Gab = (new function(priorGab) {
 		"bash": "bashed up",
 		"burn": "scorched",
 		"freeze": "frosty",
+		"water": "soaked",
+		"shock": "ashy",
 		"corrode": "corroded",
 		"poison": "poisoned",
 		"smite": "smitten",
@@ -157,7 +158,7 @@ Gab = (new function(priorGab) {
 		light: function(subj,obj,oldValue,newValue) {
 			return ['The area around ',mSubject,subj,' '+(newValue>oldValue?' brightens':'grows darker')+'.'];
 		},
-		loseTurn: function(subj,obj,oldValue,newValue) {
+		stun: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' ',mVerb,'is',(!newValue?' no longer':''),' stunned.'];
 		},
 		eJump2: function(subj,obj,oldValue,newValue) {

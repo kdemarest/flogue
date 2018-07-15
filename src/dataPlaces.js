@@ -164,6 +164,14 @@ ScapeList.caveTownRural = () => ({
 	passageWander: 		0,
 });
 
+ScapeList.caveWildlands = () => ({
+	dim: 				Math.randInt(120,140),
+	architecture: 		"cave",
+	floorDensity: 		0.48,
+	seedPercent: 		0.30,
+	passageWander: 		50,
+});
+
 
 ScapeList.caveTown = () => ({
 	dim: 				Math.randInt(50,60),
@@ -237,6 +245,19 @@ ThemeList.coreCavernRooms = {
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
+	enemyDensity: 	0.05,
+	friendDensity: 	0.01,
+}
+
+ThemeList.wildlands = {
+	scapeId: 		'caveWildlands', //'caveRoomsWellConnected',
+	palette: 		{ basis: 'jaggedCave' },
+	placeDensity: 	0.10,
+	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater,'+
+					'secretChest, hoard_shade, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle,'+
+					'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre,'+
+					'graveYard',
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon','isConstruct'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
@@ -495,6 +516,17 @@ ThemeList.coreFinalLevel = {
 	friendDensity: 	0.05,
 }
 
+ThemeList.spooky = {
+	scapeId: 	'caveRandom',
+	palette: 	{ basis: 'stoneRooms' },
+	rCOMMON: 	'graveYard, nest_bat, floodMist',
+	rUNCOMMON: 	'ruin, nest_viper',
+	rRARE: 		'shaft, fountain1, camp_human, swamp',
+	rEPIC: 		'portal',
+	prefer: 	['mist'],
+	monsters: 	['isUndead'],
+}
+
 
 //=========================
 /*
@@ -520,16 +552,6 @@ ThemeList.spookyPits = {
 	rCOMMON: 	'floodPit',
 	monsters: 	['isUndead'],
 	placeDensity: 0.5
-}
-
-ThemeList.spooky = {
-	scapeId: 	'caveRandom',
-	rCOMMON: 	'graveYard, nest_bat, floodMist',
-	rUNCOMMON: 	'ruin, nest_viper',
-	rRARE: 		'shaft, fountain1, camp_human, swamp',
-	rEPIC: 		'portal',
-	prefer: 	['mist'],
-	monsters: 	['isUndead'],
 }
 
 ThemeList.ruins = {
@@ -882,7 +904,7 @@ PlaceTypeList.goblinGathering = {
 
 PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt) {
 	if( !this.rechargeLeft ) {
-		let f = new Finder(this.area.entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).near(this.x,this.y,6);
+		let f = new Finder(this.area.entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).shotClear().near(this.x,this.y,6);
 		if( f.count ) {
 			let entity = pick(f.all);
 			let amount = Math.floor(entity.healthMax/2 - entity.health);
@@ -931,11 +953,12 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Hathgar the mighty.',
 			name: 'Hathgar\'s Chest',
+			properNoun: true,
 			inventoryLoot: [
 				'weapon.sword.eHoly, armor.eInert, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
 		}],
 		'2': [{
 			typeFilter: 'chest',
@@ -943,11 +966,12 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Ozymandius the destroyer.',
 			name: 'Ozymandius\' Chest',
+			properNoun: true,
 			inventoryLoot: [
-				'spell.eFire, spell.eShock3, cloak.eRechargeFast, 2x potion.eHealing',
+				'spell.eFire, spell.eShock3, spell.eCold, cloak.eRechargeFast, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
 		}],
 		'3': [{
 			typeFilter: 'chest',
@@ -955,11 +979,12 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Slyndero the clever.',
 			name: 'Slyndero\'s Chest',
+			properNoun: true,
 			inventoryLoot: [
 				'gloves.assassinGloves, spell.eTeleport, spell.eInvisibility, potion.eOdorless, gem.eSeeInvisible, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
 		}],
 		'4': [{
 			typeFilter: 'chest',
@@ -967,11 +992,12 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Duramure the steadfast.',
 			name: 'Duramure\'s Chest',
+			properNoun: true,
 			inventoryLoot: [
 				'weapon.hammer.eInert, armor.eInert, shield.eInert, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
 		}],
 		'5': [{
 			typeFilter: 'chest',
@@ -979,11 +1005,12 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Arithern the accurate.',
 			name: 'Arithern\'s Chest',
+			properNoun: true,
 			inventoryLoot: [
 				'armor.eInert, weapon.bow.eHoly, 50x ammo.arrow, 5x ammo.dart, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
 		}],
 		'6': [{
 			typeFilter: 'chest',
@@ -991,11 +1018,12 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Berthold the blessed.',
 			name: 'Berthold\'s Chest',
+			properNoun: true,
 			inventoryLoot: [
 				'armor.eInert, spell.eHealing, spell.eHoly, shield.eAbsorbRot, stuff.oilLamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
 		}],
 		'7': [{
 			// This would work better if I could stash my body in a chest, or something.
@@ -1004,11 +1032,12 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Gadriin the mindshaper.',
 			name: 'Gadriin\'s Chest',
+			properNoun: true,
 			inventoryLoot: [
 				'spell.ePossess, spell.eConfusion, stuff.voidCandle, 4x ammo.dart.eStartle, 2x potion.eHealing, 3x gem, 3x stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
 		}],
 		'8': [{
 			// This would work better if I could stash my body in a chest, or something.
@@ -1017,11 +1046,12 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Beowulf the bear.',
 			name: 'Beowulf\'s Chest',
+			properNoun: true,
 			inventoryLoot: [
 				'2x stuff.bearFigurine, weapon.sword, 2x potion.eHealing, 4x stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self)
+			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
 		}],
 		L: 'stuff.candleLamp',
 		X: { typeFilter: 'marker', playerStartHere: true },

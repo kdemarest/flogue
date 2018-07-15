@@ -10,37 +10,28 @@ class Effect {
 		let basis = effectRaw.basis ? EffectTypeList[effectRaw.basis] : null;
 		let effect = Object.assign({},basis,effectRaw);
 		effect.effectShape = effect.effectShape || EffectShape.SINGLE;
+		if( effect.op == 'damage' || effect.op == 'possess' ) {
+			effect.isHarm = true;
+		}
 
 		// Only write into the value if you must. Otherwise, let the world builder or
 		// other systems (like 'power' in entity natural attacks) control.
-		let needsValue = (effect.value === undefined);
+		let neededValue = (effect.value === undefined);
 		if( effect.xDamage ) {
 			// WARNING! This could be healing as well as damaging...
 			let xDamage = item ? ItemCalc(item,item,'xDamage','*') : effect.xDamage;
 
-			if( needsValue ) {
+			if( neededValue ) {
 				effect.value = Math.max(1,Math.floor(Rules.pickDamage(depth,rechargeTime||0) * xDamage));
 			}
-
 			console.assert( !isNaN(effect.value) );
-
-			if( item && (item.isWeapon || item.isArmor || item.isShield) ) {
-				effect.chanceOfEffect = effect.chanceOfEffect || ( item.isWeapon ? WEAPON_EFFECT_CHANCE_TO_FIRE : ARMOR_EFFECT_CHANCE_TO_FIRE );
-				
-				if( WEAPON_EFFECT_OP_ALWAYS.includes(effect.op) ) {
-					if( needsValue ) {
-						effect.value = Math.max(1,Math.floor(effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
-					}
-					console.assert( !isNaN(effect.value) );
-					effect.chanceOfEffect = 100;
-				}
-			}
 		}
-		if( effect.valuePick && needsValue ) {
+
+		if( effect.valuePick && neededValue ) {
 			effect.value = effect.valuePick();
 		}
-		if( item && item.effectOverride ) {
-			Object.assign( effect, item.effectOverride );
+		if( item && item.effectDecorate ) {
+			Object.assign( effect, item.effectDecorate );
 		}
 		// Always last so that all member vars are available to the namePattern.
 		if( effect.name === false ) {
@@ -53,8 +44,8 @@ class Effect {
 		Object.assign( this, effect );
 		return this;
 	}
-	trigger( target, source, item ) {
-		return effectApply(this,target,source,item);
+	trigger( target, source, item, context ) {
+		return effectApply(this,target,source,item,context);
 	}
 }
 
@@ -79,14 +70,21 @@ class Deed {
 	}
 	applyEffect() {
 		if( this.handler ) {
-			let endNow = this.handler() === false;
-			if( endNow ) {
+			debugger;
+			// I don't think we ever have a handler on an effect that effects stats. But
+			// I suppose we could...
+			console.assert( false );
+			let result = this.handler();
+			if( result.endNow ) {
 				this.end();
 			}
-			return;
+			return result;
 		}
 		let target = this.target;
 		let stat = this.stat;
+		let result = {
+			statOld: target[stat]
+		};
 		if( this.op == 'set' ) {
 			target[stat] = this.value;
 		}
@@ -130,6 +128,10 @@ class Deed {
 				target[stat] -= this.value;
 			}
 		}
+		result.statNew = target[stat];
+		result.status = this.op;
+		result.success = true;
+		return result;
 	}
 	end() {
 		if( this.killMe ) {
@@ -160,8 +162,8 @@ class Deed {
 		else
 		{
 			if( this.handler ) {
-				let endNow = this.handler(dt) === false;
-				if( endNow ) {
+				let result = this.handler(dt);
+				if( result.endNow ) {
 					this.end();
 				}
 			}
@@ -177,29 +179,41 @@ let DeedManager = (new class {
 		this.handler = {};
 		this.deedList = [];
 	}
-	// The origin should ALWAYS be an item, unless intrinsic to a monster.
 	add(effect) {
-		let success = true;
-		effect.handler = this.handler[effect.op];
+		let result = {};
+		if( this.handler[effect.op] ) {
+			// I like it this way because it leaves handler completely undefined otherwise.
+			effect.handler = this.handler[effect.op];
+		}
 		let deed = new Deed(effect);
 		if( deed.isInstant ) {
-			success = deed.handler(false);
+			result = deed.handler(false);
+			result.endNow = true;
 			deed.end();
 		}
 		else {
+			result = {
+				isOngoing: true,
+				duration: deed.duration,
+				status: 'ongoing',
+				success: true,
+			}
 			this.deedList.push( deed );
 			if( deed.stat ) {
+				result.statOld = deed.target[deed.stat];
 				this.calcStat( deed.target, deed.stat );
+				result.statNew = deed.target[deed.stat];
 			}
+
 		}
-		return success ? deed : false;
+		return result;
 	}
 	addHandler(op,handlerFn) {
 		this.handler[op] = handlerFn;
 	}
 	// This recalculates all the stats of a target. Typically performed when a new
 	// effect starts, or one expires.
-	calcStat(target,stat) {
+	calcStat(target,stat,isOnset) {
 		let oldValue = target[stat];
 //		if( target.baseType[stat] === undefined ) {
 //			debugger;
@@ -306,8 +320,35 @@ function makeFilledCircle(x0, y0, radius, fn) {
 	return count;
 }
 
+function calcQuick(source,item,effect) {
+	let quick;
+	if( source && source.quick !== undefined ) {
+		quick = source.quick;
+	}
+	if( quick === undefined && item && item.quick !== undefined ) {
+		quick = item.quick;
+	}
+	if( quick === undefined && effect.quick!==undefined ) {
+		quick = effect.quick;
+	}
+	if( quick === undefined ) {
+		quick = 1;	// Not zero, which is slow. We assume average nimbleness for attempts
+	}
+	return quick;
+}
 
-let effectApply = function(effect,target,source,item) {
+let globalEffectDepth = 0;
+
+let effectApply = function(effect,target,source,item,context) {
+	if( globalEffectDepth > 5 ) {
+		debugger;
+		return {
+			status: 'stackWarning',
+			depth: globalEffectDepth,
+			success: false
+		}
+	}
+	++globalEffectDepth;
 	if( !(effect instanceof Effect) ) {
 		effect = new Effect(
 			item ? item.depth : target.area.depth,
@@ -323,7 +364,9 @@ let effectApply = function(effect,target,source,item) {
 
 	let effectShape = effect.effectShape || EffectShape.SINGLE;
 	if( effectShape == EffectShape.SINGLE ) {
-		return _effectApplyTo(effect,target,source,item);
+		let result = _effectApplyTo(effect,target,source,item,context);
+		globalEffectDepth--;
+		return result;
 	}
 	let radius = 0;
 	let shape = '';
@@ -339,8 +382,14 @@ let effectApply = function(effect,target,source,item) {
 		radius = 3;
 		shape = 'circle'
 	}
+	let result = {
+		'status': 'illegalShape',
+		success: false
+	}
 	if( radius ) {
 		if( shape == 'circle' ) {
+			result.status = 'circle';
+			result.list = [];
 			let area = target.area;
 			makeFilledCircle(target.x,target.y,radius, (x,y) => {
 				let reached = shootRange(target.x,target.y,x,y, (x,y) => area.map.tileTypeGet(x,y).mayFly);
@@ -354,15 +403,27 @@ let effectApply = function(effect,target,source,item) {
 						}
 					}
 					//animAt( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
-					let targetList = new Finder(area.entityList).at(x,y);
+					let targetList = [];
+					let monsterList = new Finder(area.entityList).at(x,y);
+					if( monsterList.count ) {
+						targetList.push(...monsterList.all);
+					}
+					let itemList = area.map.findItemAt(x,y);
+					if( itemList.count ) {
+						targetList.push(...itemList.all);
+					}
+					targetList.push( adhoc(area.map.tileGetType(x,y),area.map,x,y) );
 					targetList.forEach( t => {
-						_effectApplyTo(effect,t,source,item);
+						let r = _effectApplyTo(effect,t,source,item,context);
+						result.list.push( r );
+						result.success = result.success || r.success;
 					});
 				}
 			});
 		}
-		return;
 	}
+	--globalEffectDepth;
+	return result;
 }
 
 // Converts the effect from just itself to a Deed, essentially, which means adding or setting
@@ -373,49 +434,183 @@ let effectApply = function(effect,target,source,item) {
 // effect.duration
 // effect.isResist
 
-let _effectApplyTo = function(effect,target,source,item) {
+let _effectApplyTo = function(effect,target,source,item,context) {
+
+	function testContextHarm(context) {
+		return context == Command.SHOOT || context == Command.ATTACK;
+	}
 
 	// Now we can change the value inside it without messing up the origin effect.
 	// This is critically important, because each affected target needs its OWN effect
 	// set upon it - for internal counters or whatever.
-	effect = Object.assign( {}, effect, { target:target, source: source, item: item });
 
-	if( effect.effectFilter ) {
-		if( !effect.effectFilter(effect) ) {
-			return;
+	effect = Object.assign( {}, effect, { target:target, source: source, item: item, context: context });
+
+	let isHarm = effect.isHarm || testContextHarm(context);
+
+	// Weapons have an automatic chance to fire any knock-on effects they own. Damage
+	// fires always, and others have a percent chance.
+	let weaponEffect = item && item.isWeapon && item.effect ? item.effect : null;
+	if( !effect.isSecondary && item && item.ammoOf ) {
+		// Certain ranged weapons (bows) convey a lot of effects into their ammo.
+		// Note that this is ALL on the temp effect created above, so it won't
+		// be permanent!
+		let src = item.ammoOf;
+		if( src.conveyDamageToAmmo ) 		effect.damage 		= src.damage;
+		if( src.conveyDamageTypeToAmmo ) 	effect.damageType 	= src.damageType;
+		if( src.conveyQuickToAmmo ) 		effect.quick 		= src.getQuick();
+		if( src.effect && src.conveyEffectToAmmo ) {
+			weaponEffect = src.effect;
 		}
 	}
 
-	if( !effect.op ) {
-		// This is an inert effect. Do nothing.
-		return false;
+	let result = {
+		effect: 		effect,
+		effectResult: 	null,
+		status: 		null,
+		success: 		false
+	};
+
+	function hasCoords(e) {
+		return !e.inVoid && e.x!==undefined;
 	}
-	if( target.isTileType && !target.isPosition ) {
-		debugger;
+
+	function makeResult(status,success) {
+		result.status = status;
+		result.success = success;
+		return result;
+	}
+
+	// Effects might be inert. Do nothing in that case.
+	if( !effect.op ) {
+		return makeResult('inert',false);
+	}
+
+	if( effect.stat && !(target.isMonsterType || target.isItemType) ) {
+		return makeResult('statChangesNotAllowed',false);
+	}
+
+	// This should happen first because it means that the effect was never intended
+	// to affect this kind of target in the first place.
+	if( effect.effectFilter ) {
+		if( !effect.effectFilter(effect) ) {
+			return makeResult('notEligibleTarget',false);
+		}
 	}
 
 	//Some effects are "singular" meaning you can't have more than one of it upon you.
 	if( effect.singularId ) {
 		if( DeedManager.findFirst( deed => deed.target.id == target.id && deed.singularId == effect.singularId ) ) {
-			return false;
+			return makeResult('duplicate',false);
 		}
 	}
-
 
 	//Some effects will NOT start unless their requirements are met. EG, no invis if you're already invis.
 	if( effect.requires && !effect.requires(target,effect) ) {
 		tell(mSubject,item || source || 'that',' has no effect on ',mObject,target);
-		return false;
+		return makeResult('failedRequirements',false);
+	}
+
+	let isSelf = source && source.id == target.id;
+	let reach = item && item.reach > 1 ? item.reach : 1;
+	let distance = source && hasCoords(source) && hasCoords(target) ? Math.max(Math.abs(target.x-source.x),Math.abs(target.y-source.y)) : 0;
+	let isRanged = distance > reach || (item && item.rangeDuration);
+
+	// Find out if this attempt to affect the target simple misses due to
+	//  - blindness
+	//  - invisible target you can not see
+	//  - you aren't overcoming those with senseLiving
+	// Note that secondary effects mean you've already been hit and so they're just happening
+	if( target.isMonsterType || target.isItemType ) {
+		if( !effect.isSecondary && source && source.isMonsterType && !isSelf && ( (source.senseBlind && !source.baseType.senseBlind) || (target.invisible && !source.senseInvisible) || !source.canPerceiveEntity(target) ) ) {
+			let chanceToMiss = isRanged ? 75 : 50;
+			if( !(source.senseLiving && target.isLiving) && Math.chance(chanceToMiss) ) {
+				tell(mSubject,source,' ',mVerb,'attack',' ',mObject,target,' but in the wrong direction!');
+				return makeResult('notVisible',false);
+			}
+		}
+	}
+
+	// Another way to miss is to have the target simply dodge your attack.
+	if( target.isMonsterType || target.isItemType ) {
+		let quick = calcQuick(source,item,effect);
+		let dodge = target.dodge>=0 ? target.dodge : 0;
+		if( !effect.isSecondary && dodge > quick && !isSelf && isHarm ) {
+			tell( mSubject,target,' '+(dodge==2 ? 'nimbly ' : ''),mVerb,'dodge',' ',mObject|mPossessive|mCares,source ? source : ( item ? item : effect),(quick==0 ? ' clumsy' : '')+' '+(item?item.name.replace(/\$/,''):'attack') );
+
+			if( source ) {
+				let dx = target.x - source.x;
+				let dy = target.y - source.y;
+				let deg = deltaToDeg(dx,dy)+Math.rand(-45,45);
+				let delay = (source.isUser() ? 0 : 0.2) + ( context == Command.THROW || context == Command.SHOOT ? source.rangeDuration : 0 );
+				// Show a dodging icon on the entity
+				new Anim( {}, {
+					follow: 	target,
+					img: 		StickerList.showDodge.img,
+					duration: 	0.2,
+					delay: 		delay,
+					onInit: 		a => { a.create(1); },
+					onSpriteMake: 	s => { s.sScaleSet(0.75); },
+					onSpriteTick: 	s => { }
+				});
+				// Make the entity wiggle away a bit.
+				new Anim( {}, {
+					follow: 	target,
+					delay: 		delay,
+					duration: 	0.15,
+					onInit: 		a => { a.puppet(target.spriteList); },
+					onSpriteMake: 	s => { s.sPosDeg(deg,0.3); },
+					onSpriteDone: 	s => { s.sReset(); }
+				});
+			}
+			return makeResult('dodged',false);
+		}
+	}
+
+	if( !effect.isSecondary && source && !isSelf && ( isHarm || (item && item.isWeapon) ) ) {
+		source.lastAttackTargetId = target.id;	// Set this early, despite blindness!
+		source.inCombatTimer = Time.simTime;
+	}
+
+	if( !effect.isSecondary && target.isMonsterType && !isSelf && isHarm ) {
+		let shield = target.getFirstItemInSlot(Slot.SHIELD);
+		let block = 0;
+		block = Math.max( block, target.calcShieldBlockChance(effect.typeId,isRanged,target.shieldBonus) );
+		block = Math.max( block, target.calcShieldBlockChance(effect.op,isRanged,target.shieldBonus) );
+		block = Math.max( block, target.calcShieldBlockChance(effect.stat,isRanged,target.shieldBonus) );
+		block = Math.max( block, target.calcShieldBlockChance(effect.value,isRanged,target.shieldBonus) );
+		if( Math.chance(block*100) ) {
+			tell(mSubject,target,' ',mVerb,'catch',' that blow with ',mSubject|mPossessive,target,' ',mObject|mPossessed,shield);
+			new Anim( {}, {
+				follow: 	target,
+				img: 		StickerList.showResistance.img,
+				duration: 	0.2,
+				delay: 		item ? item.rangeDuration || 0 : 0,
+				onInit: 		a => { a.create(1); },
+				onSpriteMake: 	s => { s.sScaleSet(0.75); },
+				onSpriteTick: 	s => { }
+			});
+			return makeResult('shielded',false);
+		}
+	}
+
+	if( target.isTileType && !target.isPosition ) {
+		debugger;
 	}
 
 	// Note that spells with a duration must last at least 1 turn!
-	effect.duration = (effect.isInstant || effect.duration===0 ? 0 :
-		((item && item.inSlot) || effect.duration==true ? true :
-		Math.max(1,(effect.duration || Rules.DEFAULT_EFFECT_DURATION) * (effect.xDuration||1))
-	));
+	if( effect.duration === undefined && effect.isInstant ) {
+		effect.duration = 0;
+	}
+	if( effect.isInstant && effect.duration !== 0 ) debugger;
+	if( effect.duration === undefined ) {
+		effect.duration = Math.max(1,(effect.duration || Rules.DEFAULT_EFFECT_DURATION) * (effect.xDuration||1))
+	}
 
+	// If this is done from range, but not thrown (because item.giveTo() handles throwing animation),
+	// show the item hurtling through the air.
 	let flyingIcon = effect.flyingIcon || effect.icon;
-	if( source && target && (source.command == Command.CAST || source.command == Command.ATTACK) && flyingIcon !== false) {
+	if( !effect.isSecondary && source && hasCoords(target) && (context == Command.CAST || context == Command.ATTACK) && flyingIcon !== false) {
 		// Icon flies to the target
 		let dx = target.x-source.x;
 		let dy = target.y-source.y;
@@ -433,31 +628,36 @@ let _effectApplyTo = function(effect,target,source,item) {
 		});
 	}
 
-	if( effect.op == 'damage' ) {
+	// Exclude certain natural damage interactions:
+	//   - fire when target is in water
+	//   - freeze when target is in fire
+	if( effect.op == 'damage' && !target.isMap ) {
 		let tile = target.map.tileTypeGet(target.x,target.y);
 		if( tile.isWater && effect.damageType == DamageType.BURN ) {
 			tell(mSubject,target,' can not be affected by '+effect.damageType+'s while in ',mObject,tile);
 			animFloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
-			return false;
+			return makeResult('elementExclusion',false);
 		}
 		if( tile.isFire && effect.damageType == DamageType.FREEZE ) {
 			tell(mSubject,target,' can not be affected by '+effect.damageType+'s while in ',mObject,tile);
 			animFloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
-			return false;
+			return makeResult('elementExclusion',false);
 		}
 	}
 
-	// DUPLCATE CODE to the calcBestWeapon...
+	// DUPLCATE CODE to the calcBestWeapon...  Sort of.
 	let isImmune = false;
 	isImmune = isImmune || (target.isImmune && target.isImmune(effect.typeId));
 	isImmune = isImmune || (target.isImmune && target.isImmune(effect.op));
+	isImmune = isImmune || (target.isImmune && target.isImmune(effect.stat));
 	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
+	effect.isImmune = isImmune;
 	if( isImmune ) {
 		tell(mSubject,target,' ',mVerb,'is',' immune to ',mObject,effect,'.');
 		if( !source || source.id!==target.id ) {
 			animOver( target, StickerList.showImmunity.img, effect.rangeDuration || 0 );
 		}
-		return false;
+		return makeResult('immune',false);
 	}
 
 	let isResist = false;
@@ -465,6 +665,8 @@ let _effectApplyTo = function(effect,target,source,item) {
 	isResist = isResist || (target.isResist && target.isResist(effect.typeId));
 	// I can resist an effect operation, like "shove"
 	isResist = isResist || (target.isResist && target.isResist(effect.op));
+	// I can resist changes to my stats, like 'stunned'
+	isResist = isResist || (target.isResist && target.isResist(effect.stat));
 	// I can resist a value that is being set, like "panicked"
 	isResist = isResist || (effect.op=='set' && target.isResist && target.isResist(effect.value));
 	effect.isResist = isResist;
@@ -472,29 +674,48 @@ let _effectApplyTo = function(effect,target,source,item) {
 	if( isResist && effect.isInstant && Math.chance(50) ) {
 		tell(mSubject,target,' ',mVerb,'resist',' the effects of ',mObject,effect,'.');
 		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
-		return false;
+		return makeResult('resist',false);
 	}
 
+	// Reduce duration of ongoing effects that you resist.
 	if( isResist && !effect.isInstant && effect.duration !== true ) {
 		tell(mSubject,target,' ',mVerb,'seem',' partially affected by ',mObject,effect,'.');
+		effect.resistDuration = true;
 		effect.duration = effect.duration * 0.50;
 		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
 	}
 
-	effect.value = rollDice(effect.value);
-
-	let success;
+	// If the effect has chosen to do something special when targetting a position,
+	// do that special thing. Otherwise the vast majority will 
 	if( target.isPosition && effect.onTargetPosition ) {
 		target.map.toEntity(target.x,target.y,target);
-		success = effect.onTargetPosition(target.map,target.x,target.y)
+		result.effectResult = effect.onTargetPosition(target.map,target.x,target.y)
 	}
 	else {
 		// Remember that by this point the effect has the target, source and item already inside it.
-		success = DeedManager.add(effect);
+		result.effectResult = DeedManager.add(effect);
 	}
-	if( success !== false && effect.icon !== false && effect.showOnset!==false ) {
+	result.status  = result.effectResult.status || context;
+	result.success = result.effectResult.success;
+
+	// Float up an icon indicating what the effect was that just happened to the target.
+	if( result.effectResult.success !== false && effect.icon !== false && effect.showOnset!==false ) {
 		animFloatUp(target,effect.icon || StickerList.eGeneric.img,effect.rangeDuration);
 	}
+
+
+	if( !effect.isSecondary && weaponEffect && item && !item.dead && Math.chance(item.chanceOfEffect === undefined ? 100 : item.chanceOfEffect) ) {
+		if( item.chanceOfEffect === undefined ) {
+			debugger;
+		}
+		if( effect.op == 'set' && effect.stat == 'stun' ) {
+			debugger;
+		}
+		weaponEffect = Object.assign( {}, weaponEffect );
+		weaponEffect.isSecondary = true;
+		result.weaponEffect = item.trigger( target, source, Command.ATTACK, weaponEffect );
+	}
+
 
 	// Note that rechargeTime CAN NOT be in the effect, because we're only dealing with a
 	// copy of the effect. There is no way for the change to rechargeTime to get back to the original effect instance.
@@ -514,7 +735,11 @@ let _effectApplyTo = function(effect,target,source,item) {
 		source.rechargeLeft = source.rechargeTime;
 	}
 
-	return true;
+	if( source && item && result.success && item.isWeapon && source.onAttack ) {
+		result.onAttack = source.onAttack(target);
+	}
+
+	return result;
 }
 
 let deedTell = function(target,stat,oldValue,newValue ) {
@@ -545,22 +770,24 @@ let DeedOp = {
 	KILLLABEL: 	'killLabel'
 }
 
+let itemOrMonsterTarget = function(effect) {
+	return effect.target.isItemType || effect.target.isMonsterType;
+}
+let resultDeniedDueToType = {
+	status: 'deniedDueToType',
+	success: false
+}
+
 DeedManager.addHandler(DeedOp.HEAL,function() {
-	this.target.takeHealing(this.source,this.value,this.healingType);
+	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
+	return this.target.takeHealing(this.source,this.value,this.healingType);
 });
 DeedManager.addHandler(DeedOp.DAMAGE,function() {
-	let attacker = this.source;
-	let isOngoing = false;
+	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
+	let isOngoing = this.onsetDone && (this.duration === true || this.duration > 1);
 
-	if( this.damageResult && (this.duration === true || this.duration > 1) ) {
-		// for non-instant damaging effects, we don't want the attacker to be conveyed, because it will
-		// result in effects that make it appear you were jsut attacked, for example by a dead guy, or at range
-		attacker = null;
-		isOngoing = true;
-	}
-
-	this.damageResult = this.target.takeDamage(
-		attacker,
+	let result = this.target.takeDamage(
+		this.source,
 		this.item,
 		this.value,
 		this.damageType,
@@ -568,41 +795,59 @@ DeedManager.addHandler(DeedOp.DAMAGE,function() {
 		isOngoing,
 		isOngoing
 	);
+	this.onsetDone = true;
 
-	if( this.isLeech && this.damageResult.amount > 0 ) {
-		this.source.takeHealing(this.source,this.damageResult.amount,this.healingType);
+	if( this.isLeech && this.target.isMonsterType && result.success && result.amount > 0 ) {
+		this.source.takeHealing(this.source,result.amount,this.healingType);
 	}
-	return this.damageResult.amount > 0;
+	// NUANCE! An immunity could be acquired after the onset of the effect! That is
+	// OK. The effect should continue to run its course in case the immunity
+	// suddenly disappears again. Do NOT end the effect over this.
+	return result;
 });
 DeedManager.addHandler(DeedOp.SHOVE,function() {
+	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return this.target.takeShove(this.source,this.item,this.value);
 });
 DeedManager.addHandler(DeedOp.TELEPORT,function() {
+	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return this.target.takeTeleport(this.source,this.item);
 });
 DeedManager.addHandler(DeedOp.STRIP,function() {
-	return !!this.target.stripDeeds(this.stripFn);
+	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
+	return !!this.target.takeStripDeeds(this.stripFn);
 });
 DeedManager.addHandler(DeedOp.POSSESS,function() {
+	if( !this.target.isMonsterType ) return resultDeniedDueToType;
 	if( this.source.isPossessing ) {
-		return;
+		return {
+			status: 'possessionInProgress',
+			success: true
+		}
 	}
-	let success = this.target.takeBePossessed(this,true);
-	if( success ) {
+	let result = this.target.takeBePossessed(this,true);
+	if( result.success ) {
 		this.onEnd = function() {
 			this.target.takeBePossessed(this,false);
 		}
 	}
-	if( !success ) {
-		return false;
-	}
+	result.endNow = !result.success;
+	return result;
 });
 DeedManager.addHandler(DeedOp.SUMMON,function() {
+	if( this.target.isMap ) return resultDeniedDueToType;
 	if( this.hasSummoned ) {
 		if( this.summonedEntity && this.summonedEntity.isDead() ) {
-			return false;
+			return {
+				status: 'summoneeDead',
+				success: false,
+				endNow: true
+			}
 		}
-		return;
+		return {
+			status: 'waitingForCompletion',
+			success: true
+		}
 	}
 	let target = this.target;
 	let area = target.area;
@@ -617,7 +862,11 @@ DeedManager.addHandler(DeedOp.SUMMON,function() {
 	let type = MonsterTypeList[typeFilter];
 	if( !type ) {
 		debugger;
-		return false;
+		return {
+			status: 'noSuchMonster',
+			typeFilter: typeFilter,
+			success: false
+		}
 	}
 	// NOTE: We always make the entity at the lower of its level or the depth you summoned it on.
 	// The intent is to prevent super-over-powered killings
@@ -637,9 +886,13 @@ DeedManager.addHandler(DeedOp.SUMMON,function() {
 		entity.vanish = true;
 	}
 	this.hasSummoned = true;
-	return true;
+	return {
+		status: 'summon',
+		success: true,
+	}
 });
 DeedManager.addHandler(DeedOp.DRAIN,function() {
+	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	let entity = this.target;
 	let anyDrained = false;
 	entity.inventory.forEach( item => {
@@ -651,15 +904,24 @@ DeedManager.addHandler(DeedOp.DRAIN,function() {
 	if( anyDrained ) {
 		animFloatUp(this.target,this.icon || StickerList.eGeneric.img);
 	}
-	return anyDrained;
+	return {
+		status: 'drain',
+		success: true,
+		anyDrained: anyDrained
+	}
 });
 
 DeedManager.addHandler(DeedOp.KILLLABEL,function() {
+	if( !this.target.isMap ) return resultDeniedDueToType;
 	let f = new Finder( this.target.itemList, this.source ).excludeMe().filter( item => item.label == this.value );
 	let count = f.count;
 	f.forEach( item => {
 		animFloatUp( item, StickerList.ePoof.img );
 		item.destroy()
 	});
-	return count;
+	return {
+		status: 'killedlabel',
+		success: count > 0,
+		count: count
+	}
 });

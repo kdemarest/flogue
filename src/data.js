@@ -172,16 +172,24 @@ const StickerList = {
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
 let ARMOR_SCALE = 100;
 
-const MiscImmunity = { SPEED: "speed", LOSETURN: "loseTurn", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField", HEALING: "healing" };
+const MiscImmunity = { SPEED: "speed", STUN: "stun", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField", HEALING: "healing" };
 
 
 // WARNING: the damage type names are re-used in their icon names in StickerList. Maintain both.
 const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", WATER: "water", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
-const PhysicalDamage = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(',');
+const Damage = {
+	All: 		Object.values(DamageType).join(',')+','+Object.values(MiscImmunity).join(','),
+	Misc: 		Object.values(MiscImmunity).join(','),
+	Physical: 	[DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(','),
+	Physical2: 	[DamageType.CORRODE,DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(','),
+	Elemental: 	[DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.WATER].join(','),
+	Divine: 	[DamageType.SMITE,DamageType.ROT].join(',')
+};
+
+
 const EffectShape = { SINGLE: "single", BLAST3: "blast3", BLAST5: "blast5", BLAST7: "blast7" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH];
 const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH];
-const ShieldBlocks = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.CORRODE,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
 const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked",
 				FEARFUL: "fearful", CALM: "calm",
 				AWAIT: "await", WORSHIP: "worshipping",
@@ -204,7 +212,6 @@ const PickBlock  = [DamageType.CUT,DamageType.STAB,DamageType.BASH];
 
 let EffectTypeList = {
 	eInert: 		{ level:  0, isInert: 1 },	// this is special, used in the picker effect proxy! Do not change!
-	eWater: 		{ level:  0, rarity: 1.00, isWater: 1 },
 	eBlank: 		{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
 	eKillLabel: 	{ level:  0, rarity: 1.00, op: 'killLabel', isInstant: 1, icon: false },	
 // Tactical
@@ -244,7 +251,7 @@ let EffectTypeList = {
 
 // Debuff/Control
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
-	eStun: 			{ isDeb: 1, level:  0, rarity: 0.50, op: 'set', stat: 'loseTurn', value: true, isHarm: 1, xDuration: 0.3, icon: 'gui/icons/eShove.png' },
+	eStun: 			{ isDeb: 1, level:  0, rarity: 0.50, op: 'set', stat: 'stun', value: true, isHarm: 1, xDuration: 0.3, icon: 'gui/icons/eShove.png' },
 	eShove: 		{ isDeb: 1, level:  0, rarity: 0.50, op: 'shove', value: 2, isInstant: 1, icon: 'gui/icons/eShove.png' },
 	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.HESITANT, isHarm: 1, xDuration: 0.3, icon: 'gui/icons/eAttitude.png' },
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat: 'attitude', value: Attitude.PANICKED, isHarm: 1, xDuration: 0.2, icon: 'gui/icons/eFear.png' },
@@ -261,12 +268,14 @@ let EffectTypeList = {
 
 // Healing
 	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', xDamage: 6.00, isHelp: 1, isInstant: 1, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
-	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.05, isHelp: 1, xDuration: 2.0, xPrice: 1.5, icon: 'gui/icons/eHeal.png' },
+	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.01, isHelp: 1, xDuration: 2.0, xPrice: 1.5, icon: 'gui/icons/eHeal.png' },
+	eTrollBlood: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.02, isHelp: 1, xDuration: 2.0, xPrice: 2.5, icon: 'gui/icons/eHeal.png' },
 	eCurePoison: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isPoison || deed.damageType==DamageType.POISON, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
 	eCureDisease: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isDisease, isHelp: 1, isInstant: 2.0, icon: 'gui/icons/eHeal.png' },
 // Damage
+	eWater: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.WATER, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
 	eFire: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, isInstant: 1, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eFire.png' },
-	eCold: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, mayTargetPosition: true, icon: 'gui/icons/eCold.png' },
+	eCold: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.80, isHarm: 1, isInstant: 1, damageType: DamageType.FREEZE, icon: 'gui/icons/eCold.png' },
 	eShock: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.70, isHarm: 1, isInstant: 1, damageType: DamageType.SHOCK, icon: 'gui/icons/eShock.png' },
 	eShock3: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.50, effectShape: EffectShape.BLAST3, isHarm: 1, isInstant: 1, damageType: DamageType.SHOCK, icon: 'gui/icons/eShock.png' },
 	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.90, isHarm: 1, isInstant: 1, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
@@ -292,10 +301,19 @@ for( let key in EffectTypeList ) {
 
 EffectTypeList.eFire.onTargetPosition = function(map,x,y) {
 	map.tileSymbolSet(x,y,TileTypeList.flames.symbol);
+	return {
+		status: 'putFire',
+		success: true
+	}
 }
 
 EffectTypeList.eCold.onTargetPosition = function(map,x,y) {
 	map.tileSymbolSet(x,y,TileTypeList.water.symbol);
+	return {
+		status: 'putWater',
+		success: true
+	}
+
 }
 
 const ImgBridges = {
@@ -543,7 +561,7 @@ for( let i=-MaxLightValue-20 ; i<MaxLightValue+20 ; ++i ) {
 TileTypeList.obelisk.onBump = function(toucher,self) {
 	if( !toucher.senseBlind ) {
 		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,'.');
-		effectApply( self.effect, toucher, null, self );
+		effectApply( self.effect, toucher, null, self, 'bump' );
 	}
 	else {
 		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,' but ',mVerb,'are',' already blind.');
@@ -553,7 +571,7 @@ TileTypeList.obelisk.onBump = function(toucher,self) {
 TileTypeList.crystal.onBump = function(entity,self) {
 	if( entity.speed <= 1 ) {
 		tell(mSubject,entity,' ',mVerb,'touch',' ',mObject,self,' and ',mSubject|mVerb,'blur',' with speed!');
-		effectApply( self.effect, toucher, null, self );
+		effectApply( self.effect, toucher, null, self, 'bump' );
 	}
 	else {
 		tell( mSubject,entity,' ',mVerb,'touch',' ',mObject,self,', but ',mVerb,'are',' already moving fast.');
@@ -615,10 +633,16 @@ let TouchDamage = {
 	onTouch: function(toucher,self) {
 		// We could pass in an onDamage that would also catch you on fire...
 		let xDamage = ItemCalc(self,self,'xDamage','*');
-		let effectDefault = { op: 'damage', damageType: self.damageType, isInstant: 1, icon: StickerList[self.damageType+'Icon'].img }
+		let damageType = self.damageType || (self.effect ? self.effect.damageType : DamageType.BURN);
+		let effectDefault = {
+			op: 'damage',
+			damageType: damageType,
+			isInstant: 1,
+			icon: StickerList[damageType+'Icon'].img
+		};
 		let effect = Object.assign( {}, self.effect || effectDefault, { xDamage: xDamage } );
 		effect = new Effect( toucher.area.depth, effect );
-		effectApply( effect, toucher, null, self );
+		effectApply( effect, toucher, null, self, 'touch' );
 	},
 	onTouchWalk: function(toucher,self) {
 		if( toucher.travelMode != "walk" || toucher.jump ) {
@@ -695,7 +719,7 @@ TileTypeList.forcefield.onEnterType = function(entity,self) {
 TileTypeList.ghostStone.onBump = function(toucher,self) {
 	if( !toucher.invisible ) {
 		tell( mSubject,toucher,' ',mVerb,['touch','touches'],' ',mObject,self,'.' );
-		effectApply( this.effect, toucher, null, self );
+		effectApply( this.effect, toucher, null, self, 'bump' );
 	}
 	else {
 		tell( mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,', but ',mVerb,'are',' already invisible.');
