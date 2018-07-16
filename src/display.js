@@ -207,7 +207,7 @@ function createDrawList(observer,map,entityList,asType) {
 				else {
 					//dChar = 'T';
 					console.assert( aa.length >= 2 );
-					if( tile.isWall ) {
+					if( tile.addFloor ) {
 						aa.push(lastFloor);
 					}
 					aa.push(tile);
@@ -347,9 +347,14 @@ class ImageRepo {
 
 		let self = this;
 		scanTypeList(StickerList,'img');
-		scanTypeList(AmmoList,'img');
-		scanTypeList(WeaponList,'img');
-		scanTypeList(StuffList,'img');
+		Object.each( ItemTypeList, itemType => {
+			if( !itemType.imgGet ) {
+				scanTypeList( itemType.qualities || {},'img');
+				scanTypeList( itemType.materials || {},'img');
+				scanTypeList( itemType.varieties || {},'img');
+				scanTypeList( itemType.effects || {},'img');
+			}
+		});
 		scanIcon(EffectTypeList,'icon');
 
 		function setup() {
@@ -685,6 +690,13 @@ class ViewMap extends ViewObserver {
 
 		let wx = (this.observer.x-this.sd);
 		let wy = (this.observer.y-this.sd);
+		AnimClip.set(
+			this.observer.x - this.sd*1.5,
+			this.observer.y - this.sd*1.5,
+			this.observer.x + this.sd*1.5,
+			this.observer.y + this.sd*1.5
+		);
+
 
 		for( let y=0 ; y<this.d ; ++y ) {
 			for( let x=0 ; x<this.d ; ++x ) {

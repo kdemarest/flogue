@@ -51,17 +51,17 @@ class HumanUser {
 			}
 		});
 		let f = () => new Finder(this.entity.inventory);
-		fav( '1', () => f().filter(item=>item.isWeapon && item.slot == Slot.WEAPON && !item.isFake).byDamage('desc') );
-		fav( '2', () => f().filter(item=>item.mayShoot && item.ammoSpec && !item.isFake).byDamage('desc') );
-		fav( '3', () => f().filter(item=>item.isPotion && item.effect && item.effect.op == 'heal' && !item.isFake ) );
+		fav( '1', () => f().filter(item=>item.isWeapon && !item.mayShoot && item.slot == Slot.WEAPON && !item.isFake).byDamage('desc') );
+		fav( '3', () => f().filter(item=>item.mayShoot && item.ammoSpec && !item.isFake).byDamage('desc') );
+		fav( '4', () => f().filter(item=>item.isShield && !item.isFake).byLevel('desc') );
+		fav( '5', () => f().filter(item=>item.isPotion && item.effect && item.effect.op == 'heal' && !item.isFake ) );
 		let spellList = getCastableSpellList(this.entity);
 		let i = 0;
-		i += fav( '4', () => spellList, i ) ? 1 : 0;
-		i += fav( '5', () => spellList, i ) ? 1 : 0;
 		i += fav( '6', () => spellList, i ) ? 1 : 0;
 		i += fav( '7', () => spellList, i ) ? 1 : 0;
 		i += fav( '8', () => spellList, i ) ? 1 : 0;
 		i += fav( '9', () => spellList, i ) ? 1 : 0;
+		i += fav( '0', () => spellList, i ) ? 1 : 0;
 	}
 	keyToCommand(key) {
 		if( !this.suppressFavorites ) {

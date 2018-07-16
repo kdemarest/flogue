@@ -529,9 +529,9 @@ class Map extends SimpleMap {
 		let e = this.entityLookup[y*this.xLen+x];
 		return e && e.length;
 	}
-	findEntityAt(x,y) {
-		if( !this.inBounds(x,y) ) return false;
-		return new Finder(this.entityLookup[y*this.xLen+x] || this.entityLookupStaticNop);
+	findEntityArrayAt(x,y) {
+		if( !this.inBounds(x,y) ) return this.entityLookupStaticNop;
+		return this.entityLookup[y*this.xLen+x] || this.entityLookupStaticNop;
 	}
 	_entityRemove(entity) {
 		//console.log( '- '+entity.name+' ('+entity.x+','+entity.y+')' );

@@ -8,7 +8,21 @@ class Item {
 			// ERROR: you should do your own item picking, and provide presets!
 			debugger;
 		}
-		let ignoreFields = { level:1, rarity:1, name: 1, armorMultiplier:1, blockChance: 1, xDamage:1, ingredientId:1, type:1, typeId:1 };
+		// These do NOT merge down, either because the item needs to be authoritative about them,
+		// or because future calculations will combine them.
+		let ignoreFields = {
+			level:1,
+			rarity:1,
+			name:1,
+			block:1,
+			xBlock:1,
+			xArmor:1,
+			xDamage:1,
+			xDuration:1,
+			ingredientId:1,
+			type:1,
+			typeId:1
+		};
 
 		let levelRaw = ItemCalc(this,presets,'level','+');
 		let noLevelVariance = ItemCalc(this,presets,'noLevelVariance','+');
@@ -61,6 +75,7 @@ class Item {
 			this.armor 			= adjust(  5, level, level=>picker.pickArmorRating(level,this) );
 		}
 		if( this.isShield ) {
+			this.blocks 		= ItemCalc(this,this,'block','&');
 			this.armor 			= adjust(  5, level, level=>picker.pickArmorRating(level,this) );
 		}
 		if( this.isShield ) {
@@ -73,36 +88,22 @@ class Item {
 			this.coinCount  	= picker.pickCoinCount();
 		}
 
-		// REALLY in the long term all effects should be uniquely named according to their
-		// time of use. For example:
-		// effectOnAttack
-		// effectOnShoot
-		// effectOnThrow
-		// effectOnCast
-		// effectOnDon / Doff
-		// effectOnGaze
-		// effectOnEat
-		// effectOnBlock
-		// effectOnMove
-		// effectOnTakeDamage
-		// effectOn... whatever. possession, getting a pet... the list is endless.
-		// We'll need a generic test that says
-		// for( fieldId in entity.fields ) { if startsWith('effectOn'
-		// and so on.
-
-
 		if( this.effect && this.effect.isInert ) {
 			delete this.effect;
 		}
 		if( this.effect ) {
-			this.effect 		= new Effect( this.depth, this.effect, this, this.rechargeTime );
-			if( this.takeOnDamageTypeOfEffect && this.effect.damageType ) {
-				this.damageType = this.effect.damageType;
+			this.effect = new Effect( this.depth, this.effect, this, this.rechargeTime );
+			if( this.effectDecorate ) {
+				Object.assign( this.effect, this.effectDecorate );
 			}
+
+			//if( this.takeOnDamageTypeOfEffect && this.effect.damageType ) {
+			//	this.damageType = this.effect.damageType;
+			//}
 			// NUANCE: When you equip almost everything their effects happen to you immediately.
 			// Most wearable items deal with this properly, but the Stuff effects sometimes
 			// do not, so to be friendly we set duration here.
-			if( this.slot && !this.isWeapon ) {
+			if( this.slot && !this.isWeapon && this.effect.duration===undefined ) {
 				this.effect.duration = true;
 			}
 			// Weapon secondary effect, and that of armor, happens in carefully managed circumstances.
@@ -114,25 +115,12 @@ class Item {
 				if( WEAPON_EFFECT_OP_ALWAYS.includes(this.effect.op) ) {
 					this.chanceOfEffect = 100;
 					this.effect.value = Math.max(1,Math.floor(this.effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+					this.damage -= this.plus;
+					this.effect.value += this.plus;
 					console.assert( !isNaN(this.effect.value) );
 				}
 			}
-
 		}
-
-		if( this.isWeapon && !this.effectOnAttack ) {
-			this.effectOnAttack = new Effect( this.depth, {
-				op: 		'damage',
-				isHarm: 	true,
-				isInstant: 	true,
-				value: 		this.damage,
-				damageType: this.damageType || DamageType.CUT,
-				quick: 		this.getQuick(),
-				icon: 		false,
-				name: 		this.name
-			}, this, this.rechargeTime );
-		}
-
 
 		if( this.hasInventory ) {
 			this.inventory = [];
@@ -220,13 +208,40 @@ class Item {
 		spriteDeathCallback(this.spriteList);
 	}
 	getQuick() {
-		if( this.effectOnAttack && this.effectOnAttack.quick !== undefined ) {
-			return this.effectOnAttack.quick;
-		}
 		if( this.quick !== undefined ) {
 			return this.quick;
 		}
 		return 1;
+	}
+	getEffectOnAttack() {
+		if( this._effectOnAttack ) {
+			return new Effect( this.level, this._effectOnAttack, this, this.rechargeTime );
+		}
+		let effect = Object.copySelected( {
+			op: 'damage',
+			isEffectOnAttack: true,
+			icon: false,
+		}, this, {
+			op:1,
+			isHarm:1,
+			damageType:1,
+			duration:1,
+			xDuration:1,
+			xDamage:1,
+			quick:1,
+			name:1
+		});
+
+		if( effect.op == 'damage' ) {
+			effect.isHarm = true;
+			effect.value = effect.value || this.damage;
+		}
+		// This is contrary to how the effect applier works, because weapons typically
+		// want to do their damage and just be done.
+		if( this.duration === undefined ) {
+			effect.duration = 0;
+		}
+		return new Effect( this.level, effect, this, this.rechargeTime );
 	}
 	lootGenerate( lootSpec, level ) {
 		let itemList = [];
@@ -261,6 +276,19 @@ class Item {
 		}
 		return result;
 	}
+	calcBlockChance(blockType,isRanged,shieldBonus) {
+		if( !isRanged ) {
+			return 0;
+		}
+		if( blockType !== 'any' && !String.arIncludes(this.blocks,blockType) ) {
+			return 0;
+		}
+		let blockChance = ItemCalc(this,this,'xBlock','*');
+		if( shieldBonus=='stand' ) {
+			blockChance = blockChance + (1-blockChance)*0.50;
+		}
+		return blockChance;
+	}
 
 	calcReduction(damageType) {
 		if( !this.isArmor && !this.isShield ) {
@@ -292,7 +320,7 @@ class Item {
 			}
 		}
 		if( this.effect ) {
-			let fieldList = { name:1, op: 1, stat: 1, value:1, duration:1, damageType:1, healingType:1, xDuration:1, xRecharge:1, xDamage:1, effectShape:1, isInstant:1 };
+			let fieldList = { name:1, op: 1, stat: 1, value:1, duration:1, damageType:1, healingType:1, xDuration:1, xRecharge:1, xDamage:1, effectShape:1 };
 			for( let fieldId in fieldList ) {
 				let value = this.effect[fieldId];
 				if( value !== undefined ) {
@@ -500,10 +528,6 @@ class Item {
 				success: false
 			}
 		}
-		if( context == Command.THROW && this.isPotion ) {
-			effect.effectShape = EffectShape.SPLASH;
-		}
-
 		// Here is where we should figure out the area of effect and hit all as needed.
 		let result = effectApply( effect, target, source, this, context );
 

@@ -55,8 +55,8 @@ function launcher(obj) {
 	// To make a launcher, you must specify the 
 	// 	ammoType: 'isRock',
 	// 	ammoSpec: 'ammo.rock',
+	// 	ammoDamage: ...,		// optional. 'convey' sets the damage, and 'combine' summs it
 	// 	rechargeTime: 2,
-	// 	conveyDamageToAmmo: true,	// optional, but gives you lots of control over the damage.
 	//	hitsToKillPlayer: 6,		// optional. You can just use xDamage or leave it alone too.
 	// 	name: "rock"				// needed to help describe what happened.
 
@@ -236,7 +236,7 @@ const MonsterTypeList = {
 		isUnique: true,
 		neverPick: true,
 		immune: ['eShove',DamageType.BURN,Attitude.PANICKED].join(','),
-		inventoryLoot: 'spell.eFire, spell.eRot, spell.ePoison',
+		inventoryLoot: 'spell.eBurn, spell.eRot, spell.ePoison',
 		isDemon: true,
 		isLarge: true,
 		sayPrayer: 'I shall rule this planet!',
@@ -300,8 +300,8 @@ const MonsterTypeList = {
 		core: [ SYM, 49, '3:5', 'evil', 'burn', 'sentient', 'humanoid', 'player/base/draconian_red_f.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
-		lootInventory: 'ammo.dart.eFire',
-		loot: '30% coin, 50% potion.eFire, 30% demonScale, 20% pitchfork, 30% demonEye',
+		lootInventory: 'ammo.dart.eBurn',
+		loot: '30% coin, 50% potion.eBurn, 30% demonScale, 20% pitchfork, 30% demonEye',
 		resist: DemonResistance,
 		sayPrayer: 'Hail Balgur, ruler of the deep!',
 		vuln: DemonVulnerability,
@@ -389,7 +389,7 @@ const MonsterTypeList = {
 	"daileesh": {	// (leech)
 		core: [ SYM, 34, '4:10', 'evil', null, 'demon', 'wingedBiped', 'mon/demon/daileesh.png', 'it' ],
 		attitude: Attitude.HUNT,
-		naturalWeapon: { effectOnAttack: ETL.eLeech },
+		naturalWeapon: { _effectOnAttack: ETL.eLeech },
 		immune: DemonImmunity,
 		isDemon: true,
 		isMindless: true,	// Too powerful to allow possession.
@@ -417,7 +417,7 @@ const MonsterTypeList = {
 		naturalWeapon: {
 			reach: 6,
 			rechargeTime: 2,
-			effectOnAttack: { op: 'damage', xDamage: 1, isHarm: 1, duration: 5, damageType: DamageType.CORRODE, name: 'demon acid', flyingIcon: 'item/stuff/acidSlime.png', icon: 'gui/icons/eCorrode.png' }
+			_effectOnAttack: { op: 'damage', xDamage: 1, isHarm: 1, duration: 5, damageType: DamageType.CORRODE, name: 'demon acid', flyingIcon: 'item/stuff/acidSlime.png', icon: 'gui/icons/eCorrode.png' }
 		},
 		senseSight: 8,
 		tooClose: 7,
@@ -441,7 +441,7 @@ const MonsterTypeList = {
 			isCloud: true,
 			op: 'damage',
 			xDamage: 1,
-			isInstant: 1,
+			duration: 0,
 			effectShape: EffectShape.BLAST5,
 			damageType: DamageType.POISON,
 			name: 'poison cloud',
@@ -456,7 +456,7 @@ const MonsterTypeList = {
 	"daikay": {	// (rot)
 		core: [ SYM, 54, '3:30', 'evil', null, 'demon', 'noped', 'mon/demon/daikay.png', 'it' ],
 		naturalWeapon: {
-			effectOnAttack: {
+			_effectOnAttack: {
 				op: 'damage',
 				singularId: 'putridRot',	// Will not re-infect if already impacting...
 				xDamage: 1,
@@ -637,7 +637,7 @@ const MonsterTypeList = {
 		isGoblin: true,
 		isGoblinMinion: true,
 		isEarthChild: true,
-		inventoryLoot: '1x potion.eFire',
+		inventoryLoot: '1x potion.eBurn',
 		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 20% any, 30% pinchOfEarth',
 		sayPrayer: 'Oh mighty Thagzog...'
 	},
@@ -672,8 +672,8 @@ const MonsterTypeList = {
 		glow: 1,
 		immune: DamageType.BURN,
 		isDemon: true,
-		lootInventory: '3x ammo.dart.eFire',
-		loot: '30% potion.eFire, 30% impBrain',
+		lootInventory: '3x ammo.dart.eBurn',
+		loot: '30% potion.eBurn, 30% impBrain',
 		senseInvisible: true,
 		travelMode: "fly",
 		vuln: DemonVulnerability
@@ -706,8 +706,8 @@ const MonsterTypeList = {
 		inventoryLoot: launcher({
 			ammoType: 'isRock',
 			ammoSpec: 'ammo.rock',
+			ammoDamage: 'convey',
 			rechargeTime: 2,
-			conveyDamageToAmmo: true,
 			hitsToKillPlayer: 6,
 			name: "rock"
 		}),
@@ -858,7 +858,7 @@ const MonsterTypeList = {
 		core: [ SYM, 12, '3:10', 'lunar', 'freeze', 'sentient', 'humanoid', 'dc-mon/deep_elf_demonologist.png', '*' ],
 		name: "lunar one",
 		immune: DamageType.FREEZE,
-		inventoryLoot: '3x 50% potion.eCold',
+		inventoryLoot: '3x 50% potion.eFreeze',
 		isLunarChild: true,
 		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
@@ -873,7 +873,7 @@ const MonsterTypeList = {
 		rarity: 1.0,
 		travelType: 'fly',
 		vuln: LunarVulnerabilities,
-		inventoryLoot: { typeFilter: 'spell.eCold', rechargeTime: 1, hitsToKillPlayer: 3}
+		inventoryLoot: { typeFilter: 'spell.eFreeze', rechargeTime: 1, hitsToKillPlayer: 3}
 	},
 
 // NEUTRAL TEAM
@@ -926,8 +926,9 @@ MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 		tell(mSubject,attacker,' ',mVerb,'is',' protected from the ',mObject|mPossessive,this,' spines.');
 		return;
 	}
-	let damage = this.rollDamage(this.naturalMeleeWeapon.damage);
-	attacker.takeDamagePassive( this, null, damage, DamageType.POISON, function(attacker,victim,amount,damageType) {
+/*
+	let damage = 10;
+	attacker.ta..keDamagePassive( this, null, damage, DamageType.POISON, function(attacker,victim,amount,damageType) {
 		if( amount<=0 ) {
 			tell(mSubject,victim,' ',mVerb,'ignore',' ',mObject|mPossessive,attacker,' spines.');
 		}
@@ -936,6 +937,7 @@ MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 		}
 		return true;
 	}, true);
+*/
 }
 
 MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {

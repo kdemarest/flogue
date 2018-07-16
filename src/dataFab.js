@@ -93,12 +93,13 @@ let Fab = (function() {
 function monsterPreProcess(typeId,m) {
 	let brain = null;
 	let body = null;
+	let naturalDamageType;
 	if( m.core ) {
 		m.symbol = m.core[0];
 		m.level = m.core[1];
 		m.power = m.core[2];
 		m.team  = m.core[3];
-		m.damageType = m.core[4];
+		naturalDamageType = m.core[4];
 		brain = m.core[5];
 		body  = m.core[6];
 		m.img = m.core[7];
@@ -145,8 +146,7 @@ function monsterPreProcess(typeId,m) {
 
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];
-	if( typeof m.DamageType !== 'string' ) {
-	}
+	let damType = naturalDamageType || m.naturalWeapon.damageType || DamageType.CUT;
 	let natWeapon = Object.assign({
 		typeFilter: 'fake',
 		isNatural: true,
@@ -154,8 +154,8 @@ function monsterPreProcess(typeId,m) {
 		isWeapon: true,
 		quick: 2,
 		reach: m.reach || 1,
-		damageType: m.damageType || m.naturalWeapon.damageType || m.naturalWeapon.effectOnAttack.damageType || DamageType.CUT,
-		name: m.damageType || m.naturalWeapon.damageType || m.naturalWeapon.effectOnAttack.damageType || DamageType.CUT,
+		damageType: damType,
+		name: damType,
 	}, m.naturalWeapon );
 	m.inventoryLoot.push( natWeapon );
 	delete m.naturalWeapon;

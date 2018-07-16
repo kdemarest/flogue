@@ -136,6 +136,11 @@ class Finder {
 		this.result.sort( (a,b) => ((a.range || a.reach) - (b.range || b.reach))*d );
 		return this;
 	}
+	byLevel(dir='asc') {
+		let d = dir=='asc' ? 1 : -1;
+		this.result.sort( (a,b) => (a.level-b.level)*d );
+		return this;
+	}
 	byDamage(dir='asc') {
 		let d = dir=='asc' ? 1 : -1;
 		this.result.sort( (a,b) => (a.damage-b.damage)*d );

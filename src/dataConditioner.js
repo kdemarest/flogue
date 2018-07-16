@@ -147,7 +147,7 @@ class DataConditioner {
 				Object.assign(a,b);
 			}
 
-			function merge(targetList,typeList) {
+			function merge(targetList,typeList,isMonster) {
 				for( let typeId in typeList ) {
 					console.assert( !targetList[typeId] );
 					let type = typeList[typeId];
@@ -162,7 +162,7 @@ class DataConditioner {
 					);
 					typeList[typeId] = targetList[typeId];
 
-					if( targetList[typeId].isMonsterType ) {
+					if( isMonster ) {
 						// Do this AFTER any merge due to "basis", notably for the body slots.
 						monsterPreProcess(typeId,targetList[typeId]);
 					}
@@ -179,7 +179,7 @@ class DataConditioner {
 			merge( EffectTypeList,	place.effectList );
 			merge( TileTypeList, 	place.tileTypes );
 			merge( ItemTypeList,	place.itemTypes );
-			merge( MonsterTypeList,	place.monsterTypes );
+			merge( MonsterTypeList,	place.monsterTypes, true );
 		}
 	}
 

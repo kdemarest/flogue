@@ -87,8 +87,8 @@ ThemeList.dwarfTown2 = {
 		friendDensity: 	0.00001,
 	}
 
-//	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, spell.eTeleport, spell.eFire');
-//	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, weapon.sword, 40x ammo.arrow, stuff.oilLamp';
+	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eHealing');
+	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.oilLamp';
 //	MonsterTypeList.player.experience = 100;
 
 	Object.assign( Tweak, {
@@ -98,8 +98,8 @@ ThemeList.dwarfTown2 = {
 
 
 	return {
-//		startingDepth: 10,
-//		themeId: 'kenTheme'
+		startingDepth: 8,
+		themeId: 'coreHellscape'
 	}
 }
 

@@ -485,6 +485,7 @@ ThemeList.coreHellscape = {
 	passageWidth2: 		50,
 	placeDensity: 		0.05,
 	palette: 		{ basis: 'jaggedCave' },
+	rREQUIRED:  	'6x demonNest',
 	rCOMMON: 		'hoard_shade, demonNest, firePit',
 	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
 	rRARE: 			'secretChest, etherHive',
@@ -891,11 +892,20 @@ PlaceTypeList.goblinGathering = {
 		goblinAltar: { mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png", neverPick: true }
 	},
 	monsterTypes: {
-		goblinPriest: { basis: 'goblin', name: "goblin priest", damageType: DamageType.ROT,
-						attitude: Attitude.WORSHIP, shout: 'Death to all heretic overworld invaders!',
-						inventoryLoot: 'spell.eRot',
-						resist: DamageType.ROT,
-						img: "dc-mon/gnoll.png" }
+		goblinPriest: {
+			core: [ SYM, 1, '3:10', 'evil', 'rot', 'sentient', 'humanoid', 'dc-mon/gnoll.png', '*' ],
+			attitude: Attitude.WORSHIP,
+			brainIgnoreClearShots: 20,
+			brainMindset: 'greedy',
+			greedField: 'isGem',
+			isGoblin: true,
+			isEarthChild: true,
+			inventoryLoot: '40% spell.eRot',
+			loot: '50% coin, 20% weapon.mace, 20% any, 30% pinchOfEarth',
+			sayPrayer: 'Oh mighty Thagzog...',
+			shout: 'Death to all heretic overworld invaders!',
+			resist: DamageType.ROT,
+		},
 	},
 	inject: {
 		goblin: { attitude: Attitude.WORSHIP }
@@ -904,7 +914,7 @@ PlaceTypeList.goblinGathering = {
 
 PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt) {
 	if( !this.rechargeLeft ) {
-		let f = new Finder(this.area.entityList).filter(e=>e.isGoblin && e.health<e.healthMax/2).shotClear().near(this.x,this.y,6);
+		let f = new Finder(this.area.entityList,this).filter(e=>e.isGoblin && e.health<e.healthMax/2).shotClear().near(this.x,this.y,6);
 		if( f.count ) {
 			let entity = pick(f.all);
 			let amount = Math.floor(entity.healthMax/2 - entity.health);
@@ -955,7 +965,7 @@ PlaceTypeList.surfaceSunTemple = {
 			name: 'Hathgar\'s Chest',
 			properNoun: true,
 			inventoryLoot: [
-				'weapon.sword.eHoly, armor.eInert, 2x potion.eHealing',
+				'weapon.sword.eSmite, armor.eInert, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
@@ -968,7 +978,7 @@ PlaceTypeList.surfaceSunTemple = {
 			name: 'Ozymandius\' Chest',
 			properNoun: true,
 			inventoryLoot: [
-				'spell.eFire, spell.eShock3, spell.eCold, cloak.eRechargeFast, 2x potion.eHealing',
+				'spell.eBurn, spell.eShock3, spell.eFreeze, cloak.eRechargeFast, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
@@ -1007,7 +1017,7 @@ PlaceTypeList.surfaceSunTemple = {
 			name: 'Arithern\'s Chest',
 			properNoun: true,
 			inventoryLoot: [
-				'armor.eInert, weapon.bow.eHoly, 50x ammo.arrow, 5x ammo.dart, 2x potion.eHealing',
+				'armor.eInert, weapon.bow.eSmite, 50x ammo.arrow, 5x ammo.dart, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
@@ -1020,7 +1030,7 @@ PlaceTypeList.surfaceSunTemple = {
 			name: 'Berthold\'s Chest',
 			properNoun: true,
 			inventoryLoot: [
-				'armor.eInert, spell.eHealing, spell.eHoly, shield.eAbsorbRot, stuff.oilLamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
+				'armor.eInert, spell.eHealing, spell.eSmite, shield.eAbsorbRot, stuff.oilLamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')

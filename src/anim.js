@@ -207,6 +207,29 @@ let sSine = function(pct,scale) {
 //	return (1+Math.sin( (270/360*2*Math.PI) + (this.elapsed/this.duration)*2*Math.PI ))/2*scale;
 //}
 
+let AnimClip = (new function() {
+	let xMin,yMin,xMax,yMax;
+	function setNoClip() {
+		xMin = -99999999;
+		yMin = -99999999;
+		xMax = 99999999;
+		yMax = 99999999;
+	}
+	setNoClip();
+	return {
+		setNoClip: setNoClip,
+		set: function(x0,y0,x1,y1) {
+			xMin = x0;
+			yMin = y0;
+			xMax = x1;
+			yMax = y1;
+		},
+		contains(x,y) {
+			return !(x<xMin || y<yMin || x>xMax || y>yMax);
+		}
+	};
+}());
+
 class Anim {
 	constructor(sticker,data) {
 		Object.assign(this,{ delay: 0, scale: 1, isAnim: 1 }, sticker, data);
@@ -240,6 +263,13 @@ class Anim {
 		if( this.x === undefined ) debugger;
 		if( this.y === undefined ) debugger;
 		if( this.areaId === undefined || typeof this.areaId !== 'string') debugger;
+
+
+		if( typeof this.duration === 'number' && !AnimClip.contains(this.x,this.y) ) {
+			this.dead = true;
+			this.clipped = true;
+			return this;
+		}
 
 		if( this.target ) {
 			console.assert( this.target.x!==undefined && this.target.y!==undefined );

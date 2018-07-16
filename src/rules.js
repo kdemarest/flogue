@@ -14,15 +14,23 @@ const WEAPON_EFFECT_DAMAGE_PERCENT = 20;	// Damage done is that case should be o
 function ItemCalc(item,presets,field,op) {
 	function calc(piece) {
 		let a = piece ? (piece[field] || def) : def;
-		if( isNaN(a) ) debugger;
+		if( (op=='*' || op == '+') && isNaN(a) ) debugger;
 		switch( op ) {
 			case '*': n=n*a; break;
 			case '+': n=n+a; break;
+			case '&': n = n + (n&&a?',':'') + a; break;
 		};
-		if( isNaN(n) ) debugger;
+		if( (op=='*' || op == '+') && isNaN(n) ) debugger;
 	}
 
-	let def = op=='*' ? 1 : 0;
+	let defaultValue = {
+		'*': 1,
+		'+': 0,
+		'&': ''
+	}
+
+	let def = defaultValue[op];
+	console.assert( def !== undefined );
 	let n = def;
 	calc(item);
 	if( presets ) {

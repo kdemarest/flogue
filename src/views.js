@@ -486,8 +486,9 @@ class ViewInfo extends ViewObserver {
 //		else {
 			s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
 //		}
+		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
 		if( entity.isUser() ) {
-			let bc = entity.calcShieldBlockChance(DamageType.CUT,true,entity.shieldBonus);
+			let bc = shield ? shield.calcBlockChance('any',true,entity.shieldBonus) : 0;
 			let weapon = entity.calcDefaultWeapon();
 			let ammo = entity.getFirstItemInSlot(Slot.AMMO);
 			let ex = itemExplain(ammo);
@@ -512,33 +513,37 @@ class ViewInfo extends ViewObserver {
 		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
 
 		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+'<br>';
-		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
+
+		// Shield characteristics
+		s += shield ? '<div class="monDetail">Blocking:</div>'+shield.blocks.split(',').join(', ')+'<br>' : '';
+
+		// Conditions with duration
+		let notable = { damage:1, attitude: 1, heal: 1, possess:1, immobile:1, stun: 1 };
 		let conditionList = [];
-		let senseList = [];
 		DeedManager.traverseDeeds( entity, deed => {
-			if( deed.op == 'damage' ) {
+			if( notable[deed.stat || deed.op] ) {
 				conditionList.push('<b>'+deed.name+' '+(typeof deed.timeLeft == 'number' ? Math.ceil(deed.timeLeft) : '')+'</b>');
 			}
 		});
-		test( conditionList, entity.stun,'<b>stunned</b>');
-		test( conditionList, entity.attitude==Attitude.ENRAGED,'<b>enraged</b>');
-		test( conditionList, entity.attitude==Attitude.CONFUSED,'<b>confused</b>');
-		test( conditionList, entity.attitude==Attitude.PANICKED,'<b>panicked</b>');
-		test( conditionList, entity.map.getLightAt(entity.x,entity.y,1) <= 0,		'shrouded');
-		test( conditionList, entity.immobile,				'immobile');
+		test( conditionList, entity.map.getLightAt(entity.x,entity.y,1) <= 0, 'shrouded');
 		test( conditionList, entity.invisible,				'invis');
 		test( conditionList, (entity.rechargeRate||1)>1,	'manaUp');
 		test( conditionList, entity.regenerate>MonsterTypeList[entity.typeId].regenerate,'regen '+Math.floor(entity.regenerate*100)+'%');
+		s += conditionList.join(', ')+'<br>';
+
+		// Altered senses
+		let senseList = [];
 		test( senseList, entity.senseBlind,		'blind');
 		test( senseList, entity.senseSmell,		'scent');
 		test( senseList, entity.senseXray,		'xray');
 		test( senseList, entity.senseInvisible,	'invis');
 		test( senseList, entity.senseTreasure,	'treasure');
 		test( senseList, entity.senseLiving,	'living');
-		s += conditionList.join(', ')+'<br>';
-		s += shield ? '<div class="monDetail">Blocking:</div>'+shield.blocks.split(',').join(', ')+'<br>' : '';
 		s += senseList.length ? '<div class="monDetail">Senses:</div>'+senseList.join(', ')+'<br>' : '';
-		s += entity.immune ? '<div class="monDetail">Immune:</div>'+entity.immune.split(',').filter( i=>i!==DamageType.WATER ).join(', ')+'<br>' : '';
+
+		// Immunity, resistance and vulnerability
+		let summaryImmune = (entity.immune ||'').split(',').filter( i=>i!==DamageType.WATER );
+		s += summaryImmune.length ? '<div class="monDetail">Immune:</div>'+summaryImmune.join(', ')+'<br>' : '';
 		s += entity.resist ? '<div class="monDetail">Resist:</div>'+entity.resist.split(',').join(', ')+'<br>' : '';
 		s += entity.vuln ? '<div class="monDetail">Weak:</div>'+entity.vuln.split(',').join(', ')+'<br>' : '';
 		if( !entity.isUser() ) {
@@ -785,6 +790,15 @@ function itemExplain(item,buySell) {
 		let pct = Math.floor( (1 - ( (item.rechargeLeft||0) / (item.rechargeTime||10) )) * 10 )*10;
 		return '<img class="spellRecharge" src="'+IMG_BASE+StickerList['slice'+pct].img+'">';
 	}
+	function getBonus() {
+		if( !item.effect ) {
+			return '';
+		}
+		if( item.effect.op=='damage' ) {
+			return Math.floor(item.effect.value)+' '+item.effect.damageType;
+		}
+		return item.effect.name;
+	}
 
 	if( !item ) return false;
 	let nameClean = item.name.replace(/\$/,'');
@@ -801,7 +815,7 @@ function itemExplain(item,buySell) {
 		damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
 		armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUT,item.isShield) : '',
 		aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? ' ('+item.effect.effectShape+')' : '',
-		bonus: 			item.isArmor && item.effect ? item.effect.name : (item.isWeapon && item.effect && item.effect.op=='damage' ? '+'+Math.floor(item.effect.value)+' '+item.effect.damageType:''),
+		bonus: 			getBonus(),
 		recharge: 		item.rechargeTime ? Math.floor(item.rechargeTime) : '',
 		rechargeLeft: 	rechargeImg(),
 		price: 			new Picker(item.area.depth).pickPrice(buySell,item),

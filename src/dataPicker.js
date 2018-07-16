@@ -277,6 +277,7 @@ class Picker {
 							if( !m.skip ) { thing.presets.material = m; }
 							if( !q.skip ) { thing.presets.quality = q; }
 							if( !e.skip ) { thing.presets.effect = e; }
+							
 							fn(thing);
 						}
 					}
@@ -347,7 +348,7 @@ class Picker {
 	}
 
 	pickArmorRating(level,item) {
-		let am = ItemCalc(item,item,'armorMultiplier','*');
+		let am = ItemCalc(item,item,'xArmor','*');
 		console.assert(am>=0 && level>=0);
 
 		// Intentionally leave out the effect level, because that is due to the effect.
@@ -357,9 +358,9 @@ class Picker {
 		return Math.floor(baseArmor*ARMOR_SCALE);
 	}
 	pickBlockChance(level,item) {
-		let mc = ItemCalc(item,item,'blockChance','+');
+		let mc = ItemCalc(item,item,'xBlock','+');
 		mc += Math.floor( (0.20 * (level/DEPTH_SPAN))*100 ) / 100;
-		mc = Math.clamp(mc,0,0.5);	// I'm arbitrarily capping miss chance at 50%
+		mc = Math.clamp(mc,0,0.8);	// I'm arbitrarily capping miss chance at 80%
 		console.assert(mc>=0 && level>=0);
 		return mc;
 	}

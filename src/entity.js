@@ -69,22 +69,21 @@ class Entity {
 		let naturalMeleeWeapon  = this.naturalMeleeWeapon;
 		console.assert( naturalMeleeWeapon );
 		if( isPlayer ) {
-			let damageWhenJustStartingOut = 0.75;	// I found that 50% was getting me killed by single goblins. Not OK.
+			// SUPER MEGA special case, to calculate the hand damage of the player.
+			// I found that 50% was getting me killed by single goblins. Not OK.
+			let damageWhenJustStartingOut = 0.75;
 			naturalMeleeWeapon.damage = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
 		}
 		else {
 			let hitsToKillPlayer = parseFloat( monsterType.power.split(':')[1] );
-			naturalMeleeWeapon.damage = Rules.monsterDamage(level,hitsToKillPlayer);
-			if( naturalMeleeWeapon.effectOnAttack ) {
-				naturalMeleeWeapon.effectOnAttack.value = naturalMeleeWeapon.damage;
-			}
+			naturalMeleeWeapon.damage = naturalMeleeWeapon.damage || Rules.monsterDamage(level,hitsToKillPlayer);
 		}
 
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) );
 		console.assert( this.x===undefined && this.y===undefined && this.area===undefined);
 
-		// WARNING! Not a deep copy.
+		// WARNING! Not a deep copy. But it is only for the result...
 		result.entity = Object.assign( {}, this );
 		result.success = true;
 		this.constructionResult = result;
@@ -153,7 +152,18 @@ class Entity {
 		}
 	}
 
-	findAliveOthersNearby(entityList = this.entityList) {
+	findAliveOthersNearby(visDist=MaxVis) {
+		let entityList = [];
+		this.map.traverseNear( this.x, this.y, visDist, (x,y) => {
+			let list = this.map.findEntityArrayAt(x,y);
+			list.forEach( e => {
+				if( !e.isDead() && e.id !== this.id ) {
+					entityList.push(e);
+				}
+			});
+		});
+		return new Finder( entityList, this, false );
+/*
 		let list = [];
 		for( let e of entityList ) {
 			if( !e.isDead() && this.nearTarget(e,MaxVis) && e.id!=this.id ) {
@@ -161,8 +171,11 @@ class Entity {
 			}
 		}
 		return new Finder(list,this,false);
+*/
 	}
 	findAliveOthersAt(x,y) {
+		return new Finder( this.map.findEntityArrayAt(x,y).filter( e=>!e.isDead() && e.id!==this.id ), this, false );
+/*
 		let entityList = this.entityList;
 		for( let e of entityList ) {
 			if( !e.isDead() && e.id!=this.id && e.x==x && e.y==y ) {
@@ -170,8 +183,15 @@ class Entity {
 			}
 		}
 		return new Finder([],this,false);
+*/
 	}
 	findAliveOthersOrSelfAt(x,y) {
+		let f = this.findAliveOthersAt(x,y);
+		if( this.x == x && this.y == y ) {
+			f.append( this );
+		}
+		return f;
+/*
 		let entityList = this.entityList;
 		for( let e of entityList ) {
 			if( !e.isDead() && e.x==x && e.y==y ) {
@@ -179,6 +199,7 @@ class Entity {
 			}
 		}
 		return new Finder([],this,false);
+*/
 	}
 	findAliveOthers(entityList = this.entityList) {
 		return new Finder(entityList,this).excludeMe().isAlive();
@@ -1506,19 +1527,6 @@ class Entity {
 		}
 	}
 
-	calcShieldBlockChance(what,isRanged,shieldBonus) {
-		if( !what ) return 0;
-		let shield = this.getFirstItemInSlot(Slot.SHIELD);
-		if( !shield || !isRanged ) {
-			return 0;
-		}
-		if( !String.arIncludes(shield.blocks,what) ) {
-			return 0;
-		}
-		let blockChance = shield.blockChance + (shieldBonus=='stand' ? 0.50 : 0);
-		return blockChance;
-	}
-
 	calcReduction(damageType,isRanged) {
 		console.assert(damageType);
 		let is = (isRanged ? 'isShield' : 'isArmor');
@@ -1533,7 +1541,7 @@ class Entity {
 	}
 
 	alertFriends(tellAbout=true) {
-		let friendList = this.findAliveOthers().isMyFriend().canPerceiveEntity().nearMe(7);
+		let friendList = this.findAliveOthersNearby(7).isMyFriend().canPerceiveEntity();
 		if( this.packId ) {
 			friendList.isMyPack();
 		}
@@ -1549,10 +1557,6 @@ class Entity {
 			}
 		});
 		return numAlerted;
-	}
-
-	takeDamagePassive(attacker,item,amount,damageType,callback) {
-		return this.takeDamage(attacker,item,amount,damageType,callback,true);
 	}
 
 	assessVIR(item,damageType) {
@@ -1587,7 +1591,12 @@ class Entity {
 	}
 
 
-	takeDamage(attacker,item,amount,damageType,callback,noBacksies,isOngoing) {
+	takeDamage(effect,noBacksies,isOngoing) {
+		let attacker 	= effect.source;
+		let item 		= effect.item;
+		let amount 		= effect.value;
+		let damageType 	= effect.damageType;
+
 		let quiet = false;
 
 		let isSneak = false;
@@ -1763,16 +1772,17 @@ class Entity {
 			}
 		}
 
-		if( !isOngoing && callback ) {
-			callback(attacker,this,amount,damageType);	
-		}
-
 		if( !isOngoing && this.onAttacked && !noBacksies ) {
 			quiet = this.onAttacked.call(this,attacker,amount,damageType);
 		}
 		if( !isOngoing && !quiet && attacker ) {
-			let attackVerb = item && item.attackVerb ? item.attackVerb : damageType;
-			tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+' damage!'+(isSneak?' Sneak attack!' : '') );
+			let attackVerb = damageType;
+			let qualifier = '';
+			if( item && item.attackVerb && effect.isEffectOnAttack ) {
+				attackVerb = item.attackVerb;
+				qualifier = ' '+damageType;
+			}
+			tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+qualifier+' damage!'+(isSneak?' Sneak attack!' : '') );
 		}
 
 		let isRetaliation = 0;
@@ -1781,9 +1791,10 @@ class Entity {
 			let retaliationEffects = new Finder(this.inventory).filter( item => item.inSlot && item[is] );
 			retaliationEffects.forEach( item => {
 				if( item.effect && item.effect.isHarm ) {
-					let fireEffect = Math.chance(item.chanceOfEffect || 100);
+					console.assert( item.chanceOfEffect !== undefined );
+					let fireEffect = Math.chance(item.chanceOfEffect);
 					if( fireEffect ) {
-						item.trigger( attacker, this, Command.NONE );
+						item.trigger( attacker, this, 'retaliate', item.effect );
 						isRetaliation++;
 					}
 				}
@@ -1851,7 +1862,7 @@ class Entity {
 			op: 'set',
 			stat: 'stun',
 			value: true,
-			isInstant: true,
+			duration: 0,
 		});
 		effectApply( effect, this, attacker, item, 'shove' );
 
@@ -2006,9 +2017,12 @@ class Entity {
 		weaponList.filter( item => !item.rechargeLeft );
 		// Any finally, do not bother using weapons that can not harm the target.
 		weaponList.filter( item => {
+			if( !item.effect ) {
+				return true;
+			}
 			// WARNING! This does not check all possible immunities, like mental attack! Check the effectApply() function for details.
 			let isVuln,isImmune,isResist;
-			[isVuln,isImmune,isResist] = target.assessVIR(item,item.damageType || item.effect.damageType);
+			[isVuln,isImmune,isResist] = target.assessVIR(item,item.effect.damageType);
 			return !isImmune;
 		});
 		// remove any ranged weapon or reach weapon with an obstructed shot
@@ -2033,7 +2047,6 @@ class Entity {
 			weapon = this.naturalMeleeWeapon;
 		}
 		console.assert( !weapon.rechargeLeft || weapon.isNatural );
-		console.assert( !weapon.isWeapon || weapon.effectOnAttack );
 //		console.log( this.typeId+' picked '+(weapon.typeId || weapon.name)+' with recharge '+weapon.rechargeLeft );
 
 		return weapon;
@@ -2085,7 +2098,8 @@ class Entity {
 	actAttack(target,weapon) {
 		console.assert(weapon);
 		console.assert(weapon.isWeapon);
-		let result = weapon.trigger( target, this, Command.ATTACK, weapon.effectOnAttack );
+		let effect = weapon.getEffectOnAttack();
+		let result = weapon.trigger( target, this, Command.ATTACK, effect );
 		return result;
 	}
 	
@@ -2164,7 +2178,7 @@ class Entity {
 		this.lastAttackTargetId = target.id;
 		item = item.single();
 		item = item.giveToSingly(this.map,target.x,target.y);
-		let effect = item.isWeapon ? item.effectOnAttack : item.effect;
+		let effect = item.isWeapon ? item.getEffectOnAttack() : item.effect;
 		result = item.trigger( target, this, Command.THROW, effect );
 
 		if( item.dead ) {
@@ -2279,25 +2293,28 @@ class Entity {
 		this.lastAttackTargetId = target.id;
 
 		let ammo = this.pickOrGenerateSingleAmmo(item);
+
+		// Ammo not available
 		if( ammo == false ) {
 			tell(mSubject,this,' ',mVerb,'lack',' any '+this.getAmmoName(item.ammoType)+'s to shoot!');
 			result.status = 'noAmmo';
 			return result;
 		}
+		// The ammo is the item
 		if( ammo == true ) {
 			// This weapon uses no ammunition. It simply takes effect.
 			ammo = item.single();
 			result.ammoIsTheItem = true;
 		}
 		else {
-			ammo.ammoOf = item;
+			ammo.shooter = item;
 			ammo = ammo.giveToSingly(this.map,target.x,target.y);
 			result.ammoMadeOrExists = true;
 		}
 
-		tell(mSubject,this,' ',mVerb,ammo.attackVerb || 'shoot',' ',mObject,item,' at ',mObject,target,'.');
+//		tell(mSubject,this,' ',mVerb,ammo.attackVerb || 'shoot',' ',mObject,item,' at ',mObject,target,'.');
 
-		let effect = ammo.isWeapon ? ammo.effectOnAttack : ammo.effect;
+		let effect = ammo.isWeapon ? ammo.getEffectOnAttack() : ammo.effect;
 		result.effectResult = ammo.trigger( target, this, this.command, effect, Command.SHOOT );
 
 		if( !ammo.dead ) {

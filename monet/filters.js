@@ -15,6 +15,8 @@ FilterSpec = {
 	"mon/demon/daiphant.png": 		{ brightness: 0, normalize: false, shadow: false },
 	"mon/human/solarPriest.png": 	{ strip: 0xA0 },
 	"item/stuff/darkLantern.png": 	{ shadow: { xRatio: 0.8 } },
+	"decor/brazierLit.png": 		{ normalize: false, outline: false, brightness: 0.01 },
+	"decor/brazierUnLit.png": 		{ normalize: false, },
 	"decor/boulder1.png": 			decorWall,
 	"decor/boulder2.png": 			decorWall,
 	"decor/boulder3.png": 			decorWall,
@@ -31,6 +33,7 @@ FilterSpec = {
 	"effect/arrowInFlight.png": 	{ shadow: false },
 	"effect/dartInFlight.png": 		{ shadow: false },
 	"effect/lightRayCircle.png": 	{ normalize: false, shadow: false, outline: false },
+	"effect/fire.png": 				{ normalize: false, shadow: false, outline: false, brightness: 0.01 },
 }
 
 DirSpec = {
