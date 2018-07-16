@@ -292,7 +292,6 @@ const MonsterTypeList = {
 		loot: '70% poisonGland',
 		naturalWeapon: { chanceOfEffect: 64, effect: EffectTypeList.ePoison },
 		immune: DamageType.POISON+',eSlow',
-		reach: 3,
 		resist: [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(','),
 		vuln: DamageType.FREEZE,
 	},

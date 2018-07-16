@@ -491,8 +491,8 @@ ThemeList.coreHellscape = {
 	rRARE: 			'secretChest, etherHive',
 	prefer: 		['flames','mud'],
 	monsters: 		['isDemon','isPlanar','isInsect'],
-	enemyDensity: 	0.10,
-	friendDensity: 	0.05,
+	enemyDensity: 	0.04,
+	friendDensity: 	0.01,
 }
 
 ThemeList.coreFinalLevel = {

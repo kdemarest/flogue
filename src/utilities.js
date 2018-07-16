@@ -674,8 +674,8 @@ function showHealthBar(id,newValue,lastValue,total,label,backgroundColor) {
 
 	let damage = lastValue - newValue;
 	// calculate the percentage of the total width
-	var barWidth = (newValue / total) * 100;
-	var hitWidth = (damage / lastValue) * 100 + "%";
+	var barWidth = Math.min(100,(newValue / total) * 100);
+	var hitWidth = Math.min(100,(damage / lastValue) * 100) + "%";
 
 	// show hit bar and set the width
 	bar.text('  '+label);

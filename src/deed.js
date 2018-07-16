@@ -181,26 +181,27 @@ let DeedManager = (new class {
 			effect.handler = this.handler[effect.op];
 		}
 		let deed = new Deed(effect);
-		if( deed.duration===0 ) {
-			result = deed.handler(false);
+		if( deed.handler ) {
+			result = deed.handler();
+		}
+		if( deed.stat ) {
+			result.statOld = deed.target[deed.stat];
+			this.calcStat( deed.target, deed.stat );
+			result.statNew = deed.target[deed.stat];
+		}
+
+		if( deed.duration === 0 || result.success === false ) {
 			result.endNow = true;
 			deed.end();
+			return result;
 		}
-		else {
-			result = {
-				isOngoing: true,
-				duration: deed.duration,
-				status: 'ongoing',
-				success: true,
-			}
-			this.deedList.push( deed );
-			if( deed.stat ) {
-				result.statOld = deed.target[deed.stat];
-				this.calcStat( deed.target, deed.stat );
-				result.statNew = deed.target[deed.stat];
-			}
-
-		}
+		this.deedList.push( deed );
+		result = Object.assign( result, {
+			isOngoing: deed.duration !== 0,
+			duration: deed.duration,
+			status: 'ongoing',
+			success: true,
+		});
 		return result;
 	}
 	addHandler(op,handlerFn) {
