@@ -394,7 +394,8 @@ class ViewInfo extends ViewObserver {
 			if( header ) {
 				s += item.isUnique ? '<img class="itemImage" src="'+IMG_BASE+item.img+'"><br>' :
 					ex.icon+'<br>';
-				s += ex.description+'<br>';
+				s += ex.description+(ex.permutation?' '+ex.permutation:'')+'<br>';
+//				s += String.combine(' ',ex.effect,ex.permute,ex.effect || ex.permute ? '<br>' : '');
 			}
 			let dam='',arm='';
 			if( ex.damage ) {
@@ -459,20 +460,6 @@ class ViewInfo extends ViewObserver {
 			s += '['+(this.lastDirAttempt||'-')+'] ';
 			s += entity.attitude+' '+(entity.bumpCount||'')+'<br>';
 		}
-/*
-		let poisonMax = 0;
-		entity.traverseDeeds( deed => {
-			if( poisonMax === true ) return;
-			if( deed.damageType == DamageType.POISON ) {
-				if( deed.duration === true ) {
-					poisonMax = true;
-				}
-				else {
-					poisonMax = Math.max(poisonMax,deed.timeLeft);
-				}
-			}
-		});
-*/
 		let tRow = function(a,b) {
 			return '<tr><td>'+a+'</td><td>'+b+'</td></tr>';
 		}
@@ -480,16 +467,12 @@ class ViewInfo extends ViewObserver {
 		s += '<div class="monsterImageBackground"><img class="monsterImage" src="'+IMG_BASE+entity.img+'"></div><br>';
 
 		s += '<table>';
-//		if( poisonMax ) {
-//			s += tRow( 'Health:', '<span class="poison">&nbsp;POISONED ('+(poisonMax===true ? 'FOREVER' : poisonMax)+')&nbsp;</span>' );
-//		}
-//		else {
-			s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
-//		}
+		s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
 		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
 		if( entity.isUser() ) {
 			let bc = shield ? shield.calcBlockChance('any',true,entity.shieldBonus) : 0;
 			let weapon = entity.calcDefaultWeapon();
+			let weaponEx = itemExplain(weapon);
 			let ammo = entity.getFirstItemInSlot(Slot.AMMO);
 			let ex = itemExplain(ammo);
 			s += tRow( "Armor:", entity.calcReduction(DamageType.CUT,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R" );
@@ -499,13 +482,7 @@ class ViewInfo extends ViewObserver {
 				(entity.shieldBonus?'</span>':'')+
 				" to block"
 			);
-			s += tRow( "Damage:", 
-				Math.floor(weapon.damage)+" "+weapon.damageType+
-				[' (clumsy)','',' (quick)'][weapon.getQuick()] +
-				(weapon.reach >1 ? weapon.reach+' away' : '')+
-				( (entity.sneakAttackMult||2)<=2 ? '' : ', Sneak x'+Math.floor(entity.sneakAttackMult) )
-			);
-
+			s += tRow( "Damage:", String.combine( ' ', (weaponEx.damageValue||0)+(ammo.damageValue||0), weaponEx.damageType, weaponEx.quick, weaponEx.reach, weaponEx.sneak ) );
 			s += tRow( "Ammo:", ex ? ex.description : 'none ready' );
 			s += tRow( "Gold:", Math.floor(entity.coinCount||0) );
 		}
@@ -797,8 +774,10 @@ function itemExplain(item,buySell) {
 		if( item.effect.op=='damage' ) {
 			return Math.floor(item.effect.value)+' '+item.effect.damageType;
 		}
-		return item.effect.name;
+		return item.effect.name + (item.effect.permuteName ? '**' : '');
 	}
+
+	let owner = item.owner && item.owner.isMonsterType ? item.owner : {};
 
 	if( !item ) return false;
 	let nameClean = item.name.replace(/\$/,'');
@@ -811,11 +790,16 @@ function itemExplain(item,buySell) {
 		description: 	((item.bunch||0)>1 ? item.bunch+'x ' : '')+String.capitalize(nameClean),
 		bunch: 			((item.bunch||0)>1 ? item.bunch+'x ' : ''),
 		name: 			String.capitalize(nameClean),
-		damage: 		item.isWeapon ? item.damage : (item.effect && item.effect.op=='damage' ? Math.max(1,Math.floor(item.effect.value)) : ''),
+		damage: 		item.isWeapon ? item.damage+(item.ammoSpec?'+ammo':'') : (item.effect && item.effect.op=='damage' ? Math.max(1,Math.floor(item.effect.value)) : ''),
 		damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
+		quick: 			['(clumsy)','','(quick)'][item.getQuick()],
+		reach: 			item.reach > 1 ? ' '+item.reach+' away' : '',
+		sneak: 			(owner.sneakAttackMult||2)<=2 ? '' : 'Sneak x'+Math.floor(owner.sneakAttackMult),
 		armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUT,item.isShield) : '',
 		aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? ' ('+item.effect.effectShape+')' : '',
 		bonus: 			getBonus(),
+		effect: 		item.effect ? (item.effect.name || item.effect.typeId) : '',
+		permutation: 	item.effect && item.effect.permuteName ? item.effect.permuteName : '',
 		recharge: 		item.rechargeTime ? Math.floor(item.rechargeTime) : '',
 		rechargeLeft: 	rechargeImg(),
 		price: 			new Picker(item.area.depth).pickPrice(buySell,item),

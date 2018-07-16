@@ -74,6 +74,15 @@ CmdTable[Command.CAST] = {
 	},
 	passesTimeOnExecution: true
 };
+CmdTable[Command.ATTACK] = {
+	needsItem: true,
+	pickItem: observer => {
+		return observer.calcDefaultWeapon();
+	},
+	needsTarget: true,
+	targetRange: (item) => item.reach || 1,
+	passesTimeOnExecution: true
+};
 CmdTable[Command.THROW] = {
 	needsItem: true,
 	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayThrow ),

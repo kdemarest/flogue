@@ -52,8 +52,9 @@ const NullEfects = { eInert: { level: 0, rarity: 1 } };
 const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eCureDisease','eCurePoison','eOdorless','eStink','eBloodhound','eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
 	'eRegeneration','eBurn','ePoison','eFreeze','eAcid'].includes(k) );
-const SpellEffects = Object.filter(EffectTypeList, (e,k)=>['ePossess','eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
-	'eGreed','eSlow','eHealing','ePoison','eBurn','eFreeze','eShock3','eSmite','eRot','eLeech','eRage','ePanic','eConfusion','eShove','eInvisibility'].includes(k) );
+const SpellEffects = Object.filter(EffectTypeList, (e,k)=>[
+	'ePossess','eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
+	'eGreed','eSlow','eHealing','ePoison','eBurn','eFreeze','eShock','eSmite','eSmite3','eRot','eLeech','eRage','ePanic','eConfusion','eShove','eInvisibility'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBloodhound','eOdorless','eRegeneration','eResistance','eGreed','eMobility','eSeeInvisible'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eBurn','eFreeze','eShock','eLeech','eBlindness','eSlow','ePanic','eConfusion','eShove','eSmite'].includes(k) );
 //const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSmite','eSmite3','eSmite5','eSmite7','ePoison','eBurn','eFreeze','eBlindness','eSlow','eConfusion'].includes(k) );
@@ -65,7 +66,7 @@ const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].i
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eOdorless','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
 const BowEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBurn','eFreeze','eAcid','ePoison','eSmite','eStun','eSlow'].includes(k) );
 const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eAcid','eAcid3','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
-const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','ePossess','eRage','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
+const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSmite','ePossess','eRage','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponMaterialList = Fab.add( '', {
 	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot'},
@@ -189,7 +190,6 @@ const WeaponList = Fab.add( '', {
 		effectChance: 0.80,
 		materials: BowMaterialList,
 		effects: BowEffects,
-		takeOnDamageTypeOfEffect: true,
 		damageType: DamageType.STAB,
 		mayShoot: true,
 		isBow: true,
@@ -198,6 +198,7 @@ const WeaponList = Fab.add( '', {
 		ammoSpec: 'ammo.arrow',
 		ammoDamage: 'combine',
 		ammoEffect: 'addMine',
+		ammoQuick:  'mine',
 		attackVerb: 'shoot',
 		img: 'item/weapon/ranged/stealthBow48.png'
 	},
@@ -342,8 +343,8 @@ function getBlockType(item,damageType) {
 	if( (item.reach||1)>1 ) return BlockType.REACH;
 	if( item.mayThrow ) 	return BlockType.THROWN;
 	if( item.mayShoot ) 	return BlockType.SHOT;
-	if( item.isSpell && Damage.Elemental.incldues(damageType) ) return BlockType.ELEMENTAL;
-	if( item.isSpell && Damage.Divine.incldues(damageType) ) 	return BlockType.DIVINE;
+	if( item.isSpell && String.arIncludes(Damage.Elemental,damageType) ) return BlockType.ELEMENTAL;
+	if( item.isSpell && String.arIncludes(Damage.Divine,damageType) ) 	return BlockType.DIVINE;
 	if( item.isSpell ) 		return BlockType.NOBLOCK;
 	return BlockType.PHYSICAL;
 }

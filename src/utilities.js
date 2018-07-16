@@ -224,16 +224,21 @@ function nop() {}
 		return result;
 	}
 
-	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^,]+|[*])\s*[,]*/g;
+	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^/,]+)(\/([a-zA-Z0-9$]+\s*)|\s*,?)/g;
+//	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^,]+|[*])\s*[,]*/g;
 	Array.supplyParse = function(supplyMixed) {
 
 		function supplyStringParse(supplyString) {
 			let supply = [];
-			supplyString.replace( ChParser, function( match, count, chance, typeFilter ) {
+			supplyString.replace( ChParser, function( match, count, chance, typeFilter, ignore, permute) {
 				count = count ? (parseInt(count) || 1) : 1;
 				if( chance===undefined ) { chance='100'; }
 				chance = parseInt(chance)||100;
-				supply.push( { count: count, chance: chance, typeFilter: typeFilter } );
+				let result = { count: count, chance: chance, typeFilter: typeFilter };
+				if( permute ) {
+					result.permute = permute;
+				}
+				supply.push( result );
 			});
 			return supply;
 		}

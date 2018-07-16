@@ -978,7 +978,7 @@ PlaceTypeList.surfaceSunTemple = {
 			name: 'Ozymandius\' Chest',
 			properNoun: true,
 			inventoryLoot: [
-				'spell.eBurn, spell.eShock3, spell.eFreeze, cloak.eRechargeFast, 2x potion.eHealing',
+				'spell.eBurn, spell.eFreeze, cloak.eRechargeFast, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')

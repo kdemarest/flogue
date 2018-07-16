@@ -2074,7 +2074,7 @@ class Entity {
 				mSubject,this,' ',mVerb,'find',' '
 			].concat( 
 				found.length ? found : ['nothing'],
-				originatingEntity ? [' ',originatingEntity.isItemType?'in':'on',' ',mObject,originatingEntity] : [''],
+				originatingEntity ? [' ',(originatingEntity.isItemType && !originatingEntity.usedToBe)?'in':'on',' ',mObject,originatingEntity] : [''],
 				'.'
 			);
 			tell(...description);
@@ -2129,7 +2129,7 @@ class Entity {
 		if( item.isCorpse ) {
 			let corpse = item.usedToBe;
 			if( !corpse || !corpse.loot ) {
-				tell(mSubject,this,' ',mVerb,'find',' nothing on ',mObject|mA,item);
+				tell(mSubject,this,' ',mVerb,'find',' nothing on ',mObject,item);
 				item.destroy();
 				return {
 					status: 'nothingOnCorpse',
@@ -2142,7 +2142,7 @@ class Entity {
 			}
 			let inventory = new Finder(corpse.inventory).isReal().all || [];
 			inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
-			this.inventoryTake( inventory, corpse, false );
+			this.inventoryTake( inventory, item, false );
 			item.destroy();
 			return {
 				status: 'pickup',
@@ -2648,6 +2648,8 @@ class Entity {
 		//-------------------
 		weapon = weapon || this.calcDefaultWeapon();
 		let f = this.findAliveOthersAt(x,y);
+/*
+		This was too confusing.
 		if( attackAllowed && voluntaryMotion && this.getDistance(x,y) == 1 && weapon && weapon.reach > 1) {
 			let dx = x-this.x;
 			let dy = y-this.y;
@@ -2656,7 +2658,7 @@ class Entity {
 				g.forEach( entity => f.append(entity) );
 			}
 		}
-
+*/
 
 		let allyToSwap = false;
 

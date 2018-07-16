@@ -290,7 +290,10 @@ const MonsterTypeList = {
 		isInsect: true,
 		isScorpion: true,
 		loot: '70% poisonGland',
-		naturalWeapon: { chanceOfEffect: 64, effect: EffectTypeList.ePoison },
+		naturalWeapon: {
+			chanceOfEffect: 64,
+			effect: { basis: 'ePoison', singularId: 'gsco', singularOp: 'sum' },
+		},
 		immune: DamageType.POISON+',eSlow',
 		resist: [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(','),
 		vuln: DamageType.FREEZE,
@@ -388,7 +391,9 @@ const MonsterTypeList = {
 	"daileesh": {	// (leech)
 		core: [ SYM, 34, '4:10', 'evil', null, 'demon', 'wingedBiped', 'mon/demon/daileesh.png', 'it' ],
 		attitude: Attitude.HUNT,
-		naturalWeapon: { _effectOnAttack: ETL.eLeech },
+		naturalWeapon: {
+			_effectOnAttack: ETL.eLeech
+		},
 		immune: DemonImmunity,
 		isDemon: true,
 		isMindless: true,	// Too powerful to allow possession.
@@ -416,7 +421,16 @@ const MonsterTypeList = {
 		naturalWeapon: {
 			reach: 6,
 			rechargeTime: 2,
-			_effectOnAttack: { op: 'damage', xDamage: 1, isHarm: 1, duration: 5, damageType: DamageType.CORRODE, name: 'demon acid', flyingIcon: 'item/stuff/acidSlime.png', icon: 'gui/icons/eCorrode.png' }
+			_effectOnAttack: {
+				op: 'damage',
+				xDamage: 1,
+				isHarm: 1,
+				duration: 5,
+				damageType: DamageType.CORRODE,
+				name: 'demon acid',
+				flyingIcon: 'item/stuff/acidSlime.png',
+				icon: 'gui/icons/eCorrode.png'
+			}
 		},
 		senseSight: 8,
 		tooClose: 7,
@@ -438,6 +452,7 @@ const MonsterTypeList = {
 		isDaitox: true,
 		effectOngoing: {
 			isCloud: true,
+			isGas: true,
 			op: 'damage',
 			xDamage: 1,
 			duration: 0,
@@ -458,6 +473,7 @@ const MonsterTypeList = {
 			_effectOnAttack: {
 				op: 'damage',
 				singularId: 'putridRot',	// Will not re-infect if already impacting...
+				singularOp: 'max',
 				xDamage: 1,
 				isHarm: 1,
 				duration: 30,
@@ -481,7 +497,10 @@ const MonsterTypeList = {
 		isDemon: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 15, effect: Object.assign( {}, EffectTypeList.eStun, {xDuration: 0.2} ) },
+		naturalWeapon: {
+			chanceOfEffect: 15,
+			effect: { basis: 'eStun', xDuration: 0.2, singularId: 'daitraum', },
+		},
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
@@ -491,7 +510,10 @@ const MonsterTypeList = {
 		isDemon: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eShove },
+		naturalWeapon: {
+			chanceOfEffect: 50,
+			effect: EffectTypeList.eShove
+		},
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
@@ -501,7 +523,10 @@ const MonsterTypeList = {
 		isDemon: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eConfusion },
+		naturalWeapon: {
+			chanceOfEffect: 50,
+			effect: { basis: 'eConfusion', singularId: 'daibozle' }
+		},
 		resist: DemonResistance,
 		travelMode: 'fly',
 		vuln: DemonVulnerability,
@@ -513,7 +538,10 @@ const MonsterTypeList = {
 		isDaisteria: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.ePanic },
+		naturalWeapon: {
+			chanceOfEffect: 50,
+			effect: { basis: 'ePanic', singularId: 'daisteria' }
+		},
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
@@ -524,7 +552,10 @@ const MonsterTypeList = {
 		isDaifury: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eRage },
+		naturalWeapon: {
+			chanceOfEffect: 50,
+			effect: { basis: 'eRage', singularId: 'daifury' }
+		},
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
@@ -535,7 +566,10 @@ const MonsterTypeList = {
 		isDaiphant: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 25, effect: EffectTypeList.eSlow },
+		naturalWeapon: {
+			chanceOfEffect: 25,
+			effect: { basis: 'eSlow', singularId: 'daiphant' }
+		},
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
@@ -546,7 +580,10 @@ const MonsterTypeList = {
 		isDailess: true,
 		lootInventory: '',
 		loot: '30% gem, 10% potion, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eBlindness },
+		naturalWeapon: {
+			chanceOfEffect: 50,
+			effect: { basis: 'eBlindness', singularId: 'dailess' }
+		},
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
@@ -557,7 +594,10 @@ const MonsterTypeList = {
 		isDairain: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
-		naturalWeapon: { chanceOfEffect: 50, effect: EffectTypeList.eDrain },
+		naturalWeapon: {
+			chanceOfEffect: 50,
+			effect: EffectTypeList.eDrain
+		},
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
 	},
@@ -568,7 +608,10 @@ const MonsterTypeList = {
 		isInsect: true,
 		immune: DamageType.POISON,
 		loot: '40% chitin, 80% poisonGland',
-		naturalWeapon: { chanceOfEffect: 25, effect: EffectTypeList.ePoison },
+		naturalWeapon: {
+			chanceOfEffect: 25,
+			effect: { basis: 'ePoison', singularId: 'deepCent', singularOp: 'sum' }
+		},
 		senseSight: 2,
 		senseSmell: 100,
 		scentReduce: 50
@@ -580,7 +623,11 @@ const MonsterTypeList = {
 		isInsect: true,
 		isSpider: true,
 		loot: '30% spinneret, 70% poisonGland',
-		naturalWeapon: { attackVerb: 'sting', chanceOfEffect: 34, effect: EffectTypeList.ePoisonForever },
+		naturalWeapon: {
+			attackVerb: 'sting',
+			chanceOfEffect: 34,
+			effect: { basis: 'ePoisonForever', singularId: 'deepSpider', singularOp: 'fail' }
+		},
 		resist: DamageType.POISON,
 		senseLiving: true,
 		vuln: DamageType.BASH,

@@ -55,6 +55,18 @@ class Deed {
 		this.timeLeft = this.duration===0 ? false : this.duration;
 		this.killMe = false;
 	}
+	alterTimeLeft(duration,timeOp) {
+		if( this.killMe ) return;
+		console.assert( this.timeLeft !== false );
+		if( this.timeLeft === true ) return true;
+		if( duration === true ) {
+			this.timeLeft = true;
+		}
+		else {
+			this.timeLeft = timeOp==='sum' ? this.timeLeft+duration : Math.max(this.timeLeft,duration);
+		}
+		return this.timeLeft;
+	}
 	expired() {
 		if( this.killMe ) return true;
 		let done = ( this.timeLeft!==true && this.timeLeft <= 0 );
@@ -318,14 +330,14 @@ function makeFilledCircle(x0, y0, radius, fn) {
 
 function calcQuick(source,item,effect) {
 	let quick;
-	if( source && source.quick !== undefined ) {
-		quick = source.quick;
+	if( quick === undefined && effect.quick!==undefined ) {
+		quick = effect.quick;
 	}
 	if( quick === undefined && item && item.quick !== undefined ) {
 		quick = item.quick;
 	}
-	if( quick === undefined && effect.quick!==undefined ) {
-		quick = effect.quick;
+	if( source && source.quick !== undefined ) {
+		quick = source.quick;
 	}
 	if( quick === undefined ) {
 		quick = 1;	// Not zero, which is slow. We assume average nimbleness for attempts
@@ -334,6 +346,22 @@ function calcQuick(source,item,effect) {
 }
 
 let globalEffectDepth = 0;
+let globalShapeCache = {};
+
+function makeShapeCache(radius) {
+	let temp = [];
+	makeFilledCircle(0.5,0.5,radius, (x,y) => {
+		x=Math.floor(x);
+		y=Math.floor(y);
+		temp[x+','+y] = 1;
+	});
+	let cache = [];
+	Object.each( temp, (val,posString) => {
+		let pos = posString.split(',')
+		cache.push( parseInt(pos[0]), parseInt(pos[1])  );
+	});
+	return cache;
+}
 
 let effectApply = function(effect,target,source,item,context) {
 	if( globalEffectDepth > 5 ) {
@@ -366,17 +394,25 @@ let effectApply = function(effect,target,source,item,context) {
 	}
 	let radius = 0;
 	let shape = '';
-	if( effectShape == EffectShape.BLAST3 ) {
+	if( effectShape == EffectShape.BLAST2 ) {
 		radius = 1;
 		shape = 'circle';
 	}
-	if( effectShape == EffectShape.BLAST5 ) {
+	if( effectShape == EffectShape.BLAST3 ) {
+		radius = 1.3;
+		shape = 'circle';
+	}
+	if( effectShape == EffectShape.BLAST4 ) {
 		radius = 2;
 		shape = 'circle';
 	}
-	if( effectShape == EffectShape.BLAST7 ) {
+	if( effectShape == EffectShape.BLAST5 ) {
+		radius = 2.4;
+		shape = 'circle';
+	}
+	if( effectShape == EffectShape.BLAST6 ) {
 		radius = 3;
-		shape = 'circle'
+		shape = 'circle';
 	}
 	let result = {
 		'status': 'illegalShape',
@@ -387,7 +423,13 @@ let effectApply = function(effect,target,source,item,context) {
 			result.status = 'circle';
 			result.list = [];
 			let area = target.area;
-			makeFilledCircle(target.x,target.y,radius, (x,y) => {
+			if( !globalShapeCache[effectShape] ) {
+				globalShapeCache[effectShape] = makeShapeCache(radius);
+			}
+
+			Array.traversePairs( globalShapeCache[effectShape], (x,y) => {
+				x = x + target.x;
+				y = y + target.y;
 				let reached = shootRange(target.x,target.y,x,y, (x,y) => area.map.tileTypeGet(x,y).mayFly);
 				if( reached ) {
 					if( effect.isCloud ) {
@@ -463,6 +505,9 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 			if( effect.op=='damage' && shooter.ammoDamage == 'combine' ) {
 				effect.value += shooter.damage;
 			}
+			if( shooter.ammoQuick == 'mine' ) {
+				effect.quick = shooter.quick;
+			}
 			if( shooter.ammoEffect == 'addMine' && shooter.effect ) {
 				secondary.push( {effect: shooter.effect, chance: shooter.chanceOfEffect } );
 			}
@@ -500,13 +545,6 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	if( effect.effectFilter ) {
 		if( !effect.effectFilter(effect) ) {
 			return makeResult('notEligibleTarget',false);
-		}
-	}
-
-	//Some effects are "singular" meaning you can't have more than one of it upon you.
-	if( effect.singularId ) {
-		if( DeedManager.findFirst( deed => deed.target.id == target.id && deed.singularId == effect.singularId ) ) {
-			return makeResult('duplicate',false);
 		}
 	}
 
@@ -572,6 +610,13 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		}
 	}
 
+	//Some effects are "singular" meaning you can't have more than one of it upon you.
+	let singular = effect.singularId ? DeedManager.findFirst( deed => deed.target.id == target.id && deed.singularId == effect.singularId ) : null;
+	if( singular && (!effect.singularOp || effect.singularOp == 'fail') ) {
+		return makeResult('singularFail',false);
+	}
+
+
 	if( !effect.isSecondary && source && !isSelf && ( isHarm || (item && item.isWeapon) ) ) {
 		source.lastAttackTargetId = target.id;	// Set this early, despite blindness!
 		source.inCombatTimer = Time.simTime;
@@ -602,6 +647,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	}
 
 	// Note that spells with a duration must last at least 1 turn!
+	// Duration must be determined here in order to be used in singular, below.
 	if( effect.duration === undefined ) {
 		effect.duration = Math.max(1,(effect.duration || Rules.DEFAULT_EFFECT_DURATION) * (effect.xDuration||1))
 	}
@@ -684,9 +730,21 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
 	}
 
-	// If the effect has chosen to do something special when targetting a position,
-	// do that special thing. Otherwise the vast majority will 
+	if( singular && (effect.singularOp == 'max' || effect.singularOp == 'sum') ) {
+		//Some effects are "singular" meaning you can't have more than one of it upon you.
+		result.singularOp = effect.singularOp;
+		result.oldDuration = singular.duration;
+		singular.alterTimeLeft(effect.duration,effect.singularOp)
+		result.newDuration = singular.duration;
+		result.effectResult = {
+			status: 'singular'+effect.singularOp,
+			success: true
+		}
+	}
+	else
 	if( target.isPosition && effect.onTargetPosition ) {
+		// If the effect has chosen to do something special when targetting a position,
+		// do that special thing. Otherwise the vast majority will 
 		target.map.toEntity(target.x,target.y,target);
 		result.effectResult = effect.onTargetPosition(target.map,target.x,target.y)
 	}

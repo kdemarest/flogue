@@ -187,7 +187,7 @@ const Damage = {
 };
 
 
-const EffectShape = { SINGLE: "single", BLAST3: "blast3", BLAST5: "blast5", BLAST7: "blast7" };
+const EffectShape = { SINGLE: "single", BLAST2: 'blast2', BLAST3: 'blast3', BLAST4: 'blast4', BLAST5: "blast5", BLAST6: "blast6" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH];
 const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH];
 const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked",
@@ -277,13 +277,8 @@ let EffectTypeList = {
 	eBurn: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eBurn.png' },
 	eFreeze: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.80, isHarm: 1, duration: 0, damageType: DamageType.FREEZE, icon: 'gui/icons/eFreeze.png' },
 	eShock: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, damageType: DamageType.SHOCK, icon: 'gui/icons/eShock.png' },
-	eShock3: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.50, effectShape: EffectShape.BLAST3, isHarm: 1, duration: 0, damageType: DamageType.SHOCK, icon: 'gui/icons/eShock.png' },
 	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.90, isHarm: 1, duration: 0, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
-	eAcid3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', xDamage: 0.50, effectShape: EffectShape.BLAST3, isHarm: 1, duration: 0, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
 	eSmite: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.SMITE, name: 'smite', icon: 'gui/icons/eSmite.png' },
-	eSmite3: 		{ isDmg: 1, level:  0, rarity: 0.50, op: 'damage', xDamage: 0.70, effectShape: EffectShape.BLAST3, isHarm: 1, duration: 0, damageType: DamageType.SMITE, name: 'smite', icon: 'gui/icons/eSmite.png' },
-	eSmite5: 		{ isDmg: 1, level:  0, rarity: 0.20, op: 'damage', xDamage: 0.60, effectShape: EffectShape.BLAST5, isHarm: 1, duration: 0, damageType: DamageType.SMITE, name: 'smite', icon: 'gui/icons/eSmite.png' },
-	eSmite7: 		{ isDmg: 1, level:  0, rarity: 0.05, op: 'damage', xDamage: 0.50, effectShape: EffectShape.BLAST7, isHarm: 1, duration: 0, damageType: DamageType.SMITE, name: 'smite', icon: 'gui/icons/eSmite.png' },
 	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
 	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.50, isHarm: 1, isPoison: 1,
 					duration: 10, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
@@ -292,6 +287,7 @@ let EffectTypeList = {
 	eLeech: 		{ isDmg: 1, level:  0, rarity: 0.30, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, isLeech: 1, damageType: DamageType.ROT, healingType: DamageType.SMITE, icon: 'gui/icons/eLeech.png' },
 };
 let ETL = EffectTypeList;
+
 
 for( let key in EffectTypeList ) {
 	// all effect bearing items have a bigger price.
@@ -771,9 +767,10 @@ function loadKeyMapping(name) {
 		y: Command.NW,
 		T: Command.DEBUGTEST,
 		X: Command.DEBUGKILL,
-		a: Command.DEBUGTHRIVE,
-		v: Command.DEBUGVIEW,
-		z: Command.DEBUGANIM,
+		A: Command.DEBUGTHRIVE,
+		V: Command.DEBUGVIEW,
+		Z: Command.DEBUGANIM,
+		a: Command.ATTACK,
 		i: Command.INVENTORY,
 		f: Command.FAVORITE,
 		q: Command.QUAFF,

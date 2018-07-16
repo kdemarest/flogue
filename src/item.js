@@ -97,10 +97,7 @@ class Item {
 				Object.assign( this.effect, this.effectDecorate );
 			}
 
-			//if( this.takeOnDamageTypeOfEffect && this.effect.damageType ) {
-			//	this.damageType = this.effect.damageType;
-			//}
-			// NUANCE: When you equip almost everything their effects happen to you immediately.
+			// NUANCE: When you equip almost anything their effects happen to you immediately.
 			// Most wearable items deal with this properly, but the Stuff effects sometimes
 			// do not, so to be friendly we set duration here.
 			if( this.slot && !this.isWeapon && this.effect.duration===undefined ) {
@@ -120,6 +117,7 @@ class Item {
 					console.assert( !isNaN(this.effect.value) );
 				}
 			}
+			this.effect = EffectPermutationEngine.permute( this.level, this.effect, this.permute );
 		}
 
 		if( this.hasInventory ) {
