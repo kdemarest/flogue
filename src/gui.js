@@ -40,7 +40,7 @@ class Gui {
 		this.view.dynamic = DynamicViewList.none;
 		this.view.full = new ViewFull('#guiControls','#guiMain',);
 		this.view.zoom = new ViewZoom('#guiControls');
-		this.view.narrative = new ViewNarrative('guiNarrative');
+		this.view.narrative = new ViewNarrative('#guiNarrative');
 		this.view.sign = new ViewSign('guiSign');
 		this.view.favorites = new ViewFavorites('#guiFavorites',onItemChoose);
 		this.view.spells = new ViewSpells('#guiSpells');

@@ -34,6 +34,17 @@ class ViewNarrative extends ViewObserver {
 	constructor(divId) {
 		super();
 		this.divId = divId;
+		$(this.divId)
+			.mouseover( e => {
+				$(this.divId)
+					.addClass('big')
+					.scrollTop( $(this.divId).prop('scrollHeight') );;
+			})
+			.mouseout( e => {
+				$(this.divId)
+					.removeClass('big')
+					.scrollTop( $(this.divId).prop('scrollHeight') );;
+			});
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
@@ -42,10 +53,10 @@ class ViewNarrative extends ViewObserver {
 			while( history.length > 50 ) {
 				history.shift();
 			}
-			let targetElement = document.getElementById(this.divId);
-			targetElement.display = 'block';
-			targetElement.innerHTML = history.join('\n');
-			targetElement.scrollTop = targetElement.scrollHeight;
+			$(this.divId).html( history.join('\n') ).scrollTop( $(this.divId).prop('scrollHeight') );
+//			targetElement.display = 'block';
+//			targetElement.innerHTML = history.join('\n');
+//			targetElement.scrollTop = targetElement.scrollHeight;
 		}
 	}
 	render() {
@@ -120,7 +131,7 @@ class ViewSpells extends ViewObserver {
 			let pct = Math.floor( (1 - ( (spell.rechargeLeft||0) / (spell.rechargeTime||10) )) * 10 )*10;
 			let img = '<img class="spellRecharge" src="'+IMG_BASE+StickerList['slice'+pct].img+'">';
 			let text = 'F'+(i+1)+' '+String.capitalize(spell.effect.name)+'\n';
-			let lit = observer.commandItem == spell && spell.isRecharged();
+			let lit = observer.isItemSelected(spell) && spell.isRecharged();
 			let unlit = !spell.isRecharged();
 			$(this.spellDivId).append('<div class="spell'+(unlit?' unlit':(lit?' lit':''))+'">'+img+text+'</div>');
 		}
@@ -553,6 +564,19 @@ class ViewStatus extends ViewObserver {
 		this.slotMax = 10;
 	}
 
+	message(msg,payload) {
+		super.message(msg,payload);
+		if( msg=='show' ) {
+			let div = this.slotList.find( div => div.entityId==payload.id );
+			if( div ) {
+				$(div).addClass('isSelected');
+			}
+		}
+		if( msg=='hide' ) {
+			$('.health-bar').removeClass( 'isSelected' );
+		}
+	}
+
 	render(entityList) {
 		let observer = this.observer;
 
@@ -596,7 +620,11 @@ class ViewStatus extends ViewObserver {
 		// Update all slots.
 		this.slotList.forEach( slot => {
 			let entity = f.getId( slot.entityId );
-			let color = entity.hasDeed(deed=>deed.damageType==DamageType.POISON) ? '#66cc1a' : '#c54';
+			let hurt = (entity.health / entity.healthMax) < 0.25;
+			let colorNormal = '#454';
+			let colorHurt = '#c54';
+			let colorPoison = '#a6a939';
+			let color = entity.hasDeed(deed=>deed.damageType==DamageType.POISON) ? colorPoison : ( hurt ? colorHurt : colorNormal );
 			showHealthBar( slot, entity.health, slot.entityLastHealth, entity.healthMax, entity.name, color );
 			slot.entityLastHealth = entity.health;
 		});
@@ -619,10 +647,13 @@ class ViewMiniMap extends ViewObserver {
 		this.drawn = [];
 		this.xLen = area.map.xLen;
 		this.yLen = area.map.yLen;
+		let canvasDim = 240;
+		this.yLenCanvas = canvasDim;
+		this.xLenCanvas = canvasDim;
 		let dim = Math.max(this.xLen,this.yLen);
-		this.scale = Math.max(1,Math.floor( 240/dim ));
-		this.xLenCanvas = this.scale*dim;
-		this.yLenCanvas = this.scale*dim;
+		this.scale = Math.max(1,canvasDim/dim);
+//		this.xLenCanvas = this.scale*dim;
+//		this.yLenCanvas = this.scale*dim;
 		$( '#'+this.divId)
 			.width(this.xLenCanvas)
 			.height(this.yLenCanvas)

@@ -117,8 +117,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 8,
-		themeId: 'coreHellscape' //kenTheme'
+//		startingDepth: 8,
+//		themeId: 'coreHellscape' //kenTheme'
 	}
 }
 

@@ -956,6 +956,10 @@ PlaceTypeList.surfaceSunTemple = {
         #########
 `,
 	flags: { rotate: true, hasWall: true, isUnique: true },
+	onLoot: (self,toucher) => {
+		effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot');
+		toucher.name = self.scionName;
+	},
 	symbols: {
 		'1': [{
 			typeFilter: 'chest',
@@ -963,12 +967,13 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Hathgar the mighty.',
 			name: 'Hathgar\'s Chest',
+			scionName: 'Scion of Hathgar',
 			properNoun: true,
 			inventoryLoot: [
 				'weapon.sword.eSmite, armor.eInert, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
 		'2': [{
 			typeFilter: 'chest',
@@ -976,12 +981,13 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Ozymandius the destroyer.',
 			name: 'Ozymandius\' Chest',
+			scionName: 'Scion of Ozymandius',
 			properNoun: true,
 			inventoryLoot: [
 				'spell.eBurn, spell.eFreeze, cloak.eRechargeFast, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
 		'3': [{
 			typeFilter: 'chest',
@@ -989,12 +995,13 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Slyndero the clever.',
 			name: 'Slyndero\'s Chest',
+			scionName: 'Scion of Slyndero',
 			properNoun: true,
 			inventoryLoot: [
 				'gloves.assassinGloves, spell.eTeleport, spell.eInvisibility, potion.eOdorless, gem.eSeeInvisible, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
 		'4': [{
 			typeFilter: 'chest',
@@ -1002,12 +1009,13 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Duramure the steadfast.',
 			name: 'Duramure\'s Chest',
+			scionName: 'Scion of Duramure',
 			properNoun: true,
 			inventoryLoot: [
 				'weapon.hammer.eInert, armor.eInert, shield.eInert, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
 		'5': [{
 			typeFilter: 'chest',
@@ -1015,12 +1023,13 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Arithern the accurate.',
 			name: 'Arithern\'s Chest',
+			scionName: 'Scion of Arithern',
 			properNoun: true,
 			inventoryLoot: [
 				'armor.eInert, weapon.bow.eSmite, 50x ammo.arrow, 5x ammo.dart, 2x potion.eHealing',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
 		'6': [{
 			typeFilter: 'chest',
@@ -1028,12 +1037,13 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Berthold the blessed.',
 			name: 'Berthold\'s Chest',
+			scionName: 'Scion of Berthold',
 			properNoun: true,
 			inventoryLoot: [
 				'armor.eInert, spell.eHealing, spell.eSmite, shield.eAbsorbRot, stuff.oilLamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
 		'7': [{
 			// This would work better if I could stash my body in a chest, or something.
@@ -1042,12 +1052,13 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Gadriin the mindshaper.',
 			name: 'Gadriin\'s Chest',
+			scionName: 'Scion of Gadriin',
 			properNoun: true,
 			inventoryLoot: [
 				'spell.ePossess, spell.eConfusion, stuff.voidCandle, 4x ammo.dart.eStartle, 2x potion.eHealing, 3x gem, 3x stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
 		'8': [{
 			// This would work better if I could stash my body in a chest, or something.
@@ -1056,12 +1067,13 @@ PlaceTypeList.surfaceSunTemple = {
 			isHidden: true,
 			sign: 'Legacy of Beowulf the bear.',
 			name: 'Beowulf\'s Chest',
+			scionName: 'Scion of Beowulf',
 			properNoun: true,
 			inventoryLoot: [
 				'2x stuff.bearFigurine, weapon.sword, 2x potion.eHealing, 4x stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
-			onLoot: (self) => effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot')
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
 		L: 'stuff.candleLamp',
 		X: { typeFilter: 'marker', playerStartHere: true },

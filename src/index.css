@@ -101,21 +101,32 @@ body {
 	margin-top: 12px;
 }
 
+#guiNarrative.big {
+	z-index: 100;
+	height: 600;
+	overflow-y: scroll;
+	border: 1px solid white;
+}
+
+
 #guiNarrative {
-	display: inline-block;
+	position: absolute;
 	white-space: pre-wrap;
 	font-family: 'Raleway', sans-serif;
 	font-size: 14px;
 	line-height: 14px;
-	height: 56px;
+	background-color: rgba(0,0,0,0.7);
+	height: 44px;
 	width: 816px;
 	margin: 0px 0px;
 	margin-left: 8px;
 	margin-right: 8px;
-	overflow-y: scroll;
+	overflow-y: hidden;
 	overflow-x: auto;
 	margin-bottom: 10px;
+	border: 1px solid black;
 }
+
 #guiNarrative.dim {
 	/* must be above narrative bold in this file. */
 	color: #555555;
@@ -125,6 +136,7 @@ body {
 }
 #guiControls {
 	display: inline-block;
+	opacity: 0.8;
 }
 
 .alignTop {
@@ -182,7 +194,8 @@ body {
 	display: block;
 	white-space: pre;
 	font-family: 'Raleway', sans-serif;
-	font-size: 16px;
+	color: #d2d2d2;
+	font-size: 14px;
 	margin: 0px 0px;
 	overflow-y: hidden;
 	overflow-x: hidden;
@@ -238,7 +251,7 @@ body {
 	width: 150px;
 	height: 150px;
 	font-family: "Ariel", serif;
-	border: 1px solid white;
+	border: 1px solid #666;
 	font-size: 10px;
 	margin: 0px 0px;
 	margin-left: 12px;
@@ -257,7 +270,8 @@ body {
 	z-index:10;
 }
 #guiMiniMapCaption {
-	text-align: left;
+	text-align: center;
+	color: '#d2d2d2';
 	font-size: 14px;
 	font-family: "Ariel", serif;
 	overflow-y: hidden;
@@ -512,16 +526,17 @@ table .inv tbody tr .ctr {
 	width: 100%;
 	height: 20px;
 	padding: 2px;
-	background: #ddd;
-	-webkit-border-radius: 3px;
-	-moz-border-radius: 3px;
-	border-radius: 3px;
+	background: #000;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
 	position: relative;
 	margin-bottom: 2px;
 	white-space: nowrap;
 	cursor: pointer;
 }
-.health-bar:hover {
+.health-bar:hover, .health-bar.isSelected {
+	color: cyan;
 	background-color: cyan;
 }
 
@@ -531,10 +546,13 @@ table .inv tbody tr .ctr {
 	height: 16px;
 	position: relative;
 	white-space: nowrap;
-	padding-left: 4px;
+	padding-left: 10px;
 	padding-right: 4px;
 	overflow-x: hidden;
 	overflow-y: hidden;
+	border-radius: 6px;
+	font-size: 13px;
+	text-transform: uppercase;
 
 	transition: width .5s linear;
 }
@@ -553,6 +571,6 @@ table .inv tbody tr .ctr {
 #guiPathDebug {
 	white-space: pre;
 	font-family: "Courier New", monospace;
-    overflow-y: scroll;
+    overflow-y: auto;
     height: 800px;
 }
