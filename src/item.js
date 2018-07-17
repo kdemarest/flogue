@@ -352,14 +352,13 @@ class Item {
 //		if( this.owner && /*(this.owner.isMap || (this.owner.isItemType && this.owner.owner.isMap)) &&*/ entity.isUser && entity.isUser() ) {
 		if( !entity.inVoid && entity.isUser && entity.isUser() ) {
 			// Item flies to your gui sidebar...
-			let where = this.inVoid ? entity : this;;
 			if( !this.spriteList || this.spriteList.length == 0 ) {
-				spriteMakeInWorld(this,where.x,where.y);
+				spriteMakeInWorld(this,entity.x,entity.y);
 			}
 
 			animationTimer.giveDelay = (animationTimer.giveDelay||0);
 			new Anim({},{
-				at: 		where,
+				at: 		entity,
 				img: 		this.imgGet ? this.imgGet(this) : this.img,
 				delay: 		animationTimer.giveDelay,
 				duration: 	0.6,

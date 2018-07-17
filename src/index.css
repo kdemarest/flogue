@@ -195,7 +195,7 @@ body {
 	vertical-align:middle;
 }
 
-#guiFavorites .item:hover {
+#guiFavorites .item:hover, #guiFavorites .item .isSelected {
 	background-color: rgb(110,110,110,0.73);
 	cursor: pointer;
 }

@@ -63,6 +63,10 @@ class HumanUser {
 		i += fav( '9', () => spellList, i ) ? 1 : 0;
 		i += fav( '0', () => spellList, i ) ? 1 : 0;
 	}
+	isItemSelected(item) {
+		return this.commandHandler.cmd.commandItem && this.commandHandler.cmd.commandItem.id == item.id;
+	}
+
 	keyToCommand(key) {
 		if( !this.suppressFavorites ) {
 			let favorite = this.favoriteMap[key];

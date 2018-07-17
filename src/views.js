@@ -192,7 +192,7 @@ class ViewFavorites extends ViewObserver {
 			}
 			let ex = itemExplain(item);
 			let text = ex.description;
-			let lit = observer.commandItem == item && item.isRecharged();
+			let lit = observer.isItemSelected(item) && item.isRecharged();
 			let unlit = !item.isRecharged();
 			let s = '<div class="item'+(unlit?' unlit':(lit?' lit':''))+'">'+img+hotkey+' '+text+'</div>';
 

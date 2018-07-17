@@ -207,6 +207,15 @@ class Entity {
 	isUser() {
 		return this.control == Control.USER;
 	}
+	isItemSelected(item) {
+		if( this.commandItem == item ) {
+			return true;
+		}
+		if( this.userControllingMe ) {
+			return this.userControllingMe.isItemSelected(item);
+		}
+		return false;
+	}
 	die() {
 		if( this.dead && this.isUser() ) {
 			return;
