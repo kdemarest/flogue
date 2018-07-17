@@ -68,13 +68,14 @@ function nop() {}
 	}
 	Array.filterInPlace = function(a, condition, thisArg) {
 		let j = 0;
-
-		a.forEach((e, i) => { 
+		// I made this a for loop to optimize speed.
+		for( let i=0 ; i<a.length ; ++i ) {
+			let e = a[i];
 			if (condition.call(thisArg, e, i, a)) {
 				if (i!==j) a[j] = e; 
 				j++;
 			}
-		});
+		}
 
 		a.length = j;
 		return a;

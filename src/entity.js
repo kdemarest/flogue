@@ -239,6 +239,9 @@ class Entity {
 			deed.end();
 		}
 
+		this.map._entityRemove(this);
+		this.map.calcWalkable(this.x,this.y);	// NUANCE: must be after the entityRemove!
+
 		this.dead = true;
 		if( this.onDeath ) {
 			this.onDeath.call(this,this);
@@ -1039,7 +1042,7 @@ class Entity {
 	}
 
 	thinkHunger(foodDist=2) {
-		let foodList = new Finder(this.map.itemList,this).filter(item=>item.isEdible).canPerceiveEntity().nearMe(foodDist).byDistanceFromMe();
+		let foodList = new Finder(this.map.findItemsNear(this.x,this.y,foodDist),this).filter(item=>item.isEdible && !item.invisible);
 		if( foodList.first && this.isAtTarget(foodList.first) ) {
 			this.record('found some food. eating.',true);
 			this.commandItem = foodList.first;
@@ -2128,7 +2131,7 @@ class Entity {
 
 		if( item.isCorpse ) {
 			let corpse = item.usedToBe;
-			if( !corpse || !corpse.loot ) {
+			if( !corpse || (!corpse.loot && !corpse.inventory.length) ) {
 				tell(mSubject,this,' ',mVerb,'find',' nothing on ',mObject,item);
 				item.destroy();
 				return {

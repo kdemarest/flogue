@@ -98,7 +98,7 @@ class SimpleMap {
 	traverse(fn) {
 		for( let y=0 ; y<this.yLen ; ++ y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {
-				let go = fn.call(this,x,y,this.tileTypeGet(x,y));
+				let go = fn.call(this,x,y,this.tileTypeGetFastUnsafe(x,y));
 				if( go === false ) {
 					return this;
 				}
@@ -207,14 +207,14 @@ class SimpleMap {
 		let symbol = best || defaultFloorSymbol;
 		this.tileSymbolSet(x,y,symbol);
 	}
+	tileSymbolGetFastUnasfe(x,y) {
+		return this.tile[y].charAt(x);
+	}
 	tileSymbolGet(x,y) {
 		if( !this.inBounds(x,y) ) { debugger; }
 		return this.tile[y].charAt(x);
 	}
-	tileTypeGet(x,y) {
-		if( !this.inBounds(x,y) ) {
-			return false;
-		}
+	tileTypeGetFastUnsafe(x,y) {
 		let symbol = this.tileSymbolGet(x,y);
 		if( symbol == TILE_UNKNOWN ) {
 			return false;
@@ -222,6 +222,12 @@ class SimpleMap {
 		let type = SymbolToType[symbol];
 		console.assert(type);
 		return type;
+	}
+	tileTypeGet(x,y) {
+		if( !this.inBounds(x,y) ) {
+			return false;
+		}
+		return this.tileTypeGetFastUnsafe(x,y);
 	}
 	tileTypeGetDir(x,y,dir) {
 		x += DirectionAdd[dir].x;
@@ -380,16 +386,19 @@ class Map extends SimpleMap {
 		console.assert(this.tileEntity[y][x]);
 		return this.tileEntity[y][x];
 	}
+	tileTypeGetFastUnasfe(x,y) {
+		if( this.tileEntity[y] && this.tileEntity[y][x] ) {
+			return this.tileEntity[y][x];
+		}
+		let symbol = this.tileSymbolGetFastUnasfe(x,y);
+		return SymbolToType[symbol];
+	}
+
 	tileTypeGet(x,y) {
 		if( !this.inBounds(x,y) ) {
 			return false;
 		}
-
-		if( this.tileEntity[y] && this.tileEntity[y][x] ) {
-			return this.tileEntity[y][x];
-		}
-		let symbol = this.tileSymbolGet(x,y);
-		return SymbolToType[symbol];
+		return this.tileTypeGetFastUnsafe(x,y);
 	}
 	tileSymbolSet(x,y,symbol) {
 		super.tileSymbolSet(x,y,symbol);
@@ -506,9 +515,21 @@ class Map extends SimpleMap {
 	findItem(me) {
 		return new Finder(this.itemList,me);
 	}
+	findItemsNear(x,y,dist) {
+		let itemList = [];
+		this.traverseNear(x,y,dist,(x,y)=> {
+			let temp = this.itemLookup[y*this.xLen+x];
+			if( temp && temp.length ) {
+				itemList.push(...temp);
+			}
+		});
+		return itemList;
+	}
 	findFirstItemAt(x,y) {
 		if( !this.inBounds(x,y) ) return false;
-		return this.itemLookup[y*this.xLen+x];
+		let itemList = this.itemLookup[y*this.xLen+x];
+		if( !itemList.length ) return false;
+		return itemList[0];
 	}
 	findItemAt(x,y) {
 		if( !this.inBounds(x,y) ) return new Finder([]);
@@ -524,7 +545,7 @@ class Map extends SimpleMap {
 	}
 
 	isEntityAt(x,y) {
-		// This has a TINY little flow, in that the left and right sides wrap around. But it is used
+		// This has a TINY little flaw, in that the left and right sides wrap around. But it is used
 		// during pathfind, so we're going to let this little problem slide.
 		let e = this.entityLookup[y*this.xLen+x];
 		return e && e.length;

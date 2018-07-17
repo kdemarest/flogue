@@ -1,37 +1,50 @@
 
 let MapMemoryLight = 3;
 let GlobalRenderCache = [];
-function createDrawList(observer,map,entityList,asType) {
+
+function handleScent(map,px,py,senseSmell,areaId) {
+	
+	animationRemove( anim=>anim.groupId=='scent' );
+
+	if( senseSmell) {
+		for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
+			let ty = y-(py-d);
+			for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
+				let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
+				if( !inBounds ) continue;
+				let tx = x-(px-d);
+				let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
+				if( !inPane ) continue;
+
+				let smelled = map.scentGetEntity(x,y,senseSmell);
+				if( !smelled ) continue;
+
+				let age = map.scentGetAge(x,y);
+				let alpha = 0.0 + Math.clamp(1-(age/senseSmell),0,1) * 0.6;
+				if( !alpha ) continue;
+
+				new Anim( {}, {
+					groupId: 		'scent',
+					x: 				x,
+					y: 				y,
+					areaId: 		areaId,
+					img: 			smelled.img,
+					duration: 		true,
+					onSpriteMake: 	s => { s.sScaleSet(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
+				});
+			}
+		}
+	}
+}
+
+
+function createDrawList(observer,map) {
 
 	// Recalc this here, just in case.
 	let visCache = observer.calculateVisbility();
 	let areaVis = observer.area.vis;
-
-	function spillLight(px,py,x,y,light) {
-		let range = Math.abs(light);
-		for( let ly=-range ; ly<=range ; ++ly ) {
-			for( let lx=-range ; lx<=range ; ++lx ) {
-				let fx = x+lx;
-				let fy = y+ly;
-				let rx = px+x-d;
-				let ry = py+y-d;
-				let rfx = px+fx-d;
-				let rfy = py+fy-d;
-				if( fx>=0 && fx<d2 && fy>=0 && fy<d2 && rx>=0 && rx<map.xLen && ry>=0 && ry<map.yLen ) {
-					let lightReaches = observer.senseXray || areaVis.shoot4(rfx,rfy,rx,ry,false);
-					if( lightReaches ) {
-						if( light < 0 ) {
-							let b = Math.max(Math.abs(lx),Math.abs(ly));
-							a[fy][fx][0] = Math.max(light,a[fy][fx][0]+Math.min(0,light+b));
-						}
-						else {
-							a[fy][fx][0] = Math.max(a[fy][fx][0],light+1-Math.max(Math.abs(lx),Math.abs(ly)));
-						}
-					}
-				}
-			}
-		}
-	}
+	let entityList = map.area.entityList;
+	let lightMap = map.area.lightCaster.lightMap;
 
 	//let convert = { '#': '█' };
 	let py = observer.y;
@@ -47,84 +60,14 @@ function createDrawList(observer,map,entityList,asType) {
 			let tx = x-(px-d);
 			let ty = y-(py-d);
 			a[ty][tx] = a[ty][tx] || [];
-			a[ty][tx][0] = 0;
+			a[ty][tx][0] = lightMap[y*map.xLen+x];
 			a[ty][tx][1] = false;
 			a[ty][tx].length = 2;
 		}
 	}
 
-	function testLight(x,y,light) {
-		if( !light ) { return; }
-		let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
-		if( inBounds ) {
-			let ty = y-(py-d);
-			let tx = x-(px-d);
-			// We need to let pretty much anything that makes light spill light
-			// this assumes that a value of 'light' also spills that same distance
-			let range = Math.abs(light);
-			if( tx>=-range && tx<d2+range && ty>=-range && ty<d2+range ) {
-				spillLight(px,py,tx,ty,light);
-			}
-		}
-	}
 
-	let p = [];
-	let q = [];
-	// Remember all monsters in the area
-	for( let entity of entityList ) {
-		if( observer.canPerceiveEntity(entity) ) {
-			let e = ( entity.id == observer.id && observer.invisible ) ? StickerList.invisibleObserver : entity;
-			p[entity.y*map.xLen+entity.x] = e;
-		}
-		let light = entity.id==observer.id ? Math.max(entity.darkVision||0,entity.light||0) : entity.light||0;
-		testLight(entity.x,entity.y,light);
-	}
-	// Remember all items in the area
-	for( let item of map.itemList ) {
-		testLight(item.x,item.y,item.light)
-	}
-
-// All animations, from any source, start when the object is GATED into the world.
-// Each turn, they are all paused, and then if they are near enough AND visible
-// the animation is turned on.
-
-	for( let anim of animationList ) {
-		if( anim.areaId == observer.area.id ) {
-			testLight(anim.x,anim.y,anim.light);
-		}
-	}
-	
-	animationRemove( anim=>anim.groupId=='scent' );
-
-	if( observer.senseSmell) {
-		for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
-			let ty = y-(py-d);
-			for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
-				let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
-				if( !inBounds ) continue;
-				let tx = x-(px-d);
-				let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
-				if( !inPane ) continue;
-
-				let smelled = map.scentGetEntity(x,y,observer.senseSmell);
-				if( !smelled ) continue;
-
-				let age = map.scentGetAge(x,y);
-				let alpha = 0.0 + Math.clamp(1-(age/observer.senseSmell),0,1) * 0.6;
-				if( !alpha ) continue;
-
-				new Anim( {}, {
-					groupId: 		'scent',
-					x: 				x,
-					y: 				y,
-					areaId: 		observer.area.id,
-					img: 			smelled.img,
-					duration: 		true,
-					onSpriteMake: 	s => { s.sScaleSet(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
-				});
-			}
-		}
-	}
+	handleScent(map,px,py,observer.senseSmell,observer.area.id);
 
 
 	let visId = {};
@@ -157,15 +100,23 @@ function createDrawList(observer,map,entityList,asType) {
 				}
 				console.assert(tile);
 				itemFind =  map.findItemAt(x,y);
-				entity =    p[y*map.xLen+x];
+
+				//if( x==px && y==py ) debugger;
+
+				let pos = y*map.xLen+x;
+				let temp = map.entityLookup[pos];
+				entity = temp && temp.length ? temp[0] : null;
+				if( entity ) { //&& observer.canPerceiveEntity(entity) ) {
+					entity = ( entity.id == observer.id && entity.invisible ) ? StickerList.invisibleObserver : entity;
+				}
+				else
+					entity = null;
+
 				if( !entity && observer.senseSmell ) {
 					smelled = map.scentGetEntity(x,y,observer.senseSmell);
 				}
 				if( !tile.isTileType ) {
 					debugger;
-				}
-				if( tile.light ) {
-					spillLight(px,py,tx,ty,tile.light || 0);
 				}
 			}
 
@@ -230,18 +181,6 @@ function createDrawList(observer,map,entityList,asType) {
 		//debug += '<<\n';
 	}
 	//console.log(debug);
-
-	// WARNING! These all cast darkness, but it WILL alter any light settings around the
-	// mapMemories. This is OK, I think, because the cast darkness makes your memories
-	// harder to see as well.
-
-	for( let entity of entityList ) {
-		testLight(entity.x,entity.y,-(entity.dark||0));
-	}
-
-	for( let item of map.itemList ) {
-		testLight(item.x,item.y,-(item.dark||0));
-	}
 
 	for( let anim of animationList ) {
 		if( anim.entity && !visId[anim.entity.id] ) {
@@ -564,6 +503,11 @@ class ViewMap extends ViewObserver {
 					delete entity.puppetMe;
 				}
 			}
+
+			// This can happen at game start, before anything has been told to observe.
+			if( !this.observer ) {
+				return;
+			}
 			
 			let glowLight = MaxVis;
 //			this.staticTileEntity = this.staticTileEntity || { isStaticTile: true };
@@ -717,6 +661,7 @@ class ViewMap extends ViewObserver {
 					}
 					else
 					{
+						//if( wx+x==this.observer.x && wy+y == this.observer.y ) debugger;
 						let imgGet = this.imageRepo.imgGet[entity.typeId];
 						if( imgGet ) {
 							spriteMakeInWorld(entity,wx+x,wy+y,this.observer.darkVision,this.observer.senseInvisible);
@@ -737,6 +682,7 @@ class ViewMap extends ViewObserver {
 		this.app.stage.children.forEach( sprite => sprite.sortKey = sprite.zOrder );
 		this.app.stage.children.sort( (a,b) => a.sortKey-b.sortKey );
 	}
+
 	render() {
 		//var focused =  $( document.activeElement ) ;
 		//if( !focused || focused.length == 0 ) {

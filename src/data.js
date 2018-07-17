@@ -135,6 +135,7 @@ const StickerList = {
 	open: { img: "gui/icons/open.png" },
 	selectBox: { img: "gui/selectBox.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
+	// WARNING: This is used very special-case in the ViewMap.
 	invisibleObserver: { img: "spells/enchantment/invisibility.png" },
 	crosshairYes: { img: "dc-misc/cursor_green.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
 	crosshairNo:  { img: "dc-misc/travel_exclusion.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
@@ -262,7 +263,7 @@ let EffectTypeList = {
 	eConfusion: 	{ isDeb: 1, level:  0, rarity: 0.20, op: 'attitude', isHarm: 1, value: Attitude.CONFUSED, xDuration: 0.3, icon: 'gui/icons/eAttitude.png' },
 	ePanic: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'attitude', isHarm: 1, value: Attitude.PANICKED, xDuration: 1.0, icon: 'gui/icons/eFear.png' },
 	eRage: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'attitude', isHarm: 1, value: Attitude.ENRAGED, xDuration: 0.5, icon: 'gui/icons/eAttitude.png' },
-	ePossess: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'possess', isHarm: 1, xDuration: 5.0, icon: 'gui/icons/ePossess.png' },
+	ePossess: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'possess', isHarm: 1, xDuration: 5.0, noPermute: true, icon: 'gui/icons/ePossess.png' },
 	eDrain: 		{ isDeb: 1, level:  0, rarity: 0.40, op: 'drain', isHarm: 1, value: 'all', icon: 'gui/icons/eDrain.png' },
 	eImmobilize: 	{ isDeb: 1, level:  0, rarity: 0.40, op: 'set', isHarm: 1, stat: 'immobile', value: 1, requires: e=>!e.immobile, icon: 'gui/icons/eImmobile.png' },
 
@@ -439,6 +440,7 @@ const TileTypeList = {
 		mayWalk: true,
 		mayFly: true,
 		opacity: 0.26,
+		damageType: DamageType.BURN,
 		noScent: true,
 		isFire: true,
 		addFloor: true,
@@ -461,6 +463,7 @@ const TileTypeList = {
 		maySwim: true,
 		noScent: true,
 		opacity: 0,
+		damageType: DamageType.BURN,
 		isFire: true,
 		mayJump: true,
 		name: "lava",
@@ -625,7 +628,7 @@ TileTypeList.flames.getDamage = function(toucher,self) {
 //
 let TouchDamage = {
 	isProblem: function(entity,self) {
-		if( entity.isImmune(self.damageType) ) {
+		if( entity.isImmune(self.damageType || (self.effect ? self.effect.damageType : null)) ) {
 			return Prob.NONE;
 		}
 		let xDamage = ItemCalc(self,self,'xDamage','*');

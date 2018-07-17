@@ -232,7 +232,7 @@ let AnimClip = (new function() {
 
 class Anim {
 	constructor(sticker,data) {
-		Object.assign(this,{ delay: 0, scale: 1, isAnim: 1 }, sticker, data);
+		Object.assign(this,{ delay: 0, scale: 1, isAnim: 1 }, sticker, data, { id: GetTimeBasedUid() } );
 		this.isAnimation = true;
 		this.dead = false;
 		this.delta = 0;

@@ -349,12 +349,14 @@ class Item {
 		}
 
 		let hadNoOwner = !this.owner;
-		if( this.owner && (this.owner.isMap || (this.owner.isItemType && this.owner.owner.isMap)) && entity.isUser && entity.isUser() ) {
+//		if( this.owner && /*(this.owner.isMap || (this.owner.isItemType && this.owner.owner.isMap)) &&*/ entity.isUser && entity.isUser() ) {
+		if( !entity.inVoid && entity.isUser && entity.isUser() ) {
 			// Item flies to your gui sidebar...
-			let where = this;
-			if( where.x == undefined && this.owner.isItemType ) {
-				where = this.owner;
+			let where = this.inVoid ? entity : this;;
+			if( !this.spriteList || this.spriteList.length == 0 ) {
+				spriteMakeInWorld(this,where.x,where.y);
 			}
+
 			animationTimer.giveDelay = (animationTimer.giveDelay||0);
 			new Anim({},{
 				at: 		where,
@@ -389,7 +391,9 @@ class Item {
 				});
 			}
 			else {
-				spriteMakeInWorld(this,this.owner.x,this.owner.y);
+				if( !this.spriteList || this.spriteList.length == 0 ) {
+					spriteMakeInWorld(this,this.owner.x,this.owner.y);
+				}
 				// Show the item flying to its new location
 				new Anim({
 					at: 		this.owner,
@@ -496,7 +500,8 @@ class Item {
 	}
 	tick( dt, rechargeRate = 1) {
 		let list = this.owner.itemList || this.owner.inventory;
-		console.assert( list.find( i => i.id == this.id ) );
+		// WARNING! This assert is useful for making sure of inventory integrity, but VERY slow.
+		//console.assert( list.find( i => i.id == this.id ) );
 		if( this.rechargeLeft > 0 ) {
 			this.rechargeLeft = Math.max(0,this.rechargeLeft-rechargeRate);
 		}

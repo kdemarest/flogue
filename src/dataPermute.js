@@ -64,6 +64,9 @@ let EffectPermutationEngine = (new function() {
 	}
 
 	function permute(depth,effect,forceType=null) {
+		if( effect.noPermute ) {
+			return effect;
+		}
 		let table;
 		for( let p in permutationList ) {
 			if( effect[p] ) {

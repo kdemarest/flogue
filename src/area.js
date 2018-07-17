@@ -342,6 +342,10 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		area.vis = new Vis(()=>area.map);
 	}
 
+	if( LightCaster ) {
+		area.lightCaster = new LightCaster( area.vis );
+	}
+
 	return area;
 }
 
@@ -423,6 +427,7 @@ function tick(speed,map,entityListRaw) {
 }
 
 
+
 class Area {
 	constructor(areaId,depth,theme) {
 		console.assert( areaId );
@@ -479,8 +484,27 @@ class Area {
 		let g = this.gateList.filter( g => g.typeId==typeId && !g.toAreaId );
 		return !g.length ? null : g[0];
 	}
+	castLight() {
+		// Darkvision hack... which sadly works great.
+		// The RIGHT way to do this is for the createDrawList, just before it
+		// starts compiling, to say if( obs.darkVision > obs.light ) castOne( obs.x, obs.y, obs.darkVision )
+		let observer = this.entityList.find( e=>e.userControllingMe );
+		let oldLight = observer.light;
+		observer.light = Math.max(observer.darkVision||0,observer.light||0);
+
+		this.lightCaster.castAll(
+			this.map,
+			this.vis.opacityLookup,
+			this.entityList,
+			this.map.itemList,
+			animationList.filter( a=>a.areaId==this.areaId )
+		);
+
+		observer.light = oldLight;
+	}
 	tick(speed) {
 		tick( speed, this.map, this.entityList );
+		this.castLight();
 	}
 	pickSite(fn) {
 		let list = this.siteList.filter( fn );

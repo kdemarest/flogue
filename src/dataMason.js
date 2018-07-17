@@ -554,8 +554,10 @@
 			// Create the prolist if we haven't already.
 			if( !this.proList ) {
 				this.proList = [];
-				for( let y=-this.yLen ; y<this.yLen ; ++y ) {
-					for( let x=-this.xLen ; x<this.xLen ; ++x ) {
+				let xLimit = Math.min(50,this.xLen);
+				let yLimit = Math.min(50,this.yLen);
+				for( let y=-yLimit ; y<yLimit ; ++y ) {
+					for( let x=-xLimit ; x<xLimit ; ++x ) {
 						if( x==0 && y==0 ) continue;
 						let dist = getTrueDistance(x,y);
 						this.proList.push({x:x,y:y,dist:dist});
@@ -690,7 +692,7 @@
 			// Find the closest tile for every single tile in every zone, that is on the edge.
 			let proximity = [];
 			for( let zone of zoneList) {
-				let bestDist = 4*this.xLen*this.yLen;
+				let bestDist = Math.min(30,Math.max(this.xLen,this.yLen)); //4*this.xLen*this.yLen;
 				Array.traversePairs( zone.tiles, (x,y) => {
 					if( this.getAll(x,y).hard ) {
 						// Don't attempt to make paths connect to 'hard' walls, ie those
