@@ -143,6 +143,10 @@ class Entity {
 			Gab.entityPostProcess(this);
 		}
 		tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
+		if( this.isUser() ) {
+			area.castLight();
+		}
+
 		return {
 			status: 'gateTo',
 			area: area,
