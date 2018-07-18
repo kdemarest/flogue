@@ -1,3 +1,5 @@
+Module.add('viewMerchant',function() {
+
 class ViewMerchant extends ViewInventory {
 	constructor(p) {
 		super(p.divId,p.imageRepo,null,p.colFilter || p.entity.colFilter);
@@ -74,3 +76,9 @@ class ViewMerchant extends ViewInventory {
 	tick() {
 	}
 }
+
+return {
+	ViewMerchant: ViewMerchant
+}
+
+});

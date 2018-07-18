@@ -1,25 +1,26 @@
+Module.add('path',function() {
 
 function pWalk(map) {
 	let nulItem = {};
 	return function(x,y) {
 		if( map.isEntityAt(x,y) ) {
-			return Prob.ENTITY;
+			return Problem.ENTITY;
 		}
 		if( !map.isItemAt(x,y) ) {
 			let tile = map.tileTypeGet(x,y);
-			if( !tile.mayWalk ) return Prob.WALL;
+			if( !tile.mayWalk ) return Problem.WALL;
 			if( tile.isProblem ) return tile;
-			return Prob.NONE;
+			return Problem.NONE;
 		}
 
 		let itemBlocking = map.findChosenItemAt( x, y, item => !item.mayWalk );
-		if( itemBlocking ) return Prob.WALL;
+		if( itemBlocking ) return Problem.WALL;
 		let tile = map.tileTypeGet(x,y);
-		if( !tile.mayWalk ) return Prob.WALL;
+		if( !tile.mayWalk ) return Problem.WALL;
 		let itemProblem = map.findChosenItemAt( x, y, item => item.isProblem );
 		if( itemProblem ) return itemProblem;
 		if( tile.isProblem ) return tile;
-		return Prob.NONE;
+		return Problem.NONE;
 	}
 }
 
@@ -63,7 +64,7 @@ class Path {
 		return this.ex==x && this.ey==y;
 	}
 	gridGet(x,y) {
-		return this.grid[y*this.xLen+x] || Prob.NONE;
+		return this.grid[y*this.xLen+x] || Problem.NONE;
 	}
 	render() {
 		let pathSummary = [];
@@ -71,8 +72,8 @@ class Path {
 		let py = this.eyActual;
 		for( let i=this.path.length-1 ; i>=0 ; i-=3 ) {
 			let dir = this.path[i];
-			px -= DirectionAdd[dir].x;
-			py -= DirectionAdd[dir].y;
+			px -= Direction.add[dir].x;
+			py -= Direction.add[dir].y;
 			pathSummary[py*this.xLen+px] = '*';
 		};
 
@@ -80,7 +81,7 @@ class Path {
 		let s = '';
 		this.map.traverse( (x,y) => {
 			let g = this.gridGet(x,y);
-			let c = ( g==Prob.WALL ? '#' : ( g==Prob.NONE ? '.' : stepChar.charAt(g) ) );
+			let c = ( g==Problem.WALL ? '#' : ( g==Problem.NONE ? '.' : stepChar.charAt(g) ) );
 			if( x==this.sx && y==this.sy ) {
 				c = 'S';
 			}
@@ -162,7 +163,7 @@ class Path {
 				}
 				if( typeof v !== 'number' ) {
 					v = v.isProblem(entity,v);
-					console.assert( (v>=0 && v<=1) || v == Prob.DEATH );
+					console.assert( (v>=0 && v<=1) || v == Problem.DEATH );
 				}
 				if( v >= 1 ) {
 					return false;	// 1 or greater means you have already visited, or tht you will die/hit wall entering this square
@@ -206,8 +207,8 @@ class Path {
 					let testEdge = x<=0 || y<=0 || x>=xLen-1 || y>= yLen-1;
 
 					for( let dir=0; dir<8 ; dir += dirStep ) {
-						let nx = x + DirectionAdd[dir].x;
-						let ny = y + DirectionAdd[dir].y;
+						let nx = x + Direction.add[dir].x;
+						let ny = y + Direction.add[dir].y;
 						if( testEdge && (nx<0 || ny<0 || nx>=xLen || ny>=yLen) ) continue;
 						let ok = fill(nx,ny,dist);
 						if( !ok ) {
@@ -249,12 +250,12 @@ class Path {
 				let bestValue = 999999;
 				let testEdge = x<=0 || y<=0 || x>=xLen-1 || y>= yLen-1;
 				for( let dir=0 ; dir<8 ; dir += dirStep ) {
-					let nx = x + DirectionAdd[dir].x;
-					let ny = y + DirectionAdd[dir].y;
+					let nx = x + Direction.add[dir].x;
+					let ny = y + Direction.add[dir].y;
 					if( testEdge && (nx<0 || ny<0 || nx>=xLen || ny>=yLen) ) continue;
 					let lPos = ny*xLen+nx;
 					let v = grid[lPos];
-					if( v >= 1 && v < Prob.WALL  ) {
+					if( v >= 1 && v < Problem.WALL  ) {
 						v = v*100+favor[dir];
 						if( v < bestValue ) {
 							bestDir = dir;
@@ -262,8 +263,8 @@ class Path {
 						}
 					}
 				}
-				x += DirectionAdd[bestDir].x;
-				y += DirectionAdd[bestDir].y;
+				x += Direction.add[bestDir].x;
+				y += Direction.add[bestDir].y;
 
 				this.path.unshift(x,y,(bestDir+4)%8);
 				if( onStep ) onStep();
@@ -280,3 +281,10 @@ class Path {
 	}
 }
 
+return {
+	Path: Path,
+	pWalk: pWalk,
+	pVerySafe: pVerySafe
+}
+
+});

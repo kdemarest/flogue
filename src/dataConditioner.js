@@ -1,3 +1,5 @@
+Module.add('dataConditioner',function() {
+
 class DataConditioner {
 	constructor() {
 		this.mergePlaceTypesToGlobals();
@@ -37,7 +39,6 @@ class DataConditioner {
 			let theme = ThemeList[themeId];
 			theme.id = themeId;
 			theme.rarityHash = {};
-			extractRarityHash(theme,rPROFUSE,theme.rPROFUSE);
 			extractRarityHash(theme,rCOMMON,theme.rCOMMON);
 			extractRarityHash(theme,rUNCOMMON,theme.rUNCOMMON);
 			extractRarityHash(theme,rRARE,theme.rRARE);
@@ -56,7 +57,7 @@ class DataConditioner {
 				Array.supplyValidate( jobSupply, JobTypeList );
 			}
 			if( theme.jobPick ) {
-				let pt = new PickTable().scanKeys(theme.jobPick);
+				let pt = new Pick.Table().scanKeys(theme.jobPick);
 				pt.validate(JobTypeList);
 			}
 		}
@@ -171,9 +172,6 @@ class DataConditioner {
 
 			mergeSimple( DamageType,	place.damageType);
 			mergeSimple( Attitude,		place.attitude);
-			mergeSimple( PickIgnore,	place.pickIgnore);
-			mergeSimple( PickVuln,		place.pickVuln);
-			mergeSimple( PickResist,	place.pickResist);
 
 			merge( StickerList,		place.stickers );
 			merge( EffectTypeList,	place.effectList );
@@ -200,7 +198,7 @@ class DataConditioner {
 				place.tileCount = 0;
 				for( let i=0 ; i<place.map.length ; ++i ) {
 					let s = place.map.charAt(i);
-					if( s=='\t' || s=='\n' || s==TILE_UNKNOWN ) continue;
+					if( s=='\t' || s=='\n' || s==Tile.UNKNOWN ) continue;
 					place.tileCount ++;
 					let supplyArray = Array.supplyParse(place.symbols[s]);
 					supplyArray.forEach( supply => {
@@ -208,7 +206,7 @@ class DataConditioner {
 						// We don't check on the pick list. Maybe we should.
 						let monster = supply.typeFilter ? MonsterTypeList[supply.typeFilter.split('.')[0]] : null;
 						if( monster ) {
-							level = Math.max(level,monster.level||DEPTH_MIN);
+							level = Math.max(level,monster.level||Rules.DEPTH_MIN);
 							place.comesWithMonsters = true;
 						}
 					});
@@ -275,3 +273,9 @@ class DataConditioner {
 		} );
 	}
 };
+
+return {
+	DataConditioner: DataConditioner
+}
+
+});

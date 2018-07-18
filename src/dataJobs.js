@@ -1,3 +1,5 @@
+Module.add('dataJobs',function() {
+
 // Check out this awesomeness: http://rmhh.co.uk/occup/b.html
 let JobTypeList = {
 	layman: {
@@ -153,3 +155,9 @@ let JobTypeList = {
 		sign: "Let us give thanks!",
 	}
 }
+
+return {
+	JobTypeList: JobTypeList
+}
+
+});

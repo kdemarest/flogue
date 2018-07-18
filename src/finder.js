@@ -1,3 +1,5 @@
+Module.add('finder',function() {
+
 class Finder {
 	constructor(entityList,me,makeDupe=true) {
 		if( !entityList ) {
@@ -206,3 +208,9 @@ class Finder {
 		return this.byDistanceFromPosition(this.me.x,this.me.y);
 	}
 }
+
+return {
+	Finder: Finder
+}
+
+});

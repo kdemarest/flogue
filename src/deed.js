@@ -1,3 +1,5 @@
+Module.add('deed',function() {
+
 
 class Effect {
 	constructor( depth, effectRaw, item=null, rechargeTime=0 ) {
@@ -383,7 +385,7 @@ let effectApply = function(effect,target,source,item,context) {
 	}
 
 	if( effect.iconOver ) {
-		animOver( target, effect.iconOver, 0, effect.iconOverDuration || 0.4, effect.iconOverScale || 0.75 );
+		Anim.Over( target, effect.iconOver, 0, effect.iconOverDuration || 0.4, effect.iconOverScale || 0.75 );
 	}
 
 	let effectShape = effect.effectShape || EffectShape.SINGLE;
@@ -433,14 +435,14 @@ let effectApply = function(effect,target,source,item,context) {
 				let reached = shootRange(target.x,target.y,x,y, (x,y) => area.map.tileTypeGet(x,y).mayFly);
 				if( reached ) {
 					if( effect.isCloud ) {
-						animCloud( x, y, area, source.id, effect.iconCloud || StickerList.ePoof.img );
+						Anim.Cloud( x, y, area, source.id, effect.iconCloud || StickerList.ePoof.img );
 					}
 					else {
 						if( !effect.iconOver ) {
-							animFly( target.x, target.y, x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
+							Anim.Fly( target.x, target.y, x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
 						}
 					}
-					//animAt( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
+					//Anim.At( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
 					let targetList = [];
 					let monsterList = new Finder(area.entityList).at(x,y);
 					if( monsterList.count ) {
@@ -624,7 +626,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 
 	if( !effect.isSecondary && target.isMonsterType && !isSelf && isHarm ) {
 		let shield 		= target.getFirstItemInSlot(Slot.SHIELD);
-		let blockType 	= getBlockType(item,effect.damageType);
+		let blockType 	= Item.getBlockType(item,effect.damageType);
 		let block 		= shield ? shield.calcBlockChance(blockType,isRanged,target.shieldBonus) : 0;
 		if( Math.chance(block*100) ) {
 			tell(mSubject,target,' ',mVerb,'catch',' ',mObject,item || {name:'blow'},' with ',mSubject|mPossessive,target,' ',mObject|mPossessed,shield);
@@ -652,14 +654,14 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		effect.duration = Math.max(1,(effect.duration || Rules.DEFAULT_EFFECT_DURATION) * (effect.xDuration||1))
 	}
 
-	// If this is done from range, but not thrown (because item.giveTo() handles throwing animation),
+	// If this is done from range, but not thrown (because item.giveTo() handles throwing Animation),
 	// show the item hurtling through the air.
 	let flyingIcon = effect.flyingIcon || effect.icon;
 	if( !effect.isSecondary && source && hasCoords(target) && (context == Command.CAST || context == Command.ATTACK) && flyingIcon !== false) {
 		// Icon flies to the target
 		let dx = target.x-source.x;
 		let dy = target.y-source.y;
-		let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / 15);
+		let rangeDuration = Math.max(0.1,Distance.get(dx,dy) / 15);
 		if( item ) item.rangeDuration = rangeDuration;
 		source.rangeDuration = rangeDuration;
 		effect.rangeDuration = rangeDuration;
@@ -680,12 +682,12 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		let tile = target.map.tileTypeGet(target.x,target.y);
 		if( tile.isWater && effect.damageType == DamageType.BURN ) {
 			tell(mSubject,target,' can not be affected by '+effect.damageType+'s while in ',mObject,tile);
-			animFloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
+			Anim.FloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
 			return makeResult('elementExclusion',false);
 		}
 		if( tile.isFire && effect.damageType == DamageType.FREEZE ) {
 			tell(mSubject,target,' can not be affected by '+effect.damageType+'s while in ',mObject,tile);
-			animFloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
+			Anim.FloatUp(target,StickerList.ePoof.img,effect.rangeDuration);
 			return makeResult('elementExclusion',false);
 		}
 	}
@@ -700,7 +702,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	if( isImmune ) {
 		tell(mSubject,target,' ',mVerb,'is',' immune to ',mObject,effect,'.');
 		if( !source || source.id!==target.id ) {
-			animOver( target, StickerList.showImmunity.img, effect.rangeDuration || 0 );
+			Anim.Over( target, StickerList.showImmunity.img, effect.rangeDuration || 0 );
 		}
 		return makeResult('immune',false);
 	}
@@ -718,7 +720,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 
 	if( isResist && effect.duration===0 && Math.chance(50) ) {
 		tell(mSubject,target,' ',mVerb,'resist',' the effects of ',mObject,effect,'.');
-		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
+		Anim.Over(target,StickerList.showResistance.img,effect.rangeDuration);
 		return makeResult('resist',false);
 	}
 
@@ -727,7 +729,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		tell(mSubject,target,' ',mVerb,'seem',' partially affected by ',mObject,effect,'.');
 		effect.resistDuration = true;
 		effect.duration = effect.duration * 0.50;
-		animOver(target,StickerList.showResistance.img,effect.rangeDuration);
+		Anim.Over(target,StickerList.showResistance.img,effect.rangeDuration);
 	}
 
 	if( singular && (effect.singularOp == 'max' || effect.singularOp == 'sum') ) {
@@ -757,7 +759,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 
 	// Float up an icon indicating what the effect was that just happened to the target.
 	if( result.effectResult.success !== false && effect.icon !== false && effect.showOnset!==false ) {
-		animFloatUp(target,effect.icon || StickerList.eGeneric.img,effect.rangeDuration);
+		Anim.FloatUp(target,effect.icon || StickerList.eGeneric.img,effect.rangeDuration);
 	}
 
 	if( !effect.isSecondary && secondary.length && item && !item.dead ) {
@@ -947,7 +949,7 @@ DeedManager.addHandler(DeedOp.SUMMON,function() {
 	}
 	this.onEnd = () => {
 		this.item.giveTo(entity.map,entity.x,entity.y,true);
-		animFloatUp(entity,StickerList.ePoof.img);
+		Anim.FloatUp(entity,StickerList.ePoof.img);
 		entity.vanish = true;
 	}
 	this.hasSummoned = true;
@@ -967,7 +969,7 @@ DeedManager.addHandler(DeedOp.DRAIN,function() {
 		}
 	});
 	if( anyDrained ) {
-		animFloatUp(this.target,this.icon || StickerList.eGeneric.img);
+		Anim.FloatUp(this.target,this.icon || StickerList.eGeneric.img);
 	}
 	return {
 		status: 'drain',
@@ -981,7 +983,7 @@ DeedManager.addHandler(DeedOp.KILLLABEL,function() {
 	let f = new Finder( this.target.itemList, this.source ).excludeMe().filter( item => item.label == this.value );
 	let count = f.count;
 	f.forEach( item => {
-		animFloatUp( item, StickerList.ePoof.img );
+		Anim.FloatUp( item, StickerList.ePoof.img );
 		item.destroy()
 	});
 	return {
@@ -989,4 +991,14 @@ DeedManager.addHandler(DeedOp.KILLLABEL,function() {
 		success: count > 0,
 		count: count
 	}
+});
+
+return {
+	Effect: Effect,
+	Deed: Deed,
+	DeedOp: DeedOp,
+	DeedManager: DeedManager,
+	effectApply: effectApply
+}
+
 });

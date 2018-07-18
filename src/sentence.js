@@ -1,3 +1,5 @@
+Module.add('sentence',function() {
+
 let mSubject = 1;
 let mObject = 2;
 let mPronoun = 4;
@@ -210,3 +212,21 @@ class Sentence {
 		return s;
 	}
 }
+
+return {
+	mSubject: mSubject,
+	mObject: mObject,
+	mPronoun: mPronoun,
+	mPossessive: mPossessive,
+	mPossessed: mPossessed,
+	mA: mA,
+	mList: mList,
+	mBold: mBold,
+	mVerb: mVerb,
+	mCares: mCares,
+	Sentence: Sentence
+}
+
+});
+
+

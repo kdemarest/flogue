@@ -1,3 +1,5 @@
+Module.add('user',function() {
+
 class HumanUser {
 	constructor() {
 		this.isHumanUser = true;
@@ -6,7 +8,7 @@ class HumanUser {
 		this.commandHandler = null;
 		this.areaMap = {};
 		this.favoriteMap = {};
-		this.keyMap = loadKeyMapping();
+		this.keyMap = new KeyMap();
 	}
 	clearFavorite(favorite) {
 		favorite.command = null;
@@ -55,7 +57,7 @@ class HumanUser {
 		fav( '3', () => f().filter(item=>item.mayShoot && item.ammoSpec && !item.isFake).byDamage('desc') );
 		fav( '4', () => f().filter(item=>item.isShield && !item.isFake).byLevel('desc') );
 		fav( '5', () => f().filter(item=>item.isPotion && item.effect && item.effect.op == 'heal' && !item.isFake ) );
-		let spellList = getCastableSpellList(this.entity);
+		let spellList = this.entity.getCastableSpellList();
 		let i = 0;
 		i += fav( '6', () => spellList, i ) ? 1 : 0;
 		i += fav( '7', () => spellList, i ) ? 1 : 0;
@@ -80,7 +82,7 @@ class HumanUser {
 			}
 		}
 		return {
-			command: this.keyMap[key]
+			command: this.keyMap.keyToCommand[key]
 		}
 	}
 	getAreaMap(areaId) {
@@ -105,3 +107,9 @@ class HumanUser {
 		this.autoFavorite();
 	}
 }
+
+return {
+	HumanUser: HumanUser
+}
+
+});

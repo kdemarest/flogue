@@ -1,3 +1,5 @@
+Module.add('dataMonsters',function() {
+
 // Monster Events
 // onAttacked - fired when the monster gets attacked, even if damage nets to zero.
 // onAttack - fires when ever the monster attacks, so you can pile on extra effects.
@@ -392,7 +394,7 @@ const MonsterTypeList = {
 		core: [ SYM, 34, '4:10', 'evil', null, 'demon', 'wingedBiped', 'mon/demon/daileesh.png', 'it' ],
 		attitude: Attitude.HUNT,
 		naturalWeapon: {
-			_effectOnAttack: ETL.eLeech
+			_effectOnAttack: EffectTypeList.eLeech
 		},
 		immune: DemonImmunity,
 		isDemon: true,
@@ -1096,9 +1098,91 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 	}
 };
 
+function monsterPreProcess(typeId,m) {
+	let brain = null;
+	let body = null;
+	let naturalDamageType;
+	if( m.core ) {
+		m.symbol = m.core[0];
+		m.level = m.core[1];
+		m.power = m.core[2];
+		m.team  = m.core[3];
+		naturalDamageType = m.core[4];
+		brain = m.core[5];
+		body  = m.core[6];
+		m.img = m.core[7];
+		m.pronoun = m.core[8];
+		delete m.core;
+	}
+
+	console.assert( !brain || (BrainMindset[brain]!==undefined && BrainAbility[brain]!==undefined) );
+	console.assert( !body  || (BodyAbility[body]!==undefined && BodySlots[body]!==undefined) );
+
+	// OK, this sucks, but I set isMonsterType here AS WELL AS in fab, because the merge
+	// of monsters from places requires it.
+	m.isMonsterType = true;
+	m.brainMindset = String.combine(',',m.brainMindset,BrainMindset[brain]);
+	m.brainAbility = String.combine(',',m.brainAbility,BrainAbility[brain]);
+	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[body]);
+	m.bodySlots    = Object.assign( m.bodySlots || {}, BodySlots[body] );
+
+	let blood = {
+		isPlanar: 	'bloodYellow',
+		isUndead: 	'bloodWhite',
+		isDemon: 	'bloodBlack',
+		isEarthChild: 'bloodGreen',
+		isAnimal: 	'bloodRed',
+		isSunChild: 'bloodRed',
+		isLunarChild: 'bloodBlue'
+	};
+	for( let key in blood ) {
+		if( m[key] ) {
+			m.bloodId = m.bloodId || blood[key];
+			break;
+		}
+	}
+	m.bloodId = m.bloodId || 'bloodRed';
+	if( !m.isSunChild ) {
+		m.darkVision = m.darkVision || Rules.MONSTER_DARK_VISION;
+	}
+	if( m.isLiving === undefined ) {
+		m.isLiving = !m.isUndead && !m.isConstruct;
+	}
+	if( !String.arIncludes(m.vuln||'',DamageType.WATER) && !String.arIncludes(m.resist||'',DamageType.WATER) ) {
+		m.immune = String.arAdd(m.immune,DamageType.WATER);
+	}
+
+	m.inventoryLoot = m.inventoryLoot || [];
+	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];
+	let damType = naturalDamageType || m.naturalWeapon.damageType || DamageType.CUT;
+	let natWeapon = Object.assign({
+		typeFilter: 'fake',
+		isNatural: true,
+		isMelee: true,
+		isWeapon: true,
+		quick: 2,
+		reach: m.reach || 1,
+		damageType: damType,
+		name: damType,
+	}, m.naturalWeapon );
+	m.inventoryLoot.push( natWeapon );
+	delete m.naturalWeapon;
+
+	console.assert( m.stink===undefined || (m.stink>=0 && m.stink<=1) );
+}
+
 (() => {
 	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
 	for( let typeId in MonsterTypeList ) {
 		monsterPreProcess(typeId,MonsterTypeList[typeId]);
 	}
 })();
+
+return {
+	Control: Control,
+	MonsterTypeDefaults: MonsterTypeDefaults,
+	MonsterTypeList: MonsterTypeList,
+	monsterPreProcess: monsterPreProcess
+}
+
+});

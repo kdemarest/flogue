@@ -1,10 +1,14 @@
+Module.add('viewMap',function() {
 
 let MapMemoryLight = 3;
 let GlobalRenderCache = [];
+let MONSTER_SCALE_VARIANCE_MIN = 0.75;
+let MONSTER_SCALE_VARIANCE_MAX = 1.00;
+
 
 function handleScent(map,px,py,senseSmell,areaId) {
 	
-	animationRemove( anim=>anim.groupId=='scent' );
+	Animation.remove( anim=>anim.groupId=='scent' );
 
 	if( senseSmell) {
 		for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
@@ -182,7 +186,7 @@ function createDrawList(observer,map) {
 	}
 	//console.log(debug);
 
-	for( let anim of animationList ) {
+	for( let anim of Animation.list ) {
 		if( anim.entity && !visId[anim.entity.id] ) {
 			continue;
 		}
@@ -312,11 +316,175 @@ class ImageRepo {
 	}
 }
 
-let spriteDeathCallback;
-let spriteCreate;
-let spriteAttach;
-let spriteOnStage;
-let spriteMakeInWorld;
+let _viewMap = null;
+
+let spriteDeathCallback = function(spriteList) {
+	if( !spriteList ) return;
+	Array.filterInPlace( spriteList, sprite => {
+		sprite.refs--;
+		if( sprite.refs <= 0 ) {
+			if( sprite.keepAcrossAreas ) {
+				return true;
+			}
+			_viewMap.app.stage.removeChild(sprite);
+		}
+		return false;
+	});
+};
+
+let spriteCreate = function(spriteList,imgPath,mayReuse) {
+	if( !imgPath ) {
+		debugger;
+	}
+	let resource = _viewMap.imageRepo.get(imgPath);
+	if( !resource ) {
+		debugger;
+		return;
+	}
+	let sprite = new PIXI.Sprite( resource.texture );
+	sprite.onStage = false;
+	sprite.refs = 1;
+	let allocated = false;
+	if( mayReuse ) {
+		for( let i=0 ; i<spriteList.length ; ++i ) {
+			if( spriteList[i].dead ) {
+				spriteList[i] = sprite;
+				allocated = true;
+				break;
+			}
+		}
+	}
+	if( !allocated ) {
+		spriteList.push(sprite);
+	}
+	return sprite;
+}
+
+let spriteAttach = function(spriteList,sprite) {
+	sprite.refs = (sprite.refs||0)+1;
+	spriteList.push(sprite);
+}
+
+let spriteOnStage = function(sprite,value) {
+	if( value == sprite.onStage ) {
+		return;
+	}
+	if( value && _viewMap.app.stage.children.find( s => s==sprite ) ) {
+		debugger;
+	}
+	_viewMap.app.stage[value?'addChild':'removeChild'](sprite);
+	sprite.onStage = value;
+	return sprite;
+}
+
+let spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible) {
+
+	function make(x,y,entity,imgGet,light,doTint,doGrey,numSeed) {
+
+		entity.spriteList = entity.spriteList || [];
+
+		for( let i=0 ; i<(entity.spriteCount || 1) ; ++i ) {
+			if( !entity.spriteList[i] ) {
+				let img = imgGet(entity,null,numSeed);
+				if( !img ) {
+					debugger;
+					imgGet(entity);	//helps with debugging.
+				}
+				//console.log( "Create sprite "+entity.typeId,x/Tile.DIM,y/Tile.DIM);
+				let sprite = spriteCreate( entity.spriteList, img );
+				sprite.keepAcrossAreas = entity.isUser && entity.isUser();
+				sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
+				sprite.baseScale = entity.scale || Tile.DIM/sprite.width;
+				if( entity.isMonsterType && !entity.scale) {
+					sprite.baseScale *= Math.rand(MONSTER_SCALE_VARIANCE_MIN,MONSTER_SCALE_VARIANCE_MAX);
+				}
+			}
+			let sprite = entity.spriteList[i];
+			let onStage = !entity.invisible || senseInvisible;
+			spriteOnStage(sprite,onStage);
+			if( sprite.refs == 1 ) {	// I must be the only controller, so...
+				let zOrder = entity.zOrder || (entity.isWall ? Tile.zOrder.WALL : (entity.isFloor ? Tile.zOrder.FLOOR : (entity.isTileType ? Tile.zOrder.TILE : (entity.isItemType ? (entity.isGate ? Tile.zOrder.GATE : (entity.isDecor ? Tile.zOrder.DECOR : Tile.zOrder.ITEM)) : (entity.isMonsterType ? Tile.zOrder.MONSTER : Tile.zOrder.OTHER)))));
+				sprite.zOrder 	= zOrder;
+				sprite.visible 	= true;
+				sprite.x 		= x+(Tile.DIM/2);
+				sprite.y 		= y+(Tile.DIM/2);
+				sprite.transform.scale.set( sprite.baseScale );
+				sprite.alpha 	= (entity.alpha||1) * Light.Alpha[Math.floor(light)];
+				//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
+			}
+			if( doTint ) {
+				sprite.filters = this.desaturateFilterArray;
+				sprite.tint = 0xAAAAFF;
+			}
+			else
+			if( doGrey ) {
+				sprite.filters = this.desaturateFilterArray;
+				sprite.tint = 0xFFFFFF;
+			}
+			else {
+				sprite.filters = this.resetFilterArray;
+				sprite.tint = 0xFFFFFF;
+			}
+		}
+		if( entity.puppetMe ) {
+			entity.puppetMe.puppet(entity.spriteList);
+			delete entity.puppetMe;
+		}
+	}
+
+	let self = _viewMap;
+	// This can happen at game start, before anything has been told to observe.
+	if( !self.observer ) {
+		return;
+	}
+	
+	let glowLight = MaxVis;
+//			self.staticTileEntity = self.staticTileEntity || { isStaticTile: true };
+
+	// These are the world coordinate offsets
+	let wx = (self.observer.x-self.sd);
+	let wy = (self.observer.y-self.sd);
+	let x = xWorld - wx;
+	let y = yWorld - wy;
+	let doTint = false;
+	let doGrey = false;
+	let light = x>=0 && y>=0 && x<self.d && y<self.d ? self.drawListCache[y][x][0] : 0;
+	let isMemory = x>=0 && y>=0 && x<self.d && y<self.d ? self.drawListCache[y][x][1] : false;
+	if( isMemory ) {
+		doTint = true;
+		light = MapMemoryLight;
+	}
+	else
+	if( darkVision ) {
+		doGrey = true;
+	}
+
+	if( entity.isTileType && !entity.isPosition ) {
+		entity.spriteList = self.observer.map.tileSprite[yWorld][xWorld][entity.typeId];
+	}
+
+	let imgGet = self.imageRepo.imgGet[entity.typeId];
+	let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
+	make.call(
+		self,
+		x*Tile.DIM,
+		y*Tile.DIM,
+		entity,
+		imgGet,
+		lightAfterGlow,
+		doTint,
+		doGrey,
+		self.randList[xWorld&0xFF]+7+self.randList[yWorld&0xFF]
+	);
+
+	if( entity.isTileType && !entity.isPosition ) {
+//				self.observer.map.tileSprite[yWorld][xWorld] = self.staticTileEntity.spriteList;
+		self.observer.map.tileSprite[yWorld][xWorld][entity.typeId] = entity.spriteList;
+//				delete entity.spriteList;
+	}
+}
+
+
 
 class ViewMap extends ViewObserver {
 	constructor(divId,imageRepo,worldOverlayAddFn,worldOverlayRemoveFn) {
@@ -340,7 +508,12 @@ class ViewMap extends ViewObserver {
 		document.getElementById(this.divId).appendChild(this.app.view);
 		this.setDimensions();
 		this.hookEvents();
-		this.spriteHooks();
+		_viewMap = this;
+
+		this.app.ticker.add(function(delta) {
+			// but only if real time is not stopped.
+			Animation.tickRealtime(delta/60);
+		});
 	}
 
 	hookEvents() {
@@ -348,8 +521,8 @@ class ViewMap extends ViewObserver {
 		$('#'+this.divId+' canvas').mousemove( function(e) {
 
 			let offset = $(this).offset(); 
-			let mx = Math.floor((e.pageX - offset.left)/TILE_DIM);
-			let my = Math.floor((e.pageY - offset.top)/TILE_DIM);
+			let mx = Math.floor((e.pageX - offset.left)/Tile.DIM);
+			let my = Math.floor((e.pageY - offset.top)/Tile.DIM);
 
 			if( !self.observer ) {
 				return;
@@ -388,184 +561,11 @@ class ViewMap extends ViewObserver {
 		});
 	}
 
-	spriteHooks() {
-		let self = this;
-		spriteDeathCallback = function(spriteList) {
-			if( !spriteList ) return;
-			Array.filterInPlace( spriteList, sprite => {
-				sprite.refs--;
-				if( sprite.refs <= 0 ) {
-					if( sprite.keepAcrossAreas ) {
-						return true;
-					}
-					self.app.stage.removeChild(sprite);
-				}
-				return false;
-			});
-		};
-
-		spriteCreate = function(spriteList,imgPath,mayReuse) {
-			if( !imgPath ) {
-				debugger;
-			}
-			let resource = self.imageRepo.get(imgPath);
-			if( !resource ) {
-				debugger;
-				return;
-			}
-			let sprite = new PIXI.Sprite( resource.texture );
-			sprite.onStage = false;
-			sprite.refs = 1;
-			let allocated = false;
-			if( mayReuse ) {
-				for( let i=0 ; i<spriteList.length ; ++i ) {
-					if( spriteList[i].dead ) {
-						spriteList[i] = sprite;
-						allocated = true;
-						break;
-					}
-				}
-			}
-			if( !allocated ) {
-				spriteList.push(sprite);
-			}
-			return sprite;
-		}
-
-		spriteAttach = function(spriteList,sprite) {
-			sprite.refs = (sprite.refs||0)+1;
-			spriteList.push(sprite);
-		}
-
-		spriteOnStage = function(sprite,value) {
-			if( value == sprite.onStage ) {
-				return;
-			}
-			if( value && self.app.stage.children.find( s => s==sprite ) ) {
-				debugger;
-			}
-			self.app.stage[value?'addChild':'removeChild'](sprite);
-			sprite.onStage = value;
-			return sprite;
-		}
-
-		spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible) {
-
-			function make(x,y,entity,imgGet,light,doTint,doGrey,numSeed) {
-
-				entity.spriteList = entity.spriteList || [];
-
-				for( let i=0 ; i<(entity.spriteCount || 1) ; ++i ) {
-					if( !entity.spriteList[i] ) {
-						let img = imgGet(entity,null,numSeed);
-						if( !img ) {
-							debugger;
-							imgGet(entity);	//helps with debugging.
-						}
-						//console.log( "Create sprite "+entity.typeId,x/TILE_DIM,y/TILE_DIM);
-						let sprite = spriteCreate( entity.spriteList, img );
-						sprite.keepAcrossAreas = entity.isUser && entity.isUser();
-						sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
-						sprite.baseScale = entity.scale || TILE_DIM/sprite.width;
-						if( entity.isMonsterType && !entity.scale) {
-							sprite.baseScale *= Math.rand(MONSTER_SCALE_VARIANCE_MIN,MONSTER_SCALE_VARIANCE_MAX);
-						}
-					}
-					let sprite = entity.spriteList[i];
-					let onStage = !entity.invisible || senseInvisible;
-					spriteOnStage(sprite,onStage);
-					if( sprite.refs == 1 ) {	// I must be the only controller, so...
-						let zOrder = entity.zOrder || (entity.isWall ? ZOrder.WALL : (entity.isFloor ? ZOrder.FLOOR : (entity.isTileType ? ZOrder.TILE : (entity.isItemType ? (entity.isGate ? ZOrder.GATE : (entity.isDecor ? ZOrder.DECOR : ZOrder.ITEM)) : (entity.isMonsterType ? ZOrder.MONSTER : ZOrder.OTHER)))));
-						sprite.zOrder 	= zOrder;
-						sprite.visible 	= true;
-						sprite.x 		= x+(TILE_DIM/2);
-						sprite.y 		= y+(TILE_DIM/2);
-						sprite.transform.scale.set( sprite.baseScale );
-						sprite.alpha 	= (entity.alpha||1) * LightAlpha[Math.floor(light)];
-						//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
-					}
-					if( doTint ) {
-						sprite.filters = this.desaturateFilterArray;
-						sprite.tint = 0xAAAAFF;
-					}
-					else
-					if( doGrey ) {
-						sprite.filters = this.desaturateFilterArray;
-						sprite.tint = 0xFFFFFF;
-					}
-					else {
-						sprite.filters = this.resetFilterArray;
-						sprite.tint = 0xFFFFFF;
-					}
-				}
-				if( entity.puppetMe ) {
-					entity.puppetMe.puppet(entity.spriteList);
-					delete entity.puppetMe;
-				}
-			}
-
-			// This can happen at game start, before anything has been told to observe.
-			if( !this.observer ) {
-				return;
-			}
-			
-			let glowLight = MaxVis;
-//			this.staticTileEntity = this.staticTileEntity || { isStaticTile: true };
-
-			// These are the world coordinate offsets
-			let wx = (this.observer.x-this.sd);
-			let wy = (this.observer.y-this.sd);
-			let x = xWorld - wx;
-			let y = yWorld - wy;
-			let doTint = false;
-			let doGrey = false;
-			let light = x>=0 && y>=0 && x<this.d && y<this.d ? this.drawListCache[y][x][0] : 0;
-			let isMemory = x>=0 && y>=0 && x<this.d && y<this.d ? this.drawListCache[y][x][1] : false;
-			if( isMemory ) {
-				doTint = true;
-				light = MapMemoryLight;
-			}
-			else
-			if( darkVision ) {
-				doGrey = true;
-			}
-
-			if( entity.isTileType && !entity.isPosition ) {
-				entity.spriteList = this.observer.map.tileSprite[yWorld][xWorld][entity.typeId];
-			}
-
-			let imgGet = this.imageRepo.imgGet[entity.typeId];
-			let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
-			make.call(
-				this,
-				x*TILE_DIM,
-				y*TILE_DIM,
-				entity,
-				imgGet,
-				lightAfterGlow,
-				doTint,
-				doGrey,
-				this.randList[xWorld&0xFF]+7+this.randList[yWorld&0xFF]
-			);
-
-			if( entity.isTileType && !entity.isPosition ) {
-//				this.observer.map.tileSprite[yWorld][xWorld] = this.staticTileEntity.spriteList;
-				this.observer.map.tileSprite[yWorld][xWorld][entity.typeId] = entity.spriteList;
-//				delete entity.spriteList;
-			}
-		}.bind(this);
-
-		this.app.ticker.add(function(delta) {
-			// but only if real time is not stopped.
-			animationTickRealtime(delta/60);
-		});
-	}
-
 	setDimensions() {
 		this.sd = MaxVis;
 		this.d = ((this.sd*2)+1);
-		let tileWidth  = TILE_DIM * this.d;
-		let tileHeight = TILE_DIM * this.d;
+		let tileWidth  = Tile.DIM * this.d;
+		let tileHeight = Tile.DIM * this.d;
 
 		this.app.renderer.view.style.width = tileWidth + "px";
 		this.app.renderer.view.style.height = tileHeight + "px";
@@ -573,16 +573,16 @@ class ViewMap extends ViewObserver {
 	}
 	setZoom(_zoom) {
 		this.zoom = _zoom % 3;
-		let oldDim = TILE_DIM;
-		if( this.zoom == 0 ) { TILE_DIM=32 ; MaxVis=11; }
-		if( this.zoom == 1 ) { TILE_DIM=48 ; MaxVis=8; }
-		if( this.zoom == 2 ) { TILE_DIM=64 ; MaxVis=6; }
-		//document.documentElement.style.setProperty('--TILE_DIM', TILE_DIM);
+		let oldDim = Tile.DIM;
+		if( this.zoom == 0 ) { Tile.DIM=32 ; MaxVis=11; }
+		if( this.zoom == 1 ) { Tile.DIM=48 ; MaxVis=8; }
+		if( this.zoom == 2 ) { Tile.DIM=64 ; MaxVis=6; }
+		//document.documentElement.style.setProperty('--Tile.DIM', Tile.DIM);
 		//document.documentElement.style.setProperty('--TILE_SPAN', MaxVis*2+1);
 		this.setDimensions();
 		for( let child of this.app.stage.children ) {
-			child.x = ((child.x-(oldDim/2)) / oldDim) * TILE_DIM + TILE_DIM/2;
-			child.y = ((child.y-(oldDim/2)) / oldDim) * TILE_DIM + TILE_DIM/2;
+			child.x = ((child.x-(oldDim/2)) / oldDim) * Tile.DIM + Tile.DIM/2;
+			child.y = ((child.y-(oldDim/2)) / oldDim) * Tile.DIM + Tile.DIM/2;
 			child.transform.scale.set( child.baseScale );
 		}
 	}
@@ -696,3 +696,15 @@ class ViewMap extends ViewObserver {
 		this.draw(drawList);
 	}
 }
+
+return {
+	ImageRepo: ImageRepo,
+	ViewMap: ViewMap,
+	spriteCreate: spriteCreate,
+	spriteAttach: spriteAttach,
+	spriteOnStage: spriteOnStage,
+	spriteMakeInWorld: spriteMakeInWorld,
+	spriteDeathCallback: spriteDeathCallback
+}
+
+});

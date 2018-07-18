@@ -1,3 +1,5 @@
+Module.add('plan',function() {
+
 let Plan = (new class {
 	constructor() {
 	}
@@ -201,8 +203,8 @@ let Plan = (new class {
 		};
 		let p = plan[key][depth] || plan[key].default;
 		if( p.make && key=='core' ) {
-			if( depth > DEPTH_MIN ) p.make.push( { typeFilter: 'stairsUp' } );
-			if( depth < DEPTH_MAX ) p.make.push( { typeFilter: 'stairsDown' } );
+			if( depth > Rules.DEPTH_MIN ) p.make.push( { typeFilter: 'stairsUp' } );
+			if( depth < Rules.DEPTH_MAX ) p.make.push( { typeFilter: 'stairsDown' } );
 		}
 
 		return p;
@@ -279,3 +281,9 @@ let Plan = (new class {
 	}
 
 }());
+
+return {
+	Plan: Plan
+}
+
+});

@@ -1,3 +1,5 @@
+Module.add('world',function() {
+
 class World {
 	constructor() {
 		this.areaList = {};
@@ -81,3 +83,9 @@ class World {
 		return this.areaList[areaId];
 	}
 }
+
+return {
+	World: World
+}
+
+});

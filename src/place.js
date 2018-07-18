@@ -1,3 +1,5 @@
+Module.add('place',function() {
+
 
 class Place {
 	constructor(place) {
@@ -71,13 +73,13 @@ class Place {
 					continue;
 				}
 			}
-			if( s == TILE_FLOOR ) {
+			if( s == Tile.FLOOR ) {
 				s = DefaultFloor;
 			}
-			if( s == TILE_WALL ) {
+			if( s == Tile.WALL ) {
 				s = DefaultWall;
 			}
-			if( !SymbolToType[s] && s!==TILE_UNKNOWN ) {
+			if( !SymbolToType[s] && s!==Tile.UNKNOWN ) {
 				console.log('ERROR: unknown symbol ['+s+']');
 				map += TileTypeList.floorCave.symbol;
 				debugger;	// By now we should have resolved what this symbol maps to
@@ -93,7 +95,7 @@ class Place {
 			return;
 		}
 		let mapString = this.generateStringMap(DefaultFloor,DefaultWall);
-		this.map = new SimpleMap(mapString,false,TILE_UNKNOWN);
+		this.map = new SimpleMap(mapString,false,Tile.UNKNOWN);
 	}
 	rotateIfNeeded(rotation) {
 		if( this.flags && this.flags.rotate && this.map ) {
@@ -111,7 +113,7 @@ class Place {
 	}
 	calcChance(depth,rarity) {
 		let placeLevel = (this.level=='any' ? depth : this.level);
-		let appear = Math.floor(Math.clamp(Math.chanceToAppearSimple(placeLevel,depth) * 100000, 1, 100000));
+		let appear = Math.floor(Math.clamp(ChanceToAppear.Simple(placeLevel,depth) * 100000, 1, 100000));
 		return appear * (rarity || 1);
 	}
 	containsAny(symbolArray) {
@@ -127,3 +129,9 @@ class Place {
 	}
 
 };
+
+return {
+	Place: Place
+}
+
+});

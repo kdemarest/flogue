@@ -1,17 +1,73 @@
-let DEPTH_MIN = 0;
-let DEPTH_MAX = 19;
-let DEPTH_SPAN = (DEPTH_MAX-DEPTH_MIN)+1;
+Module.add('rules',function() {
 
-let SCENT_AGE_LIMIT = 100000;
+let Rules = new class {
+	constructor() {
+		Object.assign( this, {
+			DEPTH_MIN: 0,
+			DEPTH_MAX: 19,
+			SCENT_AGE_LIMIT: 100000,
+			ARMOR_EFFECT_CHANCE_TO_FIRE: 10,
+			WEAPON_EFFECT_CHANCE_TO_FIRE: 10,
+			WEAPON_EFFECT_OP_ALWAYS: ['damage'],	// Weapons with this op will ALWAYS fire their special effect
+			WEAPON_EFFECT_DAMAGE_PERCENT: 20,	// Damage done is that case should be only x% of regular damage.
+		});
+		this.DEPTH_SPAN = (this.DEPTH_MAX-this.DEPTH_MIN)+1;
+		this.xLootFrequency 				= 1;
+		this.xEffectChance 					= 1;
+		this.DAMAGE_BONUS_FOR_RECHARGE		= 0.05;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
+		this.RANGED_WEAPON_DEFAULT_RANGE 	= 7;
+		this.DEFAULT_EFFECT_DURATION 		= 10;
+		this.PRICE_MULT_BUY  				= 10;
+		this.PRICE_MULT_SELL 				= 3;
+		this.MONSTER_DARK_VISION 			= 6;
+		this.MONSTER_SIGHT_DISTANCE 		= 6;
+		this.SPELL_RECHARGE_TIME 			= 10;
+		this.EXTRA_RECHARGE_AT_DEPTH_MAX    = 10;
+		this.COMBAT_EXPIRATION 				= 6;
 
-const ARMOR_EFFECT_CHANCE_TO_FIRE = 10;
-const ARMOR_EFFECT_DAMAGE_PERCENT = 10;
+	}
+	 playerHealth(playerLevel) {
+	 	return 90+(10*playerLevel);
+	 }
+	 playerArmor(playerLevel) {
+	 	let armorAtLevelMin = 0.30;
+	 	let armorAtLevelMax = 0.80;
+	 	let armor = armorAtLevelMin+((playerLevel-1)/Rules.DEPTH_SPAN)*(armorAtLevelMax-armorAtLevelMin);
+	 	return Math.clamp(armor,0.0,1.0);
+	 }
+	 playerDamage(playerLevel) {
+	 	// Always just 1/10th of the player's hit points at this level. Monster health will scale to it.
+	 	let damage = this.playerHealth(playerLevel)/10;
+	 	return Math.max(1,Math.floor(damage));
+	 }
+	 monsterHealth(monsterLevel,hitsToKillMonster=3) {
+	 	if( !hitsToKillMonster ) debugger;
+	 	return Math.max(1,Math.floor(this.playerDamage(monsterLevel)*hitsToKillMonster));
+	 }
+	 monsterDamage(monsterLevel,hitsToKillPlayer=10) {
+	 	if( !hitsToKillPlayer ) debugger;
+	 	let damage = this.playerHealth(monsterLevel)/(hitsToKillPlayer*(1-this.playerArmor(monsterLevel)));
+	 	return Math.max(1,Math.floor(damage));
+	 }
 
-const WEAPON_EFFECT_CHANCE_TO_FIRE = 10;
-const WEAPON_EFFECT_OP_ALWAYS = ['damage'];	// Weapons with this op will ALWAYS fire their special effect
-const WEAPON_EFFECT_DAMAGE_PERCENT = 20;	// Damage done is that case should be only x% of regular damage.
+	pickDamage(level,rechargeTime,thing) {
+		let h2k = calcFirst(thing,thing,'hitsToKillPlayer');
+		if( h2k !== undefined ) {
+			// This just short-circuits everything and cuts to the chase.
+			return this.monsterDamage(level,h2k);
+		}
+		let dm = xCalc(thing,thing,'xDamage','*');
+		let mult = (rechargeTime||0)>1 ? 1+(rechargeTime-1)*this.DAMAGE_BONUS_FOR_RECHARGE : 1;
+		let damage = this.playerDamage(level) * mult * dm;
+		return Math.max(1,Math.floor(damage));
+	}
+	effectPriceMultiplierByRarity(rarity) {
+		return 1.3 * 1/(rarity||1.0);
+	}
 
-function ItemCalc(item,presets,field,op) {
+}();
+
+let xCalc = function(item,presets,field,op) {
 	function calc(piece) {
 		let a = piece ? (piece[field] || def) : def;
 		if( (op=='*' || op == '+') && isNaN(a) ) debugger;
@@ -42,7 +98,7 @@ function ItemCalc(item,presets,field,op) {
 	return n;
 }
 
-function ItemFirstValue(item,presets,field) {
+let calcFirst = function(thing,presets,field) {
 	if( presets && presets.quality && presets.quality[field] !== undefined ) {
 		return presets.quality[field];
 	}
@@ -55,74 +111,19 @@ function ItemFirstValue(item,presets,field) {
 	if( presets && presets.effect && presets.effect[field] !== undefined ) {
 		return presets.effect[field];
 	}
-	if( item && item[field] !== undefined ) {
-		return item[field];
+	if( thing && thing[field] !== undefined ) {
+		return thing[field];
 	}
 	return;	// undefined
 }
 
-
-let Rules = new class {
-	constructor() {
-		this.DAMAGE_BONUS_FOR_RECHARGE		= 0.05;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
-		this.RANGED_WEAPON_DEFAULT_RANGE 	= 7;
-		this.DEFAULT_EFFECT_DURATION 		= 10;
-		this.PRICE_MULT_BUY  				= 10;
-		this.PRICE_MULT_SELL 				= 3;
-		this.MONSTER_DARK_VISION 			= 6;
-		this.MONSTER_SIGHT_DISTANCE 		= 6;
-		this.SPELL_RECHARGE_TIME 			= 10;
-		this.EXTRA_RECHARGE_AT_DEPTH_MAX    = 10;
-		this.COMBAT_EXPIRATION 				= 6;
-
-	}
-	 playerHealth(playerLevel) {
-	 	return 90+(10*playerLevel);
-	 }
-	 playerArmor(playerLevel) {
-	 	let armorAtLevelMin = 0.30;
-	 	let armorAtLevelMax = 0.80;
-	 	let armor = armorAtLevelMin+((playerLevel-1)/DEPTH_SPAN)*(armorAtLevelMax-armorAtLevelMin);
-	 	return Math.clamp(armor,0.0,1.0);
-	 }
-	 playerDamage(playerLevel) {
-	 	// Always just 1/10th of the player's hit points at this level. Monster health will scale to it.
-	 	let damage = this.playerHealth(playerLevel)/10;
-	 	return Math.max(1,Math.floor(damage));
-	 }
-	 monsterHealth(monsterLevel,hitsToKillMonster=3) {
-	 	if( !hitsToKillMonster ) debugger;
-	 	return Math.max(1,Math.floor(this.playerDamage(monsterLevel)*hitsToKillMonster));
-	 }
-	 monsterDamage(monsterLevel,hitsToKillPlayer=10) {
-	 	if( !hitsToKillPlayer ) debugger;
-	 	let damage = this.playerHealth(monsterLevel)/(hitsToKillPlayer*(1-this.playerArmor(monsterLevel)));
-	 	return Math.max(1,Math.floor(damage));
-	 }
-
-	pickDamage(level,rechargeTime,item) {
-		let h2k = ItemFirstValue(item,item,'hitsToKillPlayer');
-		if( h2k !== undefined ) {
-			// This just short-circuits everything and cuts to the chase.
-			return this.monsterDamage(level,h2k);
-		}
-		let dm = ItemCalc(item,item,'xDamage','*');
-		let mult = (rechargeTime||0)>1 ? 1+(rechargeTime-1)*this.DAMAGE_BONUS_FOR_RECHARGE : 1;
-		let damage = this.playerDamage(level) * mult * dm;
-		return Math.max(1,Math.floor(damage));
-	}
-
-	 effectPriceMultiplierByRarity(rarity) {
-		return 1.3 * 1/(rarity||1.0);
-	}
-};
 
 // ItemBag is the top level item probability and price manager.
 // gen = the chance to generate the item. Themes can tweak this number
 // eff = the change that the generated item has an effect of some kind. Rises by (area.depth*0.30)
 // price = how much you have to pay to buy this thing. Multiplied by the level of the variety/material/quality
 // basis = how you calculate the value and rarity
-let ItemBag = (function() {
+Rules.ItemBag = (function() {
 	let raw = {
 		// 			cGen 	cEff	price	basis
 		key: 	[	 0.0, 	 0.00,	  1.0,	[], ],
@@ -155,3 +156,10 @@ let ItemBag = (function() {
 	});
 })();
 
+return {
+	Rules: Rules,
+	xCalc: xCalc,
+	calcFirst: calcFirst,
+}
+
+});

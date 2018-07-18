@@ -1,3 +1,6 @@
+Module.add('area',function() {
+
+
 function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	let picker = new Picker(area.depth);
 
@@ -342,8 +345,8 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		area.vis = new Vis(()=>area.map);
 	}
 
-	if( LightCaster ) {
-		area.lightCaster = new LightCaster( area.vis );
+	if( Light.Caster ) {
+		area.lightCaster = new Light.Caster( area.vis );
 	}
 
 	return area;
@@ -444,7 +447,7 @@ class Area {
 
 		// NOTE: Move this into the areaBuild() at some point.
 		if( theme.jobPick ) {
-			this.jobPickTable = new PickTable().scanKeys(theme.jobPick);
+			this.jobPickTable = new Pick.Table().scanKeys(theme.jobPick);
 			this.jobPicker = (filter) => {
 				let pickTable = this.jobPickTable;
 				if( pickTable.noChances() ) {
@@ -453,10 +456,10 @@ class Area {
 				if( filter ) {
 					// WARNING! All of the QUALIFYING jobs might have already
 					// been driven to zero. So reset and let its chance numbers go negative.
-					pickTable = new PickTable().scanPickTable(this.jobPickTable,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
+					pickTable = new Pick.Table().scanPickTable(this.jobPickTable,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
 					if( pickTable.noChances() ) {
-						let temp = new PickTable().scanKeys(theme.jobPick);
-						pickTable = new PickTable().scanPickTable(temp,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
+						let temp = new Pick.Table().scanKeys(theme.jobPick);
+						pickTable = new Pick.Table().scanPickTable(temp,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
 					}
 				}
 				let jobId = pickTable.pick();
@@ -498,7 +501,7 @@ class Area {
 			this.vis.opacityLookup,
 			this.entityList,
 			this.map.itemList,
-			animationList.filter( a=>a.areaId==this.areaId )
+			Animation.list.filter( a=>a.areaId==this.areaId )
 		);
 
 		observer.light = oldLight;
@@ -516,3 +519,9 @@ class Area {
 		return this.map.getSiteAt(x,y);
 	}
 }
+
+return {
+	Area: Area
+}
+
+});

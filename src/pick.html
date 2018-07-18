@@ -67,7 +67,7 @@ function drawItemTop() {
 	var chart = new google.visualization.PieChart( chartDiv('itemTopLevel') );
 	data.addColumn('string', 'Item Type');
 	data.addColumn('number', 'Frequency');
-	forEach( ItemBag, (item,key) => data.addRow([key,item.cGen]) );
+	forEach( Rules.ItemBag, (item,key) => data.addRow([key,item.cGen]) );
 	chart.draw(data, {
 		title: 'Item Share',
 		width:1000,
@@ -130,7 +130,7 @@ function drawItemByLevel(title,itemTypeId,setting={}) {
 	let columnOf = {};
 	let columnCount = 1;
 
-	for( let depth=DEPTH_MIN ; depth <= DEPTH_MAX ; depth += 1 ) {
+	for( let depth=Rules.DEPTH_MIN ; depth <= Rules.DEPTH_MAX ; depth += 1 ) {
 		let row = [depth];
 		let colIndex = 0;
 		let picker = new Picker(depth);
@@ -227,7 +227,7 @@ function drawItemSamplerPerLevel() {
 	let div = chartDiv('itemSampler');
 	let table = $('<table><tbody><tr></tr></td></table>').appendTo(div);
 	let itemCountToShow = 50;
-	for( let depth = DEPTH_MIN ; depth <= DEPTH_MAX ; ++depth ) {
+	for( let depth = Rules.DEPTH_MIN ; depth <= Rules.DEPTH_MAX ; ++depth ) {
 		let picker = new Picker(depth);
 		let a = [];
 		for( let i=0 ; i<itemCountToShow ; ++i ) {
@@ -263,7 +263,7 @@ function drawMonsterStatistics(title="Monsters By Depth",criteriaFn) {
 		}
 	}
 
-	for( let depth=DEPTH_MIN ; depth <= DEPTH_MAX ; depth += 1 ) {
+	for( let depth=Rules.DEPTH_MIN ; depth <= Rules.DEPTH_MAX ; depth += 1 ) {
 		let row = [depth];
 		while( row.length < columnCount ) {
 			row.push(0);

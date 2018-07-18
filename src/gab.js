@@ -1,3 +1,5 @@
+Module.add('gab',function() {
+
 Gab = (new function(priorGab) {
 	console.assert(this!==window);
 	Object.assign(this,priorGab);
@@ -34,8 +36,10 @@ Gab = (new function(priorGab) {
 //		return sentence.refine(null);
 //	}
 
-
-
+	function commandToKey(command) {
+		return new KeyMap().commandToKey(command) || 'UNKNOWN';
+	}
+	
 	let sign4Type = {
 		stairsUp: 	(e)=> () => 'These stairs ascend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.WAIT)+'" to ascend.',
 		stairsDown: (e)=> () => 'These stairs descend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.WAIT)+'" to descend.',
@@ -175,3 +179,8 @@ Gab = (new function(priorGab) {
 	return this;
 }(Gab));
 
+return {
+	Gab: Gab
+}
+
+});

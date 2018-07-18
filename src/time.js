@@ -1,3 +1,5 @@
+Module.add('time',function() {
+
 let Time = (new class {
 	constructor() {
 		this.simTime = 1;
@@ -32,3 +34,10 @@ class SimTimer {
 		return Time.remaining(this.simTimeEnd) <= 0;
 	}
 }
+
+return {
+	Time: Time,
+	SimTimer: SimTimer
+}
+
+});

@@ -6418,7 +6418,7 @@ jQuery.extend( {
 
 	// Don't automatically add "px" to these possibly-unitless properties
 	cssNumber: {
-		"animationIterationCount": true,
+		"AnimationIterationCount": true,
 		"columnCount": true,
 		"fillOpacity": true,
 		"flexGrow": true,
@@ -6625,7 +6625,7 @@ jQuery.cssHooks.marginLeft = addGetHookIf( support.reliableMarginLeft,
 	}
 );
 
-// These hooks are used by animate to expand properties
+// These hooks are used by Animate to expand properties
 jQuery.each( {
 	margin: "",
 	padding: "",
@@ -6822,7 +6822,7 @@ function createFxNow() {
 	return ( fxNow = Date.now() );
 }
 
-// Generate parameters to create a standard animation
+// Generate parameters to create a standard Animation
 function genFx( type, includeWidth ) {
 	var which,
 		i = 0,
@@ -6843,13 +6843,13 @@ function genFx( type, includeWidth ) {
 	return attrs;
 }
 
-function createTween( value, prop, animation ) {
+function createTween( value, prop, Animation ) {
 	var tween,
 		collection = ( Animation.tweeners[ prop ] || [] ).concat( Animation.tweeners[ "*" ] ),
 		index = 0,
 		length = collection.length;
 	for ( ; index < length; index++ ) {
-		if ( ( tween = collection[ index ].call( animation, prop, value ) ) ) {
+		if ( ( tween = collection[ index ].call( Animation, prop, value ) ) ) {
 
 			// We're done with this property
 			return tween;
@@ -6866,7 +6866,7 @@ function defaultPrefilter( elem, props, opts ) {
 		hidden = elem.nodeType && isHiddenWithinTree( elem ),
 		dataShow = dataPriv.get( elem, "fxshow" );
 
-	// Queue-skipping animations hijack the fx hooks
+	// Queue-skipping Animations hijack the fx hooks
 	if ( !opts.queue ) {
 		hooks = jQuery._queueHooks( elem, "fx" );
 		if ( hooks.unqueued == null ) {
@@ -6892,7 +6892,7 @@ function defaultPrefilter( elem, props, opts ) {
 		} );
 	}
 
-	// Detect show/hide animations
+	// Detect show/hide Animations
 	for ( prop in props ) {
 		value = props[ prop ];
 		if ( rfxtypes.test( value ) ) {
@@ -6920,7 +6920,7 @@ function defaultPrefilter( elem, props, opts ) {
 		return;
 	}
 
-	// Restrict "overflow" and "display" styles during box animations
+	// Restrict "overflow" and "display" styles during box Animations
 	if ( isBox && elem.nodeType === 1 ) {
 
 		// Support: IE <=9 - 11, Edge 12 - 15
@@ -6952,7 +6952,7 @@ function defaultPrefilter( elem, props, opts ) {
 		if ( display === "inline" || display === "inline-block" && restoreDisplay != null ) {
 			if ( jQuery.css( elem, "float" ) === "none" ) {
 
-				// Restore the original display value at the end of pure show/hide animations
+				// Restore the original display value at the end of pure show/hide Animations
 				if ( !propTween ) {
 					anim.done( function() {
 						style.display = restoreDisplay;
@@ -6976,11 +6976,11 @@ function defaultPrefilter( elem, props, opts ) {
 		} );
 	}
 
-	// Implement show/hide animations
+	// Implement show/hide Animations
 	propTween = false;
 	for ( prop in orig ) {
 
-		// General show/hide setup for this element animation
+		// General show/hide setup for this element Animation
 		if ( !propTween ) {
 			if ( dataShow ) {
 				if ( "hidden" in dataShow ) {
@@ -6995,7 +6995,7 @@ function defaultPrefilter( elem, props, opts ) {
 				dataShow.hidden = !hidden;
 			}
 
-			// Show elements before animating them
+			// Show elements before Anim.Ating them
 			if ( hidden ) {
 				showHide( [ elem ], true );
 			}
@@ -7006,7 +7006,7 @@ function defaultPrefilter( elem, props, opts ) {
 
 			/* eslint-enable no-loop-func */
 
-				// The final step of a "hide" animation is actually hiding the element
+				// The final step of a "hide" Animation is actually hiding the element
 				if ( !hidden ) {
 					showHide( [ elem ] );
 				}
@@ -7073,7 +7073,7 @@ function Animation( elem, properties, options ) {
 		length = Animation.prefilters.length,
 		deferred = jQuery.Deferred().always( function() {
 
-			// Don't match elem in the :animated selector
+			// Don't match elem in the :Animated selector
 			delete tick.elem;
 		} ),
 		tick = function() {
@@ -7081,36 +7081,36 @@ function Animation( elem, properties, options ) {
 				return false;
 			}
 			var currentTime = fxNow || createFxNow(),
-				remaining = Math.max( 0, animation.startTime + animation.duration - currentTime ),
+				remaining = Math.max( 0, Animation.startTime + Animation.duration - currentTime ),
 
 				// Support: Android 2.3 only
 				// Archaic crash bug won't allow us to use `1 - ( 0.5 || 0 )` (#12497)
-				temp = remaining / animation.duration || 0,
+				temp = remaining / Animation.duration || 0,
 				percent = 1 - temp,
 				index = 0,
-				length = animation.tweens.length;
+				length = Animation.tweens.length;
 
 			for ( ; index < length; index++ ) {
-				animation.tweens[ index ].run( percent );
+				Animation.tweens[ index ].run( percent );
 			}
 
-			deferred.notifyWith( elem, [ animation, percent, remaining ] );
+			deferred.notifyWith( elem, [ Animation, percent, remaining ] );
 
 			// If there's more to do, yield
 			if ( percent < 1 && length ) {
 				return remaining;
 			}
 
-			// If this was an empty animation, synthesize a final progress notification
+			// If this was an empty Animation, synthesize a final progress notification
 			if ( !length ) {
-				deferred.notifyWith( elem, [ animation, 1, 0 ] );
+				deferred.notifyWith( elem, [ Animation, 1, 0 ] );
 			}
 
-			// Resolve the animation and report its conclusion
-			deferred.resolveWith( elem, [ animation ] );
+			// Resolve the Animation and report its conclusion
+			deferred.resolveWith( elem, [ Animation ] );
 			return false;
 		},
-		animation = deferred.promise( {
+		Animation = deferred.promise( {
 			elem: elem,
 			props: jQuery.extend( {}, properties ),
 			opts: jQuery.extend( true, {
@@ -7123,9 +7123,9 @@ function Animation( elem, properties, options ) {
 			duration: options.duration,
 			tweens: [],
 			createTween: function( prop, end ) {
-				var tween = jQuery.Tween( elem, animation.opts, prop, end,
-						animation.opts.specialEasing[ prop ] || animation.opts.easing );
-				animation.tweens.push( tween );
+				var tween = jQuery.Tween( elem, Animation.opts, prop, end,
+						Animation.opts.specialEasing[ prop ] || Animation.opts.easing );
+				Animation.tweens.push( tween );
 				return tween;
 			},
 			stop: function( gotoEnd ) {
@@ -7133,62 +7133,62 @@ function Animation( elem, properties, options ) {
 
 					// If we are going to the end, we want to run all the tweens
 					// otherwise we skip this part
-					length = gotoEnd ? animation.tweens.length : 0;
+					length = gotoEnd ? Animation.tweens.length : 0;
 				if ( stopped ) {
 					return this;
 				}
 				stopped = true;
 				for ( ; index < length; index++ ) {
-					animation.tweens[ index ].run( 1 );
+					Animation.tweens[ index ].run( 1 );
 				}
 
 				// Resolve when we played the last frame; otherwise, reject
 				if ( gotoEnd ) {
-					deferred.notifyWith( elem, [ animation, 1, 0 ] );
-					deferred.resolveWith( elem, [ animation, gotoEnd ] );
+					deferred.notifyWith( elem, [ Animation, 1, 0 ] );
+					deferred.resolveWith( elem, [ Animation, gotoEnd ] );
 				} else {
-					deferred.rejectWith( elem, [ animation, gotoEnd ] );
+					deferred.rejectWith( elem, [ Animation, gotoEnd ] );
 				}
 				return this;
 			}
 		} ),
-		props = animation.props;
+		props = Animation.props;
 
-	propFilter( props, animation.opts.specialEasing );
+	propFilter( props, Animation.opts.specialEasing );
 
 	for ( ; index < length; index++ ) {
-		result = Animation.prefilters[ index ].call( animation, elem, props, animation.opts );
+		result = Animation.prefilters[ index ].call( Animation, elem, props, Animation.opts );
 		if ( result ) {
 			if ( isFunction( result.stop ) ) {
-				jQuery._queueHooks( animation.elem, animation.opts.queue ).stop =
+				jQuery._queueHooks( Animation.elem, Animation.opts.queue ).stop =
 					result.stop.bind( result );
 			}
 			return result;
 		}
 	}
 
-	jQuery.map( props, createTween, animation );
+	jQuery.map( props, createTween, Animation );
 
-	if ( isFunction( animation.opts.start ) ) {
-		animation.opts.start.call( elem, animation );
+	if ( isFunction( Animation.opts.start ) ) {
+		Animation.opts.start.call( elem, Animation );
 	}
 
 	// Attach callbacks from options
-	animation
-		.progress( animation.opts.progress )
-		.done( animation.opts.done, animation.opts.complete )
-		.fail( animation.opts.fail )
-		.always( animation.opts.always );
+	Animation
+		.progress( Animation.opts.progress )
+		.done( Animation.opts.done, Animation.opts.complete )
+		.fail( Animation.opts.fail )
+		.always( Animation.opts.always );
 
 	jQuery.fx.timer(
 		jQuery.extend( tick, {
 			elem: elem,
-			anim: animation,
-			queue: animation.opts.queue
+			anim: Animation,
+			queue: Animation.opts.queue
 		} )
 	);
 
-	return animation;
+	return Animation;
 }
 
 jQuery.Animation = jQuery.extend( Animation, {
@@ -7282,9 +7282,9 @@ jQuery.fn.extend( {
 		return this.filter( isHiddenWithinTree ).css( "opacity", 0 ).show()
 
 			// Animate to the value specified
-			.end().animate( { opacity: to }, speed, easing, callback );
+			.end().Animate( { opacity: to }, speed, easing, callback );
 	},
-	animate: function( prop, speed, easing, callback ) {
+	Animate: function( prop, speed, easing, callback ) {
 		var empty = jQuery.isEmptyObject( prop ),
 			optall = jQuery.speed( speed, easing, callback ),
 			doAnimation = function() {
@@ -7292,7 +7292,7 @@ jQuery.fn.extend( {
 				// Operate on a copy of prop so per-property easing won't be lost
 				var anim = Animation( this, jQuery.extend( {}, prop ), optall );
 
-				// Empty animations, or finishing resolves immediately
+				// Empty Animations, or finishing resolves immediately
 				if ( empty || dataPriv.get( this, "finish" ) ) {
 					anim.stop( true );
 				}
@@ -7377,7 +7377,7 @@ jQuery.fn.extend( {
 				hooks.stop.call( this, true );
 			}
 
-			// Look for any active animations, and finish them
+			// Look for any active Animations, and finish them
 			for ( index = timers.length; index--; ) {
 				if ( timers[ index ].elem === this && timers[ index ].queue === type ) {
 					timers[ index ].anim.stop( true );
@@ -7385,7 +7385,7 @@ jQuery.fn.extend( {
 				}
 			}
 
-			// Look for any animations in the old queue and finish them
+			// Look for any Animations in the old queue and finish them
 			for ( index = 0; index < length; index++ ) {
 				if ( queue[ index ] && queue[ index ].finish ) {
 					queue[ index ].finish.call( this );
@@ -7403,11 +7403,11 @@ jQuery.each( [ "toggle", "show", "hide" ], function( i, name ) {
 	jQuery.fn[ name ] = function( speed, easing, callback ) {
 		return speed == null || typeof speed === "boolean" ?
 			cssFn.apply( this, arguments ) :
-			this.animate( genFx( name, true ), speed, easing, callback );
+			this.Animate( genFx( name, true ), speed, easing, callback );
 	};
 } );
 
-// Generate shortcuts for custom animations
+// Generate shortcuts for custom Animations
 jQuery.each( {
 	slideDown: genFx( "show" ),
 	slideUp: genFx( "hide" ),
@@ -7417,7 +7417,7 @@ jQuery.each( {
 	fadeToggle: { opacity: "toggle" }
 }, function( name, props ) {
 	jQuery.fn[ name ] = function( speed, easing, callback ) {
-		return this.animate( props, speed, easing, callback );
+		return this.Animate( props, speed, easing, callback );
 	};
 } );
 
@@ -9931,7 +9931,7 @@ jQuery.each( [
 
 
 
-jQuery.expr.pseudos.animated = function( elem ) {
+jQuery.expr.pseudos.Animated = function( elem ) {
 	return jQuery.grep( jQuery.timers, function( fn ) {
 		return elem === fn.elem;
 	} ).length;

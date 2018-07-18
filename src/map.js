@@ -1,21 +1,10 @@
-function FillTextMap(xLen,yLen,symbol) {
-	let s = '';
-	while( yLen-- ) {
-		let x = xLen;
-		while( x-- ) {
-			s += symbol;
-		}
-		s += '\n';
-	}
-	return s;
-}
-
+Module.add('map',function() {
 
 // MAP
 class SimpleMap {
 	constructor(tileRaw,replaceBlanks,padSymbol) {
 		this.isMap = true;
-		if( TILE_UNKNOWN != ' ' ) debugger;
+		if( Tile.UNKNOWN != ' ' ) debugger;
 		
 		let temp = tileRaw.replace(/\t/g,'');;
 		temp = replaceBlanks ? temp.replace(/ /g,padSymbol) : temp;
@@ -33,6 +22,7 @@ class SimpleMap {
 			}
 		}
 	}
+
 	setDimensions(xLen,yLen) {
 		this.xLen = xLen;
 		this.yLen = yLen;
@@ -136,8 +126,8 @@ class SimpleMap {
 	count8(cx,cy,fn) {
 		let c = 0;
 		for( let dir=0 ; dir<8 ; ++dir ) {
-			let x = cx+DirectionAdd[dir].x;
-			let y = cy+DirectionAdd[dir].y;
+			let x = cx+Direction.add[dir].x;
+			let y = cy+Direction.add[dir].y;
 			if( !this.inBounds(x,y) ) continue;
 			let tile = this.tileTypeGet(x,y);
 			if( fn(x,y,tile) ) {
@@ -152,9 +142,9 @@ class SimpleMap {
 	}
 	countGaps(x,y) {
 		let swaps = 0;
-		let lastPassable = this.testPassable(x+DirectionAdd[7].x,y+DirectionAdd[7].y);
+		let lastPassable = this.testPassable(x+Direction.add[7].x,y+Direction.add[7].y);
 		for( let dir=0 ; dir < 8 ; ++dir ) {
-			let passable = this.testPassable(x+DirectionAdd[dir].x,y+DirectionAdd[dir].y);
+			let passable = this.testPassable(x+Direction.add[dir].x,y+Direction.add[dir].y);
 			if( passable != lastPassable ) ++swaps;
 			lastPassable = passable;
 		}
@@ -164,9 +154,9 @@ class SimpleMap {
 	dirChoose(x,y,ratingFn) {
 		let bestDir = false;
 		let bestRating = null;
-		for( let dir=0 ; dir<DirectionCount ; ++dir ) {
-			let dx = x+DirectionAdd[dir].x;
-			let dy = y+DirectionAdd[dir].y;
+		for( let dir=0 ; dir<Direction.count ; ++dir ) {
+			let dx = x+Direction.add[dir].x;
+			let dy = y+Direction.add[dir].y;
 			if( this.inBounds(dx,dy) ) {
 				let rating = ratingFn(dx,dy,bestRating);
 				if( rating !== false ) {
@@ -191,9 +181,9 @@ class SimpleMap {
 		}
 		let most = {};
 		let best = false;
-		for( let dir=0 ; dir<DirectionCount ; ++dir ) {
-			let dx = x+DirectionAdd[dir].x;
-			let dy = y+DirectionAdd[dir].y;
+		for( let dir=0 ; dir<Direction.count ; ++dir ) {
+			let dx = x+Direction.add[dir].x;
+			let dy = y+Direction.add[dir].y;
 			if( this.inBounds(dx,dy) ) {
 				let symbol = this.tileSymbolGet(dx,dy);
 				if( SymbolToType[symbol].isFloor ) {
@@ -216,7 +206,7 @@ class SimpleMap {
 	}
 	tileTypeGetFastUnsafe(x,y) {
 		let symbol = this.tileSymbolGet(x,y);
-		if( symbol == TILE_UNKNOWN ) {
+		if( symbol == Tile.UNKNOWN ) {
 			return false;
 		}
 		let type = SymbolToType[symbol];
@@ -230,8 +220,8 @@ class SimpleMap {
 		return this.tileTypeGetFastUnsafe(x,y);
 	}
 	tileTypeGetDir(x,y,dir) {
-		x += DirectionAdd[dir].x;
-		y += DirectionAdd[dir].y;
+		x += Direction.add[dir].x;
+		y += Direction.add[dir].y;
 		return this.tileTypeGet(x,y);
 	}
 	renderToString() {
@@ -245,6 +235,19 @@ class SimpleMap {
 		return s;
 	}
 }
+
+SimpleMap.fillTextMap = function(xLen,yLen,symbol) {
+	let s = '';
+	while( yLen-- ) {
+		let x = xLen;
+		while( x-- ) {
+			s += symbol;
+		}
+		s += '\n';
+	}
+	return s;
+}
+
 
 
 
@@ -333,20 +336,20 @@ class Map extends SimpleMap {
 	scentClear(x,y) {
 		let lPos = (y*this.xLen+x)*2;
 		if( this.scentLookup[lPos] ) {
-			this.scentLookup[lPos+0] = -SCENT_AGE_LIMIT;
+			this.scentLookup[lPos+0] = -Rules.SCENT_AGE_LIMIT;
 			this.scentLookup[lPos+1] = null;
 		}
 	}
 	scentGetAge(x,y) {
-		return Time.simTime-(this.scentLookup[(y*this.xLen+x)*2+0] || SCENT_AGE_LIMIT);
+		return Time.simTime-(this.scentLookup[(y*this.xLen+x)*2+0] || Rules.SCENT_AGE_LIMIT);
 	}
 	scentIncAge(x,y,amount) {
 		console.assert(amount);
 		let lPos = (y*this.xLen+x)*2;
 		this.scentLookup[(y*this.xLen+x)*2+0] -= amount;
 	}
-	scentGetEntity(x,y,maxScentAge=SCENT_AGE_LIMIT,excludeId) {
-		maxScentAge = Math.min(maxScentAge,SCENT_AGE_LIMIT);
+	scentGetEntity(x,y,maxScentAge=Rules.SCENT_AGE_LIMIT,excludeId) {
+		maxScentAge = Math.min(maxScentAge,Rules.SCENT_AGE_LIMIT);
 		let lPos = (y*this.xLen+x)*2;
 		let simTime = this.scentLookup[lPos+0];
 		if( !simTime || simTime < Time.simTime-maxScentAge ) {
@@ -436,7 +439,7 @@ class Map extends SimpleMap {
 	}
 	pickDirWalkable(x,y) {
 		let list = [];
-		for( let dir=0 ; dir<DirectionCount ; ++dir ) {
+		for( let dir=0 ; dir<Direction.count ; ++dir ) {
 			let type = this.tileTypeGetDir(x,y,dir);
 			if( type && type.mayWalk ) {
 				list.push(dir);
@@ -455,8 +458,8 @@ class Map extends SimpleMap {
 		}
 
 		do {
-			x += DirectionAdd[dir].x;
-			y += DirectionAdd[dir].y;
+			x += Direction.add[dir].x;
+			y += Direction.add[dir].y;
 			let tile = this.tileTypeGet(x,y);
 			if( tile && fn(x,y,tile) ) {
 				return [x,y];
@@ -494,8 +497,8 @@ class Map extends SimpleMap {
 		if( !tile || (!tile.mayWalk && !type.allowPlacementOnBlocking) ) {
 			let dir = this.pickDirWalkable(x,y);
 			if( dir !== false ) {
-				x += DirectionAdd[dir].x;
-				y += DirectionAdd[dir].y;
+				x += Direction.add[dir].x;
+				y += Direction.add[dir].y;
 			}
 		}
 		let item = new Item( this.area.depth, type, presets, inject );
@@ -577,7 +580,7 @@ class Map extends SimpleMap {
 		this.traverse( (x,y) => {
 			let lPos = (y*this.xLen+x)*2;
 			if( this.scentLookup[lPos+1] == item ) {
-				this.scentLookup[lPos+0] = SCENT_AGE_LIMIT;
+				this.scentLookup[lPos+0] = Rules.SCENT_AGE_LIMIT;
 				this.scentLookup[lPos+1] = null;
 			}
 		});
@@ -608,3 +611,9 @@ class Map extends SimpleMap {
 	}
 }
 
+return {
+	SimpleMap: SimpleMap,
+	Map: Map
+}
+
+});

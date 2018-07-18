@@ -1,8 +1,5 @@
 // STATIC UTILITY FUNCTIONS
-
-function nop() {}
-
-(function(){
+Module.add('utilities',function(){
 	Math.clamp = function(value,min,max) {
 		return Math.max(min,Math.min(max,value));
 	}
@@ -379,83 +376,9 @@ function nop() {}
 		});
 	}
 
-//let qqq = String.tokenReplace("{material} arrow{+plus}", {material:{name:'frog'},plus:2});
-//debugger;
+});
 
-	Math.chanceToAppearSimple = function(entityLevel,mapLevel) {
-		if( mapLevel < entityLevel ) {
-			return 0;
-		}
-		let span = Math.max(3,DEPTH_SPAN/10);
-		let x = (entityLevel+span)-mapLevel;
-		let n = 1-Math.abs(x/span);
-		return Math.clamp( n, 0.02, 1.0 );
-	}
-
-	Math.chanceToAppearRamp = function(entityLevel,mapLevel) {
-		if( mapLevel < entityLevel ) {
-			return 0;
-		}
-
-		let amt = 0.01 * (entityLevel*entityLevel*entityLevel+1) / (DEPTH_MAX*DEPTH_MAX*DEPTH_MAX);
-		return amt*(mapLevel-entityLevel+1);
-
-		return (entityLevel+mapLevel) / (DEPTH_MAX*2);
-
-		let total  = DEPTH_MAX+1-entityLevel;
-		let remain = DEPTH_MAX+1-mapLevel;
-		return 0.1*entityLevel + remain/total;
-	}
-
-	Math.chanceToAppearBell = function(entityLevel,mapLevel) {
-		if( mapLevel < entityLevel ) {
-			return 0;
-		}
-		let o = 0.65;
-		let u = 2.0;
-		let x = (mapLevel - entityLevel)/10*DEPTH_SPAN;
-
-		// Creates a bell curve which is near 1.0 at five levels above 
-		let chance = 1.629308 * (1/(o*Math.sqrt(2*Math.PI))) * Math.exp( -( Math.pow((x/5)-u,2) / (2*o*o) ) );
-
-		return chance;
-	}
-
-	Math.chanceToAppearSigmoid = function(entityLevel,mapLevel,span=DEPTH_SPAN) {
-		if( mapLevel < entityLevel ) {
-			return 0;
-		}
-		// it takes <span> levels for this thing to get from 0.0 frequency to 1.0 frequency.
-		let x = mapLevel - entityLevel;
-
-		// Increases chances from about 7% to near 100% ten levels away from starting level.
-		//let chance = 1 - (1 / (1+Math.exp(x*(5/span)-(span*0.25))));
-		let chance = 1-(1/(1+Math.pow(100,x/(0.5*span)-1)));
-
-		return chance;
-	}
-
-	Math.chanceToAppearSigmoidDropping = function(entityLevel,mapLevel,span=DEPTH_SPAN*0.25) {
-		if( mapLevel < entityLevel ) {
-			return 0;
-		}
-		// it takes <span> levels for this thing to get from 0.0 frequency to 1.0 frequency.
-		let x = mapLevel - entityLevel;
-
-		// Increases chances from about 7% to near 100% ten levels away from starting level.
-		//let chance = 1 - (1 / (1+Math.exp(x*(5/span)-(span*0.25))));
-		let chance = 1-(1/(1+Math.pow(100,x/(0.5*span)-1)));
-
-		let base   = entityLevel+span;
-		let total  = DEPTH_MAX+1-base;
-		let remain = DEPTH_MAX+1-mapLevel;
-		if( remain > 0 && total > 0 ) {
-			chance = (entityLevel+1)/(mapLevel+1); //(remain/total);
-		}
-		return chance;
-	}
-
-})();
+Module.add('utilities2',function() {
 
 let GetTimeBasedUid = (function() {
 	let codes = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -473,14 +396,6 @@ let GetTimeBasedUid = (function() {
 		return uid;
 	}
 })();
-
-//let qList = {};
-//for( let q=0 ; q<100000 ; ++q ) {
-//	let n = GetTimeBasedUid();
-//	if( qList[n] ) debugger;
-//	qList[n] = 1;
-//}
-
 
 let GetUniqueEntityId = (function() {
 	let humanNameList = null;
@@ -524,176 +439,6 @@ function pick(listRaw) {
 	return list.length==0 ? null : list[Math.randInt(0,list.length)];
 }
 
-function rollDice(diceString) {
-	if( typeof diceString !== 'string' ) {
-		return diceString;
-	}
-	if( diceString.charAt(0)<'0' || diceString.charAt(0)>'9' ) {
-		return diceString;
-	}
-	let parts = diceString.split( /[d\+]/ );
-	let numDice = parseInt(parts[0] || "1");
-	let dieFaces = parseInt(parts[1]);
-	let plus = parseInt(parts[2] || "0");
-	let result = plus || 0;
-	while( numDice-- ) { result += Math.randInt(1,dieFaces+1); }
-	return result;
-}
-
-//**
-// Takes a table of things, whatever you want, and uses the chanceFn to get values of likelihood.
-// Then it traverses again picking a random one by poportions. If it fails (total=0) it tries the fallbackFn instead.
-//**
-class PickTable {
-	constructor() {
-		this.table = null;
-		this.chance = null;
-		this.total = 0;
-		this.indexPicked = -1;
-		this.valuePicked = null;
-	}
-	isEmpty() {
-		return !this.table || this.table.length == 0;
-	}
-	makeBlank() {
-		this.table = [];
-		this.chance = [];
-		this.total = 0;
-		this.indexPicked = -1;
-		this.valuePicked = null;
-	}
-	scanArray(table,chanceFn) {
-		console.assert( table && table.length );
-		this.makeBlank();
-		this.sourceArray = table;
-		this.reset = () => this.scanArray(table,fn);
-		for( let i=0 ; i<table.length ; i++ ) {
-			if( !table[i] ) debugger;
-			let value = chanceFn(table[i]);
-			if( value !== undefined && value !== null && value !== false) {
-				if( typeof value != 'number' ) debugger;
-				this.table.push( table[i] );
-				this.chance.push( value );
-				this.total += Math.max(0,value);
-			}
-		}
-		return this;
-	}
-	scanPickTable(pick,keepFn) {
-		console.assert( pick && pick.table && pick.table.length && pick.chance && pick.chance.length==pick.table.length);
-		this.makeBlank();
-		this.sourceArray = pick.table;
-		this.reset = () => this.scanPickTable(pick,keepFn);
-		for( let i=0 ; i<pick.table.length ; i++ ) {
-			if( !pick.table[i] ) debugger;
-			let value = keepFn(pick.table[i],pick.chance[i]);
-			if( value !== undefined && value !== null && value !== false) {
-				if( typeof value != 'number' ) debugger;
-				this.table.push( pick.table[i] );
-				this.chance.push( value );
-				this.total += Math.max(0,value);
-			}
-		}
-		return this;
-	}
-	scanHash(hash,fn) {
-		this.makeBlank();
-		this.sourceHash = hash;
-		this.reset = () => this.scanHash(hash,fn);
-		for( let key in hash ) {
-			let value = fn( hash[key], key );
-			if( value !== undefined && value !== null && value !== false) {
-				console.assert( hash[key] );
-				this.table.push( hash[key] )
-				this.chance.push( value );
-				this.total += Math.max(0,value);
-			}
-		}
-		return this;
-	}
-	scanKeys(hash) {
-		this.makeBlank();
-		this.sourceHash = hash;
-		this.reset = () => this.scanKeys(hash);
-		for( let key in hash ) {
-			this.table.push( key )
-			this.chance.push( hash[key] );
-			this.total += Math.max(0,hash[key]);
-		}
-		return this;
-	}
-	validate(typeList) {
-		for( let i=0 ; i<this.table.length ; ++i ) {
-			let key = this.table[i].typeId || this.table[i];
-			console.assert(typeList[key]);
-		}
-	}
-	pick() {
-		let n = Math.rand(0,this.total);
-		for( let i=0 ; i<this.table.length ; ++i ) {
-			n -= Math.max(0,this.chance[i]);
-			if( n<=0 ) {
-				this.indexPicked = i;
-				this.valuePicked = this.table[i];
-				return this.valuePicked;
-			}
-		}
-		debugger;
-	}
-	noChances() {
-		for( let i=0 ; i<this.chance.length ; ++i ) {
-			if( this.chance[i] <= 0 ) return false;		// negative chances supported.
-		}
-		return true;
-	}
-	forbidLast() {
-		console.assert( !this.isEmpty() );
-		if( this.chance[this.indexPicked] > 0 ) {
-			this.total -= this.chance[this.indexPicked];
-			this.chance[this.indexPicked] = 0;
-		}
-	}
-	decrementLast(amount) {
-		console.assert( !this.isEmpty() );
-		let totalDec = Math.max(0,Math.min(amount,this.chance[this.indexPicked]));
-		this.total -= totalDec;
-		this.chance[this.indexPicked] -= amount;	// Allowed to go into negatives.
-	}
-	forbid(fn) {
-		console.assert( !this.isEmpty() );
-		for( let i=0 ; i<this.table.length ; ++i ) {
-			if( fn(this.table[i]) ) {
-				if( this.chance[i] > 0 ) {
-					this.total -= this.chance[i];
-					this.chance[i] = 0;
-				}
-			}
-		}
-	} 
-}
-
-
-function showHealthBar(id,newValue,lastValue,total,label,backgroundColor) {
-	let hBar = $(id);
-	let bar = hBar.find(' .bar');
-	let hit = hBar.find(' .hit');
-
-	let damage = lastValue - newValue;
-	// calculate the percentage of the total width
-	var barWidth = Math.min(100,(newValue / total) * 100);
-	var hitWidth = Math.min(100,(damage / lastValue) * 100) + "%";
-
-	// show hit bar and set the width
-	bar.text('  '+label);
-	hit.css('width', hitWidth);
-	hBar.data('value', newValue);
-	bar.css('background-color', backgroundColor);
-
-	setTimeout(function(){
-		hit.css({'width': '0'});
-		bar.css('width', barWidth + "%");
-	}, 500);
-}
 
 function shootRange(x1,y1,x2,y2,testFn,onStep) {
 	// Define differences and error check
@@ -721,3 +466,11 @@ function shootRange(x1,y1,x2,y2,testFn,onStep) {
 	return ok;
 }
 
+	return {
+		GetTimeBasedUid: GetTimeBasedUid,
+		GetUniqueEntityId: GetUniqueEntityId,
+		validCoords: validCoords,
+		pick: pick,
+		shootRange: shootRange
+	}
+});

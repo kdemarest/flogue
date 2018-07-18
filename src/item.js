@@ -1,3 +1,5 @@
+Module.add('item',function() {
+
 // ITEM
 class Item {
 	constructor(depth,itemType,presets,inject) {
@@ -24,8 +26,8 @@ class Item {
 			typeId:1
 		};
 
-		let levelRaw = ItemCalc(this,presets,'level','+');
-		let noLevelVariance = ItemCalc(this,presets,'noLevelVariance','+');
+		let levelRaw = xCalc(this,presets,'level','+');
+		let noLevelVariance = xCalc(this,presets,'noLevelVariance','+');
 		let level = (noLevelVariance || (levelRaw >= depth)) ? levelRaw : Math.randInt(levelRaw,depth+1);
 
 		// Notice that the init overrides the typeId. This is to make sure that the inject doesn't do so with a dot 
@@ -75,7 +77,7 @@ class Item {
 			this.armor 			= adjust(  5, level, level=>picker.pickArmorRating(level,this) );
 		}
 		if( this.isShield ) {
-			this.blocks 		= ItemCalc(this,this,'block','&');
+			this.blocks 		= xCalc(this,this,'block','&');
 			this.armor 			= adjust(  5, level, level=>picker.pickArmorRating(level,this) );
 		}
 		if( this.isShield ) {
@@ -106,12 +108,12 @@ class Item {
 			// Weapon secondary effect, and that of armor, happens in carefully managed circumstances.
 			if( this.isWeapon || this.isArmor || this.isShield ) {
 				if( this.chanceOfEffect === undefined ) {
-					this.chanceOfEffect = this.isWeapon ? WEAPON_EFFECT_CHANCE_TO_FIRE : ARMOR_EFFECT_CHANCE_TO_FIRE;
+					this.chanceOfEffect = this.isWeapon ? Rules.WEAPON_EFFECT_CHANCE_TO_FIRE : Rules.ARMOR_EFFECT_CHANCE_TO_FIRE;
 				}
 				
-				if( WEAPON_EFFECT_OP_ALWAYS.includes(this.effect.op) ) {
+				if( Rules.WEAPON_EFFECT_OP_ALWAYS.includes(this.effect.op) ) {
 					this.chanceOfEffect = 100;
-					this.effect.value = Math.max(1,Math.floor(this.effect.value*WEAPON_EFFECT_DAMAGE_PERCENT/100));
+					this.effect.value = Math.max(1,Math.floor(this.effect.value*Rules.WEAPON_EFFECT_DAMAGE_PERCENT/100));
 					this.damage -= this.plus;
 					this.effect.value += this.plus;
 					console.assert( !isNaN(this.effect.value) );
@@ -165,6 +167,107 @@ class Item {
 	get baseType() {
 		return ItemTypeList[this.typeId];
 	}
+	calcFirst(presets,field) {
+		let item = this;
+		if( presets && presets.quality && presets.quality[field] !== undefined ) {
+			return presets.quality[field];
+		}
+		if( presets && presets.material && presets.material[field] !== undefined ) {
+			return presets.material[field];
+		}
+		if( presets && presets.variety && presets.variety[field] !== undefined ) {
+			return presets.variety[field];
+		}
+		if( presets && presets.effect && presets.effect[field] !== undefined ) {
+			return presets.effect[field];
+		}
+		if( item && item[field] !== undefined ) {
+			return item[field];
+		}
+		return;	// undefined
+	}
+	calc(presets,field,op) {
+		function calc(piece) {
+			let a = piece ? (piece[field] || def) : def;
+			if( (op=='*' || op == '+') && isNaN(a) ) debugger;
+			switch( op ) {
+				case '*': n=n*a; break;
+				case '+': n=n+a; break;
+				case '&': n = n + (n&&a?',':'') + a; break;
+			};
+			if( (op=='*' || op == '+') && isNaN(n) ) debugger;
+		}
+
+		let item = this;
+		let defaultValue = {
+			'*': 1,
+			'+': 0,
+			'&': ''
+		}
+
+		let def = defaultValue[op];
+		console.assert( def !== undefined );
+		let n = def;
+		calc(item);
+		if( presets ) {
+			calc(presets.quality);
+			calc(presets.material);
+			calc(presets.variety);
+			calc(presets.effect);
+		}
+		return n;
+	}
+	explain(buySell) {
+		function order(typeId) {
+			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
+		}
+		function icon(file) {
+			return file ? '<img src="'+IMG_BASE+'gui/icons/'+file+'">' : '';
+		}
+		function rechargeImg() {
+			if( !item.rechargeTime ) return '';
+			let pct = Math.floor( (1 - ( (item.rechargeLeft||0) / (item.rechargeTime||10) )) * 10 )*10;
+			return '<img class="spellRecharge" src="'+IMG_BASE+StickerList['slice'+pct].img+'">';
+		}
+		function getBonus() {
+			if( !item.effect ) {
+				return '';
+			}
+			if( item.effect.op=='damage' ) {
+				return Math.floor(item.effect.value)+' '+item.effect.damageType;
+			}
+			return item.effect.name + (item.effect.permuteName ? '**' : '');
+		}
+
+		let item = this;
+		let owner = item.owner && item.owner.isMonsterType ? item.owner : {};
+		let nameClean = item.name.replace(/\$/,'');
+		return {
+			item: 			item,
+			typeId: 		item.typeId,
+			level: 			item.level,
+			typeOrder: 		order(item.typeId),
+			icon: 			icon(item.icon),
+			description: 	((item.bunch||0)>1 ? item.bunch+'x ' : '')+String.capitalize(nameClean),
+			bunch: 			((item.bunch||0)>1 ? item.bunch+'x ' : ''),
+			name: 			String.capitalize(nameClean),
+			damage: 		item.isWeapon ? item.damage+(item.ammoSpec?'+ammo':'') : (item.effect && item.effect.op=='damage' ? Math.max(1,Math.floor(item.effect.value)) : ''),
+			damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
+			quick: 			['(clumsy)','','(quick)'][item.getQuick()],
+			reach: 			item.reach > 1 ? ' '+item.reach+' away' : '',
+			sneak: 			(owner.sneakAttackMult||2)<=2 ? '' : 'Sneak x'+Math.floor(owner.sneakAttackMult),
+			armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUT,item.isShield) : '',
+			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? ' ('+item.effect.effectShape+')' : '',
+			bonus: 			getBonus(),
+			effect: 		item.effect ? (item.effect.name || item.effect.typeId) : '',
+			permutation: 	item.effect && item.effect.permuteName ? item.effect.permuteName : '',
+			recharge: 		item.rechargeTime ? Math.floor(item.rechargeTime) : '',
+			rechargeLeft: 	rechargeImg(),
+			price: 			new Picker(item.area.depth).pickPrice(buySell,item),
+			priceWithCommas: (new Picker(item.area.depth).pickPrice(buySell,item)).toLocaleString(),
+		};
+	}
+
 	isAt(x,y,area) {
 		console.assert(area);
 		return this.x==x && this.y==y && this.area.id==area.id;
@@ -281,7 +384,7 @@ class Item {
 		if( blockType !== 'any' && !String.arIncludes(this.blocks,blockType) ) {
 			return 0;
 		}
-		let blockChance = ItemCalc(this,this,'xBlock','*');
+		let blockChance = xCalc(this,this,'xBlock','*');
 		if( shieldBonus=='stand' ) {
 			blockChance = blockChance + (1-blockChance)*0.50;
 		}
@@ -350,22 +453,21 @@ class Item {
 
 		let hadNoOwner = !this.owner;
 //		if( this.owner && /*(this.owner.isMap || (this.owner.isItemType && this.owner.owner.isMap)) &&*/ entity.isUser && entity.isUser() ) {
-		if( !entity.inVoid && entity.isUser && entity.isUser() ) {
+		if( !this.isUnbunching && !entity.inVoid && entity.isUser && entity.isUser() ) {
 			// Item flies to your gui sidebar...
 			if( !this.spriteList || this.spriteList.length == 0 ) {
 				spriteMakeInWorld(this,entity.x,entity.y);
 			}
 
-			animationTimer.giveDelay = (animationTimer.giveDelay||0);
 			new Anim({},{
 				at: 		entity,
 				img: 		this.imgGet ? this.imgGet(this) : this.img,
-				delay: 		animationTimer.giveDelay,
+				delay: 		Animation.Timer.getDelay(),
 				duration: 	0.6,
 				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
 			});
-			animationTimer.giveDelay += 0.3;
+			Animation.Timer.addDelay( 0.3);
 		}
 		this.rangeDuration = 0;
 		if( this.owner && !this.owner.isMap && (x!=this.owner.x || y!=this.owner.y)  ) {
@@ -412,6 +514,7 @@ class Item {
 		this.y = y;
 		this.owner = entity;
 		this.inVoid = false;
+		delete this.isUnbunching;
 		if( Gab && hadNoOwner ) {
 			Gab.entityPostProcess(this);
 		}
@@ -443,6 +546,7 @@ class Item {
 		item.bunch = amount;
 		item.id = GetUniqueEntityId(item.typeId,item.depth);
 		item.spriteList = [];
+		item.isUnbunching = true;
 		this.bunch = this.bunch - amount;
 		item.giveToSingly(this.owner,this.x,this.y);
 		return item;
@@ -543,3 +647,22 @@ class Item {
 		return result;
 	}
 }
+
+let getBlockNop = {};
+Item.getBlockType = function(item,damageType) {
+	item = item || getBlockNop;
+	if( (item.reach||1)>1 ) return BlockType.REACH;
+	if( item.mayThrow ) 	return BlockType.THROWN;
+	if( item.mayShoot ) 	return BlockType.SHOT;
+	if( item.isSpell && String.arIncludes(Damage.Elemental,damageType) ) return BlockType.ELEMENTAL;
+	if( item.isSpell && String.arIncludes(Damage.Divine,damageType) ) 	return BlockType.DIVINE;
+	if( item.isSpell ) 		return BlockType.NOBLOCK;
+	return BlockType.PHYSICAL;
+}
+
+
+return {
+	Item: Item
+}
+
+});

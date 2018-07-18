@@ -1,4 +1,4 @@
-
+Module.add('viewInventory',function() {
 
 class ViewInventory extends ViewObserver {
 	constructor(inventoryDivId,imageRepo,onItemChoose,colFilter) {
@@ -188,14 +188,14 @@ class ViewInventory extends ViewObserver {
 
 		this.inventory.result = doSort(
 			this.inventory,
-			item => itemExplain(item,this.mode),
+			item => item.explain(this.mode),
 			sortFn[this.sortColId||'description'],
 			this.sortAscending
 		);
 
 		for( let i=0 ; i<this.inventory.count ; ++i ) {
 			let item = this.inventory.all[i];
-			let ex = itemExplain(item,this.mode);
+			let ex = item.explain(this.mode);
 
 			let cell = {};
 			let spc = this.sortColId == 'icon' && lastTypeId && lastTypeId!=item.typeId;
@@ -240,3 +240,9 @@ class ViewInventory extends ViewObserver {
 		this.div.show();
 	}
 }
+
+return {
+	ViewInventory: ViewInventory
+}
+
+});

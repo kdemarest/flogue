@@ -1,3 +1,4 @@
+Module.add('dataItems',function(){
 
 const ItemTypeDefaults = {
 	namePattern: 'nameless *',
@@ -337,17 +338,6 @@ let BlockType = {
 	DIVINE: 	'divine',
 	NOBLOCK: 	'noblock'
 };
-let getBlockNop = {};
-function getBlockType(item,damageType) {
-	item = item || getBlockNop;
-	if( (item.reach||1)>1 ) return BlockType.REACH;
-	if( item.mayThrow ) 	return BlockType.THROWN;
-	if( item.mayShoot ) 	return BlockType.SHOT;
-	if( item.isSpell && String.arIncludes(Damage.Elemental,damageType) ) return BlockType.ELEMENTAL;
-	if( item.isSpell && String.arIncludes(Damage.Divine,damageType) ) 	return BlockType.DIVINE;
-	if( item.isSpell ) 		return BlockType.NOBLOCK;
-	return BlockType.PHYSICAL;
-}
 
 // Shield blocking in the xBlock plus 20%*level/MAX_DEPTH
 const ShieldList = Fab.add( '', {
@@ -701,12 +691,6 @@ const NulImg = { img: '' };
 // onPickup - fired just before an item is picked up. Return false to disallow the pickup.
 // onTick - fires each time a full turn has passed, for every item, whether in the world or in an inventory. 
 
-let Tweak = {
-	lootFrequency: 0.70,
-	effectChance: 1.0
-};
-
-
 const ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
 // GATEWAYS
@@ -769,7 +753,7 @@ const ItemTypeList = {
 		name: "table",
 		isDecor: true,
 		isTable: true,
-		zOrder: ZOrder.TABLE,
+		zOrder: Tile.zOrder.TABLE,
 		img: "decor/tableSmall.png",
 		imgChoices: ImgTables,
 		imgGet: (self, img) => img || self.img
@@ -781,7 +765,7 @@ const ItemTypeList = {
 		opacity: 0,
 		name: "sign",
 		mayPickup: false,
-		zOrder: ZOrder.SIGN,
+		zOrder: Tile.zOrder.SIGN,
 		isDecor: true,
 		isSign: true,
 		allowPlacementOnBlocking: true,
@@ -922,7 +906,7 @@ const ItemTypeList = {
 // CORPSE
 	"corpse":   { symbol: SYM, namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1,
 				isCorpse: true,
-				zOrder: ZOrder.CORPSE,
+				zOrder: Tile.zOrder.CORPSE,
 				img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // KEYS
 	"key": {
@@ -1190,9 +1174,9 @@ const ItemTypeList = {
 		let itemType = ItemTypeList[typeId];
 		if( !itemType.isTreasure ) continue;
 		console.assert( !itemType.xPrice && !itemType.effectChance );
-		console.assert( ItemBag[typeId] );
-		ItemTypeList[typeId].xPrice 		= ItemBag[typeId].xPrice;
-		ItemTypeList[typeId].effectChance	= ItemBag[typeId].cEff;
+		console.assert( Rules.ItemBag[typeId] );
+		ItemTypeList[typeId].xPrice 		= Rules.ItemBag[typeId].xPrice;
+		ItemTypeList[typeId].effectChance	= Rules.ItemBag[typeId].cEff;
 	}
 })();
 
@@ -1274,7 +1258,7 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 		let hidList = [].concat( self.map.itemListHidden );
 		hidList.forEach( item => {
 			item.unhide();
-			animFloatUp( item, StickerList.ePoof.img, delay );
+			Anim.FloatUp( item, StickerList.ePoof.img, delay );
 			delay += 0.2;
 		});
 		delete self.unhide;
@@ -1375,7 +1359,7 @@ ItemTypeList.door.onBump = function(entity,self) {
 		self.setState('open');
 		spriteDeathCallback(self.spriteList);
 		tell(mSubject,entity,' ',mVerb,'open',' the ',mObject,self);
-		animFloatUp(self,StickerList.open.img);
+		Anim.FloatUp(self,StickerList.open.img);
 		return true;
 	}
 	if( self.state == 'locked' ) {
@@ -1385,14 +1369,14 @@ ItemTypeList.door.onBump = function(entity,self) {
 			self.setState('shut');
 			spriteDeathCallback(self.spriteList);
 			tell(mSubject,entity,' ',mVerb,'unlock',' the ',mObject,self);
-			animFloatUp(self,StickerList.unlock.img);
+			Anim.FloatUp(self,StickerList.unlock.img);
 			if( key && key.name.indexOf('(used)') < 0 ) {
 				key.name += ' (used)';
 			}
 			return true;
 		}
 		tell(mSubject,self,' requires a specific key to unlock.');
-		animFloatUp(self,StickerList.locked.img);		
+		Anim.FloatUp(self,StickerList.locked.img);		
 		return false;
 	}
 	debugger;
@@ -1425,7 +1409,7 @@ ItemTypeList.chest.onBump = function(toucher,self) {
 //				});
 //				delay += 0.3;
 //			});
-			animFountain(self,20,1.0,4,StickerList.coinSingle.img);
+			Anim.Fountain(self,20,1.0,4,StickerList.coinSingle.img);
 		}
 		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
 	}
@@ -1492,7 +1476,7 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 				}
 			});
 			effectApply(effect,entity,null,self,'tick');
-			animHoming(self,entity,StickerList.glowGold.img,45,6,0.5,5);
+			Anim.Homing(self,entity,StickerList.glowGold.img,45,6,0.5,5);
 		}
 		let f = new Finder(entity.inventory).filter( item => item.rechargeTime && item.rechargeLeft > 0 );
 		if( f.count ) {
@@ -1518,7 +1502,7 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 			effect.icon = StickerList.glowRed.img;
 			//this.command = Command.CAST;
 			effectApply(effect,entity,this,null,'tick');
-			animHoming(entity,self,effect.icon,45,6,0.5,5);
+			Anim.Homing(entity,self,effect.icon,45,6,0.5,5);
 		});
 		this.resetRecharge();
 	}
@@ -1530,3 +1514,16 @@ StuffList.sunCrystal.onTick = function(dt) {
 		effectApply(this.effect,tile,this.ownerOfRecord,this,'tick');
 	}
 }
+
+return {
+	ItemTypeDefaults: ItemTypeDefaults,
+	ItemTypeList: ItemTypeList,
+	WeaponMaterialList: WeaponMaterialList,
+	BowMaterialList: BowMaterialList,
+	ItemSortOrder: ItemSortOrder,
+	ItemFilterOrder: ItemFilterOrder,
+	ItemFilterGroup: ItemFilterGroup,
+	BlockType: BlockType,
+}
+
+});

@@ -1,4 +1,4 @@
-(function() {
+Module.add('dataPicker',function() {
 
 class Picker {
 	constructor(depth) {
@@ -39,7 +39,7 @@ class Picker {
 			if( m.level > this.depth || m.neverPick ) {
 				continue;
 			}
-			let chance = Math.floor(Math.clamp(Math.chanceToAppearSimple(m.level,this.depth) * 100000, 1, 100000));
+			let chance = Math.floor(Math.clamp(ChanceToAppear.Simple(m.level,this.depth) * 100000, 1, 100000));
 			if( m.rarity ) console.assert( m.rarity>=0 );
 			chance *= (m.rarity || 1);
 			table.push(chance,m);
@@ -177,7 +177,7 @@ class Picker {
 
 						// Order here MUST be the same as in Item constructor.
 						let effectChance = v.effectChance!==undefined ? v.effectChance : (m.effectChance!==undefined ? m.effectChance : (q.varietyChance!==undefined ? q.varietyChance : item.effectChance || 0));
-						effectChance = Math.clamp(effectChance * Tweak.effectChance, 0.0, 1.0);
+						effectChance = Math.clamp(effectChance * Rules.xEffectChance, 0.0, 1.0);
 						let appearTotal = 0;
 						let rarityTotal = 0;
 						//if( depth == 5 ) debugger;
@@ -188,7 +188,7 @@ class Picker {
 							//if( done[id] ) { debugger; continue; }
 							//done[id] = 1;
 							let level = Math.max(0,(item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.isInert ? 0 : (e.level||0)));
-							let appear = Math.chanceToAppearRamp(level,depth);
+							let appear = ChanceToAppear.Ramp(level,depth);
 							if( v.typeId == 'diamond' && level <= depth && level == 7 ) {
 								console.log('Diamond, level '+level+' on depth '+depth+' is '+appear );
 							}
@@ -201,7 +201,7 @@ class Picker {
 							// Scale to depth...
 							if( rarity > 0.0 && rarity < 1.0 ) {
 								let delta = 1.0 - rarity;
-								let pct = Math.clamp(depth/DEPTH_SPAN,0.0,1.0);
+								let pct = Math.clamp(depth/Rules.DEPTH_SPAN,0.0,1.0);
 								rarity = rarity + delta*pct;
 								console.assert( rarity >= 0 );
 							}
@@ -242,7 +242,7 @@ class Picker {
 									// None of the effects on this item were low enough level, probably
 									// so just use inert as level zero and re-calculate.
 									if( !e.level == 0 ) debugger;	// inet should ALWAYS be level zero.
-									appear = Math.chanceToAppearRamp(level,depth);
+									appear = ChanceToAppear.Ramp(level,depth);
 									// Note that this might STILL result in a zero appear. And that is OK, we just have to
 									// trust that something else will appear!
 								}
@@ -307,9 +307,9 @@ class Picker {
 		}
 		// No item type was specified, so use the master chance table to pick one.
 		if( !itemTypeId && !filter.specifiesId ) {
-			let p = new PickTable().scanArray( Object.keys(ItemBag), typeId => {
-				//console.log( typeId+' = '+ItemBag[typeId].cGen );
-				return ItemBag[typeId].cGen;
+			let p = new Pick.Table().scanArray( Object.keys(Rules.ItemBag), typeId => {
+				//console.log( typeId+' = '+Rules.ItemBag[typeId].cGen );
+				return Rules.ItemBag[typeId].cGen;
 			});
 			itemTypeId = p.pick();
 		}
@@ -330,7 +330,7 @@ class Picker {
 			return ItemTypeList.coin;
 		}
 		// Make a table with all the chances to appear figured out.
-		let p = new PickTable().scanArray( table, thing=> thing.appear*thing.rarity );
+		let p = new Pick.Table().scanArray( table, thing=> thing.appear*thing.rarity );
 		// Pick an item, based on chance to appear.
 		let depth = this.depth;
 		let choice = p.total ? p.pick() : function() {
@@ -343,23 +343,23 @@ class Picker {
 	}
 
 	pickRechargeTime(level,item) {
-		let xRecharge = ItemCalc(item,item,'xRecharge','*');
-		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/DEPTH_SPAN)*Rules.EXTRA_RECHARGE_AT_DEPTH_MAX);
+		let xRecharge = xCalc(item,item,'xRecharge','*');
+		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/Rules.DEPTH_SPAN)*Rules.EXTRA_RECHARGE_AT_DEPTH_MAX);
 	}
 
 	pickArmorRating(level,item) {
-		let am = ItemCalc(item,item,'xArmor','*');
+		let am = xCalc(item,item,'xArmor','*');
 		console.assert(am>=0 && level>=0);
 
 		// Intentionally leave out the effect level, because that is due to the effect.
 		let avgLevel = (level+this.depth)/2;
 		let baseArmor = Rules.playerArmor(avgLevel)*am;
 		if( isNaN(baseArmor) ) debugger;
-		return Math.floor(baseArmor*ARMOR_SCALE);
+		return Math.floor(baseArmor*100);
 	}
 	pickBlockChance(level,item) {
-		let mc = ItemCalc(item,item,'xBlock','+');
-		mc += Math.floor( (0.20 * (level/DEPTH_SPAN))*100 ) / 100;
+		let mc = xCalc(item, item,'xBlock','+');
+		mc += Math.floor( (0.20 * (level/Rules.DEPTH_SPAN))*100 ) / 100;
 		mc = Math.clamp(mc,0,0.8);	// I'm arbitrarily capping miss chance at 80%
 		console.assert(mc>=0 && level>=0);
 		return mc;
@@ -373,7 +373,7 @@ class Picker {
 			return item.coinCount;
 		}
 		let base = item.level + item.depth + 1;
-		let xPrice = ItemCalc(item,item,'xPrice','*');
+		let xPrice = xCalc(item,item,'xPrice','*');
 		let mult = (buySell=='buy' ? Rules.PRICE_MULT_BUY : Rules.PRICE_MULT_SELL);
 		return Math.max(1,Math.floor(base * xPrice * mult));
 	}
@@ -383,7 +383,7 @@ class Picker {
 	// { count: n, chance: 60, id: 'weapon.dagger', inject: { anyvar: value, ... }
 	pickLoot(supplyMixed,callback) {
 		let supplyArray = Array.supplyParse(supplyMixed);		
-		let makeList = new Finder( Array.supplyToMake(supplyArray,Tweak.lootFrequency) );
+		let makeList = new Finder( Array.supplyToMake(supplyArray,Rules.xLootFrequency) );
 		let list = [];
 		makeList.forEach( make => {
 			let any = (''+make.typeFilter).toLowerCase()==='any';
@@ -465,5 +465,8 @@ class Picker {
 	}
 }
 
-window.Picker = Picker;
-})();
+return {
+	Picker: Picker
+}
+
+});

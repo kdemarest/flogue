@@ -1,3 +1,5 @@
+Module.add('entity',function() {
+
 //
 // ENTITY (monsters, players etc)
 //
@@ -274,8 +276,8 @@ class Entity {
 						let ly = self.y;
 						if( this.lootFling ) {
 							let dir = Math.randInt(0,8);
-							lx += DirectionAdd[dir].x*this.lootFling;
-							ly += DirectionAdd[dir].y*this.lootFling;
+							lx += Direction.add[dir].x*this.lootFling;
+							ly += Direction.add[dir].y*this.lootFling;
 						}
 						item.giveTo(this.map,lx,ly,true)
 					}
@@ -354,17 +356,17 @@ class Entity {
 	dirToEntityPredictable(entity) {
 		let dx = entity.x - this.x;
 		let dy = entity.y - this.y;
-		return deltasToDirPredictable(dx,dy);
+		return Direction.predictable(dx,dy);
 	}
 	dirToEntityNatural(entity) {
 		let dx = entity.x - this.x;
 		let dy = entity.y - this.y;
-		return deltasToDirNatural(dx,dy);
+		return Direction.natural(dx,dy);
 	}
 	dirToPosNatural(x,y) {
 		let dx = x - this.x;
 		let dy = y - this.y;
-		return deltasToDirNatural(dx,dy);
+		return Direction.natural(dx,dy);
 	}
 
 	inCombat() {
@@ -659,7 +661,7 @@ class Entity {
 
 
 	getDistance(x,y) {
-		return Math.max(Math.abs(x-this.x),Math.abs(y-this.y));
+		return Distance.getSq(x-this.x,y-this.y);
 	}
 
 	inArea(area) {
@@ -674,16 +676,16 @@ class Entity {
 		console.assert(target && target.area);
 		return this.isAt(target.x,target.y,target.area);
 	}
-/*
-	at(x,y) {
-		let f = this.findAliveOthersAt(x,y);
-		return f.first || this.map.tileTypeGet(x,y);
+	getCastableSpellList() {
+		let hasId = {};
+		return new Finder(this.inventory).filter( item=>{
+			if( item.isSpell && item.effect && item.effect.op && !item.effect.isBlank  && !item.isFake) {
+				let ok = !hasId[item.effect.typeId];
+				hasId[item.effect.typeId] = 1;
+				return ok;
+			}
+		});
 	}
-
-	atDir(x,y,dir) {
-		return at(x + DirectionAdd[dir].x, y + DirectionAdd[dir].y);
-	}
-*/
 	findFirstDeed(fn) {
 		let found = null;
 		DeedManager.traverseDeeds(this,deed => {
@@ -811,19 +813,19 @@ class Entity {
 	}
 
 	mayGo(dir,problemTolerance) {
-		return this.mayEnter(this.x+DirectionAdd[dir].x,this.y+DirectionAdd[dir].y,problemTolerance);
+		return this.mayEnter(this.x+Direction.add[dir].x,this.y+Direction.add[dir].y,problemTolerance);
 	}
 
 	problemTolerance() {
 		// WARNING! This does NOT consider whether the creature is immune to the damage,
 		// nor does it understand that their movement mode might be immune.
 		if( this.attitude == Attitude.ENRAGED ) {
-			return Prob.HARSH;
+			return Problem.HARSH;
 		}
 		if( this.attitude == Attitude.PANICKED || this.attitude == Attitude.CONFUSED ) {
-			return Prob.MILD;
+			return Problem.MILD;
 		}
-		return Prob.NONE;
+		return Problem.NONE;
 	}
 
 	thinkApproachTarget(target) {
@@ -897,7 +899,7 @@ class Entity {
 					stallSet(true);
 				}
 				this.lastDirAttempt = dir;
-				return directionToCommand(dir);
+				return Direction.toCommand(dir);
 			}
 		}
 
@@ -909,13 +911,13 @@ class Entity {
 		let problemTolerance = this.problemTolerance();
 		// If you're aggressive and healthy, there is a 15% change you will charge forward through problems.
 		if( this.attitude == Attitude.AGGRESSIVE && Math.chance(15) ) {
-			problemTolerance = Prob.HARSH;
+			problemTolerance = Problem.HARSH;
 		}
 		this.record( 'Problem tolerance = '+problemTolerance, true );
 
 		if( this.mayGo(dir,problemTolerance) ) {
 			this.record('approach '+(target ? target.name : '('+x+','+y+')'),true);
-			return directionToCommand(dir);
+			return Direction.toCommand(dir);
 		}
 		return false;
 	}
@@ -949,7 +951,7 @@ class Entity {
 			if( c ) return c;
 		}
 
-		let dirLast = commandToDirection(this.commandLast);
+		let dirLast = Direction.fromCommand(this.commandLast);
 		if( dirLast !== false ) {
 			if( Math.chance(100/avgWanderDist) && this.mayGo(dirLast,this.problemTolerance()) ) {
 				this.record('wander forward',true);
@@ -962,21 +964,21 @@ class Entity {
 		do {
 			let dir = Math.randInt(0,8);
 			if( this.mayGo(dir,this.problemTolerance()) ) {
-				return directionToCommand(dir);
+				return Direction.toCommand(dir);
 			}
 		} while( --reps );
 		return Command.WAIT;
 	}
 
 	thinkRetreat(dirAwayPerfect,panic=false) {
-		let dirAwayRandom = (dirAwayPerfect+8+Math.randInt(0,3)-1) % DirectionCount;
-		let dirAway = [dirAwayRandom,dirAwayPerfect,(dirAwayPerfect+8-1)%DirectionCount,(dirAwayPerfect+1)%DirectionCount];
+		let dirAwayRandom = (dirAwayPerfect+8+Math.randInt(0,3)-1) % Direction.count;
+		let dirAway = [dirAwayRandom,dirAwayPerfect,(dirAwayPerfect+8-1)%Direction.count,(dirAwayPerfect+1)%Direction.count];
 		while( dirAway.length ) {
 			let dir = dirAway.shift();
 			if( panic || this.mayGo(dir,this.problemTolerance()) ) {
 				this.record( 'fleeing', true );
 				console.assert( dir>=0 && dir < 8 );
-				return directionToCommand(dir);
+				return Direction.toCommand(dir);
 			}
 		}
 		this.record( 'unable to retreat '+dirAwayPerfect, true );
@@ -995,9 +997,9 @@ class Entity {
 
 
 	thinkFlee(enemy) {
-		let dirAwayPerfect = (this.dirToEntityNatural(enemy)+4)%DirectionCount;
-		let dirLeft = (dirAwayPerfect+8-1)%DirectionCount;
-		let dirRight = (dirAwayPerfect+1)%DirectionCount;
+		let dirAwayPerfect = (this.dirToEntityNatural(enemy)+4)%Direction.count;
+		let dirLeft = (dirAwayPerfect+8-1)%Direction.count;
+		let dirRight = (dirAwayPerfect+1)%Direction.count;
 
 		// Generally try to flee towards your friends, if they exist and are in a valid flee direction.
 		if( this.brainMaster || this.mindset('pack') ) {
@@ -1112,7 +1114,7 @@ class Entity {
 			if( temp !== Command.ATTACK || !this.nearTarget(target,1) ) {
 				return temp;
 			}
-			return directionToCommand(this.dirToEntityPredictable(target));
+			return Direction.toCommand(this.dirToEntityPredictable(target));
 		}
 	}
 
@@ -1297,7 +1299,7 @@ class Entity {
 				}
 
 				if( this.attitude == Attitude.PANICKED ) {
-					let dirAway = (this.dirToEntityNatural(theEnemy)+4)%DirectionCount;
+					let dirAway = (this.dirToEntityNatural(theEnemy)+4)%Direction.count;
 					return this.thinkRetreat(dirAway,true) || this.thinkWanderF();
 				}
 
@@ -1358,7 +1360,7 @@ class Entity {
 							if( this.attacker !== Attitude.HUNT || this.attitude !== Attitude.PATROL ) {
 								tell(mCares,theEnemy,mSubject,this,' ',mVerb,'think',' ',mObject,theEnemy,' ',mVerb|mObject,'is',' too close!');
 							}
-							animAbove(this,StickerList.alert.img,0);
+							Anim.Above(this,StickerList.alert.img,0);
 						}
 						this.changeAttitude( Attitude.AGGRESSIVE );
 					}
@@ -1472,7 +1474,7 @@ class Entity {
 						this.map.scentIncAge(this.x,this.y,this.senseSmell);
 					}
 					if( dir !== false && this.mayGo(dir,this.problemTolerance()) ) {
-						return directionToCommand(dir);
+						return Direction.toCommand(dir);
 					}
 					// We don't get to use regular pathfind because we found it through smell.
 					return this.thinkWanderF();
@@ -1489,10 +1491,6 @@ class Entity {
 			if( this.command == undefined ) debugger;
 			this.record( this.attitude+" cmd: "+this.command );
 		}
-	}
-
-	rollDamage(damageString) {
-		return rollDice(damageString);
 	}
 
 	isImmune(immunityType) {
@@ -1623,7 +1621,7 @@ class Entity {
 
 		// Deal with armor first...
 		let isRanged = !isOngoing && ( (attacker && this.getDistance(attacker.x,attacker.y) > 1) || (item && item.rangeDuration) );
-		let reduction = this.calcReduction(damageType,isRanged)/ARMOR_SCALE;
+		let reduction = this.calcReduction(damageType,isRanged)/100;
 
 		reduction = Math.min(0.8,reduction);
 		amount = Math.max(1,Math.floor(amount*(1.00-reduction)));
@@ -1853,7 +1851,7 @@ class Entity {
 				success: false
 			}
 		}
-		let dist = Math.sqrt(dx*dx+dy*dy)
+		let dist = Distance.get(dx,dy);
 
 		// Special case - all large things resist shove.
 		let resisting = false;
@@ -1884,7 +1882,7 @@ class Entity {
 
 		let ddx = this.x - sx;
 		let ddy = this.y - sy;
-		let duration = Math.max(0.1,Math.sqrt(ddx*ddx+ddy*ddy) / 10);
+		let duration = Math.max(0.1,Distance.get(ddx,ddy) / 10);
 		new Anim({
 			x: 			sx,
 			y: 			sy,
@@ -2568,7 +2566,7 @@ class Entity {
 			}
 		}
 		if( this.busy && this.busy.icon ) {
-			animFloatUp(this,this.busy.icon);
+			Anim.FloatUp(this,this.busy.icon);
 		}
 		return result;
 	}
@@ -2632,8 +2630,8 @@ class Entity {
 	}
 
 	moveDir(dir,weapon,voluntaryMotion) {
-		let x = this.x + DirectionAdd[dir].x;
-		let y = this.y + DirectionAdd[dir].y;
+		let x = this.x + Direction.add[dir].x;
+		let y = this.y + Direction.add[dir].y;
 		return this.moveTo(x,y,true,weapon,voluntaryMotion);
 	}
 	// Returns false if the move fails. Very important for things like takeShove().
@@ -2656,7 +2654,7 @@ class Entity {
 			if( incCount ) {
 				entity.bumpCount = (entity.bumpCount||0)+1;
 			}
-			entity.bumpDir = deltasToDirPredictable(entity.x-this.x,entity.y-this.y);
+			entity.bumpDir = Direction.predictable(entity.x-this.x,entity.y-this.y);
 		}.bind(this);
 
 
@@ -2691,7 +2689,7 @@ class Entity {
 		let doAttack = f.count && attackAllowed && wantToAttack;
 
 		if( !doAttack && voluntaryMotion && this.immobile ) {
-			animFloatUp( this, EffectTypeList.eImmobilize.icon );
+			Anim.FloatUp( this, EffectTypeList.eImmobilize.icon );
 			tell(mSubject,this,' ',mVerb,'is',' immobilized!');
 			return {
 				status: 'immobile',
@@ -2997,11 +2995,11 @@ class Entity {
 	}
 
 	act(timePasses=true) {
-		let dir = commandToDirection(this.command);
+		let dir = Direction.fromCommand(this.command);
 		if( this.isDead() ) {
 			if( this.isSpectator && dir !== false ) {
-				let x = this.x + DirectionAdd[dir].x;
-				let y = this.y + DirectionAdd[dir].y;
+				let x = this.x + Direction.add[dir].x;
+				let y = this.y + Direction.add[dir].y;
 				if( this.map.inBounds(x,y) ) {
 					this.x = x;
 					this.y = y;
@@ -3034,7 +3032,7 @@ class Entity {
 			}
 		}
 
-		if( commandToDirection(this.command) !== false ) {
+		if( Direction.fromCommand(this.command) !== false ) {
 			this.commandResult = this.moveDir(dir,this.commandItem,true);
 		}
 		else {
@@ -3115,3 +3113,19 @@ class Entity {
 		this.commandTarget = null;
 	}
 }
+
+function bonk(entity,target) {
+	tell( mSubject|mCares, entity, ' ', mVerb, 'run', ' into ', mObject, target, '.' );
+	if( target.isWall && target.invisible && target.isPosition ) {
+//		target.wasBonked = true;
+		target.invisible = false;
+		guiMessage( 'reveal', target );
+	}
+}
+
+
+return {
+	Entity: Entity
+}
+
+});

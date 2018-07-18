@@ -1,3 +1,5 @@
+Module.add('dataPermute',function() {
+
 let EffectPermutationEngine = (new function() {
 	let permutationList = {
 		isDmg: (effect) => {
@@ -55,10 +57,10 @@ let EffectPermutationEngine = (new function() {
 	}
 
 	function permuteByTable(depth,effect,table) {
-		let p = new PickTable();
+		let p = new Pick.Table();
 		// By the time you're at the final level, all of these things are of
 		// equal weight to occur.
-		p.scanHash( table, entry => entry.rarity+( (1-entry.rarity) * (depth/DEPTH_SPAN) ) );
+		p.scanHash( table, entry => entry.rarity+( (1-entry.rarity) * (depth/Rules.DEPTH_SPAN) ) );
 		let result = p.pick();
 		return Object.assign( {}, effect, result );		
 	}
@@ -88,3 +90,9 @@ let EffectPermutationEngine = (new function() {
 		permute: permute
 	}
 }());
+
+return {
+	EffectPermutationEngine: EffectPermutationEngine
+}
+
+});

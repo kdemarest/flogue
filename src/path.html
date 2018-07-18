@@ -359,7 +359,7 @@ roster.tedious = {
 A test case, above, can have the following:
 	map 			- an ascii map, which S=start, E=end, f=fire, m=monster
 	test 			- a function that returns an (x,y) function that tests each square being traversed.
-	endIsMonster 	- true makes the obstacle a Prob.ENTITY, which is important
+	endIsMonster 	- true makes the obstacle a Problem.ENTITY, which is important
 	distLimit		- the distance at which the test should no longer keep searching and fail
 	expect 			- what the expected path length is. set to false if you expect pathing failure.
 	entity 			- the entity that is doing the pathing.
@@ -370,7 +370,7 @@ A test case, above, can have the following:
 function solve(source,caseId) {
 	let mapSource = source.map.trim().replace(/\t/g,'')
 	let sx,sy,ex,ey;
-	let raw = new SimpleMap(mapSource,true,TILE_UNKNOWN);
+	let raw = new SimpleMap(mapSource,true,Tile.UNKNOWN);
 	document.getElementById('caseId').innerHTML = caseId;
 	document.getElementById('mapOriginal').innerHTML = raw.tile.join('\n');
 
@@ -387,15 +387,15 @@ function solve(source,caseId) {
 			ey=y;
 			raw.tileSymbolSet(x,y,'.');
 			if( source.endIsMonster ) {
-				obList.push(x,y,Prob.ENTITY);
+				obList.push(x,y,Problem.ENTITY);
 			}
 		}
 		if( tile == 'f' ) {
-			obList.push(x,y,Prob.MILD);
+			obList.push(x,y,Problem.MILD);
 			raw.tileSymbolSet(x,y,'.');
 		}
 		if( tile == 'm' ) {
-			obList.push(x,y,Prob.ENTITY);
+			obList.push(x,y,Problem.ENTITY);
 			raw.tileSymbolSet(x,y,'.');
 		}
 	});

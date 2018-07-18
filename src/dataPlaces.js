@@ -1,3 +1,5 @@
+Module.add('dataPlaces',function() {
+
 let ScapeList = { };
 let PaletteList = { };
 let ThemeList = { };
@@ -35,7 +37,6 @@ PlaceTypeList.uniqueIdentity = {
 	}
 };
 */
-let rPROFUSE	= 1000.00;
 let rCOMMON 	= 1.00;
 let rUNCOMMON 	= 0.50;
 let rRARE 		= 0.20;
@@ -920,7 +921,7 @@ PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt) {
 			let amount = Math.floor(entity.healthMax/2 - entity.health);
 			entity.takeHealing(this,amount,DamageType.ROT,true);
 			tell( mSubject,this,' ',mVerb,'imbue',' ',mObject,entity,' with dark power.');
-			animHoming(this,entity,StickerList.bloodGreen.img,45,6,0.5,5);
+			Anim.Homing(this,entity,StickerList.bloodGreen.img,45,6,0.5,5);
 			this.rechargeLeft = this.rechargeTime;
 		}
 	}
@@ -1955,3 +1956,18 @@ yuy
 	}
 
 }));
+
+return {
+	ScapeList: ScapeList,
+	PaletteList: PaletteList,
+	ThemeDefault: ThemeDefault,
+	ThemeList: ThemeList,
+	PlaceTypeList: PlaceTypeList,
+	rCOMMON: rCOMMON,
+	rUNCOMMON: rUNCOMMON,
+	rRARE: rRARE,
+	rEPIC: rEPIC,
+	rLEGENDARY: rLEGENDARY
+}
+
+});

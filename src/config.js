@@ -1,3 +1,5 @@
+Module.add('config',function() {
+
 let ConfigList = {};
 
 ConfigList.ken = () => {
@@ -110,14 +112,14 @@ ConfigList.ken = () => {
 	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.oilLamp';
 //	MonsterTypeList.player.experience = 100;
 
-	Object.assign( Tweak, {
-//		lootFrequency: 0.80,
-//		effectChance: 4.0
+	Object.assign( Rules, {
+//		xLootFrequency: 0.80,
+//		xEffectChance: 4.0
 	});
 
 
 	return {
-//		startingDepth: 8,
+		startingDepth: 1,
 //		themeId: 'coreHellscape' //kenTheme'
 	}
 }
@@ -128,3 +130,9 @@ class Config {
 		Object.assign(this,init,overlay);
 	}
 };
+
+return {
+	Config: Config
+}
+
+});

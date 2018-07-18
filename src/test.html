@@ -63,29 +63,34 @@
 <script src="utilities.js" charset="utf-8"></script>
 <script src="utilPick.js" charset="utf-8"></script>
 <script src="utilChance.js" charset="utf-8"></script>
-<script src="time.js" charset="utf-8"></script>
 <script src="rules.js" charset="utf-8"></script>
+<script src="time.js" charset="utf-8"></script>
 <script src="dataFab.js" charset="utf-8"></script>
 <script src="data.js" charset="utf-8"></script>
+
 <script src="dataTiles.js" charset="utf-8"></script>
 <script src="dataItems.js" charset="utf-8"></script>
 <script src="dataMonsters.js" charset="utf-8"></script>
 <script src="dataJobs.js" charset="utf-8"></script>
+
 <script src="dataHumanNames.js" charset="utf-8"></script>
 <script src="dataPlaces.js" charset="utf-8"></script>
 <script src="dataConditioner.js" charset="utf-8"></script>
 <script src="dataPermute.js" charset="utf-8"></script>
 <script src="dataPicker.js" charset="utf-8"></script>
 <script src="dataMason.js" charset="utf-8"></script>
+
 <script src="place.js" charset="utf-8"></script>
 <script src="path.js" charset="utf-8"></script>
 <script src="map.js" charset="utf-8"></script>
 <script src="vis.js" charset="utf-8"></script>
 <script src="light.js" charset="utf-8"></script>
+
 <script src="gab.js" charset="utf-8"></script>
 <script src="deed.js" charset="utf-8"></script>
 <script src="item.js" charset="utf-8"></script>
 <script src="entity.js" charset="utf-8"></script>
+
 <script src="anim.js" charset="utf-8"></script>
 <script src="tell.js" charset="utf-8"></script>
 <script src="views.js" charset="utf-8"></script>
@@ -96,10 +101,12 @@
 <script src="viewRange.js" charset="utf-8"></script>
 <script src="viewMerchant.js" charset="utf-8"></script>
 <script src="viewJobs.js" charset="utf-8"></script>
+
 <script src="viewMap.js" charset="utf-8"></script>
 <script src="sentence.js" charset="utf-8"></script>
 <script src="finder.js" charset="utf-8"></script>
 <script src="gui.js" charset="utf-8"></script>
+
 <script src="user.js" charset="utf-8"></script>
 <script src="command.js" charset="utf-8"></script>
 <script src="area.js" charset="utf-8"></script>
@@ -107,148 +114,12 @@
 <script src="plan.js" charset="utf-8"></script>
 <script src="config.js" charset="utf-8"></script>
 
-<script>
-
-
-function adhoc(tileType,map,x,y) {
-	if( !tileType.isTileType || tileType.isPosition ) {
-		// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
-		// This also means no permanent data can exist in them. Meanwhile, items and
-		// persistent in the map item list.
-		return tileType;
-	}
-	return Object.assign({},tileType,{x:x,y:y,area:map.area,map:map,isPosition:true});
-}
-
-
-function main() {
-
-	let User = new HumanUser();
-
-	function TickWorld(timePasses) {
-		Animation.Timer.reset();
-		User.entity.area.tick( timePasses ? User.entity.speed : false );
-		if( timePasses && User.priorArea && User.priorArea.id !== User.entity.area.id ) {
-			User.priorArea.tick( User.entity.speed );
-		}
-		gui.tick();
-		gui.render();
-		if( timePasses ) {
-			Time.simTimeInc();
-		}
-	}
-
-	function onUserEvent(event) {
-		let now = Time.wallTime;
-		if( now < (User.entity.nowPrior||0)+(User.entity.timeDelay||0) ) {
-			// This makes sure that time-consuming activities, like mining, don't go too quickly.
-			return;
-		}
-		User.entity.nowPrior = now;
-		User.entity.timeDelay = 0;
-		User.tick();
-		let timePasses = User.commandHandler.evalCommand(User.entity,event);
-		TickWorld(timePasses);
-		//event.stopPropagation();
-		//event.preventDefault();
-		//return false;
-	}
-
-	function startGame(user,onAssetsReady) {
-
-		let config = new Config('ken',{
-			startingDepth: 0
-		});
-
-		new DataConditioner();
-
-		let gui = new Gui(
-			()=>user.entity,
-		);
-		gui.create(
-			(event) => { onUserEvent(event); }
-		);
-		user.commandHandler = new UserCommandHandler(user,gui.view.inventory,gui.view.range);
-
-		let world = new World();
-		let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
-		let area = world.createArea(null,config.startingDepth,ThemeList[themeId],true,[]);
-		user.takeControlOf( new Entity( area.depth, MonsterTypeList.player, null, area.jobPicker ) );
-		Gab.observer = user.entity;
-		user.entity.gateTo(area,...area.map.pickPosToStartGame());
-		Narrative.addRecipient(
-			() => user.entity,
-			(observer,entity) => !observer ? true : observer.canPerceiveEntity(entity),
-			(message,history) => guiMessage('receive',history,'narrative')
-		);
-
-		let handle = setInterval(function() {
-			if( !gui.imageRepo.ready ) {
-				return;
-			}
-			clearInterval(handle);
-			onAssetsReady();
-		}, 20);
-		return [world,gui];
-	}
-
-	let world,gui;
-	[world,gui] = startGame( User, () => {
-		User.tick();
-		User.entity.area.tick( false );
-		gui.render();
-		tell([User.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
-		$('#guiLoading').hide();
-		$('#guiMain').show();
-		$(document).keydown( onUserEvent );
-	});
-}
-
-
-</script>
 </head>
 <body>
-	<div class='top'>
-	<div id="guiLoading">
-		Flogue loading...
-	</div>
-	<table id="guiMain">
-		<tr><td>
-			<div id="guiNarrative"></div>
-		</td><td>
-			<div id="guiControls"></div>
-		</td><td>
-			<div id="guiDebug2"></div>
-		</td></tr>
-		<tr>
-			<td>
-				<div id="mapContainer">
-					<div id="guiMap"></div>
-					<div id="guiInventory" class="guiInventory"></div>
-					<pre id="guiSign" class="guiSign"></pre>
-					<div id="guiDynamic" class="guiInventory"></div>
-				</div>
-			</td><td class="alignTop">
-				<div id="guiExperience"></div>
-				<div id="guiInfo"></div>
-				<div id="guiStatus"></div>
-			</td>
-			<td>
-				<div id="guiMiniMap"></div>
-				<div id="guiMiniMapCaption"></div>
-				<div id="guiFavorites"></div>
-				<div id="guiPathDebugSummary"></div>
-				<div id="guiPathDebug"></div>
-			</td>
-		</tr>
-	</table>
-	</div>
-	<script>
+<script>
 		$(document).ready( () => {
-			//keep('main');
 			Module.realize();
-			setTimeout( main, 0 );
 		});
-	</script>
+</script>
 </body>
 </html>

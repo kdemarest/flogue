@@ -1,6 +1,7 @@
+Module.add('command',function() {
 
 function castConvert(cmd,observer,index) {
-	let spellList = getCastableSpellList(observer);
+	let spellList = observer.getCastableSpellList();
 	cmd.command = Command.CAST;
 	cmd.commandItem = spellList.all[index];
 }
@@ -62,7 +63,7 @@ CmdTable[Command.QUAFF] = {
 };
 CmdTable[Command.CAST] = {
 	needsItem: true,
-	itemFilter: observer => () => getCastableSpellList(observer),
+	itemFilter: observer => () => observer.getCastableSpellList(),
 	needsTarget: true,
 	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
 	criteriaToExecute: (cmd,observer) => {
@@ -221,9 +222,9 @@ class UserCommandHandler {
 		if( dirCommand == Command.CANCEL ) {
 			return this.cmd.cancel();
 		}
-		let dir = commandToDirection(dirCommand);
+		let dir = Direction.fromCommand(dirCommand);
 		if( dir !== false ) {
-			this.viewRange.move(DirectionAdd[dir].x,DirectionAdd[dir].y);
+			this.viewRange.move(Direction.add[dir].x,Direction.add[dir].y);
 			return false;
 		}
 		if( dirCommand == Command.EXECUTE ) {
@@ -342,3 +343,10 @@ class UserCommandHandler {
 		return false;
 	}
 }
+
+return {
+	commandForItem: commandForItem,
+	UserCommandHandler: UserCommandHandler
+}
+
+});

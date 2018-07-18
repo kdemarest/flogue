@@ -1,4 +1,4 @@
-(function() {
+Module.add('dataMason',function() {
 	const Dir = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
 	const DirAdd = [
 		{ x:0,  y:-1 },
@@ -15,23 +15,23 @@
 	let NO_ZONE = -1;
 
 	let TileType = {
-		Unknown: ' ',
-		Floor: TILE_FLOOR,
-		Wall: TILE_WALL,
+		Unknown: Tile.UNKNOWN,
+		Floor: Tile.FLOOR,
+		Wall: Tile.WALL,
 		Door: '+'
 	};
 	let T = TileType;
 
-	function deltasToDirPredictable(dx,dy) {
+	function directionPredictable(dx,dy) {
 		if( dy < 0 ) return dx==0 ? Dir.N : (dx<0 ? Dir.NW : Dir.NE);
 		if( dy > 0 ) return dx==0 ? Dir.S : (dx<0 ? Dir.SW : Dir.SE);
 		return dx==0 ? false : (dx<0 ? Dir.W : Dir.E);
 	} 
-	function deltasToDirNaturalOrtho(dx,dy) {
+	function directionNaturalOrtho(dx,dy) {
 		let ax = Math.abs(dx);
 		let ay = Math.abs(dy);
 		if( Math.rand(0,ax+ay) < ay ) { dx=0; } else { dy=0; }
-		return deltasToDirPredictable(dx,dy);
+		return directionPredictable(dx,dy);
 	}
 	function deltasToDirFarthestOrtho(dx,dy,alwaysReturnDirection) {
 		let ax = Math.abs(dx);
@@ -44,10 +44,6 @@
 		}
 		return false;
 	}
-	function getTrueDistance(dx,dy) {
-		return Math.sqrt(dx*dx+dy*dy);
-	}
-
 	function isUnknown(tile) {
 		return tile == T.Unknown;
 	}
@@ -559,7 +555,7 @@
 				for( let y=-yLimit ; y<yLimit ; ++y ) {
 					for( let x=-xLimit ; x<xLimit ; ++x ) {
 						if( x==0 && y==0 ) continue;
-						let dist = getTrueDistance(x,y);
+						let dist = Distance.get(x,y);
 						this.proList.push({x:x,y:y,dist:dist});
 					}
 				}
@@ -777,10 +773,10 @@
 						if( dx && dy ) {
 							if( lean ) { dx=0; } else { dy=0; }
 						}
-						return deltasToDirPredictable(dx,dy);
+						return directionPredictable(dx,dy);
 					}
 					if( p.x!=p.tx || p.y!=p.ty ) {
-						let linkFn = Math.chance(passageWander) ? deltasToDirNaturalOrtho : deltasToDirStrict;
+						let linkFn = Math.chance(passageWander) ? directionNaturalOrtho : deltasToDirStrict;
 						let ok = this.zoneLinkByPath(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
 						if( !ok ) {
 							this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
@@ -856,7 +852,7 @@
 			for( let y=0 ; y<placeMap.yLen ; ++y ) {
 				for( let x=0 ; x<placeMap.xLen ; ++x ) {
 					let pSym = placeMap.tileSymbolGet(x,y);
-					if( pSym == TILE_UNKNOWN ) {
+					if( pSym == Tile.UNKNOWN ) {
 						// This is allwed.
 						continue;
 					}
@@ -864,7 +860,7 @@
 						debugger;
 					}
 					let mSym = this.getTile(px+x,py+y)
-					if( mSym !== TILE_UNKNOWN ) {
+					if( mSym !== Tile.UNKNOWN ) {
 						debugger;
 					}
 					this.setTile(px+x,py+y,pSym);
@@ -1037,9 +1033,9 @@
 		majorityNear(x,y,testFn) {
 			let most = {};
 			let best = false;
-			for( let dir=0 ; dir<DirectionCount ; ++dir ) {
-				let dx = x+DirectionAdd[dir].x;
-				let dy = y+DirectionAdd[dir].y;
+			for( let dir=0 ; dir<Direction.count ; ++dir ) {
+				let dx = x+Direction.add[dir].x;
+				let dy = y+Direction.add[dir].y;
 				let tile = this.getTile(dx,dy);
 				if( testFn(tile) ) {
 					most[tile] = (most[tile]||0)+1;
@@ -1173,7 +1169,7 @@
 
 	function positionPlaces(depth,map,numPlaceTilesOriginal,quota,requiredPlaces,rarityHash,injectList,siteList,mapOffset) {
 
-		class PlacePicker extends PickTable {
+		class PlacePicker extends Pick.Table {
 			constructor() {
 				super();
 				this.placeUsed = {};
@@ -1209,10 +1205,10 @@
 					map.countGaps(x,y)==1;
 			}
 			let edge = makeWalled ? 1 : 0;
-			if( floorSymbol == TILE_FLOOR ) { floorSymbol = T.Floor };
-			if( wallSymbol == TILE_WALL ) { wallSymbol = T.Wall };
+			if( floorSymbol == Tile.FLOOR ) { floorSymbol = T.Floor };
+			if( wallSymbol == Tile.WALL ) { wallSymbol = T.Wall };
 			console.assert( xLen>2 && yLen>2 && floorSymbol && wallSymbol );
-			let map = new SimpleMap(FillTextMap(xLen,yLen,wallSymbol));
+			let map = new SimpleMap(SimpleMap.fillTextMap(xLen,yLen,wallSymbol));
 			console.assert( map.xLen == xLen && map.yLen == yLen );
 			let deadEnds = [];
 			let stack = [];
@@ -1843,8 +1839,10 @@
 		return map;
 	}
 
+	return {
+		Mason: {
+			masonConstruct: masonConstruct
+		}
+	}
 
-	window.Mason = {
-		masonConstruct: masonConstruct
-	};
-})();
+});

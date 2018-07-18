@@ -1,3 +1,6 @@
+Module.add('anim',function() {
+
+
 let _test = function(a,b) {
 	console.assert( Math.abs(a-b) < 0.0001 );
 }
@@ -105,7 +108,7 @@ let sQuiver = function(rate,range=0.5) {
 }
 let sVel = function(deg,vel) {
 	this.deg = deg;
-	this.vel = vel * TILE_DIM;
+	this.vel = vel * Tile.DIM;
 	this.xVel = (this.xVel||0) + Math.cos(toRad(deg)) * vel;
 	this.yVel = (this.yVel||0) + Math.sin(toRad(deg)) * vel;
 	return this;
@@ -241,7 +244,7 @@ class Anim {
 		this.spritesAlive = 0;
 		this.elapsed = 0;
 		if( (this.at && this.at.inVoid) || (this.follow && this.follow.inVoid) || (this.target && this.target.inVoid) ) {
-			// Don't try to animate on this thing. It is in the void.
+			// Don't try to Animate on this thing. It is in the void.
 			return false;
 		}
 		if( this.at ) {
@@ -284,7 +287,7 @@ class Anim {
 		else {
 			this.spriteAdd(this.img);
 		}
-		animationAdd(this);
+		Anim.addToMasterAnimationList(this);
 	}
 	sprites(fn) {
 		return this.spriteList.forEach( fn );
@@ -344,7 +347,7 @@ class Anim {
 		if( this.dead ) return;
 		console.assert( this.duration !== undefined );
 		console.assert( typeof this.duration !== 'number' || !isNaN(this.duration) );
-		sprite.baseScale = sprite.baseScale || TILE_DIM/sprite.width;
+		sprite.baseScale = sprite.baseScale || Tile.DIM/sprite.width;
 		sprite.rx = sprite.rx || 0;
 		sprite.ry = sprite.ry || 0;
 		sprite.rxTarget = this.rxTarget || 0;
@@ -415,8 +418,8 @@ class Anim {
 	}
 	spriteCalc(s) {
 		let e = this.delay<=0;
-		s.x = (this.x-this.xBase+((e?s.rx+s.qx:0)+0.5)*this.scale)*TILE_DIM;
-		s.y = (this.y-this.yBase+((e?s.ry+s.qy:0)+0.5)*this.scale)*TILE_DIM;
+		s.x = (this.x-this.xBase+((e?s.rx+s.qx:0)+0.5)*this.scale)*Tile.DIM;
+		s.y = (this.y-this.yBase+((e?s.ry+s.qy:0)+0.5)*this.scale)*Tile.DIM;
 	}
 	tick(delta) {
 
@@ -488,7 +491,7 @@ class Anim {
 	}
 }
 
-function animFloatUp(target,icon,delay,duration=0.4) {
+Anim.FloatUp = function(target,icon,delay,duration=0.4) {
 	if( icon !== false ) {
 		return new Anim( {}, {
 			follow: 	target,
@@ -502,7 +505,7 @@ function animFloatUp(target,icon,delay,duration=0.4) {
 	}
 }
 
-function animOver(target,icon,delay=0,duration=0.2,scale=0.75) {
+Anim.Over = function(target,icon,delay=0,duration=0.2,scale=0.75) {
 	return new Anim( {}, {
 		follow: 	target,
 		img: 		icon,
@@ -514,7 +517,7 @@ function animOver(target,icon,delay=0,duration=0.2,scale=0.75) {
 	});
 }
 
-function animCloud(x,y,area,groupId,icon) {
+Anim.Cloud = function(x,y,area,groupId,icon) {
 	return new Anim( {}, {
 		x: 			x,
 		y: 			y,
@@ -530,7 +533,7 @@ function animCloud(x,y,area,groupId,icon) {
 	});
 }
 
-function animAt(x,y,area,icon,delay) {
+Anim.At = function(x,y,area,icon,delay) {
 	return new Anim( {}, {
 		x: 			x,
 		y: 			y,
@@ -544,7 +547,7 @@ function animAt(x,y,area,icon,delay) {
 	});
 }
 
-function animAbove(target,icon,delay=0) {
+Anim.Above = function(target,icon,delay=0) {
 	return new Anim( {}, {
 		follow: 	target,
 		img: 		icon,
@@ -556,10 +559,10 @@ function animAbove(target,icon,delay=0) {
 	});
 }
 
-function animFly(sx,sy,ex,ey,area,img,delay) {
+Anim.Fly = function(sx,sy,ex,ey,area,img,delay) {
 	let dx = ex-sx;
 	let dy = ey-sy;
-	let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / 10);
+	let rangeDuration = Math.max(0.1,Distance.get(dx,dy) / 10);
 	return new Anim({
 		x: 			sx,
 		y: 			sy,
@@ -572,7 +575,7 @@ function animFly(sx,sy,ex,ey,area,img,delay) {
 	});
 }
 
-function animFountain(entity,num=40,duration=2,velocity=3,img) {
+Anim.Fountain = function(entity,num=40,duration=2,velocity=3,img) {
 	return new Anim({},{
 		follow: 	entity,
 		img: 		img,
@@ -584,7 +587,7 @@ function animFountain(entity,num=40,duration=2,velocity=3,img) {
 	});
 }
 
-function animHoming(entity,target,img,offAngle=45,num=40,duration=2,velocity=3) {
+Anim.Homing = function(entity,target,img,offAngle=45,num=40,duration=2,velocity=3) {
 	let dx = target.x - entity.x ;
 	let dy = target.y - entity.y;
 	let deg = deltaToDeg(dx,dy);
@@ -601,7 +604,7 @@ function animHoming(entity,target,img,offAngle=45,num=40,duration=2,velocity=3) 
 	});
 }
 
-function animBlam(target, scale=0.20, num=10, duration=0.2, fromDeg=0, arc=45, mag0=4, mag1=10, grav=10, rot=0, img, delay=0 ) {
+Anim.Blam = function(target, scale=0.20, num=10, duration=0.2, fromDeg=0, arc=45, mag0=4, mag1=10, grav=10, rot=0, img, delay=0 ) {
 	return new Anim({},{
 		follow: 	target,
 		img: 		img,
@@ -613,22 +616,42 @@ function animBlam(target, scale=0.20, num=10, duration=0.2, fromDeg=0, arc=45, m
 	});
 }
 
-let animationList = [];
-let animationTimer = {};
-function animationAdd(anim) {
-	animationList.push(anim);
-	return anim;
-}
-function animationRemove(fn) {
-	animationList.forEach( anim => { if( fn(anim) ) anim.die(); } );
-}
-function animationTickRealtime(delta) {
-	animationList.map( anim => anim.tick(delta) );
-	Array.filterInPlace( animationList, anim => !anim.dead );
+let Animation = new class {
+	constructor() {
+		this.list = [];
+		Anim.addToMasterAnimationList = anim => this.add(anim);
+	}
+	add(anim) {
+		this.list.push(anim);
+		return anim;
+	}
+	remove(fn) {
+		this.list.forEach( anim => { if( fn(anim) ) anim.die(); } );
+	}
+	tickRealtime(delta) {
+		this.list.map( anim => anim.tick(delta) );
+		Array.filterInPlace( this.list, anim => !anim.dead );
+	}
 }
 
+Animation.Timer = new class {
+	constructor() {
+		this.delay = {};
+	}
+	reset() {
+		this.delay = {};
+	}
+	getDelay(id) {
+		return this.delay[id] || 0;
+	}
+	addDelay(id,amount) {
+		this.delay[id] = (this.delay[id]||0) + amount;
+	}
+}
+
+
 /*
-Notes on fully data-driven animations:
+Notes on fully data-driven Animations:
 
 {
 	follow: 1,			// to follow whatever relevant
@@ -639,9 +662,16 @@ Notes on fully data-driven animations:
 	duration: 			// usually standard
 	scale:
 	alpha:
-	template:  // like animBlam, etc that take { params... } and use them in an onSprite, onSpriteTick, etc.
+	template:  // like Anim.Blam, etc that take { params... } and use them in an onSprite, onSpriteTick, etc.
 }
 
 */
 
+return {
+	Anim: Anim,
+	AnimClip: AnimClip,
+	Animation: Animation,
+	deltaToDeg: deltaToDeg,
+}
 
+});

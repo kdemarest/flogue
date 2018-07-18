@@ -1,6 +1,8 @@
+Module.add('data',function(extern){
+
 // STATIC DATA
 
-// WARNING: The strings for directions MUST remain the same for commandToDirection() to work.
+// WARNING: The strings for directions MUST remain the same for Direction.fromCommand() to work.
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
 				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", SHOOT: "shoot",
 				FAVORITE: "favorite",
@@ -11,60 +13,72 @@ const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", 
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit",
 				EXECUTE: "execute", CANCEL: "cancel"
 			};
-const Direction = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
-const DirectionAdd = [
-	{ x:0,  y:-1, c:Command.N },
-	{ x:1,  y:-1, c:Command.NE },
-	{ x:1,  y:0,  c:Command.E },
-	{ x:1,  y:1,  c:Command.SE },
-	{ x:0,  y:1,  c:Command.S },
-	{ x:-1, y:1,  c:Command.SW },
-	{ x:-1, y:0,  c:Command.W },
-	{ x:-1, y:-1, c:Command.NW }
-];
-const DirectionCount = 8;
-function commandToDirection(c) {
-	return ( Direction[c] != undefined ? Direction[c] : false );
-}
-function directionToCommand(dir) {
-	let d2c = [ Command.N, Command.NE, Command.E, Command.SE, Command.S, Command.SW, Command.W, Command.NW ];
-	if( dir === false || dir < 0 || dir >= DirectionCount ) { debugger; }
-	return d2c[dir];
-}
-function deltasToDirPredictable(dx,dy) {
-	if( dy < 0 ) return dx==0 ? Direction.N : (dx<0 ? Direction.NW : Direction.NE);
-	if( dy > 0 ) return dx==0 ? Direction.S : (dx<0 ? Direction.SW : Direction.SE);
-	return dx==0 ? false : (dx<0 ? Direction.W : Direction.E);
-} 
-function deltasToDirNatural(dx,dy) {
-	let ax = Math.abs(dx);
-	let ay = Math.abs(dy);
-	if( ax != ay ) {
-		// We want to flatten our trajectory sometimes.
-		if( Math.rand(0,ax+ay)<Math.max(ax,ay) ) {
-			if( ax < ay ) { dx=0; } else { dy=0; }
-		}
-	}
-	return deltasToDirPredictable(dx,dy);
-}
 
+const Distance = new class{
+	get(dx,dy) {
+		return Math.sqrt(dx*dx+dy*dy);
+	}
+	getSq(dx,dy) {
+		return Math.max(Math.abs(dx),Math.abs(dy));
+	}
+};
+
+const Direction = new class {
+	constructor() {
+		this.add = [
+			{ x:0,  y:-1, c:Command.N },
+			{ x:1,  y:-1, c:Command.NE },
+			{ x:1,  y:0,  c:Command.E },
+			{ x:1,  y:1,  c:Command.SE },
+			{ x:0,  y:1,  c:Command.S },
+			{ x:-1, y:1,  c:Command.SW },
+			{ x:-1, y:0,  c:Command.W },
+			{ x:-1, y:-1, c:Command.NW }
+		];
+		this.count = 8;
+	}
+	fromCommand(command) {
+		let c2d = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
+		return ( c2d[Command[command]] != undefined ? c2d[Command[command]] : false );
+	}
+	toCommand(dir) {
+		let d2c = [ Command.N, Command.NE, Command.E, Command.SE, Command.S, Command.SW, Command.W, Command.NW ];
+		if( dir === false || dir < 0 || dir >= Direction.count ) { debugger; }
+		return d2c[dir];
+	
+	}
+	predictable(dx,dy) {
+		let dirId = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
+		if( dy < 0 ) return dx==0 ? dirId.N : (dx<0 ? dirId.NW : dirId.NE);
+		if( dy > 0 ) return dx==0 ? dirId.S : (dx<0 ? dirId.SW : dirId.SE);
+		return dx==0 ? false : (dx<0 ? dirId.W : dirId.E);
+	} 
+	natural(dx,dy) {
+		let ax = Math.abs(dx);
+		let ay = Math.abs(dy);
+		if( ax != ay ) {
+			// We want to flatten our trajectory sometimes.
+			if( Math.rand(0,ax+ay)<Math.max(ax,ay) ) {
+				if( ax < ay ) { dx=0; } else { dy=0; }
+			}
+		}
+		return this.predictable(dx,dy);
+	}
+};
 
 let IMG_BASE = 'http://localhost:3000/tiles/';
 
-// If you change this, you must also chance the .css class .tile
-let TILE_DIM = 48;
-let MapVis = 8;		// The vision distance used when actually drawing your map display, casting light etc.
-let MaxVis = 8;		// The vision distance max any monster can see
-let TILE_UNKNOWN = ' ';		// reserved so that map creation can look sane.
-let TILE_FLOOR   = '.';		// reserved so that map creation can look sane.
-let TILE_WALL    = '#';		// reserved so that map creation can look sane.
 let SymbolForbidden = { ' ': 1, '.': 1, '#': 1 };
 let SymbolToType = {};
 let TypeIdToSymbol = {};
 let SYM = 111;
 
+// If you change this, you must also chance the .css class .tile
+let MapVis = 8;		// The vision distance used when actually drawing your map display, casting light etc.
+let MaxVis = 8;		// The vision distance max any monster can see
+
 // Pathfinding and terrain isProblem
-let Prob = {
+let Problem = {
 	NONE:  0.0,
 	ENTITY: 0.2,		// be wary of changing this!
 	MILD:  0.3,
@@ -74,24 +88,28 @@ let Prob = {
 	DEATH: 900000.0
 }
 
-let ZOrder = {
-	FLOOR: 6,
-	TILE: 8,
-	WALL: 10,
-	GATE: 20,
-	DECOR: 22,
-	TABLE: 24,
-	CORPSE: 25,
-	ITEM: 26,
-	SIGN: 28,
-	MONSTER: 30,
-	OTHER: 40,
-	MIST: 50,
-	ANIM: 100
-};
+let Tile = {
+	DIM: 48,
+	UNKNOWN: ' ',
+	FLOOR: '.',
+	WALL: '#',
+	zOrder: {
+		FLOOR: 6,
+		TILE: 8,
+		WALL: 10,
+		GATE: 20,
+		DECOR: 22,
+		TABLE: 24,
+		CORPSE: 25,
+		ITEM: 26,
+		SIGN: 28,
+		MONSTER: 30,
+		OTHER: 40,
+		MIST: 50,
+		ANIM: 100
+	}
+}
 
-let MONSTER_SCALE_VARIANCE_MIN = 0.75;
-let MONSTER_SCALE_VARIANCE_MAX = 1.00;
 
 Gab = {
 };
@@ -171,7 +189,6 @@ const StickerList = {
 
 // Probably should do this at some point.
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
-let ARMOR_SCALE = 100;
 
 const MiscImmunity = { SPEED: "speed", STUN: "stun", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField", HEALING: "healing" };
 
@@ -224,7 +241,7 @@ let EffectTypeList = {
 	eSeeInvisible: 	{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseInvisible', value: true, xDuration: 5.0, isHelp: 1, name: 'see invisible', icon: 'gui/icons/eVision.png' },
 	eXray: 			{ isTac: 1, level:  0, rarity: 0.20, op: 'set', stat: 'senseXray', value: true, xDuration: 5.0, isPlayerOnly: 1, name: 'xray vision', icon: 'gui/icons/eVision.png' },
 	eTeleport: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'teleport', duration: 0, xRecharge: 2.0, isHelp: true, name: 'teleport', icon: 'gui/icons/eTeleport.png' },
-	eOdorless: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'scentReduce', value: SCENT_AGE_LIMIT, isHelp: true, name: 'no scent', icon: 'gui/icons/eFragrance.png' },
+	eOdorless: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'scentReduce', value: Rules.SCENT_AGE_LIMIT, isHelp: true, name: 'no scent', icon: 'gui/icons/eFragrance.png' },
 	eStink: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'stink', value: 0.8, isHarm: true, name: 'stink', icon: 'gui/icons/eFragrance.png' },
 	eBloodhound: 	{ isTac: 1, level:  0, rarity: 1.00, op: 'set', stat: 'senseSmell', value: 100, isHelp: true, name: 'bloodhound', icon: 'gui/icons/eFragrance.png' },
 // Buff
@@ -287,14 +304,16 @@ let EffectTypeList = {
 					duration: true, damageType: DamageType.POISON, name: 'mortal poison', icon: 'gui/icons/ePoison.png' },
 	eLeech: 		{ isDmg: 1, level:  0, rarity: 0.30, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, isLeech: 1, damageType: DamageType.ROT, healingType: DamageType.SMITE, icon: 'gui/icons/eLeech.png' },
 };
-let ETL = EffectTypeList;
 
 
+(() => {
 for( let key in EffectTypeList ) {
 	// all effect bearing items have a bigger price.
 	EffectTypeList[key].xPrice = Rules.effectPriceMultiplierByRarity(EffectTypeList[key].rarity);
+	// Although this is set in the Fab, certain code needs it sooner, so here it is.
 	EffectTypeList[key].isEffect = true;
 }
+})();
 
 EffectTypeList.eBurn.onTargetPosition = function(map,x,y) {
 	map.tileSymbolSet(x,y,TileTypeList.flames.symbol);
@@ -313,12 +332,6 @@ EffectTypeList.eFreeze.onTargetPosition = function(map,x,y) {
 
 }
 
-const ImgBridges = {
-	NS: { img: "dc-dngn/bridgeNS.png" },
-	EW: { img: "dc-dngn/bridgeEW.png" }
-}
-
-
 
 // Item Events
 // onTouch - fires each round a monster is standing on a tile. Also fires when you WAIT or LOSE TURN upon a tile.
@@ -331,463 +344,85 @@ const ImgBridges = {
 //				return false to stop the movement.
 
 
-
-const TileTypeList = {
-	"floorCave":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "cave floor",
-					img: "decor/floorSlate.png",
-					isFloor: true },
-	"floorDirt":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "dirt floor",
-					img: "decor/floorDirt.png",
-					isFloor: true },
-	"floorSlate":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "slate floor",
-					img: "decor/floorSlate.png",
-					isFloor: true },
-	"floorStone":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "stone floor",
-					img: "dc-dngn/floor/rect_gray1.png", isFloor: true
-					},
-	"wallCave":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "cave wall", 
-					addFloor: true,
-					imgChoices: {
-						0: { img: "decor/boulder1.png" },
-						1: { img: "decor/boulder2.png" },
-						2: { img: "decor/boulder3.png" },
-						3: { img: "decor/boulder4.png" },
-					},
-					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true },
-	"wallJagged":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "jagged wall", 
-					addFloor: true,
-					imgChoices: {
-						0: { img: "decor/jagged1.png" },
-						1: { img: "decor/jagged2.png" },
-						2: { img: "decor/jagged3.png" },
-						3: { img: "decor/jagged4.png" },
-					},
-					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true, scale: 0.7 },
-	"wallStone":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall",
-					img: "dc-dngn/floor/pedestal_full.png", isWall: true, wantsDoor: true
-					},
-	"pit": {
-		symbol: ':',
-		mayWalk: true,
-		mayFly: true,
-		opacity: 0,
-		noScent: true,
-		name: "pit",
-		mayJump: true,
-		isPit: true,
-		// NOTE! Technically the pit isRemovable when you build bridges with a hammer. But
-		// that is for another day.
-		wantsBridge: true,
-		img: "dc-dngn/pit.png"
-	},
-	"bridge": {
-		symbol: SYM,
-		mayWalk: true,
-		mayFly: true,
-		opacity: 0,
-		name: "bridge",
-		isBridge: true,
-		// NOTE! Although the bridge isRemovable doing so turns it into PIT, and the isRemovable
-		// flag only means "can be removed in such a way as to be walked upon later.
-		img: "dc-dngn/bridgeNS.png",
-		imgChoices: ImgBridges,
-		imgGet: (self, img) => img || self.img
-	},
-	"water": {
-		symbol: '~',
-		mayWalk: true,
-		mayFly: true,
-		maySwim: true,
-		noScent: true,
-		isWater: true,
-		opacity: 0,
-		mayJump: true,
-		wantsBridge: true,
-		name: "water",
-		img: "dc-dngn/water/dngn_shoals_shallow_water1.png"
-	},
-	"grass": {
-		symbol: SYM,
-		mayWalk: true,
-		mayFly: true,
-		opacity: 0,
-		name: "grass",
-		img: "dc-dngn/floor/grass/grass_flowers_blue1.png",
-		isFloor: true
-	},
-	"glass": {
-		symbol: SYM,
-		mayWalk: false,
-		mayFly: false,
-		opacity: 0,
-		name: "glass",
-		img: "dc-dngn/wall/dngn_mirrored_wall.png",
-		isWall: true
-	},
-	"shaft": {
-		symbol: SYM,
-		mayWalk: false,
-		mayFly: true,
-		opacity: 0,
-		noScent: true,
-		name: "shaft",
-		mayJump: true,
-		addFloor: true,
-		img: "dc-dngn/dngn_trap_shaft.png"
-	},
-	"flames": {
-		symbol: SYM,
-		mayWalk: true,
-		mayFly: true,
-		opacity: 0.26,
-		damageType: DamageType.BURN,
-		noScent: true,
-		isFire: true,
-		addFloor: true,
-		name: "flames",
-		light: 9,
-		glow: 1,
-		effect: {
-			op: 'damage',
-			xDamage: 4.0,
-			damageType: DamageType.BURN,
-			duration: 0,
-			icon: 'gui/icons/eBurn.png'
-		},
-		img: "effect/fire.png"
-	},
-	"lava": {
-		symbol: SYM,
-		mayWalk: true,
-		mayFly: true,
-		maySwim: true,
-		noScent: true,
-		opacity: 0,
-		damageType: DamageType.BURN,
-		isFire: true,
-		mayJump: true,
-		name: "lava",
-		light: 5,
-		glow: 1,
-		effect: {
-			op: 'damage',
-			xDamage: 8.0,
-			damageType: DamageType.BURN,
-			duration: 0,
-			icon: 'gui/icons/eBurn.png'
-		},
-		img: "UNUSED/features/dngn_lava.png"
-	},
-	"mist": {
-		symbol: SYM,
-		mayWalk: true,
-		mayFly: true,
-		opacity: 0.34,
-		name: "mist",
-		zOrder: ZOrder.MIST,
-		addFloor: true,
-		img: "effect/cloud_grey_smoke.png",
-		layer: 3
-	},
-	"mud": {
-		symbol: SYM,
-		mayWalk: true,
-		mayFly: true,
-		opacity: 0,
-		noScent: true,
-		mayJump: true,
-		name: "mud",
-		img: "dc-dngn/floor/dirt0.png"
-	},
-	"ghostStone": {
-		symbol: SYM,
-		mayWalk: false,
-		mayFly: false,
-		opacity: 0,
-		name: "ghost stone",
-		addFloor: true,
-		img: "dc-dngn/altars/dngn_altar_vehumet.png",
-		effect: {
-			op: 'set',
-			stat: 'invisible',
-			value: true
-		}
-	},
-	"obelisk": {
-		symbol: SYM,
-		mayWalk: false,
-		mayFly: false,
-		opacity: 0,
-		name: "obsidian obelisk",
-		addFloor: true,
-		img: "dc-dngn/altars/dngn_altar_sif_muna.png",
-		effect: {
-			op: 'set',
-			stat: 'senseBlind',
-			value: true
-		}
-	},
-	"crystal": {
-		symbol: SYM,
-		mayWalk: false,
-		mayFly: false,
-		opacity: 0,
-		name: "shimmering crystal",
-		glow: 1,
-		addFloor: true,
-		img: "dc-dngn/altars/dngn_altar_beogh.png",
-		effect: {
-			op: 'add',
-			stat: 'speed',
-			value: 3
-		}
-	},
-	"forcefield": {
-		symbol: SYM,
-		mayWalk: true,
-		mayFly: true,
-		opacity: 1,
-		name: "force field",
-		light: 3,
-		glow: 1,
-		addFloor: true,
-		img: "spells/air/static_discharge.png"
-	},
-};
-
-
-let MaxLightValue = 15;
-let LightFullBrightDistance = 7;	// how many squares light casts.
-
-let LightAlpha = [];
-// This makes the assumption that a 
-for( let i=-MaxLightValue-20 ; i<MaxLightValue+20 ; ++i ) {
-	LightAlpha[i] = Math.clamp(i/LightFullBrightDistance,0.0,1.0);
-}
-
-
-TileTypeList.obelisk.onBump = function(toucher,self) {
-	if( !toucher.senseBlind ) {
-		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,'.');
-		effectApply( self.effect, toucher, null, self, 'bump' );
+class KeyMap {
+	constructor() {
+		this.keyToCommand = this.load();
 	}
-	else {
-		tell(mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,' but ',mVerb,'are',' already blind.');
+
+	commandToKey(command) {
+		let key;
+		Object.each( this.keyToCommand, (c,k) => { if( c==command ) key=k; });
+		return key;
 	}
-}
 
-TileTypeList.crystal.onBump = function(entity,self) {
-	if( entity.speed <= 1 ) {
-		tell(mSubject,entity,' ',mVerb,'touch',' ',mObject,self,' and ',mSubject|mVerb,'blur',' with speed!');
-		effectApply( self.effect, toucher, null, self, 'bump' );
-	}
-	else {
-		tell( mSubject,entity,' ',mVerb,'touch',' ',mObject,self,', but ',mVerb,'are',' already moving fast.');
-	}
-}
-
-TileTypeList.pit.isProblem = function(entity,self) {
-	if( entity.travelMode == 'walk' ) {
-		// This is a temporary fix to the problem that dogs that can jump are allowed to enter
-		// pit squares but might actually have no viable path out...
-		return Prob.DEATH;
-	}
-	if( entity.travelMode == 'walk' && (!entity.jumpMax || entity.jump>0) ) {
-		return Prob.DEATH;
-	}
-	if( entity.travelMode == 'walk' && entity.attitude !== Attitude.AGGRESSIVE ) {
-		return Prob.MILD;
-	}
-	return Prob.NONE;
-}
-
-
-TileTypeList.pit.onTouch = function(entity,self) {
-	if( entity.travelMode == "walk" && !entity.jump ) {
-		tell(mSubject|mCares,entity,' ',mVerb,'are',' at the edge of ',mObject,self);
-	}
-}
-
-TileTypeList.flames.onEnterType = function(entity,self) {
-	tell( mSubject|mCares,entity,' ',mVerb,'enter',' ',mObject,self,'.' );
-}
-
-TileTypeList.flames.onDepartType = function(entity,self) {
-	tell( mSubject|mCares,entity,' ',mVerb,'leave',' ',mObject,self,'.' );
-}
-
-TileTypeList.flames.getDamage = function(toucher,self) {
-	return value
-}
-
-// TouchDamage
-// To use this convenience function, assign your type a damageType and optionally an xDamage
-// and those will be used automagically. 
-// NOTE: We need to turn this into a 'bundle', so that post-processing can assign everything
-// automatically, like Object.each( BundleType[this.bundle], (value,key) => this[key] = value );
-//
-let TouchDamage = {
-	isProblem: function(entity,self) {
-		if( entity.isImmune(self.damageType || (self.effect ? self.effect.damageType : null)) ) {
-			return Prob.NONE;
-		}
-		let xDamage = ItemCalc(self,self,'xDamage','*');
-		let damage = Math.max(1,Math.floor(Rules.pickDamage(entity.area.depth,self.rechargeTime) * xDamage))
-		let ratio = damage/entity.health;
-		if( ratio <= 0.3 ) return Prob.MILD;
-		if( ratio <= 0.7 ) return Prob.HARSH;
-		return Prob.DEATH;
-	},
-	onTouch: function(toucher,self) {
-		// We could pass in an onDamage that would also catch you on fire...
-		let xDamage = ItemCalc(self,self,'xDamage','*');
-		let damageType = self.damageType || (self.effect ? self.effect.damageType : DamageType.BURN);
-		let effectDefault = {
-			op: 'damage',
-			damageType: damageType,
-			duration: 0,
-			icon: StickerList[damageType+'Icon'].img
+	load() {
+		return {
+			ArrowUp: Command.N,
+			ArrowLeft: Command.W,
+			ArrowDown: Command.S,
+			ArrowRight: Command.E,
+			k: Command.N,
+			u: Command.NE,
+			l: Command.E,
+			n: Command.SE,
+			j: Command.S,
+			b: Command.SW,
+			h: Command.W,
+			y: Command.NW,
+			T: Command.DEBUGTEST,
+			X: Command.DEBUGKILL,
+			A: Command.DEBUGTHRIVE,
+			V: Command.DEBUGVIEW,
+			Z: Command.DEBUGANIM,
+			a: Command.ATTACK,
+			i: Command.INVENTORY,
+			f: Command.FAVORITE,
+			q: Command.QUAFF,
+			t: Command.THROW,
+			s: Command.SHOOT,
+			d: Command.DROP,
+			c: Command.CAST,
+	//		F1: Command.CAST1,
+	//		F2: Command.CAST2,
+	//		F3: Command.CAST3,
+	//		F4: Command.CAST4,
+	//		F5: Command.CAST5,
+			'.': Command.WAIT,
+			Enter: Command.EXECUTE,
+			Escape: Command.CANCEL
 		};
-		let effect = Object.assign( {}, self.effect || effectDefault, { xDamage: xDamage } );
-		effect = new Effect( toucher.area.depth, effect );
-		effectApply( effect, toucher, null, self, 'touch' );
-	},
-	onTouchWalk: function(toucher,self) {
-		if( toucher.travelMode != "walk" || toucher.jump ) {
-			return;
-		}
-		return TouchDamage.onTouch(toucher,self);
-	}
-
-};
-
-TileTypeList.flames.isProblem 	= TouchDamage.isProblem;
-TileTypeList.flames.onTouch 	= TouchDamage.onTouch;
-
-TileTypeList.lava.onEnterType = function(entity,self) {
-	tell( mSubject|mCares,entity,' ',mVerb,'enter',' ',mObject,self,'.' );
-}
-
-TileTypeList.lava.onDepartType = function(entity,self) {
-	tell( mSubject|mCares,entity,' ',mVerb,'leave',' ',mObject,self,'.' );
-}
-
-TileTypeList.lava.isProblem = TouchDamage.isProblem;
-TileTypeList.lava.onTouch 	= TouchDamage.onTouchWalk;
-
-TileTypeList.mud.isProblem = function(entity,self) {
-	if( !entity.isImmune(self.typeId) && entity.travelMode == "walk" ) {
-		return Prob.HARSH;
-	}
-	return Prob.NONE;
-}
-
-TileTypeList.mud.onEnterType = function(entity,self) {
-	if( entity.travelMode == "walk" && !entity.jump ) {
-		tell( mSubject|mCares,entity,' ',mVerb,'enter',' ',mObject,self,'.' );
 	}
 }
 
-TileTypeList.mud.onDepartType = function(entity,self) {
-	if( entity.travelMode == "walk" && !entity.jump ) {
-		tell( mSubject|mCares,entity,' ',mVerb,'escape',' ',mObject,self,'.' );
-	}
+return {
+	Command: Command,
+	Distance: Distance,
+	Direction: Direction,
+	IMG_BASE: IMG_BASE,
+	SymbolForbidden: SymbolForbidden,
+	SymbolToType: SymbolToType,
+	TypeIdToSymbol: TypeIdToSymbol,
+	SYM: SYM,
+	MapVis: MapVis,
+	MaxVis: MaxVis,
+	Problem: Problem,
+	Tile: Tile,
+	Gab: Gab,
+	DynamicViewList: DynamicViewList,
+	StickerList: StickerList,
+	MiscImmunity: MiscImmunity,
+	DamageType: DamageType,
+	Damage: Damage,
+	EffectShape: EffectShape,
+	ArmorDefendsAgainst: ArmorDefendsAgainst,
+	ShieldDefendsAgainst: ShieldDefendsAgainst,
+	Attitude: Attitude,
+	Team: Team,
+	Job: Job,
+	Slot: Slot,
+	PickIgnore: PickIgnore,
+	EffectTypeList: EffectTypeList,
+	KeyMap: KeyMap,
 }
 
-TileTypeList.mud.onDepart = function(entity,self) {
-	if( entity.travelMode == "walk" && entity.jump ) {
-		return;
-	}
-
-	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Math.chance(50) ) ) {
-		return;
-	}
-
-	if( entity.travelMode == "walk" && !entity.mudded ) {
-		entity.mudded = true;
-		tell( mSubject|mCares,entity,' ',mVerb,'is',' stuck in the mud.');
-		return false;
-	}
-	entity.mudded = false;
-}
-
-
-
-TileTypeList.forcefield.onEnterType = function(entity,self) {
-	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Math.chance(50) ) ) {
-		return;
-	}
-
-	if( Math.chance(70) ) {
-		tell( mSubject|mCares,entity,' ',mVerb,'is',' stopped by the ',mObject,self,'.' );
-		return false;
-	}
-}
-
-TileTypeList.ghostStone.onBump = function(toucher,self) {
-	if( !toucher.invisible ) {
-		tell( mSubject,toucher,' ',mVerb,['touch','touches'],' ',mObject,self,'.' );
-		effectApply( this.effect, toucher, null, self, 'bump' );
-	}
-	else {
-		tell( mSubject,toucher,' ',mVerb,'touch',' ',mObject,self,', but ',mVerb,'are',' already invisible.');
-	}
-}
-
-
-TileTypeList.bridge.imgChoose = function(map,x,y) {
-	let w = map.tileTypeGet(x-1,y);
-	let e = map.tileTypeGet(x+1,y);
-	let n = map.tileTypeGet(x,y-1);
-	let s = map.tileTypeGet(x,y+1);
-	if( w.isPit && e.isPit ) {
-		this.img = this.imgChoices.NS.img;
-		return;
-	}
-	this.img = this.imgChoices.EW.img;
-}
-
-function commandToKey(command) {
-	let keyMap = loadKeyMapping();
-	let key;
-	Object.each( keyMap, (c,k) => { if( c==command ) key=k; });
-	return key;
-}
-
-function loadKeyMapping(name) {
-	return {
-		ArrowUp: Command.N,
-		ArrowLeft: Command.W,
-		ArrowDown: Command.S,
-		ArrowRight: Command.E,
-		k: Command.N,
-		u: Command.NE,
-		l: Command.E,
-		n: Command.SE,
-		j: Command.S,
-		b: Command.SW,
-		h: Command.W,
-		y: Command.NW,
-		T: Command.DEBUGTEST,
-		X: Command.DEBUGKILL,
-		A: Command.DEBUGTHRIVE,
-		V: Command.DEBUGVIEW,
-		Z: Command.DEBUGANIM,
-		a: Command.ATTACK,
-		i: Command.INVENTORY,
-		f: Command.FAVORITE,
-		q: Command.QUAFF,
-		t: Command.THROW,
-		s: Command.SHOOT,
-		d: Command.DROP,
-		c: Command.CAST,
-//		F1: Command.CAST1,
-//		F2: Command.CAST2,
-//		F3: Command.CAST3,
-//		F4: Command.CAST4,
-//		F5: Command.CAST5,
-		'.': Command.WAIT,
-		Enter: Command.EXECUTE,
-		Escape: Command.CANCEL
-	};
-}
+});

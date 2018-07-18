@@ -1,3 +1,5 @@
+Module.add('gui',function() {
+
 class Gui {
 	constructor(getPlayer) {
 		this.getPlayer = getPlayer;
@@ -34,7 +36,7 @@ class Gui {
 			});
 		}
 		function worldOverlayRemove(fn) {
-			return animationRemove(fn);
+			return Animation.remove(fn);
 		}
 		this.onItemChoose = onItemChoose;
 		this.view.dynamic = DynamicViewList.none;
@@ -120,3 +122,9 @@ class Gui {
 		this.view.dynamic.tick();
 	}
 }
+
+return {
+	Gui: Gui
+}
+
+});
