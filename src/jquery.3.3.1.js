@@ -6995,7 +6995,7 @@ function defaultPrefilter( elem, props, opts ) {
 				dataShow.hidden = !hidden;
 			}
 
-			// Show elements before Anim.Ating them
+			// Show elements before Animating them
 			if ( hidden ) {
 				showHide( [ elem ], true );
 			}

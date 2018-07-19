@@ -210,28 +210,6 @@ let sSine = function(pct,scale) {
 //	return (1+Math.sin( (270/360*2*Math.PI) + (this.elapsed/this.duration)*2*Math.PI ))/2*scale;
 //}
 
-let AnimClip = (new function() {
-	let xMin,yMin,xMax,yMax;
-	function setNoClip() {
-		xMin = -99999999;
-		yMin = -99999999;
-		xMax = 99999999;
-		yMax = 99999999;
-	}
-	setNoClip();
-	return {
-		setNoClip: setNoClip,
-		set: function(x0,y0,x1,y1) {
-			xMin = x0;
-			yMin = y0;
-			xMax = x1;
-			yMax = y1;
-		},
-		contains(x,y) {
-			return !(x<xMin || y<yMin || x>xMax || y>yMax);
-		}
-	};
-}());
 
 class Anim {
 	constructor(sticker,data) {
@@ -251,7 +229,7 @@ class Anim {
 			console.assert( this.at.x!==undefined && this.at.y!==undefined && this.at.area!==undefined );
 			this.x = this.at.x;
 			this.y = this.at.y;
-			this.areaId = this.at.area.id;
+			this.area = this.at.area;
 		}
 		if( this.x === undefined && this.follow ) {
 			if( this.follow.isTileType && !this.follow.isPosition ) {
@@ -260,15 +238,15 @@ class Anim {
 			console.assert( this.follow.x!==undefined && this.follow.y!==undefined && this.follow.area!==undefined );
 			this.x = this.follow.x;
 			this.y = this.follow.y;
-			this.areaId = this.follow.area.id;
+			this.area = this.follow.area;
 		}
 		console.assert( this.duration !== undefined );
 		if( this.x === undefined ) debugger;
 		if( this.y === undefined ) debugger;
-		if( this.areaId === undefined || typeof this.areaId !== 'string') debugger;
+		if( this.area === undefined || !this.area.isArea ) debugger;
 
-
-		if( typeof this.duration === 'number' && !AnimClip.contains(this.x,this.y) ) {
+		let animationManager = this.area.animationManager;
+		if( typeof this.duration === 'number' && !animationManager.clip.contains(this.x,this.y) ) {
 			this.dead = true;
 			this.clipped = true;
 			return this;
@@ -280,6 +258,14 @@ class Anim {
 			this.ryTarget = (this.target.y-this.y);
 		}
 
+		if( this.delay === undefined && this.delayId ) {
+			if( typeof this.duration == 'number' ) {
+				this.delay = Anim.delay.get(this.delayId);
+				animationManager.delay.add(this.delayId,this.duration);
+			}
+			// Otherwise make it delay until it is done.
+		}
+
 		this.spriteList = [];
 		if( this.onInit ) {
 			this.onInit(this);
@@ -287,7 +273,9 @@ class Anim {
 		else {
 			this.spriteAdd(this.img);
 		}
-		Anim.addToMasterAnimationList(this);
+		// These get destroyed by flagging themselves dead and then the animation
+		// manager's regular tick will prune them.
+		animationManager.add(this);
 	}
 	sprites(fn) {
 		return this.spriteList.forEach( fn );
@@ -491,13 +479,13 @@ class Anim {
 	}
 }
 
-Anim.FloatUp = function(target,icon,delay,duration=0.4) {
+Anim.FloatUp = function(delayId,target,icon,duration=0.4) {
 	if( icon !== false ) {
 		return new Anim( {}, {
 			follow: 	target,
 			img: 		icon || StickerList.bloodBlue.img,
 			duration: 	0.4,
-			delay: 		delay || 0,
+			delayId: 	delayId,
 			onInit: 		a => { a.create(1); },
 			onSpriteMake: 	s => { s.sVelTo(0,-1,0.4).sScaleSet(0.75); },
 			onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sAlpha(1-Math.max(0,(2*s.elapsed/s.duration-1))); }
@@ -505,27 +493,28 @@ Anim.FloatUp = function(target,icon,delay,duration=0.4) {
 	}
 }
 
-Anim.Over = function(target,icon,delay=0,duration=0.2,scale=0.75) {
+Anim.Over = function(delayId,target,icon,duration=0.2,scale=0.75) {
 	return new Anim( {}, {
 		follow: 	target,
 		img: 		icon,
+		delayId: 	delayId,
 		duration: 	duration,
-		delay: 		delay || 0,
 		onInit: 		a => { a.create(1); },
 		onSpriteMake: 	s => { s.sScaleSet(scale); },
 		onSpriteTick: 	s => { }
 	});
 }
 
-Anim.Cloud = function(x,y,area,groupId,icon) {
+Anim.Cloud = function(delayId,x,y,area,groupId,icon) {
 	return new Anim( {}, {
 		x: 			x,
 		y: 			y,
-		areaId: 	area.id,
+		area: 		area,
 		groupId: 	groupId,
 		alpha: 		0.2,
 		img: 		icon,
 		deathTime: 	Time.simTime+2,
+		delayId: 	delayId,
 		duration: 	(self) => Time.simTime >= self.deathTime ? 'die' : '',
 		onInit: 		a => { a.create(1); },
 		onSpriteMake: 	s => { s.sScaleSet(0.75); },
@@ -533,41 +522,42 @@ Anim.Cloud = function(x,y,area,groupId,icon) {
 	});
 }
 
-Anim.At = function(x,y,area,icon,delay) {
+Anim.At = function(delayId,x,y,area,icon) {
 	return new Anim( {}, {
 		x: 			x,
 		y: 			y,
-		areaId: 	area.id,
+		area: 		area,
 		img: 		icon,
+		delayId: 	delayId,
 		duration: 	0.2,
-		delay: 		delay || 0,
 		onInit: 		a => { a.create(1); },
 		onSpriteMake: 	s => { s.sScaleSet(0.75); },
 		onSpriteTick: 	s => { }
 	});
 }
 
-Anim.Above = function(target,icon,delay=0) {
+Anim.Above = function(delayId,target,icon) {
 	return new Anim( {}, {
 		follow: 	target,
 		img: 		icon,
+		delayId: 	delayId,
 		duration: 	0.2,
-		delay: 		delay || 0,
 		onInit: 		a => { a.create(1); },
 		onSpriteMake: 	s => { s.sScaleSet(0.75).sPos(0,-1); },
 		onSpriteTick: 	s => { }
 	});
 }
 
-Anim.Fly = function(sx,sy,ex,ey,area,img,delay) {
+Anim.Fly = function(delayId,sx,sy,ex,ey,area,img) {
 	let dx = ex-sx;
 	let dy = ey-sy;
 	let rangeDuration = Math.max(0.1,Distance.get(dx,dy) / 10);
 	return new Anim({
 		x: 			sx,
 		y: 			sy,
-		areaId: 	area.id,
+		area: 		area,
 		img: 		img,
+		delayId: 	delayId,
 		duration: 	rangeDuration,
 		onInit: 		a => { a.create(1); },
 		onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
@@ -575,10 +565,11 @@ Anim.Fly = function(sx,sy,ex,ey,area,img,delay) {
 	});
 }
 
-Anim.Fountain = function(entity,num=40,duration=2,velocity=3,img) {
+Anim.Fountain = function(delayId,entity,num=40,duration=2,velocity=3,img) {
 	return new Anim({},{
 		follow: 	entity,
 		img: 		img,
+		delayId: 	delayId,
 		duration: 		a => a.spritesMade && a.spritesAlive==0,
 		onInit: 		a => { },
 		onTick: 		a => a.createPerSec(num,duration),
@@ -587,7 +578,7 @@ Anim.Fountain = function(entity,num=40,duration=2,velocity=3,img) {
 	});
 }
 
-Anim.Homing = function(entity,target,img,offAngle=45,num=40,duration=2,velocity=3) {
+Anim.Homing = function(delayId,entity,target,img,offAngle=45,num=40,duration=2,velocity=3) {
 	let dx = target.x - entity.x ;
 	let dy = target.y - entity.y;
 	let deg = deltaToDeg(dx,dy);
@@ -596,6 +587,7 @@ Anim.Homing = function(entity,target,img,offAngle=45,num=40,duration=2,velocity=
 		follow: 	entity,
 		target: 	target,
 		img: 		img,
+		delayId: 	delayId,
 		duration: 		a => a.spritesMade && a.spritesAlive==0,
 		onInit: 		a => { },
 		onTick: 		a => a.createPerSec(num,duration),
@@ -604,11 +596,11 @@ Anim.Homing = function(entity,target,img,offAngle=45,num=40,duration=2,velocity=
 	});
 }
 
-Anim.Blam = function(target, scale=0.20, num=10, duration=0.2, fromDeg=0, arc=45, mag0=4, mag1=10, grav=10, rot=0, img, delay=0 ) {
+Anim.Blam = function(delayId, target, scale=0.20, num=10, duration=0.2, fromDeg=0, arc=45, mag0=4, mag1=10, grav=10, rot=0, img ) {
 	return new Anim({},{
 		follow: 	target,
 		img: 		img,
-		delay: 		delay,
+		delayId: 	delayId,
 		duration: 	duration,
 		onInit: 		a => { a.create(num); },
 		onSpriteMake: 	s => { s.sScaleSet(scale).sVel(Math.rand(fromDeg-arc,fromDeg+arc),Math.rand(mag0,mag1)); },
@@ -616,10 +608,54 @@ Anim.Blam = function(target, scale=0.20, num=10, duration=0.2, fromDeg=0, arc=45
 	});
 }
 
-let Animation = new class {
+class AnimationClip {
+	constructor() {
+		this.reset();
+	}
+	reset() {
+		this.xMin = -99999999;
+		this.yMin = -99999999;
+		this.xMax = 99999999;
+		this.yMax = 99999999;
+	}
+	set(x0,y0,x1,y1) {
+		this.xMin = x0;
+		this.yMin = y0;
+		this.xMax = x1;
+		this.yMax = y1;
+	}
+	contains(x,y) {
+		return !(x<this.xMin || y<this.yMin || x>this.xMax || y>this.yMax);
+	}
+}
+
+class AnimationDelay {
+	constructor() {
+		this.duration = {};
+	}
+	reset() {
+		this.duration = {};
+	}
+	get(id) {
+		console.assert(id);
+		return this.duration[id] || 0;
+	}
+	add(id,amount) {
+		console.assert(id && amount !== undefined);
+		this.duration[id] = (this.duration[id]||0) + amount;
+	}
+}
+
+
+
+class AnimationManager {
 	constructor() {
 		this.list = [];
-		Anim.addToMasterAnimationList = anim => this.add(anim);
+		this.delay = new AnimationDelay();
+		this.clip = new AnimationClip();
+	}
+	forEach(fn) {
+		return this.list.forEach(fn);
 	}
 	add(anim) {
 		this.list.push(anim);
@@ -631,21 +667,6 @@ let Animation = new class {
 	tickRealtime(delta) {
 		this.list.map( anim => anim.tick(delta) );
 		Array.filterInPlace( this.list, anim => !anim.dead );
-	}
-}
-
-Animation.Timer = new class {
-	constructor() {
-		this.delay = {};
-	}
-	reset() {
-		this.delay = {};
-	}
-	getDelay(id) {
-		return this.delay[id] || 0;
-	}
-	addDelay(id,amount) {
-		this.delay[id] = (this.delay[id]||0) + amount;
 	}
 }
 
@@ -669,8 +690,7 @@ Notes on fully data-driven Animations:
 
 return {
 	Anim: Anim,
-	AnimClip: AnimClip,
-	Animation: Animation,
+	AnimationManager: AnimationManager,
 	deltaToDeg: deltaToDeg,
 }
 

@@ -478,6 +478,7 @@ class Entity {
 				this.x,
 				this.y,
 				this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE,
+				this.darkVision,
 				this.senseBlind,
 				this.senseXray,
 				this.senseInvisible,
@@ -1360,7 +1361,7 @@ class Entity {
 							if( this.attacker !== Attitude.HUNT || this.attitude !== Attitude.PATROL ) {
 								tell(mCares,theEnemy,mSubject,this,' ',mVerb,'think',' ',mObject,theEnemy,' ',mVerb|mObject,'is',' too close!');
 							}
-							Anim.Above(this,StickerList.alert.img,0);
+							Anim.Above(this.id,this,StickerList.alert.img,0);
 						}
 						this.changeAttitude( Attitude.AGGRESSIVE );
 					}
@@ -1817,7 +1818,12 @@ class Entity {
 
 		// This should be last so that your sneak attacks can function properly.
 		if( !isOngoing && attacker && attacker.invisible ) {
-			let turnVisibleEffect = { op: 'set', stat: 'invisible', value: false };
+			let turnVisibleEffect = {
+				op: 'set',
+				stat: 'invisible',
+				value: false,
+				duration: 10,
+			};
 			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
 		}
 
@@ -1886,7 +1892,7 @@ class Entity {
 		new Anim({
 			x: 			sx,
 			y: 			sy,
-			areaId: 	this.area.id,		
+			area: 		this.area,
 			delay: 		source.rangeDuration || 0,
 			duration: 	duration,
 			onInit: 		a => { a.puppet(this.spriteList); },
@@ -2523,13 +2529,12 @@ class Entity {
 		}
 	}
 
-	actEnterGate() {
+	actEnterGate(gate) {
 		let result = {
 			status: 'entergate',
 			success: false
 		};
 		let world = this.area.world;
-		let gate = this.map.findItemAt(this.x,this.y).filter( gate=>gate.gateDir!==undefined ).first;
 		if( gate ) {
 			tell(mSubject,this,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
 			world.linkGatesAndCreateArea(gate);
@@ -2566,7 +2571,7 @@ class Entity {
 			}
 		}
 		if( this.busy && this.busy.icon ) {
-			Anim.FloatUp(this,this.busy.icon);
+			Anim.FloatUp(this.id,this,this.busy.icon);
 		}
 		return result;
 	}
@@ -2689,7 +2694,7 @@ class Entity {
 		let doAttack = f.count && attackAllowed && wantToAttack;
 
 		if( !doAttack && voluntaryMotion && this.immobile ) {
-			Anim.FloatUp( this, EffectTypeList.eImmobilize.icon );
+			Anim.FloatUp( this.id, this, EffectTypeList.eImmobilize.icon );
 			tell(mSubject,this,' ',mVerb,'is',' immobilized!');
 			return {
 				status: 'immobile',
@@ -2847,7 +2852,8 @@ class Entity {
 				return this.actWait();
 			}
 			case Command.ENTERGATE: {
-				return this.actEnterGate();
+				let gate = this.map.findItemAt(this.x,this.y).filter( gate=>gate.gateDir!==undefined ).first;
+				return this.actEnterGate(gate);
 			}
 			case Command.EXECUTE: {
 				let result = {

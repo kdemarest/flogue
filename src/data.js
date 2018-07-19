@@ -18,6 +18,9 @@ const Distance = new class{
 	get(dx,dy) {
 		return Math.sqrt(dx*dx+dy*dy);
 	}
+	isNear(dx,dy,dist) {
+		return dx*dx+dy*dy <= dist*dist;
+	}
 	getSq(dx,dy) {
 		return Math.max(Math.abs(dx),Math.abs(dy));
 	}
@@ -235,6 +238,7 @@ let EffectTypeList = {
 // Tactical
 	eLuminari: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'light', value: 6, xDuration: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
 	eDarkness: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'dark', value: 12, xDuration: 5.0, isPlayerOnly: 1, name: 'darkness', icon: 'gui/icons/eLuminari.png' },
+	eDarkVision: 	{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'darkVision', value: 6, xDuration: 5.0, isPlayerOnly: 1, name: 'dark vision', icon: 'gui/icons/eLuminari.png' },
 //	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },
 	eGreed: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseTreasure', value: true, xDuration: 5.0, isPlayerOnly: 1, name: 'sense items', icon: 'gui/icons/eVision.png' },
 	eEcholoc: 		{ isTac: 1, level:  0, rarity: 0.50, op: 'set', stat: 'senseLiving', value: true, xDuration: 5.0, isPlayerOnly: 1, name: 'sense life', icon: 'gui/icons/eVision.png' },

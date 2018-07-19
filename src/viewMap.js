@@ -1,14 +1,13 @@
 Module.add('viewMap',function() {
 
 let MapMemoryLight = 3;
-let GlobalRenderCache = [];
 let MONSTER_SCALE_VARIANCE_MIN = 0.75;
 let MONSTER_SCALE_VARIANCE_MAX = 1.00;
 
 
-function handleScent(map,px,py,senseSmell,areaId) {
-	
-	Animation.remove( anim=>anim.groupId=='scent' );
+function handleScent(map,px,py,senseSmell) {
+
+	guiMessage( 'overlayRemove', { groupId: 'scent' } );
 
 	if( senseSmell) {
 		for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
@@ -31,7 +30,7 @@ function handleScent(map,px,py,senseSmell,areaId) {
 					groupId: 		'scent',
 					x: 				x,
 					y: 				y,
-					areaId: 		areaId,
+					area: 			map.area,
 					img: 			smelled.img,
 					duration: 		true,
 					onSpriteMake: 	s => { s.sScaleSet(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
@@ -42,9 +41,10 @@ function handleScent(map,px,py,senseSmell,areaId) {
 }
 
 
-function createDrawList(observer,map) {
+function createDrawList(observer,drawListCache) {
 
 	// Recalc this here, just in case.
+	let map = observer.map;
 	let visCache = observer.calculateVisbility();
 	let areaVis = observer.area.vis;
 	let entityList = map.area.entityList;
@@ -55,7 +55,7 @@ function createDrawList(observer,map) {
 	let px = observer.x;
 	let d = MapVis;
 	let d2 = (d*2)+1
-	let a = GlobalRenderCache || [];
+	let a = drawListCache || [];
 
 	// Initialize the array, and clear all light levels.
 	for( let y=py-d ; y<=py+d ; ++y ) {
@@ -85,6 +85,7 @@ function createDrawList(observer,map) {
 	console.assert( map.defaultFloorSymbol );
 	let lastFloor = SymbolToType[map.defaultFloorSymbol];
 	console.assert( lastFloor );
+	//if( observer.senseXray ) debugger;
 	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
 		let ty = y-(py-d);
 		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
@@ -135,7 +136,7 @@ function createDrawList(observer,map) {
 			if( inPane && inBounds ) {
 				let aa = a[ty][tx];
 				console.assert( aa.length >= 2 );
-				if( !visible || aa[0] <= 0 ) {
+				if( !visible || aa[0] <= 0 || aa[0] === undefined ) {
 					//dChar = 'i';
 					let mPos = y*map.xLen+x;
 					if( mapMemory && mapMemory[mPos] ) {
@@ -186,19 +187,16 @@ function createDrawList(observer,map) {
 	}
 	//console.log(debug);
 
-	for( let anim of Animation.list ) {
+	map.area.animationManager.forEach( anim => {
 		if( anim.entity && !visId[anim.entity.id] ) {
-			continue;
-		}
-		if( anim.areaId !== observer.area.id ) {
-			continue;
+			return;
 		}
 		let tx = Math.floor(anim.x-(px-d));
 		let ty = Math.floor(anim.y-(py-d));
 		if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
 			a[ty][tx].push(anim);
 		}
-	}
+	});
 
 	map.traverseNear( px, py, d, (x,y) => {
 		let ty = y-(py-d);
@@ -209,7 +207,7 @@ function createDrawList(observer,map) {
 		map.lightCache[lPos] = light;
 	});
 
-	GlobalRenderCache = a;
+	drawListCache = a;
 	return a;
 }
 
@@ -487,10 +485,8 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible)
 
 
 class ViewMap extends ViewObserver {
-	constructor(divId,imageRepo,worldOverlayAddFn,worldOverlayRemoveFn) {
+	constructor(divId,imageRepo) {
 		super();
-		this.worldOverlayAddFn = worldOverlayAddFn;
-		this.worldOverlayRemoveFn = worldOverlayRemoveFn;
 		this.divId = divId;
 		this.imageRepo = imageRepo;
 		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
@@ -510,10 +506,14 @@ class ViewMap extends ViewObserver {
 		this.hookEvents();
 		_viewMap = this;
 
+		let self = this;
 		this.app.ticker.add(function(delta) {
 			// but only if real time is not stopped.
-			Animation.tickRealtime(delta/60);
+			if( self.observer && self.observer.area ) {
+				self.observer.area.animationManager.tickRealtime(delta/60);
+			}
 		});
+		this.drawListCache = [];
 	}
 
 	hookEvents() {
@@ -587,6 +587,27 @@ class ViewMap extends ViewObserver {
 		}
 	}
 
+	worldOverlayAdd(groupId,x,y,area,img) {
+		console.assert( x!==undefined && y!==undefined && area !==undefined && img !==undefined );
+		console.assert( area.isArea );
+//			console.log(groupId,x,y,img);
+		new Anim( {}, {
+			groupId: 	groupId,
+			x: 			x,
+			y: 			y,
+			area: 		area,
+			img: 		img,
+			duration: 	true
+		});
+	}
+
+	worldOverlayRemove(fn) {
+		// Hmm, this really isn't exactly right. We seem to need something that goes through
+		// ALL the areas and removes these animations, because... What if the removal
+		// intends an area we're not in?
+		return this.observer.area.animationManager.remove(fn);
+	}
+
 	message(msg,payload) {
 		super.message(msg,payload);
 		if( msg=='zoom' ) {
@@ -594,20 +615,20 @@ class ViewMap extends ViewObserver {
 			this.render();
 		}
 		if( msg == 'overlayRemove' ) {
-			this.worldOverlayRemoveFn( a => a.groupId==payload.groupId );
+			this.worldOverlayRemove( a => a.groupId==payload.groupId );
 		}
 		if( msg == 'overlayAdd' ) {
-			this.worldOverlayAddFn(payload.groupId,payload.x,payload.y,payload.areaId,payload.img);	
+			this.worldOverlayAdd(payload.groupId,payload.x,payload.y,payload.area,payload.img);	
 		}
 		if( msg == 'show' ) {
 			if( !payload.isItemType || (payload.owner && payload.owner.isMap) ) {
-				this.worldOverlayRemoveFn( a => a.groupId=='guiSelect' );
-				this.worldOverlayAddFn('guiSelect', payload.x, payload.y, payload.area.id, StickerList.selectBox.img);	
+				this.worldOverlayRemove( a => a.groupId=='guiSelect' );
+				this.worldOverlayAdd('guiSelect', payload.x, payload.y, payload.area, StickerList.selectBox.img);	
 			}
 			this.render();
 		}
 		if( msg == 'hide' ) {
-			this.worldOverlayRemoveFn( a => a.groupId=='guiSelect' );
+			this.worldOverlayRemove( a => a.groupId=='guiSelect' );
 			//console.log('ViewMap hide');
 			this.render();
 		}
@@ -634,7 +655,7 @@ class ViewMap extends ViewObserver {
 
 		let wx = (this.observer.x-this.sd);
 		let wy = (this.observer.y-this.sd);
-		AnimClip.set(
+		observer.area.animationManager.clip.set(
 			this.observer.x - this.sd*1.5,
 			this.observer.y - this.sd*1.5,
 			this.observer.x + this.sd*1.5,
@@ -692,7 +713,7 @@ class ViewMap extends ViewObserver {
 
 		let observer = this.observer;
 		let area = observer.area;
-		let drawList = createDrawList(observer,area.map,area.entityList);
+		let drawList = createDrawList(observer,this.drawListCache);
 		this.draw(drawList);
 	}
 }

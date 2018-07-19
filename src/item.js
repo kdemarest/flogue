@@ -167,56 +167,6 @@ class Item {
 	get baseType() {
 		return ItemTypeList[this.typeId];
 	}
-	calcFirst(presets,field) {
-		let item = this;
-		if( presets && presets.quality && presets.quality[field] !== undefined ) {
-			return presets.quality[field];
-		}
-		if( presets && presets.material && presets.material[field] !== undefined ) {
-			return presets.material[field];
-		}
-		if( presets && presets.variety && presets.variety[field] !== undefined ) {
-			return presets.variety[field];
-		}
-		if( presets && presets.effect && presets.effect[field] !== undefined ) {
-			return presets.effect[field];
-		}
-		if( item && item[field] !== undefined ) {
-			return item[field];
-		}
-		return;	// undefined
-	}
-	calc(presets,field,op) {
-		function calc(piece) {
-			let a = piece ? (piece[field] || def) : def;
-			if( (op=='*' || op == '+') && isNaN(a) ) debugger;
-			switch( op ) {
-				case '*': n=n*a; break;
-				case '+': n=n+a; break;
-				case '&': n = n + (n&&a?',':'') + a; break;
-			};
-			if( (op=='*' || op == '+') && isNaN(n) ) debugger;
-		}
-
-		let item = this;
-		let defaultValue = {
-			'*': 1,
-			'+': 0,
-			'&': ''
-		}
-
-		let def = defaultValue[op];
-		console.assert( def !== undefined );
-		let n = def;
-		calc(item);
-		if( presets ) {
-			calc(presets.quality);
-			calc(presets.material);
-			calc(presets.variety);
-			calc(presets.effect);
-		}
-		return n;
-	}
 	explain(buySell) {
 		function order(typeId) {
 			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
@@ -462,12 +412,11 @@ class Item {
 			new Anim({},{
 				at: 		entity,
 				img: 		this.imgGet ? this.imgGet(this) : this.img,
-				delay: 		Animation.Timer.getDelay(),
+				delayId: 	entity.id,
 				duration: 	0.6,
 				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
 			});
-			Animation.Timer.addDelay( 0.3);
 		}
 		this.rangeDuration = 0;
 		if( this.owner && !this.owner.isMap && (x!=this.owner.x || y!=this.owner.y)  ) {
@@ -475,16 +424,12 @@ class Item {
 			let dx = x-this.owner.x;
 			let dy = y-this.owner.y;
 			let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / (this.flyingSpeed || 10));
-			this.rangeDuration = rangeDuration;
-			this.owner.rangeDuration = rangeDuration;
-			if( this.effect ) {
-				this.effect.rangeDuration = rangeDuration;
-			}
 			if( this.flyingImg ) {
 				let deg = this.flyingRot ? deltaToDeg(dx,dy) : 0;
 				new Anim({
 					at: 		this.owner,
 					img: 		this.flyingImg,
+					delayId: 	this.id,
 					duration: 	rangeDuration,
 					onInit: 		a => { a.create(1); },
 					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sRotSet(deg).sScaleSet(this.flyingScale||1); },
@@ -499,6 +444,7 @@ class Item {
 				new Anim({
 					at: 		this.owner,
 					duration: 	rangeDuration,
+					delayId: 	this.id,
 					onInit: 		a => { a.puppet(this.spriteList); },
 					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
 					onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); },

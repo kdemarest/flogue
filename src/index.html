@@ -44,7 +44,7 @@
 				//console.log('Initializing '+id);
 				let globals = this.list[id](window);
 				for( let varId in globals ) {
-					console.log('Importing '+varId);
+					// console.log('Importing '+varId);
 					window[varId] = globals[varId];
 				}
 				for( let i in this ) {
@@ -126,11 +126,11 @@ function main() {
 	let User = new HumanUser();
 
 	function TickWorld(timePasses) {
-		Animation.Timer.reset();
 		User.entity.area.tick( timePasses ? User.entity.speed : false );
 		if( timePasses && User.priorArea && User.priorArea.id !== User.entity.area.id ) {
 			User.priorArea.tick( User.entity.speed );
 		}
+
 		gui.tick();
 		gui.render();
 		if( timePasses ) {
@@ -154,13 +154,7 @@ function main() {
 		//return false;
 	}
 
-	function startGame(user,onAssetsReady) {
-
-		let config = new Config('ken',{
-			startingDepth: 0
-		});
-
-		new DataConditioner();
+	function startGame(user,startingDepth,themeId,onAssetsReady) {
 
 		let gui = new Gui(
 			()=>user.entity,
@@ -171,8 +165,8 @@ function main() {
 		user.commandHandler = new UserCommandHandler(user,gui.view.inventory,gui.view.range);
 
 		let world = new World();
-		let themeId = config.themeId || Plan.determineTheme(config.startingDepth,true);
-		let area = world.createArea(null,config.startingDepth,ThemeList[themeId],true,[]);
+		themeId = themeId || Plan.determineTheme(startingDepth,true);
+		let area = world.createArea(null,startingDepth,ThemeList[themeId],true,[]);
 		user.takeControlOf( new Entity( area.depth, MonsterTypeList.player, null, area.jobPicker ) );
 		Gab.observer = user.entity;
 		user.entity.gateTo(area,...area.map.pickPosToStartGame());
@@ -192,8 +186,15 @@ function main() {
 		return [world,gui];
 	}
 
+	// This should be done before anything else so that even the config 
+	let config = new Config('ken',{
+		startingDepth: 0
+	});
+
+	new DataConditioner();
+
 	let world,gui;
-	[world,gui] = startGame( User, () => {
+	[world,gui] = startGame( User, config.startingDepth, config.themeId, () => {
 		User.tick();
 		User.entity.area.tick( false );
 		gui.render();

@@ -50,7 +50,7 @@ const ImgSigns = {
 
 // do NOT assign NullEffects to make something have no effects. Instead, give it effectChance of 0.0001
 const NullEfects = { eInert: { level: 0, rarity: 1 } };
-const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eCureDisease','eCurePoison','eOdorless','eStink','eBloodhound','eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
+const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eDarkVision','eCureDisease','eCurePoison','eOdorless','eStink','eBloodhound','eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
 	'eRegeneration','eBurn','ePoison','eFreeze','eAcid'].includes(k) );
 const SpellEffects = Object.filter(EffectTypeList, (e,k)=>[
@@ -60,14 +60,14 @@ const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBloodhound',
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eBurn','eFreeze','eShock','eLeech','eBlindness','eSlow','ePanic','eConfusion','eShove','eSmite'].includes(k) );
 //const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSmite','eSmite3','eSmite5','eSmite7','ePoison','eBurn','eFreeze','eBlindness','eSlow','eConfusion'].includes(k) );
 const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eAbsorbRot','eResistance'].includes(k) );
-const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari','eSeeInvisible'].includes(k) );
+const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari','eSeeInvisible','eDarkVision'].includes(k) );
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
 const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eInvisibility', 'eOdorless', 'eRechargeFast'].includes(k) );
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eOdorless','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
 const BowEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBurn','eFreeze','eAcid','ePoison','eSmite','eStun','eSlow'].includes(k) );
-const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eAcid','eAcid3','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
-const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSmite','ePossess','eRage','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
+const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eAcid','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
+const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eDarkVision','eSmite','ePossess','eRage','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponMaterialList = Fab.add( '', {
 	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot'},
@@ -1253,13 +1253,11 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 	}
 
 	if( self.unhide ) {
-		delay += 1.0;
 		let label = self.unhide;
 		let hidList = [].concat( self.map.itemListHidden );
 		hidList.forEach( item => {
 			item.unhide();
-			Anim.FloatUp( item, StickerList.ePoof.img, delay );
-			delay += 0.2;
+			Anim.FloatUp( self.id, item, StickerList.ePoof.img );
 		});
 		delete self.unhide;
 	}
@@ -1359,7 +1357,7 @@ ItemTypeList.door.onBump = function(entity,self) {
 		self.setState('open');
 		spriteDeathCallback(self.spriteList);
 		tell(mSubject,entity,' ',mVerb,'open',' the ',mObject,self);
-		Anim.FloatUp(self,StickerList.open.img);
+		Anim.FloatUp( entity.id, self, StickerList.open.img );
 		return true;
 	}
 	if( self.state == 'locked' ) {
@@ -1369,14 +1367,14 @@ ItemTypeList.door.onBump = function(entity,self) {
 			self.setState('shut');
 			spriteDeathCallback(self.spriteList);
 			tell(mSubject,entity,' ',mVerb,'unlock',' the ',mObject,self);
-			Anim.FloatUp(self,StickerList.unlock.img);
+			Anim.FloatUp( entity.id, self, StickerList.unlock.img );
 			if( key && key.name.indexOf('(used)') < 0 ) {
 				key.name += ' (used)';
 			}
 			return true;
 		}
 		tell(mSubject,self,' requires a specific key to unlock.');
-		Anim.FloatUp(self,StickerList.locked.img);		
+		Anim.FloatUp( entity.id, self, StickerList.locked.img );
 		return false;
 	}
 	debugger;
@@ -1409,7 +1407,7 @@ ItemTypeList.chest.onBump = function(toucher,self) {
 //				});
 //				delay += 0.3;
 //			});
-			Anim.Fountain(self,20,1.0,4,StickerList.coinSingle.img);
+			Anim.Fountain(toucher.id,self,20,1.0,4,StickerList.coinSingle.img);
 		}
 		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
 	}
@@ -1476,7 +1474,7 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 				}
 			});
 			effectApply(effect,entity,null,self,'tick');
-			Anim.Homing(self,entity,StickerList.glowGold.img,45,6,0.5,5);
+			Anim.Homing(self.id,self,entity,StickerList.glowGold.img,45,6,0.5,5);
 		}
 		let f = new Finder(entity.inventory).filter( item => item.rechargeTime && item.rechargeLeft > 0 );
 		if( f.count ) {
@@ -1502,7 +1500,7 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 			effect.icon = StickerList.glowRed.img;
 			//this.command = Command.CAST;
 			effectApply(effect,entity,this,null,'tick');
-			Anim.Homing(entity,self,effect.icon,45,6,0.5,5);
+			Anim.Homing(this.id,entity,self,effect.icon,45,6,0.5,5);
 		});
 		this.resetRecharge();
 	}

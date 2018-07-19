@@ -473,6 +473,7 @@ class Area {
 
 	}
 	build(tileQuota) {
+		this.animationManager = new AnimationManager();
 		return areaBuild(this,this.theme,tileQuota, (e) => e.team==Team.EVIL );
 	}
 	getGate(id) {
@@ -501,12 +502,13 @@ class Area {
 			this.vis.opacityLookup,
 			this.entityList,
 			this.map.itemList,
-			Animation.list.filter( a=>a.areaId==this.areaId )
+			this.animationManager.list,
 		);
 
 		observer.light = oldLight;
 	}
 	tick(speed) {
+		this.animationManager.delay.reset();
 		tick( speed, this.map, this.entityList );
 		this.castLight();
 	}

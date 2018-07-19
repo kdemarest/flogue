@@ -78,12 +78,12 @@ class ViewRange extends ViewObserver {
 	drawRange(map,sx,sy,tx,ty) {
 		let self = this;
 		this.isShotClear = true;
-		let areaId = this.observer.area.id;
+		let area = this.observer.area;
 		function test(x,y) {
 			return map.tileTypeGet(x,y).mayFly;
 		}
 		function add(x,y,ok) {
-			guiMessage('overlayAdd',{ groupId: 'guiCrosshair', x:x, y:y, areaId:areaId, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
+			guiMessage('overlayAdd',{ groupId: 'guiCrosshair', x:x, y:y, area:area, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
 			self.isShotClear = self.isShotClear && ok;
 		}
 		shootRange(sx,sy,tx,ty,test,add);

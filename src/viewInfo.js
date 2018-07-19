@@ -174,6 +174,7 @@ class ViewInfo extends ViewObserver {
 		test( senseList, entity.senseBlind,		'blind');
 		test( senseList, entity.senseSmell,		'scent');
 		test( senseList, entity.senseXray,		'xray');
+		test( senseList, entity.darkVision,		'dark');
 		test( senseList, entity.senseInvisible,	'invis');
 		test( senseList, entity.senseTreasure,	'treasure');
 		test( senseList, entity.senseLiving,	'living');

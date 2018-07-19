@@ -651,6 +651,7 @@ const MonsterTypeList = {
 	"shade": {
 		core: [ SYM, 4, '1.5:16', 'evil', 'rot', 'undeadDumb', 'humanoid', 'mon/shade.png', '*' ],
 		attitude: Attitude.HUNT,
+		bloodId: 'bloodBlack',
 		immune: UndeadImmunity,
 		invisible: true,
 		isUndead: true,

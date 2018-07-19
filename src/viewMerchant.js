@@ -2,7 +2,7 @@ Module.add('viewMerchant',function() {
 
 class ViewMerchant extends ViewInventory {
 	constructor(p) {
-		super(p.divId,p.imageRepo,null,p.colFilter || p.entity.colFilter);
+		super(p.divId,null,p.colFilter || p.entity.colFilter);
 		let self = this;
 		this.onEvent = p.onItemChoose;
 		this.merchant = p.entity;

@@ -23,21 +23,6 @@ class Gui {
 	}
 
 	create(onItemChoose) {
-		function worldOverlayAdd(groupId,x,y,areaId,img) {
-			console.assert( x!==undefined && y!==undefined && areaId !==undefined && img !==undefined );
-//			console.log(groupId,x,y,img);
-			new Anim( {}, {
-				groupId: 	groupId,
-				x: 			x,
-				y: 			y,
-				areaId: 	areaId,
-				img: 		img,
-				duration: 	true
-			});
-		}
-		function worldOverlayRemove(fn) {
-			return Animation.remove(fn);
-		}
 		this.onItemChoose = onItemChoose;
 		this.view.dynamic = DynamicViewList.none;
 		this.view.full = new ViewFull('#guiControls','#guiMain',);
@@ -50,8 +35,8 @@ class Gui {
 		this.view.experience = new ViewExperience('guiExperience')
 		this.view.info = new ViewInfo('guiInfo')
 		this.view.status = new ViewStatus('guiStatus');
-		this.view.inventory = new ViewInventory('guiInventory',this.imageRepo,onItemChoose);
-		this.view.map = new ViewMap('guiMap',this.imageRepo,worldOverlayAdd,worldOverlayRemove);
+		this.view.inventory = new ViewInventory('guiInventory',onItemChoose);
+		this.view.map = new ViewMap('guiMap',this.imageRepo);
 		this.view.miniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',this.imageRepo);
 	}
 
@@ -66,7 +51,6 @@ class Gui {
 		let v = {
 			divId: 'guiDynamic',
 			player: player,
-			imageRepo: this.imageRepo,
 			onItemChoose: this.onItemChoose,
 			onClose: onClose,
 		};
@@ -116,7 +100,6 @@ class Gui {
 		this.view.miniMap.render();	// must be after viewMap so the visibility
 		this.view.dynamic.render();
 	}
-
 	tick() {
 		this.makeDynamicGui();
 		this.view.dynamic.tick();

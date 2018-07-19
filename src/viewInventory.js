@@ -1,10 +1,9 @@
 Module.add('viewInventory',function() {
 
 class ViewInventory extends ViewObserver {
-	constructor(inventoryDivId,imageRepo,onItemChoose,colFilter) {
+	constructor(inventoryDivId,onItemChoose,colFilter) {
 		super();
 		this.inventoryDivId = inventoryDivId;
-		this.imageRepo = imageRepo;
 		this.onItemChoose = this.onItemChoose || onItemChoose;
 		this.inventory = null;
 		this.inventoryFn = null;

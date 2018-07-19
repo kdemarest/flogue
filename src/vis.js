@@ -41,10 +41,25 @@ class Vis {
 		nearDist is the distance from center to the very nearest part of the block
 	**/
 
-	calcVis(px,py,senseSight,blind,xray,senseInvisible,visGrid,mapMemory) {
+	calcVis(px,py,senseSight,darkVision,blind,xray,senseInvisible,visGrid,mapMemory) {
+		function canSee(x,y) {
+			return map.getLightAt(x,y,0) > 0 || Distance.isNear(x-px,y-py,darkVision+0.5);
+		}
+		function remember(x,y) {
+			let pos = y*xLen+x;
+			let tile = map.tileTypeGet(x,y);
+			let temp = itemLookup[pos];
+			let item = temp ? temp[0] : null;
+			if( item && item.invisible && !senseInvisible ) {
+				item = null;
+			}
+			mapMemory[pos] = item ? item : tile;
+		}
+
 		let map = this.getMapFn();
 		let xLen = map.xLen;
 		let itemLookup = map.itemLookup;
+		darkVision = darkVision || 0;
 
 		visGrid = visGrid || [];
 
@@ -55,8 +70,12 @@ class Vis {
 		map.traverse( (x,y) => {
 			visGrid[y] = visGrid[y] || [];
 			visGrid[y][x] = defaultValue;
+			if( defaultValue && mapMemory && canSee(x,y) && x>=px-senseSight && y>=py-senseSight && x<=px+senseSight && y<=py+senseSight ) {
+				remember(x,y);
+			}
 		});
 		visGrid[py][px] = true;
+		if( mapMemory ) { remember(px,py); }
 		if( xray || blind ) return visGrid;
 
 		let rayCircle = new Light.RayCircle( senseSight * senseSight );
@@ -66,15 +85,8 @@ class Vis {
 			let isVisible = atCenter || rayCircle.arcTest( arc.left, arc.right, arc.nearDist, arc.span*0.05 );
 			if( !isVisible ) return;
 
-			if( mapMemory && map.getLightAt(x,y,0) > 0 ) {
-				let pos = y*xLen+x;
-				let tile = map.tileTypeGet(x,y);
-				let temp = itemLookup[pos];
-				let item = temp ? temp[0] : null;
-				if( item && item.invisible && !senseInvisible ) {
-					item = null;
-				}
-				mapMemory[pos] = item ? item : tile;
+			if( mapMemory && canSee(x,y) ) {
+				remember(x,y);
 			}
 			visGrid[y][x] = true;
 
