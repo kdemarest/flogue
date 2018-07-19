@@ -420,8 +420,12 @@ class Map extends SimpleMap {
 		}
 		this.calcWalkable(x,y);
 	}
-	pickPosToStartGame() {
-		let f = new Finder(this.itemList).filter( item => item.playerStartHere );
+	pickMarker(atMarker) {
+		let f = new Finder(this.itemList).filter( item => item.markerId == atMarker );
+		return f.first;
+	}
+	pickPosToStartGame(atMarker) {
+		let f = new Finder(this.itemList).filter( item => item.markerId == atMarker );
 		if( !f.count ) {
 			console.log( "No player start marker found. Searching for stairsUp." );
 			f = new Finder(this.itemList).filter( item => item.typeId=='stairsUp' );

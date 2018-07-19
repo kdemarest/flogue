@@ -4,6 +4,8 @@ class ViewInventory extends ViewObserver {
 	constructor(inventoryDivId,onItemChoose,colFilter) {
 		super();
 		this.inventoryDivId = inventoryDivId;
+		$(this.inventoryDivId).empty();
+
 		this.onItemChoose = this.onItemChoose || onItemChoose;
 		this.inventory = null;
 		this.inventoryFn = null;
@@ -31,7 +33,7 @@ class ViewInventory extends ViewObserver {
 		return this.div.is(":visible");
 	}
 	get div() {
-		return $('#'+this.inventoryDivId);
+		return $(this.inventoryDivId);
 	}
 	_hide() {
 		if( this.userSawInventory ) {

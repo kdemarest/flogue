@@ -105,6 +105,7 @@
 <script src="area.js" charset="utf-8"></script>
 <script src="world.js" charset="utf-8"></script>
 <script src="plan.js" charset="utf-8"></script>
+<script src="tester.js" charset="utf-8"></script>
 <script src="config.js" charset="utf-8"></script>
 
 <script>
@@ -124,67 +125,67 @@ function adhoc(tileType,map,x,y) {
 function main() {
 
 	let User = new HumanUser();
+	let imageRepo;
 
-	function TickWorld(timePasses) {
-		User.entity.area.tick( timePasses ? User.entity.speed : false );
-		if( timePasses && User.priorArea && User.priorArea.id !== User.entity.area.id ) {
-			User.priorArea.tick( User.entity.speed );
+	User.tickWorld = function(timePasses) {
+		this.entity.area.tick( timePasses ? this.entity.speed : false );
+		if( timePasses && this.priorArea && this.priorArea.id !== this.entity.area.id ) {
+			this.priorArea.tick( this.entity.speed );
 		}
 
-		gui.tick();
-		gui.render();
+		this.autoFavorite();
+		this.gui.tick();
+		this.gui.render();
 		if( timePasses ) {
 			Time.simTimeInc();
 		}
-	}
+		Tester.check();
+	}.bind(User);
 
-	function onUserEvent(event) {
+	User.onEvent = function(event) {
 		let now = Time.wallTime;
-		if( now < (User.entity.nowPrior||0)+(User.entity.timeDelay||0) ) {
+		if( now < (this.entity.nowPrior||0)+(this.entity.timeDelay||0) ) {
 			// This makes sure that time-consuming activities, like mining, don't go too quickly.
 			return;
 		}
-		User.entity.nowPrior = now;
-		User.entity.timeDelay = 0;
-		User.tick();
-		let timePasses = User.commandHandler.evalCommand(User.entity,event);
-		TickWorld(timePasses);
-		//event.stopPropagation();
-		//event.preventDefault();
-		//return false;
-	}
+		this.entity.nowPrior = now;
+		this.entity.timeDelay = 0;
+		let timePasses = this.commandHandler.evalCommand(this.entity,event);
+		this.tickWorld(timePasses);
+	}.bind(User);
 
-	function startGame(user,startingDepth,themeId,onAssetsReady) {
+	User.startGame = function(startingDepth,themeId,playerTypeId,playerMarkerId,onAssetsReady) {
+		themeId = themeId || Plan.determineTheme(startingDepth,true);
+		playerTypeId = playerTypeId || 'player';
+		playerMarkerId = playerMarkerId || 'playerStartHere';
 
-		let gui = new Gui(
-			()=>user.entity,
-		);
+		let gui = new Gui( ()=>this.entity, imageRepo );
 		gui.create(
-			(event) => { onUserEvent(event); }
+			(event) => { this.onEvent(event); }
 		);
-		user.commandHandler = new UserCommandHandler(user,gui.view.inventory,gui.view.range);
+		this.gui = gui;
+		this.commandHandler = new UserCommandHandler(this,gui.view.inventory,gui.view.range);
 
 		let world = new World();
-		themeId = themeId || Plan.determineTheme(startingDepth,true);
 		let area = world.createArea(null,startingDepth,ThemeList[themeId],true,[]);
-		user.takeControlOf( new Entity( area.depth, MonsterTypeList.player, null, area.jobPicker ) );
-		Gab.observer = user.entity;
-		user.entity.gateTo(area,...area.map.pickPosToStartGame());
+		this.takeControlOf( new Entity( area.depth, MonsterTypeList[playerTypeId], null, area.jobPicker ) );
+		Gab.observer = this.entity;
+		this.entity.gateTo(area,...area.map.pickPosToStartGame(playerMarkerId));
 		Narrative.addRecipient(
-			() => user.entity,
+			() => this.entity,
 			(observer,entity) => !observer ? true : observer.canPerceiveEntity(entity),
 			(message,history) => guiMessage('receive',history,'narrative')
 		);
 
+		let self = this;
 		let handle = setInterval(function() {
 			if( !gui.imageRepo.ready ) {
 				return;
 			}
 			clearInterval(handle);
-			onAssetsReady();
+			onAssetsReady(self);
 		}, 20);
-		return [world,gui];
-	}
+	}.bind(User);
 
 	// This should be done before anything else so that even the config 
 	let config = new Config('ken',{
@@ -192,17 +193,22 @@ function main() {
 	});
 
 	new DataConditioner();
+	imageRepo =  new ImageRepo(PIXI.loader);
+	imageRepo.load();
 
-	let world,gui;
-	[world,gui] = startGame( User, config.startingDepth, config.themeId, () => {
-		User.tick();
-		User.entity.area.tick( false );
-		gui.render();
-		tell([User.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
-		$('#guiLoading').hide();
-		$('#guiMain').show();
-		$(document).keydown( onUserEvent );
-	});
+	User.startGame(
+		config.startingDepth,
+		config.themeId,
+		config.playerTypeId,
+		config.playerMarkerId,
+		(user) => {
+			user.tickWorld(false);
+			tell([user.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
+			$('#guiLoading').hide();
+			$('#guiMain').show();
+			$(document).keydown( (e) => user.onEvent(e) );
+		}
+	);
 }
 
 
@@ -238,6 +244,7 @@ function main() {
 				<div id="guiMiniMap"></div>
 				<div id="guiMiniMapCaption"></div>
 				<div id="guiFavorites"></div>
+				<div id="guiTester"></div>
 				<div id="guiPathDebugSummary"></div>
 				<div id="guiPathDebug"></div>
 			</td>

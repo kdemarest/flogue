@@ -221,6 +221,9 @@ class ImageRepo {
 		this.loader = loader;
 	}
 	load() {
+		if( this.ready ) {
+			return true;
+		}
 		let imageList = [];
 		let exists = {};
 
@@ -253,9 +256,9 @@ class ImageRepo {
 			}
 		}
 		function scanTypeList(typeList,member) {
-			for( let t in typeList ) {
-				let type = typeList[t];
-				scan( t, type, member );
+			for( let typeId in typeList ) {
+				let type = typeList[typeId];
+				scan( typeId, type, member );
 				if( type.effect ) {
 					scan( null, type.effect, 'icon' );
 					scan( null, type.effect, 'iconCloud' );
@@ -289,7 +292,7 @@ class ImageRepo {
 		let self = this;
 		scanTypeList(StickerList,'img');
 		Object.each( ItemTypeList, itemType => {
-			if( !itemType.imgGet ) {
+			if( !itemType.noScan ) {
 				scanTypeList( itemType.qualities || {},'img');
 				scanTypeList( itemType.materials || {},'img');
 				scanTypeList( itemType.varieties || {},'img');
@@ -501,7 +504,7 @@ class ViewMap extends ViewObserver {
 			this.randList.push( Math.randInt( 0, 1023 ) );
 		}
 
-		document.getElementById(this.divId).appendChild(this.app.view);
+		$(this.divId)[0].appendChild(this.app.view);
 		this.setDimensions();
 		this.hookEvents();
 		_viewMap = this;
@@ -518,7 +521,7 @@ class ViewMap extends ViewObserver {
 
 	hookEvents() {
 		let self = this;
-		$('#'+this.divId+' canvas').mousemove( function(e) {
+		$(this.divId+' canvas').mousemove( function(e) {
 
 			let offset = $(this).offset(); 
 			let mx = Math.floor((e.pageX - offset.left)/Tile.DIM);
@@ -550,11 +553,11 @@ class ViewMap extends ViewObserver {
 				console.log( entity.history.join('\n') );
 			}
 		});
-		$('#'+this.divId+' canvas').mouseout( function(e) {
+		$(this.divId+' canvas').mouseout( function(e) {
 			guiMessage('hide');
 			//console.log('mouse out of canvas');
 		});
-		$('#'+this.divId+' canvas').click( function(e) {
+		$(this.divId+' canvas').click( function(e) {
 			var e = $.Event("keydown");
 			e.key = 'Enter';
 			$(document).trigger(e);
@@ -708,7 +711,7 @@ class ViewMap extends ViewObserver {
 		//var focused =  $( document.activeElement ) ;
 		//if( !focused || focused.length == 0 ) {
 		//	console.log('re-focused from ',focused);
-		//	$('#'+this.divId+' canvas').focus();
+		//	$(this.divId+' canvas').focus();
 		//}
 
 		let observer = this.observer;

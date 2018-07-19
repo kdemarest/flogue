@@ -7,7 +7,7 @@ Module.add('dataMonsters',function() {
 // onTouch - fires if somebody is over/upon you.
 // onHeal - fires when you get healing. return true to suppress the auto-generated message about healing.
 
-const Control = { AI: "ai", USER: "user", EMPTY: "empty" };
+const Control = { AI: "ai", USER: "user", TESTER: "tester", EMPTY: "empty" };
 
 const MonsterTypeDefaults = {
 	level: 0, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
@@ -1156,6 +1156,7 @@ function monsterPreProcess(typeId,m) {
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];
 	let damType = naturalDamageType || m.naturalWeapon.damageType || DamageType.CUT;
+	m._naturalWeapon = m.naturalWeapon;
 	let natWeapon = Object.assign({
 		typeFilter: 'fake',
 		isNatural: true,
@@ -1166,8 +1167,7 @@ function monsterPreProcess(typeId,m) {
 		damageType: damType,
 		name: damType,
 	}, m.naturalWeapon );
-	m.inventoryLoot.push( natWeapon );
-	delete m.naturalWeapon;
+	m.naturalWeapon = natWeapon;
 
 	console.assert( m.stink===undefined || (m.stink>=0 && m.stink<=1) );
 }

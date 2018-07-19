@@ -103,9 +103,6 @@ class HumanUser {
 		guiMessage('setArea',area);
 		this.priorArea = this.entity.area;
 	}
-	tick() {
-		this.autoFavorite();
-	}
 }
 
 return {

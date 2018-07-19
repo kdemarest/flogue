@@ -4,6 +4,7 @@ class ViewInfo extends ViewObserver {
 	constructor(infoDivId) {
 		super();
 		this.infoDivId = infoDivId;
+		$(this.infoDivId).empty();
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
@@ -27,7 +28,7 @@ class ViewInfo extends ViewObserver {
 			}
 		}
 
-		$('#'+this.infoDivId).empty().removeClass('monColor healthWarn healthCritical');
+		$(this.infoDivId).empty().removeClass('monColor healthWarn healthCritical');
 		if( entity.isTileType ) {
 			return;
 		}
@@ -43,7 +44,7 @@ class ViewInfo extends ViewObserver {
 			}
 			if( specialMessage ) {
 				let s = '<div class="monColor">'+specialMessage+'</div>';
-				$('#'+this.infoDivId).show().html(s);
+				$(this.infoDivId).show().html(s);
 				return;
 			}
 		}
@@ -112,7 +113,7 @@ class ViewInfo extends ViewObserver {
 			}
 			s += "</div>";
 			s += '<div id="favMessage"></div>';
-			$('#'+this.infoDivId).show().html(s);
+			$(this.infoDivId).show().html(s);
 			return;
 		}
 
@@ -189,19 +190,19 @@ class ViewInfo extends ViewObserver {
 			s += debug ? (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'') : '';
 //			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');
 //			$('#guiPathDebug').html(entity.path ? entity.path.render().join('\n') : '');
-			$('#'+this.infoDivId).addClass('monColor');
+			$(this.infoDivId).addClass('monColor');
 		}
 		else {
 			let healthRatio = entity.health/entity.healthMax;
 			if( healthRatio < 0.15 ) {
-				$('#'+this.infoDivId).addClass('healthCritical');
+				$(this.infoDivId).addClass('healthCritical');
 			}
 			else
 			if( healthRatio < 0.35 ) {
-				$('#'+this.infoDivId).addClass('healthWarn');
+				$(this.infoDivId).addClass('healthWarn');
 			}
 		}
-		$('#'+this.infoDivId).show().append(s);
+		$(this.infoDivId).show().append(s);
 
 	}
 

@@ -55,6 +55,10 @@ class Entity {
 			this.name = this.name.split('/')[this.pronoun=='she' ? 1 : 0];
 		}
 
+		if( this.naturalWeapon ) {
+			this.lootTake( [this.naturalWeapon], this.level, null, true );
+		}
+
 		if( this.inventoryLoot ) {
 			this.lootTake( this.inventoryLoot, this.level, null, true );
 		}
@@ -1187,6 +1191,13 @@ class Entity {
 	think() {
 		if( this.isDead() ) {
 			return;
+		}
+
+		if( this.testControl ) {
+			this.testControl(this);
+			if( this.command ) {
+				return;
+			}
 		}
 
 		let useAiTemporarily = false;

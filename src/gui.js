@@ -1,11 +1,10 @@
 Module.add('gui',function() {
 
 class Gui {
-	constructor(getPlayer) {
+	constructor(getPlayer,imageRepo) {
 		this.getPlayer = getPlayer;
-		this.imageRepo = new ImageRepo(PIXI.loader);
-		this.imageRepo.load();
 		this.view = {};
+		this.imageRepo = imageRepo;
 		let self = this;
 		window.guiMessage = function(message,payload,target) {
 			self.message(message,payload,target);
@@ -28,16 +27,17 @@ class Gui {
 		this.view.full = new ViewFull('#guiControls','#guiMain',);
 		this.view.zoom = new ViewZoom('#guiControls');
 		this.view.narrative = new ViewNarrative('#guiNarrative');
-		this.view.sign = new ViewSign('guiSign');
+		this.view.sign = new ViewSign('#guiSign');
 		this.view.favorites = new ViewFavorites('#guiFavorites',onItemChoose);
 		this.view.spells = new ViewSpells('#guiSpells');
 		this.view.range = new ViewRange();
-		this.view.experience = new ViewExperience('guiExperience')
-		this.view.info = new ViewInfo('guiInfo')
-		this.view.status = new ViewStatus('guiStatus');
-		this.view.inventory = new ViewInventory('guiInventory',onItemChoose);
-		this.view.map = new ViewMap('guiMap',this.imageRepo);
-		this.view.miniMap = new ViewMiniMap('guiMiniMap','guiMiniMapCaption',this.imageRepo);
+		this.view.experience = new ViewExperience('#guiExperience')
+		this.view.info = new ViewInfo('#guiInfo')
+		this.view.status = new ViewStatus('#guiStatus');
+		this.view.inventory = new ViewInventory('#guiInventory',onItemChoose);
+		this.view.map = new ViewMap('#guiMap',this.imageRepo);
+		this.view.miniMap = new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption',this.imageRepo);
+		this.view.tester = new ViewTester('#guiTester',this.getPlayer);
 	}
 
 	makeDynamicGui() {

@@ -114,7 +114,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 					return;
 				}
 				let m = MonsterTypeList[typeId];
-				if( MonsterTypeList[typeId] ) {
+				if( m ) {
 					if( !tileSet ) {
 						if( m.underMe ) map.tileSymbolSet(x,y,TypeIdToSymbol[m.underMe]);
 						else map.tileSymbolSetFloor(x,y,map.defaultFloorSymbol);
@@ -135,6 +135,28 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 				makeItemFn( i, x, y, null, make, null );	// the null means you have to generate presets for this item.
 			});
 
+		});
+	}
+
+	function extractRemainingInjects(map,injectLIst,makeMonsterFn,makeItemFn,safeToMakeFn) {
+		Object.each( injectList, (inject,injectId) => {
+			// Skip the coordinate injects. They were already done.
+			if( injectId.indexOf(',') >= 0 ) return;
+			if( !inject ) {
+				inject = [{ typeFilter: mapType.typeId }];
+			}
+			inject.forEach( make => {
+				let typeId = make.typeFilter.split('.')[0];
+				let x,y;
+				let marker = map.pickMarker(inject.atMarker);
+				[x,y] = marker ? [marker.x,marker.y] : map.pickPosBy(0,0,0,0,safeToMakeFn);
+				
+				if( MonsterTypeList[typeId] ) {
+					makeMonsterFn( MonsterTypeList[typeId], x, y, null, make, null );
+					return;
+				}
+				makeItemFn( ItemTypeList[typeId], x, y, null, make, null );
+			});
 		});
 	}
 
@@ -259,6 +281,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		injectList,
 		area.siteList
 	);
+	if( theme.injectList ) {
+		injectList.push(...theme.injectList);
+	}
 
 	area.map = new Map(area,masonMap.renderToString(),[]);
 	area.entityList = [];
@@ -274,6 +299,8 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	});
 
 	extractEntitiesFromMap(area.map,injectList,makeMonster,makeItem);
+
+	extractRemainingInjects(area.map,injectList,makeMonster,makeItem,safeToMake);
 
 	let totalFloor    = area.map.count( (x,y,type) => type.isFloor && safeToMake(area.map,x,y) ? 1 : 0);
 	let totalEnemies  = Array.count( area.entityList, isEnemyFn );

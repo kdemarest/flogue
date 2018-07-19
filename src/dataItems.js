@@ -464,38 +464,38 @@ const GloveList = Fab.add( '', {
 
 
 const OreVeinList = Fab.add( '', {
-	"oreVeinCoal": 		{ level:  0, rarity:  1.0, name: "coal vein", mineId: 'coal', img: 'oreLumpBlack' },
-	"oreVeinTin": 		{ level:  5, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin', img: 'oreMetalWhite' },
-	"oreVeinIron": 		{ level: 10, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron', img: 'oreMetalBlack' },
-	"oreVeinCopper": 	{ level: 25, rarity:  0.6, name: "copper ore vein", mineId: 'oreCopper', img: 'oreMetalOrange' },
-	"oreVeinSilver": 	{ level: 30, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver', img: 'oreMetalWhite' },
-	"oreVeinGold": 		{ level: 45, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold', img: 'oreMetalYellow' },
-	"oreVeinPlatinum": 	{ level: 55, rarity:  0.3, name: "platinum ore vein", mineId: 'orePlatinum', img: 'oreMetalBlue' },
-	"oreVeinLunarium": 	{ level: 75, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'oreGemCyan' },
-	"oreVeinSolarium": 	{ level: 60, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium', img: 'oreGemYellow' },
-	"oreVeinDeepium": 	{ level: 85, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium", img: 'oreGemBlack' },
-	"oreVeinGarnet": 	{ level: 20, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", img: 'oreGemPurple', isGemOre: true },
-	"oreVeinOpal": 		{ level: 35, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", img: 'oreGemWhite', isGemOre: true },
-	"oreVeinRuby": 		{ level: 40, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", img: 'oreGemRed', isGemOre: true },
-	"oreVeinEmerald": 	{ level: 50, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", img: 'oreGemGreen', isGemOre: true },
-	"oreVeinSapphire": 	{ level: 65, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", img: 'oreGemBlue', isGemOre: true },
-	"oreVeinDiamond": 	{ level: 80, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", img: 'oreGemWhite', isGemOre: true },
+	"oreVeinCoal": 		{ level:  0, rarity:  1.0, name: "coal vein", mineId: 'coal', img: 'ore/oreLumpBlack.png' },
+	"oreVeinTin": 		{ level:  5, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin', img: 'ore/oreMetalWhite.png' },
+	"oreVeinIron": 		{ level: 10, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron', img: 'ore/oreMetalBlack.png' },
+	"oreVeinCopper": 	{ level: 25, rarity:  0.6, name: "copper ore vein", mineId: 'oreCopper', img: 'ore/oreMetalOrange.png' },
+	"oreVeinSilver": 	{ level: 30, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver', img: 'ore/oreMetalWhite.png' },
+	"oreVeinGold": 		{ level: 45, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold', img: 'ore/oreMetalYellow.png' },
+	"oreVeinPlatinum": 	{ level: 55, rarity:  0.3, name: "platinum ore vein", mineId: 'orePlatinum', img: 'ore/oreMetalBlue.png' },
+	"oreVeinLunarium": 	{ level: 75, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'ore/oreGemCyan.png' },
+	"oreVeinSolarium": 	{ level: 60, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium', img: 'ore/oreGemYellow.png' },
+	"oreVeinDeepium": 	{ level: 85, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium", img: 'ore/oreGemBlack.png' },
+	"oreVeinGarnet": 	{ level: 20, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", img: 'ore/oreGemPurple.png', isGemOre: true },
+	"oreVeinOpal": 		{ level: 35, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", img: 'ore/oreGemWhite.png', isGemOre: true },
+	"oreVeinRuby": 		{ level: 40, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", img: 'ore/oreGemRed.png', isGemOre: true },
+	"oreVeinEmerald": 	{ level: 50, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", img: 'ore/oreGemGreen.png', isGemOre: true },
+	"oreVeinSapphire": 	{ level: 65, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", img: 'ore/oreGemBlue.png', isGemOre: true },
+	"oreVeinDiamond": 	{ level: 80, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", img: 'ore/oreGemWhite.png', isGemOre: true },
 	// must be last!
-	"oreNone": 			{ level:  0, rarity: 0.001, isNone: true, name: "ore vein", img: 'oreVein' },
+	"oreNone": 			{ level:  0, rarity: 0.001, isNone: true, name: "ore vein", img: 'ore/oreVein.png' },
 });
 
 
 const OreList = Fab.add( '', {
-	"coal": 		{ level:  0, rarity: 1.0, name: "coal", img: 'oreLumpBlack', scale: 0.5, isFuel: true },
-	"oreTin": 		{ level:  2, rarity: 1.0, name: "tin ore", refinesTo: "ingotTin", img: 'oreMetalWhite', scale: 0.5 },
-	"oreIron": 		{ level:  5, rarity: 0.8, name: "iron ore", refinesTo: "ingotIron", img: 'oreMetalBlack', scale: 0.5 },
-	"oreCopper": 	{ level: 10, rarity: 0.6, name: "copper ore", refinesTo: "ingotCopper", img: 'oreMetalOrange', scale: 0.5 },
-	"oreSilver": 	{ level: 15, rarity: 0.5, name: "silver ore", refinesTo: "ingotSilver", img: 'oreMetalWhite', scale: 0.5 },
-	"oreGold": 		{ level: 20, rarity: 0.3, name: "gold ore", refinesTo: "ingotGold", img: 'oreMetalYellow', scale: 0.5 },
-	"orePlatinum": { level: 25, rarity: 0.3, name: "malachite ore", refinesTo: "ingotMalachite", img: 'oreMetalBlue', scale: 0.5 },
-	"oreLunarium": 	{ level: 30, rarity: 0.2, name: "lunarium ore", refinesTo: "ingotLunarium", img: 'oreGemCyan', scale: 0.5 },
-	"oreSolarium": 	{ level: 35, rarity: 0.1, name: "solarium ore", refinesTo: "ingotSolarium", img: 'oreGemYellow', scale: 0.5 },
-	"oreDeepium": 	{ level: 40, rarity: 0.1, name: "deepium ore", refinesTo: "ingotDeepium", img: 'oreGemBlack', scale: 0.5 },
+	"coal": 		{ level:  0, rarity: 1.0, name: "coal", img: 'ore/oreLumpBlack.png', scale: 0.5, isFuel: true },
+	"oreTin": 		{ level:  2, rarity: 1.0, name: "tin ore", refinesTo: "ingotTin", img: 'ore/oreMetalWhite.png', scale: 0.5 },
+	"oreIron": 		{ level:  5, rarity: 0.8, name: "iron ore", refinesTo: "ingotIron", img: 'ore/oreMetalBlack.png', scale: 0.5 },
+	"oreCopper": 	{ level: 10, rarity: 0.6, name: "copper ore", refinesTo: "ingotCopper", img: 'ore/oreMetalOrange.png', scale: 0.5 },
+	"oreSilver": 	{ level: 15, rarity: 0.5, name: "silver ore", refinesTo: "ingotSilver", img: 'ore/oreMetalWhite.png', scale: 0.5 },
+	"oreGold": 		{ level: 20, rarity: 0.3, name: "gold ore", refinesTo: "ingotGold", img: 'ore/oreMetalYellow.png', scale: 0.5 },
+	"orePlatinum": { level: 25, rarity: 0.3, name: "malachite ore", refinesTo: "ingotMalachite", img: 'ore/oreMetalBlue.png', scale: 0.5 },
+	"oreLunarium": 	{ level: 30, rarity: 0.2, name: "lunarium ore", refinesTo: "ingotLunarium", img: 'ore/oreGemCyan.png', scale: 0.5 },
+	"oreSolarium": 	{ level: 35, rarity: 0.1, name: "solarium ore", refinesTo: "ingotSolarium", img: 'ore/oreGemYellow.png', scale: 0.5 },
+	"oreDeepium": 	{ level: 40, rarity: 0.1, name: "deepium ore", refinesTo: "ingotDeepium", img: 'ore/oreGemBlack.png', scale: 0.5 },
 });
 
 const GemQualityList = Fab.add( '', {
@@ -507,30 +507,30 @@ const GemQualityList = Fab.add( '', {
 });
 
 const GemList = Fab.add( '', {
-	"garnet": 		{ level:  0, rarity:  0.3, img: "Gem Type1 Red" },
-	"opal": 		{ level:  3, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"turquoise": 	{ level:  6, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"amethyst": 	{ level:  9, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"pearl": 		{ level: 12, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"amber": 		{ level: 15, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"jade": 		{ level: 18, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"lapis lazuli": { level: 21, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"topaz": 		{ level: 24, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"moonstone": 	{ level: 27, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"agate": 		{ level: 30, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"tourmaline": 	{ level: 33, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"peridot": 		{ level: 36, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"malachite": 	{ level: 39, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"citrine": 		{ level: 42, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"jasper": 		{ level: 45, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"carnelian": 	{ level: 48, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"chalcedony": 	{ level: 51, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"beryl": 		{ level: 54, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"spinel": 		{ level: 57, rarity:  0.3, img: "Gem Type1 Yellow" },
-	"ruby": 		{ level: 60, rarity:  0.2, img: "Gem Type2 Red" },
-	"emerald": 		{ level: 65, rarity:  0.2, img: "Gem Type2 Green" },
-	"sapphire": 	{ level: 70, rarity:  0.2, img: "Gem Type2 Blue" },
-	"diamond": 		{ level: 75, rarity:  0.1, img: "Gem Type3 Black" },
+	"garnet": 		{ level:  0, rarity:  0.3, img: "gems/Gem Type1 Red.png" },
+	"opal": 		{ level:  3, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"turquoise": 	{ level:  6, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"amethyst": 	{ level:  9, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"pearl": 		{ level: 12, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"amber": 		{ level: 15, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"jade": 		{ level: 18, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"lapis lazuli": { level: 21, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"topaz": 		{ level: 24, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"moonstone": 	{ level: 27, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"agate": 		{ level: 30, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"tourmaline": 	{ level: 33, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"peridot": 		{ level: 36, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"malachite": 	{ level: 39, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"citrine": 		{ level: 42, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"jasper": 		{ level: 45, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"carnelian": 	{ level: 48, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"chalcedony": 	{ level: 51, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"beryl": 		{ level: 54, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"spinel": 		{ level: 57, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"ruby": 		{ level: 60, rarity:  0.2, img: "gems/Gem Type2 Red.png" },
+	"emerald": 		{ level: 65, rarity:  0.2, img: "gems/Gem Type2 Green.png" },
+	"sapphire": 	{ level: 70, rarity:  0.2, img: "gems/Gem Type2 Blue.png" },
+	"diamond": 		{ level: 75, rarity:  0.1, img: "gems/Gem Type3 Black.png" },
 });
 
 const StuffList = Fab.add( '', {
@@ -632,10 +632,10 @@ StuffList.poisonSlime.onTouch 	= TouchDamage.onTouchWalk;
 
 
 const RingMaterialList = Fab.add( '', {
-	"brass": 	{ level: 0, img: 'brass' },
-	"copper": 	{ level: 1, img: 'bronze' },
-	"silver": 	{ level: 3, img: 'silver' },
-	"gold": 	{ level: 7, img: 'gold' }
+	"brass": 	{ level: 0, img: 'item/ring/brass.png' },
+	"copper": 	{ level: 1, img: 'item/ring/bronze.png' },
+	"silver": 	{ level: 3, img: 'item/ring/silver.png' },
+	"gold": 	{ level: 7, img: 'item/ring/gold.png' }
 });
 
 const RingList = Fab.add( '', {
@@ -896,7 +896,7 @@ const ItemTypeList = {
 		opacity: 1,
 		isWall: true,
 		noneChance: 0.90,
-		imgGet: (self,img) => "ore/"+(img || self.variety.img || "oreVein")+".png",
+		imgGet: (self,img) => (img || self.variety.img || "oreVein"),
 		imgChoices: OreVeinList,
 		varieties: OreVeinList,
 		mineSwings: 14
@@ -968,7 +968,7 @@ const ItemTypeList = {
 		namePattern: 	'{variety}',
 		varieties: 		OreList,
 		isOre: 			true,
-		imgGet: 		(self,img) => "ore/"+(img || self.variety.img || "ore")+".png",
+		imgGet: 		(self,img) => (img || self.variety.img || "ore"),
 		imgChoices: 	OreList,
 		icon: 			'ore.png'
 	},
@@ -986,7 +986,7 @@ const ItemTypeList = {
 		range: 			Rules.RANGED_WEAPON_DEFAULT_RANGE,
 		mayTargetPosition: 1,
 		autoCommand: 	Command.USE,
-		imgGet: 		(self,img) => "gems/"+(img || self.variety.img || "Gem Type2 Black")+".png",
+		imgGet: 		(self,img) => (img || self.variety.img || "Gem Type2 Black"),
 		imgChoices: 	GemList,
 		scale: 			0.3,
 		icon: 			'gem.png'
@@ -1151,7 +1151,7 @@ const ItemTypeList = {
 		useVerb: 		'wear',
 		triggerOnUse: 	true,
 		effectDecorate: { duration: true },
-		imgGet: (self, img) => "item/ring/" + (img || self.material.img || 'gold') + ".png",
+		imgGet: (self, img) => (img || self.material.img || 'gold'),
 		imgChoices: 	RingMaterialList,
 		icon: 			'ring.png'
 	},

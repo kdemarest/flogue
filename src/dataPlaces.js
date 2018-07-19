@@ -1077,7 +1077,7 @@ PlaceTypeList.surfaceSunTemple = {
 			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
 		L: 'stuff.candleLamp',
-		X: { typeFilter: 'marker', playerStartHere: true },
+		X: { typeFilter: 'marker', markerId: 'playerStartHere' },
 		D: { typeFilter: 'door', state: 'locked', keyId: 'Solar Temple door' },
 		F: "fontSolar",
 		A: { typeFilter: 'altar', unhide: 'starterChest', inventoryLoot: 'weapon.solarBlade' },

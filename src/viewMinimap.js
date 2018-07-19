@@ -10,8 +10,8 @@ class ViewMiniMap extends ViewObserver {
 		this.drawn = [];
 	}
 	create(area) {
-		$( '#'+this.divId+'Canvas0' ).remove();
-		$( '#'+this.divId+'Canvas1' ).remove();
+		$( this.divId+'Canvas0' ).remove();
+		$( this.divId+'Canvas1' ).remove();
 		this.cleared = false;
 		this.drawn = [];
 		this.xLen = area.map.xLen;
@@ -23,11 +23,11 @@ class ViewMiniMap extends ViewObserver {
 		this.scale = Math.max(1,canvasDim/dim);
 //		this.xLenCanvas = this.scale*dim;
 //		this.yLenCanvas = this.scale*dim;
-		$( '#'+this.divId)
+		$( this.divId)
 			.width(this.xLenCanvas)
 			.height(this.yLenCanvas)
-			.append('<canvas id="'+this.divId+'Canvas0'+'" height="'+this.yLenCanvas+'" width="'+this.xLenCanvas+'"></canvas>')
-			.append('<canvas id="'+this.divId+'Canvas1'+'" height="'+this.yLenCanvas+'" width="'+this.xLenCanvas+'"></canvas>')
+			.append('<canvas id="'+this.divId.replace('#','')+'Canvas0'+'" height="'+this.yLenCanvas+'" width="'+this.xLenCanvas+'"></canvas>')
+			.append('<canvas id="'+this.divId.replace('#','')+'Canvas1'+'" height="'+this.yLenCanvas+'" width="'+this.xLenCanvas+'"></canvas>')
 			.show();
 	}
 	setArea(area) {
@@ -47,7 +47,7 @@ class ViewMiniMap extends ViewObserver {
 			this.drawn[target.y*this.xLen+target.x] = null;
 			if( target.isWall ) {
 				// Sadly this gets special-cased because of the way I use Wall Proxy...
-				var canvas0 = document.getElementById(this.divId+'Canvas0');
+				var canvas0 = $(this.divId+'Canvas0')[0];
 				let c0 = canvas0.getContext("2d");
 				this.draw(c0,StickerList.wallProxy,target.x,target.y,this.scale);
 			}
@@ -78,12 +78,12 @@ class ViewMiniMap extends ViewObserver {
 	render() {
 		let observer = this.observer;
 		let site = observer.area.getSiteAt(observer.x,observer.y);
-		$('#'+this.captionDivId).show().html(
+		$(this.captionDivId).show().html(
 			this.caption // + (site ? '<br>'+site.id+'<br>'+site.denizenList.map( entity=>entity.name ).join(',') : '')
 		);
 
-		var canvas0 = document.getElementById(this.divId+'Canvas0');
-		var canvas1 = document.getElementById(this.divId+'Canvas1');
+		var canvas0 = $(this.divId+'Canvas0')[0];
+		var canvas1 = $(this.divId+'Canvas1')[0];
 		if( !canvas0.getContext || !canvas1.getContext ) {
 			debugger;
 		}

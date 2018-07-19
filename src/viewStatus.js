@@ -4,6 +4,7 @@ class ViewStatus extends ViewObserver {
 	constructor(divId) {
 		super();
 		this.divId = divId;
+		$(this.divId).empty();
 		this.slotList = [];
 		this.slotMax = 10;
 	}
@@ -71,7 +72,7 @@ class ViewStatus extends ViewObserver {
 					'</div>'
 				);
 				div
-				.appendTo('#'+self.divId)
+				.appendTo(self.divId)
 				.show()
 				.mouseover( function() {
 					guiMessage('show',entity);

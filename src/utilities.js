@@ -178,6 +178,14 @@ Module.add('utilities',function(){
 		}
 		return target;
 	}
+	Object.strip = function(target,fn) {
+		for( let key in target ) {
+			if( !fn || fn(target[key],key) ) {
+				delete target[key];
+			}
+		}
+		return target;
+	}
 
 	// Produces a new object composed of each key that the fn returned true for.
 	Object.filter = function(obj,fn) {

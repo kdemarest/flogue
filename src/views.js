@@ -58,6 +58,7 @@ class ViewSign extends ViewObserver {
 	constructor(divId) {
 		super();
 		this.divId = divId;
+		$(this.divId).empty();
 		this.lastSignId = '';
 	}
 	message(msg,payload) {
@@ -90,12 +91,12 @@ class ViewSign extends ViewObserver {
 		let signId = signList.first ? signList.first.id : '';
 		if( signId !== this.lastSignId ) {
 			if( !signList.first ) {
-				$('#'+this.divId).hide();
+				$(this.divId).hide();
 				guiMessage( 'hide' );
 			}
 			else {
 				let sign = typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
-				$('#'+this.divId).show().html(sign);
+				$(this.divId).show().html(sign);
 				//console.log( 'ViewSign render' );
 				guiMessage( 'show', signList.first );
 			}
@@ -115,7 +116,7 @@ class ViewSpells extends ViewObserver {
 			return;
 		}
 		let observer = this.observer;
-		$('#'+this.spellDivId).empty();
+		$(this.spellDivId).empty();
 		let spellList = observer.getCastableSpellList();
 		for( let i=0 ; i<spellList.all.length && i<this.MAX_SLOTS ; ++i ) {
 			let spell = spellList.all[i];
@@ -294,6 +295,7 @@ class ViewExperience extends ViewObserver {
 	constructor(divId) {
 		super();
 		this.divId = divId;
+		$(this.divId).empty();
 		this.experience = 0;
 		this.level = -1;
 	}
@@ -317,7 +319,7 @@ class ViewExperience extends ViewObserver {
 			if( entity.jobId ) {
 				s += ' the '+String.capitalize(entity.jobId);
 			}
-			$('#'+this.divId).show().html('<span class="monName monColor">'+s+'</span>');
+			$(this.divId).show().html('<span class="monName monColor">'+s+'</span>');
 			return;
 		}
 
@@ -336,7 +338,7 @@ class ViewExperience extends ViewObserver {
 				this.experience = entity.experience;
 			}
 		}
-		$('#'+this.divId).show().html(level+exp);
+		$(this.divId).show().html(level+exp);
 	}
 }
 
