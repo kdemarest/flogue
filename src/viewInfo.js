@@ -88,11 +88,14 @@ class ViewInfo extends ViewObserver {
 			let item = entity;
 			let s = '<div class="monColor">';
 			s += itemSummarize(you,item,false,!item.inventory && item.isTreasure);
+
+			// Compare it to any item I have in the same slot this belongs in.
 			if( item.slot && !you.inventory.find(i=>i.id==item.id) ) {
 				let f = you.getItemsInSlot(item.slot);
 				if( f.count ) { s += '<hr>'; }
 				f.forEach( i=>{ s += '<br>'+itemSummarize(you,i,item); });
 			}
+			// If the item has inventory, tell what it is.
 			if( item.inventory ) {
 				s += '<div class="invList">';
 				if( item.state == 'shut' ) {
@@ -110,6 +113,10 @@ class ViewInfo extends ViewObserver {
 					}
 				}
 				s += '</div>';
+			}
+			if( item.sign ) {
+				let sign = typeof item.sign == 'function' ? item.sign() : item.sign;
+				s += sign.replace(/\n/g,'<br>');
 			}
 			s += "</div>";
 			s += '<div id="favMessage"></div>';

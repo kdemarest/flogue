@@ -45,7 +45,6 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		}
 		let container = area.map.findChosenItemAt(x,y,item=>item.isContainer);
 		if( container && item.isContainer ) {
-//			debugger;
 			item.destroy();
 			return null;
 		}
