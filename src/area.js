@@ -139,24 +139,22 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	}
 
 	function extractRemainingInjects(map,injectLIst,makeMonsterFn,makeItemFn,safeToMakeFn) {
-		Object.each( injectList, (inject,injectId) => {
+		Object.each( injectList, (make,makeId) => {
 			// Skip the coordinate injects. They were already done.
-			if( injectId.indexOf(',') >= 0 ) return;
-			if( !inject ) {
-				inject = [{ typeFilter: mapType.typeId }];
+			if( makeId.indexOf(',') >= 0 ) return;
+			if( typeof make === 'string' ) {
+				make = { typeFilter: make };
 			}
-			inject.forEach( make => {
-				let typeId = make.typeFilter.split('.')[0];
-				let x,y;
-				let marker = map.pickMarker(inject.atMarker);
-				[x,y] = marker ? [marker.x,marker.y] : map.pickPosBy(0,0,0,0,safeToMakeFn);
-				
-				if( MonsterTypeList[typeId] ) {
-					makeMonsterFn( MonsterTypeList[typeId], x, y, null, make, null );
-					return;
-				}
-				makeItemFn( ItemTypeList[typeId], x, y, null, make, null );
-			});
+			let typeId = make.typeFilter.split('.')[0];
+			let x,y;
+			let marker = map.pickMarker(make.atMarker);
+			[x,y] = marker ? [marker.x,marker.y] : map.pickPosBy(0,0,0,0,safeToMakeFn);
+			
+			if( MonsterTypeList[typeId] ) {
+				makeMonsterFn( MonsterTypeList[typeId], x, y, null, make, null );
+				return;
+			}
+			makeItemFn( ItemTypeList[typeId], x, y, null, make, null );
 		});
 	}
 

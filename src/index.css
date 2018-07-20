@@ -571,6 +571,30 @@ table .inv tbody tr .ctr {
 #guiPathDebug {
 	white-space: pre;
 	font-family: "Courier New", monospace;
-    overflow-y: auto;
+	overflow-y: auto;
     height: 800px;
+}
+
+#testStatus a {
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+#testStatus a:hover {
+	background-color: #444;
+}
+
+#testResults {
+	display: none;
+	position: absolute;
+	top:0;
+	left: 0;
+	width: 800px;
+	height: 800px;
+	white-space: pre;
+	font-family: "Courier New", monospace;
+	overflow-y: auto;
+	z-index: 200;
+	background: rgba(22,22,22,0.8);
+
 }

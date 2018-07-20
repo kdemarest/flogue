@@ -230,8 +230,8 @@ const WeaponList = Fab.add( '', {
 		isUnique: true,
 		isPlot: true,
 		name: "blade",
-		materials: [WeaponMaterialList.solarium],
-		effects: [EffectTypeList.eInert],
+		materials: [{ solarium: WeaponMaterialList.solarium }],
+		effects: [{ eInert: EffectTypeList.eInert}],
 		img: 'item/weapon/solariumBlade.png'
 	},
 	"pickaxe": {
@@ -514,7 +514,7 @@ const GemList = Fab.add( '', {
 	"pearl": 		{ level: 12, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"amber": 		{ level: 15, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"jade": 		{ level: 18, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"lapis lazuli": { level: 21, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"lapisLazuli":  { level: 21, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"topaz": 		{ level: 24, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"moonstone": 	{ level: 27, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"agate": 		{ level: 30, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
@@ -912,6 +912,7 @@ const ItemTypeList = {
 	"key": {
 		symbol: 		'k',
 		namePattern: 	'key to {keyId}',
+		keyId: 			'none',
 		isTreasure: 	1,
 		isKey: 			true,
 		noSell: 		true,

@@ -479,9 +479,7 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible)
 	);
 
 	if( entity.isTileType && !entity.isPosition ) {
-//				self.observer.map.tileSprite[yWorld][xWorld] = self.staticTileEntity.spriteList;
 		self.observer.map.tileSprite[yWorld][xWorld][entity.typeId] = entity.spriteList;
-//				delete entity.spriteList;
 	}
 }
 
@@ -491,8 +489,13 @@ class ViewMap extends ViewObserver {
 	constructor(divId,imageRepo) {
 		super();
 		this.divId = divId;
+		if( ViewMap.globalPixiApp ) {
+			ViewMap.globalPixiApp.destroy(true,{children:true,texture:false,baseTexture:false});
+		}
+		$(this.divId).empty();
 		this.imageRepo = imageRepo;
 		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
+		ViewMap.globalPixiApp = this.app;
 		this.desaturateFilter = new PIXI.filters.ColorMatrixFilter();
 		this.desaturateFilter.desaturate();
 		this.desaturateFilterArray = [this.desaturateFilter];

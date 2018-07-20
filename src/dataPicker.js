@@ -141,6 +141,7 @@ class Picker {
 			for( let vIndex=0 ; vIndex < varietyArray.length ; ++vIndex ) {
 				let v = varietyArray[vIndex];
 				let vi = v.typeId || 'nothing';
+				if( window._hackHalt && vi == 'solarBlade' ) debugger;
 				if( filter.killId[vi] ) {
 					if( logging ) console.log( item.typeId+' killed for being '+vi );
 					continue;

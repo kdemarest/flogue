@@ -105,6 +105,7 @@
 <script src="area.js" charset="utf-8"></script>
 <script src="world.js" charset="utf-8"></script>
 <script src="plan.js" charset="utf-8"></script>
+<script src="testList.js" charset="utf-8"></script>
 <script src="tester.js" charset="utf-8"></script>
 <script src="config.js" charset="utf-8"></script>
 
@@ -128,6 +129,7 @@ function main() {
 	let imageRepo;
 
 	User.tickWorld = function(timePasses) {
+		Tester.act(timePasses);
 		this.entity.area.tick( timePasses ? this.entity.speed : false );
 		if( timePasses && this.priorArea && this.priorArea.id !== this.entity.area.id ) {
 			this.priorArea.tick( this.entity.speed );
@@ -136,10 +138,10 @@ function main() {
 		this.autoFavorite();
 		this.gui.tick();
 		this.gui.render();
+		Tester.check();
 		if( timePasses ) {
 			Time.simTimeInc();
 		}
-		Tester.check();
 	}.bind(User);
 
 	User.onEvent = function(event) {

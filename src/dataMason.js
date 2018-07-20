@@ -94,7 +94,6 @@ Module.add('dataMason',function() {
 		}
 		injectList[pos] = injectList[pos] || [];
 		injectList[pos].push(...inject);
-
 	}
 
 

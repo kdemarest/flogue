@@ -230,6 +230,11 @@ class Entity {
 		if( this.dead && this.isUser() ) {
 			return;
 		}
+		if( this.immortal ) {
+			this.health = Math.max(1,this.health);
+			delete this.vanish;
+			return;
+		}
 		if( this.dead ) {
 			debugger;
 		}
@@ -1392,7 +1397,7 @@ class Entity {
 					if( c ) return c;
 				}
 
-				if( flee ) {
+				if( flee && !this.testNeverFlee ) {
 					let c = this.thinkFlee(theEnemy);
 					if( c ) return c;
 				}
@@ -1779,6 +1784,9 @@ class Entity {
 		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
 		this.health -= amount;
+		if( this.immortal ) {
+			this.health = Math.max(1,this.health);
+		}
 		if( !isOngoing ) {
 			this.takenDamage = amount;
 			this.takenDamageType = damageType;
