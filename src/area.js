@@ -39,10 +39,15 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			presets = type.presets;
 		}
 
+		// Create the actual item at this location. It will be merged into any
+		// existing container at that location.
 		let item = area.map.itemCreateByType(x,y,type,presets,inject);
 		if( item.bunchSize ) {
 			item.bunch = item.bunchSize;
 		}
+
+		// If I'm making a container, but there is already one here, kill this
+		// item and just return.
 		let container = area.map.findChosenItemAt(x,y,item=>item.isContainer);
 		if( container && item.isContainer ) {
 			item.destroy();
@@ -52,8 +57,12 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		// NOTE: We want to count gaps here because we don't want impassable containers  blocking up passageways.
 		// WARNING! What we really want is to do all this ad-hoc chest and barrel business AFTER
 		// scanning the entire level. That way they won't interfere with place-created containers.
+//		if( !container ) {
+//			debugger;
+//			console.log( 'item '+item.typeId+' isContainable='+item.isContainable()+' gaps='+area.map.countGaps(x,y) );
+//		}
 		if( !container && item.isContainable() && Math.chance(theme.containerChance||0) && area.map.countGaps(x,y)<=1 ) {
-			let containerTypeId = Math.chance(50) ? 'barrel' : 'chest';
+			let containerTypeId = pick(['barrel','chest','coffin']);
 			container = area.map.itemCreateByType(x,y,ItemTypeList[containerTypeId],{},{});
 		}
 		if( container ) {
@@ -412,6 +421,9 @@ function tick(speed,map,entityListRaw) {
 
 	if( speed === false ) {
 		let player = entityListRaw.find( entity => entity.isUser() );
+		if( !player ) {
+			return;
+		}
 		player.calculateVisbility();
 		player.act(false);
 		// Time is not passing, so do not tick items.

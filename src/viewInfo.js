@@ -61,7 +61,7 @@ class ViewInfo extends ViewObserver {
 			}
 			let dam='',arm='';
 			if( ex.damage ) {
-				dam = ex.damage+' '+ex.damageType+' damage'+(ex.aoe ? ' '+ex.aoe : '');
+				dam = String.combine(ex.damage,ex.damageType+' damage',ex.aoe);
 				if( comp ) {
 					if( comp.damage > item.damage ) dam = '<span class="worse">'+dam+'</span>';
 					if( comp.damage < item.damage ) dam = '<span class="better">'+dam+'</span>';

@@ -685,6 +685,15 @@ const BrazierStates = {
 	}
 };
 
+const CoffinStates = {
+	open:   {
+		img: 'item/decor/coffinOpen.png',
+	},
+	shut:   {
+		img: 'item/decor/coffinShut.png',
+	}
+};
+
 const NulImg = { img: '' };
 
 // Item Events
@@ -825,6 +834,25 @@ const ItemTypeList = {
 		},
 		imgGet: (self,img) => img || self.imgChoices[self.state].img,
 		inventoryLoot: '5x 50% any',
+		hasInventory: true
+	},
+	"coffin": {
+		symbol: SYM,
+		mayWalk: false,
+		mayFly: true,
+		opacity: 0,
+		name: "coffin",
+		isDecor: true,
+		isContainer: true,
+		inRemovable: false,
+		state: 'shut',
+		imgChoices: {
+			shut: { img: 'decor/coffinShut.png' },
+			open: { img: 'decor/coffinOpen.png' },
+			empty: { img: 'decor/coffinEmpty.png' }
+		},
+		imgGet: (self,img) => img || self.imgChoices[self.state].img,
+		inventoryLoot: '30% weapon, 30% armor, 30% coin, 5% helm, 5% bracers, 5% boots, 5% ring',
 		hasInventory: true
 	},
 	"altar": {
@@ -1396,24 +1424,15 @@ ItemTypeList.chest.onBump = function(toucher,self) {
 				let allow = self.onLoot(self,toucher);
 				if( allow === false ) return;
 			}
-//			let delay = 0;
 			toucher.inventoryTake(self.inventory, self, false); //, item => {
-//				new Anim({},{
-//					at: 		self,
-//					img: 		item.imgGet ? item.imgGet(item) : item.img,
-//					delay: 		delay,
-//					duration: 	0.6,
-//					onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
-//					onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
-//				});
-//				delay += 0.3;
-//			});
 			Anim.Fountain(toucher.id,self,20,1.0,4,StickerList.coinSingle.img);
 		}
 		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
 	}
 	spriteDeathCallback(self.spriteList);
 }
+
+ItemTypeList.coffin.onBump = ItemTypeList.chest.onBump;
 
 ItemTypeList.barrel.onBump = function(toucher,self) {
 	if( self.inventory && self.inventory.length > 0 ) {

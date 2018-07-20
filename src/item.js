@@ -207,7 +207,7 @@ class Item {
 			reach: 			item.reach > 1 ? ' '+item.reach+' away' : '',
 			sneak: 			(owner.sneakAttackMult||2)<=2 ? '' : 'Sneak x'+Math.floor(owner.sneakAttackMult),
 			armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUT,item.isShield) : '',
-			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? ' ('+item.effect.effectShape+')' : '',
+			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? '('+item.effect.effectShape+')' : '',
 			bonus: 			getBonus(),
 			effect: 		item.effect ? (item.effect.name || item.effect.typeId) : '',
 			permutation: 	item.effect && item.effect.permuteName ? item.effect.permuteName : '',
@@ -247,7 +247,7 @@ class Item {
 		return parts[0] == this.typeId && this.variety && parts[1] == this.variety.typeId;
 	}
 	isContainable() {
-		return this.isTreasure && !this.isContainer && !this.isDecor && this.walkable && !this.isHidden;
+		return this.isTreasure && !this.isContainer && !this.isDecor && this.mayWalk && !this.isHidden;
 	}
 	setState(newState) {
 		this.state = newState;
