@@ -77,13 +77,13 @@ const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eShock','eAci
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eMentalWall','eClearMind','eStalwart','eDarkVision','eSmite','ePossess','eRage','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponMaterialList = Fab.add( '', {
-	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot'},
-	"silver": 		{ level:  5, toMake: 'silver ingot' },
-	"ice": 			{ level: 25, toMake: 'ice block' },
-	"glass": 		{ level: 40, toMake: 'malachite' },
-	"lunarium": 	{ level: 55, toMake: 'lunarium ingot' },
-	"deepium": 		{ level: 70, toMake: 'deepium ingot' },
-	"solarium": 	{ level: 85, toMake: 'solarium ingot' },
+	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot', name: 'iron' },
+	"silver": 		{ level:  5, toMake: 'silver ingot', name: 'silver' },
+	"ice": 			{ level: 25, toMake: 'ice block', name: 'ice' },
+	"glass": 		{ level: 40, toMake: 'malachite', name: 'glass' },
+	"lunarium": 	{ level: 55, toMake: 'lunarium ingot', name: 'lunarium' },
+	"deepium": 		{ level: 70, toMake: 'deepium ingot', name: 'deepium' },
+	"solarium": 	{ level: 85, toMake: 'solarium ingot', name: 'solarium' },
 });
 
 const BowMaterialList = Fab.add( '', {
@@ -116,7 +116,7 @@ const AmmoList = Fab.add( '', {
 		bunchSize: 8,
 		breakChance: 20,
 		damageType: DamageType.STAB,
-		xDamage: 0.3,
+		xDamage: 0.4,	// Needs to be 0.4 or better so tht the different ammo types can be distinguished.
 		isArrow: true,
 		materials: ArrowMaterialList,
 		namePattern: '{material} arrow${+plus}',
@@ -140,7 +140,6 @@ const AmmoList = Fab.add( '', {
 		namePattern: 'rock${+plus}',
 		mayThrow: true,
 		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
-		attackVerb: 'throw',
 		effectChance: 0.000001,
 		img: 'item/weapon/ranged/rock2.png'
 	},
@@ -157,7 +156,6 @@ const AmmoList = Fab.add( '', {
 		namePattern: 'rock${+plus}',
 		mayThrow: true,
 		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
-		attackVerb: 'throw',
 		effectChance: 0.000001,
 		img: 'item/weapon/ranged/rock2.png'
 	},
@@ -176,7 +174,7 @@ const AmmoList = Fab.add( '', {
 		effects: DartEffects,
 		mayThrow: true,
 		range: 10,
-		attackVerb: 'strike', 
+		attackVerb: 'stick', 
 		img: 'effect/dart2.png',
 		flyingImg: StickerList.dartInFlight.img,
 		flyingRot: true,
@@ -254,7 +252,7 @@ const WeaponList = Fab.add( '', {
 		ammoDamage: 'combine',
 		ammoEffect: 'addMine',
 		ammoQuick:  'mine',
-		attackVerb: 'shoot',
+		attackVerb: 'sling',
 		img: 'item/weapon/ranged/bow1.png'
 	},
 	"dagger": {
@@ -284,8 +282,8 @@ const WeaponList = Fab.add( '', {
 		isUnique: true,
 		isPlot: true,
 		name: "blade",
-		materials: [{ solarium: WeaponMaterialList.solarium }],
-		effects: [{ eInert: EffectTypeList.eInert}],
+		materials: { solarium: WeaponMaterialList.solarium },
+		effects: { eInert: EffectTypeList.eInert},
 		img: 'item/weapon/solariumBlade.png'
 	},
 	"pickaxe": {

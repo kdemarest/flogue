@@ -1277,6 +1277,9 @@ class Entity {
 				let enemyList = this.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
 				if( enemyList.count ) {
 					this.enemyNearTimer = Time.simTime;
+					if( this.inCombat() ) {
+						this.inCombatTimer = Time.simTime
+					}
 				}
 
 				if( this.mindset('lep') && enemyList.count ) {
@@ -1336,7 +1339,7 @@ class Entity {
 					if( gate ) {
 						this.record('enter gate',true);
 						this.commandItem = gate;
-						this.brainState.activity = 'Entering a '+game.name+'.';
+						this.brainState.activity = 'Entering a '+gate.name+'.';
 						return Command.ENTERGATE;
 					}
 				}

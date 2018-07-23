@@ -35,7 +35,13 @@ class ViewNarrative extends ViewObserver {
 				$(this.divId)
 					.removeClass('big')
 					.scrollTop( $(this.divId).prop('scrollHeight') );;
+			})
+			.click( e => {
+				$(this.divId)
+					.removeClass('big')
+					.scrollTop( $(this.divId).prop('scrollHeight') );;
 			});
+;
 	}
 	message(msg,payload) {
 		super.message(msg,payload);

@@ -111,7 +111,7 @@ let BodyAbility = {
 }
 
 let BodySlots = {
-	humanoid: 		{ head: 1, neck: 1, arms: 1, hands: 1, fingers: 2, waist: 1, hip: 1, feet: 1, armor: 1, weapon: 1, ammo: 1, shield: 1 },
+	humanoid: 		{ head: 1, neck: 1, arms: 1, hands: 1, fingers: 2, waist: 1, hip: 1, feet: 1, armor: 1, weapon: 1, ammo: 2, shield: 1 },
 	quadruped: 		{ head: 1, neck: 1, waist: 1, hip: 1, feet: 2, armor: 1 },
 	multiped: 		{ head: 1, neck: 1, waist: 1, hip: 1, fingers: 2, feet: 2, armor: 1 },
 	wingedBiped: 	{ head: 1, neck: 1, feet: 1 },
@@ -1039,7 +1039,7 @@ const MonsterTypeList = {
 		imgGet: (self,img) => img || self.imgChoices[self.inShell?'hiding':'moving'].img,
 		attitude: Attitude.HUNT,
 		brainMindset: 'fleeWhenAttacked',
-		immuneInShell: ArmorDefendsAgainst.join(','),
+		immuneInShell: [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH,DamageType.POISON,DamageType.BURN,DamageType.FREEZE].join(','),
 		isAnimal: true,
 		isGiant: true,
 		isSnail: true,
@@ -1048,7 +1048,7 @@ const MonsterTypeList = {
 		scentReduce: -1,	// Makes it always override any scent
 		speed: 0.5,
 		trail: 'stuff.snailTrail',
-		resistInShell: [DamageType.BURN,DamageType.FREEZE,DamageType.POISON,DamageType.SMITE,DamageType.ROT].join(','),
+		resistInShell: [DamageType.SHOCK,DamageType.SMITE,DamageType.ROT].join(',')
 	},
 	"sheep": {
 		core: [ SYM, 1, '1:20', 'neutral', 'bite', 'animalHerd', 'quadruped', 'dc-mon/animals/sheep.png', 'it' ],

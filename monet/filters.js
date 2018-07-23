@@ -16,6 +16,7 @@ FilterSpec = {
 	"mon/shade.png": 				{ normalize: false, brightness: 0, outline: false, shadow: false },
 	"mon/human/solarPriest.png": 	{ strip: 0xA0 },
 	"item/stuff/darkLantern.png": 	{ shadow: { xRatio: 0.8 } },
+	"item/solariumBlade.png": 		{ normalize: false },
 	"decor/brazierLit.png": 		{ normalize: false, outline: false, brightness: 0.01 },
 	"decor/brazierUnLit.png": 		{ normalize: false, },
 	"decor/boulder1.png": 			decorWall,

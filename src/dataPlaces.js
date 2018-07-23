@@ -166,9 +166,9 @@ ScapeList.caveTownRural = () => ({
 });
 
 ScapeList.caveWildlands = () => ({
-	dim: 				Math.randInt(120,140),
+	dim: 				Math.randInt(70,90),
 	architecture: 		"cave",
-	floorDensity: 		0.48,
+	floorDensity: 		0.38,
 	seedPercent: 		0.30,
 	passageWander: 		50,
 });
