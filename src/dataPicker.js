@@ -47,6 +47,12 @@ class Picker {
 		return table.length ? table : closest;
 	}
 
+	/**
+	This filters three ways:
+	1. You can specify what to include, such as typeId, variety, material and quality.
+	2. You can require any characteristic that starts with 'is' or 'may' like isBow or mayThrow
+	3. You can reverse either of those with a !isBow or !mayShoot
+	**/
 	filterStringParse(filterString) {
 		if( filterString ) { filterString = filterString.trim(); }
 		let nopTrue = () => true;
@@ -166,6 +172,10 @@ class Picker {
 							continue;
 						}
 
+						// WARNING! If the items has an effect: set, then no matter what you specify for the effect (like eInert) it simply
+						// won't happen and the effect specified will ALWAYS be what it gets. They only way to make that effect
+						// specifyable or simetimes-occuring is to set effectChance:100 and effects: { myEffectid: { theEffect }}
+
 						// Order here MUST be the same as in Item constructor.
 						let effectArray = Object.values(v.effects || m.effects || q.effects || item.effects || one);
 						if( v.effects ) {
@@ -190,9 +200,6 @@ class Picker {
 							//done[id] = 1;
 							let level = Math.max(0,(item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.isInert ? 0 : (e.level||0)));
 							let appear = ChanceToAppear.Ramp(level,depth);
-							if( v.typeId == 'diamond' && level <= depth && level == 7 ) {
-								console.log('Diamond, level '+level+' on depth '+depth+' is '+appear );
-							}
 
 							let rarity = (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
 							if( v.rarity === 0 || m.rarity === 0 || q.rarity === 0 || e.rarity === 0 ) {

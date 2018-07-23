@@ -98,6 +98,8 @@ class ViewInventory extends ViewObserver {
 			return;
 		}
 
+		console.assert( this.div[0] );
+		
 		this.inventoryRaw = this.inventoryFn().isReal();
 		if( this.allowFilter && this.filterId ) {
 			let filterId = this.filterId;
@@ -210,7 +212,7 @@ class ViewInventory extends ViewObserver {
 			);
 			cell.key  			= td( spc, 'right', this.inventorySelector.charAt(i)+'.' );
 			cell.icon 			= td( spc, '', ex.icon );
-			cell.description 	= td( spc, '', String.combine(' ',ex.description,ex.aoe,ex.rechargeLeft) );
+			cell.description 	= td( spc, '', String.combine(' ',ex.description,ex.reach,ex.aoe,ex.rechargeLeft) );
 			cell.armor 			= td( spc, 'ctr', ex.armor );
 			cell.damage 		= td( spc, 'right', ex.damage ) + td( spc, '', ex.damageType );
 			cell.bonus 			= td( spc, 'right', ex.bonus );

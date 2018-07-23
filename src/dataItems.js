@@ -51,23 +51,30 @@ const ImgSigns = {
 // do NOT assign NullEffects to make something have no effects. Instead, give it effectChance of 0.0001
 const NullEfects = { eInert: { level: 0, rarity: 1 } };
 const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eDarkVision','eCureDisease','eCurePoison','eOdorless','eStink','eBloodhound','eLuminari','eGreed','eEcholoc','eSeeInvisible','eXray','eFlight',
-	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic',
+	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic','eBravery',
 	'eRegeneration','eBurn','ePoison','eFreeze','eAcid'].includes(k) );
 const SpellEffects = Object.filter(EffectTypeList, (e,k)=>[
-	'ePossess','eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc',
+	'ePossess','eStun','eTeleport','eStartle','eHesitate','eBlindness','eLuminari','eXray','eEcholoc','eMentalFence',
 	'eGreed','eSlow','eHealing','ePoison','eBurn','eFreeze','eShock','eSmite','eSmite3','eRot','eLeech','eRage','ePanic','eConfusion','eShove','eInvisibility'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBloodhound','eOdorless','eRegeneration','eResistance','eGreed','eMobility','eSeeInvisible'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eBurn','eFreeze','eShock','eLeech','eBlindness','eSlow','ePanic','eConfusion','eShove','eSmite'].includes(k) );
 //const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSmite','eSmite3','eSmite5','eSmite7','ePoison','eBurn','eFreeze','eBlindness','eSlow','eConfusion'].includes(k) );
 const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eAbsorbRot','eResistance'].includes(k) );
-const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari','eSeeInvisible','eDarkVision'].includes(k) );
+const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLuminari','eSeeInvisible','eDarkVision','eMentalFence','eBravery','eClearMind','eStalwart','eIronWill'].includes(k) );
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
 const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eInvisibility', 'eOdorless', 'eRechargeFast'].includes(k) );
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eOdorless','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
-const BowEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBurn','eFreeze','eAcid','ePoison','eSmite','eStun','eSlow'].includes(k) );
-const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eAcid','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
-const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eDarkVision','eSmite','ePossess','eRage','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
+
+// Gaps in the bow effects are shock (reserved for darts), and stun/slow/shove (reserved for slings)
+const BowEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBurn','eFreeze','eAcid','ePoison','eSmite'].includes(k) );
+
+// Slings are meant for short range non-stab damage and anything that feals "heavy" is their realm.
+const SlingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eSlow','eShove'].includes(k) );
+
+// Darts have the general concept of being tipped with a solutions, so all the mental effects are on them.
+const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eShock','eAcid','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
+const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eMentalWall','eClearMind','eStalwart','eDarkVision','eSmite','ePossess','eRage','eLuminari','eGreed','eEcholoc','eSeeInvisible'].includes(k) );
 
 const WeaponMaterialList = Fab.add( '', {
 	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot'},
@@ -109,7 +116,7 @@ const AmmoList = Fab.add( '', {
 		bunchSize: 8,
 		breakChance: 20,
 		damageType: DamageType.STAB,
-		xDamage: 0.4,
+		xDamage: 0.3,
 		isArrow: true,
 		materials: ArrowMaterialList,
 		namePattern: '{material} arrow${+plus}',
@@ -121,31 +128,51 @@ const AmmoList = Fab.add( '', {
 		flyingScale: 1.0,
 		flyingSpeed: 15,
 	},
-	"rock":     	{
+	"rock": {
 		level:  0,
 		rarity: 1.0,
 		bunchSize: 4,
-		xDamage: 0.50,
+		xDamage: 0.40,
 		damageType: DamageType.BASH,
 		isRock: true,
+		isSlingable: true,
 		quick: 2,
 		namePattern: 'rock${+plus}',
 		mayThrow: true,
 		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
 		attackVerb: 'throw',
-		effectChance: 0.0001,
+		effectChance: 0.000001,
 		img: 'item/weapon/ranged/rock2.png'
 	},
+	// Sling stones give better damage than irregularly shaped rocks
+	"slingStone": {
+		level:  10,
+		rarity: 1.0,
+		bunchSize: 6,
+		xDamage: 0.60,
+		damageType: DamageType.BASH,
+		isSlingStone: true,
+		isSlingable: true,
+		quick: 2,
+		namePattern: 'rock${+plus}',
+		mayThrow: true,
+		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
+		attackVerb: 'throw',
+		effectChance: 0.000001,
+		img: 'item/weapon/ranged/rock2.png'
+	},
+	// Darts are throw only. The unique thing about darts is that, when you hit somebody with one, it does very little
+	// damage but the effect ALWAYS happens.
 	"dart":     	{
 		level:  0,
 		rarity: 0.5,
-		xDamage: 0.70,
+		xDamage: 0.30,
 		damageType: DamageType.STAB,
 		quick: 2,
 		namePattern: 'dart${+plus}{?effect}',
-		effectChance: 0.80,
-		chanceOfEffect: 100,
+		chanceOfEffect: 100,	// Here is the key element of darts,
 		slot: false,
+		effectChance: 0.80,
 		effects: DartEffects,
 		mayThrow: true,
 		range: 10,
@@ -159,13 +186,14 @@ const AmmoList = Fab.add( '', {
 });
 
 const WeaponList = Fab.add( '', {
-	// Bows are interesting because they take on the damage type of their effect. That makes
-	// them large typed damage dealers, similar to spells, but with instant recharge and less
-	// damage.
+	// Bows damage combines bow+ammo, and when their effect does damage they take on more of that than weapons.
+	// Arrows are considered slow, so a stealth bow that does less damage is needed for nimble or lithe opponents.
+	// Since their primary damage is stab anything that wants some ranged protection can resist or immune to stab and do pretty well.
+	// Their natural ranged advantage is tempered by lower damage: 50% bow and 30% arrow.
 	"bow": {
 		level:  0,
 		rarity: 1.0,
-		xDamage: 0.6,
+		xDamage: 0.5,
 		xPrice: 1.4,
 		quick: 0,
 		effectChance: 0.80,
@@ -179,13 +207,16 @@ const WeaponList = Fab.add( '', {
 		ammoSpec: 'ammo.arrow',
 		ammoDamage: 'combine',
 		ammoEffect: 'addMine',
+		ammoQuick:  'mine',
 		attackVerb: 'shoot',
 		img: 'item/weapon/ranged/bow1.png'
 	},
+	// Although the Stealth Bow does much less damage it is Quick, so it is useful against nimble creatures.
+	// It still has the limitation of doing stabbing-only damage.
 	"stealthBow": {		// Less damage but it can hit nimble creatures.
 		level:  0,
 		rarity: 0.5,
-		xDamage: 0.2,
+		xDamage: 0.3,
 		xPrice: 3.0,
 		quick: 2,		// Here is what the stealth bow is all about.
 		effectChance: 0.80,
@@ -202,6 +233,29 @@ const WeaponList = Fab.add( '', {
 		ammoQuick:  'mine',
 		attackVerb: 'shoot',
 		img: 'item/weapon/ranged/stealthBow48.png'
+	},
+	// Although slings are only useful at short ranges, they can do bash damage (unlike bows).
+	// With sling stone ammo they can do full damage, at range, although they are limited in their effects to bashing-like effects.
+	"sling": {
+		level:  0,
+		rarity: 1.0,
+		xDamage: 0.4,
+		xPrice: 1.4,
+		quick: 0,
+		effectChance: 0.80,
+		effects: SlingEffects,
+		chanceOfEffect: 20,
+		damageType: DamageType.BASH,
+		mayShoot: true,
+		isSling: true,
+		range: 4,
+		ammoType: 'isSlingable',
+		ammoSpec: 'ammo.slingStone',
+		ammoDamage: 'combine',
+		ammoEffect: 'addMine',
+		ammoQuick:  'mine',
+		attackVerb: 'shoot',
+		img: 'item/weapon/ranged/bow1.png'
 	},
 	"dagger": {
 		level: 3,
@@ -264,7 +318,7 @@ const WeaponList = Fab.add( '', {
 	"greatsword": {
 		level: 5,
 		rarity: 0.3,
-		xDamage: 1.20,
+		xDamage: 1.10,
 		damageType: DamageType.CUT,
 		quick: 0,
 		img: 'item/weapon/long_sword2.png'
@@ -280,7 +334,7 @@ const WeaponList = Fab.add( '', {
 	"hammer": {
 		level: 4,
 		rarity: 0.4,
-		xDamage: 1.40,
+		xDamage: 1.15,
 		damageType: DamageType.BASH,
 		quick: 0,
 		img: 'item/weapon/hammer2.png'
@@ -585,7 +639,7 @@ const StuffList = Fab.add( '', {
 	"spinneret": 		{ rarity: 0.4, },
 	"chitin": 			{ rarity: 1.0, },
 	"poisonGland": 		{ rarity: 0.4, },
-	"snailTrail": 		{ rarity: 0.4, isLiquid: true, alpha: 0.3, img: 'item/stuff/snailSlime.png', isSnailSlime: true, mayPickup: false, existenceTime: 10 },
+	"snailTrail": 		{ rarity: 0.4, isLiquid: true, alpha: 0.3, isTreasure: false, img: 'item/stuff/snailSlime.png', isSnailSlime: true, mayPickup: false, existenceTime: 10 },
 	"snailSlime": 		{ rarity: 0.4, isLiquid: true, alpha: 0.5, img: 'item/stuff/snailSlime.png', isSnailSlime: true, },
 	"redOozeSlime": 	{ rarity: 0.2, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/stuff/redSlime.png' },
 	"poisonSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.25, mayThrow: true, mayTargetPosition: true, img: 'item/stuff/poisonSlime.png',
@@ -810,6 +864,7 @@ const ItemTypeList = {
 		mayPickup: false,
 		isDecor: true,
 		isContainer: true,
+		isRemovable: true,
 		state: 'shut',	// This is required to stop the user from "seeing inside" with mouse hover.
 		inventoryLoot: '3x 20% any',
 		hasInventory: true,
@@ -825,7 +880,6 @@ const ItemTypeList = {
 		mayPickup: false,
 		isDecor: true,
 		isContainer: true,
-		isRemovable: false,
 		state: 'shut',
 		imgChoices: {
 			shut: { img: 'decor/chestShut.png' },
@@ -844,7 +898,6 @@ const ItemTypeList = {
 		name: "coffin",
 		isDecor: true,
 		isContainer: true,
-		inRemovable: false,
 		state: 'shut',
 		imgChoices: {
 			shut: { img: 'decor/coffinShut.png' },

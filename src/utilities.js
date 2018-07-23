@@ -312,37 +312,34 @@ Module.add('utilities',function(){
 	}
 
 	String.arSplit = function(s,delim=',') {
-		if( !s ) {
-			return [];
-		}
-		let temp = s.split(delim);
-		if( temp.length==1 && temp[0]=='' ) {
-			temp.length=0;
-		}
-		return temp;
+		return (s || '')
+			.split(delim)
+			.filter( entry => entry !== undefined && entry !== null && entry !== '' )
+			.filter( (value,index,self) => self.indexOf(value)===index );
 	}
 	String.arAdd = function(str,add) {
-		let temp = String.arSplit(str,',');
-		temp.push(add);
-		return temp.join(',');
+		let a = String.arSplit(str)
+			.concat( String.arSplit(add) )
+			.filter( (value,index,self) => self.indexOf(value)===index );
+		return a.join(',');
 	}
-	String.arSub = function(str,add) {
-		let temp = String.arSplit(str,',');
-		let index = temp.find(add);
+	String.arSub = function(str,remove) {
+		let temp = String.arSplit(str);
+		let index = temp.find(remove);
 		if( index !== undefined ) {
 			temp.splice(index,1);
 		}
 		return temp.join(',');
 	}
 	String.arIncludes = function(str,find) {
-		return String.arSplit(str,',').includes(find);
+		return String.arSplit(str).includes(find);
 	}
 	String.arExtra = function(base,comp) {
-		base = String.arSplit(base,',');
-		comp = String.arSplit(comp,',');
-		for( let i=0 ; i<base.length ; ++i ) {
-			if( !comp.includes(base[i]) ) {
-				return base[i];
+		let aBase = String.arSplit(base);
+		let aComp = String.arSplit(comp);
+		for( let i=0 ; i<aBase.length ; ++i ) {
+			if( !aComp.includes(aBase[i]) ) {
+				return aBase[i];
 			}
 		}
 		return '';

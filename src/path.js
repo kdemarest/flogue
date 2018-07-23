@@ -47,9 +47,7 @@ function pVerySafe(map,fn) {
 class Path {
 	constructor(map,distLimit,isOrtho,avoidMetric=10,testFn) {
 		this.map = map;
-		this.xLen = map.xLen;
-		this.yLen = map.yLen;
-		this.distLimit = distLimit === null ? xLen*yLen : distLimit;
+		this.distLimit = distLimit === null || distLimit === undefined ? map.xLen*map.yLen : distLimit;
 		this.isOrtho = isOrtho
 		this.avoidMetric = avoidMetric;
 		this.testFn = testFn || pWalkQuick(map);
@@ -59,6 +57,9 @@ class Path {
 		this.ex = null;
 		this.ey = null;
 		this.path = [];
+	}
+	get xLen() {
+		return this.map.xLen;
 	}
 	leadsTo(x,y) {
 		return this.ex==x && this.ey==y;
@@ -145,8 +146,12 @@ class Path {
 
 		this.status = {};
 
-		let xLen 	= this.xLen;
-		let yLen 	= this.yLen;
+		// We capture the actual min/maxes because the MasonMap is allowed to go into negatives.
+		let xMin 	= this.map.xMin;
+		let yMin 	= this.map.yMin;
+		let xMax 	= this.map.xMax;
+		let yMax 	= this.map.yMax;
+		let xLen 	= this.map.xLen;
 		let dirStep = this.isOrtho ? 2 : 1;
 		let avoidMetric = this.avoidMetric;
 		let grid 	= this.grid;
@@ -204,12 +209,12 @@ class Path {
 					let y = hotTiles[i+2];
 					++numDone;
 
-					let testEdge = x<=0 || y<=0 || x>=xLen-1 || y>= yLen-1;
+					let testEdge = x<=xMin || y<=yMin || x>=xMax || y>=yMax;
 
 					for( let dir=0; dir<8 ; dir += dirStep ) {
 						let nx = x + Direction.add[dir].x;
 						let ny = y + Direction.add[dir].y;
-						if( testEdge && (nx<0 || ny<0 || nx>=xLen || ny>=yLen) ) continue;
+						if( testEdge && (nx<xMin || ny<xMin || nx>xMax || ny>yMax) ) continue;
 						let ok = fill(nx,ny,dist);
 						if( !ok ) {
 							continue;
@@ -248,11 +253,11 @@ class Path {
 			while( --reps && !(x==sx && y==sy) ) {
 				let bestDir = -1;
 				let bestValue = 999999;
-				let testEdge = x<=0 || y<=0 || x>=xLen-1 || y>= yLen-1;
+				let testEdge = x<=xMin || y<=yMin || x>=xMax || y>=yMax;
 				for( let dir=0 ; dir<8 ; dir += dirStep ) {
 					let nx = x + Direction.add[dir].x;
 					let ny = y + Direction.add[dir].y;
-					if( testEdge && (nx<0 || ny<0 || nx>=xLen || ny>=yLen) ) continue;
+					if( testEdge && (nx<xMin || ny<xMin || nx>xMax || ny>yMax) ) continue;
 					let lPos = ny*xLen+nx;
 					let v = grid[lPos];
 					if( v >= 1 && v < Problem.WALL  ) {

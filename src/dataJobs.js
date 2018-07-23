@@ -23,7 +23,7 @@ let JobTypeList = {
 		buyTest: item => item.isPotion || item.isStuff || item.isLiquid,
 		colFilter: {slot:1,key:1,icon:1,description:1,price:1},
 		sign: "Concoctions to change your outlook!",
-		inventoryLoot: '20x potion, 30x 50% potion, 10x stuff isLiquid'
+		inventoryLoot: '20x 50% potion, 10x 50% stuff isLiquid'
 	},
 	grocer: {
 		isMerchant: true,
@@ -43,7 +43,7 @@ let JobTypeList = {
 		buyTest: item => item.isSpell || item.isPaper,
 		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Arcane scribing for the gifted!",
-		inventoryLoot: '20x spell, 20x 50% spell'
+		inventoryLoot: '20x 50% spell'
 	},
 	armorer: {
 		isMerchant: true,
@@ -53,7 +53,7 @@ let JobTypeList = {
 		buyTest: item => item.isArmor || item.isShield || item.isOre || item.isMetal,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Come back safe and sound!",
-		inventoryLoot: '15x armor, 5x helm, 5x bracers, 3x shield, 20x 50% armor'
+		inventoryLoot: '15x 50% armor, 6x 50% helm, 6x 50% bracers, 4x 50% shield, 20x 50% armor'
 	},
 	clothier: {
 		isMerchant: true,
@@ -69,11 +69,12 @@ let JobTypeList = {
 		isMajor: true,
 		attitude: Attitude.AWAIT,
 		tether: 2,
-		buyTest: item => item.isWeapon || item.isAmmo || item.isOre || item.isMetal,
+		buyTest: item => item.isWeapon || item.isAmmo || item.isOre || item.isMetal || item.isDart,
 		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Defend yourself, or press the attack!",
-		inventoryLoot: '20x weapon, 20x 50% weapon, 10x stuff isMetal'
+		inventoryLoot: '20x weapon, 20x 50% weapon, 10x stuff isMetal, 5x ammo.dart'
 	},
+	// Bowyers sell bows and arrows, plus a miscellany of thrown or shooting weapons.
 	bowyer: {
 		isMerchant: true,
 		isMajor: true,
@@ -82,8 +83,9 @@ let JobTypeList = {
 		buyTest: item => item.isBow || item.isAmmo || item.mayThrow,
 		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Shoot from a distance to triumph safely!",
-		inventoryLoot: '10x weapon.bow, 20x ammo, 10x weapon mayThrow, 20x 50% weapon, 20x 50% ammo'
+		inventoryLoot: '20x 50% weapon.bow, 40x ammo.arrow, 5x weapon mayThrow, 5x 50% weapon mayShoot'
 	},
+	// Cobblers work with leather primarily to make boots. However, since slings are also leather thay carry those.
 	cobbler: {
 		isMerchant: true,
 		isMidsize: true,
@@ -92,17 +94,19 @@ let JobTypeList = {
 		buyTest: item => item.isBoots,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,bonus:1,charges:1,price:1},
 		sign: "Shoes and boots that last!",
-		inventoryLoot: '10x boots, 20x 50% boots'
+		inventoryLoot: '10x boots, 20x 50% boots, 6x 50% weapon.sling, 10x ammo isSlingable'
 	},
+	// Another leather worker, like the cobbler, gaunters are the only source of gloves.
+	// Their leather focus also means they carry slings.
 	gaunter: {
 		isMerchant: true,
 		isMidsize: true,
 		attitude: Attitude.AWAIT,
 		tether: 2,
-		buyTest: item => item.isGloves,
+		buyTest: item => item.isGloves || item.isSling,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Gloves for any hand!",
-		inventoryLoot: '10x gloves, 10x 50% gloves'
+		inventoryLoot: '10x gloves, 10x 50% gloves, 6x 50% weapon.sling, 10x ammo isSlingable'
 	},
 	lapidary: {
 		isMerchant: true,
@@ -112,7 +116,7 @@ let JobTypeList = {
 		buyTest: item => item.isGem || item.isJewelry,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "The finest gems, custom cut!",
-		inventoryLoot: '50x gem, 100x 50% gem'
+		inventoryLoot: '20x 50% gem'
 	},
 	jeweler: {
 		isMerchant: true,
@@ -122,8 +126,9 @@ let JobTypeList = {
 		buyTest: item => item.isJewelry || item.isGem || item.isOre,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Rings, amulets, you name it!",
-		inventoryLoot: '40x ring, 100x 50% ring'
+		inventoryLoot: '10x 50% ring'
 	},
+	// Known for buying anything. They sell "stuff". the peddler also happens to carry darts.
 	peddler: {
 		isMerchant: true,
 		isMinor: true,
@@ -132,8 +137,9 @@ let JobTypeList = {
 		buyTest: item => item.isTreasure,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "I sell goods of all kinds!",
-		inventoryLoot: '100x stuff, 100x 50% stuff'
+		inventoryLoot: '10x stuff, 10x 50% stuff, 5x 50% ammo.dart'
 	},
+	// Miners have enough ore for the player to manufacture things, and they also carry metal objects and pickaxes.
 	miner: {
 		isMerchant: true,
 		isMinor: true,
@@ -142,7 +148,7 @@ let JobTypeList = {
 		buyTest: item => item.isOre || item.isArmor || item.isWeapon || item.isMetal,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Raw material from the depths!",
-		inventoryLoot: '20x ore, 40x 50% ore, 10x stuff isMetal, 2x weapon.pickaxe'
+		inventoryLoot: '20x ore, 20x 50% ore, 10x stuff isMetal, 2x weapon.pickaxe'
 	},
 	evangelist: {
 		attitude: Attitude.AWAIT,

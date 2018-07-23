@@ -89,10 +89,8 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	function safeToMake(map,x,y) {
 		let tile = map.tileTypeGet(x,y);
 		if( !tile.mayWalk || tile.isProblem ) return false;
-		let item = map.findItemAt(x,y);
-		if( item.count ) return false;
-		let entity = new Finder(area.entityList).at(x,y);
-		return !entity.count;
+		if( map.isItemAt(x,y) ) return false;
+		return !map.isEntityAt(x,y);
 	}
 
 	function extractEntitiesFromMap(map,injectList,makeMonsterFn,makeItemFn) {
@@ -385,7 +383,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	return area;
 }
 
-function tick(speed,map,entityListRaw) {
+function tick(speed,map,entityListRaw,thinkClip) {
 
 	function orderByTurn(entityList) {
 		let list = [[],[],[]];	// players, pets, others
@@ -443,9 +441,11 @@ function tick(speed,map,entityListRaw) {
 		DeedManager.tick(entity,dt);
 		entity.actionCount += entity.speed / speed;
 		while( entity.actionCount >= 1 ) {
-			entity.calculateVisbility();
-			entity.think();
-			entity.act();
+			if( thinkClip.contains(entity.x,entity.y) ) {
+				entity.calculateVisbility();
+				entity.think();
+				entity.act();
+			}
 			// DANGER! At this moment the entity might have changed areas!
 			tickItemList(entity.inventory,dt,entity.rechargeRate||1);
 			DeedManager.calc(entity);
@@ -480,33 +480,36 @@ class Area {
 		this.entityList = null;
 		this.siteList = null;
 		this.picker = new Picker(depth);
+		this.pathClip = new ClipRect();
+		this.thinkClip = new ClipRect();
 
 		// NOTE: Move this into the areaBuild() at some point.
 		if( theme.jobPick ) {
-			this.jobPickTable = new Pick.Table().scanKeys(theme.jobPick);
-			this.jobPicker = (filter) => {
-				let pickTable = this.jobPickTable;
-				if( pickTable.noChances() ) {
-					pickTable.reset();
-				}
-				if( filter ) {
-					// WARNING! All of the QUALIFYING jobs might have already
-					// been driven to zero. So reset and let its chance numbers go negative.
-					pickTable = new Pick.Table().scanPickTable(this.jobPickTable,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
-					if( pickTable.noChances() ) {
-						let temp = new Pick.Table().scanKeys(theme.jobPick);
-						pickTable = new Pick.Table().scanPickTable(temp,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
-					}
-				}
-				let jobId = pickTable.pick();
-				// NUANCE! The index in the filtered table will just HAPPEN to be identical due to the implementation of scanPickTable.
-				this.jobPickTable.indexPicked = pickTable.indexPicked;
-				this.jobPickTable.decrementLast(1);		// won't have effect apply if a filter is present!!
-				return jobId;
-			}
+			this.jobPicker = this.makeJobPicker(theme);
 		}
-
-
+	}
+	makeJobPicker(theme) {
+		let jobPickTable = new Pick.Table().scanKeys(theme.jobPick);
+		return (filter) => {
+			let pickTable = jobPickTable;
+			if( pickTable.noChances() ) {
+				pickTable.reset();
+			}
+			if( filter ) {
+				// WARNING! All of the QUALIFYING jobs might have already
+				// been driven to zero. So reset and let its chance numbers go negative.
+				pickTable = new Pick.Table().scanPickTable(jobPickTable,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
+				if( pickTable.noChances() ) {
+					let temp = new Pick.Table().scanKeys(theme.jobPick);
+					pickTable = new Pick.Table().scanPickTable(temp,(jobId,chance) => JobTypeList[jobId][filter] ? chance : 0);
+				}
+			}
+			let jobId = pickTable.pick();
+			// NUANCE! The index in the filtered table will just HAPPEN to be identical due to the implementation of scanPickTable.
+			jobPickTable.indexPicked = pickTable.indexPicked;
+			jobPickTable.decrementLast(1);		// won't have effect apply if a filter is present!!
+			return jobId;
+		}
 	}
 	build(tileQuota) {
 		this.animationManager = new AnimationManager();
@@ -544,8 +547,14 @@ class Area {
 		observer.light = oldLight;
 	}
 	tick(speed) {
+		let player = this.entityList.find( e=>e.userControllingMe ) || {};
+		if( player ) {
+			this.pathClip.setCtr(player.x,player.y,MapVis*2);
+			this.thinkClip.setCtr(player.x,player.y,MapVis*5);
+		}
+
 		this.animationManager.delay.reset();
-		tick( speed, this.map, this.entityList );
+		tick( speed, this.map, this.entityList, this.thinkClip );
 		this.castLight();
 	}
 	pickSite(fn) {

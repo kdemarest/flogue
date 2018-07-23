@@ -54,14 +54,19 @@ class ViewInfo extends ViewObserver {
 			let ex = item.explain();
 			let s = '';
 			if( header ) {
+				let lvl = !item.isTreasure ? '' : ' Level '+item.level+'<br>Value '+ex.priceWithCommas;
 				s += item.isUnique ? '<img class="itemImage" src="'+IMG_BASE+item.img+'"><br>' :
-					ex.icon+'<br>';
+					'<table class="itemIconTable"><tr><td>'+ex.icon+'</td><td>'+lvl+'</td></tr></table><br>';
 				s += ex.description+(ex.permutation?' '+ex.permutation:'')+'<br>';
+				if( item.effect && item.effect.stat && !item.isWeapon ) {
+					s += item.effect.stat+' '+(''+item.effect.value).split(',').join(', ')+'<br>';
+				}
+				//s += 'Value: '+ex.priceWithCommas+'<br>';
 //				s += String.combine(' ',ex.effect,ex.permute,ex.effect || ex.permute ? '<br>' : '');
 			}
 			let dam='',arm='';
 			if( ex.damage ) {
-				dam = String.combine(ex.damage,ex.damageType+' damage',ex.aoe);
+				dam = String.combine(' ',ex.damage,ex.damageType+' damage',ex.aoe);
 				if( comp ) {
 					if( comp.damage > item.damage ) dam = '<span class="worse">'+dam+'</span>';
 					if( comp.damage < item.damage ) dam = '<span class="better">'+dam+'</span>';
@@ -137,6 +142,9 @@ class ViewInfo extends ViewObserver {
 
 		s += '<table>';
 		s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
+		if( !entity.isUser() ) {
+			s += tRow('Activity:',entity.brainState && entity.brainState.activity ? entity.brainState.activity : entity.attitude);
+		}
 		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
 		if( entity.isUser() ) {
 			let bc = shield ? shield.calcBlockChance('any',true,entity.shieldBonus) : 0;
@@ -151,14 +159,16 @@ class ViewInfo extends ViewObserver {
 				(entity.shieldBonus?'</span>':'')+
 				" to block"
 			);
-			s += tRow( "Damage:", String.combine( ' ', (weaponEx.damageValue||0)+(ammo.damageValue||0), weaponEx.damageType, weaponEx.quick, weaponEx.reach, weaponEx.sneak ) );
+			s += tRow( "Damage:", String.combine( ' ', weaponEx.damage||0, weaponEx.damageType, weaponEx.quick, weaponEx.reach, weaponEx.sneak ) );
 			s += tRow( "Ammo:", ex ? ex.description : 'none ready' );
 			s += tRow( "Gold:", Math.floor(entity.coinCount||0) );
 		}
 		s += '</table>';
-		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
 
-		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+'<br>';
+
+		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
+		let nim = entity.dodge >= 2 ? ', lithe' : (entity.dodge==1 ? ', nimble' : '');
+		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+nim+'<br>';
 
 		// Shield characteristics
 		s += shield ? '<div class="monDetail">Blocking:</div>'+shield.blocks.split(',').join(', ')+'<br>' : '';
@@ -182,7 +192,7 @@ class ViewInfo extends ViewObserver {
 		test( senseList, entity.senseBlind,		'blind');
 		test( senseList, entity.senseSmell,		'scent');
 		test( senseList, entity.senseXray,		'xray');
-		test( senseList, entity.darkVision,		'dark');
+		test( senseList, entity.darkVision,		'darkVis');
 		test( senseList, entity.senseInvisible,	'invis');
 		test( senseList, entity.senseTreasure,	'treasure');
 		test( senseList, entity.senseLiving,	'living');

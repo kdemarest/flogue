@@ -246,7 +246,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"ambligryp": {
-		core: [ SYM, 29, '4:20', 'evil', 'bash', 'animalHunter', 'multiped', 'mon/ambligryp.png', 'it' ],
+		core: [ SYM, 29, '4:20', 'evil', 'bash', 'animalHunter', 'multiped', 'mon/insect/ambligryp.png', 'it' ],
 		attitude: Attitude.HUNT,
 		gripChance: 25,
 		isInsect: true,
@@ -271,7 +271,7 @@ const MonsterTypeList = {
 		vuln: ConstructVulnerability,
 	},
 	"brassamaton": {
-		core: [ SYM, 59, '6:8', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/brassamaton.png', 'it' ],
+		core: [ SYM, 59, '6:3', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/brassamaton.png', 'it' ],
 		scale: 0.8,
 		attitude: Attitude.AWAIT,
 		tooClose: 2,
@@ -286,7 +286,7 @@ const MonsterTypeList = {
 	},
 	"ghostScorpion": {
 		// make it so this goes insubstantial from time to time.
-		core: [ SYM, 39, '6:8', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/boneScorpion.png', 'it' ],
+		core: [ SYM, 39, '6:8', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/insect/boneScorpion.png', 'it' ],
 		attitude: Attitude.AWAIT,
 		tooClose: 5,
 		isInsect: true,
@@ -494,7 +494,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daitraum": {	// (stun)
-		core: [ SYM, 59, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
+		core: [ SYM, 59, '3:4', 'evil', 'bash', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
@@ -562,7 +562,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiphant": {	// (slow)
-		core: [ SYM, 84, '3:12', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daiphant.png', 'it' ],
+		core: [ SYM, 84, '5:12', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daiphant.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		isDaiphant: true,
@@ -635,17 +635,18 @@ const MonsterTypeList = {
 		vuln: DamageType.BASH,
 	},
 	"ethermite": {
-		core: [ SYM, 59, '3:20', 'evil', 'bite', 'animalHunter', 'noped', 'dc-mon/shining_eye.png', '*' ],
+		core: [ SYM, 59, '3:12', 'evil', 'bite', 'animalHunter', 'noped', 'mon/planar/ethermite.png', '*' ],
 		attitude: Attitude.HUNT,
 		brainMindset: 'pack',
 		dodge: 1,
 		glow: true,
 		invisible: true,
-		isPlanar: 1,
+		isPlanar: true,
+		isEthermite: true,
 		light: 6,
-		loot: '50% gem.eSeeInvisible, 30% gem, 20% gem',
+		loot: '2% gem.eSeeInvisible, 10% potion.eSeeInvisible, 50% any',
 		senseInvisible: true,
-		sneakAttackMult: 3,
+		sneakAttackMult: 4,
 		vuln: 'glass'
 	},
 	"shade": {
@@ -785,22 +786,116 @@ const MonsterTypeList = {
 		senseSight: 1,
 		senseSmell: 200,
 	},
+	"redFiddler": {
+		core: [ SYM, 29, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/redFiddler.png', 'it' ],
+		namePattern: "red fiddler",
+		naturalWeapon: {
+			reach: 6,
+			_effectOnAttack: {
+				op: 'damage',
+				xDamage: 0.2,
+				isHarm: 1,
+				duration: 3,
+				singularId: 'redFiddlerGel',
+				damageType: DamageType.BURN,
+				name: 'fiddler fire gel',
+				flyingIcon: 'effect/fire.png',
+				icon: 'gui/icons/eBurn.png'
+			}
+		},
+		glow: 2,
+		resist: DamageType.BURN,
+		isInsect: true,
+		isFiddler: true,
+		isRedFiddler: true,
+		loot: '2x 30% gem',
+		travelMode: "walk",
+		vuln: 'glass'
+	},
+	"blueFiddler": {
+		core: [ SYM, 39, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/blueFiddler.png', 'it' ],
+		namePattern: "blue fiddler",
+		naturalWeapon: {
+			reach: 5,
+			_effectOnAttack: {
+				op: 'damage',
+				xDamage: 1.5,
+				isHarm: 1,
+				duration: 0,
+				damageType: DamageType.FREEZE,
+				name: 'blue fiddler ice',
+				icon: 'gui/icons/eFreeze.png'
+			}
+		},
+		reach: 5,
+		glow: 2,
+		resist: DamageType.FREEZE,
+		isInsect: true,
+		isFiddler: true,
+		isBlueFiddler: true,
+		loot: '2x 30% gem',
+		travelMode: "walk",
+		vuln: 'glass'
+	},
+	"greenFiddler": {
+		core: [ SYM, 49, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/greenFiddler.png', 'it' ],
+		namePattern: "green fiddler",
+		naturalWeapon: {
+			reach: 6,
+			rechargeTime: 3,
+			_effectOnAttack: {
+				op: 'damage',
+				xDamage: 0.3,
+				isHarm: 1,
+				duration: 8,
+				singularId: 'greenFiddlerAcid',
+				damageType: DamageType.CORRODE,
+				name: 'sticky green fiddler acid',
+				icon: 'gui/icons/eCorrode.png'
+			}
+		},
+		glow: 2,
+		resist: DamageType.CORRODE,
+		isInsect: true,
+		isFiddler: true,
+		isGreenFiddler: true,
+		loot: '2x 30% gem',
+		travelMode: "walk",
+		vuln: 'glass'
+	},
+	"redFiddler": {
+		core: [ SYM, 29, '4:7', 'evil', 'burn', 'animalHunter', 'multiped', 'mon/insect/redFiddler.png', 'it' ],
+		namePattern: "red fiddler",
+		reach: 5,
+		glow: 2,
+		resist: DamageType.BURN,
+		isPlanar: false,
+		loot: '2x 30% gem',
+		travelMode: "walk",
+		vuln: 'glass'
+	},
 	"blueScarab": {
-		core: [ SYM, 59, '2:30', 'evil', 'freeze', 'animalHunter', 'multiped', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		core: [ SYM, 59, '2:30', 'evil', 'shock', 'animalHunter', 'multiped', 'mon/insect/blueScarab.png', 'it' ],
 		namePattern: "blue scarab",
 		glow: 3,
-		immune: DamageType.FREEZE,
+		immune: DamageType.SHOCK,
 		isPlanar: true,
+		isInsect: true,
+		isScarab: true,
+		isBlueScarab: true,
 		loot: '30% gem, 50% scarabCarapace',
 		travelMode: "fly",
 		vuln: 'glass,'+DamageType.BURN
 	},
 	"redScarab": {
-		core: [ SYM, 19, '2:30', 'evil', 'burn', 'animalHunter', 'multiped', 'dc-mon/animals/boulder_beetle.png', 'it' ],
+		core: [ SYM, 19, '2:30', 'evil', 'burn', 'animalHunter', 'multiped', 'mon/insect/redScarab.png', 'it' ],
 		namePattern: "red scarab",
 		glow: 3,
 		immune: DamageType.BURN,
 		isPlanar: true,
+		isInsect: true,
+		isScarab: true,
+		isRedScarab: true,
 		loot: '30% gem, 50% scarabCarapace',
 		travelMode: "fly",
 		vuln: 'glass,'+DamageType.FREEZE
@@ -1148,6 +1243,9 @@ function monsterPreProcess(typeId,m) {
 	}
 	if( m.isLiving === undefined ) {
 		m.isLiving = !m.isUndead && !m.isConstruct;
+	}
+	if( m.isMindless ) {
+		m.immune = String.arAdd(m.immune,MentalAttack+',possess');
 	}
 	if( !String.arIncludes(m.vuln||'',DamageType.WATER) && !String.arIncludes(m.resist||'',DamageType.WATER) ) {
 		m.immune = String.arAdd(m.immune,DamageType.WATER);

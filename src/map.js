@@ -27,6 +27,18 @@ class SimpleMap {
 		this.xLen = xLen;
 		this.yLen = yLen;
 	}
+	get xMin() {
+		return 0;
+	}
+	get yMin() {
+		return 0;
+	}
+	get xMax() {
+		return this.xLen-1;
+	}
+	get yMax() {
+		return this.yLen-1;
+	}
 	getSurfaceArea() {
 		return this.xLen*this.yLen;
 	}
@@ -138,7 +150,7 @@ class SimpleMap {
 	}
 	testPassable(x,y) {
 		let tile = this.tileTypeGet(x,y);
-		return tile !== false && (tile.mayWalk || tile.isRemovable !== false);
+		return tile !== false && (tile.mayWalk || tile.isRemovable);
 	}
 	countGaps(x,y) {
 		let swaps = 0;
@@ -574,38 +586,40 @@ class Map extends SimpleMap {
 	}
 
 	_itemRemove(item) {
-		if( !this.itemList.includes(item) ) {
-			debugger;
-		}
+		//if( !this.itemList.includes(item) ) {
+		//	debugger;
+		//}
 		Array.filterInPlace( this.itemList, i => i.id!=item.id );
 		Array.filterInPlace( this.itemLookup[item.y*this.xLen+item.x], i => i.id!=item.id );
 		spriteDeathCallback( item.spriteList );
 		this.calcWalkable(item.x,item.y);
-		this.traverse( (x,y) => {
-			let lPos = (y*this.xLen+x)*2;
-			if( this.scentLookup[lPos+1] == item ) {
-				this.scentLookup[lPos+0] = Rules.SCENT_AGE_LIMIT;
-				this.scentLookup[lPos+1] = null;
-			}
-		});
+		if( Rules.removeScentOfTheDead ) {
+			this.traverse( (x,y) => {
+				let lPos = (y*this.xLen+x)*2;
+				if( this.scentLookup[lPos+1] == item ) {
+					this.scentLookup[lPos+0] = Rules.SCENT_AGE_LIMIT;
+					this.scentLookup[lPos+1] = null;
+				}
+			});
+		}
 		//this.tileSymbolSet(item.x,item.y,TileTypeList['floor'].symbol);
 	}
 	_itemTake(item,x,y) {
 		if( this.itemList.includes(item) ) {
 			debugger;
 		}
-		// NUANCE! You must set the item's x,y in order for _addToList to bunch properly.
+		// NUANCE! You must set the item's x,y in order for _addToListAndBunch to bunch properly.
 		item.x = x;
 		item.y = y;
 		if( item.isHidden ) {
 			this.itemListHidden.push(item);
 			return item;
 		}
-		item = item._addToList(this.itemList);
+		item = item._addToListAndBunch(this.itemList);
 		let lPos = y*this.xLen+x;
 		this.itemLookup[lPos] = (this.itemLookup[lPos] || []);
 		if( !this.itemLookup[lPos].find( i=>i.id==item.id ) ) {
-			// we have to try to find this because _addToList might have aggregated it!
+			// we have to try to find this because _addToListAndBunch might have aggregated it!
 			this.itemLookup[lPos].push(item);
 		}
 		this.calcWalkable(x,y);

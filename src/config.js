@@ -4,7 +4,7 @@ let ConfigList = {};
 
 ConfigList.ken = () => {
 	ScapeList.kenCave = theme => ({
-		dim: 				40,
+		dim: 				60,
 		architecture: 		"cave",
 		floorDensity: 		0.48,
 		seedPercent: 		0.20,
@@ -32,7 +32,7 @@ ConfigList.ken = () => {
 		passageWidth3: 		0
 	});
 	ScapeList.kenVast = theme => ({
-		dim: 				300,
+		dim: 				160,
 		architecture: 		"rooms",
 		floorDensity: 		0.35,
 		circleChance: 		60,
@@ -93,7 +93,7 @@ ConfigList.ken = () => {
 	}
 
 	ThemeList.kenTheme = {
-		scapeId: 		'kenVast',
+		scapeId: 		'kenCave',	//'kenRooms',
 		palette: 		{ basis: 'jaggedCave' },
 //		palette: 		{ basis: 'stoneRooms' },
 //		rREQUIRED: 		'4x kenPlace',
@@ -102,13 +102,14 @@ ConfigList.ken = () => {
 		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 		rEPIC: 			'graveYard',
-		monsters: 		['isTroll'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isEthermite'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
 		enemyDensity:  	0.05,
 		friendDensity: 	0.00001,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, 4x potion.eXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
+//	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, 4x potion.eXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
+	MonsterTypeList.player.inventoryLoot.push('2x potion.eHealing, 4x potion, 2x gem, 2x spell, 1x potion.eSeeInvisible, 3x weapon, weapon.sling, 30x ammo.slingStone, weapon.bow, 40x ammo.arrow, spell.eFreeze');
 	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.oilLamp';
 //	MonsterTypeList.player.experience = 100;
 
@@ -117,10 +118,10 @@ ConfigList.ken = () => {
 //		xEffectChance: 4.0
 	});
 
-
 	return {
-		startingDepth: 1,
-//		themeId: 'coreHellscape' //kenTheme'
+		startingDepth: 17,
+		themeId: 'dwarfTown', //kenTheme'
+		saveBattery: true
 	}
 }
 

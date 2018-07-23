@@ -69,6 +69,30 @@ const Direction = new class {
 	}
 };
 
+class ClipRect {
+	constructor() {
+		this.reset();
+	}
+	reset() {
+		this.xMin = -99999999;
+		this.yMin = -99999999;
+		this.xMax = 99999999;
+		this.yMax = 99999999;
+	}
+	set(x0,y0,x1,y1) {
+		this.xMin = x0;
+		this.yMin = y0;
+		this.xMax = x1;
+		this.yMax = y1;
+	}
+	setCtr(x,y,dist) {
+		this.set(x-dist,y-dist,x+dist,y+dist);
+	}
+	contains(x,y) {
+		return !(x<this.xMin || y<this.yMin || x>this.xMax || y>this.yMax);
+	}
+};
+
 let IMG_BASE = 'http://localhost:3000/tiles/';
 
 let SymbolForbidden = { ' ': 1, '.': 1, '#': 1 };
@@ -236,7 +260,7 @@ let EffectTypeList = {
 	eBlank: 		{ level:  0, rarity: 1.00, isBlank: 1, name: 'blank paper' },
 	eKillLabel: 	{ level:  0, rarity: 1.00, op: 'killLabel', duration: 0, icon: false },	
 // Tactical
-	eLuminari: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'light', value: 6, xDuration: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
+	eLuminari: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'light', value: 6, xDuration: 5.0, isPlayerOnly: 1, name: 'luminari', icon: 'gui/icons/eLuminari.png' },
 	eDarkness: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'add', stat: 'dark', value: 12, xDuration: 5.0, isPlayerOnly: 1, name: 'darkness', icon: 'gui/icons/eLuminari.png' },
 	eDarkVision: 	{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'darkVision', value: 6, xDuration: 5.0, isPlayerOnly: 1, name: 'dark vision', icon: 'gui/icons/eLuminari.png' },
 //	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },
@@ -254,6 +278,12 @@ let EffectTypeList = {
 	eJump2: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'set', stat: 'jumpMax', value: 2, isHelp: 1, icon: 'gui/icons/eHaste.png' },
 	eJump3: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'set', stat: 'jumpMax', value: 3, isHelp: 1, icon: 'gui/icons/eHaste.png' },
 	eHaste: 		{ isBuf: 1, level:  0, rarity: 0.30, op: 'add', stat: 'speed', value: 1, isHelp: 1, xPrice: 3, requires: e=>e.speed<5, icon: 'gui/icons/eHaste.png' },
+	eBravery: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'immune', value: Attitude.PANICKED, isHelp: 1, xPrice: 3, name: 'bravery', icon: 'gui/icons/eImmune.png' },
+	eClearMind: 	{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'immune', value: Attitude.CONFUSED, isHelp: 1, xPrice: 3, name: 'clear mind', icon: 'gui/icons/eImmune.png' },
+	eStalwart: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'immune', value: Attitude.HESITANT, isHelp: 1, xPrice: 3, name: 'stalwart', icon: 'gui/icons/eImmune.png' },
+	eIronWill: 		{ isBuf: 1, level:  0, rarity: 0.30, op: 'add', stat: 'immune', value: 'possess', isHelp: 1, xPrice: 3, name: 'iron will', icon: 'gui/icons/eImmune.png' },
+	eMentalFence: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'add', stat: 'resist', value: [Attitude.HESITANT,Attitude.PANICKED,Attitude.CONFUSED,'possess'].join(','), isHelp: 1, xPrice: 3, xDuration: 3, name: 'mental fence', icon: 'gui/icons/eResist.png' },
+	eMentalWall: 	{ isBuf: 1, level:  0, rarity: 0.05, op: 'add', stat: 'immune', value: [Attitude.HESITANT,Attitude.PANICKED,Attitude.CONFUSED,'possess'].join(','), isHelp: 1, xPrice: 6, xDuration: 0.5, name: 'mental wall', icon: 'gui/icons/eImmune.png' },
 	eResistance: 	{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickResist), isHelp: 1, namePattern: 'resist {value}s', icon: 'gui/icons/eResist.png' },
 	eAbsorb: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist',
@@ -275,15 +305,15 @@ let EffectTypeList = {
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
 	eStun: 			{ isDeb: 1, level:  0, rarity: 0.50, op: 'set', isHarm: 1, stat: 'stun', value: true, xDuration: 0.3, icon: 'gui/icons/eShove.png' },
 	eShove: 		{ isDeb: 1, level:  0, rarity: 0.50, op: 'shove', isHarm: 1, value: 2, duration: 0, icon: 'gui/icons/eShove.png' },
-	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'attitude', isHarm: 1, value: Attitude.HESITANT, isHarm: 1, xDuration: 0.3, icon: 'gui/icons/eAttitude.png' },
-	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'attitude', isHarm: 1, value: Attitude.PANICKED, isHarm: 1, xDuration: 0.2, icon: 'gui/icons/eFear.png' },
+	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.HESITANT, isHarm: 1, xDuration: 0.3, icon: 'gui/icons/eAttitude.png' },
+	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.PANICKED, isHarm: 1, xDuration: 0.2, icon: 'gui/icons/eFear.png' },
 	eVulnerability: { isDeb: 1, level:  0, rarity: 1.00, op: 'add', isHarm: 1, stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
 					valuePick: () => pick(PickVuln), isHarm: 1, xDuration: 2.0, namePattern: 'vulnerability to {value}', icon: 'gui/icons/eVuln.png' },
 	eSlow: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'sub', isHarm: 1, stat: 'speed', value: 0.5, xDuration: 0.3, requires: e=>e.speed>0.5 },
 	eBlindness: 	{ isDeb: 1, level:  0, rarity: 0.30, op: 'set', isHarm: 1, stat: 'senseBlind', value: true, xDuration: 0.25, requires: e=>!e.senseBlind, icon: 'gui/icons/eBlind.png' },
-	eConfusion: 	{ isDeb: 1, level:  0, rarity: 0.20, op: 'attitude', isHarm: 1, value: Attitude.CONFUSED, xDuration: 0.3, icon: 'gui/icons/eAttitude.png' },
-	ePanic: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'attitude', isHarm: 1, value: Attitude.PANICKED, xDuration: 1.0, icon: 'gui/icons/eFear.png' },
-	eRage: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'attitude', isHarm: 1, value: Attitude.ENRAGED, xDuration: 0.5, icon: 'gui/icons/eAttitude.png' },
+	eConfusion: 	{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.CONFUSED, xDuration: 0.3, icon: 'gui/icons/eAttitude.png' },
+	ePanic: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.PANICKED, xDuration: 1.0, icon: 'gui/icons/eFear.png' },
+	eRage: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.ENRAGED, xDuration: 0.5, icon: 'gui/icons/eAttitude.png' },
 	ePossess: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'possess', isHarm: 1, xDuration: 5.0, noPermute: true, icon: 'gui/icons/ePossess.png' },
 	eDrain: 		{ isDeb: 1, level:  0, rarity: 0.40, op: 'drain', isHarm: 1, value: 'all', icon: 'gui/icons/eDrain.png' },
 	eImmobilize: 	{ isDeb: 1, level:  0, rarity: 0.40, op: 'set', isHarm: 1, stat: 'immobile', value: 1, requires: e=>!e.immobile, icon: 'gui/icons/eImmobile.png' },
@@ -320,7 +350,10 @@ for( let key in EffectTypeList ) {
 })();
 
 EffectTypeList.eBurn.onTargetPosition = function(map,x,y) {
-	map.tileSymbolSet(x,y,TileTypeList.flames.symbol);
+	let tile = map.tileTypeGet(x,y);
+	if( tile.mayWalk && !tile.isProblem && !tile.isPit ) {
+		map.tileSymbolSet(x,y,TileTypeList.flames.symbol);
+	}
 	return {
 		status: 'putFire',
 		success: true
@@ -328,7 +361,10 @@ EffectTypeList.eBurn.onTargetPosition = function(map,x,y) {
 }
 
 EffectTypeList.eFreeze.onTargetPosition = function(map,x,y) {
-	map.tileSymbolSet(x,y,TileTypeList.water.symbol);
+	let tile = map.tileTypeGet(x,y);
+	if( tile.mayWalk && !tile.isProblem && !tile.isPit ) {
+		map.tileSymbolSet(x,y,TileTypeList.water.symbol);
+	}
 	return {
 		status: 'putWater',
 		success: true
@@ -402,6 +438,7 @@ return {
 	Command: Command,
 	Distance: Distance,
 	Direction: Direction,
+	ClipRect: ClipRect,
 	IMG_BASE: IMG_BASE,
 	SymbolForbidden: SymbolForbidden,
 	SymbolToType: SymbolToType,

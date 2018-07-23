@@ -828,7 +828,7 @@ let deedTell = function(target,stat,oldValue,newValue ) {
 }
 
 let DeedOp = {
-	ATTITUDE: 	'attitude',
+//	ATTITUDE: 	'attitude',
 	HEAL: 		'heal',
 	DAMAGE: 	'damage',
 	SHOVE: 		'shove',
@@ -850,7 +850,7 @@ let resultDeniedDueToType = {
 	status: 'deniedDueToType',
 	success: false
 }
-
+/*
 DeedManager.addHandler(DeedOp.ATTITUDE,function() {
 	if( !monsterTarget(this) ) return resultDeniedDueToType;
 	this.target.attitude = this.value;
@@ -860,6 +860,7 @@ DeedManager.addHandler(DeedOp.ATTITUDE,function() {
 		success: true,
 	}
 });
+*/
 DeedManager.addHandler(DeedOp.HEAL,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return this.target.takeHealing(this.source,this.value,this.healingType);

@@ -193,6 +193,7 @@ function main() {
 	let config = new Config('ken',{
 		startingDepth: 0
 	});
+	window.config = config;
 
 	new DataConditioner();
 	imageRepo =  new ImageRepo(PIXI.loader);

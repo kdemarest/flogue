@@ -278,8 +278,12 @@ body {
 	overflow-x: hidden;
 	margin-left: 12px;
 }
+.itemIconTable {
+	width: 100%;
+}
 .lit {
-	background-color: green;
+	background-color: #373;
+	border-radius: 6px;
 }
 .unlit {
 	color: gray;

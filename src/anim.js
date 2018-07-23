@@ -608,25 +608,7 @@ Anim.Blam = function(delayId, target, scale=0.20, num=10, duration=0.2, fromDeg=
 	});
 }
 
-class AnimationClip {
-	constructor() {
-		this.reset();
-	}
-	reset() {
-		this.xMin = -99999999;
-		this.yMin = -99999999;
-		this.xMax = 99999999;
-		this.yMax = 99999999;
-	}
-	set(x0,y0,x1,y1) {
-		this.xMin = x0;
-		this.yMin = y0;
-		this.xMax = x1;
-		this.yMax = y1;
-	}
-	contains(x,y) {
-		return !(x<this.xMin || y<this.yMin || x>this.xMax || y>this.yMax);
-	}
+class AnimationClip extends ClipRect {
 }
 
 class AnimationDelay {

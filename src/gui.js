@@ -49,7 +49,7 @@ class Gui {
 			this.view.dynamic = DynamicViewList.none;
 		}
 		let v = {
-			divId: 'guiDynamic',
+			divId: '#guiDynamic',
 			player: player,
 			onItemChoose: this.onItemChoose,
 			onClose: onClose,

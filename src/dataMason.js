@@ -1,4 +1,7 @@
 Module.add('dataMason',function() {
+
+	let MAX_CLOSEST_SEARCH = 30;
+
 	const Dir = { N: 0, NE: 1, E: 2, SE: 3, S: 4, SW: 5, W: 6, NW: 7 };
 	const DirAdd = [
 		{ x:0,  y:-1 },
@@ -97,7 +100,7 @@ Module.add('dataMason',function() {
 	}
 
 
-	class Mason {
+	class MasonMap {
 		constructor(whoseGrid) {
 			this.xMin = 0;
 			this.yMin = 0;
@@ -302,7 +305,7 @@ Module.add('dataMason',function() {
 		sizeToExtentsWithBorder(injectList,siteList,border) {
 			let xMin,yMin,xMax,yMax;
 			[xMin,yMin,xMax,yMax] = this.getExtents();
-			let area = new Mason();
+			let area = new MasonMap();
 			area.setDimensions(xMax-xMin+1+border*2,yMax-yMin+1+border*2);
 			let tx = border;
 			let ty = border;
@@ -544,13 +547,13 @@ Module.add('dataMason',function() {
 			return zoneBySizeDescending;
 		}
 
-		findClosest(sx,sy,avoidZoneId,haltAtDist) {
+		findClosest(sx,sy,avoidZoneId,haltAtDist,zoneIdLookup) {
 
 			// Create the prolist if we haven't already.
 			if( !this.proList ) {
 				this.proList = [];
-				let xLimit = Math.min(50,this.xLen);
-				let yLimit = Math.min(50,this.yLen);
+				let xLimit = Math.min(MAX_CLOSEST_SEARCH,this.xLen);
+				let yLimit = Math.min(MAX_CLOSEST_SEARCH,this.yLen);
 				for( let y=-yLimit ; y<yLimit ; ++y ) {
 					for( let x=-xLimit ; x<xLimit ; ++x ) {
 						if( x==0 && y==0 ) continue;
@@ -562,6 +565,7 @@ Module.add('dataMason',function() {
 				this.proList.sort( (a,b) => a.dist-b.dist );
 			}
 
+			let xLen = this.xLen;
 			let sameZoneCount = 0;
 			for( let i=0 ; i<this.proList.length ; ++i ) {
 				let p = this.proList[i];
@@ -571,16 +575,18 @@ Module.add('dataMason',function() {
 				}
 				let x = sx+p.x;
 				let y = sy+p.y;
-				let zoneId = this.getZoneId(x,y);
+				let zoneId = zoneIdLookup[y*xLen+x]; //this.getZoneId(x,y);
 				if( zoneId == avoidZoneId ) {
 					sameZoneCount++;
-					if( i==7 && sameZoneCount==7 ) {
+					if( i==7 && sameZoneCount==8 ) {
 						// Halt early because the first eight tiles were all my zone, that is,
-						// I am an interior tile!
+						// I am an interior tile, and I will never be anything else!
+						this.setVal( 'enclosed', sx, sy, 1 );
+						//console.log( 'found enclosed ('+sx+','+sy+')' );
 						return false;
 					}
 				}
-				if( zoneId != NO_ZONE && zoneId != avoidZoneId && !this.getAll(x,y).hard ) {
+				if( zoneId != NO_ZONE && zoneId !== undefined && zoneId != avoidZoneId && !this.getAll(x,y).hard ) {
 					return {
 						x:sx, y:sy, zoneId:avoidZoneId,
 						tx:x, ty:y, tZoneId:zoneId,
@@ -685,19 +691,23 @@ Module.add('dataMason',function() {
 
 		findProximity(zoneList) {
 			// Find the closest tile for every single tile in every zone, that is on the edge.
+			let zoneIdLookup = [];
+			let xLen = this.xLen;
+			this.traverse( (x,y) => { zoneIdLookup[y*xLen+x] = this.getZoneId(x,y); });
 			let proximity = [];
 			for( let zone of zoneList) {
 				let bestDist = Math.min(30,Math.max(this.xLen,this.yLen)); //4*this.xLen*this.yLen;
 				Array.traversePairs( zone.tiles, (x,y) => {
-					if( this.getAll(x,y).hard ) {
+					let all = this.getAll(x,y);
+					if( all.hard || all.enclosed) {
 						// Don't attempt to make paths connect to 'hard' walls, ie those
-						// put down by the places.
+						// put down by the places. Nor connect to interior spaces.
 						return;
 					}
 //					if( isWall(this.getTile(x,y)) ) {
 //						debugger;
 //					}
-					let result = this.findClosest(x,y,zone.zoneId,bestDist);
+					let result = this.findClosest(x,y,zone.zoneId,bestDist,zoneIdLookup);
 					if( result !== false ) {
 						proximity.push(result);
 						bestDist = result.dist;
@@ -1095,7 +1105,7 @@ Module.add('dataMason',function() {
 			function strip(sx,ex,y) {
 				console.assert(sx<=ex);
 				while( sx <= ex ) {
-					count += fn(sx,y) ? 1 : 0;
+					count += fn(self,sx,y) ? 1 : 0;
 					sx++;
 				}
 			}
@@ -1125,7 +1135,7 @@ Module.add('dataMason',function() {
 			let count = 0;
 			for( let y=0 ; y<yLen ; ++y ) {
 				for( let x=0 ; x<xLen ; ++x ) {
-					count += fn(sx+x,sy+y) ? 1 : 0
+					count += fn(this,sx+x,sy+y) ? 1 : 0
 				}
 			}
 			return count;
@@ -1261,6 +1271,10 @@ Module.add('dataMason',function() {
 			return map.renderToString();
 		}
 
+		function generateChamber(inject,xLen,yLen,floorSymbol,wallSymbol,makeWalled,supply) {
+
+		}
+
 		function placePrepare(place,rotation) {
 			if( !place.isPrepared ) {
 				// WARNING! Important for this to be a DEEP copy.
@@ -1269,6 +1283,17 @@ Module.add('dataMason',function() {
 //				console.log("Trying to place "+place.typeId);
 				if( place.isMaze ) {
 					place.map = generateMaze(
+						place.inject,
+						place.xLen,
+						place.yLen,
+						place.floorSymbol || T.Floor,
+						place.wallSymbol || T.Wall,
+						place.makeWalled,
+						place.supply
+					);
+				}
+				if( place.isChamber ) {
+					place.map = generateChamber(
 						place.inject,
 						place.xLen,
 						place.yLen,
@@ -1625,6 +1650,27 @@ Module.add('dataMason',function() {
 		makeRandomPlaces(placePicker);
 	}
 
+	function generateAmoebaChamber(map,floorSymbol,makeChance=30,floorToMake=0) {
+		let floorMade = 0;
+		let reps = 40;
+		do {
+			let list = map.gather( (x,y) => {
+				let tile = map.getTile(x,y);
+				return isUnknown(tile) && map.count4(x,y,isWalkable) > 0;
+			});
+
+			while( list.length ) {
+				let y = list.pop();
+				let x = list.pop();
+				if( Math.randInt(0,100) < makeChance ) {
+					map.setTile(x,y,floorSymbol);
+					++floorMade;
+				}
+			}
+		} while( floorMade < floorToMake && --reps )
+		return floorMade;
+	}
+
 	function makeAmoeba(map,percentToEat,seedPercent,mustConnect) {
 		let i=0;
 		percentToEat = Math.clamp(percentToEat||0,0.01,1.0);
@@ -1665,41 +1711,24 @@ Module.add('dataMason',function() {
 			return false;
 		}
 
+		let bePersnicketyAboutFloorDensity = false;
+
 		while( more.call(this) ) {
-			let list = map.gather( (x,y) => {
-				let tile = map.getTile(x,y);
-				return isUnknown(tile) && map.count4(x,y,isWalkable) > 0;
-			});
-//			console.log("Gathered "+list.length);
-//			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
+			floorMade += generateAmoebaChamber(map,T.FillFloor,makeChance,0);
 
-			while( list.length ) {
-				let y = list.pop();
-				let x = list.pop();
-				if( Math.randInt(0,100) < makeChance ) {
-					map.setTile(x,y,T.FillFloor);
-					++floorMade;
+			if( bePersnicketyAboutFloorDensity ) {
+				let removeCount = 0;
+				zoneList = map.floodAll();
+				while( zoneList.length && zoneList[zoneList.length-1].count < floorMade-floorToMake ) {
+					let zone = zoneList.pop();
+					let count = map.zoneFlood(zone.x,zone.y,zone.zoneId,false,NO_ZONE,T.Unknown);
+					if( count !== zone.count ) {
+						debugger;
+					}
+					floorMade -= count;
+					removeCount += 1;
 				}
 			}
-
-//			console.log("floor="+Math.floor(floorMade/map.area()*100)+'% of '+Math.floor(floorToMake/map.area()*100)+'%');
-//			console.log("floor-likes = floor="+Math.floor(map.countAll(isWalkable)/map.area()*100)+'%');
-			let removeCount = 0;
-			zoneList = map.floodAll();
-//			console.log( zoneList.length+' zones');
-			while( zoneList.length && zoneList[zoneList.length-1].count < floorMade-floorToMake ) {
-				let zone = zoneList.pop();
-				let count = map.zoneFlood(zone.x,zone.y,zone.zoneId,false,NO_ZONE,T.Unknown);
-				if( count !== zone.count ) {
-					debugger;
-				}
-				floorMade -= count;
-				removeCount += 1;
-			}
-//			if( removeCount ) {
-//				console.log("Removed "+removeCount+'. now floor='+floorMade);
-//				console.log( zoneList.length+' zones remain');
-//			}
 		}
 		// We no longer remove diagonal quads because it runs the risk of harming somebody's
 		// carefully crafted place...
@@ -1708,6 +1737,24 @@ Module.add('dataMason',function() {
 		return this;
 	}
 
+	function overlapTest(map,x,y) {
+		let tile = map.getTile(x,y);
+		if( !isUnknown(tile) ) {
+			return true;
+		}
+	}
+
+	function weakFill(map,x,y) {
+		let tile = map.getTile(x,y);
+		if( !tile || isUnknown(tile) ) {
+			map.setTile(x,y,T.FillFloor);
+			return true;
+		}
+	}
+
+	function generateRoomChamber(map,x,y,xLen,yLen,circ,filler) {
+		return circ ? map.fillCircle(x,y,xLen,filler) : map.fillRect(x,y,xLen,yLen,filler);
+	}
 
 	function makeRooms(map,percentToEat,circleChance,overlapChance,siteList) {
 
@@ -1721,21 +1768,6 @@ Module.add('dataMason',function() {
 				floorMade++;
 			}
 		});
-
-		function weakFill(x,y) {
-			let tile = map.getTile(x,y);
-			if( !tile || isUnknown(tile) ) {
-				map.setTile(x,y,T.FillFloor);
-				return true;
-			}
-		}
-
-		function overlapTest(x,y) {
-			let tile = map.getTile(x,y);
-			if( !isUnknown(tile) ) {
-				return true;
-			}
-		}
 
 		let xLenMaxDefault = Math.clamp(Math.floor(map.xLen/3.2),2,12);
 		let xLenMax = Math.min(xLenMaxDefault,map.xLen-2);
@@ -1751,7 +1783,7 @@ Module.add('dataMason',function() {
 			let overlap = circ ? map.fillCircle(x,y,xLen+1,overlapTest) : map.fillRect(x-1,y-1,xLen+1,yLen+1,overlapTest);
 			if( overlap && !Math.chance(overlapChance) ) continue;
 
-			let made = circ ? map.fillCircle(x,y,xLen,weakFill) : map.fillRect(x,y,xLen,yLen,weakFill);
+			let made = generateRoomChamber(map,x,y,xLen,yLen,circ,weakFill);
 			floorMade += made;
 		}
 	}
@@ -1812,7 +1844,7 @@ Module.add('dataMason',function() {
 		paletteCommit( theme.palette );
 
 		let mapOffset = { x: -1, y: -1 };	// this is merely a likely offset. The final sizeToExtent will really deal with it...
-		let map = new Mason();
+		let map = new MasonMap();
 		map.setDimensions(theme.dim);
 
 		let numPlaceTiles = Math.floor(map.xLen*map.yLen*theme.floorDensity*theme.placeDensity);

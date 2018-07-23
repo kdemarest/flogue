@@ -7,9 +7,12 @@ let Rules = new class {
 			DEPTH_MAX: 19,
 			SCENT_AGE_LIMIT: 100000,
 			ARMOR_EFFECT_CHANCE_TO_FIRE: 10,
-			WEAPON_EFFECT_CHANCE_TO_FIRE: 10,
+			ARMOR_EFFECT_CHANCE_TO_FIRE_MAX: 25,
+			WEAPON_EFFECT_CHANCE_TO_FIRE: 5,
+			WEAPON_EFFECT_CHANCE_TO_FIRE_MAX: 25,
 			WEAPON_EFFECT_OP_ALWAYS: ['damage'],	// Weapons with this op will ALWAYS fire their special effect
-			WEAPON_EFFECT_DAMAGE_PERCENT: 20,	// Damage done is that case should be only x% of regular damage.
+			WEAPON_EFFECT_DAMAGE_PERCENT: 15,	// Damage done is that case should be only x% of regular damage.
+			WEAPON_EFFECT_DAMAGE_PERCENT_MAX: 30
 		});
 		this.DEPTH_SPAN = (this.DEPTH_MAX-this.DEPTH_MIN)+1;
 		this.xLootFrequency 				= 1;
@@ -24,6 +27,7 @@ let Rules = new class {
 		this.SPELL_RECHARGE_TIME 			= 10;
 		this.EXTRA_RECHARGE_AT_DEPTH_MAX    = 10;
 		this.COMBAT_EXPIRATION 				= 6;
+		this.removeScentOfTheDead 			= false;
 
 	}
 	 playerHealth(playerLevel) {
@@ -63,6 +67,36 @@ let Rules = new class {
 	}
 	effectPriceMultiplierByRarity(rarity) {
 		return 1.3 * 1/(rarity||1.0);
+	}
+	depthRatio(depth) {
+		return (depth-this.DEPTH_MIN)/this.DEPTH_MAX;
+	}
+	calcSpan(level,min,max) {
+		return Math.floor(min + (max-min)*this.depthRatio(level));
+	}
+	weaponChanceToFire(level) {
+		return this.calcSpan(
+			level,
+			this.WEAPON_EFFECT_CHANCE_TO_FIRE,
+			this.WEAPON_EFFECT_CHANCE_TO_FIRE_MAX
+			);
+	}
+	armorChanceToFire(level) {
+		return this.calcSpan(
+			level,
+			this.ARMOR_EFFECT_CHANCE_TO_FIRE,
+			this.ARMOR_EFFECT_CHANCE_TO_FIRE_MAX
+		);
+	}
+	weaponEffectDamage(level,damage) {
+		return damage * this.calcSpan(
+			level,
+			this.WEAPON_EFFECT_DAMAGE_PERCENT,
+			this.WEAPON_EFFECT_DAMAGE_PERCENT_MAX
+		) / 100;
+	}
+	chanceToShatter(level) {
+		return 33;
 	}
 
 }();

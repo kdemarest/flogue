@@ -82,7 +82,7 @@ class Entity {
 		}
 		else {
 			let hitsToKillPlayer = parseFloat( monsterType.power.split(':')[1] );
-			naturalMeleeWeapon.damage = naturalMeleeWeapon.damage || Rules.monsterDamage(level,hitsToKillPlayer);
+			naturalMeleeWeapon.damage = Rules.monsterDamage(level,hitsToKillPlayer);
 		}
 
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
@@ -273,6 +273,8 @@ class Entity {
 
 		// make sure that if this critter is carrying an .isPlot item that it gets dropped SOMEWHERE useful!
 		if( this.dead ) {
+			// When you vanish, or leave no corpse, your loot just drops, or, of set to fling
+			// it sprays around within lootFling distance. Like if you want to explode a bit.
 			if( this.vanish || this.corpse === false ) {
 				let itemList = this.lootGenerate( this.loot, this.level );
 				if( this.inventory ) {
@@ -608,7 +610,7 @@ class Entity {
 		}
 		tell(mSubject,this,' ',mVerb,item.useVerb,' ',mObject,item);
 		item.inSlot = slot;
-		if( item.triggerOnUse || (item.triggerOnUseIfHelp && item.effect && (item.effect.isHelp || item.effect.isPlayerOnly)) ) {
+		if( item.triggerWhenDon() ) {
 			item.trigger(this,this,Command.USE);
 		}
 		return item;
@@ -627,7 +629,7 @@ class Entity {
 		if( this.inventory.includes(item) ) {
 			debugger;
 		}
-		item = item._addToList(this.inventory);
+		item = item._addToListAndBunch(this.inventory);
 		item.x = this.x;
 		item.y = this.y;
 		if( x!==item.x || y!==item.y ) debugger;
@@ -860,8 +862,11 @@ class Entity {
 
 		if( this.brainMaster && !this.brainPath ) { debugger; }
 
-		let DEBUG_ALL_USE_PATH = true;
-		if( this.brainPath || DEBUG_ALL_USE_PATH ) {
+		let DEBUG_ALL_USE_PATH = false; //true;
+		let closeEnoughToUsePath = this.area.pathClip.contains(this.x,this.y);
+		let attitudeNeedsPathing = this.attitude == Attitude.HUNT;
+
+		if( (this.brainPath || attitudeNeedsPathing || DEBUG_ALL_USE_PATH) && closeEnoughToUsePath ) {
 
 			let stallSet = (toggle) => {
 				if( !toggle ) {
@@ -933,6 +938,7 @@ class Entity {
 	}
 
 	thinkStumbleF(chanceToNotMove=50) {
+		this.brainState.activity = 'Stumbling around in confusion.';
 		let wait = Math.chance(chanceToNotMove);
 		this.record('stumble'+(wait?' wait':''), true);
 		if( wait ) return Command.WAIT;
@@ -944,6 +950,7 @@ class Entity {
 		let returnChance = this.beyondTether() ? tetherMagnet : ( !this.isAtTarget(this.origin) ? tetherMagnet/2 : 0 );
 		if( Math.chance(returnChance) ) {
 			this.record('wander return', true);
+			this.brainState.activity = 'Returning to a preferred place.';
 			let c = this.thinkApproachTarget(this.origin);
 			if( c ) return c;
 		}
@@ -951,8 +958,10 @@ class Entity {
 	}
 
 	thinkWanderF(avgPause=7,avgWanderDist=8,tetherMagnet=70) {
+		this.brainState.activity = 'Wandering.';
 		if( this.commandLast == Command.WAIT && Math.chance(100/avgPause) ) {
 			this.record('wander pause', true);
+			this.brainState.activity = 'Pausing for a bit during a wander.';
 			return Command.WAIT;
 		}
 
@@ -1000,6 +1009,7 @@ class Entity {
 		let pack = this.findAliveOthersNearby().isMyPack().isMySuperior().farFromMe(howClose).byDistanceFromMe().first;
 		if( pack ) {
 			this.record('back to superior pack member',true);
+			this.brainState.activity = 'Grouping up with the pack.';
 			return this.thinkApproachTarget(pack);
 		}
 		return false;
@@ -1025,18 +1035,23 @@ class Entity {
 				// Go towards your master or pack animal if possible.
 				let dirToFriend = this.dirToEntityPredictable(friend);
 				if( dirToFriend == dirAwayPerfect || dirToFriend == dirLeft || dirToFriend == dirRight ) {
+					this.brainState.activity = 'Fleeing '+enemy.name+' towards friends.';
+
 					return this.thinkApproachTarget(friend);
 				}
 			}
 		}
+		this.brainState.activity = 'Fleeing '+enemy.name+'.';
 
 		return this.thinkRetreat(dirAwayPerfect);
 	}
 
 	thinkAwaitF() {
 		if( !this.beyondOrigin() ) {
+			this.brainState.activity = 'Patiently waiting.';
 			return Command.WAIT;
 		}
+		this.brainState.activity = 'Returning to a preferred place.';
 		let c = this.thinkApproachTarget(this.origin);
 		return c || Command.WAIT;
 	}
@@ -1047,11 +1062,13 @@ class Entity {
 			let c = this.thinkApproachTarget(this.origin);
 			if( c ) return c;
 		}
+		this.brainState.activity = 'Worshipping.';
 		return Command.PRAY;
 	}
 
 	thinkStayNear(friend) {
 		this.record('stay near '+friend.id,true);
+		this.brainState.activity = 'Staying near '+friend.name+'.';
 		return this.thinkApproachTarget(friend);
 	}
 
@@ -1071,10 +1088,12 @@ class Entity {
 		if( foodList.first && this.isAtTarget(foodList.first) ) {
 			this.record('found some food. eating.',true);
 			this.commandItem = foodList.first;
+			this.brainState.activity = 'Eating '+foodList.first.name+'.';
 			return Command.EAT;
 		}
 		if( foodList.first ) {
 			this.record('head towards food',true);
+			this.brainState.activity = 'Heading towards '+foodList.first+'.';
 			return this.thinkApproachTarget(foodList.first);
 		}
 		return false;
@@ -1090,6 +1109,7 @@ class Entity {
 		if( desire ) {
 			if( this.isAtTarget(desire) ) {
 				this.commandItem = desire;
+				this.brainState.activity = 'Arriving at '+desire.name+'.';
 				return desire.isEdible || desire.isCorpse ? Command.EAT : Command.PICKUP;
 			}
 			if( !this.destination || !desire.isAtTarget(this.destination) ) {
@@ -1106,6 +1126,7 @@ class Entity {
 					id: 'DEST.'+desire.name+'.'+GetTimeBasedUid()
 				};
 			}
+			this.brainState.activity = 'Heading towards '+desire.name+'.';
 			return this.thinkApproachTarget(this.destination);
 		}
 		return false;
@@ -1124,6 +1145,7 @@ class Entity {
 			if( temp !== Command.ATTACK || !this.nearTarget(target,1) ) {
 				return temp;
 			}
+			this.brainState.activity = 'Attacking '+target.name+'.';
 			return Direction.toCommand(this.dirToEntityPredictable(target));
 		}
 	}
@@ -1234,12 +1256,16 @@ class Entity {
 					return Command.LOSETURN;
 				}
 
+				this.brainState = {
+				};
+
 				// Hard to say whether this should take priority over .busy, but it is pretty important.
 				if( this.bumpCount >=2 ) {
 					return this.thinkBumpF();
 				}
 
 				if( this.busy ) {
+					this.brainState.activity = 'Busy '+this.busy.description;
 					return Command.BUSY;
 				}
 
@@ -1261,6 +1287,11 @@ class Entity {
 				if( this.lastEnemyPosition && this.lastEnemyPosition.entity.isDead() ) {
 					delete this.lastEnemyPosition;
 				}
+				if( !this.lastEnemyPosition && this.justAttackedByEntity ) {
+					let e = this.justAttackedByEntity;
+					this.lastEnemyPosition = { isLEP: true, x:e.x, y:e.y, area:e.map.area, entity: e, name: e.name };
+				}
+				delete this.justAttackedByEntity
 
 				let wasSmell = false;
 				if( !enemyList.count && this.senseSmell ) {
@@ -1276,6 +1307,7 @@ class Entity {
 						enemyList.prepend(smelled);
 						wasSmell = true;
 						this.lastScent = smelled;
+						this.brainState.activity = 'Sniffing the trail of '+smelled.name+'.';
 					}
 				}
 				// Keep pursuing and check the lep if it is closer than any other enemy. My target might have
@@ -1290,9 +1322,11 @@ class Entity {
 						this.record('prepend lep',true);
 						enemyList.prepend(lep);
 						wasLEP = true;
+						this.brainState.activity = 'Heading towards known position of '+lep.name+'.';
 					}
 					else {
 						this.record('on the lep!',true);
+						this.brainState.activity = 'Arriving at last known position of '+lep.name+'.';
 					}
 				}
 
@@ -1302,6 +1336,7 @@ class Entity {
 					if( gate ) {
 						this.record('enter gate',true);
 						this.commandItem = gate;
+						this.brainState.activity = 'Entering a '+game.name+'.';
 						return Command.ENTERGATE;
 					}
 				}
@@ -1312,20 +1347,24 @@ class Entity {
 				let hurt = this.healthPercent()<30;
 
 				if( this.attitude == Attitude.CONFUSED ) {
+					this.brainState.activity = 'Confused!';
 					return this.thinkStumbleF(50);
 				}
 
 				if( this.attitude == Attitude.PANICKED ) {
 					let dirAway = (this.dirToEntityNatural(theEnemy)+4)%Direction.count;
+					this.brainState.activity = 'Panicked!';
 					return this.thinkRetreat(dirAway,true) || this.thinkWanderF();
 				}
 
 				if( this.attitude == Attitude.ENRAGED ) {
 					console.assert( theEnemy.id !== this.id );
+					this.brainState.activity = 'Enraged!';
 					if( theEnemy && !wasSmell && !wasLEP ) {
 						theEnemy = enemyList.shuffle().byDistanceFromMe();
 					}
 					if( theEnemy ) {
+						this.brainState.activity = 'Enraged at '+theEnemy.name+'.';
 						let c = this.thinkAttack(enemyList,personalEnemy);
 						return c || this.thinkApproachTarget(enemyList.first);
 					}
@@ -1379,12 +1418,14 @@ class Entity {
 							}
 							Anim.Above(this.id,this,StickerList.alert.img,0);
 						}
+						this.brainState.activity = 'Turning aggressive towards '+theEnemy.name+'.';
 						this.changeAttitude( Attitude.AGGRESSIVE );
 					}
 				}
 
 				if( !theEnemy && this.attitude!==this.attitudeBase ) {
 					// Revert to preferred behavior once enemies are gone.
+					this.brainState.activity = 'Reverting to '+this.attitudeBase+'.';
 					this.changeAttitude( this.attitudeBase );
 				}
 
@@ -1413,6 +1454,7 @@ class Entity {
 				}
 
 				if( pauseBesideUser ) {
+					this.brainState.activity = 'Waiting to talk.';
 					return Command.WAIT;
 				} 
 
@@ -1439,6 +1481,7 @@ class Entity {
 					if( !this.destination ) {
 						this.destination = this.pickRandomDestination();
 					}
+					this.brainState.activity = 'Hunting '+this.destination.name+'.';
 					if( this.isAtTarget(this.destination) ) {
 						debugger;
 						delete this.destination;
@@ -1463,6 +1506,7 @@ class Entity {
 				if( wasLEP ) {
 					// We do get to simply approach the last known positon of our enemy, and see
 					// what we can see from there. But of course we can't attack it.
+					this.brainState.activity = 'Heading towards '+theEnemy.name+'.';					
 					let c = this.thinkApproachTarget(theEnemy);
 					return c || this.thinkWanderF();
 				}
@@ -1497,6 +1541,7 @@ class Entity {
 					return this.thinkWanderF();
 				}
 
+				this.brainState.activity = this.brainState.activity || 'Approaching '+theEnemy.name+'.';
 				let c = this.thinkApproachTarget(theEnemy);
 				if( c ) {
 					return c;
@@ -1665,6 +1710,7 @@ class Entity {
 			this.personalEnemy = attacker.id;
 			// Stop remembering anyone else, because normally you target the lep if it is closer. So for example
 			// the player could distract an enemy from their dog by attacking.
+			this.justAttackedByEntity = attacker;
 			delete this.lastEnemyPosition;
 		}
 
@@ -2123,7 +2169,7 @@ class Entity {
 	lootGenerate( lootSpec, level ) {
 		let itemList = [];
 		new Picker(level).pickLoot( lootSpec, item=>{
-			itemList.push(item);
+			item._addToListAndBunch(itemList);
 		});
 		return itemList;
 	}
@@ -2242,15 +2288,15 @@ class Entity {
 		}
 		if( !this.able('gaze') ) {
 			tell(mSubject,this,' ',mVerb,'attempt',' to gaze, but can not!');
-			status = 'gazeUnable';
+			result.status = 'gazeUnable';
 			return result;
 		}
 		this.shieldBonus = 'stand';
 		item.x = this.x;
 		item.y = this.y;
-		let shatter = Math.chance(33);
+		let shatter = Math.chance(Rules.chanceToShatter(item.level));
 		tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'.'+(shatter ? ' It shatters!' : ''));
-		let result = item.trigger(this,this,Command.Gaze);
+		result = item.trigger(this,this,Command.Gaze);
 		if( shatter ) {
 			item.destroy();
 			result.shatter = true;
@@ -2472,6 +2518,7 @@ class Entity {
 				if( food.isCorpse ) {
 					let corpse = food.usedToBe;
 					let inventory = new Finder(corpse.inventory).isReal().all || [];
+					qqq
 					inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
 					this.inventoryTake( inventory, corpse, false );
 					food.destroy();
@@ -2882,7 +2929,7 @@ class Entity {
 				let f = this.findAliveOthersNearby().filter( e=>e.id==this.lastBumpedId );
 				if( f.first && this.isUser() && f.first.isMerchant ) {
 					this.guiViewCreator = { entity: f.first };
-					success = true;
+					result.success = true;
 				}
 				return result;
 			}

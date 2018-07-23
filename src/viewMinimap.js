@@ -76,6 +76,11 @@ class ViewMiniMap extends ViewObserver {
 	}
 
 	render() {
+
+		let large = function(mult) {
+			return Math.clamp(this.scale,2,5)*mult;
+		}.bind(this);
+
 		let observer = this.observer;
 		let site = observer.area.getSiteAt(observer.x,observer.y);
 		$(this.captionDivId).show().html(
@@ -103,12 +108,12 @@ class ViewMiniMap extends ViewObserver {
 
 		observer.entityList.forEach( entity => {
 			if( entity.brainMaster && entity.brainMaster.id==observer.id ) {
-				drawLate.push({entity:StickerList.friendProxy,x:entity.x,y:entity.y,scale:this.scale*2,ctr:true});
+				drawLate.push({entity:StickerList.friendProxy,x:entity.x,y:entity.y,scale:large(2),ctr:true});
 				return;
 			}
 			if( observer.senseLiving && entity.isLiving ) {
 				let sticker = observer.isMyEnemy(entity) ? StickerList.enemyProxy : StickerList.friendProxy;
-				drawLate.push({entity:sticker,x:entity.x,y:entity.y,scale:this.scale});
+				drawLate.push({entity:sticker,x:entity.x,y:entity.y,scale:large(1.5)});
 				return;
 			}
 		});
@@ -121,14 +126,14 @@ class ViewMiniMap extends ViewObserver {
 			for( let x=0 ; x<this.xLen ; ++x ) {
 				let mPos = y*this.xLen+x;
 				if( x==observer.x && y==observer.y ) {
-					drawLate.push({entity:StickerList.observerProxy,x:x,y:y,scale:this.scale*4,ctr:true});
+					drawLate.push({entity:StickerList.observerProxy,x:x,y:y,scale:large(4),ctr:true});
 					continue;
 				}
 				let entity = mapMemory[mPos];
 				if( entity ) {
 					if( entity.gateDir !== undefined && (!entity.invisible || observer.senseInvisible) ) {
 						let gate = StickerList[entity.gateDir>0 ? 'gateDownProxy' : 'gateProxy'];
-						drawLate.push({entity:gate,x:x,y:y,scale:this.scale*3,ctr:true});
+						drawLate.push({entity:gate,x:x,y:y,scale:large(3),ctr:true});
 						continue;
 					}
 				}
@@ -150,7 +155,7 @@ class ViewMiniMap extends ViewObserver {
 		}
 		while( drawLate.length ) {
 			let d = drawLate.pop();
-			this.draw(c1,d.entity,d.x,d.y,Math.min(d.scale,20),d.ctr);
+			this.draw(c1,d.entity,d.x,d.y,d.scale,d.ctr);
 		}
 	}
 }

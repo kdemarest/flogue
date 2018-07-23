@@ -108,12 +108,15 @@ class Item {
 			// Weapon secondary effect, and that of armor, happens in carefully managed circumstances.
 			if( this.isWeapon || this.isArmor || this.isShield ) {
 				if( this.chanceOfEffect === undefined ) {
-					this.chanceOfEffect = this.isWeapon ? Rules.WEAPON_EFFECT_CHANCE_TO_FIRE : Rules.ARMOR_EFFECT_CHANCE_TO_FIRE;
+					this.chanceOfEffect = this.isWeapon ? Rules.weaponChanceToFire(this.level) : Rules.ARMOR_EFFECT_CHANCE_TO_FIRE;
+					if( this.triggerWhenDon() ) {
+						this.chanceOfEffect = 100;
+					}
 				}
 				
 				if( Rules.WEAPON_EFFECT_OP_ALWAYS.includes(this.effect.op) ) {
 					this.chanceOfEffect = 100;
-					this.effect.value = Math.max(1,Math.floor(this.effect.value*Rules.WEAPON_EFFECT_DAMAGE_PERCENT/100));
+					this.effect.value = Rules.weaponEffectDamage(this.level,this.effect.value);
 					this.damage -= this.plus;
 					this.effect.value += this.plus;
 					console.assert( !isNaN(this.effect.value) );
@@ -180,13 +183,14 @@ class Item {
 			return '<img class="spellRecharge" src="'+IMG_BASE+StickerList['slice'+pct].img+'">';
 		}
 		function getBonus() {
-			if( !item.effect ) {
+			if( !item.effect || item.isSpell || item.isPotion || item.isGem ) {
 				return '';
 			}
+			let chance = (item.chanceOfEffect||100) !== 100 ? (item.chanceOfEffect||100)+'%' : '';
 			if( item.effect.op=='damage' ) {
-				return Math.floor(item.effect.value)+' '+item.effect.damageType;
+				return String.combine(' ',chance,Math.floor(item.effect.value),item.effect.damageType);
 			}
-			return item.effect.name + (item.effect.permuteName ? '**' : '');
+			return String.combine(' ',chance,item.effect.name + (item.effect.permuteName ? '**' : ''));
 		}
 
 		let item = this;
@@ -204,7 +208,7 @@ class Item {
 			damage: 		item.isWeapon ? item.damage+(item.ammoSpec?'+ammo':'') : (item.effect && item.effect.op=='damage' ? Math.max(1,Math.floor(item.effect.value)) : ''),
 			damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
 			quick: 			['(clumsy)','','(quick)'][item.getQuick()],
-			reach: 			item.reach > 1 ? ' '+item.reach+' away' : '',
+			reach: 			item.reach > 1 ? 'reach '+item.reach : '',
 			sneak: 			(owner.sneakAttackMult||2)<=2 ? '' : 'Sneak x'+Math.floor(owner.sneakAttackMult),
 			armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUT,item.isShield) : '',
 			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? '('+item.effect.effectShape+')' : '',
@@ -226,7 +230,9 @@ class Item {
 		console.assert(target && target.area);
 		return this.isAt(target.x,target.y,target.area);
 	}
-
+	triggerWhenDon() {
+		return this.triggerOnUse || (this.triggerOnUseIfHelp && this.effect && (this.effect.isHelp || this.effect.isPlayerOnly));
+	}
 	hasRecharge() {
 		return !!this.rechargeTime;
 	}
@@ -464,6 +470,9 @@ class Item {
 		if( Gab && hadNoOwner ) {
 			Gab.entityPostProcess(this);
 		}
+		// We wait this long to determine theme because, before this, we don't know
+		// what area we're in and hence no depth or whether we're core. But MOST gates already
+		// know what their theme is, from the plan.
 		if( this.gateDir !== undefined && !this.themeId ) {
 			this.themeId = Plan.determineTheme(this.area.depth+this.gateDir,this.gateDir ? this.area.isCore : false);
 		}
@@ -497,7 +506,7 @@ class Item {
 		item.giveToSingly(this.owner,this.x,this.y);
 		return item;
 	}
-	_addToList(list) {
+	_addToListAndBunch(list) {
 		// list could be an inventory, or a map's itemList
 		//if( this.typeId == 'ammo' ) debugger;
 		let bunchId = this.bunchId();
@@ -520,7 +529,7 @@ class Item {
 		if( this.inventory.includes(item) ) {
 			debugger;
 		}
-		item = item._addToList(this.inventory);
+		item = item._addToListAndBunch(this.inventory);
 		item.x = this.x;
 		item.y = this.y;
 		if( x!==item.x || y!==item.y ) debugger;

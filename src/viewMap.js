@@ -414,16 +414,22 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible)
 				//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 			}
 			if( doTint ) {
-				sprite.filters = this.desaturateFilterArray;
+				if( !config.saveBattery ) {
+					sprite.filters = this.desaturateFilterArray;
+				}
 				sprite.tint = 0xAAAAFF;
 			}
 			else
 			if( doGrey ) {
-				sprite.filters = this.desaturateFilterArray;
+				if( !config.saveBattery ) {
+					sprite.filters = this.desaturateFilterArray;
+				}
 				sprite.tint = 0xFFFFFF;
 			}
 			else {
-				sprite.filters = this.resetFilterArray;
+				if( !config.saveBattery ) {
+					sprite.filters = this.resetFilterArray;
+				}
 				sprite.tint = 0xFFFFFF;
 			}
 		}
