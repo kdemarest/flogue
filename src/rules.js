@@ -20,14 +20,16 @@ let Rules = new class {
 		this.DAMAGE_BONUS_FOR_RECHARGE		= 0.05;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
 		this.RANGED_WEAPON_DEFAULT_RANGE 	= 7;
 		this.DEFAULT_EFFECT_DURATION 		= 10;
-		this.PRICE_MULT_BUY  				= 10;
-		this.PRICE_MULT_SELL 				= 3;
+		this.PRICE_MULT_BASE  				= 10;
+		this.PRICE_MULT_SELL 				= 0.3;
 		this.MONSTER_DARK_VISION 			= 6;
 		this.MONSTER_SIGHT_DISTANCE 		= 6;
 		this.SPELL_RECHARGE_TIME 			= 10;
 		this.EXTRA_RECHARGE_AT_DEPTH_MAX    = 10;
 		this.COMBAT_EXPIRATION 				= 6;
 		this.removeScentOfTheDead 			= false;
+		this.armorVisualScale 				= 200;
+		this.blockVisualScale 				= 100;
 
 	}
 	 playerHealth(playerLevel) {
@@ -97,6 +99,46 @@ let Rules = new class {
 	}
 	chanceToShatter(level) {
 		return 33;
+	}
+	pickRechargeTime(level,item) {
+		let xRecharge = xCalc(item,item,'xRecharge','*');
+		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/Rules.DEPTH_SPAN)*Rules.EXTRA_RECHARGE_AT_DEPTH_MAX);
+	}
+
+	pickArmorRating(level,item) {
+		let am = xCalc(item,item,'xArmor','*');
+		console.assert(am>=0 && level>=0);
+
+		// Intentionally leave out the effect level, because that is due to the effect.
+		//let avgLevel = (level+this.depth)/2;
+		let baseArmor = Math.floor( Rules.playerArmor(level /*avgLevel*/)*am * 100000 ) / 100000;
+		if( isNaN(baseArmor) ) debugger;
+		return baseArmor;
+	}
+	pickBlockChance(level,item) {
+		let mc = xCalc(item, item,'xBlock','+');
+		mc += Math.floor( (0.20 * (level/Rules.DEPTH_SPAN))*100 ) / 100;
+		mc = Math.clamp(mc,0,0.8);	// I'm arbitrarily capping miss chance at 80%
+		console.assert(mc>=0 && level>=0);
+		return mc;
+	}
+	pickCoinCount(level) {
+		let base = Math.max(1,level);
+		return base;
+	}
+	priceBase(item) {
+		if( item.coinCount ) {
+			return item.coinCount;
+		}
+		let base = item.level*2 + 1;
+		let xPrice = xCalc(item,item,'xPrice','*');
+		return Math.max(1,Math.floor(base * xPrice * Rules.PRICE_MULT_BASE));
+	}
+	priceWhen(buySell,item) {
+		if( item.coinCount ) {
+			return item.coinCount;
+		}
+		return Math.max(1,Math.floor(item.price * (buySell=='sell' ? Rules.PRICE_MULT_SELL : 1)));
 	}
 
 }();

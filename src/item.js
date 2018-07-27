@@ -28,14 +28,17 @@ class Item {
 
 		let levelRaw = xCalc(this,presets,'level','+');
 		let noLevelVariance = xCalc(this,presets,'noLevelVariance','+');
-		let level = (noLevelVariance || (levelRaw >= depth)) ? levelRaw : Math.randInt(levelRaw,depth+1);
+		let n = depth - levelRaw;
+		let level = (noLevelVariance || (levelRaw >= depth)) ? levelRaw : levelRaw + (n-Math.floor(Math.sqrt(Math.randInt(0,(n+1)*(n+1)))));
 
 		// Notice that the init overrides the typeId. This is to make sure that the inject doesn't do so with a dot 
 		// phrase, like weapon.dagger (which it definitely might!)
+		let hitsToKillItem = 4;
 		let inits = {
 			depth: depth,
 			level: level,
 			levelRaw: levelRaw,
+			healthMax: Rules.monsterHealth(level,hitsToKillItem),
 			typeId: itemType.typeId,
 			id: GetUniqueEntityId(itemType.typeId,depth),
 			inVoid: true,
@@ -50,20 +53,40 @@ class Item {
 		Object.merge(this,this.material,ignoreFields);
 		Object.merge(this,this.variety,ignoreFields);
 
+		this.health = this.healthMax;
+
 		let adjust = function(cap,levelGoal,calc,mult=1) {
+			function getPlus(value) {
+				return Math.floor(value*mult)-Math.floor(valueRaw*mult);
+			}
 			let reps = 100;
 			let valueRaw = calc(levelRaw);
 			let value = valueRaw;
 			let plus = 0;
 			// To make sure we arrive at the exact same plus the exact same way every time
 			let level = levelRaw;
-			while( level <= levelGoal && plus < cap && --reps ) {
-				value = calc(level);
-				plus = Math.max(0,(value-valueRaw)*mult);
+			while( level < levelGoal && plus < cap && --reps ) {
 				level++;
+				value = calc(level);
+				plus = getPlus(value);
+				if( plus > cap ) {
+					--level;
+					value = calc(level);
+					plus = getPlus(value);
+					break;
+				}
 			}
 			console.assert( reps > 0 );
-			this.plus = Math.round(plus);
+			reps = 100;
+			let decs = 0;
+			while( level > levelRaw && --reps && getPlus(calc(level)) == getPlus(calc(level-1)) ) {
+				--level;
+				++decs;
+				value = calc(level);
+			}
+			console.assert( getPlus(calc(level)) == plus );
+			this.level = level;
+			this.plus = plus;
 			return value;
 		}.bind(this);
 
@@ -71,23 +94,21 @@ class Item {
 
 		let picker = new Picker(this.depth);
 		if( this.rechargeTime ) {
-			this.rechargeTime 	= adjust( 10, level, level=>picker.pickRechargeTime(level,this) );
+			this.rechargeTime 	= adjust( 10, level, level=>Rules.pickRechargeTime(level,this) );
 		}
 		if( this.isArmor ) {
-			this.armor 			= adjust(  5, level, level=>picker.pickArmorRating(level,this) );
+			this.armor 			= adjust(  5, level, level=>Rules.pickArmorRating(level,this), Rules.armorVisualScale );
 		}
 		if( this.isShield ) {
 			this.blocks 		= xCalc(this,this,'block','&');
-			this.armor 			= adjust(  5, level, level=>picker.pickArmorRating(level,this) );
-		}
-		if( this.isShield ) {
-			this.blockChance 	= adjust( 15, level, level=>picker.pickBlockChance(level,this), 100 );
+			this.blockChance 	= adjust( 15, level, level=>Rules.pickBlockChance(level,this), Rules.blockVisualScale );
+			this.armor 			= adjust(  5, level, level=>Rules.pickArmorRating(level,this), Rules.armorVisualScale );
 		}
 		if( this.isWeapon ) {
 			this.damage 		= adjust(  5, level, level=>Rules.pickDamage(level,this.rechargeTime,this) );
 		}
 		if( this.isCoin ) {
-			this.coinCount  	= picker.pickCoinCount();
+			this.coinCount  	= Rules.pickCoinCount(depth);
 		}
 
 		if( this.effect && this.effect.isInert ) {
@@ -156,6 +177,8 @@ class Item {
 			this.existenceLeft = this.existenceTime;
 		}
 
+		this.price = Rules.priceBase(this);
+
 		// Always do this last so that as many member vars as possible will be available to the namePattern!
 		//if( this.namePattern.indexOf('arrow') >=0 ) debugger;
 		this.name = (this.name || String.tokenReplace(this.namePattern,this));
@@ -210,15 +233,15 @@ class Item {
 			quick: 			['(clumsy)','','(quick)'][item.getQuick()],
 			reach: 			item.reach > 1 ? 'reach '+item.reach : '',
 			sneak: 			(owner.sneakAttackMult||2)<=2 ? '' : 'Sneak x'+Math.floor(owner.sneakAttackMult),
-			armor: 			item.isArmor || item.isShield ? item.calcReduction(DamageType.CUT,item.isShield) : '',
+			armor: 			item.isArmor || item.isShield ? Math.floor(item.calcReduction(DamageType.CUT,item.isShield)*Rules.armorVisualScale) : '',
 			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? '('+item.effect.effectShape+')' : '',
 			bonus: 			getBonus(),
 			effect: 		item.effect ? (item.effect.name || item.effect.typeId) : '',
 			permutation: 	item.effect && item.effect.permuteName ? item.effect.permuteName : '',
 			recharge: 		item.rechargeTime ? Math.floor(item.rechargeTime) : '',
 			rechargeLeft: 	rechargeImg(),
-			price: 			new Picker(item.area.depth).pickPrice(buySell,item),
-			priceWithCommas: (new Picker(item.area.depth).pickPrice(buySell,item)).toLocaleString(),
+			price: 			Rules.priceWhen(buySell,item),
+			priceWithCommas: Rules.priceWhen(buySell,item).toLocaleString(),
 		};
 	}
 
@@ -331,6 +354,26 @@ class Item {
 				result.success = true;
 			}
 		}
+		/**
+		Materials are essentially:
+					CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", WATER: "water", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
+					cut 	stab 	bite 	claw 	bash 	chop	burn 	freeze 	water 	shock 	corrode poison 	smite 	rot
+		metal 		-		-		-		-		-		-		-		-		-		-		+ 		-		+		-
+		leather 	+ 		-		-		+ 		-		+		-		-		-		-		+ 		-		-		+
+		wood 		-		-		1/2		-		1/2 	+		-		-		-		-		-		-		-		+	
+		liquid 		-		-		-		-		-		-		1/2		+		-		1/2		1/2		-		-		-
+		glass 		-		-		-		-		+		-		-		-		-		-		+		-		-		-
+		paper 		+		-		+		-		-		+		+		-		+		-		+		-		-		-
+		ivory 		-		-		-		-		+		+		-		-		-		-		-		-		-		-
+		**/
+
+		if( amount > this.health ) {
+			this.health -= amount;
+			this.destroy('damage');
+			result.damage = amount;
+			result.damageType = damageType;
+			result.success = true;
+		}
 		return result;
 	}
 	calcBlockChance(blockType,isRanged,shieldBonus) {
@@ -401,10 +444,11 @@ class Item {
 		}
 		return result;
 	}
-	giveTo(entity,x,y,assureWalkableDrop) {
+	giveTo(entity,x,y) {
+		let assureWalkableDrop = entity.isMap && this.isTreasure && !this.allowPlacementOnBlocking;
 
-		if( assureWalkableDrop && entity.isMap ) {
-			[x,y] = entity.spiralFind( x, y, (x,y,tile) => tile && tile.mayWalk && !tile.isProblem );
+		if( assureWalkableDrop ) {
+			[x,y] = entity.spiralFind( x, y, (x,y,tile) => entity.getWalkable(x,y) === Problem.NONE );
 		}
 
 		let hadNoOwner = !this.owner;

@@ -13,8 +13,13 @@ function pWalk(map) {
 			return Problem.NONE;
 		}
 
-		let itemBlocking = map.findChosenItemAt( x, y, item => !item.mayWalk );
-		if( itemBlocking ) return Problem.WALL;
+		let itemBlocking = map.findChosenItemAt( x, y, item => !item.mayWalk && !item.isRemovable );
+		if( itemBlocking ) {
+			if( itemBlocking.isDoor ) {
+				return itemBlocking;	// isProblem will get called upon this.
+			}
+			return Problem.WALL;
+		}
 		let tile = map.tileTypeGet(x,y);
 		if( !tile.mayWalk ) return Problem.WALL;
 		let itemProblem = map.findChosenItemAt( x, y, item => item.isProblem );
@@ -84,17 +89,17 @@ class Path {
 			let g = this.gridGet(x,y);
 			let c = ( g==Problem.WALL ? '#' : ( g==Problem.NONE ? '.' : stepChar.charAt(g) ) );
 			if( x==this.sx && y==this.sy ) {
-				c = 'S';
+				c = '+';
 			}
 			else
-			if( x==this.ex && y==this.ey ) {
-				c = 'E';
-			}
-			else
-			if( x==this.exActual && y==this.eyActual ) {
-				c = 'e';
-			}
-			else
+//			if( x==this.ex && y==this.ey ) {
+//				c = '=';
+//			}
+//			else
+//			if( x==this.exActual && y==this.eyActual ) {
+//				c = '-';
+//			}
+//			else
 			if( pathSummary[y*this.xLen+x] ) {
 				c = pathSummary[y*this.xLen+x];
 			}
@@ -133,6 +138,15 @@ class Path {
 	}
 	findPath(entity,sx,sy,ex,ey,closeEnough=0,onStep) {
 
+		this.status = {};
+
+		if( this.testFn(ex,ey) == Problem.WALL || this.testFn(ex,ey) == Problem.DEATH ) {
+			this.status.illegalEnd = this.testFn(ex,ey) == Problem.WALL ? 'wall' : 'death';
+			this.success = false;
+			return this.success;
+		}
+
+
 		let self = this;
 
 		this.sx = sx;
@@ -143,8 +157,6 @@ class Path {
 		this.eyActual = ey;
 		this.grid = [];
 		this.path = [];
-
-		this.status = {};
 
 		// We capture the actual min/maxes because the MasonMap is allowed to go into negatives.
 		let xMin 	= this.map.xMin;
@@ -169,6 +181,9 @@ class Path {
 				if( typeof v !== 'number' ) {
 					v = v.isProblem(entity,v);
 					console.assert( (v>=0 && v<=1) || v == Problem.DEATH );
+					if( entity.immortal && v == Problem.DEATH ) {
+						v = Problem.NEARDEATH;
+					}
 				}
 				if( v >= 1 ) {
 					return false;	// 1 or greater means you have already visited, or tht you will die/hit wall entering this square

@@ -583,6 +583,16 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		});
 	}
 
+	// Most effects do not have any impact on tiles.
+	if( target.isTileType && !effect.doesTiles ) {
+		return makeResult('does not affect tiles',false);
+	}
+
+	// Most effects do not have any impact on items.
+	if( target.isItemType && !effect.doesItems ) {
+		return makeResult('does not affect items',false);
+	}
+
 	//Some effects will NOT start unless their requirements are met. EG, no invis if you're already invis.
 	if( effect.requires && !effect.requires(target,effect) ) {
 		tell(mSubject,item || source || 'that',' has no effect on ',mObject,target);
@@ -960,7 +970,7 @@ DeedManager.addHandler(DeedOp.SUMMON,function() {
 		this.item.giveTo(entity,entity.x,entity.y);
 	}
 	this.onEnd = () => {
-		this.item.giveTo(entity.map,entity.x,entity.y,true);
+		this.item.giveTo(entity.map,entity.x,entity.y);
 		Anim.FloatUp(entity.id,entity,StickerList.ePoof.img);
 		entity.vanish = true;
 	}

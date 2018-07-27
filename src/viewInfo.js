@@ -152,7 +152,7 @@ class ViewInfo extends ViewObserver {
 			let weaponEx = weapon.explain();
 			let ammo = entity.getFirstItemInSlot(Slot.AMMO);
 			let ex = ammo ? ammo.explain() : false;
-			s += tRow( "Armor:", entity.calcReduction(DamageType.CUT,false)+"M, "+entity.calcReduction(DamageType.STAB,true)+"R" );
+			s += tRow( "Armor:", Math.floor(entity.calcReduction(DamageType.CUT,false)*Rules.armorVisualScale)+"M, "+Math.floor(entity.calcReduction(DamageType.STAB,true)*Rules.armorVisualScale)+"R" );
 			s += tRow( "Shield:", 
 				(entity.shieldBonus?'<span class="shieldBonus">':'')+
 				Math.floor(bc*100)+'%'+

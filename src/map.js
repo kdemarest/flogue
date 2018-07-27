@@ -386,6 +386,11 @@ class Map extends SimpleMap {
 		this.walkLookup[lPos] = testFn(x,y);
 	}
 
+	getWalkable(x,y) {
+		let lPos = y*this.xLen+x;
+		return this.walkLookup[lPos];
+	}
+
 	// This is used in testing, but not the main game.
 	setObstacle(x,y,prob) {
 		let lPos = y*this.xLen+x;

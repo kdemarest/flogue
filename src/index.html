@@ -129,7 +129,7 @@ function main() {
 	let imageRepo;
 
 	User.tickWorld = function(timePasses) {
-		Tester.act(timePasses);
+		Tester.tick(timePasses);
 		this.entity.area.tick( timePasses ? this.entity.speed : false );
 		if( timePasses && this.priorArea && this.priorArea.id !== this.entity.area.id ) {
 			this.priorArea.tick( this.entity.speed );

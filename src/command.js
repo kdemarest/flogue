@@ -44,7 +44,7 @@ CmdTable[Command.INVENTORY] = {
 		let item = cmd.commandItem;
 		let command = commandForItem(item) || cmd.command;
 		if( command == Command.USE ) {
-			cmd.retain = command;
+			cmd.retain = Command.INVENTORY; //command;
 		}
 
 		return command;
@@ -243,7 +243,7 @@ class UserCommandHandler {
 			let effect = item.effect;
 			let mayTargetPos = (
 				item.mayTargetPosition || 
-				(effect && effect.mayTargetPosition) || 
+				(effect && effect.doesTiles) || 
 				(effect && effect.effectShape!==undefined && effect.effectShape!==EffectShape.SINGLE)
 			);
 			if( !target.count ) {

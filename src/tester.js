@@ -2,14 +2,14 @@ Module.add('tester',function() {
 
 
 class TestHelper {
-	constructor(area) {
-		this.area = area;
+	constructor(user) {
+		this.user = user;
+	}
+	get area() {
+		return this.user.entity.area;
 	}
 	get player() {
-		return this.area.entityList.find( e=>e.userControllingMe );
-	}
-	get commandsComplete() {
-		return this.player.testerCommands.length <= 0;
+		return this.user.entity;
 	}
 	item(fn) {
 		return new Finder(this.area.map.itemList).filter(fn);
@@ -81,20 +81,7 @@ class Test {
 		this.valueRestore = [];
 		this.result = null;
 		this.area = null;
-		this.simTimeStart = 0;
-	}
-	getCommand(entity) {
-		if( Tester.interactiveDebugging && entity.command && entity.command !== Command.NONE && entity.command !== Command.WAIT ) {
-			// Leave the command alone - let the user do whatever
-			return;
-		}
-		if( entity.testerCommands && entity.testerCommands.length ) {
-			entity.command = entity.testerCommands.shift();
-		}
-	}
-	finish() {
-		this.logFn(this.result);
-		this.valueRestore.forEach( restoreFn => restoreFn() );
+		this.simTimeLimit = false;
 	}
 	alter(target,overlay0,overlay1) {
 		let oldValue = JSON.stringify(target);
@@ -104,13 +91,34 @@ class Test {
 			Object.assign(target,JSON.parse(oldValue));
 		});
 	}
-	act() {
-		if( this.result.resolved || !this.onAct ) {
+	finish() {
+		this.logFn(this.result);
+		this.valueRestore.forEach( restoreFn => restoreFn() );
+	}
+	think(entity) {
+		if( this.result.resolved || !this.onThink ) {
 			return;
 		}
-		this.onAct( this.result.helper );
+		if( Tester.interactive && entity.command && entity.command !== Command.NONE && entity.command !== Command.WAIT ) {
+			// Leave the command alone - let the user do whatever
+			return;
+		}
+		return this.onThink( entity, this.result.helper );
+	}
+	tick() {
+		if( this.result.resolved || !this.onTick ) {
+			return;
+		}
+		this.onTick( this.result.helper );
 	}
 	check() {
+		if( this.simTimeLimit !== false && Time.simTime >= this.simTimeLimit ) {
+			debugger;
+			this.result.expect( false, "Test exceeded time limit." );
+			this.result.resolved = true;
+			this.finish();
+			return true;
+		}
 		if( !this.result.resolved ) {
 			this.onCheck( this.result, this.result.helper );
 		}
@@ -122,19 +130,19 @@ class Test {
 
 	start(testId,user) {
 		let test = TestList[testId];
-		console.assert( test.themeId );
-		this.alter( ThemeList[test.themeId],   test.theme, { injectList: test.injectList } );
+		if( test.themeId !== false ) {
+			this.alter( ThemeList[test.themeId],   test.theme, { injectList: test.injectList } );
+		}
 		this.alter( MonsterTypeList['player'], test.player );
 		this.onCheck = test.check.bind(test);
-		this.onAct   = test.act ? test.act.bind(test) : null;
+		this.onTick   = test.tick ? test.tick.bind(test) : null;
+		this.onThink = test.think ? test.think.bind(test) : null;
+		this.simTimeLimit = test.timeLimit === false ? false : (Time.simTime + (test.timeLimit || 100));
 
 		try {
 			user.startGame( test.depth, test.themeId, 'player', test.player.atMarker, () => {
 				this.area = user.entity.area;
-				this.result = new TestResult(testId,new TestHelper(this.area));
-				user.entity.testControl = (entity) => {
-					return this.getCommand(entity);
-				};
+				this.result = new TestResult(testId,new TestHelper(user));
 				user.tickWorld(false);
 				this.started = true;
 			});
@@ -169,11 +177,17 @@ class TestManager {
 		this.haltOnError = true;
 		this.interactive = true;
 	}
-	act(timePasses) {
+	think(entity) {
 		if( !this.test ) {
 			return;
 		}
-		return this.test.act(...arguments);
+		return this.test.think(...arguments);
+	}
+	tick(timePasses) {
+		if( !this.test ) {
+			return;
+		}
+		return this.test.tick(...arguments);
 	}
 	check() {
 		if( !this.test ) {
@@ -263,15 +277,13 @@ class ViewTester {
 			if( Tester.test || Tester.roster.length ) {
 				return;
 			}
-			Tester.haltOnError = $('#testHaltOnError').is(":checked");
-			Tester.interactive = $('#testInteractive').is(":checked");
 			Tester.run( testId, getPlayerFn().area, outputDivId );
 		}.bind(this);
 
 		let outputDivId = '#testResults';
 		$(divId).empty();
 
-		let input = $('<input id="testId" type="text" value="makeAllItems">')
+		let input = $('<input id="testId" type="text" value="playFullGame">')
 			.appendTo(divId)
 			.keydown( function(e) {
 				e.stopPropagation();
@@ -296,9 +308,15 @@ class ViewTester {
 				run( null );
 			});
 		$('<input id="testHaltOnError" type="checkbox" '+(Tester.haltOnError?'checked':'')+'> Halt on error?</input><br>')
-			.appendTo(divId);
+			.appendTo(divId)
+			.change( function() {
+				Tester.haltOnError = $(this).is(":checked");
+			});
 		$('<input id="testInteractive" type="checkbox" '+(Tester.interactive?'checked':'')+'> Interactive debug?</input><br>')
-			.appendTo(divId);
+			.appendTo(divId)
+			.change( function() {
+				Tester.interactive = $(this).is(":checked");
+			});
 		let testStatus = $('<pre id="testStatus"></pre>')
 			.appendTo(divId);
 		$('<a><span id="testFail">0</span> fail</a>')

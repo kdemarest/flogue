@@ -73,9 +73,10 @@ function launcher(obj) {
 }
 
 let BrainMindset = {
-	sentient: 		'alert,fleeWhenHurt,lep,pack',
+	hero: 			'pickup,open,don,fleeWhenHurt',
+	sentient: 		'alert,fleeWhenHurt,lep,pack,don',
 	simpleton: 		'lep',
-	demon: 			'lep',
+	demon: 			'lep,don',
 	canine:   		'alert,fleeWhenHurt,lep,pack',
 	animal:   		'fleeWhenHurt,lep',
 	animalHunter:   'lep',
@@ -87,6 +88,7 @@ let BrainMindset = {
 }
 
 let BrainAbility = {
+	hero: 			'cast,gaze,open,pickup,shoot,talk,throw',
 	sentient: 		'cast,gaze,open,pickup,shoot,talk,throw',
 	simpleton: 		'gaze,open,pickup,shoot,talk,throw',
 	demon: 			'cast,gaze,open,pickup,shoot,talk,throw',
@@ -125,9 +127,9 @@ const MonsterTypeList = {
 
 // GOOD TEAM
 	"player": {
-		core: [ '@', 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'mon/human/solarPriest.png', 'he' ],
+		core: [ '@', 0, '3:10', 'good', 'cut', 'hero', 'humanoid', 'mon/human/solarPriest.png', 'he' ],
 		attitude: Attitude.CALM,
-		brainMindset: 'pickup',
+		brainMindset: 'pickup,open',
 		control: Control.USER,
 		experience: 0,
 		inventoryLoot: '',

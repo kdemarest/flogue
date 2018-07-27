@@ -418,10 +418,10 @@ const ArmorList = Fab.add( '', {
 	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95, ingredientId: 'iron ingot', img: 'item/armour/scale_mail1.png' },
 	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00, ingredientId: 'iron ingot', img: 'item/armour/chain_mail1.png' },
 	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00, ingredientId: 'iron ingot', img: 'item/armour/plate_mail1.png' },
-	"trollHideArmor": { level: 20, rarity: 1.0, xArmor: 1.20, ingredientId: 'troll hide', img: 'item/armour/troll_leather_armour.png' },
-	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.30, ingredientId: 'chitin', img: 'item/armour/chain_mail2.png' },
+	"trollHideArmor": { level: 20, rarity: 1.0, xArmor: 1.00, ingredientId: 'troll hide', img: 'item/armour/troll_leather_armour.png' },
+	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00, ingredientId: 'chitin', img: 'item/armour/chain_mail2.png' },
 	"chitin": 		{ level: 35, rarity: 1.0, xArmor: 1.00, ingredientId: 'chitin', img: 'item/armour/elven_leather_armor.png' },
-	"dwarven": 		{ level: 45, rarity: 1.0, xArmor: 1.10, ingredientId: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
+	"dwarven": 		{ level: 45, rarity: 1.0, xArmor: 1.00, ingredientId: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
 	"ice": 			{ level: 50, rarity: 1.0, xArmor: 1.00, ingredientId: 'ice block', img: 'item/armour/elven_ringmail.png' },
 	"glass": 		{ level: 55, rarity: 1.0, xArmor: 1.00, ingredientId: 'malachite', img: 'item/armour/crystal_plate_mail.png' },
 	"demon": 		{ level: 65, rarity: 1.0, xArmor: 1.00, ingredientId: 'malachite', img: 'item/armour/orcish_platemail.png' },
@@ -450,10 +450,10 @@ const HelmList = Fab.add( '', {
 	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95 },
 	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00 },
 	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00 },
-	"trollHideArmor": 	{ level: 20, rarity: 1.0, xArmor: 1.20 },
+	"trollHideArmor": 	{ level: 20, rarity: 1.0, xArmor: 1.00 },
 	"chitin": 		{ level: 25, rarity: 1.0, xArmor: 1.00 },
-	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.30 },
-	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.10 },
+	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00 },
+	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.00 },
 	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00 },
 	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00 },
 	"demon": 		{ level: 50, rarity: 1.0, xArmor: 1.00 },
@@ -470,10 +470,10 @@ const BracerList = Fab.add( '', {
 	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95 },
 	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00 },
 	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00 },
-	"trollHideArmor": 	{ level: 20, rarity: 1.0, xArmor: 1.20 },
+	"trollHideArmor": 	{ level: 20, rarity: 1.0, xArmor: 1.00 },
 	"chitin": 		{ level: 25, rarity: 1.0, xArmor: 1.00 },
-	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.30 },
-	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.10 },
+	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00 },
+	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.00 },
 	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00 },
 	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00 },
 	"demon": 		{ level: 50, rarity: 1.0, xArmor: 1.00 },
@@ -490,10 +490,10 @@ const BootList = Fab.add( '', {
 	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95 },
 	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00 },
 	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00 },
-	"trollHideArmor": 	{ level: 20, rarity: 1.0, xArmor: 1.20 },
+	"trollHideArmor": 	{ level: 20, rarity: 1.0, xArmor: 1.00 },
 	"chitin": 		{ level: 25, rarity: 1.0, xArmor: 1.00 },
-	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.30 },
-	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.10 },
+	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00 },
+	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.00 },
 	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00 },
 	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00 },
 	"demon": 		{ level: 50, rarity: 1.0, xArmor: 1.00 },
@@ -637,7 +637,7 @@ const StuffList = Fab.add( '', {
 	"spinneret": 		{ rarity: 0.4, },
 	"chitin": 			{ rarity: 1.0, },
 	"poisonGland": 		{ rarity: 0.4, },
-	"snailTrail": 		{ rarity: 0.4, isLiquid: true, alpha: 0.3, isTreasure: false, img: 'item/stuff/snailSlime.png', isSnailSlime: true, mayPickup: false, existenceTime: 10 },
+	"snailTrail": 		{ rarity: 0.0, isLiquid: true, alpha: 0.3, isTreasure: false, img: 'item/stuff/snailSlime.png', isSnailSlime: true, mayPickup: false, existenceTime: 10 },
 	"snailSlime": 		{ rarity: 0.4, isLiquid: true, alpha: 0.5, img: 'item/stuff/snailSlime.png', isSnailSlime: true, },
 	"redOozeSlime": 	{ rarity: 0.2, isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/stuff/redSlime.png' },
 	"poisonSlime": 		{ rarity: 0.2, isLiquid: true, alpha: 0.5, scale: 0.25, mayThrow: true, mayTargetPosition: true, img: 'item/stuff/poisonSlime.png',
@@ -755,8 +755,8 @@ const NulImg = { img: '' };
 const ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
 // GATEWAYS
-	"stairsDown": { symbol: '>', name: "stairs down", 	isGate: 1, gateDir: 1, gateInverse: 'stairsUp', mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
-	"stairsUp":   { symbol: '<', name: "stairs up", 	isGate: 1, gateDir: -1, gateInverse: 'stairsDown', mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
+	"stairsDown": { symbol: '>', name: "stairs down", 	isGate: 1, gateDir: 1, gateInverse: 'stairsUp', isStairsDown: true, mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
+	"stairsUp":   { symbol: '<', name: "stairs up", 	isGate: 1, gateDir: -1, gateInverse: 'stairsDown', isStairsUp: true, mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
 	"gateway":    { symbol: 'O', name: "gateway", 		isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
 	"portal":     { symbol: '0', name: "portal", 		isGate: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
 	"pitDrop": 	  { symbol: SYM, name: "pit drop", 		isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
@@ -917,6 +917,7 @@ const ItemTypeList = {
 		glow: true,
 		hasInventory: true,
 		isDecor: true,
+		isSolarAltar: true,
 		rechargeTime: 12,
 		healMultiplier: 3.0,
 		sign: "This golden alter to Solarus glows faintly.\nTouch it to heal or level up.",
@@ -1127,7 +1128,7 @@ const ItemTypeList = {
 		slot: 			Slot.HEAD,
 		isHelm: 		true,
 		isArmor: 		true,
-		xArmor: 0.15,
+		xArmor: 		0.15,
 		useVerb: 		'wear',
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
@@ -1350,6 +1351,7 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 			px: toucher.x,
 			py: toucher.y,
 			area:self.area,
+			altarId: self.id,
 			name: 'death return'
 		};
 		toucher.onDeath = entity => {
@@ -1459,6 +1461,21 @@ ItemTypeList.door.onBump = function(entity,self) {
 	}
 	debugger;
 }
+
+ItemTypeList.door.isProblem = function(entity,self) {
+	if( entity.isOoze || entity.isNonCorporeal ) {
+		return Problem.NONE;
+	}
+	if( !entity.mindset('open') ) {
+		return Problem.DEATH;
+	}
+	if( self.keyId === false || self.keyId === undefined ) {
+		return Problem.DOOR;
+	}
+	let key = entity.inventory.find( item => item.keyId === self.keyId );
+	return key ? Problem.DOOR : Problem.DEATH;
+}
+
 
 ItemTypeList.chest.onBump = function(toucher,self) {
 	if( self.state == 'shut' ) {

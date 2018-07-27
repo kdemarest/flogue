@@ -276,6 +276,43 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		return preferList;
 	}
 
+	function conditionSites(siteList) {
+		// Plug the siteIds into the map, and also figure out a reasonable centroid that is ALSO in the list of marks (and therefore reachable)
+		siteList.forEach( site => {
+			site.isSite = true;
+			site.area = area;
+			site.name = site.name || site.id;
+			if( !site.marks ) {
+				debugger;
+				return;
+			}
+			let xSum = 0;
+			let ySum = 0;
+			Array.traversePairs( site.marks, (x,y) => {
+				xSum += x;
+				ySum += y;
+//				if( area.map.siteLookup[y*area.map.xLen+x] ) {
+//					debugger;
+//				}
+				area.map.siteLookup[y*area.map.xLen+x] = site;
+			});
+			let xCtr = xSum / (site.marks.length/2);
+			let yCtr = ySum / (site.marks.length/2);
+			let xClosest = site.marks[0+0];
+			let yClosest = site.marks[0+1];
+			Array.traversePairs( site.marks, (x,y) => {
+				let cDist = Distance.get(xClosest-xCtr,yClosest-yCtr);
+				let tDist = Distance.get(x-xCtr,y-yCtr);
+				if( tDist < cDist ) {
+					xClosest=x;
+					yClosest=y;
+				}
+			});
+			site.x = xClosest;
+			site.y = yClosest;
+		});
+	}
+
 	let injectList = [];
 	area.siteList = [];
 
@@ -293,14 +330,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	area.entityList = [];
 	let isFriendFn = (e) => !isEnemyFn(e);
 
-	area.siteList.forEach( site => {
-		if( !site.marks ) return;
-		for( let i=0 ; i<site.marks.length ; i+=2 ) {
-			let x = site.marks[i+0];
-			let y = site.marks[i+1];
-			area.map.siteLookup[y*area.map.xLen+x] = site;
-		}
-	});
+	conditionSites(area.siteList);
 
 	extractEntitiesFromMap(area.map,injectList,makeMonster,makeItem);
 
@@ -556,6 +586,9 @@ class Area {
 		this.animationManager.delay.reset();
 		tick( speed, this.map, this.entityList, this.thinkClip );
 		this.castLight();
+	}
+	findSite(me) {
+		return new Finder(this.siteList,me);
 	}
 	pickSite(fn) {
 		let list = this.siteList.filter( fn );

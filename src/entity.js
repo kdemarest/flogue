@@ -137,7 +137,7 @@ class Entity {
 
 		let hadNoArea = !this.area;
 		this.setPosition(x,y,area);
-		let c = this.findFirstCollider(this.travelMode,x,y,this);
+		let c = !area.map.inBounds(x,y) ? true : this.findFirstCollider(this.travelMode,x,y,this);
 		if( c ) {
 			[x,y] = this.map.spiralFind( this.x, this.y, (x,y,tile) => {
 				return tile && tile.mayWalk && !tile.isProblem && !this.findFirstCollider(this.travelMode,x,y,this);
@@ -623,6 +623,7 @@ class Entity {
 		if( item.inSlot ) {
 			this.doff(item);
 		}
+		this.inventoryLastChange = Time.simTime;
 		Array.filterInPlace(this.inventory, i => i.id!=item.id );
 	}
 	_itemTake(item,x,y) {
@@ -630,6 +631,7 @@ class Entity {
 			debugger;
 		}
 		item = item._addToListAndBunch(this.inventory);
+		this.inventoryLastChange = Time.simTime;
 		item.x = this.x;
 		item.y = this.y;
 		if( x!==item.x || y!==item.y ) debugger;
@@ -753,7 +755,8 @@ class Entity {
 		}
 
 		let self = this;
-		let curTile = this.map.tileTypeGet(this.inVoid ? x : this.x,this.inVoid ? y : this.y);
+
+		let curTile = this.map.tileTypeGet(x,y);
 		console.assert(curTile);
 
 		let mayTravel = 'may'+String.capitalize(travelMode || "walk");
@@ -768,6 +771,8 @@ class Entity {
 		}
 
 		// Am I colliding with an item?
+		// Also, if I am colliding with a door, that is considered a collission but I will
+		// bump the door automatically.
 		let g = this.map.findItemAt(x,y).filter( collide );
 		if( g.count ) {
 			return g.first;
@@ -849,14 +854,16 @@ class Entity {
 			let gate = new Finder(this.map.itemList,this).filter( gate=>gate.toAreaId==target.area.id ).closestToMe().first;
 			if( !gate ) {
 				// This only happens if the target teleported and left no gate behind.
-				return Command.WAIT;
+				// We will fall through and let this path fail.
 			}
-			x = gate.x;
-			y = gate.y;
-			target = gate;
-			if( this.isAtTarget(gate) ) {
-				this.commandItem = gate;
-				return Command.ENTERGATE;
+			else {
+				x = gate.x;
+				y = gate.y;
+				target = gate;
+				if( this.isAtTarget(gate) ) {
+					this.commandItem = gate;
+					return Command.ENTERGATE;
+				}
 			}
 		}
 
@@ -877,25 +884,31 @@ class Entity {
 				this.stall = (this.stall || 0) + 1;
 				this.record('stall='+this.stall,true);
 				if( target && target.isDestination && this.stall > (target.stallLimit || 5) ) {
+					if( target.onStall ) {
+						target.onStall(this,target);
+					}
 					if( this.path && this.path.leadsTo(target.x,target.y) ) {
 						delete this.path;
 					}
+					this.stall = 0;
 					delete this.destination;
 				}
 				if( target && target.isLEP && this.stall > (target.stallLimit || 5) ) {
 					if( this.path && this.path.leadsTo(target.x,target.y) ) {
 						delete this.path;
 					}
+					this.stall = 0;
 					delete this.lastEnemyPosition;
 				}
 			}
 
 			if( !this.path || !this.path.success || !this.path.leadsTo(x,y) || !this.path.stillOnIt(this.x,this.y) ) {
 				// How hard should we try to get certain places? 
-				let distLimit = 10 + this.getDistance(x,y)*3;
+				let distLimit = Math.max( this.pathDistLimit||0, 10 + this.getDistance(x,y)*3 );
 
 				this.path = new Path(this.map,distLimit,false,10);
-				let closeEnough = !target ? 0 : (target.isLEP ? 0 : (target.isMonsterType ? 1 : (target.isDestination ? target.closeEnough||0 : 0)));
+				let closeEnough = !target ? 0 : (target.closeEnough !== undefined ? target.closeEnough : (target.isLEP ? 0 : (target.isMonsterType ? 1 : 0)));
+
 				let success = this.path.findPath(this,this.x,this.y,x,y,closeEnough);
 				if( success ) {
 					this.record( "Pathing "+this.path.path[0]+" from ("+this.x+','+this.y+') to reach ('+x+','+y+')', target ? target.id : '' );
@@ -921,6 +934,10 @@ class Entity {
 
 		// Can I walk towards them?
 		let dir = this.dirToPosNatural(x,y);
+		if( dir === false ) {
+			// Weird, I am already upon my target. Possibly I should step away from them.
+			dir = Math.randInt(0,8);
+		}
 		// Aggressive creatures will completely avoid problems if 1/3 health, otherwide they
 		// avoid problems most of the time, but eventually will give in and take the risk.
 		let problemTolerance = this.problemTolerance();
@@ -1104,6 +1121,9 @@ class Entity {
 		let greedDist = this.greedDist || (this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE);
 		let desire = new Finder(this.map.itemList,this).nearMe(greedDist).filter( item=>item[greedField] ).byDistanceFromMe().first;
 		if( !desire && this.destination && this.destination.isGreed ) {
+			if( this.destination.onCancel ) {
+				this.destination.onCancel();
+			}
 			delete this.destination;
 		}
 		if( desire ) {
@@ -1116,6 +1136,7 @@ class Entity {
 				this.destination = {
 					isDestination: true,
 					isGreed: true,
+					entity: desire,
 					area: desire.area,
 					x: desire.x,
 					y: desire.y,
@@ -1137,6 +1158,9 @@ class Entity {
 		let distLimit = weapon.reach || weapon.range || 1;
 		let inRange = new Finder(enemyList.all,this).nearMe(distLimit).shotClear();
 		if( !weapon.rechargeLeft && inRange.count ) {
+			if( weapon.isWeapon && !weapon.inSlot ) {
+				this.actUse(weapon);
+			}
 			let target = personalEnemy && inRange.includesId(personalEnemy.id) ? personalEnemy : inRange.first;	// For now, always just attack closest.
 			this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
 			this.commandItem = weapon;
@@ -1150,6 +1174,26 @@ class Entity {
 		}
 	}
 
+	thinkDon(target) {
+		if( !this.inventoryLastChange || Time.elapsed(this.inventoryLastChange) <= 1 ) {
+			let best = {};
+			let picker = new Picker(this.area.depth);
+			this.inventory.forEach( item => {
+				if( !item.slot || item.isWeapon ) {
+					return;
+				}
+				let price = item.price;
+				if( !best[item.slot] || price > best[item.slot].price ) {
+					best[item.slot] = item;
+				}
+			});
+			Object.each( best, (item,slotId) => {
+				if( !item.inSlot ) {
+					this.actUse(item);	// This makes sure any others are taken off.
+				}
+			});
+		}
+	}
 
 	beyondTether() {
 		return this.tether && !this.nearTarget(this.origin,this.tether);
@@ -1220,20 +1264,22 @@ class Entity {
 			return;
 		}
 
-		if( this.testControl ) {
-			this.testControl(this);
-			if( this.command ) {
-				return;
-			}
+		this.brainState = {
+		};
+
+		if( Tester.think(this) === true ) {
+			return;
 		}
 
 		let useAiTemporarily = false;
 		if( this.control == Control.USER ) {
-			// Placeholder, since the onPlayerKey already sets the command for us
+			if( this.playerUseAi ) {
+				useAiTemporarily = true;
+			}
 			if( this.stun || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
 				useAiTemporarily = true;
 			}
-			if( !useAiTemporarily && this.command == Command.WAIT ) {
+			if( !useAiTemporarily && this.command == Command.EXECUTE ) {
 				let gate = this.map.findItemAt(this.x,this.y).filter( item => item.gateDir!==undefined ).first;
 				if( gate ) {
 					this.command = Command.ENTERGATE;
@@ -1256,9 +1302,6 @@ class Entity {
 					return Command.LOSETURN;
 				}
 
-				this.brainState = {
-				};
-
 				// Hard to say whether this should take priority over .busy, but it is pretty important.
 				if( this.bumpCount >=2 ) {
 					return this.thinkBumpF();
@@ -1280,6 +1323,10 @@ class Entity {
 					if( this.inCombat() ) {
 						this.inCombatTimer = Time.simTime
 					}
+				}
+
+				if( this.mindset('don') ) {
+					this.thinkDon(enemyList.first);
 				}
 
 				if( this.mindset('lep') && enemyList.count ) {
@@ -1320,7 +1367,10 @@ class Entity {
 				if( lep ) {
 					this.record('me=('+this.x+','+this.y+') lep=('+lep.x+','+lep.y+')',true);
 				}
-				if( lep && !wasSmell && (!enemyList.count || this.getDistance(lep.x,lep.y) < this.getDistance(enemyList.first.x,enemyList.first.y)) ) {
+				// So, this used to check if lep distance was closer than enemy distance, but the problem is that the distance check was NOT
+				// for a pathfind, but rather a direct shot. So the distance would swap rapidly between the two.
+				// //(!enemyList.count || this.getDistance(lep.x,lep.y) < this.getDistance(enemyList.first.x,enemyList.first.y)) ) {
+				if( lep && !this.noLEP && !wasSmell && !enemyList.count ) { 
 					if( !this.isAtTarget(lep) ) {
 						this.record('prepend lep',true);
 						enemyList.prepend(lep);
@@ -1485,18 +1535,18 @@ class Entity {
 						this.destination = this.pickRandomDestination();
 					}
 					this.brainState.activity = 'Hunting '+this.destination.name+'.';
-					if( this.isAtTarget(this.destination) ) {
-						debugger;
-						delete this.destination;
-						return Command.WAIT;
-					}
+				}
+
+				// Go to any destination I might have.
+				if( !enemyList.count && !wasLEP && this.destination ) {
 					let c = this.thinkApproachTarget(this.destination);
 					if( c ) return c;
 				}
 
-				// If no enemy to attack or flee, then just wander around 
+				// If no enemy to attack or flee, and no destination, just wander around 
 				if( !enemyList.count ) {
-					this.record('no enemy',true);
+					this.record('no enemy, wandering',true);
+					this.brainState.activity = 'No enemy. Wandering.';					
 					return this.thinkWanderF();
 				}
 
@@ -1612,7 +1662,7 @@ class Entity {
 		let f = new Finder(this.inventory).filter( item=>item.inSlot && item[is] );
 		let armor = 0;
 		f.forEach( item => { armor += item.calcReduction(damageType); });
-		return Math.floor(armor);
+		return armor;
 	}
 
 	changeAttitude(newAttitude) {
@@ -1686,7 +1736,7 @@ class Entity {
 
 		// Deal with armor first...
 		let isRanged = !isOngoing && ( (attacker && this.getDistance(attacker.x,attacker.y) > 1) || (item && item.rangeDuration) );
-		let reduction = this.calcReduction(damageType,isRanged)/100;
+		let reduction = this.calcReduction(damageType,isRanged);
 
 		reduction = Math.min(0.8,reduction);
 		amount = Math.max(1,Math.floor(amount*(1.00-reduction)));
@@ -1715,6 +1765,7 @@ class Entity {
 			// the player could distract an enemy from their dog by attacking.
 			this.justAttackedByEntity = attacker;
 			delete this.lastEnemyPosition;
+			this.inCombatTimer = Time.simTime;
 		}
 
 		if( amount > 0 ) {
@@ -1840,7 +1891,6 @@ class Entity {
 			this.takenDamage = amount;
 			this.takenDamageType = damageType;
 			this.takenDamageFromId = attacker ? attacker.id : 'nobody';
-			this.inCombatTimer = Time.simTime;
 		}
 
 		if( !isOngoing && amount > 0 ) {
@@ -2073,7 +2123,7 @@ class Entity {
 		if( weapon.mayShoot ) {
 			return Command.SHOOT;
 		}
-		if( !weapon.range ) {
+		if( !weapon.range || weapon.inSlot == Slot.WEAPON ) {
 			return Command.ATTACK;
 		}
 		debugger;
@@ -2101,6 +2151,8 @@ class Entity {
 			if( item.mayGaze && !this.able('gaze') ) return false;
 			return true;
 		});
+		// Don't use non-quick weapons on quick targets
+		weaponList.filter( item => (target.dodge>=0 ? target.dodge : 0) <= item.getQuick() );
 		// We now have a roster of all possible weapons. Eliminate those that are not charged.
 		weaponList.filter( item => !item.rechargeLeft );
 		// Any finally, do not bother using weapons that can not harm the target.
@@ -2458,7 +2510,7 @@ class Entity {
 		console.assert( item.owner && !item.owner.isMap );
 		console.assert( seller.id == item.owner.id );
 		console.assert( new Finder(seller.inventory).isId(item.id).count );
-		let price = new Picker(this.area.depth).pickPrice('buy',item);
+		let price = Rules.priceWhen('buy',item);
 		result.price = price;
 		if( price <= this.coinCount ) {
 			this.coinCount = (this.coinCount||0) - price;
@@ -2487,7 +2539,7 @@ class Entity {
 			result.isPlot = item.isPlot;
 			return result;
 		}
-		let price = new Picker(this.area.depth).pickPrice('sell',item);
+		let price = Rules.priceWhen('sell',item);
 		console.assert( new Finder(this.inventory).isId(item.id).count );
 		buyer.coinCount = (buyer.coinCount||0) - price;
 		this.coinCount = (this.coinCount||0) + price;
@@ -2692,11 +2744,10 @@ class Entity {
 
 		let dest = this.destination;
 		if( dest ) {
-			let dist = this.getDistance(dest.x,dest.y);
-			if( dist <= (dest.closeEnough||3) ) {
+			if( this.nearTarget(dest,dest.closeEnough) ) {
 				this.record( "ARRIVED", true );
-				if( dest.onReached ) {
-					dest.onReached.call(this);
+				if( dest.onArrive ) {
+					dest.onArrive(this.dest);
 				}
 				delete this.destination;
 			}

@@ -147,7 +147,6 @@ class Picker {
 			for( let vIndex=0 ; vIndex < varietyArray.length ; ++vIndex ) {
 				let v = varietyArray[vIndex];
 				let vi = v.typeId || 'nothing';
-				if( window._hackHalt && vi == 'solarBlade' ) debugger;
 				if( filter.killId[vi] ) {
 					if( logging ) console.log( item.typeId+' killed for being '+vi );
 					continue;
@@ -348,42 +347,6 @@ class Picker {
 			return table[0];
 		}();
 		return choice;
-	}
-
-	pickRechargeTime(level,item) {
-		let xRecharge = xCalc(item,item,'xRecharge','*');
-		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/Rules.DEPTH_SPAN)*Rules.EXTRA_RECHARGE_AT_DEPTH_MAX);
-	}
-
-	pickArmorRating(level,item) {
-		let am = xCalc(item,item,'xArmor','*');
-		console.assert(am>=0 && level>=0);
-
-		// Intentionally leave out the effect level, because that is due to the effect.
-		let avgLevel = (level+this.depth)/2;
-		let baseArmor = Rules.playerArmor(avgLevel)*am;
-		if( isNaN(baseArmor) ) debugger;
-		return Math.floor(baseArmor*100);
-	}
-	pickBlockChance(level,item) {
-		let mc = xCalc(item, item,'xBlock','+');
-		mc += Math.floor( (0.20 * (level/Rules.DEPTH_SPAN))*100 ) / 100;
-		mc = Math.clamp(mc,0,0.8);	// I'm arbitrarily capping miss chance at 80%
-		console.assert(mc>=0 && level>=0);
-		return mc;
-	}
-	pickCoinCount() {
-		let base = Math.max(1,this.depth);
-		return base;
-	}
-	pickPrice(buySell,item) {
-		if( item.coinCount ) {
-			return item.coinCount;
-		}
-		let base = item.level + item.depth + 1;
-		let xPrice = xCalc(item,item,'xPrice','*');
-		let mult = (buySell=='buy' ? Rules.PRICE_MULT_BUY : Rules.PRICE_MULT_SELL);
-		return Math.max(1,Math.floor(base * xPrice * mult));
 	}
 
 	// picks it, but doesn't give it to anyone.

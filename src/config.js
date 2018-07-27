@@ -97,16 +97,20 @@ ConfigList.ken = () => {
 		palette: 		{ basis: 'jaggedCave' },
 //		palette: 		{ basis: 'stoneRooms' },
 //		rREQUIRED: 		'4x kenPlace',
-		placeDensity: 	0.10,
-		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
-		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
-		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
-		rEPIC: 			'graveYard',
+		placeDensity: 	0.00001,
+//		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
+//		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
+//		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+//		rEPIC: 			'graveYard',
 		monsters: 		['isEthermite'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		enemyDensity:  	0.05,
+		itemDensity:    0.00001,
+		enemyDensity:  	0.000005,
 		friendDensity: 	0.00001,
 	}
+
+	MonsterTypeList.player.inventoryLoot.push('100x potion, 100x helm, 100x armor, 100x spell, 100x gem, 100x weapon, 100x cloak, 100x gloves, 100x ammo, 100x shield, 100x ring');
+//	MonsterTypeList.player.inventoryLoot.push('100x helm.dwarven');
 
 //	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, 4x potion.eXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
 //	MonsterTypeList.player.inventoryLoot.push('2x potion.eHealing, 4x potion, 2x gem, 2x spell, 1x potion.eSeeInvisible, 3x weapon, weapon.sling, 30x ammo.slingStone, weapon.bow, 40x ammo.arrow, spell.eFreeze');
@@ -119,8 +123,8 @@ ConfigList.ken = () => {
 	});
 
 	return {
-//		startingDepth: 16,
-//		themeId: 'dwarfTown', //kenTheme'
+		startingDepth: 15,
+		themeId: 'kenTheme',
 //		saveBattery: true
 	}
 }

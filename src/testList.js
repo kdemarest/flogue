@@ -46,7 +46,8 @@ ThemeList.testSimpleRoom = {
 	itemDensity: 	0.0,
 }
 
-
+// CheckPlayerBasics
+// Player can get instantiated, with a bunch of items in inventory and wielded.
 TestList.checkPlayerBasics = {
 	themeId: 'testSimpleRoom',
 	depth: 1,
@@ -54,7 +55,6 @@ TestList.checkPlayerBasics = {
 		atMarker: 'center',
 		inventoryLoot: '1x potion.eHealing',
 		inventoryWear:  'armor, helm, bracers, boots',
-		testerCommands: [Command.NONE],
 	},
 	check(result,helper) {
 		result.expect( 'helper.player.naturalMeleeWeapon', 'player has a natural melee weapon' );
@@ -66,20 +66,29 @@ TestList.checkPlayerBasics = {
 		result.resolved = true;
 	}
 }
+
+// SimpleCombat
+// Combat with a simple goblin.
 TestList.simpleCombat = {
 	themeId: 'testSimpleRoom',
 	depth: 0,
 	player: {
 		atMarker: 'center',
 		inventoryWear: 'weapon.sword.eInert',
-		testerCommands: [Command.E,Command.E,Command.E,Command.E],
+		commandList: [Command.E,Command.E,Command.E,Command.E],
 	},
 	injectList: [
 		{ typeFilter: 'goblin', atMarker: 'dist1', testNeverFlee: true }
 	],
+	think(entity,helper) {
+		if( entity.isUser() ) {
+			entity.command = entity.commandList.shift();
+			return true;
+		}
+	},
 	check(result,helper) {
 		result.expectAt( 0, '!helper.get("goblin").isDead()', 'goblin starts alive' );
-		if( !helper.commandsComplete ) {
+		if( helper.player.commandList.length > 0 ) {
 			return;
 		}
 		result.expect( '!helper.get("goblin")', 'goblin is dead' );
@@ -87,14 +96,17 @@ TestList.simpleCombat = {
 	}
 }
 
+// MakeAllMonsters
+// Each monster is made one by one and then immediately destroyed.
 TestList.makeAllMonsters = {
 	themeId: 'testSimpleRoom',
 	depth: 0,
+	timeLimit: 300,
 	player: {
 		atMarker: 'center',
 		immortal: true,
 	},
-	act(helper) {
+	tick(helper) {
 		if( helper.lastEntity ) {
 			helper.lastEntity.vanish = true;
 		}
@@ -118,14 +130,17 @@ TestList.makeAllMonsters = {
 	}
 }
 
+// MakeAllItems
+// Every possible item is made, except permutations.
 TestList.makeAllItems = {
 	themeId: 'testSimpleRoom',
 	depth: 0,
+	timeLimit: 3300+4000,
 	player: {
 		atMarker: 'topLeft',
 		immortal: true,
 	},
-	act(helper) {
+	tick(helper) {
 		if( helper.lastItem ) {
 			helper.lastItem.destroy();
 		}
@@ -157,9 +172,6 @@ TestList.makeAllItems = {
 		}
 		let typeFilter = helper.itemList.shift();
 		helper.findTypeFilter = typeFilter;
-		if( typeFilter == 'weapon.solarBlade.solarium.eInert' ) {
-			window._hackHalt = true; //debugger;
-		}
 		let type = helper.picker.pickItem( typeFilter );
 		let item = helper.area.map.itemCreateByType(3,2,type,type.presets,null);
 		helper.lastItem = item;
@@ -169,6 +181,120 @@ TestList.makeAllItems = {
 		if( result.resolved ) return;
 		helper.typeId = helper.findTypeFilter.split('.')[0];
 		result.expect( 'helper.get(helper.typeId)', helper.findTypeFilter+' created' );
+	}
+}
+
+// PlayFullGame
+// Run the plauer through the entire game.
+TestList.playFullGame = {
+	themeId: false,
+	depth: 0,
+	timeLimit: 1000*200,
+	player: {
+		immortal: true,
+	},
+	findNextDestination(entity,helper,onArrive,onStall) {
+		let altar = entity.map.findItem(entity).filter( item => !helper.visited[item.id] && item.isSolarAltar );
+		let items = entity.map.findItem(entity).filter( item => !helper.visited[item.id] && (item.isTreasure || (item.isContainer && item.inventory.length)) ).byDistanceFromMe();
+		let sites = entity.area.findSite(entity).filter( site => !helper.visited[site.id] ).byDistanceFromMe();
+		let stairs = entity.map.findItem(entity).filter( item => !helper.visited[item.id] && item.isStairsDown ).byDistanceFromMe();
+		let closer = items.first;
+		if( items.first && sites.first && entity.getDistance(sites.first.x,sites.first.y) < entity.getDistance(items.first.x,items.first.y) ) {
+			closer = sites.first;
+		}
+		let desire = altar.first || closer || stairs.first;
+		console.assert(desire);
+		console.assert(desire.area);
+		let closeEnough = desire.isSite || desire.isSolarAltar || (desire.isContainer && !desire.isRemovable) ? 1 : 0;
+		entity.testerThing = desire;
+		entity.testerStallCount = 0;
+		entity.destination = {
+			isDestination: true,
+			isTesterDirected: true,
+			thing: desire,
+			area: desire.area,
+			x: desire.x,
+			y: desire.y,
+			site: null,
+			closeEnough: closeEnough,
+			stallLimit: 4,
+			name: desire.name,
+			id: 'DEST.'+desire.name+'.'+GetTimeBasedUid(),
+			onArrive: onArrive,
+			onStall: onStall
+		};
+	},
+	think(entity,helper) {
+		if( !entity.isUser() ) {
+			return;
+		}
+		let map = entity.map;
+		entity.brainPath = true;
+		entity.playerUseAi = true;
+		entity.healthMax = 10000;
+		entity.strictAmmo = false;
+		entity.brainIgnoreClearShots = 30;	// So that we don't spam a spell of confusion endlessly at range...
+		entity.health = entity.healthMax;
+		entity.pathDistLimit = map.xLen * map.yLen;
+		if( entity.inCombat() ) {
+			return;
+		}
+//		let enemyList = entity.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
+//		if( enemyList.count ) {
+//			return;
+//		}
+		if( entity.destination ) {
+			return;
+		}
+		if( helper.arrived ) {
+			let thing = entity.testerThing;
+			// Is it a chest? Bump it.
+			if( thing.isSolarAltar && (!entity.deathReturn || entity.deathReturn.altarId!==thing.id) ) {
+				this.brainState.activity = "Arrived at altar. bumping.";
+				let dir = entity.dirToPosNatural(thing.x,thing.y);
+				entity.command = Direction.toCommand(dir);
+				return true;
+			}
+			if( thing.isContainer && !thing.isRemovable && thing.inventory.length) {
+				this.brainState.activity = "Arrived at container. bumping.";
+				let dir = entity.dirToPosNatural(thing.x,thing.y);
+				entity.command = Direction.toCommand(dir);
+				return true;
+			}
+			if( thing.isStairsDown && thing.area.id == helper.player.area.id ) {
+				this.brainState.activity = "Arrived at stairs. descending.";
+				entity.command = Command.ENTERGATE;
+				return true;
+			}
+			helper.visited[thing.id] = true;
+			helper.arrived = false;
+		}
+		let onArrive = () => {
+			//debugger;
+			helper.arrived = true;
+		}
+		let onStall = (entity,destination) => {
+			if( entity.testerThing.isTreasure || entity.testerThing.isContainer || entity.testerThing.isSite ) {
+				// Skip this thing, if we can't reach it.
+				//debugger;
+				helper.visited[entity.testerThing.id] = true;
+				console.log('Skipping '+entity.testerThing.id+'.');
+				this.brainState.activity = "Stalled heading towards "+entity.testerThing.id+". Skipping.";
+			}
+		}
+
+		this.findNextDestination(entity,helper,onArrive,onStall);
+	},
+	tick(helper) {
+		if( !helper.initialized ) {
+			helper.visited = {};
+			helper.initialized = true;
+		}
+
+	},
+	check(result,helper) {
+		result.resolved = helper.player.area.depth == Rules.DEPTH_MAX;
+		if( result.resolved ) return;
 	}
 }
 

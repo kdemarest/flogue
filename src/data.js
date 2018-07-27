@@ -107,9 +107,11 @@ let MaxVis = 8;		// The vision distance max any monster can see
 // Pathfinding and terrain isProblem
 let Problem = {
 	NONE:  0.0,
+	DOOR: 0.1,		// be wary of changing this!
 	ENTITY: 0.2,		// be wary of changing this!
 	MILD:  0.3,
 	HARSH: 0.7,
+	NEARDEATH: 0.9,
 	// Do NOT have a value of 1.0 or up to 900000 here. The Path class requires numbers below 1.0 for problem spots.
 	WALL:  800000.0,
 	DEATH: 900000.0
@@ -292,14 +294,15 @@ let EffectTypeList = {
 					isHelp: 1, namePattern: 'deflect rot', icon: 'gui/icons/eResist.png' },
 	eBlock: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist',
 					valuePick: () => pick(PickAbsorb), isHelp: 1, namePattern: 'block {value}s', icon: 'gui/icons/eResist.png' },
-	eInvisibility: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'invisible', value: true, isHelp: 1, requires: e=>!e.invisible, xDuration: 3.0, xRecharge: 1.5, icon: 'gui/icons/eInvisible.png' },
+	eInvisibility: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'invisible', value: true, isHelp: 1, 
+					doesItems: true, doesTiles: true, requires: e=>!e.invisible, xDuration: 3.0, xRecharge: 1.5, icon: 'gui/icons/eInvisible.png' },
 	eIgnore: 		{ isBuf: 1, level:  0, rarity: 1.00, op: 'add', stat: 'immune',
 					valuePick: () => pick(PickIgnore), isHelp: 1, namePattern: 'ignore {value}', icon: 'gui/icons/eImmune.png' },
 	eRechargeFast: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'max', stat: 'rechargeRate', value: 1.3, isHelp: 1, xDuration: 3.0, icon: 'gui/icons/eMagic.png' },
 	eMobility: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'immune', value: 'eImmobilize',
 					isHelp: 1, namePattern: 'mobility', icon: 'gui/icons/eImmune.png' },
 	eAssassin: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'max', stat: 'sneakAttackMult', value: 5,
-					isHelp: 1, namePattern: 'deadly assassination', icon: 'gui/icons/eSneakAttack.png' },
+					isHelp: 1, namePattern: 'mortal strike', icon: 'gui/icons/eSneakAttack.png' },
 
 // Debuff/Control
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
@@ -307,7 +310,7 @@ let EffectTypeList = {
 	eShove: 		{ isDeb: 1, level:  0, rarity: 0.50, op: 'shove', isHarm: 1, value: 2, duration: 0, icon: 'gui/icons/eShove.png' },
 	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.HESITANT, isHarm: 1, xDuration: 0.3, icon: 'gui/icons/eAttitude.png' },
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.PANICKED, isHarm: 1, xDuration: 0.2, icon: 'gui/icons/eFear.png' },
-	eVulnerability: { isDeb: 1, level:  0, rarity: 1.00, op: 'add', isHarm: 1, stat: 'vuln', requires: (e,effect)=>!e.isImmune(effect.value),
+	eVulnerability: { isDeb: 1, level:  0, rarity: 1.00, op: 'add', isHarm: 1, stat: 'vuln', requires: (e,effect)=>e.isImmune && !e.isImmune(effect.value),
 					valuePick: () => pick(PickVuln), isHarm: 1, xDuration: 2.0, namePattern: 'vulnerability to {value}', icon: 'gui/icons/eVuln.png' },
 	eSlow: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'sub', isHarm: 1, stat: 'speed', value: 0.5, xDuration: 0.3, requires: e=>e.speed>0.5 },
 	eBlindness: 	{ isDeb: 1, level:  0, rarity: 0.30, op: 'set', isHarm: 1, stat: 'senseBlind', value: true, xDuration: 0.25, requires: e=>!e.senseBlind, icon: 'gui/icons/eBlind.png' },
@@ -320,18 +323,18 @@ let EffectTypeList = {
 
 // Healing
 	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', xDamage: 6.00, isHelp: 1, duration: 0, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' },
-	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.01, isHelp: 1, xDuration: 2.0, xPrice: 1.5, icon: 'gui/icons/eHeal.png' },
-	eTrollBlood: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.02, isHelp: 1, xDuration: 2.0, xPrice: 2.5, icon: 'gui/icons/eHeal.png' },
+	eRegeneration: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.01, isHelp: 1, xDuration: 2.0, xPrice: 2.5, icon: 'gui/icons/eHeal.png' },
+	eTrollBlood: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'add', stat: 'regenerate', value: 0.02, isHelp: 1, xDuration: 2.0, xPrice: 5.0, icon: 'gui/icons/eHeal.png' },
 	eCurePoison: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isPoison || deed.damageType==DamageType.POISON, isHelp: 1, duration: 0, icon: 'gui/icons/eHeal.png' },
 	eCureDisease: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isDisease, isHelp: 1, duration: 0, icon: 'gui/icons/eHeal.png' },
 // Damage
-	eWater: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.WATER, mayTargetPosition: true, icon: 'gui/icons/eBurn.png' },
-	eBurn: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.BURN, mayTargetPosition: true, icon: 'gui/icons/eBurn.png' },
-	eFreeze: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.80, isHarm: 1, duration: 0, damageType: DamageType.FREEZE, icon: 'gui/icons/eFreeze.png' },
-	eShock: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, damageType: DamageType.SHOCK, icon: 'gui/icons/eShock.png' },
-	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.90, isHarm: 1, duration: 0, damageType: DamageType.CORRODE, icon: 'gui/icons/eCorrode.png' },
-	eSmite: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.SMITE, name: 'smite', icon: 'gui/icons/eSmite.png' },
-	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.ROT, icon: 'gui/icons/eRot.png' },
+	eWater: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.WATER, doesTiles: true, doesItems: true, icon: 'gui/icons/eBurn.png' },
+	eBurn: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.BURN, doesTiles: true, doesItems: true, icon: 'gui/icons/eBurn.png' },
+	eFreeze: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.80, isHarm: 1, duration: 0, damageType: DamageType.FREEZE, doesTiles: true, doesItems: true, icon: 'gui/icons/eFreeze.png' },
+	eShock: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, damageType: DamageType.SHOCK, doesItems: true, icon: 'gui/icons/eShock.png' },
+	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.90, isHarm: 1, duration: 0, damageType: DamageType.CORRODE, doesItems: true, icon: 'gui/icons/eCorrode.png' },
+	eSmite: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.SMITE, doesItems: true, name: 'smite', icon: 'gui/icons/eSmite.png' },
+	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.ROT, doesItems: true, icon: 'gui/icons/eRot.png' },
 	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.50, isHarm: 1, isPoison: 1,
 					duration: 10, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png' },
 	ePoisonForever: { isDmg: 1, level:  0, rarity: 0.01, op: 'damage', xDamage: 0.05, isHarm: 1, isPoison: 1,
