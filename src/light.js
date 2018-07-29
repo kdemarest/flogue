@@ -66,7 +66,7 @@ Light.arcList = Light.arcListGenerate();
 
 Light.arcListTraverse = function( map, px, py, distLimit, onVisit ) {
 	let arcList =  Light.arcList;
-	console.assert( arcList && map && px && py && distLimit && onVisit );
+	console.assert( arcList && map && px!==undefined && py!==undefined && distLimit!==undefined && onVisit!==undefined );
 	let done = false;
 	arcList.every( arc => {
 		let xRel = arc.x;

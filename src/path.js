@@ -1,9 +1,9 @@
 Module.add('path',function() {
 
-function pWalk(map) {
+function pWalk(map,ignoreEntity) {
 	let nulItem = {};
 	return function(x,y) {
-		if( map.isEntityAt(x,y) ) {
+		if( !ignoreEntity && map.isEntityAt(x,y) ) {
 			return Problem.ENTITY;
 		}
 		if( !map.isItemAt(x,y) ) {

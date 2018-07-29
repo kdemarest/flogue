@@ -3,10 +3,9 @@ Module.add('viewMerchant',function() {
 class ViewMerchant extends ViewInventory {
 	constructor(p) {
 		super(p.divId,null,p.colFilter || p.entity.colFilter);
-		let self = this;
 		this.onEvent = p.onItemChoose;
 		this.merchant = p.entity;
-		this.buyTest = p.buyTest || p.entity.buyTest;
+		//this.buyTest = p.buyTest || p.entity.buyTest;
 		this.allowFilter = p.allowFilter || p.entity.allowFilter;
 		this.onClose = p.onClose;
 		this.mode = null;

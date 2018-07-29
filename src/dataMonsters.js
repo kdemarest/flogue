@@ -48,7 +48,7 @@ let OozeVulnerability = ['ice','glass',DamageType.FREEZE].join(',');
 let LunarVulnerabilities = ['solarium',DamageType.BURN].join(',');
 
 let DemonImmunity = [DamageType.BURN].join(',');
-let DemonResistance = ['deepium',DamageType.POISON,DamageType.STAB].join(',');
+let DemonResistance = ['deepium',DamageType.POISON,DamageType.STAB,DamageType.ROT,'possess'].join(',');
 let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE].join(',');
 
 
@@ -167,6 +167,7 @@ const MonsterTypeList = {
 		isSunChild: true,
 		isDwarf: true,
 		isNamed: true,
+		isTalker: true,
 		jobId: 'isLayman',
 		light: 6,
 		properNoun: true,
@@ -350,13 +351,12 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daifahng": {	// (bite)
-		core: [ SYM, 14, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifahng.png', 'it' ],
+		core: [ SYM, 14, '8:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifahng.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		resist: DemonResistance,
-		travelMode: 'fly',
 		vuln: DemonVulnerability,
 	},
 	"daicolasp": {	// (claw)

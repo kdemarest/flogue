@@ -181,6 +181,7 @@ TestList.makeAllItems = {
 		if( result.resolved ) return;
 		helper.typeId = helper.findTypeFilter.split('.')[0];
 		result.expect( 'helper.get(helper.typeId)', helper.findTypeFilter+' created' );
+		result.expect( 'helper.get(helper.typeId).matter !== undefined', helper.findTypeFilter+' has matter' );
 	}
 }
 

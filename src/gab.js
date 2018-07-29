@@ -41,9 +41,9 @@ Gab = (new function(priorGab) {
 	}
 	
 	let sign4Type = {
-		stairsUp: 	(e)=> () => 'These stairs ascend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.WAIT)+'" to ascend.',
-		stairsDown: (e)=> () => 'These stairs descend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.WAIT)+'" to descend.',
-		gateway: 	(e)=> () => 'To '+getAreaName(e.themeId,e.toAreaId)+'\nHit "'+commandToKey(Command.WAIT)+'" to enter.',
+		stairsUp: 	(e)=> () => 'These stairs ascend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.EXECUTE)+'" to ascend.',
+		stairsDown: (e)=> () => 'These stairs descend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.EXECUTE)+'" to descend.',
+		gateway: 	(e)=> () => 'To '+getAreaName(e.themeId,e.toAreaId)+'\nHit "'+commandToKey(Command.EXECUTE)+'" to enter.',
 		portal: 	(e) => 'This portal pulses with an aura of menace.'
 	}
 

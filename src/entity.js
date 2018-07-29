@@ -1179,7 +1179,7 @@ class Entity {
 			let best = {};
 			let picker = new Picker(this.area.depth);
 			this.inventory.forEach( item => {
-				if( !item.slot || item.isWeapon ) {
+				if( !item.slot || item.isWeapon || !this.bodySlots[item.slot] ) {
 					return;
 				}
 				let price = item.price;
@@ -1530,7 +1530,7 @@ class Entity {
 					return this.thinkWanderF();
 				}
 
-				if( this.attitude == Attitude.HUNT && !theEnemy ) {
+				if( this.attitude == Attitude.HUNT && !theEnemy && !this.brainMaster ) {
 					if( !this.destination ) {
 						this.destination = this.pickRandomDestination();
 					}
@@ -2139,7 +2139,7 @@ class Entity {
 		let self = this;
 		let weaponList = new Finder(this.inventory).filter( item => {
 			if( !item.owner.isMonsterType || item.owner.id != self.id ) debugger;
-			if( item.isWeapon ) return true;
+			if( item.isWeapon && this.bodySlots[Slot.WEAPON] ) return true;
 			if( (item.isSpell || item.isPotion) && item.effect && item.effect.isHarm ) return true;
 			return false;
 		});
@@ -2319,9 +2319,10 @@ class Entity {
 		item = item.single();
 		item = item.giveToSingly(this.map,target.x,target.y);
 		let effect = item.isWeapon ? item.getEffectOnAttack() : item.effect;
+
 		result = item.trigger( target, this, Command.THROW, effect );
 
-		if( item.dead ) {
+		if( !item || item.dead ) {
 			// potions, for example, will be consumed.
 		}
 		else
@@ -2330,8 +2331,11 @@ class Entity {
 			result.broke = true;
 		}
 		else {
-			// This will cause it to bunch up as needed.
-			item.giveTo( this.map, item.x, item.y );
+			// Note that giving it to the map ALWAYS might foil things like catching items, or a figurine being picked up by its creation.
+			if( item.owner.isMap ) {
+				// This will cause it to bunch up as needed.
+				item.giveTo( this.map, item.x, item.y );
+			}
 		}
 		return result;
 	}
@@ -2980,11 +2984,25 @@ class Entity {
 					status: 'execute',
 					success: false
 				};
-				let f = this.findAliveOthersNearby().filter( e=>e.id==this.lastBumpedId );
+				let f = this.findAliveOthersNearby().filter( e=>e.id==this.lastBumpedId || (this.seeingSignOf && this.seeingSignOf.id == e.id) );
 				if( f.first && this.isUser() && f.first.isMerchant ) {
-					this.guiViewCreator = { entity: f.first };
+					guiMessage( 'open', {
+						view: 'ViewMerchant',
+						entity: f.first,
+						entity: this
+					});
+					//this.guiViewCreator = { entity: f.first };
 					result.success = true;
 				}
+//				if( f.first && this.isUser() && f.first.isTalker ) { //isMerchant ) {
+//					guiMessage( 'open', {
+//						view: 'ViewTalk',
+//						me: f.first,
+//						you: this
+//					});
+					//this.guiViewCreator = { entity: f.first };
+//					result.success = true;
+//				}
 				return result;
 			}
 			case Command.EAT: {

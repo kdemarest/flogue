@@ -99,12 +99,14 @@ class ViewSign extends ViewObserver {
 			if( !signList.first ) {
 				$(this.divId).hide();
 				guiMessage( 'hide' );
+				observer.seeingSignOf = null;
 			}
 			else {
 				let sign = typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
 				$(this.divId).show().html(sign);
 				//console.log( 'ViewSign render' );
 				guiMessage( 'show', signList.first );
+				observer.seeingSignOf = signList.first;
 			}
 			this.lastSignId = signId;
 		}

@@ -392,7 +392,7 @@ ThemeList.coreSea = {
 	seedPercent: 		0.40,
 	placeDensity: 		0.50,
 	passageWander: 		100,
-	palette: 			{ basis: 'jaggedCave', outlineWall: 'water', fillWall: 'floor' },
+	palette: 			{ basis: 'jaggedCave', outlineWall: 'water', fillWall: 'floorDirt' },
 	rREQUIRED: 			'floodWater',
 	rCOMMON: 			'floodWaterSmall',
 	rUNCOMMON: 			'floodWall',

@@ -21,49 +21,27 @@ class Gui {
 		return p;
 	}
 
-	create(onItemChoose) {
-		this.onItemChoose = onItemChoose;
-		this.view.dynamic = DynamicViewList.none;
-		this.view.full = new ViewFull('#guiControls','#guiMain',);
-		this.view.zoom = new ViewZoom('#guiControls');
-		this.view.narrative = new ViewNarrative('#guiNarrative');
-		this.view.sign = new ViewSign('#guiSign');
-		this.view.favorites = new ViewFavorites('#guiFavorites',onItemChoose);
-		this.view.spells = new ViewSpells('#guiSpells');
-		this.view.range = new ViewRange();
-		this.view.experience = new ViewExperience('#guiExperience')
-		this.view.info = new ViewInfo('#guiInfo')
-		this.view.status = new ViewStatus('#guiStatus');
-		this.view.inventory = new ViewInventory('#guiInventory',onItemChoose);
-		this.view.map = new ViewMap('#guiMap',this.imageRepo);
-		this.view.miniMap = new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption',this.imageRepo);
-		this.view.tester = new ViewTester('#guiTester',this.getPlayer);
+	add(viewId,view) {
+		this.view[viewId] = view;
 	}
 
-	makeDynamicGui() {
-		let player = this.getPlayer();
-		if( !player.guiViewCreator ) {
-			return false;
-		}
-		let onClose = () => {
-			this.view.dynamic = DynamicViewList.none;
-		}
-		let v = {
-			divId: '#guiDynamic',
-			player: player,
-			onItemChoose: this.onItemChoose,
-			onClose: onClose,
-		};
-		Object.assign(v,player.guiViewCreator);
 
-		if( v.entity.isMerchant ) {
-			this.view.dynamic = new ViewMerchant(v);
-		}
-		else {
-			debugger;
-		}
-		delete player.guiViewCreator;
-		return true;
+	create(onItemChoose) {
+		this.onItemChoose = onItemChoose;
+		this.add('full',new ViewFull('#guiControls','#guiMain'));
+		this.add('zoom',new ViewZoom('#guiControls'));
+		this.add('narrative',new ViewNarrative('#guiNarrative'));
+		this.add('sign',new ViewSign('#guiSign'));
+		this.add('favorites',new ViewFavorites('#guiFavorites',onItemChoose));
+		this.add('spells',new ViewSpells('#guiSpells'));
+		this.add('range',new ViewRange());
+		this.add('experience',new ViewExperience('#guiExperience'));
+		this.add('info',new ViewInfo('#guiInfo'));
+		this.add('status',new ViewStatus('#guiStatus'));
+		this.add('inventory',new ViewInventory('#guiInventory',onItemChoose));
+		this.add('map',new ViewMap('#guiMap',this.imageRepo));
+		this.add('miniMap',new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption',this.imageRepo));
+		this.add('tester',new ViewTester('#guiTester',this.getPlayer));
 	}
 	message(message,payload,target) {
 		//console.log( "guiMessage: "+message );
@@ -72,6 +50,10 @@ class Gui {
 			return;
 		}
 		//console.log(message);
+		if( message == 'open' ) {
+			let viewId = payload.view;
+			this.add(viewId,new window[viewId](payload,()=>delete this.view[viewId]));
+		}
 		Object.each( this.view, (view,viewId) => {
 			if( view.message && (!target || target==viewId) ) {
 				view.message(message,payload);
@@ -87,22 +69,18 @@ class Gui {
 
 		area.vis.populateLookup();	// This could be maintained progressively, but it hasn't mattered yet.
 
-		this.view.narrative.render();
-		this.view.sign.render();
-		this.view.favorites.render();
-		this.view.spells.render();
-		this.view.range.render();
-		this.view.experience.render();
-		this.view.info.render();
-		this.view.status.render(area.entityList);
-		this.view.inventory.render();
-		this.view.map.render();
-		this.view.miniMap.render();	// must be after viewMap so the visibility
-		this.view.dynamic.render();
+		Object.each( this.view, view => {
+			if( view.render ) {
+				view.render();
+			}
+		});
 	}
 	tick() {
-		this.makeDynamicGui();
-		this.view.dynamic.tick();
+		Object.each( this.view, view => {
+			if( view.tick ) {
+				view.tick();
+			}
+		});
 	}
 }
 

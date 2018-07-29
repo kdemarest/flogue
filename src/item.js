@@ -21,6 +21,7 @@ class Item {
 			xArmor:1,
 			xDamage:1,
 			xDuration:1,
+			matter:1,
 			ingredientId:1,
 			type:1,
 			typeId:1
@@ -30,6 +31,9 @@ class Item {
 		let noLevelVariance = xCalc(this,presets,'noLevelVariance','+');
 		let n = depth - levelRaw;
 		let level = (noLevelVariance || (levelRaw >= depth)) ? levelRaw : levelRaw + (n-Math.floor(Math.sqrt(Math.randInt(0,(n+1)*(n+1)))));
+
+		let matter = calcFirst(this,presets,'matter');
+		console.assert( (matter && Rules.itemDamageTable[matter]) || !this.isTreasure);
 
 		// Notice that the init overrides the typeId. This is to make sure that the inject doesn't do so with a dot 
 		// phrase, like weapon.dagger (which it definitely might!)
@@ -46,6 +50,10 @@ class Item {
 			x:null,
 			y:null
 		};
+		if( matter ) {
+			inits.matter = matter;
+			inits['is'+String.capitalize(matter)] = true;
+		}
 		Object.assign( this, itemType, presets, inject||{}, inits );
 
 		// order is VERY important here! Variety rules, then material, then quality.
@@ -337,6 +345,27 @@ class Item {
 		return null;
 	}
 
+	isImmune(damageType) {
+		if( !this.matter ) {
+			return true;
+		}
+		return Rules.itemDamageTable[this.matter][damageType] === undefined;
+	}
+
+	isResist(damageType) {
+		if( !this.matter ) {
+			return false;
+		}
+		return Rules.itemDamageTable[this.matter][damageType] < 1.0;
+	}
+
+	isVuln(damageType) {
+		if( !this.matter ) {
+			return false;
+		}
+		return Rules.itemDamageTable[this.matter][damageType] >= 2;
+	}
+
 	takeDamage( source, item, amount, damageType, callback, noBacksies, isOngoing) {
 		let result = {
 			status: 'damageItem',
@@ -354,24 +383,21 @@ class Item {
 				result.success = true;
 			}
 		}
-		/**
-		Materials are essentially:
-					CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", WATER: "water", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
-					cut 	stab 	bite 	claw 	bash 	chop	burn 	freeze 	water 	shock 	corrode poison 	smite 	rot
-		metal 		-		-		-		-		-		-		-		-		-		-		+ 		-		+		-
-		leather 	+ 		-		-		+ 		-		+		-		-		-		-		+ 		-		-		+
-		wood 		-		-		1/2		-		1/2 	+		-		-		-		-		-		-		-		+	
-		liquid 		-		-		-		-		-		-		1/2		+		-		1/2		1/2		-		-		-
-		glass 		-		-		-		-		+		-		-		-		-		-		+		-		-		-
-		paper 		+		-		+		-		-		+		+		-		+		-		+		-		-		-
-		ivory 		-		-		-		-		+		+		-		-		-		-		-		-		-		-
-		**/
 
-		if( amount > this.health ) {
+		let adjustment = 1;
+		if( this.matter ) {
+			adjustment = Rules.itemDamageTable[this.matter][damageType] || 0;
+		}
+		result.adjustment = adjustment;
+
+		amount *= adjustment;
+		result.damageType = damageType;
+		result.damage = amount;
+
+		if( amount >= this.health ) {
 			this.health -= amount;
 			this.destroy('damage');
-			result.damage = amount;
-			result.damageType = damageType;
+			result.destroyed = true;
 			result.success = true;
 		}
 		return result;
@@ -448,7 +474,8 @@ class Item {
 		let assureWalkableDrop = entity.isMap && this.isTreasure && !this.allowPlacementOnBlocking;
 
 		if( assureWalkableDrop ) {
-			[x,y] = entity.spiralFind( x, y, (x,y,tile) => entity.getWalkable(x,y) === Problem.NONE );
+			let mayDrop = pWalk(entity,true);
+			[x,y] = entity.spiralFind( x, y, (x,y,tile) => mayDrop(x,y) === Problem.NONE );
 		}
 
 		let hadNoOwner = !this.owner;
@@ -458,7 +485,6 @@ class Item {
 			if( !this.spriteList || this.spriteList.length == 0 ) {
 				spriteMakeInWorld(this,entity.x,entity.y);
 			}
-
 			new Anim({},{
 				at: 		entity,
 				img: 		this.imgGet ? this.imgGet(this) : this.img,
@@ -629,14 +655,14 @@ class Item {
 		}
 		if( !this.isRecharged() ) {
 			return {
-				status: 'triggerfNotRecharged',
+				status: 'triggerNotRecharged',
 				success: false
 			}
 		}
 		// Here is where we should figure out the area of effect and hit all as needed.
 		let result = effectApply( effect, target, source, this, context );
 
-		if( result.success && typeof this.charges =='number' ) {
+		if( (result.success || context == 'throw') && typeof this.charges =='number' ) {
 			this.charges = Math.max(0,this.charges-1);
 			if( this.charges <= 0 && this.destroyOnLastCharge ) {
 				this.destroy();

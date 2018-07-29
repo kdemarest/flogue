@@ -22,7 +22,7 @@ class ViewStatus extends ViewObserver {
 		}
 	}
 
-	render(entityList) {
+	render() {
 
 
 		function showHealthBar(id,newValue,lastValue,total,label,backgroundColor) {
@@ -48,6 +48,7 @@ class ViewStatus extends ViewObserver {
 		}
 
 		let observer = this.observer;
+		let entityList = observer.area.entityList;
 
 		// We both exclude and then prepend the observer to make sure the observer is first in the list.
 		let f = new Finder(entityList,observer).isAlive().exclude(observer).prepend(observer)

@@ -143,10 +143,6 @@ let Tile = {
 Gab = {
 };
 
-DynamicViewList = {
-	none: { tick: ()=>{}, render: ()=>{} }
-};
-
 const StickerList = {
 	wallProxy: { img: "dc-dngn/wallProxy.png" },
 	observerProxy: { img: "gems/Gem Type2 Yellow.png" },
@@ -223,11 +219,11 @@ const MiscImmunity = { SPEED: "speed", STUN: "stun", IMMOBILE: "immobile", GAS: 
 
 
 // WARNING: the damage type names are re-used in their icon names in StickerList. Maintain both.
-const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", BASH: "bash", BURN: "burn", FREEZE: "freeze", WATER: "water", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
+const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", CHOP: "chop", BASH: "bash", BURN: "burn", FREEZE: "freeze", WATER: "water", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
 const Damage = {
 	All: 		Object.values(DamageType).join(',')+','+Object.values(MiscImmunity).join(','),
 	Misc: 		Object.values(MiscImmunity).join(','),
-	Physical: 	[DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(','),
+	Physical: 	[DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.CHOP,DamageType.BASH].join(','),
 	Physical2: 	[DamageType.CORRODE,DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH].join(','),
 	Elemental: 	[DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.WATER].join(','),
 	Divine: 	[DamageType.SMITE,DamageType.ROT].join(',')
@@ -235,8 +231,8 @@ const Damage = {
 
 
 const EffectShape = { SINGLE: "single", BLAST2: 'blast2', BLAST3: 'blast3', BLAST4: 'blast4', BLAST5: "blast5", BLAST6: "blast6" };
-const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH];
-const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH];
+const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.CHOP,DamageType.BASH];
+const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.CHOP,DamageType.BASH];
 const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked",
 				FEARFUL: "fearful", CALM: "calm",
 				AWAIT: "await", WORSHIP: "worshipping",
@@ -247,8 +243,8 @@ const Slot = { HEAD: "head", NECK: "neck", ARMS: "arms", HANDS: "hands", FINGERS
 const PickIgnore = ['mud','forceField'];
 const PickVuln   = [DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
 const PickResist = [DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
-const PickAbsorb = [DamageType.CUT,DamageType.STAB,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.SMITE,DamageType.ROT];
-const PickBlock  = [DamageType.CUT,DamageType.STAB,DamageType.BASH];
+const PickAbsorb = [DamageType.CUT,DamageType.STAB,DamageType.CHOP,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.SMITE,DamageType.ROT];
+const PickBlock  = [DamageType.CUT,DamageType.STAB,DamageType.CHOP,DamageType.BASH];
 
 // IMMUNITY and RESISTANCE!
 // Note that you can be immune to almost anything that is a string. That is, you can be immune to a DamageType,
@@ -355,7 +351,7 @@ for( let key in EffectTypeList ) {
 EffectTypeList.eBurn.onTargetPosition = function(map,x,y) {
 	let tile = map.tileTypeGet(x,y);
 	if( tile.mayWalk && !tile.isProblem && !tile.isPit ) {
-		map.tileSymbolSet(x,y,TileTypeList.flames.symbol);
+		//map.tileSymbolSet(x,y,TileTypeList.flames.symbol);
 	}
 	return {
 		status: 'putFire',
@@ -366,7 +362,7 @@ EffectTypeList.eBurn.onTargetPosition = function(map,x,y) {
 EffectTypeList.eFreeze.onTargetPosition = function(map,x,y) {
 	let tile = map.tileTypeGet(x,y);
 	if( tile.mayWalk && !tile.isProblem && !tile.isPit ) {
-		map.tileSymbolSet(x,y,TileTypeList.water.symbol);
+		//map.tileSymbolSet(x,y,TileTypeList.water.symbol);
 	}
 	return {
 		status: 'putWater',
@@ -452,7 +448,6 @@ return {
 	Problem: Problem,
 	Tile: Tile,
 	Gab: Gab,
-	DynamicViewList: DynamicViewList,
 	StickerList: StickerList,
 	MiscImmunity: MiscImmunity,
 	DamageType: DamageType,

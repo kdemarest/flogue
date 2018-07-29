@@ -10,6 +10,8 @@ function handleScent(map,px,py,senseSmell) {
 	guiMessage( 'overlayRemove', { groupId: 'scent' } );
 
 	if( senseSmell) {
+		let d = MapVis;
+		let d2 = (d*2)+1
 		for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
 			let ty = y-(py-d);
 			for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
@@ -71,7 +73,7 @@ function createDrawList(observer,drawListCache) {
 	}
 
 
-	handleScent(map,px,py,observer.senseSmell,observer.area.id);
+	handleScent(map,px,py,observer.senseSmell);
 
 
 	let visId = {};

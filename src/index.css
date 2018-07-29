@@ -159,9 +159,30 @@ body {
 	position: absolute;
 	top:0;
 	left:165px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    white-space: pre-wrap;
+	overflow-y: auto;
+	overflow-x: hidden;
+	white-space: pre-wrap;
+}
+#guiTalk {
+	display: none;
+	z-index: 8;
+	position: absolute;
+	top:60;
+	left: 165px;
+	width: 474px;
+	height: 474px;
+	margin-top: 16;
+	border-radius: 8px;
+	padding: 10px;
+	text-align: center;	
+	font-family: 'Raleway', sans-serif;
+	font-size: 18px;
+	color: #a9a9a9;
+	border: 3px solid #828181;
+	background-color: #00000085;
+	overflow-y: auto;
+	overflow-x: hidden;
+	white-space: pre-wrap;
 }
 #guiStatus {
 	width: 240px;

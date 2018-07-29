@@ -10,6 +10,13 @@ ConfigList.ken = () => {
 		seedPercent: 		0.20,
 		passageWander: 		0,
 	});
+	ScapeList.kenTinyCave = theme => ({
+		dim: 				20,
+		architecture: 		"cave",
+		floorDensity: 		0.68,
+		seedPercent: 		0.20,
+		passageWander: 		0,
+	});
 	ScapeList.kenCaveSpindle = theme => ({
 		dim: 				60,
 		architecture: 		"cave",
@@ -73,19 +80,13 @@ ConfigList.ken = () => {
 		itemDensity:    0.01,
 	}
 
-	ThemeList.dwarfTown2 = {
+	ThemeList.kenDwarfTown = {
 		isDwarfish: true,
 		isTown: 	true,
-		scapeId: 	'caveTown',
+		scapeId: 	'kenTinyCave',
 		palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
-		rREQUIRED: 	'dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
-					'gatewayFromDwarves, 2x dwarfHouseSmall, 2x dwarfHouse, '+
-					'70% dwarfTemple, 30% den_dog, 10% camp_human',
-		rCOMMON: 	'floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall',
-		rUNCOMMON: 	'floodPit, dwarfHouse, barrelStorage',
-		rRARE: 		'firePit, floodWater',
+		rREQUIRED: 	'shopOpenAir',
 		jobPick: 	{ layman: 10, sentry: 3, grocer: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
-		prefer: 	['pit'],
 		monsters: 	['isDwarf'],
 		enemyDensity: 	0.00,
 		friendDensity: 	0.01,
@@ -109,13 +110,17 @@ ConfigList.ken = () => {
 		friendDensity: 	0.00001,
 	}
 
-	MonsterTypeList.player.inventoryLoot.push('100x potion, 100x helm, 100x armor, 100x spell, 100x gem, 100x weapon, 100x cloak, 100x gloves, 100x ammo, 100x shield, 100x ring');
+//	MonsterTypeList.player.inventoryLoot.push('100x potion, 100x helm, 100x armor, 100x spell, 100x gem, 100x weapon, 100x cloak, 100x gloves, 100x ammo, 100x shield, 100x ring');
 //	MonsterTypeList.player.inventoryLoot.push('100x helm.dwarven');
+//	MonsterTypeList.player.inventoryLoot.push('10x coin');
 
 //	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, 4x potion.eXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
 //	MonsterTypeList.player.inventoryLoot.push('2x potion.eHealing, 4x potion, 2x gem, 2x spell, 1x potion.eSeeInvisible, 3x weapon, weapon.sling, 30x ammo.slingStone, weapon.bow, 40x ammo.arrow, spell.eFreeze');
 //	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.oilLamp';
 //	MonsterTypeList.player.experience = 100;
+/*
+	BUG: Dog no longer stay near master...
+*/
 
 	Object.assign( Rules, {
 //		xLootFrequency: 0.80,
@@ -123,8 +128,8 @@ ConfigList.ken = () => {
 	});
 
 	return {
-		startingDepth: 15,
-		themeId: 'kenTheme',
+//		startingDepth: 6,
+//		themeId: 'kenDwarfTown',
 //		saveBattery: true
 	}
 }

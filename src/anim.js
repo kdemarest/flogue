@@ -213,7 +213,7 @@ let sSine = function(pct,scale) {
 
 class Anim {
 	constructor(sticker,data) {
-		Object.assign(this,{ delay: 0, scale: 1, isAnim: 1 }, sticker, data, { id: GetTimeBasedUid() } );
+		Object.assign(this,{ scale: 1, isAnim: 1 }, sticker, data, { id: GetTimeBasedUid() } );
 		this.isAnimation = true;
 		this.dead = false;
 		this.delta = 0;
@@ -260,10 +260,13 @@ class Anim {
 
 		if( this.delay === undefined && this.delayId ) {
 			if( typeof this.duration == 'number' ) {
-				this.delay = Anim.delay.get(this.delayId);
+				this.delay = animationManager.delay.get(this.delayId);
 				animationManager.delay.add(this.delayId,this.duration);
 			}
 			// Otherwise make it delay until it is done.
+		}
+		if( this.delay === undefined ) {
+			this.delay = 0;
 		}
 
 		this.spriteList = [];
