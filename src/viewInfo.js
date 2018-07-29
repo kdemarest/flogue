@@ -161,7 +161,7 @@ class ViewInfo extends ViewObserver {
 			);
 			s += tRow( "Damage:", String.combine( ' ', weaponEx.damage||0, weaponEx.damageType, weaponEx.quick, weaponEx.reach, weaponEx.sneak ) );
 			s += tRow( "Ammo:", ex ? ex.description : 'none ready' );
-			s += tRow( "Gold:", Math.floor(entity.coinCount||0) );
+			s += tRow( "Coins:", Math.floor(entity.coinCount||0) );
 		}
 		s += '</table>';
 

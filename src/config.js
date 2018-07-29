@@ -128,8 +128,8 @@ ConfigList.ken = () => {
 	});
 
 	return {
-//		startingDepth: 6,
-//		themeId: 'kenDwarfTown',
+		startingDepth: 6,
+		themeId: 'kenDwarfTown',
 //		saveBattery: true
 	}
 }

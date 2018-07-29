@@ -2989,7 +2989,7 @@ class Entity {
 					guiMessage( 'open', {
 						view: 'ViewMerchant',
 						entity: f.first,
-						entity: this
+						self: this
 					});
 					//this.guiViewCreator = { entity: f.first };
 					result.success = true;

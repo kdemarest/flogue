@@ -43,6 +43,7 @@ class Gui {
 		this.add('miniMap',new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption',this.imageRepo));
 		this.add('tester',new ViewTester('#guiTester',this.getPlayer));
 	}
+
 	message(message,payload,target) {
 		//console.log( "guiMessage: "+message );
 		if( target && !this.view[target] ) {
@@ -51,8 +52,10 @@ class Gui {
 		}
 		//console.log(message);
 		if( message == 'open' ) {
+			payload.onItemChoose = this.onItemChoose;
+			payload.onClose = ()=>delete this.view[viewId];
 			let viewId = payload.view;
-			this.add(viewId,new window[viewId](payload,()=>delete this.view[viewId]));
+			this.add(viewId,new window[viewId](payload));
 		}
 		Object.each( this.view, (view,viewId) => {
 			if( view.message && (!target || target==viewId) ) {

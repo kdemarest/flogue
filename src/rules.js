@@ -235,7 +235,7 @@ Rules.ItemBag = (function() {
 		potion: [	10.0, 	 1.00,	  1.0,	['effect'], ],
 		spell: 	[	 1.0, 	 1.00,	  3.0,	['effect'], ],
 		ore: 	[	 5.0, 	 0.00,	  0.1,	['variety'], ],
-		gem: 	[	 4.0,	 0.30,	  1.5,	['material','quality','effect'], ],
+		gem: 	[	 4.0,	 0.30,	  2.0,	['material','quality','effect'], ],
 		weapon: [	10.0, 	 0.15,	  4.0,	['material','effect','variety'], ],
 		ammo: 	[	15.0, 	 0.30,	  0.1,	['material','effect','variety'], ],
 		shield: [	 3.0, 	 0.25,	  3.0,	['material','effect','variety'], ],
