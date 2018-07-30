@@ -15,24 +15,23 @@ FIXED All demons should resist rot
 FIXED BUG: Daifahng should not be flying
 FIXED BUG: Things fly out of chests in a lump
 FIXED BUG: Figurines I throw no longer manifest.
+FIXED BUG: Sorting by damage seems to be a text sort, but it should sort by parseInt of the first number
 
 
-BUG: monsters nolonger travel to your LEP when you leave a doorways...
-BUG: And corpses should not form over pits. Pits should be considered forbidden. Maybe entity.die() doesn't giveTo() properly?
-Possess should probably start much closer range, and recharge much slower
-BUG: How did I get scale armor of regeneration AC 31 on level 1?
-BUG: Way more things need to allow LEP and perhaps basic pathing?
-Perhaps goblin priests, or whatever shows up on the next level, should cast darkness so that all the darkvision and luminaris are useful.
-BUG: A bear tried to use the iron mace of shock
 BUG: Iron mace of shock didn't say how much shock. Perhaps it is not understood as that kind of effect?
+BUG: Corpses should not form over pits. Pits should be considered forbidden. Maybe entity.die() doesn't giveTo() properly?
+BUG: Way more things need to allow LEP and perhaps basic pathing?
+BUG: A bear tried to use the iron mace of shock
 BUG: You should be able to swap places, I think, with your mindless husk
-BUG: Freeze spell should put out flames, not be stopped by them.
 BUG: I tried to possess a goblin who was out of my sight. It did the right thing saying "but in the wrong diretion" but failed to consume my spell.
+Possess should probably start much closer range, and recharge much slower
+Perhaps goblin priests, or whatever shows up on the next level, should cast darkness so that all the darkvision and luminaris are useful.
 Definitely put things on the other sides of pits so that possessing a daispine to daibelade lets you fly over to them. How to pick them up is another matter.
 Rocks and arrow ammo should be WAY more common, maybe even just added during the adventure pass, arrows stuck into chests, rocks on the ground or accessible from
 crumbling rock walls
-BUG: Sorting by damage seems to be a text sort, but it should sort by parseInt of the first number
 Ranged weapons like bow and sling need to not be regular weapons, but rather explicitly a category of ranged weapons.
+BUG: Freeze spell should put out flames, not be stopped by them.
+WORRY: How did I get scale armor of regeneration AC 31 on level 1?
 **/
 
 

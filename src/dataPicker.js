@@ -72,9 +72,15 @@ class Picker {
 		let killIs = [];
 		let keepId = {};
 		let killId = {};
-		filterString.replace( /\s*(!)*(is|may)*(\S+|\S+)/g, function( whole, not, is, token ) {
+		filterString.replace( /\s*(!)*(is|may|of)*(\S+|\S+)/g, function( whole, not, is, token ) {
 			if( is ) {
-				(not ? killIs.push(is+token) : keepIs.push(is+token));
+				if( is == 'of' ) {
+					// special case hack to detect matter
+					self.matter = token.toLowerCase();
+				}
+				else {
+					(not ? killIs.push(is+token) : keepIs.push(is+token));
+				}
 			}
 			else {
 				// Split by the dot
@@ -151,7 +157,7 @@ class Picker {
 					if( logging ) console.log( item.typeId+' killed for being '+vi );
 					continue;
 				}
-				let materialHash = v.materials || item.materials || one;
+				let materialHash = v.materials === undefined ? (item.materials || one) : (v.materials || one);
 				for( let mi in materialHash ) {
 					if( filter.killId[mi] ) {
 						if( logging ) console.log( item.typeId+' killed for being '+mi );
@@ -166,6 +172,13 @@ class Picker {
 						}
 						let q = qualityHash[qi];
 
+						// Must be in QMVI order.
+						let matter = q.matter || m.matter || v.matter || item.matter;
+						if( filter.matter && filter.matter !== matter ) {
+							if( logging ) console.log( item.typeId+' lacks correct matter '+filter.matter );
+							continue;
+						}
+
 						if( !filter.testMembers(item) && !filter.testMembers(v) && !filter.testMembers(m) && !filter.testMembers(q) ) {
 							if( logging ) console.log( item.typeId+' lacks member' );
 							continue;
@@ -175,8 +188,8 @@ class Picker {
 						// won't happen and the effect specified will ALWAYS be what it gets. They only way to make that effect
 						// specifyable or simetimes-occuring is to set effectChance:100 and effects: { myEffectid: { theEffect }}
 
-						// Order here MUST be the same as in Item constructor.
-						let effectArray = Object.values(v.effects || m.effects || q.effects || item.effects || one);
+						// Order here MUST be the same as in Item constructor.  QMVI
+						let effectArray = Object.values(q.effects || m.effects || v.effects || item.effects || one);
 						if( v.effects ) {
 							//console.log(v.typeId+' has custom effects.');
 						}
@@ -267,6 +280,7 @@ class Picker {
 								if( logging ) console.log( id+' killed for being '+ei );
 								continue;
 							}
+
 							if( !filter.testKeepId(ii,vi,mi,qi,ei) ) {
 								if( logging ) console.log( id+' lacked id '+filter.keepId );
 								continue;

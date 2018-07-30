@@ -20,17 +20,17 @@ let JobTypeList = {
 		isMinor: true,
 		attitude: Attitude.AWAIT,
 		tether: 2,
-		buyTest: item => item.isPotion || item.isStuff || item.isLiquid,
+		buyTest: item => item.isPotion || item.isStuff || item.ofLiquid,
 		colFilter: {slot:1,key:1,icon:1,description:1,price:1},
 		sign: "Concoctions to change your outlook!",
-		inventoryLoot: '20x 50% potion, 10x 50% stuff isLiquid'
+		inventoryLoot: '20x 50% potion, 10x 50% stuff ofLiquid'
 	},
 	grocer: {
 		isMerchant: true,
 		isMinor: true,
 		attitude: Attitude.AWAIT,
 		tether: 2,
-		buyTest: item => item.isPotion || item.isEdible || item.isLiquid,
+		buyTest: item => item.isPotion || item.isEdible || item.ofLiquid,
 		colFilter: {slot:1,key:1,icon:1,description:1,price:1},
 		sign: "Don't let hunger slow you down!",
 		inventoryLoot: '20x stuff isEdible'
@@ -50,7 +50,7 @@ let JobTypeList = {
 		isMajor: true,
 		attitude: Attitude.AWAIT,
 		tether: 2,
-		buyTest: item => item.isArmor || item.isShield || item.isOre || item.isMetal,
+		buyTest: item => item.isArmor || item.isShield || item.isOre || item.ofMetal,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Come back safe and sound!",
 		inventoryLoot: '15x 50% armor, 6x 50% helm, 6x 50% bracers, 4x 50% shield, 20x 50% armor'
@@ -69,10 +69,10 @@ let JobTypeList = {
 		isMajor: true,
 		attitude: Attitude.AWAIT,
 		tether: 2,
-		buyTest: item => item.isWeapon || item.isAmmo || item.isOre || item.isMetal || item.isDart,
+		buyTest: item => item.isWeapon || item.isAmmo || item.isOre || item.ofMetal || item.isDart,
 		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Defend yourself, or press the attack!",
-		inventoryLoot: '20x weapon, 20x 50% weapon, 10x stuff isMetal, 5x ammo.dart'
+		inventoryLoot: '20x weapon, 20x 50% weapon, 10x stuff ofMetal, 5x ammo.dart'
 	},
 	// Bowyers sell bows and arrows, plus a miscellany of thrown or shooting weapons.
 	bowyer: {
@@ -145,10 +145,10 @@ let JobTypeList = {
 		isMinor: true,
 		attitude: Attitude.AWAIT,
 		tether: 2,
-		buyTest: item => item.isOre || item.isArmor || item.isWeapon || item.isMetal,
+		buyTest: item => item.isOre || item.isArmor || item.isWeapon || item.ofMetal,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Raw material from the depths!",
-		inventoryLoot: '20x ore, 20x 50% ore, 10x stuff isMetal, 2x weapon.pickaxe'
+		inventoryLoot: '20x ore, 20x 50% ore, 10x stuff ofMetal, 2x weapon.pickaxe'
 	},
 	evangelist: {
 		attitude: Attitude.AWAIT,

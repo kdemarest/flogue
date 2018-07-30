@@ -197,6 +197,15 @@ Module.add('utilities',function(){
 		}
 		return result;
 	}
+	Object.filterInPlace = function(obj,fn) {
+		let temp = Object.assign({},obj);
+		for( let key in temp ) {
+			if( !fn(temp[key],key) ) {
+				delete obj[key];
+			}
+		}
+		return obj;
+	}
 	Object.find = function(obj,fn) {
 		for( let key in obj ) {
 			if( fn(obj[key],key) ) {

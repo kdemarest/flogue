@@ -261,7 +261,7 @@ class Anim {
 		if( this.delay === undefined && this.delayId ) {
 			if( typeof this.duration == 'number' ) {
 				this.delay = animationManager.delay.get(this.delayId);
-				animationManager.delay.add(this.delayId,this.duration);
+				animationManager.delay.add(this.delayId,this.delayAdd || this.duration);
 			}
 			// Otherwise make it delay until it is done.
 		}

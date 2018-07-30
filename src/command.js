@@ -6,6 +6,27 @@ function castConvert(cmd,observer,index) {
 	cmd.commandItem = spellList.all[index];
 }
 
+function commandForItemAttack(weapon) {
+	if( weapon.mayThrow && (!weapon.inSlot || weapon.inSlot==Slot.AMMO) ) {
+		return Command.THROW;
+	}
+	if( weapon.mayCast ) {
+		return Command.CAST;
+	}
+	if( weapon.mayShoot ) {
+		return Command.SHOOT;
+	}
+	if( !weapon.range || weapon.inSlot == Slot.WEAPON ) {
+		return Command.ATTACK;
+	}
+	if( weapon.isSkill ) {
+		return Command.TRIGGER;
+	}
+	debugger;
+	return Command.SHOOT;
+}
+
+
 function commandForItem(item) {
 	if( item.isPotion ) {
 		return item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
@@ -13,17 +34,23 @@ function commandForItem(item) {
 	if( item.isGem ) {
 		return Command.GAZE;
 	}
-	if( item.isSpell ) {
+	if( item.isSpell || item.mayCast ) {
 		return Command.CAST;
 	}
 	if( item.isCorpse ) {
 		return Command.LOOT;
 	}
+	if( item.mayShoot ) {
+		return Command.SHOOT;
+	}
 	if( item.slot ) {
 		return Command.USE;
 	}
-	if( item.mayThrow ) {
+	if( item.mayThrow && (!item.inSlot || item.inSlot==Slot.AMMO) ) {
 		return Command.THROW;
+	}
+	if( item.isSkill ) {
+		return Command.TRIGGER;
 	}
 	return false;
 }
@@ -61,10 +88,18 @@ CmdTable[Command.QUAFF] = {
 	criteriaToExecute: (cmd,observer) => cmd.commandItem.effect,
 	passesTimeOnExecution: true
 };
+CmdTable[Command.TRIGGER] = {
+	needsItem: true,
+	itemFilter: observer => () => new Finder(observer.inventory).isTypeId("skill"),
+	needsTarget: (cmd) => cmd.commandItem.needsTarget,
+	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
+	criteriaToExecute: (cmd,observer) => cmd.commandItem.effect,
+	passesTimeOnExecution: (cmd) => cmd.commandItem.passesTime === undefined ? true : cmd.commandItem.passesTime
+};
 CmdTable[Command.CAST] = {
 	needsItem: true,
 	itemFilter: observer => () => observer.getCastableSpellList(),
-	needsTarget: true,
+	needsTarget: ()=>true,
 	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
 	criteriaToExecute: (cmd,observer) => {
 		if( !cmd.commandItem.isRecharged() ) {
@@ -80,14 +115,14 @@ CmdTable[Command.ATTACK] = {
 	pickItem: observer => {
 		return observer.calcDefaultWeapon();
 	},
-	needsTarget: true,
+	needsTarget: ()=>true,
 	targetRange: (item) => item.reach || 1,
 	passesTimeOnExecution: true
 };
 CmdTable[Command.THROW] = {
 	needsItem: true,
 	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayThrow ),
-	needsTarget: true,
+	needsTarget: ()=>true,
 	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
 	passesTimeOnExecution: true
 };
@@ -102,7 +137,7 @@ CmdTable[Command.SHOOT] = {
 		return weaponList.first;
 	},
 	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayShoot ),
-	needsTarget: true,
+	needsTarget: ()=>true,
 	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
 	criteriaToExecute: (cmd,observer) => {
 		if( !cmd.commandItem.isRecharged() ) {
@@ -180,7 +215,7 @@ class Cmd {
 		return false;
 	}
 	enact() {
-		let passesTime = this.passesTimeOnExecution
+		let passesTime = typeof this.passesTimeOnExecution === 'function' ? this.passesTimeOnExecution(this) : this.passesTimeOnExecution;
 		let retain = this.retain;
 		this.onEnact(this);
 		this.clear();
@@ -194,7 +229,7 @@ class Cmd {
 	get itemAllowFilter()		{ return this.ct && this.ct.itemAllowFilter; }
 	get itemFilter()			{ return this.ct && this.ct.itemFilter; }
 	get convertOnItemChosen()	{ return this.ct && this.ct.convertOnItemChosen; }
-	get needsTarget() 			{ return this.ct && this.ct.needsTarget; }
+	get needsTarget() 			{ return this.ct && this.ct.needsTarget && this.ct.needsTarget(this); }
 	get targetRange() 			{ return this.ct && this.ct.targetRange; }
 	get criteriaToExecute()		{ return this.ct && this.ct.criteriaToExecute; }
 	get passesTimeOnExecution() { return this.ct ? this.ct.passesTimeOnExecution : true; }
@@ -346,6 +381,7 @@ class UserCommandHandler {
 
 return {
 	commandForItem: commandForItem,
+	commandForItemAttack: commandForItemAttack,
 	UserCommandHandler: UserCommandHandler
 }
 

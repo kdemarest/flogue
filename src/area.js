@@ -479,19 +479,32 @@ function tick(speed,map,entityListRaw,thinkClip) {
 			// DANGER! At this moment the entity might have changed areas!
 			tickItemList(entity.inventory,dt,entity.rechargeRate||1);
 			DeedManager.calc(entity);
-			entity.actionCount -= 1;
+			let actionCost = 1;
+			if( entity.freeCommands && entity.freeCommands.includes(entity.command) ) {
+				tell(mSubject,entity,' ',mVerb,'can',' take another action.');
+				actionCost = 0;
+			}
+			entity.actionCount -= actionCost;
+			entity.clearCommands();
+			if( entity.isUser() && actionCost === 0 ) {
+				speed = 1000;
+				dt = 1/speed;
+				break;
+			}
 		}
 	}
 	DeedManager.tick(null,dt);	// this ticks the positions...
-	map.actionCount += 1 / speed;
-	while( map.actionCount >= 1 ) {
-		// WARNING! There is some risk that an item could tick twice here, or not at all, if an entity caused something to
-		// pop out of another entity's inventory. But the harm seems small. I hope.
-		tickItemList(map.itemList,dt,1);
-		map.actionCount -= 1;
+	if( dt ) {
+		map.actionCount += 1 / speed;
+		while( map.actionCount >= 1 ) {
+			// WARNING! There is some risk that an item could tick twice here, or not at all, if an entity caused something to
+			// pop out of another entity's inventory. But the harm seems small. I hope.
+			tickItemList(map.itemList,dt,1);
+			map.actionCount -= 1;
+		}
 	}
 	DeedManager.cleanup();
-	entityListByTurnOrder.forEach( entity => entity.clearCommands() );
+	//entityListByTurnOrder.forEach( entity => entity.clearCommands() );
 	checkDeaths(entityListByTurnOrder);
 }
 

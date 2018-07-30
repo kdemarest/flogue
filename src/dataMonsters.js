@@ -132,6 +132,9 @@ const MonsterTypeList = {
 		brainMindset: 'pickup,open',
 		control: Control.USER,
 		experience: 0,
+		naturalWeapon: {
+			typeFilter: 'weapon.hands',
+		},
 		inventoryLoot: '',
 		inventoryWear: '',
 		isChosenOne: true,
@@ -682,7 +685,7 @@ const MonsterTypeList = {
 		senseSmell: 200,
 	},
 	"goblin": {
-		core: [ SYM, 1, '3:10', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
+		core: [ SYM, 1, '3:10', 'evil', 'cut', 'sentient', 'humanoid', 'mon/earth/goblin.png', '*' ],
 		brainIgnoreClearShots: 70,
 		brainMindset: 'greedy',
 		greedField: 'isGem',
@@ -691,7 +694,8 @@ const MonsterTypeList = {
 		isEarthChild: true,
 		inventoryLoot: '1x potion.eBurn',
 		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 20% any, 30% pinchOfEarth',
-		sayPrayer: 'Oh mighty Thagzog...'
+		sayPrayer: 'Oh mighty Thagzog...',
+		scale: 0.45,
 	},
 	"goblinWar": { 
 		core: [ SYM, 49, '3:8', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
@@ -943,7 +947,7 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"soldierAnt": {
-		core: [ SYM, 1, '2:12', 'evil', 'bite', 'hivemind', 'multiped', 'dc-mon/animals/soldier_ant.png', 'it' ],
+		core: [ SYM, 1, '2:12', 'evil', 'bite', 'hivemind', 'multiped', 'mon/insect/giantAnt.png', 'it' ],
 		name: "soldier ant",
 		brainMindset: 'greedy',
 		greedField: 'isAntFood',
@@ -1265,7 +1269,6 @@ function monsterPreProcess(typeId,m) {
 		quick: 2,
 		reach: m.reach || 1,
 		damageType: damType,
-		name: damType,
 	}, m.naturalWeapon );
 	m.naturalWeapon = natWeapon;
 

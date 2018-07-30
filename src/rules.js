@@ -202,6 +202,8 @@ let xCalc = function(item,presets,field,op) {
 	return n;
 }
 
+
+// WARNING! This must be in the same order as evaluations in dataPicker's item picker.
 let calcFirst = function(thing,presets,field) {
 	if( presets && presets.quality && presets.quality[field] !== undefined ) {
 		return presets.quality[field];

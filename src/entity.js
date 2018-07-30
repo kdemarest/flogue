@@ -122,6 +122,17 @@ class Entity {
 	get baseType() {
 		return MonsterTypeList[this.typeId];
 	}
+	getBaseStat(stat) {
+		if( stat == 'healthMax' ) {
+			return Rules.playerHealth(this.level);
+		}
+		return this.baseType[stat];
+	}
+	grantPerks() {
+		for( let i=0 ; i<this.level ; ++i ) {
+			Perk.grant( this, this.legacyId, i );
+		}
+	}
 	gateTo(area,x,y) {
 		if( this.area && this.area.id == area.id ) {
 			return {
@@ -152,7 +163,9 @@ class Entity {
 		if( this.isUser() ) {
 			area.castLight();
 		}
-
+		if( this.legacyId && !this.perkList ) {
+			this.grantPerks();
+		}
 		return {
 			status: 'gateTo',
 			area: area,
@@ -282,7 +295,7 @@ class Entity {
 				}
 				let self = this;
 				itemList.forEach( item => {
-					if( (!item.isFake && !this.vanish) || item.isPlot ) {
+					if( (!item.isFake && !item.isSkill && !this.vanish) || item.isPlot ) {
 						let lx = self.x;
 						let ly = self.y;
 						if( this.lootFling ) {
@@ -330,9 +343,8 @@ class Entity {
 		this.experience -= this.experienceForLevel(this.level+1);
 		this.level += 1;
 		DeedManager.end( deed => deed.stat && deed.stat=='healthMax' );
-		let add = Rules.playerHealth(this.level)-Rules.playerHealth(this.level-1);
-		this.healthMax += add;
-		this.health = Math.max(this.health+add,this.healthMax);
+		this.healthMax = Rules.playerHealth(this.level);
+		this.health = this.healthMax;
 		tell(mSubject,this,' ',mVerb,'gain',' a level!');
 
 		// happiness flies away from the attacker
@@ -1165,7 +1177,7 @@ class Entity {
 			this.record('attack '+target.name+' with '+(weapon.name || weapon.typeId),true);
 			this.commandItem = weapon;
 			this.commandTarget = target;
-			let temp = this.itemToAttackCommand(weapon);
+			let temp = commandForItemAttack(weapon);
 			if( temp !== Command.ATTACK || !this.nearTarget(target,1) ) {
 				return temp;
 			}
@@ -1662,7 +1674,7 @@ class Entity {
 		let f = new Finder(this.inventory).filter( item=>item.inSlot && item[is] );
 		let armor = 0;
 		f.forEach( item => { armor += item.calcReduction(damageType); });
-		return armor;
+		return Perk.apply( { source: this, op: 'calcReduction', isRanged: isRanged, damageType: damageType, armor: armor } ).armor;
 	}
 
 	changeAttitude(newAttitude) {
@@ -1728,10 +1740,16 @@ class Entity {
 
 		let quiet = false;
 
+		let isCharge = false;
+		if( !isOngoing && attacker && attacker.chargeDist>0 && attacker.chargeAttackMult ) {
+			isCharge = true;
+			amount *= attacker.chargeAttackMult;
+		}
+
 		let isSneak = false;
-		if( !isOngoing && attacker && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=2 ) {
+		if( !isOngoing && !isCharge && attacker && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=2 ) {
 			isSneak = true;
-			amount *= (attacker.sneakAttackMult || 2);
+			amount *= attacker.sneakAttackMult||2;	// perk touches stat directly.
 		}
 
 		// Deal with armor first...
@@ -1915,7 +1933,7 @@ class Entity {
 				attackVerb = item.attackVerb;
 				qualifier = ' '+damageType;
 			}
-			tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+qualifier+' damage!'+(isSneak?' Sneak attack!' : '') );
+			tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+qualifier+' damage!'+(isSneak?' Sneak attack!' : '')+(isCharge?' Charge attack!' : '') );
 		}
 
 		let isRetaliation = 0;
@@ -1953,6 +1971,7 @@ class Entity {
 			isRanged: 	isRanged,
 			reduction: 	reduction,
 			isSneak: 	isSneak,
+			isCharge: 	isCharge,
 			isImmune: 	isImmune,
 			isResist: 	isResist,
 			isVuln: 	isVuln,
@@ -2001,6 +2020,7 @@ class Entity {
 			stat: 'stun',
 			value: true,
 			duration: 0,
+			isSecondary: true,
 		});
 		effectApply( effect, this, attacker, item, 'shove' );
 
@@ -2113,21 +2133,8 @@ class Entity {
 		}
 	}
 
-	itemToAttackCommand(weapon) {
-		if( weapon.mayThrow && (!weapon.inSlot || weapon.inSlot==Slot.AMMO) ) {
-			return Command.THROW;
-		}
-		if( weapon.mayCast ) {
-			return Command.CAST;
-		}
-		if( weapon.mayShoot ) {
-			return Command.SHOOT;
-		}
-		if( !weapon.range || weapon.inSlot == Slot.WEAPON ) {
-			return Command.ATTACK;
-		}
-		debugger;
-		return Command.SHOOT;
+	isMyHusk(entity) {
+		return this.oldMe && this.oldMe.id == entity.id;
 	}
 
 	calcDefaultWeapon() {
@@ -2340,6 +2347,17 @@ class Entity {
 		return result;
 	}
 
+	actTrigger(item,target) {
+		let result = {
+			status: 'trigger',
+			success: false
+		}
+		item.x = this.x;
+		item.y = this.y;
+		result = item.trigger(target||this,this,Command.TRIGGER);
+		return result;
+	}
+
 	actGaze(item) {
 		let result = {
 			status: 'gaze',
@@ -2355,7 +2373,7 @@ class Entity {
 		item.y = this.y;
 		let shatter = Math.chance(Rules.chanceToShatter(item.level));
 		tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'.'+(shatter ? ' It shatters!' : ''));
-		result = item.trigger(this,this,Command.Gaze);
+		result = item.trigger(this,this,Command.GAZE);
 		if( shatter ) {
 			item.destroy();
 			result.shatter = true;
@@ -2617,7 +2635,7 @@ class Entity {
 			success: false
 		}
 		this.shieldBonus = 'stand';
-		if( item.isPlot ) {
+		if( item.isPlot || item.noDrop ) {
 			tell( mSubject,this,' ',mVerb,'may',' not drop the ',mObject,item,'.' );
 			result.isPlot = true;
 			return result;
@@ -2828,19 +2846,23 @@ class Entity {
 
 		if( doAttack ) {
 			if( weapon.mayShoot ) {
+				this.command = Command.SHOOT;
 				return this.actShoot(weapon,f.first);
 			}
 			if( weapon.mayCast ) {
+				this.command = Command.CAST;
 				return this.actCast(weapon,f.first);
 			}
 			if( weapon.mayThrow && (!weapon.inSlot || weapon.inSlot==Slot.AMMO) ) {
+				this.command = Command.THROW;
 				return this.actThrow(weapon,f.first);
 			}
+			this.command = Command.ATTACK;
 			return this.actAttack(f.first,weapon);
 		}
 		else
 		// Switch with friends, else bonk!				// used to be isMyFriend()
-		if( f.count && (!this.isUser() || !f.first.isMerchant) && !this.isMyEnemy(f.first) && !this.isMySuperior(f.first) ) {
+		if( f.count && (!this.isUser() || !f.first.isMerchant) && (this.isMyHusk(f.first) || (!this.isMyEnemy(f.first) && !this.isMySuperior(f.first))) ) {
 			// swap places with allies
 			allyToSwap = f.first;
 		}
@@ -2960,6 +2982,7 @@ class Entity {
 				result.pickup.push( this.actPickup(item) );
 			}
 		}
+
 		return result;
 	}
 
@@ -3052,6 +3075,11 @@ class Entity {
 				let item = this.commandItem;
 				this.commandItem = null;
 				return this.actShoot(item,this.commandTarget);
+			}
+			case Command.TRIGGER: {
+				let item = this.commandItem;
+				this.commandItem = null;
+				return this.actTrigger(item,this.commandTarget || this);
 			}
 			case Command.USE: {
 				let item = this.commandItem;
@@ -3152,6 +3180,10 @@ class Entity {
 			return true;
 		}
 
+		if( this.legacyId && !this.perkList ) {
+			this.grantPerks();
+		}
+
 		if( timePasses && this.regenerate ) {
 			if( this.health < this.healthMax ) {
 				this.health = Math.clamp(this.health+this.regenerate*this.healthMax,0.0,this.healthMax);
@@ -3181,6 +3213,16 @@ class Entity {
 		}
 		else {
 			this.commandResult = this.actOnCommand();
+		}
+
+		if( !this.jump && Command.Movement.includes(this.command) && this.commandResult.success ) {
+			if( dir === this.lastDir ) {
+				this.chargeDist = (this.chargeDist||0)+1;
+			}
+			this.lastDir = dir;
+		}
+		else {
+			delete this.chargeDist;
 		}
 
 		if( timePasses ) {

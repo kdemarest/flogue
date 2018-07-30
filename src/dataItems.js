@@ -278,7 +278,7 @@ const WeaponList = Fab.add( '', {
 
 	"solarBlade": {
 		level: 0,
-		rarity: 0.0000001,
+		rarity: 0,
 		xDamage: 0.33,	// This must be low to offset the fact that it is solarium.
 		damageType: DamageType.SMITE,
 		glow: 1,
@@ -292,6 +292,45 @@ const WeaponList = Fab.add( '', {
 		materials: { solarium: WeaponMaterialList.solarium },
 		effects: { eInert: EffectTypeList.eInert},
 		img: 'item/weapon/solariumBlade.png'
+	},
+	"hands": {
+		level: 0,
+		rarity: 0,
+		xDamage: 0.5,
+		damageType: DamageType.BASH,
+		noDrop: true,
+		quick: 2,
+		materials: { flesh: {} },
+		effects: { eInert: EffectTypeList.eInert},
+		matter: 'flesh',
+		namePattern: 'hands{?effect}',
+		isHands: true
+	},
+	"claws": {
+		level: 0,
+		rarity: 0,
+		xDamage: 0.8,
+		damageType: DamageType.CLAW,
+		noDrop: true,
+		quick: 2,
+		materials: { flesh: {} },
+		effects: { eInert: EffectTypeList.eInert},
+		matter: 'flesh',
+		namePattern: 'claws{?effect}',
+		isClaws: true
+	},
+	"bite": {
+		level: 0,
+		rarity: 0,
+		xDamage: 0.8,
+		damageType: DamageType.BITE,
+		noDrop: true,
+		quick: 2,
+		materials: { flesh: {} },
+		effects: { eInert: EffectTypeList.eInert},
+		matter: 'flesh',
+		namePattern: 'bite{?effect}',
+		isBite: true
 	},
 	"pickaxe": {
 		level: 0,
@@ -310,6 +349,7 @@ const WeaponList = Fab.add( '', {
 		matter: 'wood',
 		damageType: DamageType.BASH,
 		quick: 1,
+		isClub: true,
 		attackVerb: 'smash',
 		img: 'item/weapon/club.png'
 	},
@@ -319,6 +359,7 @@ const WeaponList = Fab.add( '', {
 		xDamage: 1.00,
 		damageType: DamageType.CUT,
 		quick: 2,
+		isSword: 1,
 		img: 'item/weapon/long_sword1.png'
 	},
 	"greatsword": {
@@ -326,6 +367,7 @@ const WeaponList = Fab.add( '', {
 		rarity: 0.3,
 		xDamage: 1.10,
 		damageType: DamageType.CUT,
+		isSword: 1,
 		quick: 0,
 		img: 'item/weapon/long_sword2.png'
 	},
@@ -606,7 +648,7 @@ const StuffList = Fab.add( '', {
 	"trollHide": 		{ rarity: 0.5, matter: 'leather', img: "item/armour/troll_hide.png" },
 	"bone": 			{ rarity: 1.0, matter: 'bone', mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: "item/food/bone.png" },
 	"antGrubMush": 		{ rarity: 0.8, matter: 'liquid', isAntFood: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/sultana.png" },
-	"viperVenom": 		{ rarity: 0.6, matter: 'liquid', isLiquid: true, img: "UNUSED/other/acid_venom.png" },
+	"viperVenom": 		{ rarity: 0.6, matter: 'liquid', img: "UNUSED/other/acid_venom.png" },
 	"dogCollar": 		{ rarity: 1.0, matter: 'leather', isJewelry: true, img: 'item/misc/collar.png' },
 	"skull": 			{ rarity: 1.0, matter: 'bone', mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: 'item/stuff/skull.png' },
 	"mushroomBread": 	{ rarity: 1.0, matter: 'plant', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/bread_ration.png'},
@@ -615,7 +657,7 @@ const StuffList = Fab.add( '', {
 	"ghoulFlesh": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/chunk_rotten.png' },
 	"pinchOfEarth": 	{ rarity: 1.0, matter: 'stone', img: 'item/weapon/ranged/rock.png' },
 	"impBrain": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"ogreDrool": 		{ rarity: 1.0, matter: 'liquid', isLiquid: true, mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
+	"ogreDrool": 		{ rarity: 1.0, matter: 'liquid', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
 	"centurionFigurine":{ level: 44, rarity: 0.1, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/solarCenturionFigurine.png',
 						effect: { op: 'summon', value: 'solarCenturion', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
 						},
@@ -1004,7 +1046,8 @@ const ItemTypeList = {
 		varieties: 	OreVeinList,
 		mineSwings: 14
 	},
-// FAKE
+// FAKES and SKILLS
+	"skill": 	{ symbol: SYM, isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "skill.png" },
 	"fake":   	{ symbol: SYM, isFake: true, namePattern: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // CORPSE
 	"corpse":   { symbol: SYM, namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1,
@@ -1300,9 +1343,10 @@ const ItemTypeList = {
 })();
 
 
-const ItemSortOrder = ['weapon','ammo','helm','armor','cloak','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff','key'];
-const ItemFilterOrder = ['','weapon','armor','shield','potion','spell','ring','gem','ore','stuff'];
+const ItemSortOrder = ['skill','weapon','ammo','helm','armor','cloak','bracers','gloves','boots','shield','ring','potion','gem','ore','spell','stuff','key'];
+const ItemFilterOrder = ['','skill','weapon','armor','shield','potion','spell','ring','gem','ore','stuff'];
 const ItemFilterGroup = {
+	skill:  ['skill'],
 	weapon: ['weapon','ammo'],
 	armor:  ['armor','cloak','helm','bracers','gloves','boots'],
 	shield: ['shield'],

@@ -46,11 +46,20 @@ class ViewInventory extends ViewObserver {
 	}
 	render() {
 
-		function sortOrder(a,b,...fields) {
+		function sortOrder(a,b,sortDir,...fields) {
 			let fieldId;
 			while( fieldId = fields.shift() ) {
-				let af = !fieldId ? '' : a[fieldId];
-				let bf = !fieldId ? '' : b[fieldId];
+				let af = a[fieldId];
+				let bf = b[fieldId]
+				if( !fieldId ) debugger;
+				if( (af === undefined || af === '') && !(bf === undefined || bf === '') ) {
+					return -sortDir;
+				}
+				if( !(af === undefined || af === '') && (bf === undefined || bf === '') ) {
+					return -sortDir;
+				}
+				af = sortIsNumeric[fieldId] ? parseFloat(af) : af;
+				bf = sortIsNumeric[fieldId] ? parseFloat(bf) : bf;
 				if( af < bf ) return -1;
 				if( af > bf ) return 1;
 			}
@@ -60,7 +69,7 @@ class ViewInventory extends ViewObserver {
 		function doSort(inventory,explainFn,sortFn,asc) {
 			let colData = inventory.arrayMap( item => explainFn(item) );
 			let sortDir = asc ? 1 : -1;
-			colData.sort( (a,b) => sortFn(a,b)*sortDir );
+			colData.sort( (a,b) => sortFn(a,b,sortDir)*sortDir );
 			return colData.map( ex => ex.item );
 		}
 
@@ -145,14 +154,16 @@ class ViewInventory extends ViewObserver {
 		}
 
 		let sortFn = {
-			icon: 			(a,b) => sortOrder(a,b,'typeOrder','name'),
-			description: 	(a,b) => sortOrder(a,b,'name'),
-			armor: 			(a,b) => sortOrder(a,b,'armor','typeOrder','name'),
-			damage: 		(a,b) => sortOrder(a,b,'damage','typeOrder','name'),
-			bonus: 			(a,b) => sortOrder(a,b,'bonus','typeOrder','name'),
-			charges: 		(a,b) => sortOrder(a,b,'recharge','typeOrder','name'),
-			price: 			(a,b) => sortOrder(a,b,'price','name'),
+			icon: 			(a,b,sortDir) => sortOrder(a,b,sortDir,'typeOrder','name'),
+			description: 	(a,b,sortDir) => sortOrder(a,b,sortDir,'name'),
+			armor: 			(a,b,sortDir) => sortOrder(a,b,sortDir,'armor','typeOrder','name'),
+			damage: 		(a,b,sortDir) => sortOrder(a,b,sortDir,'damage','typeOrder','name'),
+			bonus: 			(a,b,sortDir) => sortOrder(a,b,sortDir,'bonus','typeOrder','name'),
+			charges: 		(a,b,sortDir) => sortOrder(a,b,sortDir,'recharge','typeOrder','name'),
+			price: 			(a,b,sortDir) => sortOrder(a,b,sortDir,'price','name'),
 		}
+
+		let sortIsNumeric = { armor:1, damage:1, recharge:1, price:1 };
 
 		let sortDirectionDefault = {
 			icon: true,

@@ -58,9 +58,12 @@ class ViewInfo extends ViewObserver {
 				s += item.isUnique ? '<img class="itemImage" src="'+IMG_BASE+item.img+'"><br>' :
 					'<table class="itemIconTable"><tr><td>'+ex.icon+'</td><td>'+lvl+'</td></tr></table><br>';
 				s += ex.description+(ex.permutation?' '+ex.permutation:'')+'<br>';
-				if( item.effect && item.effect.stat && !item.isWeapon ) {
-					s += item.effect.stat+' '+(''+item.effect.value).split(',').join(', ')+'<br>';
+				if( ex.description2 ) {
+					s += ex.description2+'<br>';
 				}
+				//if( item.effect && item.effect.stat && !item.isWeapon ) {
+				//	s += item.effect.stat+' '+(''+item.effect.value).split(',').join(', ')+'<br>';
+				//}
 				//s += 'Value: '+ex.priceWithCommas+'<br>';
 //				s += String.combine(' ',ex.effect,ex.permute,ex.effect || ex.permute ? '<br>' : '');
 			}
@@ -168,7 +171,10 @@ class ViewInfo extends ViewObserver {
 
 		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
 		let nim = entity.dodge >= 2 ? ', lithe' : (entity.dodge==1 ? ', nimble' : '');
-		s += (entity.jump>0 ? '<span class="jump">JUMPING</span>' : (entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' : entity.travelMode+'ing'))+spd+nim+'<br>';
+		s += (entity.chargeAttackMult && entity.chargeDist>0) ? '<span class="jump">CHARGING</span>' :
+			(entity.jump>0 ? '<span class="jump">JUMPING</span>' :
+			(entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' :
+			entity.travelMode+'ing'))+spd+nim+'<br>';
 
 		// Shield characteristics
 		s += shield ? '<div class="monDetail">Blocking:</div>'+shield.blocks.split(',').join(', ')+'<br>' : '';
@@ -203,6 +209,19 @@ class ViewInfo extends ViewObserver {
 		s += summaryImmune.length ? '<div class="monDetail">Immune:</div>'+summaryImmune.join(', ')+'<br>' : '';
 		s += entity.resist ? '<div class="monDetail">Resist:</div>'+entity.resist.split(',').join(', ')+'<br>' : '';
 		s += entity.vuln ? '<div class="monDetail">Weak:</div>'+entity.vuln.split(',').join(', ')+'<br>' : '';
+		let p = '';
+		if( entity.perkList ) {
+			Object.each(entity.perkList, perk => {
+				if( perk.dead ) {
+					return;
+				}
+				if( !p ) {
+					p += '<span>PERKS</span><br>';
+				}
+				p += '<span>'+perk.name+'</span><br>';
+			});
+		}
+		s += p;
 		if( !entity.isUser() ) {
 			s += debug ? (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'') : '';
 //			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');

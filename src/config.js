@@ -110,6 +110,8 @@ ConfigList.ken = () => {
 		friendDensity: 	0.00001,
 	}
 
+//	MonsterTypeList.player.inventoryLoot.push('30x weapon ofMetal, 10x stuff ofLiquid, 10x gloves ofLeather');
+
 //	MonsterTypeList.player.inventoryLoot.push('100x potion, 100x helm, 100x armor, 100x spell, 100x gem, 100x weapon, 100x cloak, 100x gloves, 100x ammo, 100x shield, 100x ring');
 //	MonsterTypeList.player.inventoryLoot.push('100x helm.dwarven');
 //	MonsterTypeList.player.inventoryLoot.push('10x coin');
@@ -127,9 +129,12 @@ ConfigList.ken = () => {
 //		xEffectChance: 4.0
 	});
 
+	MonsterTypeList.player.legacyId = 'monk';
+	MonsterTypeList.player.light = 8;
+
 	return {
-		startingDepth: 6,
-		themeId: 'kenDwarfTown',
+		startingDepth: 19,
+//		themeId: 'kenDwarfTown',
 //		saveBattery: true
 	}
 }

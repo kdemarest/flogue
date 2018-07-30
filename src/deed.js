@@ -236,7 +236,8 @@ let DeedManager = (new class {
 //		if( target.baseType[stat] === undefined ) {
 //			debugger;
 //		}
-		target[stat] = target.baseType[stat];
+//		if( stat == 'visciousWhack' ) debugger;
+		target[stat] = target.isMonsterType ? target.getBaseStat(stat) : target.baseType[stat];
 		for( let deed of this.deedList ) {
 			if( !deed.killMe && deed.target.id == target.id && deed.stat == stat ) {
 				deed.applyEffect();
@@ -524,6 +525,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 				secondary.push( {effect: shooter.effect, chance: shooter.chanceOfEffect } );
 			}
 		}
+		Perk.apply( effect, { secondary: secondary } );
 	}
 
 	let result = {
@@ -752,6 +754,9 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		effect.duration = effect.duration * 0.50;
 		Anim.Over(delayId,target,StickerList.showResistance.img);
 	}
+
+	// Let any applicable perk transmogrify the effect any way it wants to.
+	Perk.apply( effect );
 
 	if( singular && (effect.singularOp == 'max' || effect.singularOp == 'sum') ) {
 		//Some effects are "singular" meaning you can't have more than one of it upon you.

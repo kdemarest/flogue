@@ -21,7 +21,6 @@ class Item {
 			xArmor:1,
 			xDamage:1,
 			xDuration:1,
-			matter:1,
 			ingredientId:1,
 			type:1,
 			typeId:1
@@ -31,9 +30,6 @@ class Item {
 		let noLevelVariance = xCalc(this,presets,'noLevelVariance','+');
 		let n = depth - levelRaw;
 		let level = (noLevelVariance || (levelRaw >= depth)) ? levelRaw : levelRaw + (n-Math.floor(Math.sqrt(Math.randInt(0,(n+1)*(n+1)))));
-
-		let matter = calcFirst(this,presets,'matter');
-		console.assert( (matter && Rules.itemDamageTable[matter]) || !this.isTreasure);
 
 		// Notice that the init overrides the typeId. This is to make sure that the inject doesn't do so with a dot 
 		// phrase, like weapon.dagger (which it definitely might!)
@@ -50,16 +46,17 @@ class Item {
 			x:null,
 			y:null
 		};
-		if( matter ) {
-			inits.matter = matter;
-			inits['is'+String.capitalize(matter)] = true;
-		}
 		Object.assign( this, itemType, presets, inject||{}, inits );
 
-		// order is VERY important here! Variety rules, then material, then quality.
-		Object.merge(this,this.quality,ignoreFields);
-		Object.merge(this,this.material,ignoreFields);
+		// order is VERY important here! Variety rules, then material, then quality. QMVI (here reversed because each over-writes the prior)
 		Object.merge(this,this.variety,ignoreFields);
+		Object.merge(this,this.material,ignoreFields);
+		Object.merge(this,this.quality,ignoreFields);
+
+		console.assert( (this.matter && Rules.itemDamageTable[this.matter]) || !this.isTreasure);
+		if( this.matter ) {
+			inits['of'+String.capitalize(this.matter)] = true;
+		}
 
 		this.health = this.healthMax;
 
@@ -223,6 +220,13 @@ class Item {
 			}
 			return String.combine(' ',chance,item.effect.name + (item.effect.permuteName ? '**' : ''));
 		}
+		function getDamage() {
+			let effect = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
+			if( !effect ) {
+				return '';
+			}
+			return Math.max(1,Math.floor(Perk.apply( Object.assign({},effect,{source:item.owner,item:item}) ).value));
+		}
 
 		let item = this;
 		let owner = item.owner && item.owner.isMonsterType ? item.owner : {};
@@ -234,9 +238,10 @@ class Item {
 			typeOrder: 		order(item.typeId),
 			icon: 			icon(item.icon),
 			description: 	((item.bunch||0)>1 ? item.bunch+'x ' : '')+String.capitalize(nameClean),
+			description2: 	item.description || (item.effect?item.effect.description:'') || '',
 			bunch: 			((item.bunch||0)>1 ? item.bunch+'x ' : ''),
 			name: 			String.capitalize(nameClean),
-			damage: 		item.isWeapon ? item.damage+(item.ammoSpec?'+ammo':'') : (item.effect && item.effect.op=='damage' ? Math.max(1,Math.floor(item.effect.value)) : ''),
+			damage: 		getDamage(),
 			damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
 			quick: 			['(clumsy)','','(quick)'][item.getQuick()],
 			reach: 			item.reach > 1 ? 'reach '+item.reach : '',
@@ -430,7 +435,7 @@ class Item {
 		return this.armor;
 	}
 	bunchId() {
-		if( (this.inSlot && !this.donBunches) || !this.isTreasure || this.noBunch || this.isFake || this.inventory ) {
+		if( (this.inSlot && !this.donBunches) || !this.isTreasure || this.noBunch || this.isFake || this.isSkill || this.inventory ) {
 			return this.id;
 		}
 		let b = '';
@@ -489,6 +494,7 @@ class Item {
 				at: 		entity,
 				img: 		this.imgGet ? this.imgGet(this) : this.img,
 				delayId: 	entity.id,
+				delayAdd: 	0.2,
 				duration: 	0.6,
 				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
 				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }

@@ -894,7 +894,7 @@ PlaceTypeList.goblinGathering = {
 	},
 	monsterTypes: {
 		goblinPriest: {
-			core: [ SYM, 1, '3:10', 'evil', 'rot', 'sentient', 'humanoid', 'dc-mon/gnoll.png', '*' ],
+			core: [ SYM, 1, '3:10', 'evil', 'rot', 'sentient', 'humanoid', 'mon/earth/goblinPriest.png', '*' ],
 			attitude: Attitude.WORSHIP,
 			brainIgnoreClearShots: 20,
 			brainMindset: 'greedy',
@@ -904,6 +904,7 @@ PlaceTypeList.goblinGathering = {
 			inventoryLoot: '40% spell.eRot',
 			loot: '50% coin, 20% weapon.mace, 20% any, 30% pinchOfEarth',
 			sayPrayer: 'Oh mighty Thagzog...',
+			scale: 0.55,
 			shout: 'Death to all heretic overworld invaders!',
 			resist: DamageType.ROT,
 		},
@@ -960,6 +961,7 @@ PlaceTypeList.surfaceSunTemple = {
 	onLoot: (self,toucher) => {
 		effectApply( { basis: 'eKillLabel', value: 'starterChest' }, self.map, self, null, 'loot');
 		toucher.name = self.scionName;
+		toucher.legacyId = self.legacyId;
 	},
 	symbols: {
 		'1': [{
@@ -969,6 +971,7 @@ PlaceTypeList.surfaceSunTemple = {
 			sign: 'Legacy of Hathgar the mighty.',
 			name: 'Hathgar\'s Chest',
 			scionName: 'Scion of Hathgar',
+			legacyId: 'soldier',
 			properNoun: true,
 			inventoryLoot: [
 				'weapon.sword.eSmite, armor.eInert, 2x potion.eHealing',

@@ -130,6 +130,20 @@ TestList.makeAllMonsters = {
 	}
 }
 
+TestList.legacies = {
+	themeId: 'testSimpleRoom',
+	depth: 0,
+	timeLimit: 3300+4000,
+	player: {
+		atMarker: 'topLeft',
+		immortal: true,
+	},
+	tick(helper) {
+		helper.player.legacyId = 'brawler';
+		helper.player.inventoryLoot = '2x weapon.club, 10x ammo.rock';
+	}
+}
+
 // MakeAllItems
 // Every possible item is made, except permutations.
 TestList.makeAllItems = {
