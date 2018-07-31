@@ -30,6 +30,7 @@ let Rules = new class {
 		this.removeScentOfTheDead 			= false;
 		this.armorVisualScale 				= 200;
 		this.blockVisualScale 				= 100;
+		this.tooCloseDefault				= 4;
 
 		this.itemDamageTable = {
 			metal: 		{ corrode: 1, smite: 1},

@@ -131,12 +131,14 @@ ConfigList.ken = () => {
 	});
 
 	MonsterTypeList.player.inventoryLoot = '5x weapon.bow, 50x ammo.arrow';
-	MonsterTypeList.player.legacyId = 'archer';
+	MonsterTypeList.player.legacyId = 'ninja';
+	MonsterTypeList.player.sensePerception = true;
+	MonsterTypeList.player.senseAlert = true;
 	MonsterTypeList.player.light = 8;
 
 	return {
-		startingDepth: 19,
-		themeId: 'kenTheme',
+		startingDepth: 6,
+//		themeId: 'kenTheme',
 //		saveBattery: true
 	}
 }

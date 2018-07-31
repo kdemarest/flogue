@@ -9,38 +9,89 @@ function handleScent(map,px,py,senseSmell) {
 
 	guiMessage( 'overlayRemove', { groupId: 'scent' } );
 
-	if( senseSmell) {
-		let d = MapVis;
-		let d2 = (d*2)+1
-		for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
-			let ty = y-(py-d);
-			for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
-				let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
-				if( !inBounds ) continue;
-				let tx = x-(px-d);
-				let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
-				if( !inPane ) continue;
+	if( !senseSmell) {
+		return;
+	}
 
-				let smelled = map.scentGetEntity(x,y,senseSmell);
-				if( !smelled ) continue;
+	let d = MapVis;
+	let d2 = (d*2)+1
+	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
+		let ty = y-(py-d);
+		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
+			let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
+			if( !inBounds ) continue;
+			let tx = x-(px-d);
+			let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
+			if( !inPane ) continue;
 
-				let age = map.scentGetAge(x,y);
-				let alpha = 0.0 + Math.clamp(1-(age/senseSmell),0,1) * 0.6;
-				if( !alpha ) continue;
+			let smelled = map.scentGetEntity(x,y,senseSmell);
+			if( !smelled ) continue;
 
-				new Anim( {}, {
-					groupId: 		'scent',
-					x: 				x,
-					y: 				y,
-					area: 			map.area,
-					img: 			smelled.img,
-					duration: 		true,
-					onSpriteMake: 	s => { s.sScaleSet(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
-				});
-			}
+			let age = map.scentGetAge(x,y);
+			let alpha = 0.0 + Math.clamp(1-(age/senseSmell),0,1) * 0.6;
+			if( !alpha ) continue;
+
+			new Anim( {}, {
+				groupId: 		'scent',
+				x: 				x,
+				y: 				y,
+				area: 			map.area,
+				img: 			smelled.img,
+				duration: 		true,
+				onSpriteMake: 	s => { s.sScaleSet(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
+			});
 		}
 	}
 }
+
+function handlePerception(observer,visCache,map,px,py,sensePerception,senseAlert) {
+
+	guiMessage( 'overlayRemove', { groupId: 'perc' } );
+
+	if( !sensePerception ) {
+		return;
+	}
+
+	let f = observer.findAliveOthersNearby(MaxVis*2).filter( e => observer.isMyEnemy(e) && observer.canPerceiveEntity(e) );
+
+	let d = MapVis;
+	let d2 = (d*2)+1
+	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
+		let ty = y-(py-d);
+		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
+			let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
+			if( !inBounds ) continue;
+			let tx = x-(px-d);
+			let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
+			if( !inPane ) continue;
+
+			let visible = inBounds && visCache[y] && visCache[y][x];
+			if( !visible ) {
+				continue;
+			}
+			let tile = map.tileTypeGet(x,y);
+			if( tile.isWall ) {
+				continue;
+			}
+			let perc = f.all.find( e => e.canTargetPosition(x,y,e.area) );
+			if( !perc ) {
+				continue;
+			}
+			let alarm = senseAlert && f.all.find( e => e.near(x,y,e.area,e.tooClose||Rules.tooCloseDefault) );
+
+			new Anim( {}, {
+				groupId: 		'perc',
+				x: 				x,
+				y: 				y,
+				area: 			map.area,
+				img: 			alarm ? StickerList.alert.img : StickerList.perception.img,
+				duration: 		true,
+				onSpriteMake: 	s => { s.sScaleSet(0.3).sAlpha(0.1); }
+			});
+		}
+	}
+}
+
 
 
 function createDrawList(observer,drawListCache) {
@@ -74,7 +125,7 @@ function createDrawList(observer,drawListCache) {
 
 
 	handleScent(map,px,py,observer.senseSmell);
-
+	handlePerception(observer,visCache,map,px,py,observer.sensePerception,observer.senseAlert);
 
 	let visId = {};
 	let revealLight = 7;		// Assumes max light is about 10.

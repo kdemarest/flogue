@@ -313,7 +313,7 @@ LegacyList.archer = compose( 'archer', [
 			: false,
 		description: 'Bow shots do additional damage as your eagle eye finds weakness.'
 	}) ),
-	range( [2,8,14], (level,index) => ({
+	range( [2,18], (level,index) => ({
 		name: 'Multi Shot x'+(index+2),
 		skill: {
 			rechargeTime: 50,
@@ -322,12 +322,27 @@ LegacyList.archer = compose( 'archer', [
 		},
 		description: 'Rain arrows upon foes in a burst of speed'
 	}) ),
+	range( [4,14], (level,index) => ({
+		name: 'Dash '+(3+index)+'x',
+		skill: {
+			rechargeTime: 20,
+			passesTime: false,
+			effect: { op: 'set', stat: 'freeCommands', value: Command.Movement, duration: 3+index-1 }
+		},
+		description: 'Move multiple times in a row. Any other action cancels the dash.'
+	}) ),
 	range( [6], (level,index) => ({
 		name: 'Nimble shots',
+		singularId: 'nimShot',
 		apply: (when,e)=>when=='main' && e.source && e.item && (e.item.isBow || e.item.isArrow)
 			? e.quick = Math.max(e.quick||0,1)
 			: false,
 		description: 'Faster shots now hit nimble creatures.'
+	}) ),
+	range( [8], (level,index) => ({
+		name: 'Blind Shot',
+		effect: { op: 'set', stat: 'blindShot', value: true, duration: true },
+		description: 'Never miss when attacking enemies you can not see.'
 	}) ),
 	range( [10], (level,index) => ({
 		name: 'Elemental Arrows',
@@ -338,15 +353,11 @@ LegacyList.archer = compose( 'archer', [
 	}) ),
 	range( [12], (level,index) => ({
 		name: 'Lithe shots',
+		singularId: 'nimShot',
 		apply: (when,e)=>when=='main' && e.source && e.item && (e.item.isBow || e.item.isArrow)
 			? e.quick = Math.max(e.quick||0,2)
 			: false,
 		description: 'Faster shots now hit lithe and nimble creatures.'
-	}) ),
-	range( [14], (level,index) => ({
-		name: 'Blind Shot',
-		effect: { op: 'set', stat: 'blindShot', value: true, duration: true },
-		description: 'Never miss when attacking enemies you can not see.'
 	}) ),
 	range( [16], (level,index) => ({
 		name: 'Exploding Shot',
@@ -363,8 +374,10 @@ LegacyList.archer = compose( 'archer', [
 
 ]);
 
-LegacyList.ninja = [
-];
+LegacyList.ninja = compose( 'ninja', [
+
+]);
+
 LegacyList.thief = [
 ];
 LegacyList.bomber = [

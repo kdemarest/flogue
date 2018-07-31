@@ -179,6 +179,7 @@ const StickerList = {
 	locked: { img: "gui/icons/locked.png" },
 	unlock: { img: "gui/icons/unlock.png" },
 	open: { img: "gui/icons/open.png" },
+	perception: { img: "gui/icons/perception.png" },
 	selectBox: { img: "gui/selectBox.png", scale: 1.0, xAnchor: 0, yAnchor: 0 },
 	hit: { img: "effect/bolt04.png", scale: 0.4, xAnchor: 0.5, yAnchor: 0.5 },
 	// WARNING: This is used very special-case in the ViewMap.

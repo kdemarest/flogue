@@ -680,8 +680,7 @@ class Entity {
 		if( !this.inArea(area) ) {
 			return false;
 		}
-		let dist = this.getDistance(x,y);
-		return dist <= targetDist;
+		return Distance.isNear(this.x-x,this.y-y,targetDist);
 	}
 
 
@@ -1456,7 +1455,7 @@ class Entity {
 				}
 
 				// OK, now all the mind control stuff is done, we need to manage our attitude a little.
-				let tooClose = theEnemy && !wasSmell && !wasLEP && distanceToNearestEnemy <= (this.tooClose||4);
+				let tooClose = theEnemy && !wasSmell && !wasLEP && distanceToNearestEnemy <= (this.tooClose||Rules.tooCloseDefault);
 
 				let farFromMaster = this.brainMaster && (
 					(this.brainMaster.area.id!==this.area.id) ||
