@@ -198,7 +198,7 @@ class Item {
 	get baseType() {
 		return ItemTypeList[this.typeId];
 	}
-	explain(buySell) {
+	explain(buySell,observer) {
 		function order(typeId) {
 			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
 		}
@@ -221,19 +221,20 @@ class Item {
 			return String.combine(' ',chance,item.effect.name + (item.effect.permuteName ? '**' : ''));
 		}
 		function getDamage() {
-			let effect = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
-			if( !effect ) {
+			let effectRaw = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
+			if( !effectRaw ) {
 				return '';
 			}
-			return Math.max(1,Math.floor(Perk.apply( Object.assign({},effect,{source:item.owner,item:item}) ).value));
+			let effect = Object.assign({},effectRaw,{source:observer,item:item});
+			return Math.max(1,Math.floor(Perk.apply( 'main', effect ).value));
 		}
 		function getDamageType() {
-			let effect = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
-			if( !effect ) {
+			let effectRaw = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
+			if( !effectRaw ) {
 				return '';
 			}
-			if( window.aa && effect.damageType == DamageType.CHOP ) debugger;
-			return Perk.apply( Object.assign({},effect,{source:item.owner,item:item}) ).damageType;
+			let effect = Object.assign({},effectRaw,{source:observer,item:item});
+			return Perk.apply( 'main', effect ).damageType;
 		}
 
 		let item = this;

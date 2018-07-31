@@ -201,7 +201,7 @@ class ViewFavorites extends ViewObserver {
 			if( item.slot ) {
 				img = '<img class="itemRecharge" src="'+IMG_BASE+'gui/icons/'+(item.inSlot?'marked':'unmarked')+'.png">';
 			}
-			let ex = item.explain();
+			let ex = item.explain(null,observer);
 			let text = ex.description;
 			let lit = observer.isItemSelected(item) && item.isRecharged();
 			let unlit = !item.isRecharged();

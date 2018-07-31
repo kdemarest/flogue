@@ -1688,7 +1688,7 @@ class Entity {
 		let f = new Finder(this.inventory).filter( item=>item.inSlot && item[is] );
 		let armor = 0;
 		f.forEach( item => { armor += item.calcReduction(damageType); });
-		return Perk.apply( { source: this, op: 'calcReduction', isRanged: isRanged, damageType: damageType, armor: armor } ).armor;
+		return Perk.apply( 'calcReduction', { source: this, isRanged: isRanged, damageType: damageType, armor: armor } ).armor;
 	}
 
 	changeAttitude(newAttitude) {

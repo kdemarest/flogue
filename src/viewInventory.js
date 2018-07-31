@@ -202,14 +202,14 @@ class ViewInventory extends ViewObserver {
 
 		this.inventory.result = doSort(
 			this.inventory,
-			item => item.explain(this.mode),
+			item => item.explain(this.mode,observer),
 			sortFn[this.sortColId||'description'],
 			this.sortAscending
 		);
 
 		for( let i=0 ; i<this.inventory.count ; ++i ) {
 			let item = this.inventory.all[i];
-			let ex = item.explain(this.mode);
+			let ex = item.explain(this.mode,observer);
 
 			let cell = {};
 			let spc = this.sortColId == 'icon' && lastTypeId && lastTypeId!=item.typeId;

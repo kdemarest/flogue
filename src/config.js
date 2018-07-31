@@ -106,7 +106,7 @@ ConfigList.ken = () => {
 		monsters: 		['isDemon'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
 		itemDensity:    0.00001,
-		enemyDensity:  	0.002,
+		enemyDensity:  	0.008,
 		friendDensity: 	0.000001,
 	}
 
@@ -130,8 +130,8 @@ ConfigList.ken = () => {
 //		xEffectChance: 4.0
 	});
 
-	MonsterTypeList.player.inventoryLoot = 'armor, helm, bracers, boots, stuff.oilLamp, 2x weapon, shield, weapon.bow';
-	MonsterTypeList.player.legacyId = 'monk';
+	MonsterTypeList.player.inventoryLoot = '5x weapon.bow, 50x ammo.arrow';
+	MonsterTypeList.player.legacyId = 'archer';
 	MonsterTypeList.player.light = 8;
 
 	return {

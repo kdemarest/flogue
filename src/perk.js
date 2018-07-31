@@ -5,7 +5,7 @@ let perkNop = function() {}
 let Perk = {};
 
 // This assumes it has the right to alter the effect in-place.
-Perk.apply = function(effect,details) {
+Perk.apply = function(when,effect,details) {
 	console.assert(effect);
 	let source = effect.source ? effect.source : (effect.item ? effect.item.ownerOfRecord : null);
 	if( !source || !source.isMonsterType || !source.perkList) {
@@ -16,7 +16,7 @@ Perk.apply = function(effect,details) {
 			return;
 		}
 		let fn = perk.apply || perkNop;
-		fn(effect,details);
+		fn(when,effect,details);
 	});
 	return effect;
 }

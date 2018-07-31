@@ -77,7 +77,7 @@ By default like perks do NOT stack - they are each assigned a singularId and tha
 LegacyList.soldier = compose('soldier',[
 	range( [1,3,5,7,9,11,13,15,17,19], (level,index) => ({
 		name: 'Swordsmanship +'+((index+1)*10)+'%',
-		apply: e=>e.isEffect && e.item && e.item.isSword && e.op=='damage' ? e.value *= 1+(index+1)*0.10 : false,
+		apply: (when,e)=>when=='main' && e.item && e.item.isSword && e.op=='damage' ? e.value *= 1+(index+1)*0.10 : false,
 		description: 'Inflict more damage with sword style weapons.'
 	}) ),
 	range( [2,6,14,18], (level,index) => ({
@@ -110,7 +110,7 @@ LegacyList.soldier = compose('soldier',[
 	}) ),
 	range( [8,16], (level,index) => ({
 		name: 'Armor Skill +'+((index+1)*20)+'%',
-		apply: e=>e.op=='calcReduction' ? e.armor *= 1+(index+1)*0.20 : false,
+		apply: (when,e)=>when=='calcReduction' ? e.armor *= 1+(index+1)*0.20 : false,
 		description: 'Improves the defense of any armor worn, reducing damage.'
 	}) ),
 ]);
@@ -122,14 +122,14 @@ LegacyList.soldier = compose('soldier',[
 LegacyList.brawler = compose('brawler',[
 	range( [1,5,9,13,17], (level,index) => ({
 		name: 'Bruiser +'+((index+3)*20)+'%',
-		apply: e=>e.source && e.item && e.item.isClub
+		apply: (when,e)=>when=='main' && e.source && e.item && e.item.isClub
 			? e.value = ( Rules.pickDamage(e.source.level,0,e.item) * (1+((index+3)*0.20)) + (e.item.plus||0) ) * (e.source.visciousWhack||1)
 			: false,
 		description: 'Heavy handed bashing with club weapons.'
 	}) ),
 	range( [3,7,11,15,19], (level,index) => ({
 		name: 'Hurler +'+((index+3)*20)+'%',
-		apply: e => e.source && e.item && e.item.isRock
+		apply: (when,e) => when=='main' && e.source && e.item && e.item.isRock
 			? e.value = Rules.pickDamage(e.source.level,0,e.item) * (1+((index+3)*0.20)) + (e.item.plus||0)
 			: false,
 		description: 'Hurl rocks with mortal effect.'
@@ -146,7 +146,7 @@ LegacyList.brawler = compose('brawler',[
 	}) ),
 	range( [2,14], (level,index) => ({
 		name: 'Stunning blow '+((index+1)*10)+'%',
-		apply: (e,details) => details && details.secondary && e.isEffect && e.item && (e.item.isClub || e.item.isRock) && e.op=='damage' ? 
+		apply: (when,e,details) => when=='secondary' && e.isEffect && e.item && (e.item.isClub || e.item.isRock) && e.op=='damage' ? 
 			details.secondary.push( {
 				effect: { op: 'set', stat: 'stun', value: true, duration: 1, icon: 'gui/icons/eShove.png' },
 				chance: 100
@@ -202,8 +202,8 @@ LegacyList.monk = compose( 'monk', [
 		name: 'Stone Hands +'+((index+1)*20)+'%',
 		singularId: 'monkHands',
 		allow: handsEmpty,
-		apply: e => {
-			if( e.source && e.item && e.item.isHands ) {
+		apply: (when,e) => {
+			if( when=='main' && e.source && e.item && e.item.isHands ) {
 				let ok = handsEmpty(e);
 				e.value = ok ? Rules.pickDamage(handLevel,0,e.item) * (1+((index+1)*0.20)) : Rules.pickDamage(1,0,e.item);
 			}
@@ -214,8 +214,8 @@ LegacyList.monk = compose( 'monk', [
 		name: 'Chopping Hands +'+((index+3)*20)+'%',
 		singularId: 'monkHands',
 		allow: handsEmpty,
-		apply: e => {
-			if( e.source && e.item && e.item.isHands ) {
+		apply: (when,e) => {
+			if( when=='main' && e.source && e.item && e.item.isHands ) {
 				let ok = handsEmpty(e);
 				e.item.damageType = ok ? DamageType.CHOP : DamageType.BASH;
 				e.damageType = ok ? DamageType.CHOP : DamageType.BASH;
@@ -238,7 +238,7 @@ LegacyList.monk = compose( 'monk', [
 	range( [3,7,11], (level,index) => ({
 		name: 'Refocus Harm '+Number.roman(index),
 		allow: noChestArmor,
-		apply: e => e.op=='calcReduction' && noChestArmor(e) ? e.armor = Rules.playerArmor(level+1) : false,
+		apply: (when,e) => when=='calcReduction' && noChestArmor(e) ? e.armor = Rules.playerArmor(level+1) : false,
 		description: 'You move like wind to deflect '+Rules.playerArmor(level+1)+'% of damage. No chest armor.'
 	})),
 	range( [16], (level,index) => ({
@@ -260,7 +260,7 @@ LegacyList.monk = compose( 'monk', [
 	})),
 	range( [19], (level,index) => ({
 		name: 'Divine strike',
-		apply: e=> e.item && e.item.isHands ? e.item.damageType = DamageType.SMITE : false,
+		apply: (when,e)=> when=='main' && e.item && e.item.isHands ? e.item.damageType = DamageType.SMITE : false,
 		description: 'Your strikes smite with divine power.'
 	})),
 	range( [4,12], (level,index) => ({
@@ -300,8 +300,69 @@ LegacyList.monk = compose( 'monk', [
 		description: 'Enter a trance for '+(10-index*5)+' turns to restore your health.'
 	})),
 ]);
-LegacyList.archer = [
-];
+
+//
+// Archer
+//
+
+LegacyList.archer = compose( 'archer', [
+	range( [1,3,5,7,9,11,13,15,17,19], (level,index) => ({
+		name: 'Marksman +'+((index+1)*10)+'%',
+		apply: (when,e)=>when=='main' && e.source && e.item && (e.item.isBow || e.item.isArrow)
+			? e.value = ( e.value * (1+((index+1)*0.10)) + (e.item.plus||0) )
+			: false,
+		description: 'Bow shots do additional damage as your eagle eye finds weakness.'
+	}) ),
+	range( [2,8,14], (level,index) => ({
+		name: 'Multi Shot x'+(index+2),
+		skill: {
+			rechargeTime: 50,
+			passesTime: false,
+			effect: { op: 'set', stat: 'freeCommands', value: [Command.SHOOT], duration: 2+index }
+		},
+		description: 'Rain arrows upon foes in a burst of speed'
+	}) ),
+	range( [6], (level,index) => ({
+		name: 'Nimble shots',
+		apply: (when,e)=>when=='main' && e.source && e.item && (e.item.isBow || e.item.isArrow)
+			? e.quick = Math.max(e.quick||0,1)
+			: false,
+		description: 'Faster shots now hit nimble creatures.'
+	}) ),
+	range( [10], (level,index) => ({
+		name: 'Elemental Arrows',
+		apply: (when,e)=>when=='shooter' && e.item && e.item.isBow
+			? e.item.ammoDamageType = 'convey'
+			: false,
+		description: 'Your arrow\'s entire damage now aligns with the bow\'s bonus effect.'
+	}) ),
+	range( [12], (level,index) => ({
+		name: 'Lithe shots',
+		apply: (when,e)=>when=='main' && e.source && e.item && (e.item.isBow || e.item.isArrow)
+			? e.quick = Math.max(e.quick||0,2)
+			: false,
+		description: 'Faster shots now hit lithe and nimble creatures.'
+	}) ),
+	range( [14], (level,index) => ({
+		name: 'Blind Shot',
+		effect: { op: 'set', stat: 'blindShot', value: true, duration: true },
+		description: 'Never miss when attacking enemies you can not see.'
+	}) ),
+	range( [16], (level,index) => ({
+		name: 'Exploding Shot',
+		apply: (when,e)=>when=='effectShape' && e.source && source.explodingShot && e.item && e.item.isArrow && (e.effectShape==EffectShape.SINGLE || !e.effectShape)
+			? e.effectShape = EffectShape.BLAST3
+			: false,
+		skill: {
+			rechargeTime: 20,
+			passesTime: false,
+			effect: { op: 'set', stat: 'explodingShot', value: true, duration: 1 }
+		},
+		description: 'Your next shot will explode in a 3 radius blast.'
+	}) ),
+
+]);
+
 LegacyList.ninja = [
 ];
 LegacyList.thief = [

@@ -175,10 +175,11 @@ class Deed {
 		return true;
 	}
 	tick(dt) {
-		console.assert( !(this.duration===0) );
 		if( this.killMe || !this.doTick ) {
+			// Note that zero duration deeds might be in the list, with killMe true at this moment.
 			return;
 		}
+		console.assert( !(this.duration===0) );
 		if( this.timeLeft !== true ) {
 			let temp = this.timeLeft;
 			console.assert( typeof this.timeLeft !== 'number' || !isNaN(this.timeLeft) );
@@ -215,16 +216,14 @@ let DeedManager = (new class {
 			effect.handler = this.handler[effect.op];
 		}
 		let deed = new Deed(effect);
+		this.deedList.push( deed );
 		if( deed.onStart ) {
 			deed.onStart.call(deed,deed);
 		}
 		if( deed.handler ) {
 			result = deed.handler();
 		}
-		// This must happen before the stat recalc or the deed will not be in the list and hence it will be ignored!
-		this.deedList.push( deed );
 		if( deed.stat ) {
-			if( deed.stat === 'attitude' ) debugger;
 			result.statOld = deed.target[deed.stat];
 			this.calcStat( deed.target, deed.stat );
 			result.statNew = deed.target[deed.stat];
@@ -418,7 +417,7 @@ let effectApply = function(effect,target,source,item,context) {
 		Anim.Over( target.id, target, effect.iconOver, 0, effect.iconOverDuration || 0.4, effect.iconOverScale || 0.75 );
 	}
 
-	let effectShape = effect.effectShape || EffectShape.SINGLE;
+	let effectShape = Perk.apply( 'effectShape', effect).effectShape || EffectShape.SINGLE;
 	if( effectShape == EffectShape.SINGLE ) {
 		let result = _effectApplyTo(effect,target,source,item,context);
 		globalEffectDepth--;
@@ -526,7 +525,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		if( item.isWeapon && item.effect ) {
 			secondary.push( { effect: item.effect, chance: item.chanceOfEffect } );
 		}
-		let shooter = item.shooter;
+		let shooter = Perk.apply( 'shooter', { source: effect.source, item: item.shooter } ).item;
 		if( shooter ) {
 			// Certain ranged weapons (bows) convey a lot of effects into their ammo.
 			// Note that this is ALL on the temp effect created above, so it won't
@@ -537,6 +536,9 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 			if( effect.op=='damage' && shooter.ammoDamage == 'combine' ) {
 				effect.value += shooter.damage;
 			}
+			if( effect.op=='damage' && shooter.ammoDamageType == 'convey' && shooter.effect ) {
+				effect.damageType = shooter.effect.damageType;
+			}
 			if( shooter.ammoQuick == 'mine' ) {
 				effect.quick = shooter.quick;
 			}
@@ -544,7 +546,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 				secondary.push( {effect: shooter.effect, chance: shooter.chanceOfEffect } );
 			}
 		}
-		Perk.apply( effect, { secondary: secondary } );
+		Perk.apply( 'secondary', effect, { secondary: secondary } );
 	}
 
 	let result = {
@@ -633,6 +635,12 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	if( target.isMonsterType || target.isItemType ) {
 		if( !effect.isSecondary && source && source.isMonsterType && !isSelf && ( (source.senseBlind && !source.baseType.senseBlind) || (target.invisible && !source.senseInvisible) || !source.canPerceiveEntity(target) ) ) {
 			let chanceToMiss = isRanged ? 75 : 50;
+			if( isRanged && source.blindShot ) {
+				chanceToMiss = 0;
+			}
+			if( !isRanged && source.blindFight ) {
+				chanceToMiss = 0;
+			}
 			if( !(source.senseLiving && target.isLiving) && Math.chance(chanceToMiss) ) {
 				tell(mSubject,source,' ',mVerb,'attack',' ',mObject,target,' but in the wrong direction!');
 				return makeResult('notVisible',false);
@@ -791,7 +799,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 
 
 	// Let any applicable perk transmogrify the effect any way it wants to.
-	Perk.apply( effect );
+	Perk.apply( 'main', effect );
 
 	if( singular && (effect.singularOp == 'max' || effect.singularOp == 'sum') ) {
 		//Some effects are "singular" meaning you can't have more than one of it upon you.

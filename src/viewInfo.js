@@ -51,7 +51,7 @@ class ViewInfo extends ViewObserver {
 
 		function itemSummarize(you,item,comp,header=true) {
 			let mine = you.inventory.find(i=>i.id==item.id)
-			let ex = item.explain();
+			let ex = item.explain(null,you);
 			let s = '';
 			if( header ) {
 				let lvl = !item.isTreasure ? '' : ' Level '+item.level+'<br>Value '+ex.priceWithCommas;
@@ -112,7 +112,7 @@ class ViewInfo extends ViewObserver {
 				else {
 					let any = false;
 					item.inventory.forEach( item => {
-						let ex = item.explain();
+						let ex = item.explain(null,you);
 						s += (any ? ', ' : '')+'<span>'+ex.description+'</span>';
 						any=true;
 					});
@@ -152,9 +152,9 @@ class ViewInfo extends ViewObserver {
 		if( entity.isUser() ) {
 			let bc = shield ? shield.calcBlockChance('any',true,entity.shieldBonus) : 0;
 			let weapon = entity.calcDefaultWeapon();
-			let weaponEx = weapon.explain();
+			let weaponEx = weapon.explain(null,entity);
 			let ammo = entity.getFirstItemInSlot(Slot.AMMO);
-			let ex = ammo ? ammo.explain() : false;
+			let ex = ammo ? ammo.explain(null,entity) : false;
 			s += tRow( "Armor:", Math.floor(entity.calcReduction(DamageType.CUT,false)*Rules.armorVisualScale)+"M, "+Math.floor(entity.calcReduction(DamageType.STAB,true)*Rules.armorVisualScale)+"R" );
 			s += tRow( "Shield:", 
 				(entity.shieldBonus?'<span class="shieldBonus">':'')+

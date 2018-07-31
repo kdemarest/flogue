@@ -34,17 +34,19 @@ function commandForItem(item) {
 	if( item.isGem ) {
 		return Command.GAZE;
 	}
-	if( item.isSpell || item.mayCast ) {
-		return Command.CAST;
-	}
 	if( item.isCorpse ) {
 		return Command.LOOT;
 	}
-	if( item.mayShoot ) {
-		return Command.SHOOT;
-	}
+	// This must be before shoot and throw so that, by default, you are arming yourself
+	// from inventory instead of trying to use the thing.
 	if( item.slot ) {
 		return Command.USE;
+	}
+	if( item.isSpell || item.mayCast ) {
+		return Command.CAST;
+	}
+	if( item.mayShoot ) {
+		return Command.SHOOT;
 	}
 	if( item.mayThrow && (!item.inSlot || item.inSlot==Slot.AMMO) ) {
 		return Command.THROW;
