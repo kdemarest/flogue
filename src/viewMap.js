@@ -5,7 +5,7 @@ let MONSTER_SCALE_VARIANCE_MIN = 0.75;
 let MONSTER_SCALE_VARIANCE_MAX = 1.00;
 
 
-function handleScent(map,px,py,senseSmell) {
+function handleScent(map,px,py,senseSmell,ofs) {
 
 	guiMessage( 'overlayRemove', { groupId: 'scent' } );
 
@@ -33,7 +33,7 @@ function handleScent(map,px,py,senseSmell) {
 
 			new Anim( {}, {
 				groupId: 		'scent',
-				x: 				x,
+				x: 				x-ofs,
 				y: 				y,
 				area: 			map.area,
 				img: 			smelled.img,
@@ -44,15 +44,15 @@ function handleScent(map,px,py,senseSmell) {
 	}
 }
 
-function handlePerception(observer,visCache,map,px,py,sensePerception,senseAlert) {
+function handlePerception(observer,visCache,map,px,py,sensePerception,senseAlert,ofs) {
 
 	guiMessage( 'overlayRemove', { groupId: 'perc' } );
 
-	if( !sensePerception ) {
+	if( !sensePerception && !senseAlert ) {
 		return;
 	}
 
-	let f = observer.findAliveOthersNearby(MaxVis*2).filter( e => observer.isMyEnemy(e) && observer.canPerceiveEntity(e) );
+	let f = observer.findAliveOthersNearby(MaxVis*2).filter( e => observer.isMyEnemy(e) && !observer.isHiddenEntity(e) );
 
 	let d = MapVis;
 	let d2 = (d*2)+1
@@ -73,15 +73,16 @@ function handlePerception(observer,visCache,map,px,py,sensePerception,senseAlert
 			if( tile.isWall ) {
 				continue;
 			}
-			let perc = f.all.find( e => e.canTargetPosition(x,y,e.area) );
-			if( !perc ) {
+			// WARNING: The sneak and light must be the same as those used in entity.canTargetEntity
+			let perc = sensePerception && f.all.find( e => e.canTargetPosition(x,y,e.area,observer.sneak||0,(observer.light||0) * Rules.noticeableLightRatio) );
+			let alarm = senseAlert && f.all.find( e => e.testTooClose(x,y,observer.sneak) );
+			if( !perc && !alarm ) {
 				continue;
 			}
-			let alarm = senseAlert && f.all.find( e => e.near(x,y,e.area,e.tooClose||Rules.tooCloseDefault) );
 
 			new Anim( {}, {
 				groupId: 		'perc',
-				x: 				x,
+				x: 				x+ofs,
 				y: 				y,
 				area: 			map.area,
 				img: 			alarm ? StickerList.alert.img : StickerList.perception.img,
@@ -123,9 +124,9 @@ function createDrawList(observer,drawListCache) {
 		}
 	}
 
-
-	handleScent(map,px,py,observer.senseSmell);
-	handlePerception(observer,visCache,map,px,py,observer.sensePerception,observer.senseAlert);
+	let ofs = (observer.senseSmell && (observer.sensePerception || observer.senseAlert)) ? 0.2 : 0;
+	handleScent(map,px,py,observer.senseSmell,ofs);
+	handlePerception(observer,visCache,map,px,py,observer.sensePerception,observer.senseAlert,ofs);
 
 	let visId = {};
 	let revealLight = 7;		// Assumes max light is about 10.

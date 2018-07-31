@@ -493,7 +493,8 @@ class Entity {
 		else {
 			// Calc vis if I am near the user, that it, I might be interacting with him!
 			let user = this.entityList.find( e => e.isUser() );
-			doVis = user && this.nearTarget(user,MaxVis);
+			let distanceForVisCacheCalculation = MaxVis * 2;	// this should match handlePerception()
+			doVis = user && this.nearTarget(user,distanceForVisCacheCalculation);
 		}
 
 		if( doVis ) {
@@ -516,7 +517,7 @@ class Entity {
 		return this.visCache;
 	}
 
-	canTargetPosition(x,y,area) {
+	canTargetPosition(x,y,area,sightReduction=0,lightDistance=0) {
 		if( x===undefined || y===undefined ) {
 			debugger;
 		}
@@ -530,11 +531,13 @@ class Entity {
 		if( d <= 1 ) {
 			return true;
 		}
+		let sightDistance = (this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE);
+		let canSee = this.near( x, y, area, Math.max( 1, Math.max( lightDistance, sightDistance - sightReduction ) ) );
+
 		// If you are not close enough to a user to have a vis cache, then just guess at your
 		// ability to target the position.
-		if( !visCache ) {
-			let sightDistance = (this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE);
-			return this.near( x, y, area, sightDistance );
+		if( !canSee || !visCache ) {
+			return canSee;
 		}
 		// If the location has never been processed by the vis cache (rare) then assume
 		// it is hidden behind a wall or something.
@@ -544,6 +547,26 @@ class Entity {
 		// The spot must be both visible and have enough light to see, except see above
 		// for the exception of targetting adjacent things.
 		return visCache[y][x] && this.map.getLightAt(x,y,0) > 0;
+	}
+
+	isHiddenEntity(entity) {
+		if( (entity.isMonsterType && entity.senseLiving && this.isLiving) || (entity.isItemType && entity.isTreasure && this.senseTreasure) ) {
+			return false;
+		}
+		let d = this.getDistance(entity.x,entity.y);
+		// Adjacent things can be smelled if they stink, or detected with a good sense of smell.
+		if( d <= 1 && (entity.stink || (this.senseSmell && !entity.scentReduce)) ) {
+			return false;
+		}
+		// blind can not target. WARNING! Check this AFTER any smell tests and senseLiving or senseTreasure
+		if( this.senseBlind ) {
+			return true;
+		}
+		// You can't target invisible unless you can see invisible (but see scent above)
+		if( entity.invisible && !this.senseInvisible ) {
+			return true;
+		}
+		return false;
 	}
 
 	canTargetEntity(entity,isPerceiving) {
@@ -589,11 +612,19 @@ class Entity {
 			return false;
 		}
 		// Otherwise, you can target an entity in any position you can see.
-		return this.canTargetPosition(entity.x,entity.y,entity.area);
+		// WARNING: The sneak and light must be the same as those used in viewMap handlePerception
+		return this.canTargetPosition(entity.x,entity.y,entity.area,entity.sneak||0,(entity.light||0) * Rules.noticeableLightRatio);
 	}
 
 	canPerceiveEntity(entity) {
 		return this.canTargetEntity(entity,true);
+	}
+
+	testTooClose(x,y,sneak=0) {
+		let sightDistance = (this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE);
+		let sightEdge = Math.max( 1, sightDistance - sneak );
+
+		return this.near( x, y, this.area, Math.min( this.tooClose||Rules.tooCloseDefault, sightEdge) );
 	}
 
 	get naturalMeleeWeapon() {
@@ -677,13 +708,11 @@ class Entity {
 	}
 
 	near(x,y,area,targetDist) {
-		if( !this.inArea(area) ) {
+		if( area && !this.inArea(area) ) {
 			return false;
 		}
 		return Distance.isNear(this.x-x,this.y-y,targetDist);
 	}
-
-
 
 	getDistance(x,y) {
 		return Distance.getSq(x-this.x,y-this.y);
@@ -1455,7 +1484,7 @@ class Entity {
 				}
 
 				// OK, now all the mind control stuff is done, we need to manage our attitude a little.
-				let tooClose = theEnemy && !wasSmell && !wasLEP && distanceToNearestEnemy <= (this.tooClose||Rules.tooCloseDefault);
+				let tooClose = theEnemy && !wasSmell && !wasLEP && this.testTooClose(theEnemy.x,theEnemy.y,theEnemy.sneak);
 
 				let farFromMaster = this.brainMaster && (
 					(this.brainMaster.area.id!==this.area.id) ||
@@ -2343,6 +2372,15 @@ class Entity {
 		item = item.giveToSingly(this.map,target.x,target.y);
 		let effect = item.isWeapon ? item.getEffectOnAttack() : item.effect;
 
+		if( Math.chance(target.catchThrown||0) ) {
+			item.giveTo( target, target.x, target.y );
+			tell(mSubject,this,' ',mVerb,'throw',' ',mObject,item,' and ',mSubject,target,' ',mVerb,'catch',' it!');
+			result.caught = true;
+			result.catcher = target;
+			result.success = true;
+			return result;
+		}
+
 		result = item.trigger( target, this, Command.THROW, effect );
 
 		if( !item || item.dead ) {
@@ -2488,6 +2526,16 @@ class Entity {
 			ammo.shooter = item;
 			ammo = ammo.giveToSingly(this.map,target.x,target.y);
 			result.ammoMadeOrExists = true;
+		}
+
+		if( Math.chance(target.catchShot||0) ) {
+			delete ammo.shooter;
+			ammo.giveTo( target, target.x, target.y );
+			tell(mSubject,this,' ',mVerb,'shoot',' ',mObject,ammo,' and ',mSubject,target,' ',mVerb,'catch',' it!');
+			result.caught = true;
+			result.catcher = target;
+			result.success = true;
+			return result;
 		}
 
 //		tell(mSubject,this,' ',mVerb,ammo.attackVerb || 'shoot',' ',mObject,item,' at ',mObject,target,'.');

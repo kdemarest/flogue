@@ -192,7 +192,7 @@ function main() {
 
 		let world = new World();
 		let area = world.createArea(null,startingDepth,ThemeList[themeId],true,[]);
-		this.takeControlOf( new Entity( area.depth, MonsterTypeList[playerTypeId], null, area.jobPicker ) );
+		this.takeControlOf( new Entity( area.depth, MonsterTypeList[playerTypeId], config.playerInject, area.jobPicker ) );
 		Gab.observer = this.entity;
 		this.entity.gateTo(area,...area.map.pickPosToStartGame(playerMarkerId));
 		Narrative.addRecipient(

@@ -276,7 +276,7 @@ class Item {
 		return this.isAt(target.x,target.y,target.area);
 	}
 	triggerWhenDon() {
-		return this.triggerOnUse || (this.triggerOnUseIfHelp && this.effect && (this.effect.isHelp || this.effect.isPlayerOnly));
+		return this.isSkill || this.triggerOnUse || (this.triggerOnUseIfHelp && this.effect && (this.effect.isHelp || this.effect.isPlayerOnly));
 	}
 	hasRecharge() {
 		return !!this.rechargeTime;

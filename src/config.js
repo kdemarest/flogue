@@ -132,14 +132,18 @@ ConfigList.ken = () => {
 
 	MonsterTypeList.player.inventoryLoot = '5x weapon.bow, 50x ammo.arrow';
 	MonsterTypeList.player.legacyId = 'ninja';
-	MonsterTypeList.player.sensePerception = true;
-	MonsterTypeList.player.senseAlert = true;
-	MonsterTypeList.player.light = 8;
+//	MonsterTypeList.player.sensePerception = true;
+//	MonsterTypeList.player.senseAlert = true;
+//	MonsterTypeList.player.senseSmell = 200;
+//	MonsterTypeList.player.darkVision = 8;
+//	MonsterTypeList.player.light = 8;
+
 
 	return {
-		startingDepth: 6,
+		startingDepth: 7,
 //		themeId: 'kenTheme',
-//		saveBattery: true
+//		saveBattery: true,
+		playerInject: { level: 20 }
 	}
 }
 

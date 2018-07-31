@@ -31,6 +31,7 @@ let Rules = new class {
 		this.armorVisualScale 				= 200;
 		this.blockVisualScale 				= 100;
 		this.tooCloseDefault				= 4;
+		this.noticeableLightRatio 			= 0.5;
 
 		this.itemDamageTable = {
 			metal: 		{ corrode: 1, smite: 1},

@@ -473,7 +473,8 @@ let effectApply = function(effect,target,source,item,context) {
 					}
 					//Anim.At( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
 					let targetList = [];
-					let monsterList = new Finder(area.entityList).at(x,y).filter( entity => !source || entity.id!==source.id || (!effect.ignoreSource && (effect.isHelp || effect.isBuf || effect.isTac )) );
+					let ignoreSourceId = source ? source.id : '';
+					let monsterList = new Finder(area.entityList).at(x,y).filter( entity => entity.id !== ignoreSourceId );
 					if( monsterList.count ) {
 						targetList.push(...monsterList.all);
 					}

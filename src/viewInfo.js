@@ -180,7 +180,7 @@ class ViewInfo extends ViewObserver {
 		s += shield ? '<div class="monDetail">Blocking:</div>'+shield.blocks.split(',').join(', ')+'<br>' : '';
 
 		// Conditions with duration
-		let notable = { damage:1, attitude: 1, heal: 1, possess:1, immobile:1, stun: 1, summon: 1 };
+		let notable = { damage:1, attitude: 1, heal: 1, possess:1, immobile:1, stun: 1, summon: 1, sneak: 1 };
 		let conditionList = [];
 		DeedManager.traverseDeeds( entity, deed => {
 			if( notable[deed.stat || deed.op] ) {

@@ -113,13 +113,13 @@ let BodyAbility = {
 }
 
 let BodySlots = {
-	humanoid: 		{ head: 1, neck: 1, arms: 1, hands: 1, fingers: 2, waist: 1, hip: 1, feet: 1, armor: 1, weapon: 1, ammo: 2, shield: 1 },
-	quadruped: 		{ head: 1, neck: 1, waist: 1, hip: 1, feet: 2, armor: 1 },
-	multiped: 		{ head: 1, neck: 1, waist: 1, hip: 1, fingers: 2, feet: 2, armor: 1 },
-	wingedBiped: 	{ head: 1, neck: 1, feet: 1 },
-	noped:  		{ head: 1 },
-	blob:  			{ },
-	humanoidBot: 	{ hip: 1, shield: 1 },
+	humanoid: 		{ head: 1, neck: 1, arms: 1, hands: 1, fingers: 2, waist: 1, hip: 1, feet: 1, armor: 1, weapon: 1, ammo: 2, shield: 1, skill: 100 },
+	quadruped: 		{ head: 1, neck: 1, waist: 1, hip: 1, feet: 2, armor: 1, skill: 100 },
+	multiped: 		{ head: 1, neck: 1, waist: 1, hip: 1, fingers: 2, feet: 2, armor: 1, skill: 100 },
+	wingedBiped: 	{ head: 1, neck: 1, feet: 1, skill: 100 },
+	noped:  		{ head: 1, skill: 100 },
+	blob:  			{ skill: 100 },
+	humanoidBot: 	{ hip: 1, shield: 1, skill: 100 },
 }
 
 

@@ -16,6 +16,9 @@ function perkCondition(perk, level, index, singularId ) {
 			perk.item.effect.name = perk.item.effect.name || perk.item.name;
 			perk.item.effect.singularId = perk.item.effect.singularId || perk.singularId;
 		}
+		if( perk.item.slot ) {
+			perk.item.useVerb = perk.item.useVerb || 'activate';
+		}
 	}
 	if( perk.skill ) {
 		Object.assign( perk.skill, { isItemType: true, isSkill: true, img: 'gui/icons/skill.png', icon: "skill.png", typeId: 'skill' } );
@@ -25,6 +28,9 @@ function perkCondition(perk, level, index, singularId ) {
 		if( perk.skill.effect ) {
 			perk.skill.effect.name = perk.skill.effect.name || perk.skill.name;
 			perk.skill.effect.singularId = perk.skill.effect.singularId || perk.singularId;
+		}
+		if( perk.skill.slot ) {
+			perk.skill.useVerb = perk.skill.useVerb || 'activate';
 		}
 	}
 	if( perk.effect ) {
@@ -236,7 +242,7 @@ LegacyList.monk = compose( 'monk', [
 		description: 'Move like the jaguar for '+((index+1)*4)+' turns to outpace opponents. No chest armor allowed.'
 	})),
 	range( [3,7,11], (level,index) => ({
-		name: 'Refocus Harm '+Number.roman(index),
+		name: 'Refocus Harm '+Number.roman(index+1),
 		allow: noChestArmor,
 		apply: (when,e) => when=='calcReduction' && noChestArmor(e) ? e.armor = Rules.playerArmor(level+1) : false,
 		description: 'You move like wind to deflect '+Rules.playerArmor(level+1)+'% of damage. No chest armor.'
@@ -374,7 +380,86 @@ LegacyList.archer = compose( 'archer', [
 
 ]);
 
+//
+// Ninja
+//
+
 LegacyList.ninja = compose( 'ninja', [
+	range( [1], (level,index) => ({
+		name: 'Intuition',
+		skill: {
+			slot: Slot.SKILL,
+			passesTime: false,
+			effect: { op: 'set', stat: 'sensePerception', value: true, duration: true, onStart: ()=>guiMessage('render',null,'map'), onEnd: ()=>guiMessage('render',null,'map') }
+		},
+		description: 'Intuition tells you what areas are being watched.'
+	}) ),
+	range( [2,6,12,17], (level,index) => ({
+		name: 'Sneak '+Number.roman(index+1),
+		skill: {
+			rechargeTime: 40,
+			passesTime: false,
+			effect: { op: 'set', stat: 'sneak', value: index+2, duration: 20, onStart: ()=>guiMessage('render',null,'map'), onEnd: ()=>guiMessage('render',null,'map') },
+		},
+		description: 'Enemy sight distance reduced by '+(index+2)+' as you sneak. However, if your light is bright they will see you!'
+	}) ),
+	range( [3,7,13], (level,index) => ({
+		name: 'Nimble Catch '+Number.roman(index+1),
+		effect: { op: 'max', stat: 'catchThrown', value: 50+index*25, duration: true },
+		description: 'You catch thrown objects '+(50+index*25)+'% of the time.'
+	}) ),
+	range( [4,9,15], (level,index) => ({
+		name: 'Shot Catch '+Number.roman(index+1),
+		effect: { op: 'max', stat: 'catchShot', value: 50+index*25, duration: true },
+		description: 'You catch shot objects '+(50+index*25)+'% of the time.'
+	}) ),
+	range( [5,14], (level,index) => ({
+		name: 'Odorless Step '+Number.roman(index+1),
+		singularId: 'ninjaOdor',
+		skill: {
+			rechargeTime: 40,
+			passesTime: false,
+			effect: { op: 'max', stat: 'scentReduce', value: Rules.SCENT_AGE_LIMIT, duration: 2+index*2 }
+		},
+		description: 'Take '+(2+index*2)+' steps without leaving a scent trail.'
+	}) ),
+	range( [10], (level,index) => ({
+		name: 'Delicacy',
+		skill: {
+			slot: Slot.SKILL,
+			passesTime: false,
+			effect: { op: 'set', stat: 'senseAlert', value: true, duration: true, onStart: ()=>guiMessage('render',null,'map'), onEnd: ()=>guiMessage('render',null,'map') }
+		},
+		description: 'Delicate sense reveal how close is "too close".'
+	}) ),
+	range( [8,11,16], (level,index) => ({
+		name: 'Dark Vision '+Number.roman(index+1),
+		skill: {
+			slot: Slot.SKILL,
+			passesTime: false,
+			effect: { op: 'set', stat: 'darkVision', value: 4+index*2, duration: true, onStart: ()=>guiMessage('render',null,'map'), onEnd: ()=>guiMessage('render',null,'map') }
+		},
+		description: 'See in the dark '+(4+index*2)+' squares.'
+	}) ),
+	range( [18], (level,index) => ({
+		name: 'Odorless',
+		singularId: 'ninjaOdor',
+		skill: {
+			slot: Slot.SKILL,
+			passesTime: false,
+			effect: { op: 'set', stat: 'scentReduce', value: Rules.SCENT_AGE_LIMIT, duration: true }
+		},
+		description: 'Become odorless at will.'
+	}) ),
+	range( [19], (level,index) => ({
+		name: 'Invisible',
+		skill: {
+			slot: Slot.SKILL,
+			passesTime: false,
+			effect: { op: 'set', stat: 'invisible', value: true, duration: true }
+		},
+		description: 'Become invisible at will.'
+	}) ),
 
 ]);
 
