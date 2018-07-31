@@ -261,7 +261,10 @@ class Anim {
 		if( this.delay === undefined && this.delayId ) {
 			if( typeof this.duration == 'number' ) {
 				this.delay = animationManager.delay.get(this.delayId);
-				animationManager.delay.add(this.delayId,this.delayAdd || this.duration);
+				if( !animationManager.delay.group[this.delayId] ) {
+					let add = this.delayAdd === undefined ? this.duration : this.delayAdd;
+					animationManager.delay.add(this.delayId,add || this.duration);
+				}
 			}
 			// Otherwise make it delay until it is done.
 		}
@@ -551,7 +554,7 @@ Anim.Above = function(delayId,target,icon) {
 	});
 }
 
-Anim.Fly = function(delayId,sx,sy,ex,ey,area,img) {
+Anim.Fly = function(delayId,delayAdd,sx,sy,ex,ey,area,img) {
 	let dx = ex-sx;
 	let dy = ey-sy;
 	let rangeDuration = Math.max(0.1,Distance.get(dx,dy) / 10);
@@ -561,6 +564,7 @@ Anim.Fly = function(delayId,sx,sy,ex,ey,area,img) {
 		area: 		area,
 		img: 		img,
 		delayId: 	delayId,
+		delayAdd: 	delayAdd,
 		duration: 	rangeDuration,
 		onInit: 		a => { a.create(1); },
 		onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
@@ -616,6 +620,7 @@ class AnimationClip extends ClipRect {
 
 class AnimationDelay {
 	constructor() {
+		this.group = {};
 		this.duration = {};
 	}
 	reset() {
@@ -624,6 +629,13 @@ class AnimationDelay {
 	get(id) {
 		console.assert(id);
 		return this.duration[id] || 0;
+	}
+	makeGroup(id,durationAdd=0) {
+		let groupId = id+GetTimeBasedUid();
+		this.duration[groupId] = this.get(id);
+		this.group[groupId] = true;
+		this.duration[id] = this.get(id) + durationAdd;
+		return groupId;
 	}
 	add(id,amount) {
 		console.assert(id && amount !== undefined);

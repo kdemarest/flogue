@@ -14,6 +14,7 @@ function perkCondition(perk, level, index, singularId ) {
 		perk.item.name = perk.item.name || perk.name;
 		if( perk.item.effect ) {
 			perk.item.effect.name = perk.item.effect.name || perk.item.name;
+			perk.item.effect.singularId = perk.item.effect.singularId || perk.singularId;
 		}
 	}
 	if( perk.skill ) {
@@ -23,10 +24,12 @@ function perkCondition(perk, level, index, singularId ) {
 		perk.skill.name = perk.skill.name || perk.name;
 		if( perk.skill.effect ) {
 			perk.skill.effect.name = perk.skill.effect.name || perk.skill.name;
+			perk.skill.effect.singularId = perk.skill.effect.singularId || perk.singularId;
 		}
 	}
 	if( perk.effect ) {
 		perk.effect.duration = perk.effect.duration===undefined ? true : perk.effect.duration;
+		perk.effect.singularId = perk.singularId;
 	}
 	return perk;
 }
@@ -66,6 +69,10 @@ Perks come in three flavors (so far):
 	- loot   - uses an typeFilter spec identical to that used in places, lootInventory etc to generate an item.
 By default like perks do NOT stack - they are each assigned a singularId and that is checked.
 **/
+
+//
+// Soldier
+//
 
 LegacyList.soldier = compose('soldier',[
 	range( [1,3,5,7,9,11,13,15,17,19], (level,index) => ({
@@ -107,6 +114,10 @@ LegacyList.soldier = compose('soldier',[
 		description: 'Improves the defense of any armor worn, reducing damage.'
 	}) ),
 ]);
+
+//
+// Brawler
+//
 
 LegacyList.brawler = compose('brawler',[
 	range( [1,5,9,13,17], (level,index) => ({
@@ -179,13 +190,116 @@ LegacyList.brawler = compose('brawler',[
 	}) ),
 ]);
 
-LegacyList.monk = [
-	range( [1,3,5,7,9,11,13,15,17,19], (level,index) => ({
-		effect: { op: 'max', stat: 'speed', value: 1+(index+1)*0.20, singular: 'monkSpeed', name: 'Monk speed' },
-		name: 'Monk speed '+((index+1)*20)+'%',
-		description: 'Chi will find the most efficient path, speeding all your actions.'
-	}))
-];
+//
+// Monk
+//
+
+let noChestArmor = e => e.source && e.source.isMonsterType && !e.source.anySlotFilled([Slot.ARMOR]);
+let handsEmpty = e => e.source && e.source.isMonsterType && !e.source.anySlotFilled([Slot.WEAPON,Slot.SHIELD,Slot.HANDS]);
+
+LegacyList.monk = compose( 'monk', [
+	range( [1,5], (level,index) => ({
+		name: 'Stone Hands +'+((index+1)*20)+'%',
+		singularId: 'monkHands',
+		allow: handsEmpty,
+		apply: e => {
+			if( e.source && e.item && e.item.isHands ) {
+				let ok = handsEmpty(e);
+				e.value = ok ? Rules.pickDamage(handLevel,0,e.item) * (1+((index+1)*0.20)) : Rules.pickDamage(1,0,e.item);
+			}
+		},
+		description: 'Your hands strike like stone. Hands must be empty.'
+	})),
+	range( [9,13], (level,index) => ({
+		name: 'Chopping Hands +'+((index+3)*20)+'%',
+		singularId: 'monkHands',
+		allow: handsEmpty,
+		apply: e => {
+			if( e.source && e.item && e.item.isHands ) {
+				let ok = handsEmpty(e);
+				e.item.damageType = ok ? DamageType.CHOP : DamageType.BASH;
+				e.damageType = ok ? DamageType.CHOP : DamageType.BASH;
+				e.value = ok ? Rules.pickDamage(e.source.level,0,e.item) * (1+((index+3)*0.20)) : Rules.pickDamage(1,0,e.item);
+			}
+		},
+		description: 'Your strikes chop like an axe for extra damage. Hands must be empty.'
+	})),
+	range( [2,6,10,14], (level,index) => ({
+		name: 'Jaguar Technique '+Number.roman(index+1),
+		singularId: 'monkJaguar',
+		allow: noChestArmor,
+		skill: {
+			rechargeTime: 30-(index*4),
+			passesTime: false,
+			effect: { op: 'max', stat: 'speed', value: 2, duration: ((index+1)*4), contingent: noChestArmor },
+		},
+		description: 'Move like the jaguar for '+((index+1)*4)+' turns to outpace opponents. No chest armor allowed.'
+	})),
+	range( [3,7,11], (level,index) => ({
+		name: 'Refocus Harm '+Number.roman(index),
+		allow: noChestArmor,
+		apply: e => e.op=='calcReduction' && noChestArmor(e) ? e.armor = Rules.playerArmor(level+1) : false,
+		description: 'You move like wind to deflect '+Rules.playerArmor(level+1)+'% of damage. No chest armor.'
+	})),
+	range( [16], (level,index) => ({
+		name: 'Jaguar Essence',
+		singularId: 'monkJaguar',
+		allow: noChestArmor,
+		effect: { op: 'max', stat: 'speed', value: 2, duration: true, contingent: noChestArmor },
+		description: 'Become one with the jaguar to move faster permanently. No chest armor allowed.'
+	})),
+	range( [17], (level,index) => ({
+		name: 'Attunement',
+		effect: { op: 'set', stat: 'senseLiving', value: true, duration: true },
+		description: 'You sense all living energy.'
+	})),
+	range( [18], (level,index) => ({
+		name: 'Resist Energies',
+		effect: { op: 'add', stat: 'resist', value: Damage.Elemental, duration: true },
+		description: 'You resist damage from all elemental energies.'
+	})),
+	range( [19], (level,index) => ({
+		name: 'Divine strike',
+		apply: e=> e.item && e.item.isHands ? e.item.damageType = DamageType.SMITE : false,
+		description: 'Your strikes smite with divine power.'
+	})),
+	range( [4,12], (level,index) => ({
+		name: 'Peaceful Chi '+Number.roman(index+1),
+		skill: {
+			rechargeTime: 50,
+			effect: {
+				op: 'set',
+				stat:'attitude',
+				ignoreSource: true,
+				value: Attitude.PACIFIED,
+				effectShape: [EffectShape.BLAST3,EffectShape.BLAST5][index],
+				xDuration: 2.0,
+				icon: 'gui/icons/eAttitude.png'
+			}
+		},
+		description: 'Radiate peace into the hearts of your opponents.'
+	})),
+	range( [8,15], (level,index) => ({
+		name: 'Healing Trance '+Number.roman(index+1),
+		skill: {
+			rechargeTime: 100,
+			effect: {
+				op: 'set',
+				stat: 'attitude',
+				value: Attitude.BUSY,
+				duration: (10-index*5),
+				description: 'in a healing trance',
+				onEnd: (deed) => {
+					if( deed.completed() ) {
+						let healEffect = { op: 'heal', value: 10000, duration: 0, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png' };
+						effectApply( healEffect, deed.source, deed.target, null, 'postTrance' );
+					}
+				}
+			}
+		},
+		description: 'Enter a trance for '+(10-index*5)+' turns to restore your health.'
+	})),
+]);
 LegacyList.archer = [
 ];
 LegacyList.ninja = [

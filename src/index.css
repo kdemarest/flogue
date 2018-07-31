@@ -97,6 +97,10 @@ body {
     padding-right: 6px;
 }
 
+.notAllowed {
+	color: red;
+}
+
 #favMessage {
 	margin-top: 12px;
 }

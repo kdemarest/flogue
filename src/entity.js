@@ -712,12 +712,11 @@ class Entity {
 			}
 		});
 	}
-	findFirstDeed(fn) {
-		let found = null;
-		DeedManager.traverseDeeds(this,deed => {
-			if( fn(deed) ) found = deed;
-		});
-		return found;
+	deedFind(fn) {
+		return DeedManager.findFirst( deed => deed.target.id == this.id && fn(deed) );
+	}
+	deedBusy() {
+		return this.deedFind( deed => deed.value==Attitude.BUSY );
 	}
 	traverseDeeds(fn) {
 		DeedManager.traverseDeeds(this,fn);
@@ -1271,6 +1270,10 @@ class Entity {
 		return packId;
 	}
 
+	hasForcedAttitude() {
+		return [Attitude.CONFUSED,Attitude.ENRAGED,Attitude.PANICKED,Attitude.PACIFIED,Attitude.BUSY].includes(this.attitude);
+	}
+
 	think() {
 		if( this.isDead() ) {
 			return;
@@ -1288,7 +1291,7 @@ class Entity {
 			if( this.playerUseAi ) {
 				useAiTemporarily = true;
 			}
-			if( this.stun || this.attitude == Attitude.CONFUSED || this.attitude == Attitude.ENRAGED || this.attitude == Attitude.PANICKED ) {
+			if( this.stun || this.hasForcedAttitude() ) {
 				useAiTemporarily = true;
 			}
 			if( !useAiTemporarily && this.command == Command.EXECUTE ) {
@@ -1319,9 +1322,15 @@ class Entity {
 					return this.thinkBumpF();
 				}
 
-				if( this.busy ) {
-					this.brainState.activity = 'Busy '+this.busy.description;
-					return Command.BUSY;
+				if( this.attitude == Attitude.BUSY ) {
+					let deed = this.deedBusy();
+					if( deed ) {
+						this.brainState.activity = 'Busy '+deed.timeLeft+' '+deed.description;
+						return Command.BUSY;
+					}
+					else {
+						debugger;
+					}
 				}
 
 				if( this.mindset('pack') && !this.packId ) {
@@ -1414,6 +1423,11 @@ class Entity {
 				if( this.attitude == Attitude.CONFUSED ) {
 					this.brainState.activity = 'Confused!';
 					return this.thinkStumbleF(50);
+				}
+
+				if( this.attitude == Attitude.PACIFIED ) {
+					this.brainState.activity = 'Pacified!';
+					return Command.WAIT; //this.thinkWanderF();
 				}
 
 				if( this.attitude == Attitude.PANICKED ) {
@@ -1678,6 +1692,9 @@ class Entity {
 	}
 
 	changeAttitude(newAttitude) {
+		if( this.hasForcedAttitude() ) {
+			return;
+		}
 		this.attitude = newAttitude;
 	}
 
@@ -1915,7 +1932,7 @@ class Entity {
 			if( this.brainDisengageAttempt ) {
 				this.brainDisengageFailed = true;
 			}
-			if( this.attitude == Attitude.HESITANT || this.attitude == Attitude.WANDER || this.attitude == Attitude.AWAIT ) {
+			if( this.attitude == Attitude.HESITANT || this.attitude == Attitude.WANDER || this.attitude == Attitude.AWAIT || this.attitude == Attitude.PACIFIED) {
 				this.changeAttitude(Attitude.AGGRESSIVE);
 			}
 			if( this.mindset('alert') ) {
@@ -2587,15 +2604,20 @@ class Entity {
 		console.assert(food && (food.isEdible || food.isCorpse));
 		tell(mSubject,this,' ',mVerb,'begin',' to eat ',mObject,food,' (4 turns)');
 		food = food.giveToSingly(this,this.x,this.y);
-		this.busy = {
-			turns: 4,
-			icon: StickerList.showEat.img,
+		let eatEffect = {
+			op: 'set',
+			stat: 'attitude',
+			value: Attitude.BUSY,
+			duration: 4,
 			description: 'eating',
-			onDone: () => {
+			icon: StickerList.showEat.img,
+			onEnd: (deed) => {
+				if( !deed.completed() ) {
+					return;
+				}
 				if( food.isCorpse ) {
 					let corpse = food.usedToBe;
 					let inventory = new Finder(corpse.inventory).isReal().all || [];
-					qqq
 					inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
 					this.inventoryTake( inventory, corpse, false );
 					food.destroy();
@@ -2614,6 +2636,7 @@ class Entity {
 				}
 			}
 		};
+		effectApply( eatEffect, this, this, null, Command.EAT );
 		result.status = true;
 		return result;
 	}
@@ -2701,20 +2724,9 @@ class Entity {
 			status: 'busy',
 			success: true
 		};
-		console.assert( this.busy.turns === true || (typeof this.busy.turns == 'number' && !isNaN(this.busy.turns)) );
-		if( typeof this.busy.turns == 'number' ) {
-			this.busy.turns--;
-			if( this.busy.turns <= 0 ) {
-				this.busy.onDone();
-				delete this.busy;
-				result.completedThisTurn = true;
-			}
-			else {
-				result.turnsRemaining = this.busy.turns;
-			}
-		}
-		if( this.busy && this.busy.icon ) {
-			Anim.FloatUp(this.id,this,this.busy.icon);
+		let busy = this.deedBusy();
+		if( busy && busy.icon ) {
+			Anim.FloatUp(this.id,this,busy.icon);
 		}
 		return result;
 	}
@@ -3157,6 +3169,9 @@ class Entity {
 	}
 	mayDon(item) {
 		return item.slot && this.bodySlots && this.bodySlots[item.slot] && this.getItemsInSlot(item.slot).count < this.bodySlots[item.slot];
+	}
+	anySlotFilled(slotList) {
+		return new Finder(this.inventory).filter( i => i.inSlot && slotList.includes(i.inSlot)).count > 0;
 	}
 	getItemsInSlot(slot) {
 		return new Finder(this.inventory).filter( i => i.inSlot==slot);

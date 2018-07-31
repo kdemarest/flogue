@@ -73,6 +73,9 @@ class Deed {
 		}
 		return this.timeLeft;
 	}
+	completed() {
+		return ( this.timeLeft!==true && this.timeLeft <= 0 );
+	}
 	expired() {
 		if( this.killMe ) return true;
 		console.assert( typeof this.timeLeft !== 'number' || !isNaN(this.timeLeft) );
@@ -83,6 +86,15 @@ class Deed {
 		return done;
 	}
 	applyEffect() {
+		if( this.contingent ) {
+			if( !this.contingent(this) ) {
+				return {
+					result: 'failed contingency',
+					success: false
+				};
+			}
+		}
+
 		if( this.handler ) {
 			debugger;
 			// I don't think we ever have a handler on an effect that effects stats. But
@@ -152,7 +164,7 @@ class Deed {
 			return false;
 		}
 		if( this.onEnd ) {
-			this.onEnd.call(this);
+			this.onEnd.call(this,this);
 		}
 		// WARNING! This must happen before the recalc, or this stat chance will remain in force!
 		this.killMe = true;
@@ -203,10 +215,16 @@ let DeedManager = (new class {
 			effect.handler = this.handler[effect.op];
 		}
 		let deed = new Deed(effect);
+		if( deed.onStart ) {
+			deed.onStart.call(deed,deed);
+		}
 		if( deed.handler ) {
 			result = deed.handler();
 		}
+		// This must happen before the stat recalc or the deed will not be in the list and hence it will be ignored!
+		this.deedList.push( deed );
 		if( deed.stat ) {
+			if( deed.stat === 'attitude' ) debugger;
 			result.statOld = deed.target[deed.stat];
 			this.calcStat( deed.target, deed.stat );
 			result.statNew = deed.target[deed.stat];
@@ -217,7 +235,6 @@ let DeedManager = (new class {
 			deed.end();
 			return result;
 		}
-		this.deedList.push( deed );
 		result = Object.assign( result, {
 			isOngoing: deed.duration !== 0,
 			duration: deed.duration,
@@ -268,13 +285,6 @@ let DeedManager = (new class {
 			}
 		}
 	}
-	findFirst(fn) {
-		for( let deed of this.deedList ) {
-			if( !deed.killMe && fn(deed) ) {
-				return deed;
-			}
-		}
-	}
 	end(fn) {
 		let count = 0;
 		for( let deed of this.deedList ) {
@@ -288,6 +298,13 @@ let DeedManager = (new class {
 	}
 	cleanup() {
 		Array.filterInPlace(this.deedList, deed => !deed.killMe );
+	}
+	findFirst(fn) {
+		for( let deed of this.deedList ) {
+			if( !deed.killMe && fn(deed) ) {
+				return deed;
+			}
+		}
 	}
 	traverseDeeds(target,fn) {
 		for( let deed of this.deedList ) {
@@ -394,6 +411,8 @@ let effectApply = function(effect,target,source,item,context) {
 	}
 
 	let delayId = item ? item.id : (source ? source.id : target.id);
+	effect.groupDelayId = target.inVoid || !delayId ? delayId : target.area.animationManager.delay.makeGroup(delayId);
+	
 
 	if( effect.iconOver ) {
 		Anim.Over( target.id, target, effect.iconOver, 0, effect.iconOverDuration || 0.4, effect.iconOverScale || 0.75 );
@@ -450,12 +469,12 @@ let effectApply = function(effect,target,source,item,context) {
 					}
 					else {
 						if( !effect.iconOver ) {
-							Anim.Fly( delayId, target.x, target.y, x, y, area, effect.icon || StickerList.eGeneric.img );
+							Anim.Fly( effect.groupDelayId, 0, target.x, target.y, x, y, area, effect.icon || StickerList.eGeneric.img );
 						}
 					}
 					//Anim.At( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
 					let targetList = [];
-					let monsterList = new Finder(area.entityList).at(x,y);
+					let monsterList = new Finder(area.entityList).at(x,y).filter( entity => !source || entity.id!==source.id || (!effect.ignoreSource && (effect.isHelp || effect.isBuf || effect.isTac )) );
 					if( monsterList.count ) {
 						targetList.push(...monsterList.all);
 					}
@@ -545,7 +564,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		return result;
 	}
 
-	let delayId = item ? item.id : (source ? source.id : target.id);
+	let delayId = effect.groupDelayId || (item ? item.id : (source ? source.id : target.id));
 	// Effects might be inert. Do nothing in that case.
 	if( !effect.op ) {
 		return makeResult('inert',false);
@@ -755,6 +774,22 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		Anim.Over(delayId,target,StickerList.showResistance.img);
 	}
 
+	let isVuln = false;
+	isVuln = isVuln || (target.isVuln && target.isVuln(effect.typeId));
+	isVuln = isVuln || (target.isVuln && target.isVuln(effect.op));
+	isVuln = isVuln || (target.isVuln && target.isVuln(effect.stat));
+	isVuln = isVuln || (effect.op=='set' && target.isVuln && target.isVuln(effect.value));
+	effect.isVuln = isVuln;
+
+	// Double the duration of ongoing effects that you are vulnerable to.
+	if( isVuln && effect.duration!==0 && effect.duration !== true ) {
+		tell(mSubject,target,' ',mVerb,'succumb',' to ',mObject,effect,'.');
+		effect.vulnDuration = true;
+		effect.duration = effect.duration * 2.0;
+		Anim.Over(delayId,target,StickerList.showVulnerability.img);
+	}
+
+
 	// Let any applicable perk transmogrify the effect any way it wants to.
 	Perk.apply( effect );
 
@@ -865,17 +900,6 @@ let resultDeniedDueToType = {
 	status: 'deniedDueToType',
 	success: false
 }
-/*
-DeedManager.addHandler(DeedOp.ATTITUDE,function() {
-	if( !monsterTarget(this) ) return resultDeniedDueToType;
-	this.target.attitude = this.value;
-	return {
-		status: 'attitude',
-		value:  this.value,
-		success: true,
-	}
-});
-*/
 DeedManager.addHandler(DeedOp.HEAL,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return this.target.takeHealing(this.source,this.value,this.healingType);

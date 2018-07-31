@@ -15,6 +15,8 @@ FilterSpec = {
 	"mon/demon/daiphant.png": 		{ brightness: 0.2, normalize: false, shadow: false },
 	"mon/demon/daifahng.png": 		{ normalize: false, brightness: 0 },
 	"mon/shade.png": 				{ normalize: false, brightness: 0, outline: false, shadow: false },
+	"mon/earth/goblin.png": 		{ normalize: false, brightness: 0 },
+	"mon/earth/goblinPriest.png":   { normalize: false, brightness: 0 },
 	"mon/human/solarPriest.png": 	{ strip: 0xA0 },
 	"item/stuff/darkLantern.png": 	{ shadow: { xRatio: 0.8 } },
 	"item/solariumBlade.png": 		{ normalize: false },

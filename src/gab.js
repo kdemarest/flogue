@@ -95,6 +95,7 @@ Gab = (new function(priorGab) {
 		"stab": "pierced",
 		"bite": "chewed",
 		"claw": "mauled",
+		"chop": "chopped",
 		"bash": "bashed up",
 		"burn": "scorched",
 		"freeze": "frosty",

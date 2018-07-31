@@ -147,7 +147,7 @@ CmdTable[Command.SHOOT] = {
 		let weapon = cmd.commandItem;
 		let ammo   = observer.hasAmmo(weapon);
 		if( !ammo ) {
-			tell(mSubject,observer,' ',mVerb,'has',' no suitable ammunition.');
+			tell('Warning: ',mSubject,observer,' ',mVerb,'has',' no suitable ammunition.');
 			return false;
 		}
 		return true;

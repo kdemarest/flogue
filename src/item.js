@@ -227,6 +227,14 @@ class Item {
 			}
 			return Math.max(1,Math.floor(Perk.apply( Object.assign({},effect,{source:item.owner,item:item}) ).value));
 		}
+		function getDamageType() {
+			let effect = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
+			if( !effect ) {
+				return '';
+			}
+			if( window.aa && effect.damageType == DamageType.CHOP ) debugger;
+			return Perk.apply( Object.assign({},effect,{source:item.owner,item:item}) ).damageType;
+		}
 
 		let item = this;
 		let owner = item.owner && item.owner.isMonsterType ? item.owner : {};
@@ -242,7 +250,7 @@ class Item {
 			bunch: 			((item.bunch||0)>1 ? item.bunch+'x ' : ''),
 			name: 			String.capitalize(nameClean),
 			damage: 		getDamage(),
-			damageType: 	item.isWeapon ? item.damageType : (item.effect && item.effect.op=='damage' ? item.effect.damageType : ''),
+			damageType: 	getDamageType(),
 			quick: 			['(clumsy)','','(quick)'][item.getQuick()],
 			reach: 			item.reach > 1 ? 'reach '+item.reach : '',
 			sneak: 			(owner.sneakAttackMult||2)<=2 ? '' : 'Sneak x'+Math.floor(owner.sneakAttackMult),

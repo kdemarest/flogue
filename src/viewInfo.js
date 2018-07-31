@@ -218,7 +218,8 @@ class ViewInfo extends ViewObserver {
 				if( !p ) {
 					p += '<span>PERKS</span><br>';
 				}
-				p += '<span>'+perk.name+'</span><br>';
+				let allow = Perk.allow(perk,{source:entity}) ? '' : ' class="notAllowed"';
+				p += '<span'+allow+'>'+perk.name+'</span><br>';
 			});
 		}
 		s += p;

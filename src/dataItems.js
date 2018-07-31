@@ -304,6 +304,7 @@ const WeaponList = Fab.add( '', {
 		effects: { eInert: EffectTypeList.eInert},
 		matter: 'flesh',
 		namePattern: 'hands{?effect}',
+		slot: false,
 		isHands: true
 	},
 	"claws": {

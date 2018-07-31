@@ -103,11 +103,11 @@ ConfigList.ken = () => {
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
 //		rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 //		rEPIC: 			'graveYard',
-		monsters: 		['isEthermite'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isDemon'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
 		itemDensity:    0.00001,
-		enemyDensity:  	0.000005,
-		friendDensity: 	0.00001,
+		enemyDensity:  	0.002,
+		friendDensity: 	0.000001,
 	}
 
 //	MonsterTypeList.player.inventoryLoot.push('30x weapon ofMetal, 10x stuff ofLiquid, 10x gloves ofLeather');
@@ -124,17 +124,19 @@ ConfigList.ken = () => {
 	BUG: Dog no longer stay near master...
 */
 
+
 	Object.assign( Rules, {
 //		xLootFrequency: 0.80,
 //		xEffectChance: 4.0
 	});
 
+	MonsterTypeList.player.inventoryLoot = 'armor, helm, bracers, boots, stuff.oilLamp, 2x weapon, shield, weapon.bow';
 	MonsterTypeList.player.legacyId = 'monk';
 	MonsterTypeList.player.light = 8;
 
 	return {
 		startingDepth: 19,
-//		themeId: 'kenDwarfTown',
+		themeId: 'kenTheme',
 //		saveBattery: true
 	}
 }

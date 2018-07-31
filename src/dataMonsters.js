@@ -30,12 +30,12 @@ const MonsterTypeDefaults = {
 };
 
 
-let MentalAttack = [Attitude.ENRAGED, Attitude.CONFUSED, Attitude.PANICKED].join(',');
+let MentalAttack = [Attitude.ENRAGED, Attitude.CONFUSED, Attitude.PANICKED, Attitude.PACIFIED].join(',');
 let ConstructImmunity = [MentalAttack,DamageType.ROT,DamageType.POISON,MiscImmunity.HEALING].join(',');
 let ConstructResistance = Damage.Physical;
 let ConstructVulnerability = [DamageType.WATER,DamageType.SHOCK,DamageType.FREEZE,DamageType.CORRODE].join(',');
 
-let UndeadImmunity = [DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,'eBlindness'].join(',');
+let UndeadImmunity = [DamageType.FREEZE,DamageType.ROT,DamageType.POISON,Attitude.PANICKED,Attitude.ENRAGED,Attitude.CONFUSED,Attitude.PACIFIED,'eBlindness'].join(',');
 let SkeletonImmunity = [UndeadImmunity,DamageType.CUT,DamageType.STAB].join(',');
 let UndeadResistance = [DamageType.CUT,DamageType.STAB].join(',');
 let UndeadVulnerability = ['silver',DamageType.SMITE,DamageType.BURN].join(',');
@@ -47,9 +47,9 @@ let OozeVulnerability = ['ice','glass',DamageType.FREEZE].join(',');
 
 let LunarVulnerabilities = ['solarium',DamageType.BURN].join(',');
 
-let DemonImmunity = [DamageType.BURN].join(',');
-let DemonResistance = ['deepium',DamageType.POISON,DamageType.STAB,DamageType.ROT,'possess'].join(',');
-let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE].join(',');
+let DemonImmunity = [DamageType.BURN,Attitude.PANICKED].join(',');
+let DemonResistance = ['deepium',DamageType.POISON,DamageType.STAB,DamageType.ROT,'possess',Attitude.PACIFIED].join(',');
+let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE,Attitude.ENRAGED].join(',');
 
 
 function launcher(obj) {
@@ -1183,20 +1183,26 @@ MonsterTypeList.daitox.onTick = function() {
 
 MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 	if( amount > 0 ) {
-		this.inShell = true;
-		this.immune = this.immuneInShell;
-		this.resist = this.resistInShell;
-		spriteDeathCallback(this.spriteList);
-		this.busy = {
-			turns: 10,
+		let shellEffect = {
+			op: 'set',
+			stat: 'attitude',
+			value: Attitude.BUSY,
+			duration: 10,
 			description: 'in its shell',
-			onDone: () => {
+			onStart: (deed) => {
+				this.inShell = true;
+				this.immune = this.immuneInShell;
+				this.resist = this.resistInShell;
+				spriteDeathCallback(this.spriteList);
+			},
+			onEnd: (deed) => {
 				this.inShell = false;
 				this.immune = '';
 				this.resist = '';
 				spriteDeathCallback(this.spriteList);
 			}
 		};
+		effectApply(shellEffect,this,this,null,'attacked');
 	}
 };
 

@@ -20,6 +20,16 @@ Perk.apply = function(effect,details) {
 	});
 	return effect;
 }
+
+Perk.allow = function(perk,effect,details) {
+	console.assert(perk && effect);
+	let source = effect.source ? effect.source : (effect.item ? effect.item.ownerOfRecord : null);
+	if( !source || !source.isMonsterType || !source.perkList) {
+		return false;
+	}
+	let fn = perk.allow || perkNop;
+	return fn(effect,details) !== false;
+}
 /*
 Perk.visual = function(effect) {
 	console.assert(effect);
@@ -49,15 +59,15 @@ Perk.grant = function(entity, legacyId, level) {
 				item.destroy();
 			}
 		});
+		DeedManager.end( deed => deed.target.id == entity.id && deed.singularId && deed.singularId == singularId );
 	}
 
 	function grantOne(perk) {
+		zapSingular(entity,perk.singularId);
 		if( perk.skill ) {
-			zapSingular(entity,perk.singularId);
 			entity.itemCreateByType( perk.skill, {} );
 		}
 		if( perk.item ) {
-			zapSingular(entity,perk.singularId);
 			entity.itemCreateByType( perk.item, perk.item.presets || {} );
 		}
 		if( perk.loot ) {

@@ -236,8 +236,8 @@ const Damage = {
 const EffectShape = { SINGLE: "single", BLAST2: 'blast2', BLAST3: 'blast3', BLAST4: 'blast4', BLAST5: "blast5", BLAST6: "blast6" };
 const ArmorDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.CHOP,DamageType.BASH];
 const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.CHOP,DamageType.BASH];
-const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked",
-				FEARFUL: "fearful", CALM: "calm",
+const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked", PACIFIED: "pacified",
+				FEARFUL: "fearful", CALM: "calm", BUSY: "busy",
 				AWAIT: "await", WORSHIP: "worshipping",
 				AGGRESSIVE: "aggressive", PATROL: "patroling", HUNT: "hunting", HESITANT: "hesitant", WANDER: "wandering" };
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};

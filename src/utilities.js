@@ -37,6 +37,16 @@ Module.add('utilities',function(){
 		n = n.substr(0,n.length-decimals)+(decimals>0 ? '.'+n.substr(n.length-decimals) : '');
 		return n.substr(-(3+decimals));
 	}
+	Number.roman = function(num) {
+		var lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1},roman = '',i;
+		for ( i in lookup ) {
+			while ( num >= lookup[i] ) {
+				roman += i;
+				num -= lookup[i];
+			}
+		}
+		return roman;
+	}
 	String.splice = function(str, start, delCount, newSubStr) {
         return str.slice(0, start) + newSubStr + str.slice(start + Math.abs(delCount));
     }
