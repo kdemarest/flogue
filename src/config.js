@@ -130,18 +130,17 @@ ConfigList.ken = () => {
 //		xEffectChance: 4.0
 	});
 
-	MonsterTypeList.player.inventoryLoot = '5x weapon.bow, 50x ammo.arrow';
 	MonsterTypeList.player.legacyId = 'ninja';
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;
 //	MonsterTypeList.player.senseSmell = 200;
-//	MonsterTypeList.player.darkVision = 8;
+//	MonsterTypeList.player.senseDarkVision = 8;
 //	MonsterTypeList.player.light = 8;
 
 
 	return {
-		startingDepth: 7,
-//		themeId: 'kenTheme',
+		startingDepth: 1,
+//		themeId: 'dwarfTown',
 //		saveBattery: true,
 		playerInject: { level: 20 }
 	}

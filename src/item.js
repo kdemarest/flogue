@@ -307,7 +307,7 @@ class Item {
 			Object.assign(this,this.states[newState]);
 		}
 		// we can just assume that the sprites will need regenerating.
-		spriteDeathCallback(this.spriteList);
+		imageDirty(this);
 	}
 	getQuick() {
 		if( this.quick !== undefined ) {

@@ -265,111 +265,6 @@ function createDrawList(observer,drawListCache) {
 	return a;
 }
 
-function DefaultImgGet(self) {
-	return self.img;
-}
-class ImageRepo {
-	constructor(loader) {
-		this.imgGet = [];
-		this.ready = false;
-		this.loader = loader;
-	}
-	load() {
-		if( this.ready ) {
-			return true;
-		}
-		let imageList = [];
-		let exists = {};
-
-		function add(imgPath) {
-			if( imgPath === undefined ) {
-				debugger;
-			}
-			if( !imgPath ) {
-				return;
-			}
-			imgPath = IMG_BASE+imgPath;
-			if( !exists[imgPath] ) {
-				imageList.push(imgPath);
-				exists[imgPath] = true;
-			}
-		}
-
-		function scan(typeId,type,member) {
-			if( type[member] ) {
-				if( typeId ) {
-					self.imgGet[typeId] = type.imgGet || DefaultImgGet;
-				}
-				add(type[member]);
-			}
-		}
-
-		function scanIcon(typeList,member) {
-			for( let t in typeList ) {
-				scan(null,typeList[t],member);
-			}
-		}
-		function scanTypeList(typeList,member) {
-			for( let typeId in typeList ) {
-				let type = typeList[typeId];
-				scan( typeId, type, member );
-				if( type.effect ) {
-					scan( null, type.effect, 'icon' );
-					scan( null, type.effect, 'iconCloud' );
-					scan( null, type.effect, 'iconOver' );
-				}
-			}
-		}
-
-
-		// Pre-load all of the images by running the real imagGets with the SECOND variable forced to each
-		// variation of imgChoices. It is the responsibilty of the type to implement this properly.
-		for( let symbol in SymbolToType ) {
-			let type = SymbolToType[symbol];
-			console.assert( this.imgGet[type.typeId] === undefined );
-			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
-			if( type.imgGet && !type.imgChoices ) debugger;
-			if( type.imgChoices ) {
-				let imgGet = this.imgGet[type.typeId];
-				for( let key in type.imgChoices ) {
-					add( imgGet(null,type.imgChoices[key].img) );
-				}
-			}
-			else {
-				add(type.img);
-			}
-			if( type.icon ) {
-				add( 'gui/icons/'+type.icon );
-			}
-		}
-
-		let self = this;
-		scanTypeList(StickerList,'img');
-		Object.each( ItemTypeList, itemType => {
-			if( !itemType.noScan ) {
-				scanTypeList( itemType.qualities || {},'img');
-				scanTypeList( itemType.materials || {},'img');
-				scanTypeList( itemType.varieties || {},'img');
-				scanTypeList( itemType.effects || {},'img');
-			}
-		});
-		scanIcon(EffectTypeList,'icon');
-
-		function setup() {
-			self.ready = true;
-		}
-
-		this.loader
-			.add(imageList)
-			.load(setup);
-
-	}
-	get(imgPath) {
-		let resource = this.loader.resources[IMG_BASE+imgPath];
-		if( !resource ) debugger;
-		return resource;
-	}
-}
 
 let _viewMap = null;
 
@@ -378,20 +273,25 @@ let spriteDeathCallback = function(spriteList) {
 	Array.filterInPlace( spriteList, sprite => {
 		sprite.refs--;
 		if( sprite.refs <= 0 ) {
-			if( sprite.keepAcrossAreas ) {
-				return true;
-			}
 			_viewMap.app.stage.removeChild(sprite);
 		}
 		return false;
 	});
 };
 
+let imageDirty = function(entity) {
+	if( !entity.spriteList ) {
+		return;
+	}
+	return spriteDeathCallback(entity.spriteList);
+}
+
+
 let spriteCreate = function(spriteList,imgPath,mayReuse) {
 	if( !imgPath ) {
 		debugger;
 	}
-	let resource = _viewMap.imageRepo.get(imgPath);
+	let resource = ImageRepo.get(imgPath);
 	if( !resource ) {
 		debugger;
 		return;
@@ -432,7 +332,7 @@ let spriteOnStage = function(sprite,value) {
 	return sprite;
 }
 
-let spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible) {
+let spriteMakeInWorld = function(entity,xWorld,yWorld,senseDarkVision,senseInvisible) {
 
 	function make(x,y,entity,imgGet,light,doTint,doGrey,numSeed) {
 
@@ -447,7 +347,6 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible)
 				}
 				//console.log( "Create sprite "+entity.typeId,x/Tile.DIM,y/Tile.DIM);
 				let sprite = spriteCreate( entity.spriteList, img );
-				sprite.keepAcrossAreas = entity.isUser && entity.isUser();
 				sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
 				sprite.baseScale = entity.scale || Tile.DIM/sprite.width;
 				if( entity.isMonsterType && !entity.scale) {
@@ -516,7 +415,7 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible)
 		light = MapMemoryLight;
 	}
 	else
-	if( darkVision ) {
+	if( senseDarkVision ) {
 		doGrey = true;
 	}
 
@@ -524,7 +423,7 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible)
 		entity.spriteList = self.observer.map.tileSprite[yWorld][xWorld][entity.typeId];
 	}
 
-	let imgGet = self.imageRepo.imgGet[entity.typeId];
+	let imgGet = ImageRepo.imgGet[entity.typeId];
 	let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
 	make.call(
 		self,
@@ -546,14 +445,13 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,darkVision,senseInvisible)
 
 
 class ViewMap extends ViewObserver {
-	constructor(divId,imageRepo) {
+	constructor(divId) {
 		super();
 		this.divId = divId;
 		if( ViewMap.globalPixiApp ) {
 			ViewMap.globalPixiApp.destroy(true,{children:true,texture:false,baseTexture:false});
 		}
 		$(this.divId).empty();
-		this.imageRepo = imageRepo;
 		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
 		ViewMap.globalPixiApp = this.app;
 		this.desaturateFilter = new PIXI.filters.ColorMatrixFilter();
@@ -749,9 +647,9 @@ class ViewMap extends ViewObserver {
 					else
 					{
 						//if( wx+x==this.observer.x && wy+y == this.observer.y ) debugger;
-						let imgGet = this.imageRepo.imgGet[entity.typeId];
+						let imgGet = ImageRepo.imgGet[entity.typeId];
 						if( imgGet ) {
-							spriteMakeInWorld(entity,wx+x,wy+y,this.observer.darkVision,this.observer.senseInvisible);
+							spriteMakeInWorld(entity,wx+x,wy+y,this.observer.senseDarkVision,this.observer.senseInvisible);
 						}
 						else {
 							debugger;
@@ -785,13 +683,13 @@ class ViewMap extends ViewObserver {
 }
 
 return {
-	ImageRepo: ImageRepo,
 	ViewMap: ViewMap,
 	spriteCreate: spriteCreate,
 	spriteAttach: spriteAttach,
 	spriteOnStage: spriteOnStage,
 	spriteMakeInWorld: spriteMakeInWorld,
-	spriteDeathCallback: spriteDeathCallback
+	spriteDeathCallback: spriteDeathCallback,
+	imageDirty: imageDirty
 }
 
 });

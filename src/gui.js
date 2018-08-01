@@ -1,10 +1,9 @@
 Module.add('gui',function() {
 
 class Gui {
-	constructor(getPlayer,imageRepo) {
+	constructor(getPlayer) {
 		this.getPlayer = getPlayer;
 		this.view = {};
-		this.imageRepo = imageRepo;
 		let self = this;
 		window.guiMessage = function(message,payload,target) {
 			self.message(message,payload,target);
@@ -39,8 +38,8 @@ class Gui {
 		this.add('info',new ViewInfo('#guiInfo'));
 		this.add('status',new ViewStatus('#guiStatus'));
 		this.add('inventory',new ViewInventory('#guiInventory',onItemChoose));
-		this.add('map',new ViewMap('#guiMap',this.imageRepo));
-		this.add('miniMap',new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption',this.imageRepo));
+		this.add('map',new ViewMap('#guiMap'));
+		this.add('miniMap',new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption'));
 		this.add('tester',new ViewTester('#guiTester',this.getPlayer));
 	}
 
@@ -52,10 +51,11 @@ class Gui {
 		}
 		//console.log(message);
 		if( message == 'open' ) {
+			debugger;
 			payload.onItemChoose = this.onItemChoose;
 			payload.onClose = ()=>delete this.view[viewId];
-			let viewId = payload.view;
-			this.add(viewId,new window[viewId](payload));
+			let viewClass = payload.viewClass;
+			this.add(viewClass,new window[viewClass](payload));
 		}
 		Object.each( this.view, (view,viewId) => {
 			if( view.message && (!target || target==viewId) ) {

@@ -502,7 +502,7 @@ class Entity {
 				this.x,
 				this.y,
 				this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE,
-				this.darkVision,
+				this.senseDarkVision,
 				this.senseBlind,
 				this.senseXray,
 				this.senseInvisible,
@@ -1321,13 +1321,6 @@ class Entity {
 			}
 			if( this.stun || this.hasForcedAttitude() ) {
 				useAiTemporarily = true;
-			}
-			if( !useAiTemporarily && this.command == Command.EXECUTE ) {
-				let gate = this.map.findItemAt(this.x,this.y).filter( item => item.gateDir!==undefined ).first;
-				if( gate ) {
-					this.command = Command.ENTERGATE;
-					this.commandItem = gate;
-				}
 			}
 		}
 
@@ -2412,6 +2405,20 @@ class Entity {
 		return result;
 	}
 
+	actCraft(item,target) {
+		let result = {
+			status: 'craft',
+			success: false
+		}
+		if( !this.craft ) {
+			return;
+		}
+		item.x = this.x;
+		item.y = this.y;
+		result = this.craft.operate.call(this,item,target);
+		return result;
+	}
+
 	actGaze(item) {
 		let result = {
 			status: 'gaze',
@@ -3047,6 +3054,7 @@ class Entity {
 
 	actOnCommand() {
 		if( this.command == undefined ) debugger;
+
 		switch( this.command ) {
 			case Command.BUSY: {
 				return this.actBusy();
@@ -3066,19 +3074,36 @@ class Entity {
 					status: 'execute',
 					success: false
 				};
+				if( this.commandItem && this.commandItem.isCraft ) {
+					guiMessage( 'open', {
+						viewClass: 'ViewCraft',
+						entity: this.commandItem.owner,
+						self: this
+					});
+					result.status = 'ViewCraft';
+					result.success = true;
+					return result;
+
+				}
+				let gate = this.map.findItemAt(this.x,this.y).filter( item => item.gateDir!==undefined ).first;
+				if( gate ) {
+					return this.actEnterGate(gate);
+				}
+
 				let f = this.findAliveOthersNearby().filter( e=>e.id==this.lastBumpedId || (this.seeingSignOf && this.seeingSignOf.id == e.id) );
 				if( f.first && this.isUser() && f.first.isMerchant ) {
 					guiMessage( 'open', {
-						view: 'ViewMerchant',
+						viewClass: 'ViewMerchant',
 						entity: f.first,
 						self: this
 					});
 					//this.guiViewCreator = { entity: f.first };
+					result.status = 'ViewMerchant';
 					result.success = true;
 				}
 //				if( f.first && this.isUser() && f.first.isTalker ) { //isMerchant ) {
 //					guiMessage( 'open', {
-//						view: 'ViewTalk',
+//						viewClass: 'ViewTalk',
 //						me: f.first,
 //						you: this
 //					});
@@ -3139,6 +3164,12 @@ class Entity {
 				let item = this.commandItem;
 				this.commandItem = null;
 				return this.actTrigger(item,this.commandTarget || this);
+			}
+			case Command.CRAFT: {
+				debugger;
+				let item = this.commandItem;
+				this.commandItem = null;
+				return this.actCraft(item,this.commandTarget || this);
 			}
 			case Command.USE: {
 				let item = this.commandItem;
@@ -3338,6 +3369,9 @@ class Entity {
 			this.map.findItemAt(this.x,this.y).forEach( item => {
 				if( item.onTouch ) {
 					item.onTouch( this, item );
+				}
+				if( item.isBomb ) {
+					item.trigger(this,null,'tripped');
 				}
 			});
 

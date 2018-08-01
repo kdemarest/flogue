@@ -42,6 +42,9 @@ function commandForItem(item) {
 	if( item.slot ) {
 		return Command.USE;
 	}
+	if( item.isCraft ) {
+		return Command.EXECUTE;
+	}
 	if( item.isSpell || item.mayCast ) {
 		return Command.CAST;
 	}
@@ -89,6 +92,12 @@ CmdTable[Command.QUAFF] = {
 	itemFilter: observer => () => new Finder(observer.inventory).isTypeId("potion"),
 	criteriaToExecute: (cmd,observer) => cmd.commandItem.effect,
 	passesTimeOnExecution: true
+};
+CmdTable[Command.CRAFT] = {
+	needsItem: true,
+	itemFilter: observer => () => new Finder(observer.inventory).filter(observer.craft.filter),
+	criteriaToExecute: (cmd,observer) => observer.craft.criteria ? observer.craft.criteria(cmd.commandItem) : true,
+	passesTimeOnExecution: false
 };
 CmdTable[Command.TRIGGER] = {
 	needsItem: true,

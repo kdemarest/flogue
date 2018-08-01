@@ -146,7 +146,15 @@ const MonsterTypeList = {
 		regenerate: 0.01,
 		rechargeRate: 1,
 		senseSight: MaxVis,
-		strictAmmo: true
+		strictAmmo: true,
+		imgChoices: { standard: { img: 'mon/human/solarPriest.png' }, ninja: { img: 'mon/human/ninja.png' }, ninjaSneak: { img: 'mon/human/ninjaSneak.png' } },
+		imgGet: (self,img) => {
+			if( img ) return img;
+			let i2 = self.imgChoices.standard;
+			let i1 = self.imgChoices[self.legacyId];
+			let i0 = self.imgChoices[self.legacyId+(self.sneak?'Sneak':'')];
+			return (i0||i1||i2).img;
+		},
 	},
 	"dog": {
 		core: [ 'd', 0, '10:10', 'good', 'bite', 'canine', 'quadruped', 'UNUSED/spells/components/dog2.png', '*'  ],
@@ -1193,13 +1201,13 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 				this.inShell = true;
 				this.immune = this.immuneInShell;
 				this.resist = this.resistInShell;
-				spriteDeathCallback(this.spriteList);
+				imageDirty(this);
 			},
 			onEnd: (deed) => {
 				this.inShell = false;
 				this.immune = '';
 				this.resist = '';
-				spriteDeathCallback(this.spriteList);
+				imageDirty(this);
 			}
 		};
 		effectApply(shellEffect,this,this,null,'attacked');
@@ -1251,7 +1259,7 @@ function monsterPreProcess(typeId,m) {
 	}
 	m.bloodId = m.bloodId || 'bloodRed';
 	if( !m.isSunChild ) {
-		m.darkVision = m.darkVision || Rules.MONSTER_DARK_VISION;
+		m.senseDarkVision = m.senseDarkVision || Rules.MONSTER_DARK_VISION;
 	}
 	if( m.isLiving === undefined ) {
 		m.isLiving = !m.isUndead && !m.isConstruct;

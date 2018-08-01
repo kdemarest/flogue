@@ -1,12 +1,11 @@
 Module.add('viewMinimap',function() {
 
 class ViewMiniMap extends ViewObserver {
-	constructor(divId,captionDivId,imageRepo) {
+	constructor(divId,captionDivId) {
 		super();
 		this.divId = divId;
 		this.captionDivId = captionDivId;
 		this.caption = '';
-		this.imageRepo = imageRepo;
 		this.drawn = [];
 	}
 	create(area) {
@@ -54,12 +53,12 @@ class ViewMiniMap extends ViewObserver {
 		}
 	}
 	draw( c, entity, x, y, scale, ctr ) {
-		let imgGet = this.imageRepo.imgGet[entity.typeId];
+		let imgGet = ImageRepo.imgGet[entity.typeId];
 		if( !imgGet ) debugger;
 		if( imgGet ) {
 			let imgPath = imgGet(entity);
 			if( !entity ) debugger;
-			let resource = this.imageRepo.get(imgPath);
+			let resource = ImageRepo.get(imgPath);
 			if( resource ) {
 				let image = resource.texture.baseTexture.source;
 				if( ctr ) {

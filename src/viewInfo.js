@@ -141,7 +141,7 @@ class ViewInfo extends ViewObserver {
 			return '<tr><td>'+a+'</td><td>'+b+'</td></tr>';
 		}
 
-		s += '<div class="monsterImageBackground"><img class="monsterImage" src="'+IMG_BASE+entity.img+'"></div><br>';
+		s += '<div class="monsterImageBackground"><img class="monsterImage" src="'+ImageRepo.imgPath(entity)+/*IMG_BASE+entity.img+*/'"></div><br>';
 
 		s += '<table>';
 		s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
@@ -198,7 +198,7 @@ class ViewInfo extends ViewObserver {
 		test( senseList, entity.senseBlind,		'blind');
 		test( senseList, entity.senseSmell,		'scent');
 		test( senseList, entity.senseXray,		'xray');
-		test( senseList, entity.darkVision,		'darkVis');
+		test( senseList, entity.senseDarkVision,		'darkVis');
 		test( senseList, entity.senseInvisible,	'invis');
 		test( senseList, entity.senseTreasure,	'treasure');
 		test( senseList, entity.senseLiving,	'living');

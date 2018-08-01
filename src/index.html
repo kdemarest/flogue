@@ -109,6 +109,7 @@
 <script src="perk.js" charset="utf-8"></script>
 <script src="anim.js" charset="utf-8"></script>
 <script src="tell.js" charset="utf-8"></script>
+<script src="imageRepo.js" charset="utf-8"></script>
 <script src="views.js" charset="utf-8"></script>
 <script src="viewInventory.js" charset="utf-8"></script>
 <script src="viewInfo.js" charset="utf-8"></script>
@@ -116,6 +117,7 @@
 <script src="viewStatus.js" charset="utf-8"></script>
 <script src="viewRange.js" charset="utf-8"></script>
 <script src="viewMerchant.js" charset="utf-8"></script>
+<script src="viewCraft.js" charset="utf-8"></script>
 <script src="viewJobs.js" charset="utf-8"></script>
 <script src="viewMap.js" charset="utf-8"></script>
 <script src="talk.js" charset="utf-8"></script>
@@ -148,8 +150,6 @@ function adhoc(tileType,map,x,y) {
 function main() {
 
 	let User = new HumanUser();
-	let imageRepo;
-
 	User.tickWorld = function(timePasses) {
 		Tester.tick(timePasses);
 		this.entity.area.tick( timePasses ? this.entity.speed : false );
@@ -183,7 +183,7 @@ function main() {
 		playerTypeId = playerTypeId || 'player';
 		playerMarkerId = playerMarkerId || 'playerStartHere';
 
-		let gui = new Gui( ()=>this.entity, imageRepo );
+		let gui = new Gui( ()=>this.entity );
 		gui.create(
 			(event) => { this.onEvent(event); }
 		);
@@ -203,7 +203,7 @@ function main() {
 
 		let self = this;
 		let handle = setInterval(function() {
-			if( !gui.imageRepo.ready ) {
+			if( !ImageRepo.ready ) {
 				return;
 			}
 			clearInterval(handle);
@@ -218,8 +218,8 @@ function main() {
 	window.config = config;
 
 	new DataConditioner();
-	imageRepo =  new ImageRepo(PIXI.loader);
-	imageRepo.load();
+	window.ImageRepo =  new PixiImageRepo(PIXI.loader);
+	ImageRepo.load();
 
 	User.startGame(
 		config.startingDepth,
@@ -260,6 +260,7 @@ function main() {
 					<pre id="guiSign" class="guiSign"></pre>
 					<pre id="guiTalk" class="guiTalk"></pre>
 					<div id="guiMerchant" class="guiInventory"></div>
+					<div id="guiCraft" class="guiInventory"></div>
 				</div>
 			</td><td class="alignTop">
 				<div id="guiExperience"></div>

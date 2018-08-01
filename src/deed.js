@@ -208,6 +208,8 @@ let DeedManager = (new class {
 	constructor() {
 		this.handler = {};
 		this.deedList = [];
+		this.statsThatCauseImageChanges = { sneak:1 };
+		this.statsThatCauseMapRenders = { senseBlind:1, senseLiving:1, senseInvisible: 1, sensePerception:1, senseAlert:1, senseDarkVision:1, senseXray:1, senseSmell:1 }
 	}
 	add(effect) {
 		let result = {};
@@ -217,9 +219,6 @@ let DeedManager = (new class {
 		}
 		let deed = new Deed(effect);
 		this.deedList.push( deed );
-		if( deed.onStart ) {
-			deed.onStart.call(deed,deed);
-		}
 		if( deed.handler ) {
 			result = deed.handler();
 		}
@@ -227,6 +226,9 @@ let DeedManager = (new class {
 			result.statOld = deed.target[deed.stat];
 			this.calcStat( deed.target, deed.stat );
 			result.statNew = deed.target[deed.stat];
+		}
+		if( deed.onStart ) {
+			deed.onStart.call(deed,deed);
 		}
 
 		if( deed.duration === 0 || result.success === false ) {
@@ -258,6 +260,12 @@ let DeedManager = (new class {
 			if( !deed.killMe && deed.target.id == target.id && deed.stat == stat ) {
 				deed.applyEffect();
 			}
+		}
+		if( stat in this.statsThatCauseImageChanges && oldValue !== target[stat] ) {
+			imageDirty(target);
+		}
+		if( target.userControllingMe && stat in this.statsThatCauseMapRenders && oldValue !== target[stat] ) {
+			guiMessage('render',null,'map');
 		}
 		deedTell(target,stat,oldValue,target[stat]);
 	}
@@ -887,7 +895,7 @@ let deedTell = function(target,stat,oldValue,newValue ) {
 }
 
 let DeedOp = {
-//	ATTITUDE: 	'attitude',
+	COMMAND: 	'command',
 	HEAL: 		'heal',
 	DAMAGE: 	'damage',
 	SHOVE: 		'shove',
@@ -909,6 +917,15 @@ let resultDeniedDueToType = {
 	status: 'deniedDueToType',
 	success: false
 }
+DeedManager.addHandler(DeedOp.COMMAND,function() {
+	if( !monsterTarget(this) ) return resultDeniedDueToType;
+	this.target.command = this.value;
+	debugger;
+	return {
+		status: 'command',
+		success: true
+	};
+});
 DeedManager.addHandler(DeedOp.HEAL,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return this.target.takeHealing(this.source,this.value,this.healingType);

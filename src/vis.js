@@ -41,9 +41,9 @@ class Vis {
 		nearDist is the distance from center to the very nearest part of the block
 	**/
 
-	calcVis(px,py,senseSight,darkVision,blind,xray,senseInvisible,visGrid,mapMemory) {
+	calcVis(px,py,senseSight,senseDarkVision,blind,xray,senseInvisible,visGrid,mapMemory) {
 		function canSee(x,y) {
-			return map.getLightAt(x,y,0) > 0 || Distance.isNear(x-px,y-py,darkVision+0.5);
+			return map.getLightAt(x,y,0) > 0 || Distance.isNear(x-px,y-py,senseDarkVision+0.5);
 		}
 		function remember(x,y) {
 			let pos = y*xLen+x;
@@ -59,7 +59,7 @@ class Vis {
 		let map = this.getMapFn();
 		let xLen = map.xLen;
 		let itemLookup = map.itemLookup;
-		darkVision = darkVision || 0;
+		senseDarkVision = senseDarkVision || 0;
 
 		visGrid = visGrid || [];
 

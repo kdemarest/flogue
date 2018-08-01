@@ -1091,7 +1091,7 @@ const ItemTypeList = {
 		glow: 			true,
 		attackVerb: 	'splash',
 		isPotion: 		true,
-		range: 			Rules.RANGED_WEAPON_DEFAULT_RANGE,
+		range: 			Rules.rangePotion,
 		effects: 		PotionEffects,
 		effectWhen: 	{ isHarm: 'throw', DEFAULT: 'quaff'},
 		mayThrow: 		true,
@@ -1110,7 +1110,7 @@ const ItemTypeList = {
 		effectWhen: 	'cast',
 		mayCast: 		true,
 		isSpell: 		true,
-		range: 			Rules.RANGED_WEAPON_DEFAULT_RANGE,
+		range: 			Rules.rangeSpell,
 		img: 			"item/scroll/scroll.png",
 		icon: 			'spell.png'
 	},
@@ -1523,7 +1523,7 @@ ItemTypeList.door.onBump = function(entity,self) {
 	}
 	if( self.state == 'shut' ) {
 		self.setState('open');
-		spriteDeathCallback(self.spriteList);
+		imageDirty(self);
 		tell(mSubject,entity,' ',mVerb,'open',' the ',mObject,self);
 		Anim.FloatUp( entity.id, self, StickerList.open.img );
 		return true;
@@ -1533,7 +1533,7 @@ ItemTypeList.door.onBump = function(entity,self) {
 		let hasKey = self.keyId===undefined || key;
 		if( hasKey ) {
 			self.setState('shut');
-			spriteDeathCallback(self.spriteList);
+			imageDirty(self);
 			tell(mSubject,entity,' ',mVerb,'unlock',' the ',mObject,self);
 			Anim.FloatUp( entity.id, self, StickerList.unlock.img );
 			if( key && key.name.indexOf('(used)') < 0 ) {

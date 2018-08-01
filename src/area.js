@@ -573,11 +573,11 @@ class Area {
 	castLight() {
 		// Darkvision hack... which sadly works great.
 		// The RIGHT way to do this is for the createDrawList, just before it
-		// starts compiling, to say if( obs.darkVision > obs.light ) castOne( obs.x, obs.y, obs.darkVision )
+		// starts compiling, to say if( obs.senseDarkVision > obs.light ) castOne( obs.x, obs.y, obs.senseDarkVision )
 		// Observer might not exist in this area! So make a throw-away object if so.
 		let observer = this.entityList.find( e=>e.userControllingMe ) || {};
 		let oldLight = observer.light;
-		observer.light = Math.max(observer.darkVision||0,observer.light||0);
+		observer.light = Math.max(observer.senseDarkVision||0,observer.light||0);
 
 		this.lightCaster.castAll(
 			this.map,

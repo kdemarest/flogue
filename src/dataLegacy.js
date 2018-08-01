@@ -390,7 +390,7 @@ LegacyList.ninja = compose( 'ninja', [
 		skill: {
 			slot: Slot.SKILL,
 			passesTime: false,
-			effect: { op: 'set', stat: 'sensePerception', value: true, duration: true, onStart: ()=>guiMessage('render',null,'map'), onEnd: ()=>guiMessage('render',null,'map') }
+			effect: { op: 'set', stat: 'sensePerception', value: true, duration: true }
 		},
 		description: 'Intuition tells you what areas are being watched.'
 	}) ),
@@ -399,7 +399,7 @@ LegacyList.ninja = compose( 'ninja', [
 		skill: {
 			rechargeTime: 40,
 			passesTime: false,
-			effect: { op: 'set', stat: 'sneak', value: index+2, duration: 20, onStart: ()=>guiMessage('render',null,'map'), onEnd: ()=>guiMessage('render',null,'map') },
+			effect: { op: 'set', stat: 'sneak', value: index+2, duration: 20 },
 		},
 		description: 'Enemy sight distance reduced by '+(index+2)+' as you sneak. However, if your light is bright they will see you!'
 	}) ),
@@ -428,7 +428,7 @@ LegacyList.ninja = compose( 'ninja', [
 		skill: {
 			slot: Slot.SKILL,
 			passesTime: false,
-			effect: { op: 'set', stat: 'senseAlert', value: true, duration: true, onStart: ()=>guiMessage('render',null,'map'), onEnd: ()=>guiMessage('render',null,'map') }
+			effect: { op: 'set', stat: 'senseAlert', value: true, duration: true }
 		},
 		description: 'Delicate sense reveal how close is "too close".'
 	}) ),
@@ -437,7 +437,7 @@ LegacyList.ninja = compose( 'ninja', [
 		skill: {
 			slot: Slot.SKILL,
 			passesTime: false,
-			effect: { op: 'set', stat: 'darkVision', value: 4+index*2, duration: true, onStart: ()=>guiMessage('render',null,'map'), onEnd: ()=>guiMessage('render',null,'map') }
+			effect: { op: 'set', stat: 'senseDarkVision', value: 4+index*2, duration: true }
 		},
 		description: 'See in the dark '+(4+index*2)+' squares.'
 	}) ),
@@ -463,10 +463,25 @@ LegacyList.ninja = compose( 'ninja', [
 
 ]);
 
-LegacyList.thief = [
-];
-LegacyList.bomber = [
-];
+//LegacyList.thief = [
+//];
+
+//
+// Bomber
+//
+
+LegacyList.bomber = compose( 'bomber', [
+	range( [1], (level,index) => ({
+		name: 'Craft Bomb',
+		skill: {
+			isCraft: true,
+			passesTime: false,
+			effect: { op: 'command', value: Command.CRAFT, duration: 0 }
+		},
+		description: 'Become odorless at will.'
+	}) ),
+
+]);
 LegacyList.assassin = [
 ];
 LegacyList.possessor = [
