@@ -1270,7 +1270,7 @@ function monsterPreProcess(typeId,m) {
 	if( !String.arIncludes(m.vuln||'',DamageType.WATER) && !String.arIncludes(m.resist||'',DamageType.WATER) ) {
 		m.immune = String.arAdd(m.immune,DamageType.WATER);
 	}
-	if( m.isDemon ) {
+	if( m.isDemon && !m.lightHarms ) {
 		m.lightHarms = 8;
 	}		
 
