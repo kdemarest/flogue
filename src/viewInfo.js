@@ -146,7 +146,7 @@ class ViewInfo extends ViewObserver {
 		s += '<table>';
 		s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
 		if( !entity.isUser() ) {
-			s += tRow('Activity:',entity.brainState && entity.brainState.activity ? entity.brainState.activity : entity.attitude);
+			s += tRow('Activity:',(entity.brainState && entity.brainState.activity ? entity.brainState.activity : entity.attitude)+(this.enemyIsPresent?'*':''));
 		}
 		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
 		if( entity.isUser() ) {

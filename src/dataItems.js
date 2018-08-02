@@ -711,7 +711,9 @@ const StuffList = Fab.add( '', {
 								iconOverScale: 5.0,
 							}
 						},
-	"solarOrb":   		{ rarity: 1.0, matter: 'special', mayThrow: true, range: 5, mayTargetPosition: true, light: 12, glow: 1, img: "item/stuff/solarOrb.png" },
+	"solarOrbS":   		{ rarity: 1.0, matter: 'special', xPrice: 4.0, mayThrow: true, range: 6, mayTargetPosition: true, light: 12, glow: 1, scale: 0.3, img: "item/stuff/solarOrb.png", name: 'small solar orb' },
+	"solarOrbM":   		{ rarity: 0.6, matter: 'special', xPrice: 5.0, mayThrow: true, range: 5, mayTargetPosition: true, light: 15, glow: 1, scale: 0.4, img: "item/stuff/solarOrb.png", name: 'medium solar orb' },
+	"solarOrbL":   		{ rarity: 0.2, matter: 'special', xPrice: 7.0, mayThrow: true, range: 4, mayTargetPosition: true, light: 18, glow: 1, scale: 0.5, img: "item/stuff/solarOrb.png", name: 'large solar orb' },
 	"trollBlood": 		{ rarity: 0.6, matter: 'liquid' },
 	"spinneret": 		{ rarity: 0.4, matter: 'flesh', },
 	"chitin": 			{ rarity: 1.0, matter: 'chitin', },

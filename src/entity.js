@@ -839,8 +839,8 @@ class Entity {
 			return false;
 		}
 
-		let lightMatters = this.isLightHarmful(x,y) && this.map.getLightAt(x,y) > this.map.getLightAt(this.x,this.y);
-		if( lightMatters && problemTolerance <= Problem.NONE ) {
+		let lightMatters = !this.enemyIsPresent && this.isLightHarmful(x,y) && this.map.getLightAt(x,y) > this.map.getLightAt(this.x,this.y);
+		if( lightMatters && problemTolerance <= Problem.TINY ) {
 			return false;
 		}
 
@@ -887,7 +887,7 @@ class Entity {
 		if( this.attitude == Attitude.PANICKED || this.attitude == Attitude.CONFUSED ) {
 			return Problem.MILD;
 		}
-		return Problem.NONE;
+		return Problem.TINY;
 	}
 
 	thinkApproachTarget(target) {
@@ -1424,6 +1424,7 @@ class Entity {
 						this.inCombatTimer = Time.simTime
 					}
 				}
+				this.enemyIsPresent = enemyList.count > 0;
 
 				if( this.mindset('don') ) {
 					this.thinkDon(enemyList.first);
@@ -1460,6 +1461,7 @@ class Entity {
 						this.brainState.activity = 'Sniffing the trail of '+smelled.name+'.';
 					}
 				}
+				this.enemyIsSmelled = wasSmell;
 				// Keep pursuing and check the lep if it is closer than any other enemy. My target might have
 				// simply vanished around a corner.
 				let wasLEP = false;
@@ -1482,6 +1484,7 @@ class Entity {
 						this.brainState.activity = 'Arriving at last known position of '+lep.name+'.';
 					}
 				}
+				this.enemyIsLep = wasLEP;
 
 				if( lep && this.isAtTarget(lep) ) {
 					this.record('at lep ('+lep.x+','+lep.y+')',true);
