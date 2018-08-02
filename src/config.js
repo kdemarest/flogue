@@ -128,7 +128,7 @@ ConfigList.ken = () => {
 //		xEffectChance: 4.0
 	});
 
-	MonsterTypeList.player.legacyId = 'soldier';
+	MonsterTypeList.player.legacyId = 'blaster';
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;
 //	MonsterTypeList.player.senseSmell = 200;

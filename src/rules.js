@@ -80,7 +80,10 @@ let Rules = new class {
 	 }
 	 monsterHealth(monsterLevel,hitsToKillMonster=3) {
 	 	if( !hitsToKillMonster ) debugger;
-	 	return Math.max(1,Math.floor(this.playerDamage(monsterLevel)*hitsToKillMonster));
+	 	// Monsters get twice as tough over the course of the game, because player perks
+	 	// typically give them a cumulative 200% advantage
+	 	let pct = (monsterLevel-DEPTH_MIN)/DEPTH_SPAN;
+	 	return Math.max(1,Math.floor(this.playerDamage(monsterLevel)*hitsToKillMonster*(1+pct)));
 	 }
 	 monsterDamage(monsterLevel,hitsToKillPlayer=10) {
 	 	if( !hitsToKillPlayer ) debugger;
