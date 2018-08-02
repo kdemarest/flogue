@@ -49,7 +49,7 @@ let LunarVulnerabilities = ['solarium',DamageType.BURN].join(',');
 
 let DemonImmunity = [DamageType.BURN,Attitude.PANICKED].join(',');
 let DemonResistance = ['deepium',DamageType.POISON,DamageType.STAB,DamageType.ROT,'possess',Attitude.PACIFIED].join(',');
-let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE,Attitude.ENRAGED].join(',');
+let DemonVulnerability = ['ice','solarium',DamageType.SMITE,DamageType.FREEZE,DamageType.LIGHT,Attitude.ENRAGED].join(',');
 
 
 function launcher(obj) {
@@ -1080,7 +1080,7 @@ MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
 		return;
 	}
 
-	if( attacker.isImmune(StuffList.frogSpine.typeId) ) {
+	if( attacker.isImmune('frogSpine') ) {
 		tell(mSubject,attacker,' ',mVerb,'is',' protected from the ',mObject|mPossessive,this,' spines.');
 		return;
 	}
@@ -1270,6 +1270,9 @@ function monsterPreProcess(typeId,m) {
 	if( !String.arIncludes(m.vuln||'',DamageType.WATER) && !String.arIncludes(m.resist||'',DamageType.WATER) ) {
 		m.immune = String.arAdd(m.immune,DamageType.WATER);
 	}
+	if( m.isDemon ) {
+		m.lightHarms = 8;
+	}		
 
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];

@@ -208,6 +208,7 @@ const StickerList = {
 	clawIcon: { img: 'gui/icons/damageClaw.png' },
 	bashIcon: { img: 'gui/icons/damageBash.png' },
 	burnIcon: { img: 'gui/icons/eBurn.png' },
+	lightIcon: { img: 'gui/icons/eLight.png' },
 	freezeIcon: { img: 'gui/icons/eFreeze.png' },
 	shockIcon: { img: 'gui/icons/eShock.png' },
 	corrodeIcon: { img: 'gui/icons/eCorrode.png' },
@@ -223,7 +224,7 @@ const MiscImmunity = { SPEED: "speed", STUN: "stun", IMMOBILE: "immobile", GAS: 
 
 
 // WARNING: the damage type names are re-used in their icon names in StickerList. Maintain both.
-const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", CHOP: "chop", BASH: "bash", BURN: "burn", FREEZE: "freeze", WATER: "water", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
+const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", CHOP: "chop", BASH: "bash", BURN: "burn", FREEZE: "freeze", WATER: "water", LIGHT: "light", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
 const Damage = {
 	All: 		Object.values(DamageType).join(',')+','+Object.values(MiscImmunity).join(','),
 	Misc: 		Object.values(MiscImmunity).join(','),
@@ -328,7 +329,7 @@ let EffectTypeList = {
 	eCurePoison: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isPoison || deed.damageType==DamageType.POISON, isHelp: 1, duration: 0, icon: 'gui/icons/eHeal.png' },
 	eCureDisease: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isDisease, isHelp: 1, duration: 0, icon: 'gui/icons/eHeal.png' },
 // Damage
-	eWater: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.WATER, doesTiles: true, doesItems: true, icon: 'gui/icons/eBurn.png' },
+	eWater: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.WATER, doesTiles: true, doesItems: true, icon: 'gui/icons/eWater.png' },
 	eBurn: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.BURN, doesTiles: true, doesItems: true, icon: 'gui/icons/eBurn.png' },
 	eFreeze: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.80, isHarm: 1, duration: 0, damageType: DamageType.FREEZE, doesTiles: true, doesItems: true, icon: 'gui/icons/eFreeze.png' },
 	eShock: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, damageType: DamageType.SHOCK, doesItems: true, icon: 'gui/icons/eShock.png' },

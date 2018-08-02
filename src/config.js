@@ -106,7 +106,7 @@ ConfigList.ken = () => {
 		monsters: 		['isDemon'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
 		itemDensity:    0.00001,
-		enemyDensity:  	0.008,
+		enemyDensity:  	0.001,
 		friendDensity: 	0.000001,
 	}
 
@@ -118,9 +118,9 @@ ConfigList.ken = () => {
 
 //	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, 4x potion.eXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
 //	MonsterTypeList.player.inventoryLoot.push('2x potion.eHealing, 4x potion, 2x gem, 2x spell, 1x potion.eSeeInvisible, 3x weapon, weapon.sling, 30x ammo.slingStone, weapon.bow, 40x ammo.arrow, spell.eFreeze');
-//	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.oilLamp';
+	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.oilLamp, cloak.eInvisibility';
 //	MonsterTypeList.player.experience = 100;
-	MonsterTypeList.player.inventoryLoot.push('2x stuff.shovel, stuff.lantern, stuff.candleLamp, stuff.oilLamp');
+	MonsterTypeList.player.inventoryLoot.push('6x weapon, 50x ammo.arrow, 2x stuff.shovel, stuff.lantern, stuff.candleLamp, stuff.oilLamp, 5x stuff.solarOrb, stuff.sunCrystal');
 
 
 	Object.assign( Rules, {
@@ -128,7 +128,7 @@ ConfigList.ken = () => {
 //		xEffectChance: 4.0
 	});
 
-	MonsterTypeList.player.legacyId = 'blaster';
+	MonsterTypeList.player.legacyId = 'soldier';
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;
 //	MonsterTypeList.player.senseSmell = 200;
@@ -137,8 +137,8 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 1,
-		themeId: 'dwarfVillage',
+		startingDepth: 11,
+		themeId: 'kenTheme',
 		//saveBattery: true,
 		playerInject: { level: 20 }
 	}

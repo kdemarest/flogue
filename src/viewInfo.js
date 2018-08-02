@@ -198,14 +198,16 @@ class ViewInfo extends ViewObserver {
 		test( senseList, entity.senseBlind,		'blind');
 		test( senseList, entity.senseSmell,		'scent');
 		test( senseList, entity.senseXray,		'xray');
-		test( senseList, entity.senseDarkVision,		'darkVis');
+		test( senseList, entity.senseDarkVision, 'darkVis');
 		test( senseList, entity.senseInvisible,	'invis');
 		test( senseList, entity.senseTreasure,	'treasure');
 		test( senseList, entity.senseLiving,	'living');
+		test( senseList, entity.sensePerception,'intuit');
+		test( senseList, entity.senseAlert,		'alert');
 		s += senseList.length ? '<div class="monDetail">Senses:</div>'+senseList.join(', ')+'<br>' : '';
 
 		// Immunity, resistance and vulnerability
-		let summaryImmune = (entity.immune ||'').split(',').filter( i=>i!==DamageType.WATER );
+		let summaryImmune = (entity.immune ||'').split(',').filter( i=>i!==DamageType.WATER && i!==DamageType.LIGHT );
 		s += summaryImmune.length ? '<div class="monDetail">Immune:</div>'+summaryImmune.join(', ')+'<br>' : '';
 		s += entity.resist ? '<div class="monDetail">Resist:</div>'+entity.resist.split(',').join(', ')+'<br>' : '';
 		s += entity.vuln ? '<div class="monDetail">Weak:</div>'+entity.vuln.split(',').join(', ')+'<br>' : '';

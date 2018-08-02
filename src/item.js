@@ -198,8 +198,8 @@ class Item {
 	get baseType() {
 		return ItemTypeList[this.typeId];
 	}
-	calcName() {
-		this.name = (this.name || String.tokenReplace(this.namePattern,this));
+	calcName(force=false) {
+		this.name = (force?false:this.name) || String.tokenReplace(this.namePattern,this);
 	}
 	explain(buySell,observer) {
 		function order(typeId) {
@@ -310,7 +310,7 @@ class Item {
 			Object.assign(this,this.states[newState]);
 		}
 		// Maybe the state is in the name?
-		this.calcName();
+		this.calcName(true);
 		// we can just assume that the sprites will need regenerating.
 		imageDirty(this);
 	}

@@ -19,6 +19,7 @@ FilterSpec = {
 	"mon/earth/goblinPriest.png":   { normalize: false, brightness: 0 },
 	"mon/human/solarPriest.png": 	{ strip: 0xA0 },
 	"item/stuff/darkLantern.png": 	{ shadow: { xRatio: 0.8 } },
+	"item/stuff/solarOrb.png": 		{ shadow: false, outline: false },
 	"item/solariumBlade.png": 		{ normalize: false },
 	"decor/brazierLit.png": 		{ normalize: false, outline: false, brightness: 0.01 },
 	"decor/brazierUnLit.png": 		{ normalize: false, },

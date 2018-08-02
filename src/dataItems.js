@@ -646,13 +646,13 @@ const PlantQualityList = Fab.add( '', {
 });
 
 const PlantList = Fab.add( '', {
-	"wheatPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.wheat', img: "plant/wheatPlant.png" },
-	"barleyPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.barley', img: "plant/barleyPlant.png" },
-	"carrotPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.carrot', img: "plant/carrotPlant.png" },
-	"potatoPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.potato', img: "plant/potatoPlant.png" },
-	"peaPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.peas', img: "plant/peaPlant.png" },
-	"beanPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.bean', img: "plant/beanPlant.png" },
-	"cabbagePlant": 	{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.cabbage', img: "plant/cabbagePlant.png" },
+	"wheatPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.wheat', img: "plant/wheatPlant.png" },
+	"barleyPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.barley', img: "plant/barleyPlant.png" },
+	"carrotPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.carrot', img: "plant/carrotPlant.png" },
+	"potatoPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.potato', img: "plant/potatoPlant.png" },
+	"peaPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.peas', img: "plant/peaPlant.png" },
+	"beanPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.bean', img: "plant/beanPlant.png" },
+	"cabbagePlant": 	{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.cabbage', img: "plant/cabbagePlant.png" },
 });
 
 const StuffList = Fab.add( '', {
@@ -711,6 +711,7 @@ const StuffList = Fab.add( '', {
 								iconOverScale: 5.0,
 							}
 						},
+	"solarOrb":   		{ rarity: 1.0, matter: 'special', mayThrow: true, range: 5, mayTargetPosition: true, light: 12, glow: 1, img: "item/stuff/solarOrb.png" },
 	"trollBlood": 		{ rarity: 0.6, matter: 'liquid' },
 	"spinneret": 		{ rarity: 0.4, matter: 'flesh', },
 	"chitin": 			{ rarity: 1.0, matter: 'chitin', },
@@ -1088,6 +1089,7 @@ const ItemTypeList = {
 		mayHarvest: 	true,
 		rechargeTime: 	10,
 		namePattern: 	'{state} {variety}',
+		properNoun: 	true,
 		state: 			'wilted',
 		states: 		{ wilted: { isWilted: true }, thriving: { isWilted: false } },
 		varieties: 		PlantList,
@@ -1725,8 +1727,8 @@ ItemTypeList.plant.onTick = function() {
 	else {
 		this.stateCounter = 0;
 	}
-	if( this.isWilted ) {
-		this.resetRecharge();
+	if( this.rechargeTime && this.isWilted && (this.rechargeLeft||0) < this.rechargeTime ) {
+		this.rechargeLeft = (this.rechargeLeft||0) + 1;
 	}
 }
 

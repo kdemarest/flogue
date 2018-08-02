@@ -100,6 +100,7 @@ Gab = (new function(priorGab) {
 		"burn": "scorched",
 		"freeze": "frosty",
 		"water": "soaked",
+		"light": "seared",
 		"shock": "ashy",
 		"corrode": "corroded",
 		"poison": "poisoned",

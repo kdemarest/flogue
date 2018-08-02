@@ -410,7 +410,7 @@ let effectApply = function(effect,target,source,item,context) {
 	++globalEffectDepth;
 	if( !(effect instanceof Effect) ) {
 		effect = new Effect(
-			item ? item.depth : target.area.depth,
+			item && item.depth!==undefined ? item.depth : target.area.depth,
 			effect,
 			item,
 			item ? item.rechargeTime : 0

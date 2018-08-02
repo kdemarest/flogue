@@ -119,7 +119,7 @@ const TileTypeList = {
 		isFire: true,
 		addFloor: true,
 		name: "flames",
-		light: 9,
+		light: 7,			// NOTE! Must be under the demon-harming light threshold.
 		glow: 1,
 		effect: {
 			op: 'damage',

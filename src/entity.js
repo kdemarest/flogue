@@ -550,7 +550,7 @@ class Entity {
 	}
 
 	isHiddenEntity(entity) {
-		if( (entity.isMonsterType && entity.senseLiving && this.isLiving) || (entity.isItemType && entity.isTreasure && this.senseTreasure) ) {
+		if( (entity.isMonsterType && this.senseLiving && entity.isLiving) || (entity.isItemType && entity.isTreasure && this.senseTreasure) ) {
 			return false;
 		}
 		let d = this.getDistance(entity.x,entity.y);
@@ -592,7 +592,7 @@ class Entity {
 			return false;
 		}
 		// Magic might be helping you see things
-		if( (entity.isMonsterType && entity.senseLiving && this.isLiving) || (entity.isItemType && entity.isTreasure && this.senseTreasure) ) {
+		if( (entity.isMonsterType && this.senseLiving && entity.isLiving) || (entity.isItemType && entity.isTreasure && this.senseTreasure) ) {
 			return true;
 		}
 //		if( entity.ownerOfRecord ) {
@@ -839,6 +839,11 @@ class Entity {
 			return false;
 		}
 
+		let lightMatters = this.isLightHarmful(x,y) && this.map.getLightAt(x,y) > this.map.getLightAt(this.x,this.y);
+		if( lightMatters && problemTolerance <= Problem.NONE ) {
+			return false;
+		}
+
 		// Maybe we're not colliding, but perhaps there is an item present that is a problem.
 		let g = this.map.findItemAt(x,y);
 		if( g.count ) {
@@ -873,6 +878,7 @@ class Entity {
 	}
 
 	problemTolerance() {
+		// WARNING! When we have no enemy our problem tolerance should be zero.
 		// WARNING! This does NOT consider whether the creature is immune to the damage,
 		// nor does it understand that their movement mode might be immune.
 		if( this.attitude == Attitude.ENRAGED ) {
@@ -1013,8 +1019,56 @@ class Entity {
 		return false;
 	}
 
+	isLightHarmful(x,y) {
+		return this.lightHarms && this.map.getLightAt(x,y) >= this.lightHarms;
+	}
+	isLightHarmfulDir(dir=false) {
+		let x = this.x;
+		let y = this.y;
+		if( dir !== false ) {
+			x += Direction.add[dir].x;
+			y += Direction.add[dir].y;
+		}
+		return this.isLightHarmful(x,y);
+	}
+
+	thinkAvoidLight() {
+		if( !this.lightHarms ) {
+			return;
+		}
+		let dir = this.map.dirChoose( this.x, this.y, (x,y,bestLight) => {
+			if( !this.mayEnter(x,y,this.problemTolerance()) ) {
+				return false;
+			}
+			let light = this.map.getLightAt(x,y);
+			if( bestLight === null || light < bestLight ) {
+				return light;
+			}
+			return false;
+		});
+
+		if( dir !== false ) {
+			this.brainState.activity = 'Avoiding harmful light';
+			return Direction.toCommand(dir);
+		}
+	}
+
 	thinkWanderF(avgPause=7,avgWanderDist=8,tetherMagnet=70) {
+		let c = this._thinkWanderF(avgPause,avgWanderDist,tetherMagnet);
+		if( this.isLightHarmfulDir( Direction.fromCommand(c) ) && !this.isLightHarmfulDir() ) {
+			c = Command.WAIT;
+		}
+		return c;
+	}
+
+	_thinkWanderF(avgPause=7,avgWanderDist=8,tetherMagnet=70) {
 		this.brainState.activity = 'Wandering.';
+
+		if( this.isLightHarmfulDir() ) {
+			let c = this.thinkAvoidLight();
+			if( c ) return c;
+		}
+
 		if( this.commandLast == Command.WAIT && Math.chance(100/avgPause) ) {
 			this.record('wander pause', true);
 			this.brainState.activity = 'Pausing for a bit during a wander.';
@@ -1055,6 +1109,10 @@ class Entity {
 				console.assert( dir>=0 && dir < 8 );
 				return Direction.toCommand(dir);
 			}
+		}
+		if( this.isLightHarmfulDir() ) {
+			let c = this.thinkAvoidLight();
+			if( c ) return c;
 		}
 		this.record( 'unable to retreat '+dirAwayPerfect, true );
 		return false;
@@ -1475,6 +1533,12 @@ class Entity {
 					// Give up on my personal enemy if it exits my perception.
 					this.personalEnemy = null;
 				}
+
+				if( !theEnemy && this.isLightHarmfulDir() ) {
+					let c = this.thinkAvoidLight();
+					if( c ) return c;
+				}
+
 
 				// OK, now all the mind control stuff is done, we need to manage our attitude a little.
 				let tooClose = theEnemy && !wasSmell && !wasLEP && this.testTooClose(theEnemy.x,theEnemy.y,theEnemy.sneak);
@@ -3415,6 +3479,22 @@ class Entity {
 					item.trigger(this,null,'tripped');
 				}
 			});
+
+			if( this.lightHarms ) {
+				let light = this.map.getLightAt(this.x,this.y);
+				if( light >= this.lightHarms ) {
+					let pct = 1.0 - ((20-light) / (20-Math.clamp(this.lightHarms,0,19)));
+					let damage = Math.max(1,Math.floor(Rules.pickDamage(this.area.depth,0,null) * pct * 0.2));
+					let lightEffect = {
+						op: 'damage',
+						damageType: DamageType.LIGHT,
+						value: damage,
+						duration: 0,
+						icon: 'gui/icons/eLight.png'
+					}
+					effectApply(lightEffect,this,null,null,'ambientLight');
+				}
+			}
 
 			if( this.onTick ) {
 				this.onTick.call(this);
