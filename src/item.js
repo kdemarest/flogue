@@ -186,7 +186,7 @@ class Item {
 
 		// Always do this last so that as many member vars as possible will be available to the namePattern!
 		//if( this.namePattern.indexOf('arrow') >=0 ) debugger;
-		this.name = (this.name || String.tokenReplace(this.namePattern,this));
+		this.calcName();
 	}
 	get area() {
 		if( !this.owner ) debugger;
@@ -197,6 +197,9 @@ class Item {
 	}
 	get baseType() {
 		return ItemTypeList[this.typeId];
+	}
+	calcName() {
+		this.name = (this.name || String.tokenReplace(this.namePattern,this));
 	}
 	explain(buySell,observer) {
 		function order(typeId) {
@@ -306,6 +309,8 @@ class Item {
 			console.assert(this.states[newState]);
 			Object.assign(this,this.states[newState]);
 		}
+		// Maybe the state is in the name?
+		this.calcName();
 		// we can just assume that the sprites will need regenerating.
 		imageDirty(this);
 	}
@@ -646,7 +651,9 @@ class Item {
 		// WARNING! This assert is useful for making sure of inventory integrity, but VERY slow.
 		//console.assert( list.find( i => i.id == this.id ) );
 		if( this.rechargeLeft > 0 ) {
-			this.rechargeLeft = Math.max(0,this.rechargeLeft-rechargeRate);
+			if( !this.rechargeCriteria || this.rechargeCriteria.call(this) ) {
+				this.rechargeLeft = Math.max(0,this.rechargeLeft-rechargeRate);
+			}
 		}
 		if( this.onTick ) {
 			this.onTick.call(this,dt);

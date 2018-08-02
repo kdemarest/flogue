@@ -46,11 +46,12 @@ DirSpec = {
 	"item/": true,
 	"decor/": true,
 	"effect/": true,
+	"plant/": true,
 }
 
 FilterDefault = {
-	normalize: true,
-	brightness: -0.3,
+	normalize: false,
+	brightness: 0.0,
 	contrast: 0,
 	shadow: {
 		threshold: 0x20,

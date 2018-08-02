@@ -120,9 +120,7 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.inventoryLoot.push('2x potion.eHealing, 4x potion, 2x gem, 2x spell, 1x potion.eSeeInvisible, 3x weapon, weapon.sling, 30x ammo.slingStone, weapon.bow, 40x ammo.arrow, spell.eFreeze');
 //	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.oilLamp';
 //	MonsterTypeList.player.experience = 100;
-/*
-	BUG: Dog no longer stay near master...
-*/
+	MonsterTypeList.player.inventoryLoot.push('2x stuff.shovel, stuff.lantern, stuff.candleLamp, stuff.oilLamp');
 
 
 	Object.assign( Rules, {
@@ -130,18 +128,18 @@ ConfigList.ken = () => {
 //		xEffectChance: 4.0
 	});
 
-	MonsterTypeList.player.legacyId = 'ninja';
+	MonsterTypeList.player.legacyId = 'blaster';
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;
 //	MonsterTypeList.player.senseSmell = 200;
 //	MonsterTypeList.player.senseDarkVision = 8;
-//	MonsterTypeList.player.light = 8;
+	MonsterTypeList.player.light = 2;
 
 
 	return {
 		startingDepth: 1,
-//		themeId: 'dwarfTown',
-//		saveBattery: true,
+		themeId: 'dwarfVillage',
+		//saveBattery: true,
 		playerInject: { level: 20 }
 	}
 }

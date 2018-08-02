@@ -73,7 +73,7 @@ function launcher(obj) {
 }
 
 let BrainMindset = {
-	hero: 			'pickup,open,don,fleeWhenHurt',
+	hero: 			'pickup,harvest,open,don,fleeWhenHurt',
 	sentient: 		'alert,fleeWhenHurt,lep,pack,don',
 	simpleton: 		'lep',
 	demon: 			'lep,don',
@@ -88,28 +88,28 @@ let BrainMindset = {
 }
 
 let BrainAbility = {
-	hero: 			'cast,gaze,open,pickup,shoot,talk,throw',
-	sentient: 		'cast,gaze,open,pickup,shoot,talk,throw',
-	simpleton: 		'gaze,open,pickup,shoot,talk,throw',
-	demon: 			'cast,gaze,open,pickup,shoot,talk,throw',
-	canine:   		'gaze,open,pickup,shoot,talk,throw',
+	hero: 			'cast,gaze,open,pickup,harvest,shoot,talk,throw',
+	sentient: 		'cast,gaze,open,pickup,harvest,shoot,talk,throw',
+	simpleton: 		'gaze,open,pickup,harvest,shoot,talk,throw',
+	demon: 			'cast,gaze,open,pickup,harvest,shoot,talk,throw',
+	canine:   		'gaze,open,pickup,harvest,shoot,talk,throw',
 	animal:   		'',
 	animalHunter:   '',
 	animalHerd: 	'',
-	robot: 			'open,pickup,shoot,throw',
+	robot: 			'open,pickup,harvest,shoot,throw',
 	undead: 		'open,pickup,shoot,throw',
 	undeadDumb: 	'open,pickup,shoot,throw',
-	hivemind: 		'gaze,open,pickup,shoot,talk,throw',
+	hivemind: 		'gaze,open,pickup,harvest,shoot,talk,throw',
 }
 
 let BodyAbility = {
-	humanoid: 		'cast,gaze,open,pickup,shoot,talk,throw',
-	quadruped: 		'gaze,open,pickup',
-	multiped: 		'gaze,open,pickup',
-	wingedBiped: 	'gaze,open,pickup',
+	humanoid: 		'cast,gaze,open,pickup,harvest,shoot,talk,throw',
+	quadruped: 		'gaze,open,pickup,harvest',
+	multiped: 		'gaze,open,pickup,harvest',
+	wingedBiped: 	'gaze,open,pickup,harvest',
 	noped:    		'gaze',
-	blob:    		'open,pickup',
-	humanoidBot: 	'gaze,open,pickup,shoot,throw',
+	blob:    		'open,pickup,harvest',
+	humanoidBot: 	'gaze,open,pickup,harvest,shoot,throw',
 }
 
 let BodySlots = {

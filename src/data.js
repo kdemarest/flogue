@@ -8,7 +8,7 @@ const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", 
 				FAVORITE: "favorite",
 				LOSETURN: "lose turn", PRAY: "pray", EAT: "eat", ENTERGATE: "enterGate",
 				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop", PICKUP: "pickup",
-				BUY: "buy", SELL: "sell", CRAFT: "craft", BUSY: "busy",
+				BUY: "buy", SELL: "sell", CRAFT: "craft", BUSY: "busy", DIG: "dig",
 				DEBUGKILL: "debugkill", DEBUGTHRIVE: "debugthrive", DEBUGVIEW: "debugview", DEBUGANIM: "debuganim", DEBUGTEST: "debugtest",
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit",
 				EXECUTE: "execute", CANCEL: "cancel"

@@ -51,7 +51,6 @@ class Gui {
 		}
 		//console.log(message);
 		if( message == 'open' ) {
-			debugger;
 			payload.onItemChoose = this.onItemChoose;
 			payload.onClose = ()=>delete this.view[viewId];
 			let viewClass = payload.viewClass;

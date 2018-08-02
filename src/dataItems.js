@@ -335,12 +335,13 @@ const WeaponList = Fab.add( '', {
 	},
 	"pickaxe": {
 		level: 0,
-		rarity: 0.01,
+		rarity: 0.1,
 		xDamage: 0.70,
 		damageType: DamageType.STAB,
 		quick: 0,
 		attackVerb: 'strike',
 		mineSpeed: 1.0,
+		effects: { eInert: EffectTypeList.eInert},
 		img: 'item/weapon/pickaxe.png'
 	},
 	"club": {
@@ -639,7 +640,30 @@ const GemList = Fab.add( '', {
 	"diamond": 		{ level: 75, rarity:  0.1, img: "gems/Gem Type3 Black.png" },
 });
 
+const PlantQualityList = Fab.add( '', {
+	"wilted": 		{ level:  0, rarity: 1.0 },
+	"thriving": 	{ level:  0, rarity: 1.0 },
+});
+
+const PlantList = Fab.add( '', {
+	"wheatPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.wheat', img: "plant/wheatPlant.png" },
+	"barleyPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.barley', img: "plant/barleyPlant.png" },
+	"carrotPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.carrot', img: "plant/carrotPlant.png" },
+	"potatoPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.potato', img: "plant/potatoPlant.png" },
+	"peaPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.peas', img: "plant/peaPlant.png" },
+	"beanPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.bean', img: "plant/beanPlant.png" },
+	"cabbagePlant": 	{ level:  0, rarity:  1.0, needLight: 6, harvestLoot: '5x 50% stuff.cabbage', img: "plant/cabbagePlant.png" },
+});
+
 const StuffList = Fab.add( '', {
+	"shovel": {
+		rarity: 0.2,
+		matter: 'wood',
+		mineSpeed: 0.2,
+		isShovel: true,
+		effects: { eInert: EffectTypeList.eInert},
+		img: 'item/stuff/shovel.png'
+	},
 	"lantern": 			{ rarity: 0.2, matter: 'metal', xPrice: 10, slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"oilLamp": 			{ rarity: 0.4, matter: 'metal', xPrice: 10, slot: Slot.HIP, light:  8, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  8, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
 	"candleLamp": 		{ rarity: 0.6, matter: 'wax', xPrice: 10, slot: Slot.HIP, light:  4, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  4, name: 'light', icon: EffectTypeList.eLuminari.icon }, useVerb: 'clip on', img: "item/misc/misc_lamp.png" },
@@ -713,7 +737,13 @@ const StuffList = Fab.add( '', {
 	"ingotLunarium": 	{ rarity: 0.5, matter: 'metal', name: 'lunarium ingot' },
 	"ingotSolarium": 	{ rarity: 0.4, matter: 'metal', name: 'solarium ingot' },
 	"ingotDeepium": 	{ rarity: 0.3, matter: 'metal', name: 'deepium ingot' },
-
+	"wheat": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/wheat.png" },
+	"barley": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/barley.png" },
+	"carrot": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/carrot.png" },
+	"potato": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/potato.png" },
+	"pea": 				{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/pea.png" },
+	"bean": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/bean.png" },
+	"cabbage": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/cabbage.png" },
 });
 
 
@@ -799,6 +829,7 @@ const CoffinStates = {
 		img: 'item/decor/coffinShut.png',
 	}
 };
+
 
 const NulImg = { img: '' };
 
@@ -1041,11 +1072,31 @@ const ItemTypeList = {
 		opacity: 	1,
 		isWall: 	true,
 		noneChance: 0.90,
-		imgGet: (self,img) => (img || self.variety.img || "oreVein"),
+		imgGet: 	(self,img) => (img || self.variety.img || "oreVein"),
 		matter: 	'stone',
 		imgChoices: OreVeinList,
 		varieties: 	OreVeinList,
 		mineSwings: 14
+	},
+// Plants
+	"plant": 	{
+		symbol: 		SYM,
+		rarity: 		0,
+		mayWalk: 		true,
+		mayFly: 		true,
+		mayPickup: 		false,
+		mayHarvest: 	true,
+		rechargeTime: 	10,
+		namePattern: 	'{state} {variety}',
+		state: 			'wilted',
+		states: 		{ wilted: { isWilted: true }, thriving: { isWilted: false } },
+		varieties: 		PlantList,
+		matter: 		'plant',
+		isLivePlant:	true,
+		mayHarvest: 	true,
+		icon: 			'skill.png',
+		imgGet: 		(self,img) => (img || (self.isWilted ? self.imgChoices.wilted.img : self.variety.img)),
+		imgChoices: 	{ wilted: { img: 'plant/wilted.png' } },
 	},
 // FAKES and SKILLS
 	"skill": 	{ symbol: SYM, isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "skill.png" },
@@ -1657,6 +1708,26 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 			tell( mSubject|mPossessive|mCares,entity,' ',mObject,item,' suddenly recharges.' );
 		}
 	});
+}
+
+ItemTypeList.plant.rechargeCriteria = function() {
+	return this.owner && this.owner.isMap && this.owner.getLightAt(this.x,this.y) >= this.needLight;
+}
+
+ItemTypeList.plant.onTick = function() {
+	let state = this.rechargeCriteria.call(this) ? 'thriving' : 'wilted';
+	if( this.state !== state ) {
+		this.stateCounter = (this.stateCounter||0)+1;
+		if( this.stateCounter >= 20 ) {
+			this.setState( state );
+		}
+	}
+	else {
+		this.stateCounter = 0;
+	}
+	if( this.isWilted ) {
+		this.resetRecharge();
+	}
 }
 
 ItemTypeList.fontDeep.onTick = function(dt) {

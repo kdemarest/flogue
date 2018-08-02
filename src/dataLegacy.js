@@ -2,7 +2,7 @@ Module.add('dataLegacy',function() {
 
 let LegacyList = {};
 
-function perkCondition(perk, level, index, singularId ) {
+function perkDataCondition(perk, level, index, singularId ) {
 	perk.level = level;
 	perk.index = index;
 	if( perk.singularId === undefined ) {
@@ -45,7 +45,7 @@ function range(array,fn) {
 	let result = {};
 	let singularId = GetTimeBasedUid();
 	array.forEach( (level,index) => {
-		result[level] = perkCondition( fn(level,index), level, index, singularId );
+		result[level] = perkDataCondition( fn(level,index), level, index, singularId );
 	});
 	return result;
 }
@@ -67,8 +67,9 @@ function compose(perkIdStem,raw) {
 }
 
 /**
-Perks come in three flavors (so far):
-	- apply - a function that transforms any effect in any way. It is run at the moment of the effect.
+Perks can have any or all of the following:
+	- apply - a function that transforms any effect in any way. It is run at MANY moments during the code, and you must check for which
+	          applies to you. when=='main' is the main one, but calcReduction exists as do many others.
 	- effect - an effect that is applied to the entity at the moment of grant. Always given duration=true unless given another duration
 	- skill  - a skill given to the entity at the moment of grant.
 	- item   - an item given to the entity at the moment of grant. Always set to isPlot unless explicitly isPlot===false
@@ -467,18 +468,18 @@ LegacyList.ninja = compose( 'ninja', [
 //];
 
 //
-// Bomber
+// Blaster
 //
 
-LegacyList.bomber = compose( 'bomber', [
+LegacyList.blaster = compose( 'blaster', [
 	range( [1], (level,index) => ({
-		name: 'Craft Bomb',
+		name: 'Craft Explosive',
 		skill: {
-			isCraft: true,
+			craftId: 'ordner',
 			passesTime: false,
-			effect: { op: 'command', value: Command.CRAFT, duration: 0 }
+			//effect: { op: 'command', value: Command.CRAFT, duration: 0 }
 		},
-		description: 'Become odorless at will.'
+		description: 'Create or enhance exploding ordnance.'
 	}) ),
 
 ]);

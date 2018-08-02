@@ -2,6 +2,22 @@ Module.add('viewCraft',function() {
 
 let Craft = {};
 
+Craft.ordner = {
+	title: 'Ordnance Crafting',
+	colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
+	allowFilter: false,
+	makeHeader: function() {
+		$(document).off( '.ViewCraft' );
+		let ingredientNone = { name: '<i>none selected</i>' }
+		let s = '';
+		for( let i=0 ; i<3 ; ++i ) {
+			let ing = (this.ingredientList[i] || ingredientNone).name;
+			s += '<div>'+ing+'</div>';
+		}
+		return s;
+	}
+};
+
 /**
 Craft.
 
@@ -13,11 +29,16 @@ and then you can click a button that sets command=craft, commandItem=[item1,item
 
 class ViewCraft extends ViewInventory {
 	constructor(p) {
-		super('#guiCraft',null,p.colFilter || p.entity.colFilter);
+		super('#guiCraft',null,null);
+		console.assert(p.craftId && Craft[p.craftId]);
+		Object.assign( this, Craft[p.craftId] );
 		this.onEvent = p.onItemChoose;
-		this.crafter = p.entity;
-		this.allowFilter = p.allowFilter || p.entity.allowFilter;
+		this.craftId = p.craftId;
+		this.crafter = p.crafter;
+		this.customer = p.customer;
 		this.onClose = p.onClose;
+		this.ingedientList = [];
+		Object.each(this,(fn,id)=>this[id]=fn.bind(this));
 		$(document).on( 'keydown.ViewCraft', null, this.onKeyDown.bind(this) );
 
 		guiMessage('clearSign');
@@ -51,12 +72,11 @@ class ViewCraft extends ViewInventory {
 		this.onEvent(event);
 	}
 	headerComponent() {
-		let element = $('<div>Crafting header</div>');
+		let element = $('<h1>'+this.title+'</h1>'+this.makeHeader.call(this));
 		return element;
 
 	}
 	render() {
-		debugger;
 		$('#guiNarrative').removeClass('dim');
 		$('#guiNarrative').addClass('dim');
 		super.render();

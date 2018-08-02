@@ -42,8 +42,11 @@ function commandForItem(item) {
 	if( item.slot ) {
 		return Command.USE;
 	}
-	if( item.isCraft ) {
+	if( item.craftId ) {
 		return Command.EXECUTE;
+	}
+	if( item.isShovel ) {
+		return Command.DIG;
 	}
 	if( item.isSpell || item.mayCast ) {
 		return Command.CAST;
@@ -91,6 +94,12 @@ CmdTable[Command.QUAFF] = {
 	needsItem: true,
 	itemFilter: observer => () => new Finder(observer.inventory).isTypeId("potion"),
 	criteriaToExecute: (cmd,observer) => cmd.commandItem.effect,
+	passesTimeOnExecution: true
+};
+CmdTable[Command.DIG] = {
+	needsItem: false,
+	needsTarget: (cmd) => true,
+	targetRange: (item) => 1,
 	passesTimeOnExecution: true
 };
 CmdTable[Command.CRAFT] = {

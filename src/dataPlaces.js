@@ -297,7 +297,7 @@ ThemeList.dwarfVillage = {
 	isTown: 	true,
 	scapeId: 	'caveTownSmall',
 	palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
-	rREQUIRED: 	'gatewayFromDwarves',
+	rREQUIRED: 	'garden, gatewayFromDwarves',
 	rCOMMON: 	'dwarfTemple, dwarfSmithy, shopSmall, shopOpenAir, dwarfHouseSmall',
 	rUNCOMMON: 	'floodOreSmall, floodPitSmall, dwarfHouse, barrelStorage',
 	rRARE: 		'firePit, floodWater',
@@ -315,7 +315,7 @@ ThemeList.dwarfTown = {
 	isTown: 	true,
 	scapeId: 	'caveTown',
 	palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
-	rREQUIRED: 	'dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
+	rREQUIRED: 	'2x garden, dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
 				'gatewayFromDwarves, 2x dwarfHouseSmall, 2x dwarfHouse, '+
 				'70% dwarfTemple, 30% den_dog, 10% camp_human',
 	rCOMMON: 	'floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall, barrelStorage',
@@ -1132,6 +1132,19 @@ PlaceTypeList.circle = {
 	symbols: {
 		x: { pick: ['pit','flames','lava','water','mist','mud','forcefield'] },
 		c: 'chest',
+	}
+}
+
+PlaceTypeList.garden = {
+	map:
+`
+.p.p.
+.p.p.
+.p.p.
+`,
+	flags: { rotate: true },
+	symbols: {
+		p: { pick: ['plant.wheatPlant','plant.barleyPlant','plant.carrotPlant','plant.potatoPlant','plant.peaPlant','plant.beanPlant','plant.cabbagePlant'] },
 	}
 }
 

@@ -2255,11 +2255,15 @@ class Entity {
 			let possiblyAggregatedItem = item.giveTo( this, this.x, this.y);
 		});
 		if( !quiet && !this.inVoid ) {
+			let verb = originatingEntity && originatingEntity.mayHarvest ? 'harvest' : 'find'
+			let predicate = 'on';
+			if( originatingEntity && originatingEntity.isItemType && !originatingEntity.usedToBe ) predicate = 'in';
+			if( originatingEntity && originatingEntity.mayHarvest ) predicate = 'from';
 			let description = [
-				mSubject,this,' ',mVerb,'find',' '
+				mSubject,this,' ',mVerb,verb,' '
 			].concat( 
 				found.length ? found : ['nothing'],
-				originatingEntity ? [' ',(originatingEntity.isItemType && !originatingEntity.usedToBe)?'in':'on',' ',mObject,originatingEntity] : [''],
+				originatingEntity ? [' ',predicate,' ',mObject,originatingEntity] : [''],
 				'.'
 			);
 			tell(...description);
@@ -2288,6 +2292,19 @@ class Entity {
 		return result;
 	}
 	
+	actHarvest(item) {
+		console.assert(item && item.mayHarvest);
+		if( item.rechargeLeft ) {
+			tell('This ',mSubject,item,' ',mVerb,'is',' not ready to harvest.');
+			return {
+				status: 'harvest',
+				success: false
+			};
+		}
+		item.resetRecharge();
+		return this.lootTake( item.harvestLoot, this.area.depth, item, false );
+	}
+
 	actPickup(item) {
 		if( !item ) debugger;
 
@@ -2392,6 +2409,17 @@ class Entity {
 			}
 		}
 		return result;
+	}
+
+	actDig(target) {
+		let result = {
+			status: 'dig',
+			success: false
+		}
+		if( target.isItemType && target.isLivePlant ) {
+			target.giveTo(this,this.x,this.y);
+			tell(mSubject,this,' ',mVerb,'dig',' up ',mObject,target);
+		}
 	}
 
 	actTrigger(item,target) {
@@ -3049,6 +3077,14 @@ class Entity {
 			}
 		}
 
+		if( this.mindset('harvest') && this.able('harvest') ) {
+			let f = this.map.findItemAt(x,y).filter( item => item.mayHarvest );
+			result.harvestResult = [];
+			for( let item of f.all ) {
+				result.harvestResult.push( this.actHarvest(item) );
+			}
+		}
+
 		return result;
 	}
 
@@ -3074,11 +3110,12 @@ class Entity {
 					status: 'execute',
 					success: false
 				};
-				if( this.commandItem && this.commandItem.isCraft ) {
+				if( this.commandItem && this.commandItem.craftId ) {
 					guiMessage( 'open', {
 						viewClass: 'ViewCraft',
-						entity: this.commandItem.owner,
-						self: this
+						craftId: this.commandItem.craftId,
+						crafter: this.commandItem.owner,
+						customer: this
 					});
 					result.status = 'ViewCraft';
 					result.success = true;
@@ -3164,6 +3201,10 @@ class Entity {
 				let item = this.commandItem;
 				this.commandItem = null;
 				return this.actTrigger(item,this.commandTarget || this);
+			}
+			case Command.DIG: {
+				let target = this.commandTarget;
+				return this.actDig(target);
 			}
 			case Command.CRAFT: {
 				debugger;
@@ -3370,7 +3411,7 @@ class Entity {
 				if( item.onTouch ) {
 					item.onTouch( this, item );
 				}
-				if( item.isBomb ) {
+				if( item.isMine ) {
 					item.trigger(this,null,'tripped');
 				}
 			});
