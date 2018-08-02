@@ -1044,7 +1044,7 @@ PlaceTypeList.surfaceSunTemple = {
 			scionName: 'Scion of Berthold',
 			properNoun: true,
 			inventoryLoot: [
-				'armor.eInert, spell.eHealing, spell.eSmite, shield.eAbsorbRot, stuff.oilLamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
+				'armor.eInert, spell.eHealing, spell.eSmite, shield.eAbsorbRot, stuff.lamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
@@ -1636,11 +1636,11 @@ xxxxxxxxxxx...........
 PlaceTypeList.handoutStand = {
 	map:
 		`
-		     xxxxx
+		     txxxx
 		.....,,,bx
 		rrrrrp,,bx
 		.....,,,bx
-		.....x,,,x
+		.....t,,,x
 		 ....xxpxx
 		   ....... 
 		`,
@@ -1651,6 +1651,7 @@ PlaceTypeList.handoutStand = {
 		',': "floorStone",
 		x: "wallStone",
 		b: 'barrel',
+		t: [ { typeFilter: 'stuff.torch' }, { typeFilter: 'wallStone' } ]
 	},
 	inject: {
 		philanthropist: { attitude: Attitude.AWAIT, tether: 0 },
@@ -1668,7 +1669,7 @@ xb.d.bx
 x.....x
 x.....x
 x.....x
-xxx+xxx
+xrx+xrx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
@@ -1681,6 +1682,7 @@ xxx+xxx
 	inject: {
 		dwarf: { name: "dwarf herald", attitude: Attitude.WANDER, tether: 3, jobId: 'isSentry'  },
 		gateway: { themeId: 'dwarfTown' },
+		r: [ { typeFilter: 'stuff.torch' }, { typeFilter: 'wallStone' } ]
 	}
 }
 
@@ -1718,7 +1720,7 @@ xb.....bx
 x.......x
 xb.....bx
 x.......x
-xxsx+xxxx
+xtsx+xxtx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
@@ -1729,7 +1731,8 @@ xxsx+xxxx
 		f: "fountain",
 		c: 'chest',
 		d: { typeFilter: 'dwarf', name: "dwarf cleric", jobId: 'priest' },
-		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'wallStone' } ]
+		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'wallStone' } ],
+		t: [ { typeFilter: 'stuff.torch' }, { typeFilter: 'wallStone' } ]
 	}
 }
 
@@ -1746,7 +1749,7 @@ xt.d...tx
 xt...d.tx
 xt.....tx
 x.......x
-xxxx+xxxx
+xrxx+xxrx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
@@ -1756,7 +1759,8 @@ xxxx+xxxx
 		b: 'bed',
 		c: 'chest',
 		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 3, jobId: 'isSentry'  },
-		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'wallStone' } ]
+		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'wallStone' } ],
+		r: [ { typeFilter: 'stuff.torch' }, { typeFilter: 'wallStone' } ]
 	}
 }
 
@@ -1770,7 +1774,7 @@ x.....x
 x.....x
 x.....x
 x.....x
-xxxx+xx
+xrx+xrx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
@@ -1778,7 +1782,8 @@ xxxx+xx
 		x: "wallStone",
 		d: "dwarf",
 		t: 'table',
-		b: 'barrel'
+		b: 'barrel',
+		r: [ { typeFilter: 'stuff.torch' }, { typeFilter: 'wallStone' } ]
 	},
 	inject: {
 		dwarf: { attitude: Attitude.WANDER, tether: 6, jobId: 'isLayman'  }
@@ -1795,7 +1800,7 @@ x.....xx+xx
 x.....x
 x.....x
 x.....x
-xxxx+xx
+xrx+xrx
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
@@ -1804,6 +1809,7 @@ xxxx+xx
 		d: "dwarf",
 		t: 'table',
 		b: 'barrel',
+		r: [ { typeFilter: 'stuff.torch' }, { typeFilter: 'wallStone' } ]
 	},
 	inject: {
 		dwarf: { attitude: Attitude.WANDER, tether: 6, jobId: 'isLayman' }
@@ -1813,18 +1819,19 @@ xxxx+xx
 PlaceTypeList.market = {
 	map:
 `
-.d...d.
+.d.b.d.
 stt.tts
 .......
 .......
 stt.tts
-.d...d.
+.d.b.d.
 `,
 	forbidTreasure: true,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
 		'.': "floorStone",
 		t: 'table',
+		b: 'brazier',
 		d: { typeFilter: 'dwarf', jobId: 'isMerchant' },
 		s: [ { typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' } ]
 	},
@@ -1854,7 +1861,7 @@ PlaceTypeList.shopOpenAir = {
 	map:
 `
  ... 
-.stt.
+.str.
 ..d..
 .....
 `,
@@ -1864,7 +1871,8 @@ PlaceTypeList.shopOpenAir = {
 		'.': "floorStone",
 		t: 'table',
 		d: { typeFilter: 'dwarf', jobId: 'isMinor' },
-		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' }]
+		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, { typeFilter: 'table' }],
+		r: [ { typeFilter: 'stuff.torch' }, { typeFilter: 'table' } ]
 	},
 }
 
@@ -1873,11 +1881,11 @@ PlaceTypeList.shopLarge = {
 `
 xxxxxxx
 xcbd..x
-xtttttx
+xttttlx
 x.....x
 x.....x
 xt....x
-xxsx+xx
+xrsx+xx
 `,
 	forbidTreasure: true,
 	flags: { rotate: true, hasWall: true },
@@ -1888,7 +1896,9 @@ xxsx+xx
 		c: 'chest',
 		b: 'barrel',
 		d: { typeFilter: 'dwarf', attitude: Attitude.WANDER, tether: 2, jobId: 'isMajor' },
-		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'wallStone'}]
+		s: [{ typeFilter: 'sign', sign: 'BYJOB' }, {typeFilter: 'wallStone'}],
+		r: [ { typeFilter: 'stuff.torch' }, { typeFilter: 'wallStone' } ],
+		l: [ { typeFilter: 'stuff.lamp' }, { typeFilter: 'table' } ]
 	},
 }
 
@@ -1916,18 +1926,19 @@ PlaceTypeList.dwarfSmithy = {
 PlaceTypeList.dwarfPlaza = {
 	map:
 `
- ....
+ r..r
 ......
 ..ff..
 .dff..
 ......
- .... 
+ r..r 
 `,
 	flags: { rotate: true, hasWall: true },
 	symbols: {
 		'.': "floorStone",
 		f: "fountain",
-		d: { typeFilter: 'dwarf', jobId: 'evangelist' }
+		d: { typeFilter: 'dwarf', jobId: 'evangelist' },
+		r: 'stuff.lamp'
 	}
 }
 

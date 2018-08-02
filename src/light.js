@@ -138,6 +138,7 @@ Light.Caster = class {
 		let xLen = map.xLen;
 		let rayCircle = new Light.RayCircle( maxReach*maxReach );
 		let atCenter = true;
+		let ratio = 1 / Math.min(MaxVis+1,light+1);	// Helps the light 'fall off' at its max reach.
 
 		Light.arcListTraverse( map, x, y, maxReach, (arc, x, y, xRel, yRel) => {
 			let lightReaches = atCenter || rayCircle.arcTest( arc.left, arc.right, arc.nearDist, arc.span*0.05 );
@@ -146,10 +147,13 @@ Light.Caster = class {
 			let pos = y*xLen+x;
 			let value = this.lightMap[pos] || 0;
 			if( light < 0 ) {
+				// Darkness
 				value = Math.max( light, value + Math.min(0,light+arc.dist+0.3) );
 			}
 			else {
-				value = Math.max( value, light+1-arc.dist+0.5 );
+				// Brightness
+				value = Math.max( value, light * (1-(arc.dist*ratio)) );
+				//value = Math.max( value, light+1-arc.dist+0.5 );
 			}
 			this.lightMap[pos] = value;
 

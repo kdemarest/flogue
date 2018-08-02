@@ -142,7 +142,7 @@ TestList.legacies = {
 		helper.player.legacyId = 'brawler';
 		helper.player.inventoryLoot = '2x weapon.club, 10x ammo.rock';
 
-//	MonsterTypeList.player.inventoryLoot = 'armor, helm, bracers, boots, stuff.oilLamp, 2x weapon, shield, weapon.bow';
+//	MonsterTypeList.player.inventoryLoot = 'armor, helm, bracers, boots, stuff.lamp, 2x weapon, shield, weapon.bow';
 //	MonsterTypeList.player.legacyId = 'monk';
 
 

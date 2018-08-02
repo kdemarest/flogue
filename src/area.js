@@ -61,7 +61,8 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 //			debugger;
 //			console.log( 'item '+item.typeId+' isContainable='+item.isContainable()+' gaps='+area.map.countGaps(x,y) );
 //		}
-		if( !container && item.isContainable() && Math.chance(theme.containerChance||0) && area.map.countGaps(x,y)<=1 ) {
+		// We check isFloor here so that, for example, we don't contain something hung on a wall.
+		if( !container && item.isContainable() && area.map.tileTypeGet(x,y).isFloor && Math.chance(theme.containerChance||0) && area.map.countGaps(x,y)<=1 ) {
 			let containerTypeId = pick(['barrel','chest','coffin']);
 			container = area.map.itemCreateByType(x,y,ItemTypeList[containerTypeId],{},{});
 		}

@@ -301,7 +301,7 @@ class Item {
 		return parts[0] == this.typeId && this.variety && parts[1] == this.variety.typeId;
 	}
 	isContainable() {
-		return this.isTreasure && !this.isContainer && !this.isDecor && this.mayWalk && !this.isHidden;
+		return this.isTreasure && !this.light && !this.isContainer && !this.isDecor && this.mayWalk && !this.isHidden;
 	}
 	setState(newState) {
 		this.state = newState;
