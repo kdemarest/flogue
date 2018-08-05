@@ -9,6 +9,7 @@ class DataConditioner {
 		this.validateAndConditionThemeData();
 		this.validateLoot();
 		this.validateResistances();
+		dataConditionRecipes();
 	}
 
 	// Within any category of rarity, like rCOMMON, you can give a chance that further alters the probability,

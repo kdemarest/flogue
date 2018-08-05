@@ -47,77 +47,6 @@ class Picker {
 		return table.length ? table : closest;
 	}
 
-	/**
-	This filters three ways:
-	1. You can specify what to include, such as typeId, variety, material and quality.
-	2. You can require any characteristic that starts with 'is' or 'may' like isBow or mayThrow
-	3. You can reverse either of those with a !isBow or !mayShoot
-	**/
-	filterStringParse(filterString) {
-		if( filterString ) { filterString = filterString.trim(); }
-		let nopTrue = () => true;
-		let nop = () => {};
-
-		let self = {
-			killId: {},
-			testMembers: nopTrue,
-			testKeepId: nopTrue,
-			firstId: null,
-			specifiesId: false
-		};
-		if( typeof filterString != 'string' || !filterString ) {
-			return self;
-		}
-		let keepIs = [];
-		let killIs = [];
-		let keepId = {};
-		let killId = {};
-		filterString.replace( /\s*(!)*(is|may|of)*(\S+|\S+)/g, function( whole, not, is, token ) {
-			if( is ) {
-				if( is == 'of' ) {
-					// special case hack to detect matter
-					self.matter = token.toLowerCase();
-				}
-				else {
-					(not ? killIs.push(is+token) : keepIs.push(is+token));
-				}
-			}
-			else {
-				// Split by the dot
-				//console.log('processing '+token );
-				token.replace( /([^\s.]+)[\s.]*/g, function( whole, token ) {
-					//console.log('adding '+token );
-					self.specifiesId = true;
-					(not ? killId[token]=1 : keepId[token]=1);
-					self.firstId = self.firstId || token;
-				});
-			}
-		});
-		if( killIs.length || keepIs.length ) {
-			self.testMembers = (item => {
-				for( let keep of keepIs ) if( !item[keep] ) return false;
-				for( let kill of killIs ) if( item[kill] ) return false;
-				return true;
-			});
-		}
-		self.killId = killId;
-		self.keepId = keepId;
-		self.keepIs = keepIs;
-		self.killIs = killIs;
-		let keepIdCount = Object.keys(keepId).length || 0;
-		if( keepIdCount ) {
-			self.testKeepId = (...argList) => {
-				let count=0;
-				let arg;
-				while( arg=argList.shift() ) {
-					count += keepId[arg] ? 1 : 0;
-				}
-				return count >= keepIdCount;
-			}
-		}
-		return self;
-	}
-
 	//**
 	// itemTypeId is allowed to be empty, although it will make the search take substantially longer.
 	// filter should be an instance of filterStringParam() above.
@@ -321,7 +250,7 @@ class Picker {
 	//**
 
 	pickItem(filterString,criteriaFn,defaultToCoins=true) {
-		let filter = this.filterStringParse(filterString);
+		let filter = Picker.filterStringParse(filterString);
 		let itemTypeId;
 		if( ItemTypeList[filter.firstId] ) {
 			itemTypeId = filter.firstId;
@@ -448,6 +377,78 @@ class Picker {
 
 		return table[i+1];
 	}
+}
+
+/**
+This filters three ways:
+1. You can specify what to include, such as typeId, variety, material and quality.
+2. You can require any characteristic that starts with 'is' or 'may' like isBow or mayThrow
+3. You can reverse either of those with a !isBow or !mayShoot
+**/
+Picker.filterStringParse = function(filterString) {
+	if( filterString ) { filterString = filterString.trim(); }
+	let nopTrue = () => true;
+	let nop = () => {};
+
+	let self = {
+		killId: {},
+		testMembers: nopTrue,
+		testKeepId: nopTrue,
+		firstId: null,
+		specifiesId: false
+	};
+	if( typeof filterString != 'string' || !filterString ) {
+		return self;
+	}
+	let keepIs = [];
+	let killIs = [];
+	let keepId = {};
+	let killId = {};
+	filterString.replace( /\s*(!)*(is|may|bit|of)*(\S+|\S+)/g, function( whole, not, is, token ) {
+		if( is ) {
+			if( is == 'of' ) {
+				// special case hack to detect matter
+				self.matter = token.toLowerCase();
+			}
+			else {
+				(not ? killIs.push(is+token) : keepIs.push(is+token));
+			}
+		}
+		else {
+			// Split by the dot
+			//console.log('processing '+token );
+			token.replace( /([^\s.]+)[\s.]*/g, function( whole, token ) {
+				//console.log('adding '+token );
+				self.specifiesId = true;
+				(not ? killId[token]=1 : keepId[token]=1);
+				self.firstId = self.firstId || token;
+			});
+		}
+	});
+	if( killIs.length || keepIs.length ) {
+		self.testMembers = (item => {
+			for( let keep of keepIs ) if( !item[keep] ) return false;
+			for( let kill of killIs ) if( item[kill] ) return false;
+			return true;
+		});
+	}
+	self.killId = killId;
+	self.keepId = keepId;
+	self.keepIs = keepIs;
+	self.killIs = killIs;
+	let keepIdCount = Object.keys(keepId).length || 0;
+	if( keepIdCount ) {
+		self.testKeepId = (...argList) => {
+			let count=0;
+			let arg;
+			while( argList.length ) {
+				let arg=argList.shift();
+				count += keepId[arg] ? 1 : 0;
+			}
+			return count >= keepIdCount;
+		}
+	}
+	return self;
 }
 
 return {

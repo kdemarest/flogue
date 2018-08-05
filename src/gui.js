@@ -52,7 +52,7 @@ class Gui {
 		//console.log(message);
 		if( message == 'open' ) {
 			payload.onItemChoose = this.onItemChoose;
-			payload.onClose = ()=>delete this.view[viewId];
+			payload.onClose = ()=>delete this.view[viewClass];
 			let viewClass = payload.viewClass;
 			this.add(viewClass,new window[viewClass](payload));
 		}

@@ -53,7 +53,7 @@ class Item {
 		Object.merge(this,this.material,ignoreFields);
 		Object.merge(this,this.quality,ignoreFields);
 
-		console.assert( (this.matter && Rules.itemDamageTable[this.matter]) || !this.isTreasure);
+		console.assert( (this.matter && Matter[this.matter]) || !this.isTreasure);
 		if( this.matter ) {
 			inits['of'+String.capitalize(this.matter)] = true;
 		}
@@ -133,15 +133,15 @@ class Item {
 			}
 			// Weapon secondary effect, and that of armor, happens in carefully managed circumstances.
 			if( this.isWeapon || this.isArmor || this.isShield ) {
-				if( this.chanceOfEffect === undefined ) {
-					this.chanceOfEffect = this.isWeapon ? Rules.weaponChanceToFire(this.level) : Rules.ARMOR_EFFECT_CHANCE_TO_FIRE;
+				if( this.chanceEffectFires === undefined ) {
+					this.chanceEffectFires = this.isWeapon ? Rules.weaponChanceToFire(this.level) : Rules.ARMOR_EFFECT_CHANCE_TO_FIRE;
 					if( this.triggerWhenDon() ) {
-						this.chanceOfEffect = 100;
+						this.chanceEffectFires = 100;
 					}
 				}
 				
 				if( Rules.WEAPON_EFFECT_OP_ALWAYS.includes(this.effect.op) ) {
-					this.chanceOfEffect = 100;
+					this.chanceEffectFires = 100;
 					this.effect.value = Rules.weaponEffectDamage(this.level,this.effect.value);
 					this.damage -= this.plus;
 					this.effect.value += this.plus;
@@ -202,6 +202,8 @@ class Item {
 		this.name = (force?false:this.name) || String.tokenReplace(this.namePattern,this);
 	}
 	explain(buySell,observer) {
+		let potencyList = ['feeble', 'frail', 'faint', 'tepid', 'mild', 'common', 'passable', 'sturdy', 'hardy', 'robust', 'vigorous', 'mighty', 'fierce', 'righteous', 'potent', 'glorious', 'epic', 'supernal', 'legendary', 'celestial'];
+
 		function order(typeId) {
 			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
 		}
@@ -217,7 +219,7 @@ class Item {
 			if( !item.effect || item.isSpell || item.isPotion || item.isGem ) {
 				return '';
 			}
-			let chance = (item.chanceOfEffect||100) !== 100 ? (item.chanceOfEffect||100)+'%' : '';
+			let chance = (item.chanceEffectFires||100) !== 100 ? (item.chanceEffectFires||100)+'%' : '';
 			if( item.effect.op=='damage' ) {
 				return String.combine(' ',chance,Math.floor(item.effect.value),item.effect.damageType);
 			}
@@ -247,6 +249,7 @@ class Item {
 			item: 			item,
 			typeId: 		item.typeId,
 			level: 			item.level,
+			potency: 		potencyList[Math.clamp(item.level,0,potencyList.length-1)],
 			typeOrder: 		order(item.typeId),
 			icon: 			icon(item.icon),
 			description: 	((item.bunch||0)>1 ? item.bunch+'x ' : '')+String.capitalize(nameClean),
@@ -368,21 +371,21 @@ class Item {
 		if( !this.matter ) {
 			return true;
 		}
-		return Rules.itemDamageTable[this.matter][damageType] === undefined;
+		return Matter[this.matter].damage[damageType] === undefined;
 	}
 
 	isResist(damageType) {
 		if( !this.matter ) {
 			return false;
 		}
-		return Rules.itemDamageTable[this.matter][damageType] < 1.0;
+		return Matter[this.matter].damage[damageType] < 1.0;
 	}
 
 	isVuln(damageType) {
 		if( !this.matter ) {
 			return false;
 		}
-		return Rules.itemDamageTable[this.matter][damageType] >= 2;
+		return Matter[this.matter].damage[damageType] >= 2;
 	}
 
 	takeDamage( source, item, amount, damageType, callback, noBacksies, isOngoing) {
@@ -405,7 +408,7 @@ class Item {
 
 		let adjustment = 1;
 		if( this.matter ) {
-			adjustment = Rules.itemDamageTable[this.matter][damageType] || 0;
+			adjustment = Matter[this.matter].damage[damageType]  || 0;
 		}
 		result.adjustment = adjustment;
 

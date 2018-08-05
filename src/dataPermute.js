@@ -25,11 +25,11 @@ let EffectPermutationEngine = (new function() {
 				'1': { rarity: 4.00, effectShape: EffectShape.SINGLE },
 				'L': { rarity: 0.50, effectShape: EffectShape.SINGLE, xDuration: (effect.xDuration||1)*2, permuteName: 'long lasting' },
 				'V': { rarity: 0.20, effectShape: EffectShape.SINGLE, xDuration: (effect.xDuration||1)*3, permuteName: 'very long lasting' },
-				'2': { rarity: 0.50, effectShape: EffectShape.BLAST2 },
-				'3': { rarity: 0.35, effectShape: EffectShape.BLAST3 },
-				'4': { rarity: 0.20, effectShape: EffectShape.BLAST4 },
-				'5': { rarity: 0.10, effectShape: EffectShape.BLAST5 },
-				'6': { rarity: 0.05, effectShape: EffectShape.BLAST6 },
+				'2': { rarity: 0.50, effectShape: EffectShape.BLAST2, xDuration: 0.80 },
+				'3': { rarity: 0.35, effectShape: EffectShape.BLAST3, xDuration: 0.70 },
+				'4': { rarity: 0.20, effectShape: EffectShape.BLAST4, xDuration: 0.60 },
+				'5': { rarity: 0.10, effectShape: EffectShape.BLAST5, xDuration: 0.50 },
+				'6': { rarity: 0.05, effectShape: EffectShape.BLAST6, xDuration: 0.40 },
 			};
 		},
 		isBuf: (effect) => {

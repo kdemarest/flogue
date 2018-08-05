@@ -188,6 +188,7 @@ function main() {
 			(event) => { this.onEvent(event); }
 		);
 		this.gui = gui;
+
 		this.commandHandler = new UserCommandHandler(this,gui.view.inventory,gui.view.range);
 
 		let world = new World();
@@ -211,6 +212,18 @@ function main() {
 		}, 20);
 	}.bind(User);
 
+	function layout() {
+		let wWin = $(window).width();
+		let hWin = $(window).height();
+
+		let w = $('#mapContainer').width();
+		let h = $('#mapContainer').height();
+		let smallestDim = Math.min(w,h);
+		let mapTileDim = MapVis*2+1;
+		let newDim = Math.floor(smallestDim / mapTileDim);
+		guiMessage('resize',{ dim: newDim });
+	}
+
 	// This should be done before anything else so that even the config 
 	let config = new Config('ken',{
 		startingDepth: 0
@@ -230,6 +243,8 @@ function main() {
 			user.tickWorld(false);
 			tell([user.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
 			$('#guiLoading').hide();
+			$( window ).resize(layout);
+			layout();
 			$('#guiMain').show();
 			$(document).keydown( (e) => user.onEvent(e) );
 		}
@@ -240,43 +255,36 @@ function main() {
 </script>
 </head>
 <body>
-	<div class='top'>
 	<div id="guiLoading">
 		Flogue loading...
 	</div>
-	<table id="guiMain">
-		<tr><td>
-			<div id="guiNarrative"></div>
-		</td><td>
-			<div id="guiControls"></div>
-		</td><td>
-			<div id="guiDebug2"></div>
-		</td></tr>
-		<tr>
-			<td>
-				<div id="mapContainer">
-					<div id="guiMap"></div>
-					<div id="guiInventory" class="guiInventory"></div>
-					<pre id="guiSign" class="guiSign"></pre>
-					<pre id="guiTalk" class="guiTalk"></pre>
-					<div id="guiMerchant" class="guiInventory"></div>
-					<div id="guiCraft" class="guiInventory"></div>
-				</div>
-			</td><td class="alignTop">
-				<div id="guiExperience"></div>
-				<div id="guiInfo"></div>
-				<div id="guiStatus"></div>
-			</td>
-			<td>
-				<div id="guiMiniMap"></div>
-				<div id="guiMiniMapCaption"></div>
-				<div id="guiFavorites"></div>
-				<div id="guiTester"></div>
-				<div id="guiPathDebugSummary"></div>
-				<div id="guiPathDebug"></div>
-			</td>
-		</tr>
-	</table>
+	<div id="guiMain">
+		<div class='col0'>
+			<div id="guiNarrative" class="rowTop"></div>
+			<div id="mapContainer">
+				<div id="guiMap"></div>
+				<div id="guiInventory" class="guiInventory"></div>
+				<pre id="guiSign" class="guiSign"></pre>
+				<pre id="guiTalk" class="guiTalk"></pre>
+				<div id="guiMerchant" class="guiInventory"></div>
+				<div id="guiCraft" class="guiInventory"></div>
+			</div>
+		</div>
+		<div class='col1'>
+			<div id="guiControls" class="rowTop"></div>
+			<div id="guiExperience"></div>
+			<div id="guiInfo"></div>
+			<div id="guiStatus"></div>
+		</div>
+		<div class='col2'>
+			<div class="rowTop"></div>
+			<div id="guiMiniMap"></div>
+			<div id="guiMiniMapCaption"></div>
+			<div id="guiFavorites"></div>
+			<div id="guiTester"></div>
+			<div id="guiPathDebugSummary"></div>
+			<div id="guiPathDebug"></div>
+		</div>
 	</div>
 	<script>
 		$(document).ready( () => {

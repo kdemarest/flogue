@@ -241,7 +241,7 @@ ThemeList.coreCavernRooms = {
 	palette: 		{ basis: 'jaggedCave' },
 	placeDensity: 	0.50,
 	rREQUIRED: 		'goblinGathering',
-	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rCOMMON: 		'mushrooms, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'secretChest, hoard_shade, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
@@ -254,7 +254,7 @@ ThemeList.wildlands = {
 	scapeId: 		'caveWildlands', //'caveRoomsWellConnected',
 	palette: 		{ basis: 'jaggedCave' },
 	placeDensity: 	0.10,
-	rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater,'+
+	rCOMMON: 		'mushrooms, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater,'+
 					'secretChest, hoard_shade, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle,'+
 					'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre,'+
 					'graveYard',
@@ -267,7 +267,7 @@ ThemeList.refugeeCamp = {
 	scapeId: 	'caveBroadWinding',
 	palette: 	{ basis: 'jaggedCave' },
 	rCOMMON: 	'camp_refugee',
-	rUNCOMMON: 	'pen_sheep, handoutStand, floodPit, pitEncircle',
+	rUNCOMMON: 	'mushrooms, pen_sheep, handoutStand, floodPit, pitEncircle',
 	rRARE: 		'secretChest, den_dog, camp_goblin',
 	monsters: 	['isSunChild','isPet','isLivestock'],
 	sign: 		'Bring your own supplies. We won\'t feed you.',
@@ -283,7 +283,7 @@ ThemeList.refugeeCampSlaughter = {
 	placeDensity: 	0.70,
 	rREQUIRED: 	'camp_refugee, camp_refugee, camp_goblin, camp_ogre, floodOre',
 	rCOMMON: 	'camp_refugee, camp_goblin',
-	rUNCOMMON: 	'hoard_shade, pen_sheep, floodPit, pitEncircle, veil, ruin, den_kobold, camp_ogre',
+	rUNCOMMON: 	'mushrooms, hoard_shade, pen_sheep, floodPit, pitEncircle, veil, ruin, den_kobold, camp_ogre',
 	rRARE: 		'den_dog',
 	monsters: 	['isSunChild','isPet','isEarthChild'],
 	sign: 		'Refugee Camp "Prosperous Tranquility" Ahead',
@@ -298,7 +298,7 @@ ThemeList.dwarfVillage = {
 	scapeId: 	'caveTownSmall',
 	palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
 	rREQUIRED: 	'garden, gatewayFromDwarves',
-	rCOMMON: 	'garden, dwarfTemple, dwarfSmithy, shopSmall, shopOpenAir, dwarfHouseSmall',
+	rCOMMON: 	'garden, mushrooms, dwarfTemple, dwarfSmithy, shopSmall, shopOpenAir, dwarfHouseSmall',
 	rUNCOMMON: 	'floodOreSmall, floodPitSmall, dwarfHouse, barrelStorage',
 	rRARE: 		'firePit, floodWater',
 	jobPick: 	{ layman: 10, sentry: 3, grocer: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
@@ -315,10 +315,10 @@ ThemeList.dwarfTown = {
 	isTown: 	true,
 	scapeId: 	'caveTown',
 	palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
-	rREQUIRED: 	'2x garden, dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
+	rREQUIRED: 	'2x garden, mushrooms, dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
 				'gatewayFromDwarves, 2x dwarfHouseSmall, 2x dwarfHouse, '+
 				'70% dwarfTemple, 30% den_dog, 10% camp_human',
-	rCOMMON: 	'garden, floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall, barrelStorage',
+	rCOMMON: 	'mushrooms, garden, floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall, barrelStorage',
 	rUNCOMMON: 	'floodPit, dwarfHouse',
 	rRARE: 		'firePit, floodWater',
 	jobPick: 	{ layman: 10, sentry: 3, grocer: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
@@ -332,9 +332,9 @@ ThemeList.dwarfTown = {
 ThemeList.corePits = {
 	scapeId: 	'caveBroadWinding',
 	palette: 	{ basis: 'jaggedCave' },
-	rREQUIRED: 	'floodPitLarge, 4x floodPit',
+	rREQUIRED: 	'floodPitLarge, 3x floodPit, 4x mushrooms',
 	rCOMMON: 	'floodPit, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold',
-	rUNCOMMON: 	'secretChest, camp_human, antHive, tinyRoom, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, floodWater',
+	rUNCOMMON: 	'mushrooms, secretChest, camp_human, antHive, tinyRoom, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, floodWater',
 	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
@@ -344,7 +344,7 @@ ThemeList.coreBridges = {
 	palette: 	{ basis: 'jaggedCave', outlineWall:'pit', fillWall: 'pit' },
 	scapeId: 	'caveMazeLike',
 	rCOMMON: 	'floodPit, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodWater',
-	rUNCOMMON: 	'secretChest, camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rUNCOMMON: 	'mushrooms, secretChest, camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'goblinGathering, tinyRoom, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
@@ -353,7 +353,7 @@ ThemeList.coreBridges = {
 ThemeList.coreMaze = {
 	scapeId: 	'caveMazeLike',
 	palette: 	{ basis: 'jaggedCave' },
-	rCOMMON: 	'demonNest, hoard_shade, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom, barrelStorage',
+	rCOMMON: 	'mushrooms, demonNest, hoard_shade, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom, barrelStorage',
 	rUNCOMMON: 	'secretChest, floodPit, camp_goblin, den_kobold, nest_bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'camp_human, goblinGathering, portal, circle, ruin, swamp, firePit, floodOre, floodWater',
 	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
@@ -378,7 +378,7 @@ ThemeList.dwarfGoblinBattle = {
 ThemeList.coreCavernSomewhatOpen = {
 	scapeId: 	'caveBroadWinding',
 	palette: 	{ basis: 'jaggedCave' },
-	rCOMMON: 	'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rCOMMON: 	'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 	'secretChest, camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre, barrelStorage',
 	rEPIC: 		'graveYard, lunarEmbassy',
@@ -393,7 +393,7 @@ ThemeList.coreSea = {
 	placeDensity: 		0.50,
 	passageWander: 		100,
 	palette: 			{ basis: 'jaggedCave', outlineWall: 'water', fillWall: 'floorDirt' },
-	rREQUIRED: 			'floodWater',
+	rREQUIRED: 			'mushrooms, floodWater',
 	rCOMMON: 			'floodWaterSmall',
 	rUNCOMMON: 			'floodWall',
 	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon'],
@@ -409,7 +409,7 @@ ThemeList.coreSwamp = {
 	placeDensity: 		0.70,
 	passageWander: 		100,
 	palette: 			{ basis: 'jaggedCave', outlineWall: 'mud', fillWall: 'mud' },
-	rCOMMON: 			'floodMud',
+	rCOMMON: 			'mushrooms, floodMud',
 	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
@@ -427,7 +427,7 @@ ThemeList.coreRooms = {
 	passageWander: 		20,
 	palette: 		{ basis: 'stoneRooms' },
 	rCOMMON: 		'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
-	rUNCOMMON: 		'secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rUNCOMMON: 		'mushrooms, secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
@@ -447,7 +447,7 @@ ThemeList.coreMorphousRooms = {
 	passageWidth3: 		0,
 	placeDensity: 		0.35,
 	palette: 		{ basis: 'stoneRooms' },
-	rCOMMON: 		'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rCOMMON: 		'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
@@ -468,7 +468,7 @@ ThemeList.coreMixedRooms = {
 	passageWidth3: 		0,
 	placeDensity: 		0.35,
 	palette: 		{ basis: 'stoneRooms' },
-	rCOMMON: 		'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rCOMMON: 		'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
@@ -487,7 +487,7 @@ ThemeList.coreHellscape = {
 	placeDensity: 		0.05,
 	palette: 		{ basis: 'jaggedCave' },
 	rREQUIRED:  	'6x demonNest',
-	rCOMMON: 		'hoard_shade, demonNest, firePit',
+	rCOMMON: 		'mushrooms, hoard_shade, demonNest, firePit',
 	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
 	rRARE: 			'secretChest, etherHive',
 	prefer: 		['flames','mud'],
@@ -1145,6 +1145,21 @@ PlaceTypeList.garden = {
 	flags: { rotate: true },
 	symbols: {
 		p: { pick: ['plant.wheatPlant','plant.barleyPlant','plant.carrotPlant','plant.potatoPlant','plant.peaPlant','plant.beanPlant','plant.cabbagePlant'] },
+	}
+}
+
+PlaceTypeList.mushrooms = {
+	map:
+`
+..m.m
+m..m.
+..m.m
+mm.m.
+m.m..
+`,
+	flags: { rotate: true },
+	symbols: {
+		m: 'mushroom',
 	}
 }
 

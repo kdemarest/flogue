@@ -7,6 +7,123 @@ Module.add('dataMonsters',function() {
 // onTouch - fires if somebody is over/upon you.
 // onHeal - fires when you get healing. return true to suppress the auto-generated message about healing.
 
+let PartList = Fab.add( '', {
+	blood: 		{
+		matter: 'liquid',
+		makes: ['eRechargeFast', 'eBlindness', 'eRage', 'eHealing', 'eRegeneration', 'eWater'],
+	},
+	eye: 		{
+		matter: 'flesh',
+		makes: ['eLight', 'eDark', 'eDarkVision', 'eSeeInvisible', 'eSenseXray'],
+	},
+	ear: 		{
+		matter: 'flesh',
+		makes: ['eSenseLiving', 'eConfusion'],
+	},
+	nose: 		{
+		matter: 'flesh',
+		makes: ['eSenseSmell', 'ePanic'],
+	},
+	tongue: 	{
+		matter: 'flesh',
+		makes: ['eShove', 'eHesitate', 'eStartle'],
+	},
+	brain: 		{
+		matter: 'flesh',
+		makes: ['eSensetreasure', 'eBravery', 'eClearMind', 'eStalwart', 'eMentalFence'],
+	},
+	bone: 		{
+		matter: 'flesh',
+		makes: ['eOdorless', 'eResistance'],
+	},
+	skull: 		{
+		matter: 'bone',
+		makes: ['eIronWill', 'eSlow'],
+	},
+	tooth:		{
+		matter: 'bone',
+		makes: ['eAssassin', 'eBash'],
+	},
+	claw:		{
+		matter: 'bone',
+		makes: ['eJump2', 'eMobility'],
+	},
+	heart:		{
+		matter: 'flesh',
+		makes: ['eSenseLiving', 'ePossess', 'eSmite'],
+	},
+	liver:		{
+		matter: 'flesh',
+		makes: ['eVulnerability', 'eCurePoison', 'eCureDisease'],
+	},
+	gland:		{
+		matter: 'flesh',
+		makes: ['eStink', 'eDrain', 'eAcid', 'ePoison'],
+	},
+	wing:		{
+		matter: 'leather',
+		makes: ['eFlight', 'eHaste'],
+	},
+	chitin:		{
+		matter: 'chitin',
+		makes: ['eStun', 'eLeech'],
+	},
+	icor:		{
+		matter: 'liquid',
+		makes: ['eTeleport', 'eImmobilize', 'eBurn', 'eFreeze', 'eRot'],
+	},
+	inductor:	{
+		matter: 'metal',
+		makes: ['eShock'],
+	},
+	slime:		{
+		matter: 'liquid',
+		makes: ['eInvisibility', 'eAcid'],
+	},
+});
+Object.each( PartList, (part,partId) => {
+	part.typeId = partId;
+	part.name = partId;
+});
+
+let SpeciesList = {};
+SpeciesList.isAnimal = {
+	parts: ['blood','eye','ear','nose','tongue','brain','bone','skull','tooth','claw','heart','liver'],
+}
+SpeciesList.isEarthChild = {
+	parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
+}
+SpeciesList.isSunChild = {
+	parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
+}
+SpeciesList.isLunarChild = {
+	parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
+}
+SpeciesList.isUndead = {
+	parts: ['eye','ear','tongue','brain','bone','skull','tooth','claw'],
+}
+SpeciesList.isDemon = {
+	parts: ['blood','eye','ear','nose','tongue','brain','bone','skull','tooth','claw','heart','liver'],
+}
+SpeciesList.isInsect = {
+	parts: ['eye','tongue','brain','gland','wing','chitin','icor'],
+}
+SpeciesList.isPlanar = {
+	parts: ['eye','tongue','brain','heart','liver','gland','icor'],
+}
+SpeciesList.isConstruct = {
+	parts: ['inductor','gear','strut','cam','oil'],
+}
+SpeciesList.isOoze = {
+	parts: ['slime'],
+}
+SpeciesList.isPlant = {
+	parts: ['*self*','leaf','sap','bark','flower'],
+}
+SpeciesList.isMushroom = {
+	parts: ['*self*','stem','gill'],
+}
+
 const Control = { AI: "ai", USER: "user", TESTER: "tester", EMPTY: "empty" };
 
 const MonsterTypeDefaults = {
@@ -307,7 +424,7 @@ const MonsterTypeList = {
 		isScorpion: true,
 		loot: '70% poisonGland',
 		naturalWeapon: {
-			chanceOfEffect: 64,
+			chanceEffectFires: 64,
 			effect: { basis: 'ePoison', singularId: 'gsco', singularOp: 'sum' },
 		},
 		immune: DamageType.POISON+',eSlow',
@@ -513,7 +630,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: {
-			chanceOfEffect: 15,
+			chanceEffectFires: 15,
 			effect: { basis: 'eStun', xDuration: 0.2, singularId: 'daitraum', },
 		},
 		resist: DemonResistance,
@@ -526,7 +643,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: {
-			chanceOfEffect: 50,
+			chanceEffectFires: 50,
 			effect: EffectTypeList.eShove
 		},
 		resist: DemonResistance,
@@ -539,7 +656,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: {
-			chanceOfEffect: 50,
+			chanceEffectFires: 50,
 			effect: { basis: 'eConfusion', singularId: 'daibozle' }
 		},
 		resist: DemonResistance,
@@ -554,7 +671,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: {
-			chanceOfEffect: 50,
+			chanceEffectFires: 50,
 			effect: { basis: 'ePanic', singularId: 'daisteria' }
 		},
 		resist: DemonResistance,
@@ -568,7 +685,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: {
-			chanceOfEffect: 50,
+			chanceEffectFires: 50,
 			effect: { basis: 'eRage', singularId: 'daifury' }
 		},
 		resist: DemonResistance,
@@ -582,7 +699,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonEye',
 		naturalWeapon: {
-			chanceOfEffect: 25,
+			chanceEffectFires: 25,
 			effect: { basis: 'eSlow', singularId: 'daiphant' }
 		},
 		resist: DemonResistance,
@@ -596,7 +713,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 10% potion, 30% demonEye',
 		naturalWeapon: {
-			chanceOfEffect: 50,
+			chanceEffectFires: 50,
 			effect: { basis: 'eBlindness', singularId: 'dailess' }
 		},
 		resist: DemonResistance,
@@ -610,7 +727,7 @@ const MonsterTypeList = {
 		lootInventory: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: {
-			chanceOfEffect: 50,
+			chanceEffectFires: 50,
 			effect: EffectTypeList.eDrain
 		},
 		resist: DemonResistance,
@@ -624,7 +741,7 @@ const MonsterTypeList = {
 		immune: DamageType.POISON,
 		loot: '40% chitin, 80% poisonGland',
 		naturalWeapon: {
-			chanceOfEffect: 25,
+			chanceEffectFires: 25,
 			effect: { basis: 'ePoison', singularId: 'deepCent', singularOp: 'sum' }
 		},
 		senseSight: 2,
@@ -640,7 +757,7 @@ const MonsterTypeList = {
 		loot: '30% spinneret, 70% poisonGland',
 		naturalWeapon: {
 			attackVerb: 'sting',
-			chanceOfEffect: 34,
+			chanceEffectFires: 34,
 			effect: { basis: 'ePoisonForever', singularId: 'deepSpider', singularOp: 'fail' }
 		},
 		resist: DamageType.POISON,
@@ -960,7 +1077,7 @@ const MonsterTypeList = {
 		brainMindset: 'greedy',
 		greedField: 'isAntFood',
 		loot: '10% potion, 20% facetedEye, 10% antGrubMush',
-		isAnimal: true,
+		isInsect: true,
 		isSmall: true,
 		senseSmell: 200,
 		speed: 1.5,
@@ -1243,21 +1360,17 @@ function monsterPreProcess(typeId,m) {
 	m.bodySlots    = Object.assign( m.bodySlots || {}, BodySlots[body] );
 
 	let blood = {
-		isPlanar: 	'bloodYellow',
-		isUndead: 	'bloodWhite',
-		isDemon: 	'bloodBlack',
-		isEarthChild: 'bloodGreen',
-		isAnimal: 	'bloodRed',
-		isSunChild: 'bloodRed',
-		isLunarChild: 'bloodBlue'
+		isAnimal: 		'bloodRed',
+		isEarthChild: 	'bloodGreen',
+		isSunChild: 	'bloodRed',
+		isLunarChild: 	'bloodBlue',
+		isPlanar: 		'bloodYellow',
+		isInsect: 		'bloodYellow',
+		isUndead: 		'bloodWhite',
+		isDemon: 		'bloodBlack',
+		isOoze: 		'bloodBlack',
 	};
-	for( let key in blood ) {
-		if( m[key] ) {
-			m.bloodId = m.bloodId || blood[key];
-			break;
-		}
-	}
-	m.bloodId = m.bloodId || 'bloodRed';
+	m.bloodId = m.bloodId || Object.findByFlag( m, blood ) || 'bloodRed';
 	if( !m.isSunChild ) {
 		m.senseDarkVision = m.senseDarkVision || Rules.MONSTER_DARK_VISION;
 	}
@@ -1273,6 +1386,24 @@ function monsterPreProcess(typeId,m) {
 	if( m.isDemon && !m.lightHarms ) {
 		m.lightHarms = 8;
 	}		
+	let eat = {
+		isInsectivore:	['plant','fungus','liquid'],
+		isHerbivore:	['plant','fungus','liquid'],
+		isCarnivore:	['liquid','flesh','bone'],
+		isOmnivore:		['plant','fungus','liquid','flesh','bone'],
+		isScavenger:	['plant','fungus','liquid','flesh','bone','leather'],
+		isDog:			['liquid','flesh','bone', 'leather', 'cloth', 'chitin', 'ivory'],
+		isAnimal:		['plant','fungus','liquid','flesh','bone'],
+		isEarthChild:	['plant','fungus','liquid','flesh','bone'],
+		isSunChild:		['plant','fungus','liquid','flesh','bone'],
+		isLunarChild:	['plant','fungus','liquid','flesh','bone'],
+		isPlanar:		['plant','fungus','liquid','flesh','energy'],
+		isUndead: 		['flesh'],
+		isDemon: 		['liquid','flesh','bone','gem'],
+		isOoze: 		['plant','fungus','liquid','flesh','bone','leather','gem','wood','wax','cloth','chitin','paper','ivory'],
+	}
+	this.eat = this.eat || Object.findByFlag( m, eat ) || ['plant'];
+	this.matter = this.matter || (m.isOoze ? 'liquid' : 'flesh');
 
 	m.inventoryLoot = m.inventoryLoot || [];
 	m.inventoryLoot = Array.isArray(m.inventoryLoot) ? m.inventoryLoot : [m.inventoryLoot];
@@ -1301,6 +1432,8 @@ function monsterPreProcess(typeId,m) {
 
 return {
 	Control: Control,
+	PartList: PartList,
+	SpeciesList: SpeciesList,
 	MonsterTypeDefaults: MonsterTypeDefaults,
 	MonsterTypeList: MonsterTypeList,
 	monsterPreProcess: monsterPreProcess

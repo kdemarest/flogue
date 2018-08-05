@@ -293,6 +293,7 @@ class Entity {
 				if( this.inventory ) {
 					itemList = itemList.concat(this.inventory);
 				}
+				itemList = itemList.concat( this.generateParts() );
 				let self = this;
 				itemList.forEach( item => {
 					if( (!item.isFake && !item.isSkill && !this.vanish) || item.isPlot ) {
@@ -1198,7 +1199,7 @@ class Entity {
 	}
 
 	thinkHunger(foodDist=2) {
-		let foodList = new Finder(this.map.findItemsNear(this.x,this.y,foodDist),this).filter(item=>item.isEdible && !item.invisible);
+		let foodList = new Finder(this.map.findItemsNear(this.x,this.y,foodDist),this).filter(item=>item.isEdible && this.eat.includes[item.matter] && !item.invisible);
 		if( foodList.first && this.isAtTarget(foodList.first) ) {
 			this.record('found some food. eating.',true);
 			this.commandItem = foodList.first;
@@ -2047,8 +2048,8 @@ class Entity {
 			let retaliationEffects = new Finder(this.inventory).filter( item => item.inSlot && item[is] );
 			retaliationEffects.forEach( item => {
 				if( item.effect && item.effect.isHarm ) {
-					console.assert( item.chanceOfEffect !== undefined );
-					let fireEffect = Math.chance(item.chanceOfEffect);
+					console.assert( item.chanceEffectFires !== undefined );
+					let fireEffect = Math.chance(item.chanceEffectFires);
 					if( fireEffect ) {
 						item.trigger( attacker, this, 'retaliate', item.effect );
 						isRetaliation++;
@@ -2336,7 +2337,29 @@ class Entity {
 			tell(...description);
 		}
 	}
-
+	partsGenerate() {
+		let itemList = [];
+		let species = Object.findByFlag( this, SpeciesList );
+		let partList = this.parts || species.parts;
+		let partTable = new Pick.Table();
+		partTable.scanArray(partList,()=>1.0);
+		let count = Math.randInt(1,3);
+		while( !partTable.isEmpty() && count-- ) {
+			let part = PartList[partTable.pick()];
+			partTable.forbidLast();
+			let inject = {
+				name: this.name+' '+part.name,
+				matter: part.matter,
+			};
+			part.makes.forEach( effectId => {
+				let bitId = 'bit'+String.capitalize(effectId.slice(1));
+				inject[bitId] = true;
+			});
+			let item = new Item( this.level, ItemTypeList.part, {}, inject );
+			itemList.push(item);
+		}
+		return itemList;
+	}
 	lootGenerate( lootSpec, level ) {
 		let itemList = [];
 		new Picker(level).pickLoot( lootSpec, item=>{
@@ -2411,6 +2434,7 @@ class Entity {
 			}
 			let inventory = new Finder(corpse.inventory).isReal().all || [];
 			inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
+			inventory.push( ...corpse.partsGenerate() )
 			this.inventoryTake( inventory, item, false );
 			item.destroy();
 			return {
@@ -2483,7 +2507,7 @@ class Entity {
 			status: 'dig',
 			success: false
 		}
-		if( target.isItemType && target.isLivePlant ) {
+		if( target.isItemType && (target.isPlant || target.isMushroom)) {
 			target.giveTo(this,this.x,this.y);
 			tell(mSubject,this,' ',mVerb,'dig',' up ',mObject,target);
 		}

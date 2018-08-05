@@ -532,7 +532,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	let secondary = [];
 	if( !effect.isSecondary && item ) {
 		if( item.isWeapon && item.effect ) {
-			secondary.push( { effect: item.effect, chance: item.chanceOfEffect } );
+			secondary.push( { effect: item.effect, chance: item.chanceEffectFires } );
 		}
 		let shooter = Perk.apply( 'shooter', { source: effect.source, item: item.shooter } ).item;
 		if( shooter ) {
@@ -552,7 +552,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 				effect.quick = shooter.quick;
 			}
 			if( shooter.ammoEffect == 'addMine' && shooter.effect ) {
-				secondary.push( {effect: shooter.effect, chance: shooter.chanceOfEffect } );
+				secondary.push( {effect: shooter.effect, chance: shooter.chanceEffectFires } );
 			}
 		}
 		Perk.apply( 'secondary', effect, { secondary: secondary } );

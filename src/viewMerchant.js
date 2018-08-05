@@ -55,14 +55,13 @@ class ViewMerchant extends ViewInventory {
 		event.commandTarget = this.merchant;
 		this.onEvent(event);
 	}
-	headerComponent() {
+	headerComponent(div) {
 		let element = $('<div class="merchant">'+String.capitalize(this.observer.name)+' <span class="merchantOp"></span> '+this.merchant.name+' the '+String.capitalize(this.merchant.jobId)+'</div>');
 		$(element).find('.merchantOp').on( 'click.ViewMerchant', null, () => {
 			this.setMode('toggle').render();
 		});
 		$(element).find('.merchantOp').html( this.mode=='buy' ? '<- BUYING FROM <-' : '-> SELLING TO ->' );
-		return element;
-
+		element.appendTo(div);
 	}
 	render() {
 		if( !this.mode ) {

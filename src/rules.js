@@ -35,34 +35,14 @@ let Rules = new class {
 		this.tooCloseDefault				= 4;
 		this.noticeableLightRatio 			= 0.5;
 
-		this.itemDamageTable = {
-			metal: 		{ corrode: 1, smite: 1},
-			stone: 		{ bash: 1, smite: 1},
-			chitin: 	{ bash: 1, smite: 1},
-			leather: 	{ cut: 1, claw: 1, chop: 1, corrode: 1, rot: 2 },
-			cloth: 		{ cut: 1, claw: 1, chop: 1, corrode: 1, rot: 2 },
-			wax: 		{ cut: 1, claw: 1, chop: 1, bash: 0.5, burn: 2, corrode: 1, rot: 2 },
-			wood: 		{ bite: 0.5, bash: 0.5, chop: 1, rot: 1 },
-			liquid: 	{ burn: 0.5, freeze: 1, shock: 0.5, corrode: 0.5 },
-			glass: 		{ bash: 1, corrode: 1 },
-			paper: 		{ cut: 1, bite: 1, chop: 1, burn: 1, water: 1, corrode: 1 },
-			ivory: 		{ bash: 1, chop: 1, smite: 1 },
-			bone: 		{ bash: 1, chop: 1, smite: 1 },
-			plant: 		{ cut: 1, bite: 0.5, chop: 1, burn: 1, corrode: 0.5, smite: 1, rot: 1 },
-			flesh: 		{ cut: 1, stab: 1, bite: 1, claw: 1, bash: 1, chop: 1, burn: 1, freeze: 0.5, shock: 0.5, corrode: 1, smite: 1, rot: 2 },
-			special: 	{ },
+		this.effectShapePriceMult = {
+			single: 1.0,
+			blast2: 2.0,
+			blast3: 3.0,
+			blast4: 4.0,
+			blast5: 5.0,
+			blast6: 6.0
 		};
-
-//					cut 	stab 	bite 	claw 	bash 	chop	burn 	freeze 	water 	shock 	corrode poison 	smite 	rot
-//		metal 		-		-		-		-		-		-		-		-		-		-		+ 		-		+		-
-//		leather 	+ 		-		-		+ 		-		+		-		-		-		-		+ 		-		-		+
-//		wood 		-		-		1/2		-		1/2 	+		-		-		-		-		-		-		-		+	
-//		liquid 		-		-		-		-		-		-		1/2		+		-		1/2		1/2		-		-		-
-//		glass 		-		-		-		-		+		-		-		-		-		-		+		-		-		-
-//		paper 		+		-		+		-		-		+		+		-		+		-		+		-		-		-
-//		ivory 		-		-		-		-		+		+		-		-		-		-		-		-		-		-
-
-
 	}
 	 playerHealth(playerLevel) {
 	 	return 90+(10*playerLevel);
@@ -82,7 +62,7 @@ let Rules = new class {
 	 	if( !hitsToKillMonster ) debugger;
 	 	// Monsters get twice as tough over the course of the game, because player perks
 	 	// typically give them a cumulative 200% advantage
-	 	let pct = (monsterLevel-DEPTH_MIN)/DEPTH_SPAN;
+	 	let pct = (monsterLevel-this.DEPTH_MIN)/this.DEPTH_SPAN;
 	 	return Math.max(1,Math.floor(this.playerDamage(monsterLevel)*hitsToKillMonster*(1+pct)));
 	 }
 	 monsterDamage(monsterLevel,hitsToKillPlayer=10) {
@@ -167,7 +147,12 @@ let Rules = new class {
 		}
 		let base = item.level*2 + 1;
 		let xPrice = xCalc(item,item,'xPrice','*');
-		return Math.max(1,Math.floor(base * xPrice * Rules.PRICE_MULT_BASE));
+		let xDuration = Math.max( 1.0, xCalc(item,item,'xDuration','*') );
+		let xDamage = xCalc(item,item,'xDamage','*');
+		let xEffectShape = !item.effect ? 1.0 : (this.effectShapePriceMult[item.effect.effectShape] || 1);
+		let xChanceOfEffect = !item.effect ? 1.0 : (item.chanceEffectFires === undefined ? 2.0 : (1+item.chanceEffectFires/100));
+		// perhaps we should adjust price for the charges and the recharge time in the item... A potion that has 1 use and a spell are quite different.
+		return Math.max(1,Math.floor(base * xPrice * xDuration * xDamage * xEffectShape * xChanceOfEffect * Rules.PRICE_MULT_BASE));
 	}
 	priceWhen(buySell,item) {
 		if( item.coinCount ) {
@@ -242,8 +227,8 @@ Rules.ItemBag = (function() {
 		key: 	[	 0.0, 	 0.00,	  1.0,	[], ],
 		coin: 	[	23.0, 	 0.00,	  1.0,	[], ],
 		potion: [	10.0, 	 1.00,	  1.0,	['effect'], ],
-		spell: 	[	 1.0, 	 1.00,	  3.0,	['effect'], ],
-		ore: 	[	 5.0, 	 0.00,	  0.1,	['variety'], ],
+		spell: 	[	 2.0, 	 1.00,	  3.0,	['effect'], ],
+		ore: 	[	 3.0, 	 0.00,	  0.1,	['variety'], ],
 		gem: 	[	 4.0,	 0.30,	  2.0,	['material','quality','effect'], ],
 		weapon: [	10.0, 	 0.15,	  4.0,	['material','effect','variety'], ],
 		ammo: 	[	15.0, 	 0.30,	  0.1,	['material','effect','variety'], ],
@@ -254,8 +239,9 @@ Rules.ItemBag = (function() {
 		bracers:[	 2.0, 	 0.15,	  3.5,	['variety','effect'], ],
 		gloves: [	 0.5, 	 0.50,	  1.0,	['variety','effect'], ],
 		boots: 	[	 2.0, 	 0.15,	  1.8,	['variety','effect'], ],
-		ring: 	[	 1.0, 	 0.50,	  6.0,	['material','effect'], ],
-		stuff: 	[	10.0, 	  0.0,	  0.4,	['variety'], ]
+		ring: 	[	 2.0, 	 0.50,	  6.0,	['material','effect'], ],
+		stuff: 	[	10.0, 	  0.0,	  0.4,	['variety'], ],
+		part: 	[	 0.0, 	  0.0,	  0.4,	['variety'], ],
 	};
 	return Object.convert(raw,(row,key) => {
 		let a={};

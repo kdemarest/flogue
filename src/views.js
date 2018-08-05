@@ -25,21 +25,31 @@ class ViewNarrative extends ViewObserver {
 	constructor(divId) {
 		super();
 		this.divId = divId;
+		this.isBig = false;
 		$(this.divId)
-			.mouseover( e => {
-				$(this.divId)
-					.addClass('big')
-					.scrollTop( $(this.divId).prop('scrollHeight') );;
-			})
-			.mouseout( e => {
-				$(this.divId)
-					.removeClass('big')
-					.scrollTop( $(this.divId).prop('scrollHeight') );;
-			})
+//			.mouseover( e => {
+//				$(this.divId)
+//					.addClass('big')
+//					.scrollTop( $(this.divId).prop('scrollHeight') );;
+//			})
+//			.mouseout( e => {
+//				$(this.divId)
+//					.removeClass('big')
+//					.scrollTop( $(this.divId).prop('scrollHeight') );;
+//			})
 			.click( e => {
-				$(this.divId)
-					.removeClass('big')
-					.scrollTop( $(this.divId).prop('scrollHeight') );;
+				if( this.isBig ) {
+					$(this.divId)
+						.removeClass('big')
+						.scrollTop( $(this.divId).prop('scrollHeight') );;
+					this.isBig = false;
+				}
+				else {
+					$(this.divId)
+						.addClass('big')
+						.scrollTop( $(this.divId).prop('scrollHeight') );;
+					this.isBig = true;
+				}
 			});
 ;
 	}
@@ -70,6 +80,7 @@ class ViewSign extends ViewObserver {
 	message(msg,payload) {
 		super.message(msg,payload);
 		if( msg=='clearSign' ) {
+			$(this.divId).hide();
 			guiMessage( 'hide' );
 			this.observer.lastBumpedId = null;
 		}

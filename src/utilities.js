@@ -232,6 +232,13 @@ Module.add('utilities',function(){
 		}
 		return result;
 	}
+	Object.findByFlag = function( target, flagValueList ) {
+		for( let key in flagValueList ) {
+			if( target[key] ) {
+				return flagValueList[key];
+			}
+		}
+	}
 
 	Array.supplyConcat = function(...args) {
 		let result = [];
@@ -249,8 +256,11 @@ Module.add('utilities',function(){
 		return result;
 	}
 
+	//
+	// Supplies can be of the form 3x 50% itemType.variety.material.quality.effect isFlag mayFlag
+	//
+
 	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^/,]+)(\/([a-zA-Z0-9$]+\s*)|\s*,?)/g;
-//	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^,]+|[*])\s*[,]*/g;
 	Array.supplyParse = function(supplyMixed) {
 
 		function supplyStringParse(supplyString) {

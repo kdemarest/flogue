@@ -1333,6 +1333,13 @@ Module.add('dataMason',function() {
 			}
 		}
 
+		function typeIdRemap(typeId) {
+			if( T[String.capitalize(typeId)] ) {
+				return SymbolToType[T[String.capitalize(typeId)]].typeId;
+			}
+			return typeId;
+		}
+
 		function placeMake(x,y,place) {
 			console.assert( typeof x === 'number' && !isNaN(x) );
 			console.assert( typeof y === 'number' && !isNaN(y) );
@@ -1340,8 +1347,8 @@ Module.add('dataMason',function() {
 			let siteMarks = [];
 //				console.log('Placed at ('+x+','+y+')');
 			if( place.floodId ) {
-				let floodTile = TypeIdToSymbol[place.floodId];
-				let sparkTile = TypeIdToSymbol[place.sparkId];
+				let floodTile = TypeIdToSymbol[typeIdRemap(place.floodId)];
+				let sparkTile = TypeIdToSymbol[typeIdRemap(place.sparkId)];
 				let sparkDensity = place.sparkDensity || 0;
 				let sparkLimit = place.sparkLimit;
 				let tilesMade = map.floodSpread( x, y, tileCount(place), sparkTile, sparkLimit, sparkDensity, false, 

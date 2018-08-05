@@ -136,7 +136,7 @@ function drawItemByLevel(title,itemTypeId,setting={}) {
 		let picker = new Picker(depth);
 		typeList.forEach( type => {
 			let filterString = type.typeId;
-			let filter = picker.filterStringParse(filterString);
+			let filter = Picker.filterStringParse(filterString);
 			picker.itemTraverse(itemTypeId, filter, item => {
 				if( setting.filterFn && !setting.filterFn(item) ) return;
 				let id = item.presets[presetIndex[groupId]].typeId;

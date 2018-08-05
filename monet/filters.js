@@ -48,6 +48,7 @@ DirSpec = {
 	"decor/": true,
 	"effect/": true,
 	"plant/": true,
+	"mushroom/": true,
 }
 
 FilterDefault = {

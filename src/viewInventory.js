@@ -63,6 +63,9 @@ class ViewInventory extends ViewObserver {
 				if( af < bf ) return -1;
 				if( af > bf ) return 1;
 			}
+			// The id comparisons add sorting stability, most noticeable in the crafting screen.
+			if( a.id < b.id ) return -1;
+			if( b.id < a.id ) return 1;
 			return 0;
 		}
 
@@ -138,7 +141,7 @@ class ViewInventory extends ViewObserver {
 		}
 
 		if( this.headerComponent ) {
-			this.headerComponent().appendTo(this.div);
+			this.headerComponent(this.div);
 		}
 
 		let colHead = {

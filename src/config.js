@@ -11,7 +11,7 @@ ConfigList.ken = () => {
 		passageWander: 		0,
 	});
 	ScapeList.kenTinyCave = theme => ({
-		dim: 				20,
+		dim: 				30,
 		architecture: 		"cave",
 		floorDensity: 		0.68,
 		seedPercent: 		0.20,
@@ -85,7 +85,7 @@ ConfigList.ken = () => {
 		isTown: 	true,
 		scapeId: 	'kenTinyCave',
 		palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
-		rREQUIRED: 	'shopOpenAir',
+		rREQUIRED: 	'mushrooms, shopOpenAir',
 		jobPick: 	{ layman: 10, sentry: 3, grocer: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
 		monsters: 	['isDwarf'],
 		enemyDensity: 	0.00,
@@ -116,11 +116,11 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.inventoryLoot.push('100x helm.dwarven');
 //	MonsterTypeList.player.inventoryLoot.push('10x coin');
 
-//	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, 4x potion.eXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
+//	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, 4x potion.eSenseXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
 //	MonsterTypeList.player.inventoryLoot.push('2x potion.eHealing, 4x potion, 2x gem, 2x spell, 1x potion.eSeeInvisible, 3x weapon, weapon.sling, 30x ammo.slingStone, weapon.bow, 40x ammo.arrow, spell.eFreeze');
-	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility';
+	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, weapon, weapon.bow, ammo.arrow';
 //	MonsterTypeList.player.experience = 100;
-	MonsterTypeList.player.inventoryLoot.push('6x weapon, 50x ammo.arrow, 2x stuff.shovel, stuff.lantern, stuff.candleLamp, stuff.lamp, 2x stuff.solarOrbS, 2x stuff.solarOrbM, 2x stuff.solarOrbL, stuff.sunCrystal');
+//	MonsterTypeList.player.inventoryLoot.push('6x weapon, 50x ammo.arrow, 2x stuff.shovel, stuff.lantern, stuff.candleLamp, stuff.lamp, 2x stuff.solarOrbS, 2x stuff.solarOrbM, 2x stuff.solarOrbL, stuff.sunCrystal');
 
 
 	Object.assign( Rules, {
@@ -129,6 +129,7 @@ ConfigList.ken = () => {
 	});
 
 	MonsterTypeList.player.legacyId = 'blaster';
+	MonsterTypeList.player.inventoryLoot.push('5x spell, 10x potion, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;
 //	MonsterTypeList.player.senseSmell = 200;
@@ -137,9 +138,9 @@ ConfigList.ken = () => {
 
 
 	return {
-		startingDepth: 11,
-		themeId: 'dwarfTown',
-		//saveBattery: true,
+		startingDepth: 1,
+		//themeId: 'kenDwarfTown',
+		saveBattery: true,
 		playerInject: { level: 20 }
 	}
 }

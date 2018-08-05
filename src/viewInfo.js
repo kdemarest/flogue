@@ -55,7 +55,7 @@ class ViewInfo extends ViewObserver {
 			let s = '';
 			if( header ) {
 				let lvl = !item.isTreasure ? '' : ' Level '+item.level+'<br>Value '+ex.priceWithCommas;
-				s += item.isUnique ? '<img class="itemImage" src="'+IMG_BASE+item.img+'"><br>' :
+				s += true||item.isUnique ? '<img class="itemImage" src="'+ImageRepo.imgPath(item)+'"><br>' :
 					'<table class="itemIconTable"><tr><td>'+ex.icon+'</td><td>'+lvl+'</td></tr></table><br>';
 				s += ex.description+(ex.permutation?' '+ex.permutation:'')+'<br>';
 				if( ex.description2 ) {

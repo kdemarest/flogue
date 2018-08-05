@@ -332,9 +332,9 @@ let spriteOnStage = function(sprite,value) {
 	return sprite;
 }
 
-let spriteMakeInWorld = function(entity,xWorld,yWorld,senseDarkVision,senseInvisible) {
+let spriteMakeInWorld = function(entity,xWorld,yWorld,indexOrder=0,senseDarkVision,senseInvisible) {
 
-	function make(x,y,entity,imgGet,light,doTint,doGrey,numSeed) {
+	function make(x,y,entity,imgGet,light,doTint,doGrey,numSeed,indexOrder) {
 
 		entity.spriteList = entity.spriteList || [];
 
@@ -347,10 +347,14 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,senseDarkVision,senseInvis
 				}
 				//console.log( "Create sprite "+entity.typeId,x/Tile.DIM,y/Tile.DIM);
 				let sprite = spriteCreate( entity.spriteList, img );
+				sprite.entity = entity;
 				sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
 				sprite.baseScale = entity.scale || Tile.DIM/sprite.width;
 				if( entity.isMonsterType && !entity.scale) {
 					sprite.baseScale *= Math.rand(MONSTER_SCALE_VARIANCE_MIN,MONSTER_SCALE_VARIANCE_MAX);
+				}
+				if( entity.isMushroom ) {
+					sprite.baseScale *= Math.rand(0.6,1.0);
 				}
 			}
 			let sprite = entity.spriteList[i];
@@ -360,9 +364,10 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,senseDarkVision,senseInvis
 				let zOrder = entity.zOrder || (entity.isWall ? Tile.zOrder.WALL : (entity.isFloor ? Tile.zOrder.FLOOR : (entity.isTileType ? Tile.zOrder.TILE : (entity.isItemType ? (entity.isGate ? Tile.zOrder.GATE : (entity.isDecor ? Tile.zOrder.DECOR : Tile.zOrder.ITEM)) : (entity.isMonsterType ? Tile.zOrder.MONSTER : Tile.zOrder.OTHER)))));
 				sprite.zOrder 	= zOrder;
 				sprite.visible 	= true;
-				sprite.x 		= x+(Tile.DIM/2);
-				sprite.y 		= y+(Tile.DIM/2);
+				sprite.x 		= x*Tile.DIM+(Tile.DIM/2);
+				sprite.y 		= y*Tile.DIM+(Tile.DIM/2);
 				sprite.transform.scale.set( sprite.baseScale );
+				if( sprite.flip ) sprite.scale.x = -sprite.scale.x;
 				sprite.alpha 	= (entity.alpha||1) * Light.Alpha[Math.floor(light)];
 				//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 			}
@@ -385,6 +390,7 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,senseDarkVision,senseInvis
 				}
 				sprite.tint = 0xFFFFFF;
 			}
+			//sprite.sortKey = sprite.y*10000+sprite.indexOrder*100+sprite.zOrder;
 		}
 		if( entity.puppetMe ) {
 			entity.puppetMe.puppet(entity.spriteList);
@@ -427,14 +433,15 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,senseDarkVision,senseInvis
 	let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
 	make.call(
 		self,
-		x*Tile.DIM,
-		y*Tile.DIM,
+		x,
+		y,
 		entity,
 		imgGet,
 		lightAfterGlow,
 		doTint,
 		doGrey,
-		self.randList[xWorld&0xFF]+7+self.randList[yWorld&0xFF]
+		self.randList[xWorld&0xFF]+7+self.randList[yWorld&0xFF],
+		indexOrder
 	);
 
 	if( entity.isTileType && !entity.isPosition ) {
@@ -448,25 +455,12 @@ class ViewMap extends ViewObserver {
 	constructor(divId) {
 		super();
 		this.divId = divId;
-		if( ViewMap.globalPixiApp ) {
-			ViewMap.globalPixiApp.destroy(true,{children:true,texture:false,baseTexture:false});
-		}
-		$(this.divId).empty();
-		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
-		ViewMap.globalPixiApp = this.app;
-		this.desaturateFilter = new PIXI.filters.ColorMatrixFilter();
-		this.desaturateFilter.desaturate();
-		this.desaturateFilterArray = [this.desaturateFilter];
-		this.resetFilter = new PIXI.filters.ColorMatrixFilter();
-		this.resetFilter.reset();
-		this.resetFilterArray = [this.resetFilter];
+		this.pixiCreate();
 		this.randList = [];
 		for( let i=0 ; i<256 ; ++i ) {
 			this.randList.push( Math.randInt( 0, 1023 ) );
 		}
-
-		$(this.divId)[0].appendChild(this.app.view);
-		this.setDimensions();
+		//this.setDimensions(Tile.DIM,MapVis);
 		this.hookEvents();
 		_viewMap = this;
 
@@ -478,6 +472,24 @@ class ViewMap extends ViewObserver {
 			}
 		});
 		this.drawListCache = [];
+	}
+
+	pixiCreate() {
+		$(this.divId).empty();
+		if( ViewMap.globalPixiApp ) {
+			ViewMap.globalPixiApp.destroy(true,{children:true,texture:false,baseTexture:false});
+		}
+		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
+		ViewMap.globalPixiApp = this.app;
+
+		this.desaturateFilter = new PIXI.filters.ColorMatrixFilter();
+		this.desaturateFilter.desaturate();
+		this.desaturateFilterArray = [this.desaturateFilter];
+		this.resetFilter = new PIXI.filters.ColorMatrixFilter();
+		this.resetFilter.reset();
+		this.resetFilterArray = [this.resetFilter];
+
+		$(this.divId)[0].appendChild(this.app.view);
 	}
 
 	hookEvents() {
@@ -525,30 +537,69 @@ class ViewMap extends ViewObserver {
 		});
 	}
 
-	setDimensions() {
+	resizeAllSprites(oldDim) {
+		let area = this.observer.area;
+		area.entityList.forEach( entity => {
+			spriteDeathCallback(entity.spriteList);
+			entity.inventory.forEach( item => {
+				spriteDeathCallback(item.spriteList);
+			});
+		});
+		area.map.itemList.forEach( item => {
+			spriteDeathCallback(item.spriteList);
+			(item.inventory||[]).forEach( item => {
+				spriteDeathCallback(item.spriteList);
+			});
+		});
+		area.map.traverse( (x,y) => {
+//			let tile = area.map.tileTypeGetFastUnasfe(x,y);
+//			spriteDeathCallback(tile.spriteList);
+			if( area.map.tileEntity[y] && area.map.tileEntity[y][x] ) {
+				spriteDeathCallback(area.map.tileEntity[y][x].spriteList);
+			}
+			if( area.map.tileSprite[y] && area.map.tileSprite[y][x] ) {
+				for( let typeId in area.map.tileSprite[y][x] ) {
+					spriteDeathCallback(area.map.tileSprite[y][x][typeId]);
+				}
+			}
+		});
+		Object.each( SymbolToType, type => spriteDeathCallback(type.spriteList) );
+
+		let temp = this.app.stage.children.slice();
+		temp.forEach( child => this.app.stage.removeChild(child) );
+
+		// Clears the stage, for certain.
+	}
+
+//		for( let child of this.app.stage.children ) {
+//			child.x = ((child.x-(oldDim/2)) / oldDim) * Tile.DIM + Tile.DIM/2;
+//			child.y = ((child.y-(oldDim/2)) / oldDim) * Tile.DIM + Tile.DIM/2;
+//			child.baseScale = (child.entity||{}).scale || Tile.DIM/child.width;
+//			child.transform.scale.set( child.baseScale );
+//		}
+//	}
+	setDimensions(dim=Tile.DIM,maxVis=MapVis) {
+		MaxVis = maxVis;
+		let oldDim = Tile.DIM;
+		Tile.DIM = dim;
 		this.sd = MaxVis;
 		this.d = ((this.sd*2)+1);
+		console.assert( !isNaN(this.d) );
 		let tileWidth  = Tile.DIM * this.d;
 		let tileHeight = Tile.DIM * this.d;
 
 		this.app.renderer.view.style.width = tileWidth + "px";
 		this.app.renderer.view.style.height = tileHeight + "px";
 		this.app.renderer.resize(tileWidth,tileHeight);
+
+		this.resizeAllSprites(oldDim);
 	}
 	setZoom(_zoom) {
 		this.zoom = _zoom % 3;
 		let oldDim = Tile.DIM;
-		if( this.zoom == 0 ) { Tile.DIM=32 ; MaxVis=11; }
-		if( this.zoom == 1 ) { Tile.DIM=48 ; MaxVis=8; }
-		if( this.zoom == 2 ) { Tile.DIM=64 ; MaxVis=6; }
-		//document.documentElement.style.setProperty('--Tile.DIM', Tile.DIM);
-		//document.documentElement.style.setProperty('--TILE_SPAN', MaxVis*2+1);
-		this.setDimensions();
-		for( let child of this.app.stage.children ) {
-			child.x = ((child.x-(oldDim/2)) / oldDim) * Tile.DIM + Tile.DIM/2;
-			child.y = ((child.y-(oldDim/2)) / oldDim) * Tile.DIM + Tile.DIM/2;
-			child.transform.scale.set( child.baseScale );
-		}
+		if( this.zoom == 0 ) { this.setDimensions(32,11); }
+		if( this.zoom == 1 ) { this.setDimensions(48,8); }
+		if( this.zoom == 2 ) { this.setDimensions(64,6) }
 	}
 
 	worldOverlayAdd(groupId,x,y,area,img) {
@@ -576,6 +627,10 @@ class ViewMap extends ViewObserver {
 		super.message(msg,payload);
 		if( msg=='zoom' ) {
 			this.setZoom(this.zoom+1);
+			this.render();
+		}
+		if( msg == 'resize' ) {
+			this.setDimensions(payload.dim,payload.maxVis||MapVis);
 			this.render();
 		}
 		if( msg == 'overlayRemove' ) {
@@ -649,7 +704,14 @@ class ViewMap extends ViewObserver {
 						//if( wx+x==this.observer.x && wy+y == this.observer.y ) debugger;
 						let imgGet = ImageRepo.imgGet[entity.typeId];
 						if( imgGet ) {
-							spriteMakeInWorld(entity,wx+x,wy+y,this.observer.senseDarkVision,this.observer.senseInvisible);
+							spriteMakeInWorld(
+								entity,
+								wx+x,
+								wy+y,
+								i,
+								this.observer.senseDarkVision,
+								this.observer.senseInvisible
+							);
 						}
 						else {
 							debugger;
@@ -663,7 +725,7 @@ class ViewMap extends ViewObserver {
 		//console.log(debug);
 		//$('#guiDebug2').html(this.app.stage.children.length);
 
-//		this.app.stage.children.forEach( sprite => sprite.sortKey = sprite.zOrder*10000*10000+sprite.y*10000+sprite.x );
+//		this.app.stage.children.forEach( sprite => sprite.sortKey = (sprite.y-sprite.anchor.y*sprite.height)*100+sprite.zOrder );
 		this.app.stage.children.forEach( sprite => sprite.sortKey = sprite.zOrder );
 		this.app.stage.children.sort( (a,b) => a.sortKey-b.sortKey );
 	}
