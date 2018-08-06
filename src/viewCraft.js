@@ -237,9 +237,12 @@ class ViewCraft extends ViewInventory {
 		$(document).off( '.ViewCraftHeader' );
 		$('<div class="craftingHeader"></div>')
 			.append( title() )
-			.append( ingredientList() )
-			.append( craftingArrow() )
-			.append( product() )
+			.append( 
+				$('<div class="craftingCentered"></div>')
+					.append( ingredientList() )
+					.append( craftingArrow() )
+					.append( product() )
+			)
 			.append( $('<hr>') )
 			.appendTo( div );
 	}

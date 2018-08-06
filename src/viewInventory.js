@@ -194,7 +194,7 @@ class ViewInventory extends ViewObserver {
 
 		let sortIcon = '<img src="'+IMG_BASE+StickerList[this.sortAscending?'sortAscending':'sortDescending'].img+'">';
 		let tHeadContent = (hide) => {
-			return '<thead'+(hide?' style="display:none;"':'')+'><tr>'+colJoin(this.colFilter,colHead,colId=>self.sortColId==colId ? sortIcon : '')+'</tr></thead>';
+			return '<thead style="'+(hide?'visibility:hidden;':'')+'"><tr>'+colJoin(this.colFilter,colHead,colId=>self.sortColId==colId ? sortIcon : '')+'</tr></thead>';
 		};
 		let tableFixed = $( '<table class="inv fixedHeader" style="z-index: 101;"></table>' ).appendTo(invBody);
 		let tHeadFixed = $(tHeadContent(false))
@@ -226,9 +226,11 @@ class ViewInventory extends ViewObserver {
 			let real = $('.realHeader thead tr td');
 			let fixed = $('.fixedHeader thead tr td');
 			for( let index=0 ; index < real.length ; ++index ) {
-				$(fixed[index]).width( $(real[index]).width() );
+				$(real[index]).width( $(real[index]).width()+'px' );
+				$(fixed[index]).width( $(real[index]).width()+'px' );
 			}
-			$('.realHeader thead').css( 'visibility', 'hidden' );
+			real.empty();
+			//$('.realHeader thead').css( 'visibility', 'hidden' ); //'visibility', 'hidden' );
 		}, 1 );
 
 
