@@ -243,6 +243,23 @@ class ViewCraft extends ViewInventory {
 			.append( $('<hr>') )
 			.appendTo( div );
 	}
+	message( msg, payload ) {
+		super.message(msg,payload);
+		if( msg == 'resize' ) {
+			Gui.layout( {
+				'#guiCraft': {
+					height: self => $(window).height() - self.offset().top
+				},
+				'#guiCraft .invBody': {
+					height: self => $(window).height() - self.offset().top
+				},
+				'#guiCraft .invBodyScroll': {
+					height: self => $(window).height() - self.offset().top
+				}
+			});
+			$('#guiCraft .invBodyScroll').scrollTop(this.scrollPos);
+		}
+	}
 	render() {
 		$('#guiNarrative').removeClass('dim');
 		$('#guiNarrative').addClass('dim');

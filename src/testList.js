@@ -257,8 +257,18 @@ TestList.playFullGame = {
 		entity.health = entity.healthMax;
 		entity.pathDistLimit = map.xLen * map.yLen;
 		if( entity.inCombat() ) {
+			helper.inCombatCounter++;
+			if( helper.inCombatCounter > 100 ) {
+				// Maybe I'm fighting something that I can not kill? Probably should check for stillness here
+				// as well, but for now lets just kill it.
+				let victim = entity.area.entityList.find( e=>e.id==entity.lastAttackTargetId );
+				if( victim && !victim.isDead() ) {
+					victim.vanish = true;
+				}
+			}
 			return;
 		}
+		helper.inCombatCounter = 0;
 //		let enemyList = entity.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
 //		if( enemyList.count ) {
 //			return;
@@ -270,19 +280,19 @@ TestList.playFullGame = {
 			let thing = entity.testerThing;
 			// Is it a chest? Bump it.
 			if( thing.isSolarAltar && (!entity.deathReturn || entity.deathReturn.altarId!==thing.id) ) {
-				this.brainState.activity = "Arrived at altar. bumping.";
+				entity.brainState.activity = "Arrived at altar. bumping.";
 				let dir = entity.dirToPosNatural(thing.x,thing.y);
 				entity.command = Direction.toCommand(dir);
 				return true;
 			}
 			if( thing.isContainer && !thing.isRemovable && thing.inventory.length) {
-				this.brainState.activity = "Arrived at container. bumping.";
+				entity.brainState.activity = "Arrived at container. bumping.";
 				let dir = entity.dirToPosNatural(thing.x,thing.y);
 				entity.command = Direction.toCommand(dir);
 				return true;
 			}
 			if( thing.isStairsDown && thing.area.id == helper.player.area.id ) {
-				this.brainState.activity = "Arrived at stairs. descending.";
+				entity.brainState.activity = "Arrived at stairs. descending.";
 				entity.command = Command.ENTERGATE;
 				return true;
 			}
@@ -299,7 +309,7 @@ TestList.playFullGame = {
 				//debugger;
 				helper.visited[entity.testerThing.id] = true;
 				console.log('Skipping '+entity.testerThing.id+'.');
-				this.brainState.activity = "Stalled heading towards "+entity.testerThing.id+". Skipping.";
+				entity.brainState.activity = "Stalled heading towards "+entity.testerThing.id+". Skipping.";
 			}
 		}
 

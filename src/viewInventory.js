@@ -44,6 +44,24 @@ class ViewInventory extends ViewObserver {
 		}
 		this.div.hide();
 	}
+	message( msg, payload ) {
+		super.message(msg,payload);
+		if( msg == 'resize' ) {
+			Gui.layout( {
+				'#guiInventory': {
+					height: self => $(window).height() - self.offset().top
+				},
+				'#guiInventory .invBody': {
+					height: self => $(window).height() - self.offset().top
+				},
+				'#guiInventory .invBodyScroll': {
+					height: self => $(window).height() - self.offset().top
+				}
+			});
+			$('#guiInventory .invBodyScroll').scrollTop(this.scrollPos);
+		}
+	}
+
 	render() {
 
 		function sortOrder(a,b,sortDir,...fields) {
@@ -179,11 +197,15 @@ class ViewInventory extends ViewObserver {
 		}
 
 
-		let table = $( '<table class="inv"></table>' ).appendTo(this.div);
-		let sortIcon = '<img src="'+IMG_BASE+StickerList[this.sortAscending?'sortAscending':'sortDescending'].img+'">';
+		let invBody = $('<div class="invBody"></div>').appendTo(this.div);
 
-		let tHead = $('<thead><tr>'+colJoin(this.colFilter,colHead,colId=>self.sortColId==colId ? sortIcon : '')+'</tr></thead>' )
-			.appendTo(table)
+		let sortIcon = '<img src="'+IMG_BASE+StickerList[this.sortAscending?'sortAscending':'sortDescending'].img+'">';
+		let tHeadContent = (hide) => {
+			return '<thead'+(hide?' style="display:none;"':'')+'><tr>'+colJoin(this.colFilter,colHead,colId=>self.sortColId==colId ? sortIcon : '')+'</tr></thead>';
+		};
+		let tableFixed = $( '<table class="inv fixedHeader" style="z-index: 101;"></table>' ).appendTo(invBody);
+		let tHeadFixed = $(tHeadContent(false))
+			.appendTo(tableFixed)
 			.click( function(e) {
 				let parts = e.target.className.match( /inv(\S+)/ );
 				if( !parts ) {
@@ -196,10 +218,27 @@ class ViewInventory extends ViewObserver {
 					self.sortAscending = self.sortColId !== last ? sortDirectionDefault[next] : !self.sortAscending;
 					self.render();
 				}
-			})
-			.mouseover( function(e) {
-
 			});
+
+		let invBodyScroll = $('<div class="invBodyScroll"></div>')
+			.appendTo(invBody)
+			.scroll( function() {
+				self.scrollPos = $(this).scrollTop();
+			});
+
+		let table = $( '<table class="inv realHeader"></table>' ).appendTo(invBodyScroll);
+		let tHead = $(tHeadContent(true))
+			.appendTo(table);
+		setTimeout( () => {
+			let real = $('.realHeader thead tr td');
+			let fixed = $('.fixedHeader thead tr td');
+			for( let index=0 ; index < real.length ; ++index ) {
+				$(fixed[index]).width( $(real[index]).width() );
+			}
+			$('.realHeader thead').css( 'visibility', 'hidden' );
+		}, 1 );
+
+
 		let tBody = $('<tbody></tbody>').appendTo(table);
 		let lastTypeId = '';
 
@@ -255,6 +294,7 @@ class ViewInventory extends ViewObserver {
 		}
 		this.userSawInventory = true;
 		this.div.show();
+		setTimeout( () => guiMessage('resize'), 1 );
 	}
 }
 

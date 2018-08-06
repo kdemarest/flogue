@@ -1440,6 +1440,7 @@ const ItemTypeList = {
 
 	"part": {
 		symbol: 		'y',
+		matter: 		'stone',
 		isPart: 		1,
 		isTreasure:		1,
 		name:			'a part',

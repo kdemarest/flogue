@@ -118,7 +118,7 @@ ConfigList.ken = () => {
 
 //	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, 4x potion.eSenseXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
 //	MonsterTypeList.player.inventoryLoot.push('2x potion.eHealing, 4x potion, 2x gem, 2x spell, 1x potion.eSeeInvisible, 3x weapon, weapon.sling, 30x ammo.slingStone, weapon.bow, 40x ammo.arrow, spell.eFreeze');
-	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, weapon, weapon.bow, ammo.arrow';
+	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 5x weapon, weapon.bow, ammo.arrow';
 //	MonsterTypeList.player.experience = 100;
 //	MonsterTypeList.player.inventoryLoot.push('6x weapon, 50x ammo.arrow, 2x stuff.shovel, stuff.lantern, stuff.candleLamp, stuff.lamp, 2x stuff.solarOrbS, 2x stuff.solarOrbM, 2x stuff.solarOrbL, stuff.sunCrystal');
 

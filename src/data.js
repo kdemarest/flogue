@@ -314,7 +314,7 @@ let EffectTypeList = {
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.PANICKED, isHarm: 1, xDuration: 0.2, icon: 'gui/icons/eFear.png' },
 	eVulnerability: { isDeb: 1, level:  0, rarity: 1.00, op: 'add', isHarm: 1, stat: 'vuln', requires: (e,effect)=>e.isImmune && !e.isImmune(effect.value),
 					valuePick: () => pick(PickVuln), isHarm: 1, xDuration: 2.0, namePattern: 'vulnerability to {value}', icon: 'gui/icons/eVuln.png' },
-	eSlow: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'sub', isHarm: 1, stat: 'speed', value: 0.5, xDuration: 0.3, requires: e=>e.speed>0.5 },
+	eSlow: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'sub', isHarm: 1, stat: 'speed', value: 0.5, xDuration: 0.3, requires: e=>e.speed>0.5, icon: 'gui/icons/eSlow.png' },
 	eBlindness: 	{ isDeb: 1, level:  0, rarity: 0.30, op: 'set', isHarm: 1, stat: 'senseBlind', value: true, xDuration: 0.25, requires: e=>!e.senseBlind, icon: 'gui/icons/eBlind.png' },
 	eConfusion: 	{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.CONFUSED, xDuration: 0.3, icon: 'gui/icons/eAttitude.png' },
 	ePanic: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.PANICKED, xDuration: 1.0, icon: 'gui/icons/eFear.png' },

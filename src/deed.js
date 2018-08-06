@@ -596,7 +596,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	// If this is done from range, but not thrown (because item.giveTo() handles throwing Animation),
 	// show the item hurtling through the air.
 	let flyingIcon = effect.flyingIcon || effect.icon;
-	if( !effect.isSecondary && source && hasCoords(target) && (context == Command.CAST || context == Command.ATTACK) && flyingIcon !== false) {
+	if( !effect.isSecondary && source && hasCoords(target) && (context == Command.CAST || context == Command.ATTACK) && (flyingIcon !== false && flyingIcon !== undefined)) {
 		// Icon flies to the target
 		let dx = target.x-source.x;
 		let dy = target.y-source.y;
@@ -738,7 +738,8 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	//   - fire when target is in water
 	//   - freeze when target is in fire
 	if( effect.op == 'damage' && !target.isMap ) {
-		let tile = target.map.tileTypeGet(target.x,target.y);
+		// This must be made a position because tell() can't assess its position otherwise!
+		let tile = adhoc( target.map.tileTypeGet(target.x,target.y), target.map, target.x, target.y );
 		if( tile.isWater && effect.damageType == DamageType.BURN ) {
 			tell(mSubject,target,' can not be affected by '+effect.damageType+'s while in ',mObject,tile);
 			Anim.FloatUp(delayId,target,StickerList.ePoof.img);

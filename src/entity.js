@@ -65,7 +65,7 @@ class Entity {
 		console.assert( this.inventory.length >= 1 );	// 1 due to the natural melee weapon.
 
 		if( this.inventoryWear ) {
-			this.lootTake( this.inventoryWear, this.level, null, true, item => {
+			this.lootTake( this.inventoryWear, this.level, null, true, null, item => {
 				if( this.mayDon(item) ) {
 					this.don(item,item.slot);
 				}
@@ -272,7 +272,7 @@ class Entity {
 		});
 
 		if( this.oldMe ) {
-			let deed = this.findFirstDeed( deed => deed.op=='possess' );
+			let deed = this.deedFind( deed => deed.op=='possess' );
 			deed.end();
 		}
 
@@ -293,7 +293,7 @@ class Entity {
 				if( this.inventory ) {
 					itemList = itemList.concat(this.inventory);
 				}
-				itemList = itemList.concat( this.generateParts() );
+				itemList = itemList.concat( this.partsGenerate() );
 				let self = this;
 				itemList.forEach( item => {
 					if( (!item.isFake && !item.isSkill && !this.vanish) || item.isPlot ) {
@@ -1527,7 +1527,7 @@ class Entity {
 					}
 					if( theEnemy ) {
 						this.brainState.activity = 'Enraged at '+theEnemy.name+'.';
-						let c = this.thinkAttack(enemyList,personalEnemy);
+						let c = !wasSmell && !wasLEP ? this.thinkAttack(enemyList,personalEnemy) : null;
 						return c || this.thinkApproachTarget(enemyList.first);
 					}
 					return this.thinkWanderF();
@@ -2312,15 +2312,18 @@ class Entity {
 		item = item.giveTo(this,this.x,this.y);
 		return item;
 	}
-	inventoryTake(inventory, originatingEntity, quiet, onEach) {
+	inventoryTake(inventory, originatingEntity, quiet, onEachRaw, onEachGiven) {
 		let found = [];
 		let inventoryTemp = inventory.slice();	// because the inventory could chage out from under us!
 		Object.each( inventoryTemp, item => {
 			//if( !item.isTreasure && !item.isNatural ) debugger;
 			// BEWARE that giveTo() can aggregate, so deal with found and onEach FIRST.
 			found.push(mObject|mA|mList|mBold,item);
-			if( onEach ) { onEach(item); }
+			// WARNING: We have to give the item to the entity before calling onEach, because what if
+			// it needs to unbunch? That can only happen 
+			if( onEachRaw ) { onEachRaw(item); }
 			let possiblyAggregatedItem = item.giveTo( this, this.x, this.y);
+			if( onEachGiven ) { onEachGiven(possiblyAggregatedItem); }
 		});
 		if( !quiet && !this.inVoid ) {
 			let verb = originatingEntity && originatingEntity.mayHarvest ? 'harvest' : 'find'
@@ -2368,9 +2371,9 @@ class Entity {
 		return itemList;
 	}
 
-	lootTake( lootSpec, level, originatingEntity, quiet, onEach ) {
+	lootTake( lootSpec, level, originatingEntity, quiet, onEachRaw, onEachGiven ) {
 		let itemList = this.lootGenerate( lootSpec, level );
-		this.inventoryTake(itemList, originatingEntity, quiet, onEach);
+		this.inventoryTake(itemList, originatingEntity, quiet, onEachRaw, onEachGiven);
 		return itemList;
 	}
 

@@ -1,3 +1,5 @@
+
+
 body {
 	overflow-x: hidden;
 	overflow-y: hidden;
@@ -7,6 +9,7 @@ body {
 #guiMain {
 	display: none;
 	background-color: black;
+	white-space: nowrap;
 }
 
 #guiMain > div {
@@ -17,20 +20,18 @@ body {
 }
 
 #guiMain .col0 {
-	width: 832px;
+	width: calc( 100% - 504px );
 	height: 100%;
-	border: 4px solid red;
 }
 
 #guiMain .col1 {
 	width: 240px;
-	border: 1px solid blue;
 }
 
 #guiMain .col2 {
 	width: 240px;
-	border: 1px solid green;
 }
+	
 
 #guiMain .rowTop {
 	height: 44px;
@@ -329,7 +330,8 @@ body {
 	color: #d2d2d2;
 	font-size: 14px;
 	margin: 0px 0px;
-	overflow-y: hidden;
+    margin-top: 24px;
+    overflow-y: hidden;
 	overflow-x: hidden;
 }
 #guiFavorites .itemRecharge {
@@ -490,31 +492,11 @@ body {
 	position: absolute;
 	top:0;
 	left:0;
-	overflow-y: auto;
 }
 .guiInventory table {
 	font-family: 'Raleway', sans-serif;
 	font-size: 14px;
 	opacity: 0.8;
-}
-
-.guiInventory::-webkit-scrollbar {
-	width: 10px;
-}
-.guiInventory::-webkit-scrollbar-track {
-	box-shadow: inset 0 0 3px grey; 
-	border-radius: 5px;
-}
-.guiInventory::-webkit-scrollbar-thumb {
-	background: grey; 
-	border-radius: 5px;
-}
-.guiInventory::-webkit-scrollbar-thumb:hover {
-	background: #b3b3b3;
-}
-
-table .inv tbody tr td.invSpacer {
-	padding-top: 16px;
 }
 
 .invCategories img:hover {
@@ -543,102 +525,131 @@ table .inv tbody tr td.invSpacer {
 }
 
 
+.invBody {
+}
+
+.invBodyScroll {
+	overflow-y: auto;
+}
+
+
+.invBodyScroll::-webkit-scrollbar {
+	width: 10px;
+}
+.invBodyScroll::-webkit-scrollbar-track {
+	box-shadow: inset 0 0 3px grey; 
+	border-radius: 5px;
+}
+.invBodyScroll::-webkit-scrollbar-thumb {
+	background: grey; 
+	border-radius: 5px;
+}
+.invBodyScroll::-webkit-scrollbar-thumb:hover {
+	background: #b3b3b3;
+}
+
 .inv .newItem {
 	font-size: 10px;
 	color: gold;
 	font-style: italic;
 }
 
+
+.inv tbody tr td.invSpacer {
+	padding-top: 16px;
+}
+
+
 .inv .tooExpensive {
 	color: gray;
 }
 
-table .inv {
+.inv {
 	border-collapse: separate;
 	margin-left: 6px;
 }
-table .inv thead tr td {
+.inv thead tr td {
 	font-size: 18px;
 	font-weight: 400;
 	padding-bottom: 10px;
 	white-space: nowrap;
 }
-table .inv thead tr td:hover {
+.inv thead tr td:hover {
 	background-color: rgb(110,110,110,0.73);
 	cursor: pointer;
 }
-table .inv thead tr td img{
+.inv thead tr td img{
 	height: 18px;
 }
 
-table .inv thead tr td.invSlot {
+.inv thead tr td.invSlot {
 	width: 35px;
 }
-table .inv thead tr td.invKey {
+.inv thead tr td.invKey {
 	width: 24px;
 	padding-right: 0px;
 }
-table .inv thead tr td.invIcon {
+.inv thead tr td.invIcon {
 	width: 22px;
 }
-table .inv thead tr td.invDescription {
+.inv thead tr td.invDescription {
 	width: 256px;
 }
-table .inv thead tr td.invArmor {
+.inv thead tr td.invArmor {
 	qwidth: 70px;
 	text-align: center;
 }
-table .inv thead tr td.invDamage {
+.inv thead tr td.invDamage {
 	qwidth: 98px;
 	text-align: center;
 	padding-left: 6px;
 }
-table .inv thead tr td.invBonus {
+.inv thead tr td.invBonus {
 	qwidth: 64px;
 	padding-left: 6px;
 }
-table .inv thead tr td.invCharges {
+.inv thead tr td.invCharges {
 	qwidth: 54px;
 	padding-left: 6px;
 }
-table .inv thead tr td.invPrice {
+.inv thead tr td.invPrice {
 	padding-left: 6px;
 }
 
-table .inv tbody tr td:nth-child(1) img {
+.inv tbody tr td:nth-child(1) img {
 	margin-left: 6px;
 	width: 16px;
 }
-table .inv tbody tr td:nth-child(2) {
+.inv tbody tr td:nth-child(2) {
 	padding-right: 6px;
 	font-size: 20px;
 }
-table .inv tbody tr td:nth-child(3) {
+.inv tbody tr td:nth-child(3) {
 	padding-right: 4px;
 	font-size: 18px;
 }
-table .inv tbody tr td:nth-child(6) {
+.inv tbody tr td:nth-child(6) {
 	padding-right: 3px;
 }
 
 
-table .inv tbody tr {
+.inv tbody tr {
 	border-radius: 6px;
 	cursor: pointer;
 }
-table .inv tbody tr:hover {
+.inv tbody tr:hover {
 	background-color: rgb(110,110,110,0.73);
 }
-table .inv tbody tr img {
+.inv tbody tr img {
 	width: 16px;
 }
 
-table .inv tr:first-child td:first-child { border-top-left-radius: 4px; }
-table .inv tr:first-child td:last-child { border-top-right-radius: 4px; }
-table .inv tr:last-child td:first-child { border-bottom-left-radius: 4px; }
-table .inv tr:last-child td:last-child { border-bottom-right-radius: 4px; }
+.inv tr:first-child td:first-child { border-top-left-radius: 4px; }
+.inv tr:first-child td:last-child { border-top-right-radius: 4px; }
+.inv tr:last-child td:first-child { border-bottom-left-radius: 4px; }
+.inv tr:last-child td:last-child { border-bottom-right-radius: 4px; }
 
-table .inv tbody tr td {
+.inv tbody tr td {
 	font-size: 18px;
 	vertical-align: middle;
 	text-align: left;
@@ -647,10 +658,10 @@ table .inv tbody tr td {
 	white-space: nowrap;
 	padding-bottom: 1px;
 }
-table .inv tbody tr .right {
+.inv tbody tr .right {
 	text-align: right;
 }
-table .inv tbody tr .ctr {
+.inv tbody tr .ctr {
 	text-align: center;
 }
 

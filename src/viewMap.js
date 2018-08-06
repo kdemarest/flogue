@@ -538,6 +538,9 @@ class ViewMap extends ViewObserver {
 	}
 
 	resizeAllSprites(oldDim) {
+		if( oldDim == Tile.DIM ) {
+			return;
+		}
 		let area = this.observer.area;
 		area.entityList.forEach( entity => {
 			spriteDeathCallback(entity.spriteList);
@@ -630,7 +633,18 @@ class ViewMap extends ViewObserver {
 			this.render();
 		}
 		if( msg == 'resize' ) {
-			this.setDimensions(payload.dim,payload.maxVis||MapVis);
+			Gui.layout({
+				'#mapContainer': {
+					height: self => $(window).height() - self.offset().top
+				}
+			});
+
+			let w = $('#mapContainer').width();
+			let h = $('#mapContainer').height();
+			let smallestDim = Math.min(w,h);
+			let mapTileDim = MapVis*2+1;
+			let newDim = Math.floor(smallestDim / mapTileDim);
+			this.setDimensions(newDim,MapVis);
 			this.render();
 		}
 		if( msg == 'overlayRemove' ) {

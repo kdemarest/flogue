@@ -76,6 +76,46 @@ let PartList = Fab.add( '', {
 		matter: 'metal',
 		makes: ['eShock'],
 	},
+	gear:	{
+		matter: 'metal',
+		makes: [],
+	},
+	strut:	{
+		matter: 'metal',
+		makes: [],
+	},
+	cam:	{
+		matter: 'metal',
+		makes: [],
+	},
+	oil:	{
+		matter: 'metal',
+		makes: [],
+	},
+	leaf:	{
+		matter: 'plant',
+		makes: [],
+	},
+	sap:	{
+		matter: 'plant',
+		makes: [],
+	},
+	bark:	{
+		matter: 'plant',
+		makes: [],
+	},
+	flower:	{
+		matter: 'plant',
+		makes: [],
+	},
+	stem:	{
+		matter: 'fungus',
+		makes: [],
+	},
+	gill:	{
+		matter: 'fungus',
+		makes: [],
+	},
 	slime:		{
 		matter: 'liquid',
 		makes: ['eInvisibility', 'eAcid'],
@@ -1000,7 +1040,9 @@ const MonsterTypeList = {
 		reach: 5,
 		glow: 2,
 		resist: DamageType.BURN,
-		isPlanar: false,
+		isInsect: true,
+		isFiddler: true,
+		isRedFiddler: true,
 		loot: '2x 30% gem',
 		travelMode: "walk",
 		vuln: 'glass'
@@ -1358,6 +1400,7 @@ function monsterPreProcess(typeId,m) {
 	m.brainAbility = String.combine(',',m.brainAbility,BrainAbility[brain]);
 	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[body]);
 	m.bodySlots    = Object.assign( m.bodySlots || {}, BodySlots[body] );
+	m.brainState   = {};
 
 	let blood = {
 		isAnimal: 		'bloodRed',

@@ -212,18 +212,6 @@ function main() {
 		}, 20);
 	}.bind(User);
 
-	function layout() {
-		let wWin = $(window).width();
-		let hWin = $(window).height();
-
-		let w = $('#mapContainer').width();
-		let h = $('#mapContainer').height();
-		let smallestDim = Math.min(w,h);
-		let mapTileDim = MapVis*2+1;
-		let newDim = Math.floor(smallestDim / mapTileDim);
-		guiMessage('resize',{ dim: newDim });
-	}
-
 	// This should be done before anything else so that even the config 
 	let config = new Config('ken',{
 		startingDepth: 0
@@ -240,12 +228,13 @@ function main() {
 		config.playerTypeId,
 		config.playerMarkerId,
 		(user) => {
+			guiMessage( 'observer', user.entity );
+			$('#guiLoading').hide();
+			$( window ).resize( () => { guiMessage('resize'); });
+			$('#guiMain').show();
 			user.tickWorld(false);
 			tell([user.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
-			$('#guiLoading').hide();
-			$( window ).resize(layout);
-			layout();
-			$('#guiMain').show();
+			guiMessage('resize');
 			$(document).keydown( (e) => user.onEvent(e) );
 		}
 	);
@@ -263,9 +252,9 @@ function main() {
 			<div id="guiNarrative" class="rowTop"></div>
 			<div id="mapContainer">
 				<div id="guiMap"></div>
-				<div id="guiInventory" class="guiInventory"></div>
 				<pre id="guiSign" class="guiSign"></pre>
 				<pre id="guiTalk" class="guiTalk"></pre>
+				<div id="guiInventory" class="guiInventory"></div>
 				<div id="guiMerchant" class="guiInventory"></div>
 				<div id="guiCraft" class="guiInventory"></div>
 			</div>
