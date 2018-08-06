@@ -139,7 +139,7 @@ ConfigList.ken = () => {
 
 	return {
 		startingDepth: 1,
-		//themeId: 'kenDwarfTown',
+		themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: { level: 20 }
 	}
