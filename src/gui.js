@@ -93,7 +93,7 @@ Gui.layout = function( layoutList ) {
 			if( me.length ) {
 				let value = fn($(divId));
 				me[key](value);
-				console.log( 'Set '+divId+'.'+key+' = '+value );
+				//console.log( 'Set '+divId+'.'+key+' = '+value );
 			}
 		});
 	});
