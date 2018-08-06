@@ -115,12 +115,6 @@ class ViewInventory extends ViewObserver {
 			return '<td'+c+'>'+text+'</td>';
 		}
 
-		function qq(array) {
-			let s = [];
-			array.forEach( a => s.push(a.name) );
-			return s;
-		}
-
 		let observer = this.observer;
 
 		if( !this.visibleFn || !this.visibleFn() ) {
@@ -195,7 +189,6 @@ class ViewInventory extends ViewObserver {
 			charges: false,
 			price: false
 		}
-
 
 		let invBody = $('<div class="invBody"></div>').appendTo(this.div);
 

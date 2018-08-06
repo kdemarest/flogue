@@ -1,5 +1,51 @@
 Module.add('entity',function() {
 
+
+// NOTE: This collides with monsters first, then items, then tiles. It could be a LOT
+// more efficient if it checked the tile first, but that probably isn't best game-wise.
+function GlobalFindFirstCollider(me,travelMode,map,x,y,ignoreEntity) {
+
+	function doesCollide(entity) {
+		if( entity[mayTravel] ) {
+			return false;
+		}
+		if( travelMode=='walk' && entity.mayJump && me.jump < me.jumpMax && (me.jump || !curTile.mayJump)) {
+			return false;
+		}
+		return true;
+	}
+
+	let curTile = map.tileTypeGet(x,y);
+	console.assert(curTile);
+
+	let mayTravel = 'may'+String.capitalize(travelMode || "walk");
+
+	// Am I colliding with another entity?
+	let f = new Finder( map.findEntityArrayAt(x,y).filter( e=>!e.isDead() && e.id!==me.id && doesCollide(e) ), me, false );	
+	if( ignoreEntity ) {
+		f.exclude(ignoreEntity);
+	}
+	if( f.count ) {
+		return f.first;
+	}
+
+	// Am I colliding with an item?
+	// Also, if I am colliding with a door, that is considered a collission but I will
+	// bump the door automatically.
+	let g = map.findItemAt(x,y).filter( doesCollide );
+	if( g.count ) {
+		return g.first;
+	}
+
+	// Am I colliding with a tile?
+	let tile = map.tileTypeGet(x,y);
+	if( tile && doesCollide(tile) ) {
+		return tile;
+	}
+
+	return null;
+}
+
 //
 // ENTITY (monsters, players etc)
 //
@@ -15,7 +61,7 @@ class Entity {
 
 		// Use the average!
 		let level = 	isPlayer ? depth : Math.round( (depth+monsterType.level) / 2 );
-		let inits =    { inVoid: true, inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [], tileTypeLast: TileTypeList.floor };
+		let inits =    { inVoid: true, inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [] };
 		let values =   { id: GetUniqueEntityId(monsterType.typeId,level) };
 
 
@@ -147,15 +193,14 @@ class Entity {
 		}
 
 		let hadNoArea = !this.area;
-		this.setPosition(x,y,area);
-		let c = !area.map.inBounds(x,y) ? true : this.findFirstCollider(this.travelMode,x,y,this);
+		let c = !area.map.inBounds(x,y) ? true : GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
 		if( c ) {
-			[x,y] = this.map.spiralFind( this.x, this.y, (x,y,tile) => {
-				return tile && tile.mayWalk && !tile.isProblem && !this.findFirstCollider(this.travelMode,x,y,this);
+			[x,y] = area.map.spiralFind( x, y, (x,y,tile) => {
+				return tile && tile.mayWalk && !tile.isProblem && !GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
 			});
 			console.assert( x!==false );
-			this.setPosition(x,y);
 		}
+		this.setPosition(x,y,area);
 		if( Gab && hadNoArea ) {
 			Gab.entityPostProcess(this);
 		}
@@ -175,6 +220,10 @@ class Entity {
 		}
 	}
 
+	findFirstCollider(travelMode,x,y,ignoreEntity) {
+		return GlobalFindFirstCollider(this,travelMode,this.map,x,y,ignoreEntity);
+	}
+
 	findAliveOthersNearby(visDist=MaxVis) {
 		let entityList = [];
 		this.map.traverseNear( this.x, this.y, visDist, (x,y) => {
@@ -186,27 +235,9 @@ class Entity {
 			});
 		});
 		return new Finder( entityList, this, false );
-/*
-		let list = [];
-		for( let e of entityList ) {
-			if( !e.isDead() && this.nearTarget(e,MaxVis) && e.id!=this.id ) {
-				list.push(e);
-			}
-		}
-		return new Finder(list,this,false);
-*/
 	}
 	findAliveOthersAt(x,y) {
 		return new Finder( this.map.findEntityArrayAt(x,y).filter( e=>!e.isDead() && e.id!==this.id ), this, false );
-/*
-		let entityList = this.entityList;
-		for( let e of entityList ) {
-			if( !e.isDead() && e.id!=this.id && e.x==x && e.y==y ) {
-				return new Finder([e],this,false);
-			}
-		}
-		return new Finder([],this,false);
-*/
 	}
 	findAliveOthersOrSelfAt(x,y) {
 		let f = this.findAliveOthersAt(x,y);
@@ -214,15 +245,6 @@ class Entity {
 			f.append( this );
 		}
 		return f;
-/*
-		let entityList = this.entityList;
-		for( let e of entityList ) {
-			if( !e.isDead() && e.x==x && e.y==y ) {
-				return new Finder([e],this,false);
-			}
-		}
-		return new Finder([],this,false);
-*/
 	}
 	findAliveOthers(entityList = this.entityList) {
 		return new Finder(entityList,this).excludeMe().isAlive();
@@ -780,52 +802,6 @@ class Entity {
 		return [dir,_bestAge];
 	}
 
-	// NOTE: This collides with monsters first, then items, then tiles. It could be a LOT
-	// more efficient if it checked the tile first, but that probably isn't best game-wise.
-	findFirstCollider(travelMode,x,y,ignoreEntity) {
-
-		function collide(entity) {
-			if( entity[mayTravel] ) {
-				return false;
-			}
-			if( travelMode=='walk' && entity.mayJump && self.jump < self.jumpMax && (self.jump || !curTile.mayJump)) {
-				return false;
-			}
-			return true;
-		}
-
-		let self = this;
-
-		let curTile = this.map.tileTypeGet(x,y);
-		console.assert(curTile);
-
-		let mayTravel = 'may'+String.capitalize(travelMode || "walk");
-
-		// Am I colliding with another entity?
-		let f = this.findAliveOthersAt(x,y).filter( collide );
-		if( ignoreEntity ) {
-			f.exclude(ignoreEntity);
-		}
-		if( f.count ) {
-			return f.first;
-		}
-
-		// Am I colliding with an item?
-		// Also, if I am colliding with a door, that is considered a collission but I will
-		// bump the door automatically.
-		let g = this.map.findItemAt(x,y).filter( collide );
-		if( g.count ) {
-			return g.first;
-		}
-
-		// Am I colliding with a tile?
-		let tile = this.map.tileTypeGet(x,y);
-		if( tile && collide(tile) ) {
-			return tile;
-		}
-
-		return null;
-	}
 	mayOccupy(travelMode,x,y,ignoreEntity) {
 		let type = this.findFirstCollider(travelMode,x,y,ignoreEntity);
 		return type===null;
@@ -2150,7 +2126,7 @@ class Entity {
 		}
 	}
 
-	takeTeleport(source,item) {
+	takeTeleport() {
 		let xOld = this.x;
 		let yOld = this.y;
 
@@ -2916,9 +2892,7 @@ class Entity {
 			return;
 		}
 
-		if( !this.inVoid ) {
-			this.tileTypeLast = this.map.tileTypeGet(this.x,this.y);
-			console.assert( this.tileTypeLast );
+		if( !this.inVoid && this.map.inBounds(this.x,this.y) ) {
 			console.assert( this.x !== undefined );
 			this.map.scentLeave(this.x,this.y,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
 			this.map._entityRemove(this);
@@ -3134,7 +3108,7 @@ class Entity {
 		}
 
 		if( allyToSwap ) {
-			console.log( this.name+" ally swap with "+allyToSwap.name );
+			//console.log( this.name+" ally swap with "+allyToSwap.name );
 			allyToSwap.setPosition(this.x,this.y);
 			result.allyToSwap = allyToSwap;
 		}

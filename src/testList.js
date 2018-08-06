@@ -263,6 +263,7 @@ TestList.playFullGame = {
 				// as well, but for now lets just kill it.
 				let victim = entity.area.entityList.find( e=>e.id==entity.lastAttackTargetId );
 				if( victim && !victim.isDead() ) {
+					console.log('vanishing a thing I cannot kill.');
 					victim.vanish = true;
 				}
 			}
@@ -274,6 +275,16 @@ TestList.playFullGame = {
 //			return;
 //		}
 		if( entity.destination ) {
+			if( !helper.lastDestId || helper.lastDestId !== entity.destination.id ) {
+				helper.lastDestId = entity.destination.id;
+				helper.lastDestCounter = 0;
+			}
+			helper.lastDestCounter++;
+			if( helper.lastDestCounter > 100 ) {
+				console.log('teleporting because stuck heading towards single destination.');
+				entity.takeTeleport();
+				helper.lastDestCounter = 0;
+			}
 			return;
 		}
 		if( helper.arrived ) {
