@@ -99,6 +99,32 @@ Gui.layout = function( layoutList ) {
 	});
 }
 
+Gui.keyHandler = new class {
+	constructor() {
+		this.handlerList = [];
+		$(document).keydown( this.trigger.bind(this) );
+	}
+	trigger(e) {
+		for( let i=0 ; i<this.handlerList.length ; ++i ) {
+			let propagate = this.handlerList[i].handlerFn(e);
+			if( propagate === false ) {
+				break;
+			}
+		}
+		e.stopPropagation();
+	}
+	add( id, handlerFn ) {
+		console.assert(id);
+		console.assert(handlerFn);
+		this.handlerList.unshift({
+			id: id,
+			handlerFn: handlerFn
+		});
+	}
+	remove( id ) {
+		this.handlerList = this.handlerList.filter( handler => handler.id !== id );
+	}
+}
 
 return {
 	Gui: Gui

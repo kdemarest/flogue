@@ -132,14 +132,13 @@ class ViewInventory extends ViewObserver {
 
 		this.inventory = new Finder(this.inventoryRaw.all);
 		let self = this;
-		$(this.div).empty();
 
-		let cat = $('<div class="invCategories"></div>').appendTo(this.div);
+		let cat = $('<div class="invCategories"></div>');
 		if( this.allowFilter ) {
 			$(document).off( '.ItemFilter' );
 			ItemFilterOrder.map( filterId => {
 				let typeIcon =  $(icon( filterId=='' ? 'all.png' : ItemTypeList[filterId].icon ));
-				typeIcon.appendTo(this.div)
+				typeIcon.appendTo(cat)
 				if( self.allowFilter && self.filterId==filterId ) {
 					typeIcon.addClass('iconLit');
 				}
@@ -152,8 +151,9 @@ class ViewInventory extends ViewObserver {
 			});
 		}
 
+		let headerDiv = $('<div></div>');
 		if( this.headerComponent ) {
-			this.headerComponent(this.div);
+			this.headerComponent(headerDiv);
 		}
 
 		let colHead = {
@@ -190,7 +190,7 @@ class ViewInventory extends ViewObserver {
 			price: false
 		}
 
-		let invBody = $('<div class="invBody"></div>').appendTo(this.div);
+		let invBody = $('<div class="invBody"></div>');
 
 		let sortIcon = '<img src="'+IMG_BASE+StickerList[this.sortAscending?'sortAscending':'sortDescending'].img+'">';
 		let tHeadContent = (hide) => {
@@ -231,6 +231,10 @@ class ViewInventory extends ViewObserver {
 			}
 			real.empty();
 			//$('.realHeader thead').css( 'visibility', 'hidden' ); //'visibility', 'hidden' );
+			$(this.div).empty();
+			if( headerDiv ) $(headerDiv).appendTo(this.div);
+			if( cat ) $(cat).appendTo(this.div);
+			$(invBody).appendTo(this.div);
 		}, 1 );
 
 

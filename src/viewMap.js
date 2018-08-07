@@ -533,7 +533,8 @@ class ViewMap extends ViewObserver {
 		$(this.divId+' canvas').click( function(e) {
 			var e = $.Event("keydown");
 			e.key = 'Enter';
-			$(document).trigger(e);
+			Gui.keyHandler.trigger(e);
+//			$(document).trigger(e);
 		});
 	}
 

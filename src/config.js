@@ -122,7 +122,7 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.inventoryLoot.push('6x weapon, 50x ammo.arrow, 2x stuff.shovel, stuff.lantern, stuff.candleLamp, stuff.lamp, 2x stuff.solarOrbS, 2x stuff.solarOrbM, 2x stuff.solarOrbL, stuff.sunCrystal');
 
 
-//	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 5x weapon, weapon.bow, ammo.arrow';
+	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 5x weapon, weapon.bow, ammo.arrow';
 
 
 	Object.assign( Rules, {
@@ -131,7 +131,7 @@ ConfigList.ken = () => {
 	});
 
 	MonsterTypeList.player.legacyId = 'blaster';
-//	MonsterTypeList.player.inventoryLoot.push('5x spell, 10x potion, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
+	MonsterTypeList.player.inventoryLoot.push('5x spell, 10x potion, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
 	MonsterTypeList.player.inventoryLoot.push('spell.eTeleport, spell.eBlink');
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;

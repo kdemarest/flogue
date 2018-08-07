@@ -235,7 +235,7 @@ function main() {
 			user.tickWorld(false);
 			tell([user.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
 			guiMessage('resize');
-			$(document).keydown( (e) => user.onEvent(e) );
+			Gui.keyHandler.add( 'main', user.onEvent.bind(user) );
 		}
 	);
 }

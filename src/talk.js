@@ -179,7 +179,7 @@ class ViewTalk extends ViewObserver {
 		super();
 		this.divId = '#guiTalk';
 		this.talk = new Talk( p.me, p.you );
-		$(document).on( 'keydown.ViewTalk', null, this.onKeyDown.bind(this) );
+		Gui.keyHandler('viewTalk', this.onKeyDown.bind(this) );
 		this.isVisible = false;
 		this.onHide = onHide;
 		this.show();
@@ -187,9 +187,9 @@ class ViewTalk extends ViewObserver {
 	onKeyDown(e) {
 		if( e.key == 'Escape' ) {
 			this.hide();
-			e.stopPropagation();
-			return;
+			return false;
 		}
+		return false;
 	}
 	show() {
 		this.isVisible = true;

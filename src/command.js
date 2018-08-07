@@ -368,6 +368,7 @@ class UserCommandHandler {
 						return cmd.cancel();
 					}
 					cmd.commandItem = this.viewInventory.getItemByKey(event.key);
+					event.key = null;
 				}
 			}
 		}

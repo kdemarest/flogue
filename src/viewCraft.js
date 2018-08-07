@@ -130,7 +130,7 @@ class ViewCraft extends ViewInventory {
 				this[id]=fn.bind(this);
 			}
 		});
-		$(document).on( 'keydown.ViewCraft', null, this.onKeyDown.bind(this) );
+		Gui.keyHandler.add( 'ViewCraft', this.onKeyDown.bind(this) );
 
 		guiMessage('clearSign');
 
@@ -139,19 +139,20 @@ class ViewCraft extends ViewInventory {
 	onKeyDown(e) {
 		if( e.key == 'Escape' ) {
 			this.hide();
-			e.stopPropagation();
-			return;
+			return false;
 		}
 		let item = this.getItemByKey(e.key);
 		if( item ) {
 			e.commandItem = item;
 			this.onItemChoose(e);
 		}
+		return false;
 	}
 	hide() {
 		$('#guiNarrative').removeClass('dim');
 		this.div.hide();
 		$(document).off( '.ViewCraft' );
+		Gui.keyHandler.remove( 'ViewCraft' );
 		this.onClose();
 		delete this;
 	}

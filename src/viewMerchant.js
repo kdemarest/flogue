@@ -9,20 +9,17 @@ class ViewMerchant extends ViewInventory {
 		this.allowFilter = p.allowFilter || p.entity.allowFilter;
 		this.onClose = p.onClose;
 		this.mode = null;
-		$(document).on( 'keydown.ViewMerchant', null, this.onKeyDown.bind(this) );
+		Gui.keyHandler.add( 'ViewMerchant', this.onKeyDown.bind(this) );
 
 		guiMessage('clearSign');
 	}
 	onKeyDown(e) {
 		if( e.key == 'Escape' ) {
 			this.hide();
-			e.stopPropagation();
-			return;
+			return false;
 		}
 		if( e.key == 'Tab' ) {
 			this.setMode('toggle');
-			e.stopPropagation();
-			e.preventDefault();
 			return false;
 		}
 		let item = this.getItemByKey(e.key);
@@ -30,6 +27,7 @@ class ViewMerchant extends ViewInventory {
 			e.commandItem = item;
 			this.onItemChoose(e);
 		}
+		return false;
 	}
 	setMode(mode) {
 		if( mode == 'toggle' ) {
@@ -47,6 +45,7 @@ class ViewMerchant extends ViewInventory {
 		$('#guiNarrative').removeClass('dim');
 		this.div.hide();
 		$(document).off( '.ViewMerchant' );
+		Gui.keyHandler.remove( 'ViewMerchant' );
 		this.onClose();
 		delete this;
 	}

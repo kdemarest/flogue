@@ -165,7 +165,7 @@ class ViewFavorites extends ViewObserver {
 			this.favoriteCandidate = payload;
 			if( payload ) {
 				this.user.suppressFavorites = true;
-				$(document).on( 'keydown.ViewFavoritesKeyCapture', null, (e) => {
+				Gui.keyHandler.add( 'ViewFavoritesKeyCapture', (e) => {
 					if( e.key >= '0' && e.key <= '9' ) {
 						this.setFavorite(e)
 						e.stopPropagation();
@@ -173,7 +173,7 @@ class ViewFavorites extends ViewObserver {
 				});
 			}
 			else {
-				$(document).off( '.ViewFavoritesKeyCapture' );
+				Gui.keyHandler.remove( 'ViewFavoritesKeyCapture' );
 				this.user.suppressFavorites = false;
 			}
 		}
@@ -188,7 +188,6 @@ class ViewFavorites extends ViewObserver {
 	render() {
 		let observer = this.observer;
 		$(this.divId).empty();
-		$(document).off( '.ViewFavorites' );
 
 		let keyList = '1234567890';
 		for( let i=0 ; i<keyList.length ; ++i ) {
@@ -264,6 +263,7 @@ class ViewFull {
 			self.isFull = !self.isFull;
 			$(myDiv).attr("src",self.image[self.isFull?1:0]);
 		});
+		// Super special-case for Cmd-Enter, which enters and exits full screen.
 		$(document).keydown( function(e) {
 			if( e.key == 'Enter' && (e.metaKey || e.altKey) ) {
 				$(myDiv).trigger('click');
