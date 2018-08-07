@@ -341,7 +341,7 @@ class Anim {
 		if( this.dead ) return;
 		console.assert( this.duration !== undefined );
 		console.assert( typeof this.duration !== 'number' || !isNaN(this.duration) );
-		sprite.baseScale = sprite.baseScale || Tile.DIM/sprite.width;
+		sprite.baseScale = sprite.baseScale || sprite.width/Tile.DIM;
 		sprite.rx = sprite.rx || 0;
 		sprite.ry = sprite.ry || 0;
 		sprite.rxTarget = this.rxTarget || 0;

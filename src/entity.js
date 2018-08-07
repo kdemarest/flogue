@@ -2126,18 +2126,23 @@ class Entity {
 		}
 	}
 
-	takeTeleport() {
+	takeTeleport(landing) {
 		let xOld = this.x;
 		let yOld = this.y;
 
-		let safeSpot = pVerySafe(this.map);
-		let pos = this.map.pickPosBy(1,1,1,1,safeSpot);
-		if( pos !== false ) {
-			this.moveTo(pos[0],pos[1]);
+		if( !landing ) {
+			let safeSpot = pVerySafe(this.map);
+			let pos = this.map.pickPosBy(1,1,1,1,safeSpot);
+			if( pos !== false ) {
+				landing = { x: pos[0], y: pos[1] };
+			}
+		}
+		if( landing ) {
+			this.moveTo(landing.x,landing.y);
 		}
 		return {
-			status: pos !== false ? 'teleported' : 'noteleport',
-			success: pos !== false,
+			status: landing ? 'teleported' : 'noteleport',
+			success: !!landing,
 			xOld: xOld,
 			yOld: yOld,
 			x: this.x,
@@ -2217,6 +2222,16 @@ class Entity {
 
 	isMyHusk(entity) {
 		return this.oldMe && this.oldMe.id == entity.id;
+	}
+
+	getRange(item) {
+		let rangeId = item.typeId+'Range';
+		return this[rangeId] || item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE;
+	}
+
+	getRange2(item) {
+		let rangeId = item.typeId+'Range2';
+		return this[rangeId] || item.range2 || (item.effect ? item.effect.range2 : false) || Rules.RANGED_WEAPON_DEFAULT_RANGE;
 	}
 
 	calcDefaultWeapon() {
@@ -3515,9 +3530,11 @@ class Entity {
 		this.commandLast = this.command;
 		this.commandItemLast = this.commandItem;
 		this.commandTargetLast = this.commandTarget;
+		this.commandTarget2Last = this.commandTarget2;
 		this.command = Command.NONE;
 		this.commandItem = null;
 		this.commandTarget = null;
+		this.commandTarget2 = null;
 	}
 }
 

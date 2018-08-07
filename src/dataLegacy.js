@@ -472,16 +472,42 @@ LegacyList.ninja = compose( 'ninja', [
 //
 
 LegacyList.blaster = compose( 'blaster', [
-	range( [1], (level,index) => ({
-		name: 'Craft Explosive',
+	range( [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19], (level,index) => ({
+		name: 'Craft Explosives '+Number.roman(level),
+		effect: { op: 'set', stat: 'skillOrdner', value: level, duration: true },
 		skill: {
 			craftId: 'ordner',
 			passesTime: false,
-			//effect: { op: 'command', value: Command.CRAFT, duration: 0 }
 		},
-		description: 'Create or enhance exploding ordnance.'
+		description: 'Gain skill level '+level+' creating ordnance.'
 	}) ),
-
+	range( [2,8,14], (level,index) => ({
+		name: 'Blast '+Number.roman(index+1),
+		effect: { op: 'set', stat: 'skillOrdnerBlast', value: [EffectShape.BLAST3,EffectShape.BLAST4,EffectShape.BLAST5][index] },
+		description: 'Craft potions to blast in a radius of '+(3+index)
+	}) ),
+	range( [3,9,15], (level,index) => ({
+		name: 'Build mines '+Number.roman(index+1),
+		effect: { op: 'set', stat: 'skillOrdnerMine', value: [EffectShape.SINGLE,EffectShape.BLAST2,EffectShape.BLAST3][index] },
+		description: 'Convert a potion into a mine that explodes in radius '+(index+1)+'.'
+	}) ),
+	range( [4,7,11], (level,index) => ({
+		name: 'Far toss '+Number.roman(index+1),
+		effect: { op: 'set', stat: 'potionRange', value: 6+index },
+		description: 'Throw potions '+(index+1)+' tiles farther.'
+	}) ),
+/*	
+	range( [5,10,16], (level,index) => ({
+		name: 'Magician Blast '+Number.roman(index+1),
+		skill: {
+			craftId: 'ordner',
+			passesTime: false,
+		},
+allow the use to select a point to blink to...
+		effect: { op: 'set', stat: 'skillOrdnerMine', value: [EffectShape.BLAST2,EffectShape.BLAST3,EffectShape.BLAST4][index] },
+		description: 'Smash the potion at your feet and blink away, affecting all within '+(2+index)+' tiles.'
+	}) ),
+*/
 ]);
 LegacyList.assassin = [
 ];

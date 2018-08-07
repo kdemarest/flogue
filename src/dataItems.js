@@ -75,7 +75,7 @@ const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eDarkVision','eCure
 	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic','eBravery',
 	'eRegeneration','eWater','eBurn','ePoison','eFreeze','eAcid'].includes(k) );
 const SpellEffects = Object.filter(EffectTypeList, (e,k)=>[
-	'ePossess','eStun','eTeleport','eStartle','eHesitate','eBlindness','eLight','eSenseXray','eSenseLiving','eMentalFence',
+	'ePossess','eStun','eBlink','eTeleport','eStartle','eHesitate','eBlindness','eLight','eSenseXray','eSenseLiving','eMentalFence',
 	'eSenseTreasure','eSlow','eHealing','ePoison','eWater','eBurn','eFreeze','eShock','eSmite','eSmite3','eRot','eLeech','eRage','ePanic','eConfusion','eShove','eInvisibility'].includes(k) );
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSenseSmell','eOdorless','eRegeneration','eResistance','eSenseTreasure','eMobility','eSeeInvisible'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eBurn','eFreeze','eShock','eLeech','eBlindness','eSlow','ePanic','eConfusion','eShove','eSmite'].includes(k) );

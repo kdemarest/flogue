@@ -13,7 +13,7 @@ class ViewRange extends ViewObserver {
 		this.xOfs = 0;
 		this.yOfs = 0;
 		guiMessage('overlayRemove',{groupId: 'guiCrosshair'});
-		this.isShotClear = false;
+		this.isShotClear = true;
 	}
 	move(xAdd,yAdd) {
 		let x = this.xOfs + xAdd;
@@ -39,7 +39,7 @@ class ViewRange extends ViewObserver {
 			}
 		}
 	}
-	prime(rangeLimit,cmd,visibleFn) {
+	primeRange(rangeLimit,cmd,visibleFn) {
 		let entity = this.observer;
 		this.visibleFn = visibleFn;
 		this.rangeLimit = rangeLimit;
@@ -83,7 +83,13 @@ class ViewRange extends ViewObserver {
 			return map.tileTypeGet(x,y).mayFly;
 		}
 		function add(x,y,ok) {
-			guiMessage('overlayAdd',{ groupId: 'guiCrosshair', x:x, y:y, area:area, img:StickerList[ok?'crosshairYes':'crosshairNo'].img });
+			guiMessage('overlayAdd',{
+				groupId: 'guiCrosshair',
+				x:x,
+				y:y,
+				area:area,
+				img:StickerList[ok?'crosshairYes':'crosshairNo'].img
+			});
 			self.isShotClear = self.isShotClear && ok;
 		}
 		shootRange(sx,sy,tx,ty,test,add);

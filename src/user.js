@@ -76,7 +76,8 @@ class HumanUser {
 				let cmd = {
 					command: favorite.command,
 					commandItem: !favorite.itemId ? null : this.entity.inventory.find( item=>item.id==favorite.itemId ),
-					commandTarget: null
+					commandTarget: null,
+					commandTarget2: null
 				};
 				return cmd;
 			}

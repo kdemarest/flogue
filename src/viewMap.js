@@ -608,7 +608,6 @@ class ViewMap extends ViewObserver {
 	worldOverlayAdd(groupId,x,y,area,img) {
 		console.assert( x!==undefined && y!==undefined && area !==undefined && img !==undefined );
 		console.assert( area.isArea );
-//			console.log(groupId,x,y,img);
 		new Anim( {}, {
 			groupId: 	groupId,
 			x: 			x,

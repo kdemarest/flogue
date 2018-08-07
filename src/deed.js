@@ -956,7 +956,9 @@ DeedManager.addHandler(DeedOp.SHOVE,function() {
 });
 DeedManager.addHandler(DeedOp.TELEPORT,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
-	return this.target.takeTeleport(this.source,this.item);
+	console.assert(this.source);
+	this.landing = this.landing || this.source.commandTarget2;
+	return this.target.takeTeleport(this.landing);
 });
 DeedManager.addHandler(DeedOp.STRIP,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;

@@ -98,8 +98,8 @@ CmdTable[Command.QUAFF] = {
 };
 CmdTable[Command.DIG] = {
 	needsItem: false,
-	needsTarget: (cmd) => true,
-	targetRange: (item) => 1,
+	needsTarget: () => true,
+	targetRange: () => 1,
 	passesTimeOnExecution: true
 };
 CmdTable[Command.CRAFT] = {
@@ -112,7 +112,9 @@ CmdTable[Command.TRIGGER] = {
 	needsItem: true,
 	itemFilter: observer => () => new Finder(observer.inventory).isTypeId("skill"),
 	needsTarget: (cmd) => cmd.commandItem.needsTarget,
-	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
+	targetRange: (item) => item.owner.getRange(item),
+	needsTarget2: (cmd) => !!cmd.commandItem.owner.getRange2(cmd.commandItem),
+	target2Range: (item) => item.owner.getRange2(item),
 	criteriaToExecute: (cmd,observer) => cmd.commandItem.effect,
 	passesTimeOnExecution: (cmd) => cmd.commandItem.passesTime === undefined ? true : cmd.commandItem.passesTime
 };
@@ -120,7 +122,9 @@ CmdTable[Command.CAST] = {
 	needsItem: true,
 	itemFilter: observer => () => observer.getCastableSpellList(),
 	needsTarget: ()=>true,
-	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
+	targetRange: (item) => item.owner.getRange(item),
+	needsTarget2: (cmd) => !!cmd.commandItem.owner.getRange2(cmd.commandItem),
+	target2Range: (item) => item.owner.getRange2(item),
 	criteriaToExecute: (cmd,observer) => {
 		if( !cmd.commandItem.isRecharged() ) {
 			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject|mPossessed,cmd.commandItem,' is still charging.');
@@ -143,7 +147,7 @@ CmdTable[Command.THROW] = {
 	needsItem: true,
 	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayThrow ),
 	needsTarget: ()=>true,
-	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
+	targetRange: (item) => item.owner.getRange(item),
 	passesTimeOnExecution: true
 };
 CmdTable[Command.SHOOT] = {
@@ -158,7 +162,7 @@ CmdTable[Command.SHOOT] = {
 	},
 	itemFilter: observer => () => new Finder(observer.inventory).filter( item => item.mayShoot ),
 	needsTarget: ()=>true,
-	targetRange: (item) => item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE,
+	targetRange: (item) => item.owner.getRange(item),
 	criteriaToExecute: (cmd,observer) => {
 		if( !cmd.commandItem.isRecharged() ) {
 			tell(mSubject|mPronoun|mPossessive,observer,' ',mObject|mPossessed,cmd.commandItem,' is still charging.');
@@ -222,11 +226,13 @@ class Cmd {
 		this.command = Command.NONE;
 		this.commandItem = null;
 		this.commandTarget = null;
+		this.commandTarget2 = null;
 		this.retain = null;
 	}
 	cancelItem() {
 		this.commandItem = null;
 		this.commandTarget = null;
+		this.commandTarget2 = null;
 		return false;
 	}
 	cancel() {
@@ -249,8 +255,10 @@ class Cmd {
 	get itemAllowFilter()		{ return this.ct && this.ct.itemAllowFilter; }
 	get itemFilter()			{ return this.ct && this.ct.itemFilter; }
 	get convertOnItemChosen()	{ return this.ct && this.ct.convertOnItemChosen; }
-	get needsTarget() 			{ return this.ct && this.ct.needsTarget && this.ct.needsTarget(this); }
+	get needsTarget() 			{ return (this.ct && this.ct.needsTarget) ? this.ct.needsTarget : ()=>false; }
 	get targetRange() 			{ return this.ct && this.ct.targetRange; }
+	get needsTarget2() 			{ return (this.ct && this.ct.needsTarget2) ? this.ct.needsTarget2 : ()=>false; }
+	get target2Range() 			{ return this.ct && this.ct.target2Range; }
 	get criteriaToExecute()		{ return this.ct && this.ct.criteriaToExecute; }
 	get passesTimeOnExecution() { return this.ct ? this.ct.passesTimeOnExecution : true; }
 }
@@ -270,11 +278,13 @@ class UserCommandHandler {
 				this.observer.command = c.command;
 				this.observer.commandItem = c.commandItem;;
 				this.observer.commandTarget = c.commandTarget;
+				this.observer.commandTarget2 = c.commandTarget2;
 			}
 		);
 	}
-	pickTarget(dirCommand,observer) {
+	pickTarget(member,dirCommand,observer) {
 		if( dirCommand == Command.CANCEL ) {
+			this.viewRange.clear();
 			return this.cmd.cancel();
 		}
 		let dir = Direction.fromCommand(dirCommand);
@@ -297,6 +307,7 @@ class UserCommandHandler {
 			let item = this.cmd.commandItem;
 			let effect = item.effect;
 			let mayTargetPos = (
+				member == 'commandTarget2' ||
 				item.mayTargetPosition || 
 				(effect && effect.doesTiles) || 
 				(effect && effect.effectShape!==undefined && effect.effectShape!==EffectShape.SINGLE)
@@ -307,8 +318,8 @@ class UserCommandHandler {
 				}
 				target = new Finder( [adhoc(observer.map.tileTypeGet(x,y),observer.map,x,y)] );
 			}
-			this.cmd.commandTarget = target.first;
-			return this.cmd.enact();
+			this.cmd[member] = target.first;
+			this.viewRange.clear();
 		}
 	}
 
@@ -321,6 +332,7 @@ class UserCommandHandler {
 			observer.command = event.command;
 			observer.commandItem = event.commandItem || null;
 			observer.commandTarget = event.commandTarget || null;
+			observer.commandTarget2 = event.commandTarget2 || null;
 			return !zeroTime.includes(event.command);
 		}
 
@@ -335,6 +347,7 @@ class UserCommandHandler {
 				observer.command 		= cmd.command;
 				observer.commandItem 	= cmd.commandItem || event.commandItem || null;
 				observer.commandTarget 	= cmd.commandTarget || event.commandTarget || null;
+				observer.commandTarget2 = cmd.commandTarget2 || event.commandTarget2 || null;
 				this.cmd.clear();
 				return observer.command !== Command.NONE;
 			}
@@ -380,19 +393,45 @@ class UserCommandHandler {
 			}
 		}
 
-		if( cmd.commandItem && !cmd.needsTarget ) {
+		if( cmd.commandItem && cmd.needsTarget(cmd,observer) ) {
+			if( cmd.commandItem.targetMe || (cmd.commandItem.effect && cmd.commandItem.effect.targetMe) ) {
+				cmd.commandTarget = cmd.commandItem.owner;
+			}
+		}
+
+		if( cmd.commandItem && !cmd.needsTarget(cmd,observer) ) {
 			return cmd.enact();
 		}
 
-		if( cmd.needsTarget && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) ) {
-			this.viewRange.prime(
+		if( cmd.needsTarget(cmd,observer) && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) ) {
+			this.viewRange.primeRange(
 				cmd.targetRange(cmd.commandItem),
 				cmd,
-				() => cmd.needsTarget && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) );
-			let result = this.pickTarget( this.user.keyToCommand(event.key).command, observer );
+				() => cmd.needsTarget(cmd,observer) && !cmd.commandTarget );
+			let result = this.pickTarget( 'commandTarget', this.user.keyToCommand(event.key).command, observer );
 			if( result !== undefined ) {
 				return result;
 			}
+			event.key = null;
+		}
+
+		if( cmd.commandTarget && !cmd.needsTarget2(cmd,observer) ) {
+			return cmd.enact();
+		}
+
+		if( cmd.needsTarget2(cmd,observer) && !cmd.commandTarget2 && cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) ) {
+			this.viewRange.primeRange(
+				cmd.target2Range(cmd.commandItem),
+				cmd,
+				() => cmd.needsTarget2(cmd,observer) && !cmd.commandTarget2 );
+			let result = this.pickTarget( 'commandTarget2', this.user.keyToCommand(event.key).command, observer );
+			if( result !== undefined ) {
+				return result;
+			}
+		}
+
+		if( cmd.commandTarget2 ) {
+			return cmd.enact();
 		}
 
 		return false;

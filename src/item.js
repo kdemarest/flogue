@@ -684,7 +684,6 @@ class Item {
 				success: false
 			}
 		}
-		// Here is where we should figure out the area of effect and hit all as needed.
 		let result = effectApply( effect, target, source, this, context );
 
 		if( (result.success || context == 'throw') && typeof this.charges =='number' ) {
