@@ -232,6 +232,13 @@ Module.add('utilities',function(){
 		}
 		return result;
 	}
+	Object.extract = function(obj,memberId) {
+		let result = {};
+		for( let key in obj ) {
+			result[obj[key][memberId]] = true;
+		}
+		return result;
+	}
 	Object.findByFlag = function( target, flagValueList ) {
 		for( let key in flagValueList ) {
 			if( target[key] ) {

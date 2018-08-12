@@ -96,7 +96,7 @@ class ClipRect {
 	}
 };
 
-let IMG_BASE = 'http://localhost:3000/tiles/';
+let IMG_BASE = 'http://localhost:8080/tiles/';
 
 let SymbolForbidden = { ' ': 1, '.': 1, '#': 1 };
 let SymbolToType = {};

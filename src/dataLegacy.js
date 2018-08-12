@@ -483,7 +483,25 @@ LegacyList.blaster = compose( 'blaster', [
 	}) ),
 	range( [2,8,14], (level,index) => ({
 		name: 'Blast '+Number.roman(index+1),
-		effect: { op: 'set', stat: 'skillOrdnerBlast', value: [EffectShape.BLAST3,EffectShape.BLAST4,EffectShape.BLAST5][index] },
+		apply: (when,e)=>{
+/*
+			let item = when=='recipe.ordner' ? e.ingredientList.first : false;
+			if( item && item.isPotion && e.ingredientList.count == 1 && item.effect && (item.effect.isDeb || item.effect.isDmg) ) {
+				let effectShape = [EffectShape.BLAST3,EffectShape.BLAST4,EffectShape.BLAST5][index];
+				return new RecipeAugment
+
+				e.found = {
+					augment:	e.ingredientList.first,
+					transform:	item => item.effect.effectShape = effectShape,
+					description: 'add blast area '+(3+index),
+				}
+			}
+*/
+		},
+		skill: {
+			craftId: 'ordner',
+			passesTime: false,
+		},
 		description: 'Craft potions to blast in a radius of '+(3+index)
 	}) ),
 	range( [3,9,15], (level,index) => ({

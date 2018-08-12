@@ -22,7 +22,7 @@ let PartList = Fab.add( '', {
 	},
 	nose: 		{
 		matter: 'flesh',
-		makes: ['eSenseSmell', 'ePanic'],
+		makes: ['eSenseSmell', 'ePanic', 'eOdorless'],
 	},
 	tongue: 	{
 		matter: 'flesh',
@@ -30,11 +30,11 @@ let PartList = Fab.add( '', {
 	},
 	brain: 		{
 		matter: 'flesh',
-		makes: ['eSensetreasure', 'eBravery', 'eClearMind', 'eStalwart', 'eMentalFence'],
+		makes: ['eSenseTreasure', 'eBravery', 'eClearMind', 'eStalwart', 'eMentalFence'],
 	},
 	bone: 		{
-		matter: 'flesh',
-		makes: ['eOdorless', 'eResistance'],
+		matter: 'bone',
+		augs: { augBlast:1 },
 	},
 	skull: 		{
 		matter: 'bone',
@@ -42,7 +42,7 @@ let PartList = Fab.add( '', {
 	},
 	tooth:		{
 		matter: 'bone',
-		makes: ['eAssassin', 'eBash'],
+		makes: ['eAssassin', 'eBash', 'eResistance'],
 	},
 	claw:		{
 		matter: 'bone',
@@ -119,6 +119,7 @@ let PartList = Fab.add( '', {
 	slime:		{
 		matter: 'liquid',
 		makes: ['eInvisibility', 'eAcid'],
+		augs: { augAfterDamage:1 },
 	},
 });
 Object.each( PartList, (part,partId) => {
@@ -945,7 +946,6 @@ const MonsterTypeList = {
 		eatenFoodToInventory: true,
 		glow: 4,
 		immune: OozeImmunity,
-		isPlanar: true,
 		isOoze: true,
 		loot: '90% potion.eAcid, 40% redOozeSlime',
 		regenerate: 0.05,
@@ -1374,6 +1374,8 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 };
 
 function monsterPreProcess(typeId,m) {
+	m.typeId = typeId;
+
 	let brain = null;
 	let body = null;
 	let naturalDamageType;
@@ -1462,6 +1464,30 @@ function monsterPreProcess(typeId,m) {
 		damageType: damType,
 	}, m.naturalWeapon );
 	m.naturalWeapon = natWeapon;
+
+	// Generate all the parts of this creature as items.
+	let species = Object.findByFlag( m, SpeciesList );
+	let partList = m.parts || species.parts;
+	partList.forEach( partId => {
+		let part = PartList[partId];
+		let inject = {
+			typeId:		m.typeId+String.capitalize(partId),				// goblinHeart
+			name:		m.typeId+' '+(part.name||partId),				// goblin heart, ooze slime
+			matter:		part.matter,									// matter: liquid or matter: flash
+		};
+		inject['is'+String.capitalize(m.typeId)] = true;				// isGoblin: true
+		inject['is'+String.capitalize(partId)] = true;					// isHeart: true or isSlime: true
+		if( part.makes ) {
+			part.makes.forEach( effectId => {
+				let bitId = 'bit'+String.capitalize(effectId.slice(1));		// bitInvisibility or bitFreeze
+				inject[bitId] = true;
+			});
+		}
+		if( part.augs ) {
+			Object.assign( inject, part.augs );
+		}
+		ItemTypeList.part.varieties[inject.typeId] = inject;
+	});
 
 	console.assert( m.stink===undefined || (m.stink>=0 && m.stink<=1) );
 }

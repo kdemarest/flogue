@@ -315,7 +315,9 @@ class Entity {
 				if( this.inventory ) {
 					itemList = itemList.concat(this.inventory);
 				}
-				itemList = itemList.concat( this.partsGenerate() );
+				let partCount = Math.randInt(1,3);
+				let partFrom = 'is'+String.capitalize(this.typeId); 
+				itemList = itemList.concat( this.lootGenerate( partCount+'x part '+partFrom, this.level ) );
 				let self = this;
 				itemList.forEach( item => {
 					if( (!item.isFake && !item.isSkill && !this.vanish) || item.isPlot ) {
@@ -2330,29 +2332,6 @@ class Entity {
 			);
 			tell(...description);
 		}
-	}
-	partsGenerate() {
-		let itemList = [];
-		let species = Object.findByFlag( this, SpeciesList );
-		let partList = this.parts || species.parts;
-		let partTable = new Pick.Table();
-		partTable.scanArray(partList,()=>1.0);
-		let count = Math.randInt(1,3);
-		while( !partTable.isEmpty() && count-- ) {
-			let part = PartList[partTable.pick()];
-			partTable.forbidLast();
-			let inject = {
-				name: this.name+' '+part.name,
-				matter: part.matter,
-			};
-			part.makes.forEach( effectId => {
-				let bitId = 'bit'+String.capitalize(effectId.slice(1));
-				inject[bitId] = true;
-			});
-			let item = new Item( this.level, ItemTypeList.part, {}, inject );
-			itemList.push(item);
-		}
-		return itemList;
 	}
 	lootGenerate( lootSpec, level ) {
 		let itemList = [];

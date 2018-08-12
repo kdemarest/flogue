@@ -321,12 +321,15 @@ let spriteAttach = function(spriteList,sprite) {
 }
 
 let spriteOnStage = function(sprite,value) {
+	if( !_viewMap.app ) {
+		return;
+	}
 	if( value == sprite.onStage ) {
 		return;
 	}
-	if( value && _viewMap.app.stage.children.find( s => s==sprite ) ) {
-		debugger;
-	}
+//	if( value && _viewMap.app.stage.children.find( s => s==sprite ) ) {
+//		debugger;
+//	}
 	_viewMap.app.stage[value?'addChild':'removeChild'](sprite);
 	sprite.onStage = value;
 	return sprite;
@@ -455,7 +458,7 @@ class ViewMap extends ViewObserver {
 	constructor(divId) {
 		super();
 		this.divId = divId;
-		this.pixiCreate();
+		this.pixiDestroy();
 		this.randList = [];
 		for( let i=0 ; i<256 ; ++i ) {
 			this.randList.push( Math.randInt( 0, 1023 ) );
@@ -464,21 +467,17 @@ class ViewMap extends ViewObserver {
 		this.hookEvents();
 		_viewMap = this;
 
-		let self = this;
-		this.app.ticker.add(function(delta) {
-			// but only if real time is not stopped.
-			if( self.observer && self.observer.area ) {
-				self.observer.area.animationManager.tickRealtime(delta/60);
-			}
-		});
 		this.drawListCache = [];
 	}
 
-	pixiCreate() {
+	pixiDestroy() {
 		$(this.divId).empty();
 		if( ViewMap.globalPixiApp ) {
 			ViewMap.globalPixiApp.destroy(true,{children:true,texture:false,baseTexture:false});
 		}
+		this.app = null;
+	}
+	pixiCreate() {
 		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
 		ViewMap.globalPixiApp = this.app;
 
@@ -490,6 +489,18 @@ class ViewMap extends ViewObserver {
 		this.resetFilterArray = [this.resetFilter];
 
 		$(this.divId)[0].appendChild(this.app.view);
+
+		// Don't start rendering until we first try to render.
+		this.app.ticker.stop()
+		this.pixiTimerPaused = true;
+
+		this.app.ticker.add( delta =>  {
+			// but only if real time is not stopped.
+			if( this.observer && this.observer.area ) {
+				this.observer.area.animationManager.tickRealtime(delta/60);
+			}
+		});
+
 	}
 
 	hookEvents() {
@@ -750,11 +761,18 @@ class ViewMap extends ViewObserver {
 		//	console.log('re-focused from ',focused);
 		//	$(this.divId+' canvas').focus();
 		//}
-
+		if( !this.app ) {
+			this.pixiCreate();
+		}
 		let observer = this.observer;
 		let area = observer.area;
 		let drawList = createDrawList(observer,this.drawListCache);
 		this.draw(drawList);
+		if( this.pixiTimerPaused ) {
+			this.app.ticker.start()
+			this.pixiTimerPaused = false;
+		}
+
 	}
 }
 

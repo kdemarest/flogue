@@ -368,7 +368,7 @@ class UserCommandHandler {
 						return cmd.cancel();
 					}
 					cmd.commandItem = this.viewInventory.getItemByKey(event.key);
-					event.key = null;
+					event.key = null;	// Stops this event being interpreted by other command thingies. Nasty hack.
 				}
 			}
 		}

@@ -1443,7 +1443,8 @@ const ItemTypeList = {
 		matter: 		'stone',
 		isPart: 		1,
 		isTreasure:		1,
-		name:			'a part',
+		varieties:		{},
+		namePattern:	'{variety}$',
 		img: 			'item/misc/misc_rune.png',
 		icon: 			'stuff.png'
 	},

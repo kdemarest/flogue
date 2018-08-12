@@ -20,62 +20,10 @@
 <meta name="msapplication-TileColor" content="#ffffff">
 <meta name="msapplication-TileImage" content="/favicon/ms-icon-144x144.png">
 <meta name="theme-color" content="#ffffff">
-
-<style>
-/* latin-ext */
-@font-face {
-  font-family: 'Raleway';
-  font-style: normal;
-  font-weight: 400;
-  qsrc: local('Raleway'), local('Raleway-Regular'), url(https://fonts.gstatic.com/s/raleway/v12/1Ptug8zYS_SKggPNyCMIT4ttDfCmxA.woff2) format('woff2');
-  src: local('Raleway'), local('Raleway-Regular'), url(font/1Ptug8zYS_SKggPNyCMIT4ttDfCmxA.woff2) format('woff2');
-  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'Raleway';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Raleway'), local('Raleway-Regular'), url(font/1Ptug8zYS_SKggPNyC0IT4ttDfA.woff2) format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-</style>
-
 <link rel="stylesheet" type="text/css" href="minireset.css">
 <link rel="stylesheet" type="text/css" href="index.css">
-<!--script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script-->
 
-<script>
-	window.Module = new class {
-		constructor() {
-			this.list = {};
-			this.count = 10;
-		}
-		add(id,fn) {
-			if( typeof id === 'function' ) {
-				fn = id;
-				id = this.count++;
-			}
-			this.list[id] = fn;
-		}
-		realize() {
-			for( let id in this.list ) {
-				//console.log('Initializing '+id);
-				let globals = this.list[id](window);
-				for( let varId in globals ) {
-					// console.log('Importing '+varId);
-					window[varId] = globals[varId];
-				}
-				for( let i in this ) {
-					if( i!=='list' && i!=='count' ) {
-						console.log("Rogue declaration "+i);
-						delete this[i]
-					}
-				}
-			}
-		}
-	};
-</script>
+<script src="utilModule.js" charset="utf-8"></script>
 
 <script src="jquery.3.3.1.js" charset="utf-8"></script>
 <script src="pixi.min.js" charset="utf-8"></script>
@@ -148,8 +96,9 @@ function adhoc(tileType,map,x,y) {
 
 
 function main() {
-
+	Module.realize();
 	let User = new HumanUser();
+
 	User.tickWorld = function(timePasses) {
 		Tester.tick(timePasses);
 		this.entity.area.tick( timePasses ? this.entity.speed : false );
@@ -278,7 +227,6 @@ function main() {
 	<script>
 		$(document).ready( () => {
 			//keep('main');
-			Module.realize();
 			setTimeout( main, 0 );
 		});
 	</script>

@@ -24,6 +24,7 @@ class PixiImageRepo {
 			if( !imgPath ) {
 				return;
 			}
+			//console.log(imgPath);
 			imgPath = IMG_BASE+imgPath;
 			if( !exists[imgPath] ) {
 				imageList.push(imgPath);

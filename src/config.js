@@ -131,7 +131,7 @@ ConfigList.ken = () => {
 	});
 
 	MonsterTypeList.player.legacyId = 'blaster';
-	MonsterTypeList.player.inventoryLoot.push('5x spell, 10x potion, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
+	MonsterTypeList.player.inventoryLoot.push('5x spell, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
 	MonsterTypeList.player.inventoryLoot.push('spell.eTeleport, spell.eBlink');
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;
@@ -139,6 +139,8 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.senseDarkVision = 8;
 	MonsterTypeList.player.light = 2;
 
+	// If you are doing graphics work, use this. Otherwise leave it alone to get faster performance.
+	//IMG_BASE = 'http://localhost:3000/tiles/';
 
 	return {
 //		startingDepth: 1,

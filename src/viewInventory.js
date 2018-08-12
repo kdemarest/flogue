@@ -65,32 +65,58 @@ class ViewInventory extends ViewObserver {
 	render() {
 
 		function sortOrder(a,b,sortDir,...fields) {
-			let fieldId;
-			while( fieldId = fields.shift() ) {
-				let af = a[fieldId];
-				let bf = b[fieldId]
-				if( !fieldId ) debugger;
-				if( (af === undefined || af === '') && !(bf === undefined || bf === '') ) {
-					return -sortDir;
+			function compare() {
+				let fieldId;
+				while( fieldId = fields.shift() ) {
+					//f += fieldId+' ';
+					let af = a[fieldId];
+					let bf = b[fieldId]
+					if( window.aa && (a.armor !== '' || b.armor !== '') ) debugger;
+					if( !fieldId ) debugger;
+					let afNul = !!(af === undefined || af === '');
+					let bfNul = !!(bf === undefined || bf === '');
+					if( afNul && !bfNul ) {
+						//console.log( "a blank" );
+						// WARNING! This is tricky. It must always return sortDir
+						return sortDir;
+					}
+					if( !afNul && bfNul ) {
+						//console.log( "b blank" );
+						// WARNING! This is tricky. It must always return negative sortDir
+						return -sortDir;
+					}
+
+					if( afNul !== bfNul ) {
+						// If one or the other is blank, then we want to sort such things to the bottom.
+						//	return -sortDir;
+					}
+					if( afNul && bfNul ) {
+						//console.log( "both blank" );
+						continue;
+					}
+					af = sortIsNumeric[fieldId] ? parseFloat(af) : af;
+					bf = sortIsNumeric[fieldId] ? parseFloat(bf) : bf;
+					if( af < bf ) return -1;
+					if( af > bf ) return 1;
 				}
-				if( !(af === undefined || af === '') && (bf === undefined || bf === '') ) {
-					return -sortDir;
-				}
-				af = sortIsNumeric[fieldId] ? parseFloat(af) : af;
-				bf = sortIsNumeric[fieldId] ? parseFloat(bf) : bf;
-				if( af < bf ) return -1;
-				if( af > bf ) return 1;
+				// The id comparisons add sorting stability, most noticeable in the crafting screen.
+				if( a.id < b.id ) return -1;
+				if( a.id > b.id ) return 1;
+				return 0;
 			}
-			// The id comparisons add sorting stability, most noticeable in the crafting screen.
-			if( a.id < b.id ) return -1;
-			if( b.id < a.id ) return 1;
-			return 0;
+			//let f = '';
+			let n = compare();
+			//console.log(f+': '+n);
+			return n;
 		}
 
 		function doSort(inventory,explainFn,sortFn,asc) {
 			let colData = inventory.arrayMap( item => explainFn(item) );
 			let sortDir = asc ? 1 : -1;
-			colData.sort( (a,b) => sortFn(a,b,sortDir)*sortDir );
+			colData.sort( (a,b) => {
+//				console.log( "Comparing "+a.name+" vs "+b.name );
+				return sortFn(a,b,sortDir)*sortDir ;
+			});
 			return colData.map( ex => ex.item );
 		}
 
@@ -196,7 +222,7 @@ class ViewInventory extends ViewObserver {
 		let tHeadContent = (hide) => {
 			return '<thead style="'+(hide?'visibility:hidden;':'')+'"><tr>'+colJoin(this.colFilter,colHead,colId=>self.sortColId==colId ? sortIcon : '')+'</tr></thead>';
 		};
-		let tableFixed = $( '<table class="inv fixedHeader" style="z-index: 101;"></table>' ).appendTo(invBody);
+		let tableFixed = $( '<table class="inv" style="z-index: 101;"></table>' ).appendTo(invBody);
 		let tHeadFixed = $(tHeadContent(false))
 			.appendTo(tableFixed)
 			.click( function(e) {
@@ -219,28 +245,30 @@ class ViewInventory extends ViewObserver {
 				self.scrollPos = $(this).scrollTop();
 			});
 
-		let table = $( '<table class="inv realHeader"></table>' ).appendTo(invBodyScroll);
+		let table = $( '<table class="inv"></table>' ).appendTo(invBodyScroll);
 		let tHead = $(tHeadContent(true))
 			.appendTo(table);
+
+		$(this.div).empty();
+		if( headerDiv ) $(headerDiv).appendTo(this.div);
+		if( cat ) $(cat).appendTo(this.div);
+		$(invBody).appendTo(this.div);
 		setTimeout( () => {
-			let real = $('.realHeader thead tr td');
-			let fixed = $('.fixedHeader thead tr td');
+			$('thead',table).css( 'visibility', 'hidden' );
+			let real = $('thead tr td',table);
+			let fixed = $('thead tr td',tableFixed);
 			for( let index=0 ; index < real.length ; ++index ) {
 				$(real[index]).width( $(real[index]).width()+'px' );
 				$(fixed[index]).width( $(real[index]).width()+'px' );
 			}
-			real.empty();
-			//$('.realHeader thead').css( 'visibility', 'hidden' ); //'visibility', 'hidden' );
-			$(this.div).empty();
-			if( headerDiv ) $(headerDiv).appendTo(this.div);
-			if( cat ) $(cat).appendTo(this.div);
-			$(invBody).appendTo(this.div);
+			$(real).empty();
 		}, 1 );
 
 
 		let tBody = $('<tbody></tbody>').appendTo(table);
 		let lastTypeId = '';
 
+		//console.log("Sorting by "+this.sortColId);
 		this.inventory.result = doSort(
 			this.inventory,
 			item => item.explain(this.mode,observer),
