@@ -199,7 +199,8 @@ class Item {
 		return ItemTypeList[this.typeId];
 	}
 	calcName(force=false) {
-		this.name = (force?false:this.name) || String.tokenReplace(this.namePattern,this);
+		this.name  = (force?false:this.name) || String.tokenReplace(this.namePattern,this);
+		this.about = (force?false:this.about) || String.tokenReplace(this.aboutPattern || '',this);
 	}
 	explain(buySell,observer) {
 		let potencyList = ['feeble', 'frail', 'faint', 'tepid', 'mild', 'common', 'passable', 'sturdy', 'hardy', 'robust', 'vigorous', 'mighty', 'fierce', 'righteous', 'potent', 'glorious', 'epic', 'supernal', 'legendary', 'celestial'];
@@ -265,6 +266,7 @@ class Item {
 			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? '('+item.effect.effectShape+')' : '',
 			bonus: 			getBonus(),
 			effect: 		item.effect ? (item.effect.name || item.effect.typeId) : '',
+			effectAbout:	item.effect && item.effect.about ? item.effect.about : '',
 			permutation: 	item.effect && item.effect.permuteName ? item.effect.permuteName : '',
 			recharge: 		item.rechargeTime ? Math.floor(item.rechargeTime) : '',
 			rechargeLeft: 	rechargeImg(),

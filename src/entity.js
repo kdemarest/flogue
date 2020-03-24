@@ -1351,12 +1351,13 @@ class Entity {
 			return;
 		}
 
+		let willHesitate = (this.attitude == Attitude.HESITANT && Math.chance(40));
 		let useAiTemporarily = false;
 		if( this.control == Control.USER ) {
 			if( this.playerUseAi ) {
 				useAiTemporarily = true;
 			}
-			if( this.stun || this.hasForcedAttitude() ) {
+			if( this.stun || willHesitate || this.hasForcedAttitude() ) {
 				useAiTemporarily = true;
 			}
 		}
@@ -1395,7 +1396,7 @@ class Entity {
 					this.packId = this.findSparsePack();
 				}
 
-				// Note that attitude enraged makes isMyEnemy() return true for all creatures.
+				// Note that attitude ENRAGED makes isMyEnemy() return true for all creatures.
 				let enemyList = this.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
 				if( enemyList.count ) {
 					this.enemyNearTimer = Time.simTime;
@@ -1501,7 +1502,8 @@ class Entity {
 					console.assert( theEnemy.id !== this.id );
 					this.brainState.activity = 'Enraged!';
 					if( theEnemy && !wasSmell && !wasLEP ) {
-						theEnemy = enemyList.shuffle().byDistanceFromMe();
+						// Note that enemyList already includes ALL friends, because enraged causes them to be included in the isMyEnemy filter.
+						theEnemy = enemyList.shuffle().byDistanceFromMe().first;
 					}
 					if( theEnemy ) {
 						this.brainState.activity = 'Enraged at '+theEnemy.name+'.';
@@ -1533,7 +1535,7 @@ class Entity {
 				let flee = theEnemy && (
 					( hurt && (this.mindset('fleeWhenHurt') || this.mindset('pack')) ) ||
 					(this.attitude == Attitude.FEARFUL) ||
-					(this.attitude == Attitude.HESITANT && Math.chance(40))
+					(this.attitude == Attitude.HESITANT && willHesitate)
 				);
 				flee = flee || (personalEnemy && this.mindset('fleeWhenAttacked'))
 
@@ -2407,7 +2409,7 @@ class Entity {
 			}
 			let inventory = new Finder(corpse.inventory).isReal().all || [];
 			inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
-			inventory.push( ...corpse.partsGenerate() )
+//			inventory.push( ...corpse.partsGenerate() )
 			this.inventoryTake( inventory, item, false );
 			item.destroy();
 			return {

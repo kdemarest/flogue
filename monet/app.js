@@ -2,7 +2,7 @@
 
 /**
 
-localhost:3000/tiles/mon/frog.png
+localhost:3010/tiles/mon/frog.png
 - comes to app.js
 - checks datestamp of source in ../tilesrc/mon/frog.png vs target in ../tiles/mon/frog.png
 - if later, gets the processing data (which it reads fresh every time) from config.js
@@ -475,7 +475,7 @@ async function run() {
 	});
 
 
-	let port = 3000;
+	let port = 3010;
 	app.listen(port, () => console.log('Monet listening on port '+port+'.'))
 }
 

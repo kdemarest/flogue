@@ -140,7 +140,7 @@ ConfigList.ken = () => {
 	MonsterTypeList.player.light = 2;
 
 	// If you are doing graphics work, use this. Otherwise leave it alone to get faster performance.
-	//IMG_BASE = 'http://localhost:3000/tiles/';
+	//IMG_BASE = 'http://localhost:3010/tiles/';
 
 	return {
 //		startingDepth: 1,

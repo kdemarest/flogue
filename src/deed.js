@@ -35,7 +35,8 @@ class Effect {
 			effect.name = '';
 		}
 		else {
-			effect.name = effect.name || String.tokenReplace(effect.namePattern || 'nameless effect',effect);
+			effect.name  = effect.name || String.tokenReplace(effect.namePattern || 'nameless effect',effect);
+			effect.about = effect.about || String.tokenReplace(effect.aboutPattern || '',effect);
 		}
 
 		Object.assign( this, effect );

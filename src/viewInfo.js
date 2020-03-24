@@ -61,6 +61,9 @@ class ViewInfo extends ViewObserver {
 				if( ex.description2 ) {
 					s += ex.description2+'<br>';
 				}
+				if( ex.effectAbout ) {
+					s += ex.effectAbout+'<br>';
+				}
 				//if( item.effect && item.effect.stat && !item.isWeapon ) {
 				//	s += item.effect.stat+' '+(''+item.effect.value).split(',').join(', ')+'<br>';
 				//}

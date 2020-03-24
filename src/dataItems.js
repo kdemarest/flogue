@@ -80,7 +80,7 @@ const SpellEffects = Object.filter(EffectTypeList, (e,k)=>[
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSenseSmell','eOdorless','eRegeneration','eResistance','eSenseTreasure','eMobility','eSeeInvisible'].includes(k) );
 const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eBurn','eFreeze','eShock','eLeech','eBlindness','eSlow','ePanic','eConfusion','eShove','eSmite'].includes(k) );
 //const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSmite','eSmite3','eSmite5','eSmite7','ePoison','eBurn','eFreeze','eBlindness','eSlow','eConfusion'].includes(k) );
-const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eAbsorb','eAbsorbRot','eResistance'].includes(k) );
+const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eDeflect','eDeflectRot','eResistance'].includes(k) );
 const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLight','eSeeInvisible','eDarkVision','eMentalFence','eBravery','eClearMind','eStalwart','eIronWill'].includes(k) );
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
 const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eInvisibility', 'eOdorless', 'eRechargeFast', 'eResistance'].includes(k) );

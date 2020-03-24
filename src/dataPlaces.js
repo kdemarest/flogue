@@ -1044,7 +1044,7 @@ PlaceTypeList.surfaceSunTemple = {
 			scionName: 'Scion of Berthold',
 			properNoun: true,
 			inventoryLoot: [
-				'armor.eInert, spell.eHealing, spell.eSmite, shield.eAbsorbRot, stuff.lamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
+				'armor.eInert, spell.eHealing, spell.eSmite, shield.eDeflectRot, stuff.lamp, weapon.hammer, 4x potion.eHealing, stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
