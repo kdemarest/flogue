@@ -267,11 +267,6 @@ class DataConditioner {
 		Fab.add( 'isJobType',		JobTypeList );
 
 		Fab.process();
-
-		Object.entries(ItemTypeList).forEach( ([typeId,itemType]) =>  {
-			itemType.namePattern = itemType.namePattern || typeId;
-
-		} );
 	}
 };
 

@@ -30,13 +30,14 @@ class Effect {
 		if( item && item.effectDecorate ) {
 			Object.assign( effect, item.effectDecorate );
 		}
-		// Always last so that all member vars are available to the namePattern.
+		// Always last so that all member vars are available to the namePattern and aboutPattern.
 		if( effect.name === false ) {
 			effect.name = '';
 		}
 		else {
-			effect.name  = effect.name || String.tokenReplace(effect.namePattern || 'nameless effect',effect);
-			effect.about = effect.about || String.tokenReplace(effect.aboutPattern || '',effect);
+			String.calcName(effect);
+//			effect.name  = String.tokenReplace(effect.namePattern || 'nameless effect',effect);
+//			effect.about = String.tokenReplace(effect.aboutPattern || '',effect);
 		}
 
 		Object.assign( this, effect );
@@ -761,7 +762,10 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	isImmune = isImmune || (effect.op=='set' && target.isImmune && target.isImmune(effect.value));
 	effect.isImmune = isImmune;
 	if( isImmune ) {
-		tell(mSubject,target,' ',mVerb,'is',' immune to ',mObject,effect,'.');
+		let isItemSoSuppress = target.isItemType;
+		if( !isItemSoSuppress ) {
+			tell(mSubject,target,' ',mVerb,'is',' immune to ',mObject,effect,'.');
+		}
 		if( !source || source.id!==target.id ) {
 			Anim.Over( delayId, target, StickerList.showImmunity.img );
 		}

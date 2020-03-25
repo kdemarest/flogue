@@ -290,22 +290,22 @@ let EffectTypeList = {
 	eMentalFence: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'add', stat: 'resist', value: [Attitude.HESITANT,Attitude.PANICKED,Attitude.CONFUSED,'possess'].join(','), isHelp: 1, xPrice: 3, xDuration: 3, name: 'mental fence', icon: 'gui/icons/eResist.png', about: 'Immunity to panic, confusion, and hesitation.' },
 	eMentalWall: 	{ isBuf: 1, level:  0, rarity: 0.05, op: 'add', stat: 'immune', value: [Attitude.HESITANT,Attitude.PANICKED,Attitude.CONFUSED,'possess'].join(','), isHelp: 1, xPrice: 6, xDuration: 0.5, name: 'mental wall', icon: 'gui/icons/eImmune.png', about: 'Longer immunity to panic, confusion and hesitation.' },
 	eResistance: 	{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist',
-					valuePick: () => pick(PickResist), isHelp: 1, namePattern: 'resist {value}s', icon: 'gui/icons/eResist.png', aboutPattern: 'Suffer only half the effect of {value}.' },
+					valuePick: () => pick(PickResist), isHelp: 1, name: 'resist {value}s', icon: 'gui/icons/eResist.png', about: 'Suffer only half the effect of {value}.' },
 	eDeflect: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist',
-					valuePick: () => pick(PickDeflect), isHelp: 1, namePattern: 'deflect {value}s', icon: 'gui/icons/eResist.png', aboutPattern: 'Deflect some incoming {value} damage.' },
+					valuePick: () => pick(PickDeflect), isHelp: 1, name: 'deflect {value}s', icon: 'gui/icons/eResist.png', about: 'Deflect some incoming {value} damage.' },
 	eDeflectRot: 	{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist', value: DamageType.ROT,
-					isHelp: 1, namePattern: 'deflect rot', icon: 'gui/icons/eResist.png', about: 'Deflect incoming rotting effects.' },
+					isHelp: 1, name: 'deflect rot', icon: 'gui/icons/eResist.png', about: 'Deflect incoming rotting effects.' },
 	eBlock: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'resist',
-					valuePick: () => pick(PickDeflect), isHelp: 1, namePattern: 'block {value}s', icon: 'gui/icons/eResist.png', aboutPattern: 'Block all incoming {value} damage.' },
+					valuePick: () => pick(PickDeflect), isHelp: 1, name: 'block {value}s', icon: 'gui/icons/eResist.png', about: 'Block all incoming {value} damage.' },
 	eInvisibility: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'invisible', value: true, isHelp: 1, 
 					doesItems: true, doesTiles: true, requires: e=>!e.invisible, xDuration: 3.0, xRecharge: 1.5, icon: 'gui/icons/eInvisible.png', about: 'Target becomes invisible to sight.' },
 	eIgnore: 		{ isBuf: 1, level:  0, rarity: 1.00, op: 'add', stat: 'immune',
-					valuePick: () => pick(PickIgnore), isHelp: 1, namePattern: 'ignore {value}', icon: 'gui/icons/eImmune.png', aboutPattern: 'Target is no longer affected by {value}.' },
+					valuePick: () => pick(PickIgnore), isHelp: 1, name: 'ignore {value}', icon: 'gui/icons/eImmune.png', about: 'Target is no longer affected by {value}.' },
 	eRechargeFast: 	{ isBuf: 1, level:  0, rarity: 0.20, op: 'max', stat: 'rechargeRate', value: 1.3, isHelp: 1, xDuration: 3.0, icon: 'gui/icons/eMagic.png', about: 'Magic recharges more quickly.' },
 	eMobility: 		{ isBuf: 1, level:  0, rarity: 0.50, op: 'add', stat: 'immune', value: 'eImmobilize',
-					isHelp: 1, namePattern: 'mobility', icon: 'gui/icons/eImmune.png', about: 'Immunity to immobilization.' },
+					isHelp: 1, name: 'mobility', icon: 'gui/icons/eImmune.png', about: 'Immunity to immobilization.' },
 	eAssassin: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'max', stat: 'sneakAttackMult', value: 5,
-					isHelp: 1, namePattern: 'mortal strike', icon: 'gui/icons/eSneakAttack.png', about: 'Sneak attacks become more effective.' },
+					isHelp: 1, name: 'mortal strike', icon: 'gui/icons/eSneakAttack.png', about: 'Sneak attacks become more effective.' },
 
 // Debuff/Control
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
@@ -314,7 +314,7 @@ let EffectTypeList = {
 	eHesitate: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.HESITANT, isHarm: 1, xDuration: 0.3, icon: 'gui/icons/eAttitude.png', about: 'Target might hesitate and fail to act sometimes.' },
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.PANICKED, isHarm: 1, xDuration: 0.2, icon: 'gui/icons/eFear.png', about: 'Startles the target, causing them to briefly flee.' },
 	eVulnerability: { isDeb: 1, level:  0, rarity: 1.00, op: 'add', isHarm: 1, stat: 'vuln', requires: (e,effect)=>e.isImmune && !e.isImmune(effect.value),
-					valuePick: () => pick(PickVuln), isHarm: 1, xDuration: 2.0, namePattern: 'vulnerability to {value}', icon: 'gui/icons/eVuln.png', aboutPattern: 'Target will suffer double harm from {value}.' },
+					valuePick: () => pick(PickVuln), isHarm: 1, xDuration: 2.0, name: 'vulnerability to {value}', icon: 'gui/icons/eVuln.png', about: 'Target will suffer double harm from {value}.' },
 	eSlow: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'sub', isHarm: 1, stat: 'speed', value: 0.5, xDuration: 0.3, requires: e=>e.speed>0.5, icon: 'gui/icons/eSlow.png', about: 'Target will act half as frequently.' },
 	eBlindness: 	{ isDeb: 1, level:  0, rarity: 0.30, op: 'set', isHarm: 1, stat: 'senseBlind', value: true, xDuration: 0.25, requires: e=>!e.senseBlind, icon: 'gui/icons/eBlind.png', about: 'Target becomes blind.' },
 	eConfusion: 	{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.CONFUSED, xDuration: 0.3, icon: 'gui/icons/eAttitude.png', about: 'Target becomes confused, stumbling about randomly.' },
@@ -345,7 +345,6 @@ let EffectTypeList = {
 					duration: true, damageType: DamageType.POISON, name: 'mortal poison', icon: 'gui/icons/ePoison.png', about: 'Poisons the target forever.' },
 	eLeech: 		{ isDmg: 1, level:  0, rarity: 0.30, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, isLeech: 1, damageType: DamageType.ROT, healingType: DamageType.SMITE, icon: 'gui/icons/eLeech.png', about: 'Leeches health from the target into the aggressor.' },
 };
-
 
 (() => {
 for( let key in EffectTypeList ) {

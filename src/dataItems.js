@@ -1,5 +1,9 @@
 Module.add('dataItems',function(){
 
+
+// To upscale images, a decent upscaler appears to be:
+// http://waifu2x.udp.jp/
+
 const Matter = {
 	metal: 		{ damage: { corrode: 1, smite: 1} },
 	stone: 		{ damage: { bash: 1, smite: 1} },
@@ -22,7 +26,6 @@ const Matter = {
 };
 
 const ItemTypeDefaults = {
-	namePattern: 'nameless *',
 	mayWalk: true, mayFly: true, opacity: 0,
 	img: null
 }
@@ -141,7 +144,7 @@ const AmmoList = Fab.add( '', {
 		isArrow: true,
 		matter: 'wood',
 		materials: ArrowMaterialList,
-		namePattern: '{material} arrow${+plus}',
+		name: '{material} arrow${+plus}',
 		quick: 0,
 		slot: Slot.AMMO,
 		img: 'UNUSED/spells/components/bolt.png',
@@ -160,7 +163,7 @@ const AmmoList = Fab.add( '', {
 		isRock: true,
 		isSlingable: true,
 		quick: 2,
-		namePattern: 'rock${+plus}',
+		name: 'rock${+plus}',
 		mayThrow: true,
 		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
 		effectChance: 0.000001,
@@ -177,7 +180,7 @@ const AmmoList = Fab.add( '', {
 		isSlingStone: true,
 		isSlingable: true,
 		quick: 2,
-		namePattern: 'rock${+plus}',
+		name: 'rock${+plus}',
 		mayThrow: true,
 		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
 		effectChance: 0.000001,
@@ -192,7 +195,7 @@ const AmmoList = Fab.add( '', {
 		damageType: DamageType.STAB,
 		matter: 'metal',
 		quick: 2,
-		namePattern: 'dart${+plus}{?effect}',
+		name: 'dart${+plus}{?effect}',
 		chanceEffectFires: 100,	// Here is the key element of darts,
 		slot: false,
 		effectChance: 0.80,
@@ -309,7 +312,7 @@ const WeaponList = Fab.add( '', {
 		isSoulCollector: true,
 		isUnique: true,
 		isPlot: true,
-		name: "blade",
+		name: "solar blade",
 		materials: { solarium: WeaponMaterialList.solarium },
 		effects: { eInert: EffectTypeList.eInert},
 		img: 'item/weapon/solariumBlade.png'
@@ -324,7 +327,7 @@ const WeaponList = Fab.add( '', {
 		materials: { flesh: {} },
 		effects: { eInert: EffectTypeList.eInert},
 		matter: 'flesh',
-		namePattern: 'hands{?effect}',
+		name: 'hands{?effect}',
 		slot: false,
 		isHands: true
 	},
@@ -338,7 +341,7 @@ const WeaponList = Fab.add( '', {
 		materials: { flesh: {} },
 		effects: { eInert: EffectTypeList.eInert},
 		matter: 'flesh',
-		namePattern: 'claws{?effect}',
+		name: 'claws{?effect}',
 		isClaws: true
 	},
 	"bite": {
@@ -351,7 +354,7 @@ const WeaponList = Fab.add( '', {
 		materials: { flesh: {} },
 		effects: { eInert: EffectTypeList.eInert},
 		matter: 'flesh',
-		namePattern: 'bite{?effect}',
+		name: 'bite{?effect}',
 		isBite: true
 	},
 	"pickaxe": {
@@ -890,7 +893,7 @@ const ItemTypeList = {
 	"pitDrop": 	  { symbol: SYM, name: "pit drop", 		isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
 // DOOR
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true, opacity: 0,
-					namePattern: "{state} door",
+					name: "{state} door",
 					isDoor: 1,
 					mayPickup: false,
 					keyId: false,
@@ -1130,7 +1133,7 @@ const ItemTypeList = {
 		mayPickup: 		false,
 		mayHarvest: 	true,
 		rechargeTime: 	1000,
-		namePattern: 	'{state} {variety}',
+		name: 	'{state} {variety}',
 		properNoun: 	true,
 		state: 			'wilted',
 		states: 		{ wilted: { isWilted: true }, thriving: { isWilted: false } },
@@ -1149,7 +1152,7 @@ const ItemTypeList = {
 		mayPickup: 		false,
 		mayHarvest: 	true,
 		rechargeTime: 	400,
-		namePattern: 	'{variety}',
+		name: 	'{variety}',
 		varieties: 		MushroomList,
 		matter: 		'fungus',
 		isMushroom:		true,
@@ -1157,16 +1160,16 @@ const ItemTypeList = {
 	},
 // FAKES and SKILLS
 	"skill": 	{ symbol: SYM, isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "skill.png" },
-	"fake":   	{ symbol: SYM, isFake: true, namePattern: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
+	"fake":   	{ symbol: SYM, isFake: true, name: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // CORPSE
-	"corpse":   { symbol: SYM, namePattern: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1,
+	"corpse":   { symbol: SYM, name: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1,
 				isCorpse: true,
 				zOrder: Tile.zOrder.CORPSE,
 				img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // KEYS
 	"key": {
 		symbol: 		'k',
-		namePattern: 	'key to {keyId}',
+		name: 			'key to {keyId}',
 		matter: 		'metal',
 		keyId: 			'none',
 		isTreasure: 	1,
@@ -1178,7 +1181,7 @@ const ItemTypeList = {
 // TREASURE
 	"coin": 	{
 		symbol: 		'$',
-		namePattern: 	'{coinCount} gold',
+		name:		 	'{coinCount} gold',
 		matter: 		'metal',
 		coinCount: 		0,
 		coinVariance: 	0.30,
@@ -1191,7 +1194,7 @@ const ItemTypeList = {
 	"potion":   {
 		symbol: 		'p',
 		isTreasure: 	1,
-		namePattern: 	'potion${?effect}{+plus}',
+		name:		 	'potion${?effect}{+plus}',
 		matter: 		'glass',
 		charges: 		1,
 		xDamage: 		1.5,	// Single use, so more damage.
@@ -1211,7 +1214,7 @@ const ItemTypeList = {
 	"spell":    {
 		symbol: 		's',
 		isTreasure: 	1,
-		namePattern: 	'spell${?effect}{+plus}',
+		name:		 	'spell${?effect}{+plus}',
 		matter: 		'paper',
 		rechargeTime: 	Rules.SPELL_RECHARGE_TIME,
 		effects: 		SpellEffects,
@@ -1225,7 +1228,7 @@ const ItemTypeList = {
 	"ore": 		{
 		symbol: 		'o',
 		isTreasure: 	1,
-		namePattern: 	'{variety}',
+		name:		 	'{variety}',
 		matter: 		'stone',
 		varieties: 		OreList,
 		isOre: 			true,
@@ -1236,7 +1239,7 @@ const ItemTypeList = {
 	"gem": 		{
 		symbol: 		"g",
 		isTreasure: 	1,
-		namePattern: 	'{quality} {variety}${+plus}{?effect}',
+		name:		 	'{quality} {variety}${+plus}{?effect}',
 		matter: 		'gem',
 		qualities: 		GemQualityList,
 		varieties: 		GemList,
@@ -1256,7 +1259,7 @@ const ItemTypeList = {
 	"weapon": 	{
 		symbol: 'w',
 		isTreasure: 1,
-		namePattern: 	'{material} {variety}${+plus}{?effect}',
+		name:		 	'{material} {variety}${+plus}{?effect}',
 		matter: 		'metal',
 		materials: 		WeaponMaterialList,
 		varieties: 		WeaponList,
@@ -1272,7 +1275,7 @@ const ItemTypeList = {
 	"ammo": 	{
 		symbol: 		'm',
 		isTreasure: 	1,
-		namePattern: 	'{material} {variety}${+plus}{?effect}',
+		name: 	'{material} {variety}${+plus}{?effect}',
 		varieties: 		AmmoList,
 		donBunches: 	true,
 		isWeapon: 		true,
@@ -1285,7 +1288,7 @@ const ItemTypeList = {
 	"shield": {
 		symbol: 		'x',
 		isTreasure: 	1,
-		namePattern: 	"{material} {variety} shield${+plus}{?effect}",
+		name: 			"{material} {variety} shield${+plus}{?effect}",
 		matter: 		'metal',
 		block: 			'physical',
 		varieties: 		ShieldList,
@@ -1304,7 +1307,7 @@ const ItemTypeList = {
 	"helm": {
 		symbol: 		'h',
 		isTreasure: 	1,
-		namePattern: 	"{variety} helm${+plus}{?effect}",
+		name:		 	"{variety} helm${+plus}{?effect}",
 		matter: 		'metal',
 		varieties: 		HelmList,
 		effects: 		HelmEffects,
@@ -1322,7 +1325,7 @@ const ItemTypeList = {
 	"armor": {
 		symbol: 		'a',
 		isTreasure: 	1,
-		namePattern: 	"{variety} armor${+plus}{?effect}",
+		name:		 	"{variety} armor${+plus}{?effect}",
 		matter: 		'metal',
 		varieties: 		ArmorList,
 		effects: 		ArmorEffects,
@@ -1340,7 +1343,7 @@ const ItemTypeList = {
 	"cloak": {
 		symbol: 		'c',
 		isTreasure: 	1,
-		namePattern: 	"{variety}${+plus}{?effect}",
+		name:		 	"{variety}${+plus}{?effect}",
 		matter: 		'cloth',
 		varieties: 		CloakList,
 		effects: 		CloakEffects,
@@ -1359,7 +1362,7 @@ const ItemTypeList = {
 	"bracers": {
 		symbol: 		'b',
 		isTreasure: 	1,
-		namePattern: 	"{variety} bracers{+plus}{?effect}",
+		name:		 	"{variety} bracers{+plus}{?effect}",
 		matter: 		'metal',
 		varieties: 		BracerList,
 		effects: 		BracersEffects,
@@ -1377,7 +1380,7 @@ const ItemTypeList = {
 	"gloves": {
 		symbol: 		'l',
 		isTreasure: 	1,
-		namePattern: 	"{variety}$",
+		name:		 	"{variety}$",
 		matter: 		'leather',
 		varieties: 		GloveList,
 		effectWhen: 	'use',
@@ -1392,7 +1395,7 @@ const ItemTypeList = {
 	"boots": {
 		symbol: 		'z',
 		isTreasure: 	1,
-		namePattern: 	"{variety} boots{+plus}{?effect}",
+		name:		 	"{variety} boots{+plus}{?effect}",
 		matter: 		'leather',
 		varieties: 		BootList,
 		slot: 			Slot.FEET,
@@ -1410,7 +1413,7 @@ const ItemTypeList = {
 	"ring": {
 		symbol: 		'r',
 		isTreasure: 	1,
-		namePattern: 	"{material} {variety} ring${+plus}{?effect}",
+		name:		 	"{material} {variety} ring${+plus}{?effect}",
 		matter: 		'metal',
 		materials: 		RingMaterialList,
 		varieties: 		RingList,
@@ -1430,7 +1433,7 @@ const ItemTypeList = {
 		symbol: 		't',
 		isTreasure: 	1,
 		isStuff: 		1,
-		namePattern: 	"{variety}${?effect}",
+		name:		 	"{variety}${?effect}",
 		varieties: 		StuffList,
 		imgGet: (self, img) => (img || (self ? self.variety.img : '') || 'item/misc/misc_rune.png'),
 		imgChoices: 	StuffList,
@@ -1444,7 +1447,7 @@ const ItemTypeList = {
 		isPart: 		1,
 		isTreasure:		1,
 		varieties:		{},
-		namePattern:	'{variety}$',
+		name:			'{variety}$',
 		img: 			'item/misc/misc_rune.png',
 		icon: 			'stuff.png'
 	},

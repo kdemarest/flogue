@@ -959,7 +959,7 @@ const MonsterTypeList = {
 	},
 	"redFiddler": {
 		core: [ SYM, 29, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/redFiddler.png', 'it' ],
-		namePattern: "red fiddler",
+		name: "red fiddler",
 		naturalWeapon: {
 			reach: 6,
 			_effectOnAttack: {
@@ -985,7 +985,7 @@ const MonsterTypeList = {
 	},
 	"blueFiddler": {
 		core: [ SYM, 39, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/blueFiddler.png', 'it' ],
-		namePattern: "blue fiddler",
+		name: "blue fiddler",
 		naturalWeapon: {
 			reach: 5,
 			_effectOnAttack: {
@@ -1010,7 +1010,7 @@ const MonsterTypeList = {
 	},
 	"greenFiddler": {
 		core: [ SYM, 49, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/greenFiddler.png', 'it' ],
-		namePattern: "green fiddler",
+		name: "green fiddler",
 		naturalWeapon: {
 			reach: 6,
 			rechargeTime: 3,
@@ -1036,7 +1036,7 @@ const MonsterTypeList = {
 	},
 	"redFiddler": {
 		core: [ SYM, 29, '4:7', 'evil', 'burn', 'animalHunter', 'multiped', 'mon/insect/redFiddler.png', 'it' ],
-		namePattern: "red fiddler",
+		name: "red fiddler",
 		reach: 5,
 		glow: 2,
 		resist: DamageType.BURN,
@@ -1049,7 +1049,7 @@ const MonsterTypeList = {
 	},
 	"blueScarab": {
 		core: [ SYM, 59, '2:30', 'evil', 'shock', 'animalHunter', 'multiped', 'mon/insect/blueScarab.png', 'it' ],
-		namePattern: "blue scarab",
+		name: "blue scarab",
 		glow: 3,
 		immune: DamageType.SHOCK,
 		isPlanar: true,
@@ -1062,7 +1062,7 @@ const MonsterTypeList = {
 	},
 	"redScarab": {
 		core: [ SYM, 19, '2:30', 'evil', 'burn', 'animalHunter', 'multiped', 'mon/insect/redScarab.png', 'it' ],
-		namePattern: "red scarab",
+		name: "red scarab",
 		glow: 3,
 		immune: DamageType.BURN,
 		isPlanar: true,

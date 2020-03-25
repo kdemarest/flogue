@@ -380,6 +380,21 @@ Module.add('utilities',function(){
 		}
 		return '';
 	}
+	String.uncamelTypeId = function(typeId) {
+		let result = String.uncamel(typeId);
+		if( result.charAt(1) == ' ' ) {	// converts eMyEffect to e my effect and then my effect.
+			result = result.substr(2);
+		}
+		return result;
+	}
+
+	String.calcName = function(obj) {
+		obj.namePattern = obj.namePattern || obj.name || String.uncamelTypeId(obj.typeId || 'NOTYPE');
+		obj.name  = String.tokenReplace(obj.namePattern,obj);
+		obj.aboutPattern = obj.aboutPattern || obj.about || '';
+		obj.about = String.tokenReplace(obj.aboutPattern,obj);
+	}
+
 	String.tokenReplace = function(s,obj) {
 		return s.replace(/{([%]*)([?]*)([+]*)(\w+)}|([\w\s]+)/g,function(whole,pct,hasQ,plus,key,words) {
 			if( words !== undefined ) return words;
@@ -409,7 +424,8 @@ Module.add('utilities',function(){
 			if( typeof obj[key] == 'object' ) {
 				if( obj[key] ) {
 					if( obj[key].name === false || obj[key].name === '' ) return '';
-					return (useOf && obj[key].name ? ' of ' : '')+(obj[key].name || 'NONAME ['+key+']');
+					let name = obj[key].name || String.uncamelTypeId(obj[key].typeId || 'NOTYPE2');
+					return (useOf && name ? ' of ' : '')+(name || 'NONAME ['+key+']');
 				}
 			}
 			debugger;

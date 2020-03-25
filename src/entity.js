@@ -131,7 +131,7 @@ class Entity {
 			naturalMeleeWeapon.damage = Rules.monsterDamage(level,hitsToKillPlayer);
 		}
 
-		this.name = (this.name || String.tokenReplace(this.namePattern,this));
+		String.calcName(this);
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) );
 		console.assert( this.x===undefined && this.y===undefined && this.area===undefined);
 

@@ -6,6 +6,8 @@ class Item {
 		console.assert(depth>=0);
 		console.assert(itemType);
 
+		console.assert('creating item with img',itemType.img);
+
 		if( !presets ) {
 			// ERROR: you should do your own item picking, and provide presets!
 			debugger;
@@ -50,6 +52,10 @@ class Item {
 
 		// order is VERY important here! Variety rules, then material, then quality. QMVI (here reversed because each over-writes the prior)
 		Object.merge(this,this.variety,ignoreFields);
+		if( this.variety && this.variety.name ) {
+			this.name = this.variety.name;
+		}
+
 		Object.merge(this,this.material,ignoreFields);
 		Object.merge(this,this.quality,ignoreFields);
 
@@ -186,7 +192,9 @@ class Item {
 
 		// Always do this last so that as many member vars as possible will be available to the namePattern!
 		//if( this.namePattern.indexOf('arrow') >=0 ) debugger;
-		this.calcName();
+		String.calcName(this);
+		console.log('p=',this.namePattern);
+		console.log('n=',this.name);
 	}
 	get area() {
 		if( !this.owner ) debugger;
@@ -197,10 +205,6 @@ class Item {
 	}
 	get baseType() {
 		return ItemTypeList[this.typeId];
-	}
-	calcName(force=false) {
-		this.name  = (force?false:this.name) || String.tokenReplace(this.namePattern,this);
-		this.about = (force?false:this.about) || String.tokenReplace(this.aboutPattern || '',this);
 	}
 	explain(buySell,observer) {
 		let potencyList = ['feeble', 'frail', 'faint', 'tepid', 'mild', 'common', 'passable', 'sturdy', 'hardy', 'robust', 'vigorous', 'mighty', 'fierce', 'righteous', 'potent', 'glorious', 'epic', 'supernal', 'legendary', 'celestial'];
@@ -315,7 +319,7 @@ class Item {
 			Object.assign(this,this.states[newState]);
 		}
 		// Maybe the state is in the name?
-		this.calcName(true);
+		String.calcName(this);
 		// we can just assume that the sprites will need regenerating.
 		imageDirty(this);
 	}
@@ -458,7 +462,7 @@ class Item {
 			return this.id;
 		}
 		let b = '';
-		let fieldList = { name:1, armor: 1, damage:1, damageType:1, blockChance:1, rechargeTime:1, rechargeLeft:1 };
+		let fieldList = { name:1, namePattern:1, armor: 1, damage:1, damageType:1, blockChance:1, rechargeTime:1, rechargeLeft:1 };
 		if( this.owner && this.owner.isMap ) {
 			fieldList.x = 1;
 			fieldList.y = 1;
@@ -470,7 +474,7 @@ class Item {
 			}
 		}
 		if( this.effect ) {
-			let fieldList = { name:1, op: 1, stat: 1, value:1, duration:1, damageType:1, healingType:1, xDuration:1, xRecharge:1, xDamage:1, effectShape:1 };
+			let fieldList = { name:1, namePattern:1, op: 1, stat: 1, value:1, duration:1, damageType:1, healingType:1, xDuration:1, xRecharge:1, xDamage:1, effectShape:1 };
 			for( let fieldId in fieldList ) {
 				let value = this.effect[fieldId];
 				if( value !== undefined ) {

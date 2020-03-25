@@ -76,12 +76,12 @@ let Fab = (function() {
 				if( list.isWhat ) {
 					type[list.isWhat] = true;
 				}
-				if( !type.namePattern ) {
-					type.name = type.name || String.uncamel(type.typeId);
-					if( type.name.charAt(1) == ' ' ) {	// hack special case to fix effect names with ePrefix format.
-						type.name = type.name.substr(2);
-					}
-				}
+//				type.name = type.name || String.uncamel(type.typeId);
+//				type.namePattern = type.name;
+//				if( type.namePattern.charAt(1) == ' ' ) {	// hack special case to fix effect names with ePrefix format.
+//					type.namePattern = type.namePattern.substr(2);
+//				}
+//				type.aboutPattern = type.about || '';
 			});
 		});
 	}

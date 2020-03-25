@@ -3,11 +3,13 @@ Module.add('dataJobs',function() {
 // Check out this awesomeness: http://rmhh.co.uk/occup/b.html
 let JobTypeList = {
 	layman: {
+		name: 'Layman',
 		isLayman: true,
 		attitude: Attitude.WANDER,
 		sign: "Just an ordinary person.",
 	},
 	sentry: {
+		name: 'sentry',
 		isSentry: true,
 		attitude: Attitude.AWAIT,
 		tether: 7,
@@ -16,6 +18,7 @@ let JobTypeList = {
 		inventoryLoot: 'weapon.sword',
 	},
 	brewer: {
+		name: 'brewer',
 		isMerchant: true,
 		isMinor: true,
 		attitude: Attitude.AWAIT,
@@ -26,6 +29,7 @@ let JobTypeList = {
 		inventoryLoot: '20x 50% potion, 10x 50% stuff ofLiquid'
 	},
 	grocer: {
+		name: 'grocer',
 		isMerchant: true,
 		isMinor: true,
 		attitude: Attitude.AWAIT,
@@ -36,6 +40,7 @@ let JobTypeList = {
 		inventoryLoot: '20x stuff isEdible'
 	},
 	scribe: {
+		name: 'scribe',
 		isMerchant: true,
 		isMajor: true,
 		attitude: Attitude.AWAIT,
@@ -46,6 +51,7 @@ let JobTypeList = {
 		inventoryLoot: '20x 50% spell'
 	},
 	armorer: {
+		name: 'armorer',
 		isMerchant: true,
 		isMajor: true,
 		attitude: Attitude.AWAIT,
@@ -56,6 +62,7 @@ let JobTypeList = {
 		inventoryLoot: '15x 50% armor, 6x 50% helm, 6x 50% bracers, 4x 50% shield, 20x 50% armor'
 	},
 	clothier: {
+		name: 'clothier',
 		isMerchant: true,
 		attitude: Attitude.AWAIT,
 		tether: 2,
@@ -65,6 +72,7 @@ let JobTypeList = {
 		inventoryLoot: '10x cloak, 5x gloves, 10x 50% stuff isFabricIngredient'
 	},
 	smith: {
+		name: 'smith',
 		isMerchant: true,
 		isMajor: true,
 		attitude: Attitude.AWAIT,
@@ -76,6 +84,7 @@ let JobTypeList = {
 	},
 	// Bowyers sell bows and arrows, plus a miscellany of thrown or shooting weapons.
 	bowyer: {
+		name: 'bowyer',
 		isMerchant: true,
 		isMajor: true,
 		attitude: Attitude.AWAIT,
@@ -87,6 +96,7 @@ let JobTypeList = {
 	},
 	// Cobblers work with leather primarily to make boots. However, since slings are also leather thay carry those.
 	cobbler: {
+		name: 'cobbler',
 		isMerchant: true,
 		isMidsize: true,
 		attitude: Attitude.AWAIT,
@@ -99,6 +109,7 @@ let JobTypeList = {
 	// Another leather worker, like the cobbler, gaunters are the only source of gloves.
 	// Their leather focus also means they carry slings.
 	gaunter: {
+		name: 'gaunter',
 		isMerchant: true,
 		isMidsize: true,
 		attitude: Attitude.AWAIT,
@@ -109,6 +120,7 @@ let JobTypeList = {
 		inventoryLoot: '10x gloves, 10x 50% gloves, 6x 50% weapon.sling, 10x ammo isSlingable'
 	},
 	lapidary: {
+		name: 'lapidary',
 		isMerchant: true,
 		isMidsize: true,
 		attitude: Attitude.AWAIT,
@@ -119,6 +131,7 @@ let JobTypeList = {
 		inventoryLoot: '20x 50% gem'
 	},
 	jeweler: {
+		name: 'jeweler',
 		isMerchant: true,
 		isMajor: true,
 		attitude: Attitude.AWAIT,
@@ -130,6 +143,7 @@ let JobTypeList = {
 	},
 	// Known for buying anything. They sell "stuff". the peddler also happens to carry darts.
 	peddler: {
+		name: 'peddler',
 		isMerchant: true,
 		isMinor: true,
 		attitude: Attitude.AWAIT,
@@ -141,6 +155,7 @@ let JobTypeList = {
 	},
 	// Miners have enough ore for the player to manufacture things, and they also carry metal objects and pickaxes.
 	miner: {
+		name: 'miner',
 		isMerchant: true,
 		isMinor: true,
 		attitude: Attitude.AWAIT,
@@ -151,11 +166,13 @@ let JobTypeList = {
 		inventoryLoot: '20x ore, 20x 50% ore, 10x stuff ofMetal, 2x weapon.pickaxe'
 	},
 	evangelist: {
+		name: 'evangelist',
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		sign: "The sun has fled the sky!",
 	},
 	priest: {
+		name: 'priest',
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		sign: "Let us give thanks!",

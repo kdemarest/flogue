@@ -335,7 +335,7 @@ class ViewExperience extends ViewObserver {
 
 		if( entity.isTileType || entity.isItemType || (entity.isMonsterType && !entity.isUser()) ) {
 			let s = String.capitalize(entity.name.replace(/\$/,''));
-			if( entity.level !== undefined ) {
+			if( entity.level !== undefined && (entity.isMonsterType || (entity.isItemType && entity.isTreasure)) ) {
 				s += ' Level '+Math.floor(entity.level);
 			}
 			if( entity.jobId ) {

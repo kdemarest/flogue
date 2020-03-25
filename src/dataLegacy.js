@@ -12,8 +12,12 @@ function perkDataCondition(perk, level, index, singularId ) {
 		perk.item.singularId = perk.singularId;
 		perk.item.description = perk.description;
 		perk.item.name = perk.item.name || perk.name;
+		perk.item.namePattern = perk.item.name;
+		perk.item.aboutPattern = perk.item.about || '';
 		if( perk.item.effect ) {
 			perk.item.effect.name = perk.item.effect.name || perk.item.name;
+			perk.item.effect.namePattern = perk.item.effect.name;
+			perk.item.effect.aboutPattern = perk.item.effect.about || '';
 			perk.item.effect.singularId = perk.item.effect.singularId || perk.singularId;
 		}
 		if( perk.item.slot ) {
@@ -25,8 +29,12 @@ function perkDataCondition(perk, level, index, singularId ) {
 		perk.skill.singularId = perk.singularId;
 		perk.skill.description = perk.description;
 		perk.skill.name = perk.skill.name || perk.name;
+		perk.skill.namePattern = perk.skill.name;
+		perk.skill.aboutPattern = perk.skill.about || '';
 		if( perk.skill.effect ) {
 			perk.skill.effect.name = perk.skill.effect.name || perk.skill.name;
+			perk.skill.effect.namePattern = perk.skill.effect.name;
+			perk.skill.effect.aboutPattern = perk.skill.effect.about || '';
 			perk.skill.effect.singularId = perk.skill.effect.singularId || perk.singularId;
 		}
 		if( perk.skill.slot ) {

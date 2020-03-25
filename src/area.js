@@ -246,7 +246,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		new Finder( map.itemList ).forEach( item => {
 			if( item.isSign && item.sign=='BYJOB' ) {
 				new Finder(entityList,item).filter(entity=>entity.jobId).closestToMe().forEach( entity => {
-					item.sign = String.capitalize(JobTypeList[entity.jobId].name);
+					item.sign = String.capitalize(JobTypeList[entity.jobId].name || 'NONAME');
 				});
 			}
 			if( item.imgChoose ) {
