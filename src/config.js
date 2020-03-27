@@ -140,8 +140,10 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.senseDarkVision = 8;
 	MonsterTypeList.player.light = 2;
 
+	PlaceTypeList.surfaceSunTemple.symbols.Z = 'weapon.hammer';
+
 	// If you are doing graphics work, use this. Otherwise comment it out to get faster performance.
-	//IMG_BASE = 'http://localhost:3010/tiles/';
+	IMG_BASE = 'http://localhost:3010/tiles/';
 
 	return {
 //		startingDepth: 1,

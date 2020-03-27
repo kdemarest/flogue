@@ -942,11 +942,11 @@ PlaceTypeList.surfaceSunTemple = {
   #....................#
  ##....................##
  #......................#
- #....b......123456789..b########
-##......................#..d..##
+ #....b......123456789.b########
+##.......Z..............#..d..##
 #f...b....X.a...........o...l.S#
 ##......................#.....##
- #....b......0ABCDEFGH..b########
+ #....b......0ABCDEFGH.b########
  #......................#
  ##....................##
   #....................#
@@ -1241,6 +1241,7 @@ PlaceTypeList.surfaceSunTemple = {
 			],
 			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
+		Z: 'weapon.dagger',
 		l: 'stuff.candleLamp',
 		X: { typeFilter: 'marker', markerId: 'playerStartHere' },
 		o: { typeFilter: 'door', state: 'locked', keyId: 'Solar Temple door' },

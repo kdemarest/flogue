@@ -11,6 +11,8 @@ localhost:3010/tiles/mon/frog.png
 
 const util 		= require('util');
 const fs 		= require('fs');
+const vm		= require('vm');
+const request	= require('request');
 const express 	= require('express');
 const jimp 		= require('jimp');
 const watch     = require('node-watch');
@@ -28,8 +30,8 @@ const DirAdd = [
 
 let DirSpec = {};
 let FilterSpec = {};
-let LastFilterSent = {};
 let FilterDefault = {};
+let LastFilterSent = {};
 
 Object.deepAssign = function(target,...args) {
 
@@ -215,6 +217,22 @@ class ImageProxy {
 		});
 		console.log( count+' stripped' );
 	}
+	sweep(fn) {
+		let count = 0;
+		this.gather( 0, (x,y,i) => {
+			let hex = this.getPixel( x, y );
+			let r = (hex & 0xFF000000)>>>24;
+			let g = (hex & 0x00FF0000)>>>16;
+			let b = (hex & 0x0000FF00)>>>8;
+			let a = (hex & 0x000000FF);
+			let result = fn(r,g,b,a);
+			if( result !== undefined && result !== null ) {
+				this.setPixel( x, y, result );
+				++count;
+			}
+		});
+		console.log( count+' swept' );
+	}
 
 	edgeFade(thickness,threshold) {
 		let result = [];
@@ -332,9 +350,17 @@ x = px + heightAboveFloor/2;
 async function filterImageInPlace(image,filter) {
 	//console.log( "The image is "+image.bitmap.width+'x'+image.bitmap.height );
 
-	let dim = Math.max(image.bitmap.width,image.bitmap.height);
-	image.resize(dim,dim);
-	image.scaleToFit(96,96,jimp.RESIZE_HERMITE);
+	image.background(0x00000000);
+
+	let dimSquare = Math.max(image.bitmap.width,image.bitmap.height);
+	if( dimSquare != image.bitmap.width || dimSquare != image.bitmap.height ) {
+		console.log('resize from '+image.bitmap.width+'x'+image.bitmap.height+' to '+dimSquare+'x'+dimSquare);
+		image.contain(dimSquare,dimSquare);
+	}
+	let dim = Math.ceil(dimSquare/filter.size) * filter.size;
+	image.scaleToFit(dim,dim,jimp.RESIZE_HERMITE);
+
+
 
 	if( filter.flying ) { filter.outline.flying = filter.flying; } 
 	if( filter.glow ) 	{ filter.shadow = false; filter.outline.glow = true; filter.outline.color = filter.glow; } 
@@ -359,10 +385,13 @@ async function filterImageInPlace(image,filter) {
 
 	let proxy = new ImageProxy(image);
 
+	if( filter.sweepFn ) {
+		proxy.sweep( filter.sweepFn );
+	}
+
 	if( filter.strip ) {
 		proxy.strip( filter.strip );
 	}
-
 
 	let blits = [];
 	if( filter.edgeFade ) {
@@ -382,7 +411,20 @@ async function filterImageInPlace(image,filter) {
 	}
 }
 
-async function processAsNeeded(fileName) {
+function asyncRequest(url) {
+	return new Promise(function (resolve, reject) {
+		request(url, function (error, res, body) {
+			if (!error && res.statusCode == 200) {
+				resolve(body);
+			} else {
+				reject(error);
+			}
+		});
+	});
+}
+
+
+async function processAsNeeded(fileName,dirSpec) {
 
 	while( fileLocks[fileName] ) {
 		console.log('Waiting on locked file '+fileName);
@@ -392,13 +434,22 @@ async function processAsNeeded(fileName) {
 
 	let image = null;
 	try {
-		let filter = Object.deepAssign( {}, FilterDefault, FilterSpec[fileName] );
+		let filter = Object.deepAssign( {}, FilterDefault, dirSpec, FilterSpec[fileName] );
 		let filterString = JSON.stringify(filter);
 
-		let isOutOfDate = filterString !== LastFilterSent[fileName] || await testTimestamps(fileName);
+		let sourcePath = getSourcePath(fileName);
+		let image;
+
+		if( filter.url ) {
+			if( !fs.existsSync(sourcePath) ) {
+				image = await jimpRead(filter.url);
+				await jimpWrite( sourcePath, image );		// This handles conversion to the new image type, eg jpg to png
+			}
+		}
+
+		let isOutOfDate = !!image || filterString !== LastFilterSent[fileName] || await testTimestamps(fileName);
 		if( isOutOfDate ) {
-			let sourcePath = getSourcePath(fileName);
-			let image = await jimpRead(sourcePath);
+			image = image || await jimpRead(sourcePath);
 			console.log( 'Filtering '+sourcePath );
 			console.log( filterString );
 			await filterImageInPlace(image,filter);
@@ -425,18 +476,34 @@ async function processAsNeeded(fileName) {
 async function loadFilterSpec(filePath) {
 	fs.readFile(filePath, 'utf8', function(err, data) {  
 		if (err) throw err;
-		eval( data );
+		const sandbox = {
+			FilterSpec: null,
+			DirSpec: null,
+			FilterDefault: null
+		};
+		try {
+			const script = new vm.Script( data );
+			const context = new vm.createContext(sandbox);
+			script.runInContext( context, { lineOffset: 0, displayErrors: true } );
+			FilterSpec    = sandbox.FilterSpec;
+			DirSpec       = sandbox.DirSpec;
+			FilterDefault = sandbox.FilterDefault;
+		}
+		catch(e) {
+			console.log('filters.js',e.message,'in line', e.stack.split('<anonymous>:')[1].split('\n\n')[0]);
+			FilterSpec = null;	
+		}
 	});
 }
 
-function shouldFilter(fileName) {
-	let doFilter = false;
+function getDirSpec(fileName) {
+	let dirSpec = false;
 	Object.each( DirSpec, (value,dir) => {
 		if( fileName.startsWith(dir) ) {
-			doFilter = value;
+			dirSpec = value;
 		}
 	});
-	return doFilter;
+	return dirSpec;
 }
 
 async function run() {
@@ -461,16 +528,25 @@ async function run() {
 
 
 	app.get('/tiles/*', async (req, res, next) => {
+		let fileName = req.params[0];
+		if( !FilterSpec ) {
+			console.log('Invalid FilterSpec. Unable to serve',fileName);
+			return next(e);
+		}
 		try {
 			let fileName = req.params[0];
-			if( shouldFilter(fileName) ) {
-				await processAsNeeded(fileName);
-			}
 			let filePath = app.cwd+'/tiles/'+fileName;
+			let dirSpec = getDirSpec(fileName);
+			console.log(dirSpec);
+			if( dirSpec ) {
+				console.log( "processing "+filePath );
+				await processAsNeeded(fileName,dirSpec);
+			}
 			console.log( "sending "+filePath );
 			res.sendFile( filePath );
 		} catch(e) {
-			next(e);
+			console.log('Error processing',fileName);
+			return next(e);
 		}
 	});
 

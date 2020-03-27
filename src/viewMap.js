@@ -353,7 +353,7 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,indexOrder=0,senseDarkVisi
 				let sprite = spriteCreate( entity.spriteList, img );
 				sprite.entity = entity;
 				sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
-				sprite.baseScale = entity.scale || Tile.DIM/sprite.width;
+				sprite.baseScale = (entity.scale || 1) * Tile.DIM/sprite.width;
 				if( entity.isMonsterType && !entity.scale) {
 					sprite.baseScale *= Math.rand(MONSTER_SCALE_VARIANCE_MIN,MONSTER_SCALE_VARIANCE_MAX);
 				}

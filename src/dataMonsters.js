@@ -386,6 +386,7 @@ const MonsterTypeList = {
 		senseSight: MaxVis,
 		strictAmmo: true,
 		imgChoices: PlayerImages,
+		scale: 1.1,
 		imgGet: (self,img) => {
 			if( img ) return img;
 			let i2 = self.imgChoices.standard;
@@ -941,7 +942,6 @@ const MonsterTypeList = {
 		inventoryLoot: '1x potion.eBurn',
 		loot: '50% coin, 20% weapon.sword, 20% weapon.club, 20% any, 30% pinchOfEarth',
 		sayPrayer: 'Oh mighty Thagzog...',
-		scale: 0.45,
 	},
 	"goblinWar": { 
 		core: [ SYM, 49, '3:8', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],

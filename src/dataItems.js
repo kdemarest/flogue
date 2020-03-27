@@ -297,7 +297,8 @@ const WeaponList = Fab.add( '', {
 		mayThrow: true,
 		range: 4,
 		attackVerb: 'strike',
-		img: 'item/weapon/dagger.png'
+		img: 'item/weapon/dagger.png',
+		scale: 0.7
 	},
 
 	"solarBlade": {
@@ -411,7 +412,7 @@ const WeaponList = Fab.add( '', {
 		xDamage: 1.15,
 		damageType: DamageType.BASH,
 		quick: 0,
-		img: 'item/weapon/hammer2.png'
+		img: 'item/weapon/hammer.png'
 	},
 	"axe": {
 		level: 2,
