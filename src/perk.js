@@ -1,6 +1,7 @@
 Module.add('perk',function() {
 
 let perkNop = function() {}
+let perkNone = [];
 
 let Perk = {};
 
@@ -8,16 +9,23 @@ let Perk = {};
 Perk.apply = function(when,effect,details) {
 	console.assert(effect);
 	let source = effect.source ? effect.source : (effect.item ? effect.item.ownerOfRecord : null);
-	if( !source || !source.isMonsterType || !source.perkList) {
-		return effect;
+	let checkPerks = !( !source || !source.isMonsterType || !source.perkList);
+	if( checkPerks ) {
+		Object.each( source.perkList, perk => {
+			if( perk.dead ) {
+				return;
+			}
+			let fn = perk.apply || perkNop;
+			let didApply = fn(when,effect,details);
+			if( didApply !== false && didApply !== undefined ) {
+				effect.perksApplied = effect.perksApplied || [];
+				effect.perksApplied.push(perk);
+			}
+		});
 	}
-	Object.each( source.perkList, perk => {
-		if( perk.dead ) {
-			return;
-		}
-		let fn = perk.apply || perkNop;
-		fn(when,effect,details);
-	});
+	if( !effect.perksApplied ) {
+		effect.perksApplied = perkNone;
+	}
 	return effect;
 }
 

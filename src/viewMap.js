@@ -297,6 +297,7 @@ let spriteCreate = function(spriteList,imgPath,mayReuse) {
 		return;
 	}
 	let sprite = new PIXI.Sprite( resource.texture );
+	sprite.resource = resource;
 	sprite.onStage = false;
 	sprite.refs = 1;
 	let allocated = false;
@@ -676,7 +677,9 @@ class ViewMap extends ViewObserver {
 			//console.log('ViewMap hide');
 			this.render();
 		}
-		if( msg == 'render' ) {
+		// It just so happens that SOME perks grants benefits that require re-render.
+		// But the map view might not even be set up yet! So check for an observer.
+		if( msg == 'render' && this.observer ) {
 			this.render();
 		}
 	}

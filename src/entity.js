@@ -209,6 +209,7 @@ class Entity {
 			area.castLight();
 		}
 		if( this.legacyId && !this.perkList ) {
+			debugger;
 			this.grantPerks();
 		}
 		return {
@@ -607,6 +608,8 @@ class Entity {
 			return false;
 		}
 		if( entity.isItemType && entity.owner && !entity.owner.isMap ) {
+			// This shortcuts a bit, returning true if the entity is owned and you are the owner.
+
 			// WARNING! This is needed so that messages generated during entity init will work
 			// properly. That is, x and y are undefined, so we need to rely on who is holding the
 			// object.
@@ -1177,7 +1180,8 @@ class Entity {
 	}
 
 	thinkHunger(foodDist=2) {
-		let foodList = new Finder(this.map.findItemsNear(this.x,this.y,foodDist),this).filter(item=>item.isEdible && this.eat.includes[item.matter] && !item.invisible);
+		let foodList = new Finder(this.map.findItemsNear(this.x,this.y,foodDist),this)
+			.filter(item => item.isEdible && this.eat.includes[item.matter] && this.canPerceiveEntity(item));
 		if( foodList.first && this.isAtTarget(foodList.first) ) {
 			this.record('found some food. eating.',true);
 			this.commandItem = foodList.first;
@@ -1444,6 +1448,8 @@ class Entity {
 				this.enemyIsSmelled = wasSmell;
 				// Keep pursuing and check the lep if it is closer than any other enemy. My target might have
 				// simply vanished around a corner.
+				// LEP means "last enemy position" and is used when enemies vanish from sight for any reason,
+				// whether turning a corner or suddenly going invisible.
 				let wasLEP = false;
 				let lep = this.lastEnemyPosition;
 				if( lep ) {

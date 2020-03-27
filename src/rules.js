@@ -54,6 +54,9 @@ let Rules = new class {
 	 	return Math.clamp(armor,0.0,1.0);
 	 }
 	 playerDamage(playerLevel) {
+	 	// There is just one weird case. Items made in the solar temple are made on
+	 	// level ZERO, and we need them to be effective on level 1.
+	 	playerLevel = Math.max(playerLevel,1);
 	 	// Always just 1/10th of the player's hit points at this level. Monster health will scale to it.
 	 	let damage = this.playerHealth(playerLevel)/10;
 	 	return Math.max(1,Math.floor(damage));

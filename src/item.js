@@ -193,8 +193,8 @@ class Item {
 		// Always do this last so that as many member vars as possible will be available to the namePattern!
 		//if( this.namePattern.indexOf('arrow') >=0 ) debugger;
 		String.calcName(this);
-		console.log('p=',this.namePattern);
-		console.log('n=',this.name);
+		//console.log('p=',this.namePattern);
+		//console.log('n=',this.name);
 	}
 	get area() {
 		if( !this.owner ) debugger;
@@ -230,26 +230,59 @@ class Item {
 			}
 			return String.combine(' ',chance,item.effect.name + (item.effect.permuteName ? '**' : ''));
 		}
-		function getDamage() {
+		function getQuick(perksApplied) {
+			let q = item.getQuick();
 			let effectRaw = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
-			if( !effectRaw ) {
-				return '';
+			if( effectRaw ) {
+				let effect = Object.assign({},effectRaw,{source:observer,item:item});
+				Perk.apply( 'quick', effect );
+				if( effect.quick !== undefined ) {
+					q = effect.quick;
+				}
+				perksApplied.push(...effect.perksApplied);
 			}
-			let effect = Object.assign({},effectRaw,{source:observer,item:item});
-			return Math.max(1,Math.floor(Perk.apply( 'main', effect ).value));
+			return ['(clumsy)','','(quick)'][q];
 		}
-		function getDamageType() {
+		function getDamage(perksApplied) {
 			let effectRaw = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
 			if( !effectRaw ) {
 				return '';
 			}
 			let effect = Object.assign({},effectRaw,{source:observer,item:item});
-			return Perk.apply( 'main', effect ).damageType;
+			Perk.apply( 'damage', effect );
+			perksApplied.push(...effect.perksApplied);
+			return Math.max(1,Math.floor(effect.value)) + (effect.perksApplied.length ? '*' : '');
+		}
+		function getDamageType(perksApplied) {
+			let effectRaw = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
+			if( !effectRaw ) {
+				return '';
+			}
+			let effect = Object.assign({},effectRaw,{source:observer,item:item});
+			Perk.apply( 'damageType', effect );
+			perksApplied.push(...effect.perksApplied);
+			return effect.damageType + (effect.perksApplied.length ? '*' : '');
 		}
 
 		let item = this;
 		let owner = item.owner && item.owner.isMonsterType ? item.owner : {};
 		let nameClean = item.name.replace(/\$/,'');
+		let perksApplied = [];
+		let exDamage = getDamage(perksApplied);
+		let exDamageType = getDamageType(perksApplied);
+		let exDescription2 = item.description || (item.effect?item.effect.description:'') || '';
+		let exQuick = getQuick(perksApplied);
+		let exPerks = '';
+		let perksDone = {};
+		perksApplied.forEach( perk => {
+			if( !perksDone[perk.name] ) {
+				exPerks += 'Perk: '+perk.name+': '+perk.description+'<br>';
+				perksDone[perk.name] = 1;
+			}
+		});
+		if( perksApplied.length && item.isSword ) {
+			//debugger;
+		}
 		return {
 			item: 			item,
 			typeId: 		item.typeId,
@@ -258,12 +291,13 @@ class Item {
 			typeOrder: 		order(item.typeId),
 			icon: 			icon(item.icon),
 			description: 	((item.bunch||0)>1 ? item.bunch+'x ' : '')+String.capitalize(nameClean),
-			description2: 	item.description || (item.effect?item.effect.description:'') || '',
+			description2: 	exDescription2,
+			perks:			exPerks,
 			bunch: 			((item.bunch||0)>1 ? item.bunch+'x ' : ''),
 			name: 			String.capitalize(nameClean),
-			damage: 		getDamage(),
-			damageType: 	getDamageType(),
-			quick: 			['(clumsy)','','(quick)'][item.getQuick()],
+			damage: 		exDamage,
+			damageType: 	exDamageType,
+			quick: 			exQuick,
 			reach: 			item.reach > 1 ? 'reach '+item.reach : '',
 			sneak: 			(owner.sneakAttackMult||2)<=2 ? '' : 'Sneak x'+Math.floor(owner.sneakAttackMult),
 			armor: 			item.isArmor || item.isShield ? Math.floor(item.calcReduction(DamageType.CUT,item.isShield)*Rules.armorVisualScale) : '',

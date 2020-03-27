@@ -342,6 +342,9 @@ class ViewCraft extends ViewInventory {
 				if( ex.description2 ) {
 					s += ex.description2+'<br>';
 				}
+				if( ex.perks ) {
+					s += ex.perks+'<br>';
+				}
 				s += recipe.description ? recipe.description+'<br>' : '';
 				nameList.push( s );
 			}

@@ -284,7 +284,7 @@ class ViewInventory extends ViewObserver {
 			let spc = this.sortColId == 'icon' && lastTypeId && lastTypeId!=item.typeId;
 			lastTypeId = item.typeId;;
 
-			cell.slot = td( spc, '', 
+			cell.slot = td( spc, 'slotSpacer', 
 				(item.inSlot ? icon('marked.png') : 
 				(item.slot ? icon('unmarked.png') : 
 				(!this.everSeen[item.id]?'<span class="newItem">NEW</span>' : ''

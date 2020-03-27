@@ -933,29 +933,29 @@ PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt) {
 PlaceTypeList.surfaceSunTemple = {
 	map:
 `
-        #########
-      ###.......###
-    ###...........###
-   ##...............##
-   #........b........#
-  ##......b...b......##
-  #...................#
- ##...................##
- #.....................#
- #....b.......1.2.3.8.b########
-##.....................#..d..##
-#F...b....X.A..........D...L.S#
-##.....................#.....##
- #....b.......4.5.6.7.b########
- #.....................#
- ##...................##
-  #...................#
-  ##......b...b......##
-   #........b........#
-   ##...............##
-    ###...........###
-      ###.......###
-        #########
+        ##########
+      ###........###
+    ###............###
+   ##................##
+   #........b.........#
+  ##......b...b.......##
+  #....................#
+ ##....................##
+ #......................#
+ #....b......123456789..b########
+##........l.............#..d..##
+#f...b....X.a...........o...l.S#
+##......................#.....##
+ #....b......0ABCDEFGH..b########
+ #......................#
+ ##....................##
+  #....................#
+  ##......b...b.......##
+   #........b.........#
+   ##................##
+    ###............###
+      ###........###
+        ##########
 `,
 	flags: { rotate: true, hasWall: true, isUnique: true },
 	onLoot: (self,toucher) => {
@@ -968,7 +968,7 @@ PlaceTypeList.surfaceSunTemple = {
 			typeFilter: 'chest',
 			label: 'starterChest',
 			isHidden: true,
-			sign: 'Legacy of Hathgar the mighty.',
+			sign: 'Legacy of Hathgar the mighty. Soldier',
 			name: 'Hathgar\'s Chest',
 			scionName: 'Scion of Hathgar',
 			legacyId: 'soldier',
@@ -983,7 +983,7 @@ PlaceTypeList.surfaceSunTemple = {
 			typeFilter: 'chest',
 			label: 'starterChest',
 			isHidden: true,
-			sign: 'Legacy of Ozymandius the destroyer.',
+			sign: 'Legacy of Ozymandius the destroyer. Proto-Thermaturge',
 			name: 'Ozymandius\' Chest',
 			scionName: 'Scion of Ozymandius',
 			properNoun: true,
@@ -997,7 +997,7 @@ PlaceTypeList.surfaceSunTemple = {
 			typeFilter: 'chest',
 			label: 'starterChest',
 			isHidden: true,
-			sign: 'Legacy of Slyndero the clever.',
+			sign: 'Legacy of Slyndero the clever. Proto-Assassin.',
 			name: 'Slyndero\'s Chest',
 			scionName: 'Scion of Slyndero',
 			properNoun: true,
@@ -1011,9 +1011,10 @@ PlaceTypeList.surfaceSunTemple = {
 			typeFilter: 'chest',
 			label: 'starterChest',
 			isHidden: true,
-			sign: 'Legacy of Duramure the steadfast.',
+			sign: 'Legacy of Duramure the steadfast. Brawler',
 			name: 'Duramure\'s Chest',
 			scionName: 'Scion of Duramure',
+			legacyId: 'brawler',
 			properNoun: true,
 			inventoryLoot: [
 				'weapon.hammer.eInert, armor.eInert, shield.eInert, 2x potion.eHealing',
@@ -1025,9 +1026,10 @@ PlaceTypeList.surfaceSunTemple = {
 			typeFilter: 'chest',
 			label: 'starterChest',
 			isHidden: true,
-			sign: 'Legacy of Arithern the accurate.',
+			sign: 'Legacy of Arithern the accurate. Archer',
 			name: 'Arithern\'s Chest',
 			scionName: 'Scion of Arithern',
+			legacyId: 'archer',
 			properNoun: true,
 			inventoryLoot: [
 				'armor.eInert, weapon.bow.eSmite, 50x ammo.arrow, 5x ammo.dart, 2x potion.eHealing',
@@ -1039,7 +1041,7 @@ PlaceTypeList.surfaceSunTemple = {
 			typeFilter: 'chest',
 			label: 'starterChest',
 			isHidden: true,
-			sign: 'Legacy of Berthold the blessed.',
+			sign: 'Legacy of Berthold the blessed. Proto-Priest',
 			name: 'Berthold\'s Chest',
 			scionName: 'Scion of Berthold',
 			properNoun: true,
@@ -1054,7 +1056,7 @@ PlaceTypeList.surfaceSunTemple = {
 			typeFilter: 'chest',
 			label: 'starterChest',
 			isHidden: true,
-			sign: 'Legacy of Gadriin the mindshaper.',
+			sign: 'Legacy of Gadriin the mindshaper. Proto-Neuromancer',
 			name: 'Gadriin\'s Chest',
 			scionName: 'Scion of Gadriin',
 			properNoun: true,
@@ -1069,7 +1071,7 @@ PlaceTypeList.surfaceSunTemple = {
 			typeFilter: 'chest',
 			label: 'starterChest',
 			isHidden: true,
-			sign: 'Legacy of Beowulf the bear.',
+			sign: 'Legacy of Beowulf the bear. Proto-Druid-ish',
 			name: 'Beowulf\'s Chest',
 			scionName: 'Scion of Beowulf',
 			properNoun: true,
@@ -1079,11 +1081,171 @@ PlaceTypeList.surfaceSunTemple = {
 			],
 			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
 		}],
-		L: 'stuff.candleLamp',
+		'9': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Legacy of Bindi the Balanced. Monk',
+			name: 'Bindi\'s Chest',
+			scionName: 'Scion of Bindi',
+			legacyId: 'monk',
+			properNoun: true,
+			inventoryLoot: [
+				'2x stuff.bearFigurine, weapon.sword, 2x potion.eHealing, 4x stuff.lumpOfMeat',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		'0': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Legacy of Bindi the Balanced. Monk',
+			name: 'Bindi\'s Chest',
+			scionName: 'Scion of Bindi',
+			legacyId: 'monk',
+			properNoun: true,
+			inventoryLoot: [
+				'cloak.linenRobes',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		'A': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Empty Chest',
+			name: 'Nobody\'s Chest',
+			scionName: 'Scion of Nobody',
+			legacyId: '',
+			properNoun: true,
+			inventoryLoot: [
+				'',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		'B': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Empty Chest',
+			name: 'Nobody\'s Chest',
+			scionName: 'Scion of Nobody',
+			legacyId: '',
+			properNoun: true,
+			inventoryLoot: [
+				'',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		'C': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Empty Chest',
+			name: 'Nobody\'s Chest',
+			scionName: 'Scion of Nobody',
+			legacyId: '',
+			properNoun: true,
+			inventoryLoot: [
+				'',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		'D': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Empty Chest',
+			name: 'Nobody\'s Chest',
+			scionName: 'Scion of Nobody',
+			legacyId: '',
+			properNoun: true,
+			inventoryLoot: [
+				'',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		'E': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Empty Chest',
+			name: 'Nobody\'s Chest',
+			scionName: 'Scion of Nobody',
+			legacyId: '',
+			properNoun: true,
+			inventoryLoot: [
+				'',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		'F': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Empty Chest',
+			name: 'Nobody\'s Chest',
+			scionName: 'Scion of Nobody',
+			legacyId: '',
+			properNoun: true,
+			inventoryLoot: [
+				'',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		'G': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Empty Chest',
+			name: 'Nobody\'s Chest',
+			scionName: 'Scion of Nobody',
+			legacyId: '',
+			properNoun: true,
+			inventoryLoot: [
+				'',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		'H': [{
+			// This would work better if I could stash my body in a chest, or something.
+			typeFilter: 'chest',
+			label: 'starterChest',
+			isHidden: true,
+			sign: 'Empty Chest',
+			name: 'Nobody\'s Chest',
+			scionName: 'Scion of Nobody',
+			legacyId: '',
+			properNoun: true,
+			inventoryLoot: [
+				'',
+				{ typeFilter: 'key', keyId: 'Solar Temple door' }
+			],
+			onLoot: (self,toucher) => PlaceTypeList.surfaceSunTemple.onLoot(self,toucher)
+		}],
+		l: 'stuff.candleLamp',
 		X: { typeFilter: 'marker', markerId: 'playerStartHere' },
-		D: { typeFilter: 'door', state: 'locked', keyId: 'Solar Temple door' },
-		F: "fontSolar",
-		A: { typeFilter: 'altar', unhide: 'starterChest', inventoryLoot: 'weapon.solarBlade' },
+		o: { typeFilter: 'door', state: 'locked', keyId: 'Solar Temple door' },
+		f: "fontSolar",
+		a: { typeFilter: 'altar', unhide: 'starterChest', inventoryLoot: 'weapon.solarBlade' },
 		b: "brazier",
 		S: "stairsDown",
 		d: "dog"

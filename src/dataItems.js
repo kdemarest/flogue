@@ -513,6 +513,7 @@ const CloakList = Fab.add( '', {
 	"corduroyCloak": 	{ level:  0, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
 	"canvasCloak": 		{ level: 10, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
 	"linenCloak": 		{ level: 20, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"linenRobes": 		{ level: 20, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
 	"silkCloak": 		{ level: 30, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
 	"elvishCloak": 		{ level: 40, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
 	"dwarvishCloak":	{ level: 50, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },

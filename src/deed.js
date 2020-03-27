@@ -814,7 +814,9 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 
 
 	// Let any applicable perk transmogrify the effect any way it wants to.
-	Perk.apply( 'main', effect );
+	Perk.apply( 'damage', effect );
+	Perk.apply( 'damageType', effect );
+	Perk.apply( 'quick', effect );
 
 	if( singular && (effect.singularOp == 'max' || effect.singularOp == 'sum') ) {
 		//Some effects are "singular" meaning you can't have more than one of it upon you.

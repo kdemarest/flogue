@@ -58,11 +58,11 @@ class ViewInfo extends ViewObserver {
 				s += true||item.isUnique ? '<img class="itemImage" src="'+ImageRepo.imgPath(item)+'"><br>' :
 					'<table class="itemIconTable"><tr><td>'+ex.icon+'</td><td>'+lvl+'</td></tr></table><br>';
 				s += ex.description+(ex.permutation?' '+ex.permutation:'')+'<br>';
-				if( ex.description2 ) {
-					s += ex.description2+'<br>';
-				}
 				if( ex.effectAbout ) {
 					s += ex.effectAbout+'<br>';
+				}
+				if( ex.description2 ) {
+					s += ex.description2+'<br>';
 				}
 				//if( item.effect && item.effect.stat && !item.isWeapon ) {
 				//	s += item.effect.stat+' '+(''+item.effect.value).split(',').join(', ')+'<br>';
@@ -88,7 +88,10 @@ class ViewInfo extends ViewObserver {
 			if( dam || arm ) {
 				s += dam+arm+'<br>';
 			}
-			s += (ex.bonus ? ex.bonus+' ' : '')+(ex.recharge ? ex.recharge+' recharge' : '');
+			s += (ex.bonus ? ex.bonus+' ' : '')+(ex.recharge ? ex.recharge+' recharge' : '')+'<br>';
+			if( ex.perks ) {
+				s += ex.perks+'<br>';
+			}
 			if( !mine ) {
 				s = '<div class="monColor">'+s+'</div>';
 			}
