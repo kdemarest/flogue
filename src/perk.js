@@ -1,7 +1,6 @@
 Module.add('perk',function() {
 
 let perkNop = function() {}
-let perkNone = [];
 
 let Perk = {};
 
@@ -24,7 +23,7 @@ Perk.apply = function(when,effect,details) {
 		});
 	}
 	if( !effect.perksApplied ) {
-		effect.perksApplied = perkNone;
+		effect.perksApplied = [];
 	}
 	return effect;
 }

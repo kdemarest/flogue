@@ -209,7 +209,6 @@ class Entity {
 			area.castLight();
 		}
 		if( this.legacyId && !this.perkList ) {
-			debugger;
 			this.grantPerks();
 		}
 		return {
@@ -1762,8 +1761,11 @@ class Entity {
 		let is = (isRanged ? 'isShield' : 'isArmor');
 		let f = new Finder(this.inventory).filter( item=>item.inSlot && item[is] );
 		let armor = 0;
-		f.forEach( item => { armor += item.calcReduction(damageType); });
-		return Perk.apply( 'calcReduction', { source: this, isRanged: isRanged, damageType: damageType, armor: armor } ).armor;
+		f.forEach( item => {
+			let armorEffect = item.calcArmorEffect(damageType,isRanged);
+			armor += armorEffect.armor;
+		});
+		return armor;
 	}
 
 	changeAttitude(newAttitude) {

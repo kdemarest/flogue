@@ -125,7 +125,9 @@ LegacyList.soldier = compose('soldier',[
 	}) ),
 	range( [8,16], (level,index) => ({
 		name: 'Armor Skill +'+((index+1)*20)+'%',
-		apply: (when,e)=>when=='calcReduction' ? e.armor *= 1+(index+1)*0.20 : false,
+		apply: (when,e) => {
+			return when=='armor' ? e.armor *= 1+(index+1)*0.20 : false;
+		},
 		description: 'Improves the defense of any armor worn, reducing damage.'
 	}) ),
 ]);
@@ -257,7 +259,7 @@ LegacyList.monk = compose( 'monk', [
 	range( [3,7,11], (level,index) => ({
 		name: 'Refocus Harm '+Number.roman(index+1),
 		allow: noChestArmor,
-		apply: (when,e) => when=='calcReduction' && noChestArmor(e) ? e.armor = Rules.playerArmor(level+1) : false,
+		apply: (when,e) => when=='armor' && noChestArmor(e) ? e.armor = Rules.playerArmor(level+1) : false,
 		description: 'You move like wind to deflect '+Rules.playerArmor(level+1)+'% of damage. No chest armor.'
 	})),
 	range( [16], (level,index) => ({

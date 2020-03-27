@@ -263,6 +263,14 @@ class Item {
 			perksApplied.push(...effect.perksApplied);
 			return effect.damageType + (effect.perksApplied.length ? '*' : '');
 		}
+		function getArmor(perksApplied) {
+			if( !item.isArmor && !item.isShield ) {
+				return '';
+			}
+			let armorEffect = item.calcArmorEffect(DamageType.CUT,false);
+			perksApplied.push(...armorEffect.perksApplied);
+			return Math.floor(armorEffect.armor*Rules.armorVisualScale) + (armorEffect.perksApplied.length ? '*' : '');
+		}
 
 		let item = this;
 		let owner = item.owner && item.owner.isMonsterType ? item.owner : {};
@@ -272,11 +280,12 @@ class Item {
 		let exDamageType = getDamageType(perksApplied);
 		let exDescription2 = item.description || (item.effect?item.effect.description:'') || '';
 		let exQuick = getQuick(perksApplied);
+		let exArmor = getArmor(perksApplied);
 		let exPerks = '';
 		let perksDone = {};
 		perksApplied.forEach( perk => {
 			if( !perksDone[perk.name] ) {
-				exPerks += 'Perk: '+perk.name+': '+perk.description+'<br>';
+				exPerks += '* '+perk.name+': '+perk.description+'<br>';
 				perksDone[perk.name] = 1;
 			}
 		});
@@ -300,7 +309,7 @@ class Item {
 			quick: 			exQuick,
 			reach: 			item.reach > 1 ? 'reach '+item.reach : '',
 			sneak: 			(owner.sneakAttackMult||2)<=2 ? '' : 'Sneak x'+Math.floor(owner.sneakAttackMult),
-			armor: 			item.isArmor || item.isShield ? Math.floor(item.calcReduction(DamageType.CUT,item.isShield)*Rules.armorVisualScale) : '',
+			armor: 			exArmor,
 			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? '('+item.effect.effectShape+')' : '',
 			bonus: 			getBonus(),
 			effect: 		item.effect ? (item.effect.name || item.effect.typeId) : '',
@@ -478,7 +487,7 @@ class Item {
 		return blockChance;
 	}
 
-	calcReduction(damageType) {
+	calcArmorEffect(damageType,isRanged) {
 		if( !this.isArmor && !this.isShield ) {
 			debugger;
 			return 0;
@@ -489,7 +498,14 @@ class Item {
 		if( this.isShield && !ShieldDefendsAgainst.includes(damageType) ) {
 			return 0;
 		}
-		return this.armor;
+		let armorEffect = {
+			item: this,
+			damageType: damageType,
+			isRanged: isRanged,
+			armor: this.armor
+		};
+		Perk.apply( 'armor', armorEffect);
+		return armorEffect;
 	}
 	bunchId() {
 		if( (this.inSlot && !this.donBunches) || !this.isTreasure || this.noBunch || this.isFake || this.isSkill || this.inventory ) {

@@ -131,7 +131,7 @@ ConfigList.ken = () => {
 	});
 
 	// soldier, brawler, monk, archer, ninja, not quite blaster
-//	MonsterTypeList.player.legacyId = 'monk';
+	MonsterTypeList.player.legacyId = 'soldier';
 //	MonsterTypeList.player.inventoryLoot.push('5x spell, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
 //	MonsterTypeList.player.inventoryLoot.push('spell.eTeleport, spell.eBlink');
 //	MonsterTypeList.player.sensePerception = true;
