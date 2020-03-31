@@ -114,7 +114,7 @@ Gab = (new function(priorGab) {
 			return [mSubject,subj,' suddenly ',mVerb,newValue?'wink':'appear',newValue?' out of sight':' from thin air','!'];
 		},
 		senseInvisible: function(subj,obj,oldValue,newValue) {
-			return [mSubject,subj,' can see invisible things!'];
+			return [mSubject,subj,' can '+(newValue?'':'no longer ')+'see invisible things!'];
 		},
 		speed: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' ',mVerb,(newValue<oldValue?'slow':'speed'),' ',(newValue<oldValue?'down':'up'),'.'];

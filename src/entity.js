@@ -91,7 +91,7 @@ class Entity {
 			values.jobId = jobId;	// because values has the highest priority.
 		}
 		let jobData = Object.merge( {}, JobTypeList[jobId], { type:1, typeId:1, baseType:1, level:1, rarity:1, name:1, namePattern:1 } );
-		jobData.inventoryLoot = Array.supplyConcat( monsterType.inventoryLoot, inits.inventoryLoot, jobData.inventoryLoot, inject?inject.inventoryLoot:null, values.inventoryLoot );
+		jobData.carrying = Array.supplyConcat( monsterType.carrying, inits.carrying, jobData.carrying, inject?inject.carrying:null, values.carrying );
 
 		Object.assign( this, monsterType, inits, jobData, inject || {}, values );
 
@@ -102,16 +102,16 @@ class Entity {
 		}
 
 		if( this.naturalWeapon ) {
-			this.lootTake( [this.naturalWeapon], this.level, null, true );
+			Inventory.lootTo( this, [this.naturalWeapon], this.level, null, true );
 		}
 
-		if( this.inventoryLoot ) {
-			this.lootTake( this.inventoryLoot, this.level, null, true );
+		if( this.carrying ) {
+			Inventory.lootTo( this, this.carrying, this.level, null, true );
 		}
 		console.assert( this.inventory.length >= 1 );	// 1 due to the natural melee weapon.
 
-		if( this.inventoryWear ) {
-			this.lootTake( this.inventoryWear, this.level, null, true, null, item => {
+		if( this.wearing ) {
+			Inventory.lootTo( this, this.wearing, this.level, null, true, null, item => {
 				if( this.mayDon(item) ) {
 					this.don(item,item.slot);
 				}
@@ -261,6 +261,20 @@ class Entity {
 		}
 		return false;
 	}
+	fling(itemList) {
+		let self = this;
+		itemList.forEach( item => {
+			let lx = self.x;
+			let ly = self.y;
+			if( this.lootFling ) {
+				let dir = Math.randInt(0,8);
+				lx += Direction.add[dir].x*this.lootFling;
+				ly += Direction.add[dir].y*this.lootFling;
+			}
+			item.giveTo(this.map,lx,ly,true)
+		});
+	}
+
 	die() {
 		if( this.dead && this.isUser() ) {
 			return;
@@ -308,36 +322,32 @@ class Entity {
 
 		// make sure that if this critter is carrying an .isPlot item that it gets dropped SOMEWHERE useful!
 		if( this.dead ) {
-			// When you vanish, or leave no corpse, your loot just drops, or, of set to fling
+			// When you vanish, or leave no corpse, your loot just drops, or, if set to fling
 			// it sprays around within lootFling distance. Like if you want to explode a bit.
 			if( this.vanish || this.corpse === false ) {
-				let itemList = this.lootGenerate( this.loot, this.level );
-				if( this.inventory ) {
-					itemList = itemList.concat(this.inventory);
+				let itemList = this.deathLootGenerate();
+				if( this.vanish ) {
+					itemList = new Finder(itemList).isPlot().all;
 				}
-				let partCount = Math.randInt(1,3);
-				let partFrom = 'is'+String.capitalize(this.typeId); 
-				itemList = itemList.concat( this.lootGenerate( partCount+'x part '+partFrom, this.level ) );
-				let self = this;
-				itemList.forEach( item => {
-					if( (!item.isFake && !item.isSkill && !this.vanish) || item.isPlot ) {
-						let lx = self.x;
-						let ly = self.y;
-						if( this.lootFling ) {
-							let dir = Math.randInt(0,8);
-							lx += Direction.add[dir].x*this.lootFling;
-							ly += Direction.add[dir].y*this.lootFling;
-						}
-						item.giveTo(this.map,lx,ly,true)
-					}
-				});
+				this.fling(itemList);
 			}
 			else {
 				let mannerOfDeath = Gab.damagePast[this.takenDamageType||DamageType.BITE];
 				if( !mannerOfDeath ) {
 					debugger;
 				}
-				this.map.itemCreateByTypeId(this.x,this.y,this.corpse || 'corpse',{},{ usedToBe: this, mannerOfDeath: mannerOfDeath, isCorpse: true } );
+				this.map.itemCreateByTypeId(
+					this.x,
+					this.y,
+					this.corpse || 'corpse',
+					{},
+					{
+						isCorpse: true,
+						usedToBe: this,
+						matter: this.matter || 'flesh',
+						mannerOfDeath: mannerOfDeath
+					}
+				);
 			}
 		}
 
@@ -699,6 +709,12 @@ class Entity {
 	_itemTake(item,x,y) {
 		if( this.inventory.includes(item) ) {
 			debugger;
+		}
+		if( item.onGiveToEntity ) {
+			item.onGiveToEntity.call(item,x,y,this);
+		}
+		if( item.dead ) {
+			return null;
 		}
 		item = item._addToListAndBunch(this.inventory);
 		this.inventoryLastChange = Time.simTime;
@@ -1180,7 +1196,7 @@ class Entity {
 
 	thinkHunger(foodDist=2) {
 		let foodList = new Finder(this.map.findItemsNear(this.x,this.y,foodDist),this)
-			.filter(item => item.isEdible && this.eat.includes[item.matter] && this.canPerceiveEntity(item));
+			.filter(item => item.isEdibleBy(this) && this.canPerceiveEntity(item));
 		if( foodList.first && this.isAtTarget(foodList.first) ) {
 			this.record('found some food. eating.',true);
 			this.commandItem = foodList.first;
@@ -1209,7 +1225,7 @@ class Entity {
 			if( this.isAtTarget(desire) ) {
 				this.commandItem = desire;
 				this.brainState.activity = 'Arriving at '+desire.name+'.';
-				return desire.isEdible || desire.isCorpse ? Command.EAT : Command.PICKUP;
+				return desire.isEdibleBy(this) ? Command.EAT : Command.PICKUP;
 			}
 			if( !this.destination || !desire.isAtTarget(this.destination) ) {
 				this.destination = {
@@ -1763,6 +1779,7 @@ class Entity {
 		let armor = 0;
 		f.forEach( item => {
 			let armorEffect = item.calcArmorEffect(damageType,isRanged);
+			console.assert( Number.isFinite(armorEffect.armor) );
 			armor += armorEffect.armor;
 		});
 		return armor;
@@ -1832,6 +1849,9 @@ class Entity {
 		let amount 		= effect.value;
 		let damageType 	= effect.damageType;
 
+		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
+		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
+
 		let quiet = false;
 
 		let isCharge = false;
@@ -1840,11 +1860,15 @@ class Entity {
 			amount *= attacker.chargeAttackMult;
 		}
 
+		// Sneak damage only can happen for Quick.LITHE weapons, the very fastest. Otherwise there is a whooshing sound that victim would hear
 		let isSneak = false;
-		if( !isOngoing && !isCharge && attacker && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=2 ) {
+		if( !isOngoing && !isCharge && attacker && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=Quick.LITHE ) {
 			isSneak = true;
 			amount *= attacker.sneakAttackMult||2;	// perk touches stat directly.
 		}
+
+		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
+		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
 
 		// Deal with armor first...
 		let isRanged = !isOngoing && ( (attacker && this.getDistance(attacker.x,attacker.y) > 1) || (item && item.rangeDuration) );
@@ -1879,6 +1903,9 @@ class Entity {
 			delete this.lastEnemyPosition;
 			this.inCombatTimer = Time.simTime;
 		}
+
+		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
+		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
 
 		if( amount > 0 ) {
 			let dx = this.x - (attacker ? attacker.x : this.x);
@@ -1944,6 +1971,8 @@ class Entity {
 			}
 		}
 
+		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
+		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
 
 		if( isVuln ) {
 			quiet = true;
@@ -2236,6 +2265,13 @@ class Entity {
 		return this.oldMe && this.oldMe.id == entity.id;
 	}
 
+	getDodge() {
+		if( this.stun || this.attitude == Attitude.ENRAGED || this.attitude == Attitude.CONFUSED ) {
+			return Quick.CLUMSY;
+		}
+		return Number.isFinite(this.dodge) ? this.dodge : Quick.NORMAL
+	}
+
 	getRange(item) {
 		let rangeId = item.typeId+'Range';
 		return this[rangeId] || item.range || Rules.RANGED_WEAPON_DEFAULT_RANGE;
@@ -2268,7 +2304,7 @@ class Entity {
 			return true;
 		});
 		// Don't use non-quick weapons on quick targets
-		weaponList.filter( item => (target.dodge>=0 ? target.dodge : 0) <= item.getQuick() );
+		weaponList.filter( item => item.getQuick() >= target.getDodge() );
 		// We now have a roster of all possible weapons. Eliminate those that are not charged.
 		weaponList.filter( item => !item.rechargeLeft );
 		// Any finally, do not bother using weapons that can not harm the target.
@@ -2301,6 +2337,7 @@ class Entity {
 		}
 		if( !weapon ) {
 			weapon = this.naturalMeleeWeapon;
+			// NOTE that this weapon might still not be quick enough to hit the opponent.
 		}
 		console.assert( !weapon.rechargeLeft || weapon.isNatural );
 //		console.log( this.typeId+' picked '+(weapon.typeId || weapon.name)+' with recharge '+weapon.rechargeLeft );
@@ -2315,47 +2352,20 @@ class Entity {
 		item = item.giveTo(this,this.x,this.y);
 		return item;
 	}
-	inventoryTake(inventory, originatingEntity, quiet, onEachRaw, onEachGiven) {
-		let found = [];
-		let inventoryTemp = inventory.slice();	// because the inventory could chage out from under us!
-		Object.each( inventoryTemp, item => {
-			//if( !item.isTreasure && !item.isNatural ) debugger;
-			// BEWARE that giveTo() can aggregate, so deal with found and onEach FIRST.
-			found.push(mObject|mA|mList|mBold,item);
-			// WARNING: We have to give the item to the entity before calling onEach, because what if
-			// it needs to unbunch? That can only happen 
-			if( onEachRaw ) { onEachRaw(item); }
-			let possiblyAggregatedItem = item.giveTo( this, this.x, this.y);
-			if( onEachGiven ) { onEachGiven(possiblyAggregatedItem); }
-		});
-		if( !quiet && !this.inVoid ) {
-			let verb = originatingEntity && originatingEntity.mayHarvest ? 'harvest' : 'find'
-			let predicate = 'on';
-			if( originatingEntity && originatingEntity.isItemType && !originatingEntity.usedToBe ) predicate = 'in';
-			if( originatingEntity && originatingEntity.mayHarvest ) predicate = 'from';
-			let description = [
-				mSubject,this,' ',mVerb,verb,' '
-			].concat( 
-				found.length ? found : ['nothing'],
-				originatingEntity ? [' ',predicate,' ',mObject,originatingEntity] : [''],
-				'.'
-			);
-			tell(...description);
-		}
+
+	partsGenerate() {
+		let partCount = Math.randInt(1,3);
+		let partFrom = 'is'+String.capitalize(this.typeId); 
+		return Inventory.lootGenerate( partCount+'x part '+partFrom, this.level )
 	}
-	lootGenerate( lootSpec, level ) {
-		let itemList = [];
-		new Picker(level).pickLoot( lootSpec, item=>{
-			item._addToListAndBunch(itemList);
-		});
+
+	deathLootGenerate() {
+		let itemList = new Finder(this.inventory).isReal().all;
+		itemList.push( ...Inventory.lootGenerate( this.loot, this.level ) )
+		itemList.push( ...this.partsGenerate() );
 		return itemList;
 	}
 
-	lootTake( lootSpec, level, originatingEntity, quiet, onEachRaw, onEachGiven ) {
-		let itemList = this.lootGenerate( lootSpec, level );
-		this.inventoryTake(itemList, originatingEntity, quiet, onEachRaw, onEachGiven);
-		return itemList;
-	}
 
 	actAttack(target,weapon) {
 		console.assert(weapon);
@@ -2375,7 +2385,16 @@ class Entity {
 			};
 		}
 		item.resetRecharge();
-		return this.lootTake( item.harvestLoot, this.area.depth, item, false );
+		let itemList = Inventory.lootTo( this, item.harvestLoot, this.area.depth, item, false );
+		item.harvestReps = Math.max(0,(item.harvestReps||0)-1);
+		if( !item.harvestReps ) {
+			item.destroy();
+		}
+		return {
+			status: 'harvest',
+			success: true,
+			itemList: itemList
+		}
 	}
 
 	actPickup(item) {
@@ -2390,7 +2409,7 @@ class Entity {
 		}
 
 		if( item.onPickup ) {
-			let allow = item.onPickup(this);
+			let allow = item.onPickup.call(this);
 			if( !allow ) return {
 				status: 'itemDeniedPickup',
 				success: false
@@ -2415,10 +2434,9 @@ class Entity {
 			if( this.experience !== undefined ) {
 				this.experience += corpse.level;
 			}
-			let inventory = new Finder(corpse.inventory).isReal().all || [];
-			inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
-//			inventory.push( ...corpse.partsGenerate() )
-			this.inventoryTake( inventory, item, false );
+
+			let itemList = corpse.deathLootGenerate();
+			Inventory.giveTo( this, itemList, item, false );
 			item.destroy();
 			return {
 				status: 'pickup',
@@ -2452,10 +2470,12 @@ class Entity {
 		}
 
 		this.lastAttackTargetId = target.id;
+		// Make sure we're only taking one from their item stack
 		item = item.single();
+		// Give it to the map. This runs the animation.
 		item = item.giveToSingly(this.map,target.x,target.y);
-		let effect = item.isWeapon ? item.getEffectOnAttack() : item.effect;
 
+		// Can we catch the thrown item?
 		if( Math.chance(target.catchThrown||0) ) {
 			item.giveTo( target, target.x, target.y );
 			tell(mSubject,this,' ',mVerb,'throw',' ',mObject,item,' and ',mSubject,target,' ',mVerb,'catch',' it!');
@@ -2465,15 +2485,13 @@ class Entity {
 			return result;
 		}
 
+		// Determine the effect this item will have at that place.
+		let effect = item.isWeapon ? item.getEffectOnAttack() : item.effect;
+		// Do the effect
 		result = item.trigger( target, this, Command.THROW, effect );
 
 		if( !item || item.dead ) {
 			// potions, for example, will be consumed.
-		}
-		else
-		if( item.breakChance && Math.chance(item.breakChance) ) {
-			item.destroy();
-			result.broke = true;
 		}
 		else {
 			// Note that giving it to the map ALWAYS might foil things like catching items, or a figurine being picked up by its creation.
@@ -2534,13 +2552,8 @@ class Entity {
 		this.shieldBonus = 'stand';
 		item.x = this.x;
 		item.y = this.y;
-		let shatter = Math.chance(Rules.chanceToShatter(item.level));
-		tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'.'+(shatter ? ' It shatters!' : ''));
+		tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'.');
 		result = item.trigger(this,this,Command.GAZE);
-		if( shatter ) {
-			item.destroy();
-			result.shatter = true;
-		}
 		return result;
 	}
 
@@ -2587,7 +2600,7 @@ class Entity {
 				}
 				// Ammo auto-generation
 				// The ammoSpec is used to generate the exact right type of ammo.
-				let ammoList = this.lootTake( weapon.ammoSpec, this.level, this, true );
+				let ammoList = Inventory.lootTo( this, weapon.ammoSpec, this.level, this, true );
 				console.assert(ammoList[0]);
 				ammoList[0].breakChance = 100;	// avoid generating heaps of whatever is being used for ammo!
 				return ammoList[0];
@@ -2617,6 +2630,7 @@ class Entity {
 
 		this.lastAttackTargetId = target.id;
 
+		// Which ammo should I use for this shot?
 		let ammo = this.pickOrGenerateSingleAmmo(item);
 
 		// Ammo not available
@@ -2625,6 +2639,7 @@ class Entity {
 			result.status = 'noAmmo';
 			return result;
 		}
+
 		// The ammo is the item
 		if( ammo == true ) {
 			// This weapon uses no ammunition. It simply takes effect.
@@ -2632,11 +2647,14 @@ class Entity {
 			result.ammoIsTheItem = true;
 		}
 		else {
+			// The ammunition is an item from inventory
 			ammo.shooter = item;
+			// This will move the ammunition to the map, and also cause its flight to animate
 			ammo = ammo.giveToSingly(this.map,target.x,target.y);
 			result.ammoMadeOrExists = true;
 		}
 
+		// Can the target catch the shot?
 		if( Math.chance(target.catchShot||0) ) {
 			delete ammo.shooter;
 			ammo.giveTo( target, target.x, target.y );
@@ -2647,20 +2665,16 @@ class Entity {
 			return result;
 		}
 
-//		tell(mSubject,this,' ',mVerb,ammo.attackVerb || 'shoot',' ',mObject,item,' at ',mObject,target,'.');
-
+		// Determine what effect this ammo will have at that spot
 		let effect = ammo.isWeapon ? ammo.getEffectOnAttack() : ammo.effect;
+		// Do the effect.
+		// WARNING: This result.effectResult thing is not the same as how throwing does it. WHY?
 		result.effectResult = ammo.trigger( target, this, this.command, effect, Command.SHOOT );
 
 		if( !ammo.dead ) {
-			if( ammo.id !== item.id && Math.chance(ammo.breakChance) ) {
-				ammo.destroy();
-				result.ammoDestroyed = true;
-			}
-			else {
-				// This will cause it to bunch appropriately.
-				ammo.giveTo( this.map, ammo.x, ammo.y );
-			}
+			// This will cause it to bunch appropriately.
+			if( target.isMonster && target.inventory ) 
+			ammo.giveTo( this.map, ammo.x, ammo.y );
 		}
 		result.success = true;
 		return result;
@@ -2757,7 +2771,7 @@ class Entity {
 			success: false
 		}
 		let provider = food.ownerOfRecord;
-		console.assert(food && (food.isEdible || food.isCorpse));
+		console.assert(food && food.isEdibleBy(this));
 		tell(mSubject,this,' ',mVerb,'begin',' to eat ',mObject,food,' (4 turns)');
 		food = food.giveToSingly(this,this.x,this.y);
 		let eatEffect = {
@@ -2771,15 +2785,23 @@ class Entity {
 				if( !deed.completed() ) {
 					return;
 				}
+				// Eating a corpse gives you its inventory by default. Oozes do this.
+				// However, other 
 				if( food.isCorpse ) {
 					let corpse = food.usedToBe;
-					let inventory = new Finder(corpse.inventory).isReal().all || [];
-					inventory.push( ...this.lootGenerate( corpse.loot, corpse.level ) )
-					this.inventoryTake( inventory, corpse, false );
+					let itemList = corpse.deathLootGenerate();
+					if( this.eatenFoodToInventory ) {
+						Inventory.giveTo( this, itemList, corpse, false );
+					}
+					else {
+						Inventory.giveTo( this.map, itemList, corpse, true );
+					}
 					food.destroy();
 					return;
 				}
-				if( !food.isCorpse && food.isEdible && this.isPet && provider && (provider.teamApparent || provider.team)==this.team ) {
+				// Even though corpses are food, nobody is their "ownerOfRecord" and so a pet
+				// eating a corpse will not see the killer as their master
+				if( food.isEdibleBy(this) && this.isPet && provider && (provider.teamApparent || provider.team)==this.team ) {
 					this.brainMaster = provider;
 					//this.watch = true;
 					this.brainPath = true;
@@ -2803,7 +2825,7 @@ class Entity {
 			success: false
 		};
 		if( item.usedToBe ) {
-			result = this.lootTake(item.usedToBe.loot || '',item.usedToBe.level,item);
+			result = Inventory.lootTo( this, item.usedToBe.loot || '',item.usedToBe.level,item);
 		}
 		return result;
 	}
@@ -2811,6 +2833,7 @@ class Entity {
 	actDrop(item) {
 		let result = {
 			status: 'drop',
+			dropCount: 0,
 			success: false
 		}
 		this.shieldBonus = 'stand';
@@ -2825,7 +2848,19 @@ class Entity {
 			result.notAllowedHere = true;
 			return result;
 		}
-		item = item.giveTo(this.map,this.x,this.y);
+
+		let itemList = [item];
+		if( !item.dead && item.lootOnDrop ) {
+			itemList = Inventory.lootGenerate( item.lootOnDrop, item.level );
+			item.destroy();
+		}
+
+		itemList.forEach( item => {
+			if( !item.dead ) {
+				item = item.giveTo(this.map,this.x,this.y);
+				++result.dropCount;
+			}
+		});
 		result.success = true;
 		result.x = this.x;
 		result.y = this.y;
@@ -3127,7 +3162,7 @@ class Entity {
 		}
 
 		if( this.trail && !this.map.findItemAt(x,y).filter( item=>item.isVariety(this.trail) ).count ) {
-			let trailList = this.lootGenerate( this.trail, this.level );
+			let trailList = Inventory.lootGenerate( this.trail, this.level );
 			console.assert( trailList.length == 1 );
 			let trail = trailList[0];
 			// Although this is set in item constructor, setting it here allows trails to not specify their
@@ -3141,7 +3176,7 @@ class Entity {
 			result.onMove = this.onMove.call(this,x,y,xOld,yOld);
 		}
 
-		if( this.mindset('pickup') && this.able('pickup') ) {
+		if( !this.dead && this.mindset('pickup') && this.able('pickup') ) {
 			let f = this.map.findItemAt(x,y).filter( item => item.mayPickup!==false );
 			result.pickup = [];
 			for( let item of f.all ) {
@@ -3149,7 +3184,7 @@ class Entity {
 			}
 		}
 
-		if( this.mindset('harvest') && this.able('harvest') ) {
+		if( !this.dead && this.mindset('harvest') && this.able('harvest') ) {
 			let f = this.map.findItemAt(x,y).filter( item => item.mayHarvest );
 			result.harvestResult = [];
 			for( let item of f.all ) {

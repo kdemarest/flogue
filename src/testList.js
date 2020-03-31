@@ -53,8 +53,8 @@ TestList.checkPlayerBasics = {
 	depth: 1,
 	player: {
 		atMarker: 'center',
-		inventoryLoot: '1x potion.eHealing',
-		inventoryWear:  'armor, helm, bracers, boots',
+		carrying: '1x potion.eHealing',
+		wearing:  'armor, helm, bracers, boots',
 	},
 	check(result,helper) {
 		result.expect( 'helper.player.naturalMeleeWeapon', 'player has a natural melee weapon' );
@@ -74,7 +74,7 @@ TestList.simpleCombat = {
 	depth: 0,
 	player: {
 		atMarker: 'center',
-		inventoryWear: 'weapon.sword.eInert',
+		wearing: 'weapon.sword.eInert',
 		commandList: [Command.E,Command.E,Command.E,Command.E],
 	},
 	injectList: [
@@ -140,9 +140,9 @@ TestList.legacies = {
 	},
 	tick(helper) {
 		helper.player.legacyId = 'brawler';
-		helper.player.inventoryLoot = '2x weapon.club, 10x ammo.rock';
+		helper.player.carrying = '2x weapon.club, 10x ammo.rock';
 
-//	MonsterTypeList.player.inventoryLoot = 'armor, helm, bracers, boots, stuff.lamp, 2x weapon, shield, weapon.bow';
+//	MonsterTypeList.player.carrying = 'armor, helm, bracers, boots, stuff.lamp, 2x weapon, shield, weapon.bow';
 //	MonsterTypeList.player.legacyId = 'monk';
 
 

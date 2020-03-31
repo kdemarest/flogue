@@ -1,13 +1,18 @@
-
-
-/**
+/*
+To view a processed image:
 
 localhost:3010/tiles/mon/frog.png
-- comes to app.js
-- checks datestamp of source in ../tilesrc/mon/frog.png vs target in ../tiles/mon/frog.png
+or
+localhost:3010/force/mon/frog.png
+
+- /force/ will force the images to reprocess, while /tiles/ cachesfor faster processing.
+- Caching includes:
+  - Check datestamp of source in ../tsrc/mon/frog.png vs target in ../tiles/mon/frog.png
+  - comparing with the last filter I used, stored in ../lastFilterSent.json
 - if later, gets the processing data (which it reads fresh every time) from config.js
-- processes and outputs as needed, returning the file
-**/
+- processes and outputs as needed, returning the file to the called
+- auto-reloads filter.js so that when it changes it will re-process.
+*/
 
 const util 		= require('util');
 const fs 		= require('fs');
@@ -28,10 +33,22 @@ const DirAdd = [
 	{ x:-1, y:-1 }
 ];
 
+let pathSource = '../tsrc/';
+let pathTarget = '../tiles/';
+let lfsFileName = pathSource+'lastFilterSent.json';
+
 let DirSpec = {};
 let FilterSpec = {};
 let FilterDefault = {};
 let LastFilterSent = {};
+
+let RectTemplate = {
+	xMin: null,
+	xMax: null,
+	yMin: null,
+	yMax: null
+};
+
 
 Object.deepAssign = function(target,...args) {
 
@@ -39,12 +56,16 @@ Object.deepAssign = function(target,...args) {
 		for( let key in source ) {
 			let value = source[key];
 			if( typeof value == 'object' && value !== null ) {
+				if( Array.isArray(value) && !Array.isArray(target[key]) ) {
+					target[key] = [];
+				}
 				if( typeof target[key] !== 'object' || target[key] === null ) {
 					target[key] = {};
 				}
 				merge( target[key], value );
 				continue;
 			}
+			//console.log(key,value);
 			target[key] = value;
 		}
 	}
@@ -73,11 +94,11 @@ function colorToHex(str) {
 }
 
 function getSourcePath(fileName) {
-	return '../tsrc/'+fileName;
+	return pathSource+fileName;
 }
 
 function getTargetPath(fileName) {
-	return '../tiles/'+fileName;
+	return pathTarget+fileName;
 }
 
 function delay(ms) {
@@ -141,6 +162,20 @@ async function jimpWrite(filePath,image) {
 	return promise;
 }
 
+async function jimpCreate(xLen,yLen) {
+	return new Promise( ( resolve, reject ) => {
+		try {
+			new jimp( xLen, yLen, ( error, image ) => {
+				if ( error ) reject( error );
+				resolve( image );
+			});
+		} catch ( error ) {
+			reject( error );
+		}
+	});
+}
+
+
 function fileNameAlter(name,fn) {
 	let parts = name.split('/');
 	let fname = parts[parts.length-1].split('.');
@@ -157,14 +192,27 @@ function sumData(data) {
 	return total;
 }
 
+function close(a,b,c) {
+	return Math.abs(a-b)<c;
+}
+
+function colorClose(r,g,b,color,threshold) {
+	return Math.abs(r-color.r)<=threshold && Math.abs(g-color.g)<=threshold && Math.abs(b-color.b)<=threshold;
+}
+
 class ImageProxy {
 	constructor(image) {
 		this.image = image;
-		this.data = this.image.bitmap.data;
-		this.xLen = this.image.bitmap.width;
-		this.yLen = this.image.bitmap.height;
 	}
-
+	get data() {
+		return this.image.bitmap.data;
+	}
+	get xLen() {
+		return this.image.bitmap.width;
+	}
+	get yLen() {
+		return this.image.bitmap.height;
+	}
 	getPixel(x,y) {
 		let idx = (this.xLen * y + x) << 2;
 		let hex = this.data.readUInt32BE(idx);
@@ -193,17 +241,74 @@ class ImageProxy {
 	}
 	gather(inset,fn) {
 		let list = [];
+		let count = 0;
 		this.image.scan( 0+inset, 0+inset, this.xLen-inset*2, this.yLen-inset*2, function(x,y,i) {
+			++count;
 			if( fn(x,y,i) ) {
 				list.push(x,y);
 			}
 		});
+		//console.log("gather checked",count);
 		return list;
 	}
+	flood(xStart, yStart, criteriaFn) {
+		let done = [];
+		let list = [];
+		let xLen = this.xLen;
+		let yLen = this.yLen;
+		let live = 0;
+		let add = (x,y) => {
+			let index = y*xLen+x;
+			if( done[index] || x<0 || x>=xLen || y<0 || y>=yLen || !criteriaFn(x,y) ) {
+				return;
+			}
+			done[index] = true;
+			list.push(x,y);
+		}
+		add(xStart,yStart);
+
+		let tail = 0;
+		while( tail < list.length ) {
+			let x = list[tail+0];
+			let y = list[tail+1];
+			add(x+0,y-1);
+			add(x+1,y-1);
+			add(x+1,y+0);
+			add(x+1,y+1);
+			add(x+0,y+1);
+			add(x-1,y+1);
+			add(x-1,y+0);
+			add(x-1,y-1);
+			tail += 2;
+		}
+
+		return list;
+	}
+	processPairs(list,fn) {
+		for( let i=0 ; i<list.length ; i+=2 ) {
+			let x = list[i+0];
+			let y = list[i+1];
+			fn(x,y,i);
+		}
+	}
+
 	blit(a) {
 		for( let i=0 ; i<a.length ; i+=3 ) {
 			this.setPixel( a[i+0], a[i+1], a[i+2] );
 		}		
+	}
+	testRGBA(x,y,fn) {
+		let hex = this.getPixel( x, y );
+		let r = (hex & 0xFF000000)>>>24;
+		let g = (hex & 0x00FF0000)>>>16;
+		let b = (hex & 0x0000FF00)>>>8;
+		let a = (hex & 0x000000FF);
+		return fn(r,g,b,a);
+	}
+	eyedropper(x,y) {
+		let color = {r:0, g:0, b:0, a:0};
+		this.testRGBA( x, y, (r,g,b,a)=>{ color.r=r; color.g=g; color.b=b; color.a=a; } );
+		return color;
 	}
 	strip(threshold) {
 		console.log( 'Stripping '+threshold );
@@ -217,28 +322,117 @@ class ImageProxy {
 		});
 		console.log( count+' stripped' );
 	}
-	sweep(fn) {
+	bgRemove(data) {
+		let isFind   = (r,g,b,a) => colorClose(r,g,b,base,data.find);
+		let isRemove = (r,g,b,a) => colorClose(r,g,b,base,data.remove);
+		let percent  = this.xLen*this.yLen*(data.percent||0);
 		let count = 0;
-		this.gather( 0, (x,y,i) => {
-			let hex = this.getPixel( x, y );
-			let r = (hex & 0xFF000000)>>>24;
-			let g = (hex & 0x00FF0000)>>>16;
-			let b = (hex & 0x0000FF00)>>>8;
-			let a = (hex & 0x000000FF);
-			let result = fn(r,g,b,a);
-			if( result !== undefined && result !== null ) {
-				this.setPixel( x, y, result );
-				++count;
+		let spots = 0;
+		let self = this;
+
+		let base = this.eyedropper(2,2);	// kind of an arbitrary place to guess the background.
+		console.log('base=',base);
+
+		this.image.scan( 0, 0, this.xLen, this.yLen, function(x,y) {
+			if( self.testRGBA(x,y,isFind) ) {
+				let list = self.flood( x, y, (x,y)=>self.testRGBA(x,y,isRemove) );
+				if( list.length >= percent ) {
+					self.processPairs( list, (x,y)=>self.setPixel(x,y,data.color||0x00000000) );
+					count += list.length;
+					++spots;
+				}
 			}
 		});
-		console.log( count+' swept' );
+		console.log( count+' bgRemoved in '+spots+' spots' );
+	}
+	ungradient(threshold) {
+		let test0 = (r,g,b,a) => Math.abs(r-base0.r)<threshold && g>=Math.abs(g-base0.g)<threshold && Math.abs(b-base0.b)<threshold
+		let test1 = (r,g,b,a) => Math.abs(r-base1.r)<threshold && g>=Math.abs(g-base1.g)<threshold && Math.abs(b-base1.b)<threshold
+		let isAlike = (r,g,b,a) => {
+			let alike = a>0x10 && (test0(r,g,b,a) || test1(r,g,b,a));
+			if( alike && driftRatio ) {
+				base1.r = Math.round(base1.r*(1-driftRatio)+r*driftRatio);
+				base1.g = Math.round(base1.g*(1-driftRatio)+g*driftRatio);
+				base1.b = Math.round(base1.b*(1-driftRatio)+b*driftRatio);
+			}
+			return alike;
+		}
+		let driftRatio = 0.10;		// How strongly do we drift, from 0.0 (never chnge base) to 1.0 (just jump to the new color)
+		let base0 = {r:0,g:0,b:0};
+		let base1;
+		let count = 0;
+
+		for( let y=0 ; y<this.yLen ; ++y ) {
+			this.testRGBA( 2, y, (r,g,b)=>{ base0.r=r; base0.g=g; base0.b=b; } );
+			base1 = Object.assign( {}, base0 );
+			for( let x=0 ; x<this.xLen ; ++x ) {
+				if( this.testRGBA(x,y,isAlike) ) {
+					this.setPixel(x,y,0x00000000);
+					++count;
+				}
+			}
+		}
+		console.log( count+' ungradiented' );
+	}
+	autocrop(marginPct,threshold) {
+		let self = this;
+		let rect = Object.assign( {}, RectTemplate );
+		this.image.scan( 0, 0, this.xLen, this.yLen, function(x,y) {
+			let hex = self.getPixel( x, y ) & 0xFF;
+			if( hex >= threshold ) {
+				if( rect.xMin===null || x<rect.xMin ) rect.xMin = x;
+				if( rect.xMax===null || x>rect.xMax ) rect.xMax = x;
+				if( rect.yMin===null || y<rect.yMin ) rect.yMin = y;
+				if( rect.yMax===null || y>rect.yMax ) rect.yMax = y;
+			}
+		});
+		let xLen = (rect.xMax-rect.xMin)+1;
+		let yLen = (rect.yMax-rect.yMin)+1;
+		//console.log('xLen',xLen,'yLen',yLen);
+		let margin = Math.floor( Math.max( marginPct*xLen, marginPct*yLen ));
+		//console.log('margin',margin);
+
+		let x0 = Math.max(0,rect.xMin-margin);
+		let y0 = Math.max(0,rect.yMin-margin);
+		let x1 = Math.min(this.xLen-x0,xLen+margin*2);
+		let y1 = Math.min(this.yLen-y0,yLen+margin*2);
+		//console.log(x0,y0,x1,y1);
+		this.image.crop(x0,y0,x1,y1);
+
+		console.log('Autocropped to '+x1+'x'+y1);
+	}
+	cropMargin(marginPct) {
+		let xMargin = Math.floor(this.xLen * marginPct.x);
+		let yMargin = Math.floor(this.yLen * marginPct.y);
+
+		let x0 = Math.max(0,0+xMargin);
+		let y0 = Math.max(0,0+yMargin);
+		let x1 = Math.min(this.xLen,this.xLen-xMargin*2);
+		let y1 = Math.min(this.yLen,this.yLen-yMargin*2);
+		//console.log(x0,y0,x1,y1);
+		this.image.crop(x0,y0,x1,y1);
+
+		console.log('cropMargin to '+x1+'x'+y1);
 	}
 
-	edgeFade(thickness,threshold) {
+	despeckle(reps) {
+		let alone = 1;
+		let isOpaque = (x,y) => this.inBounds(x,y) && (this.getPixel(x,y) & 0xFF) > 0x00;
+		let count = 0;
+		while( reps-- ) {
+			let speckles = this.gather( 0, (x,y) => isOpaque(x,y) && this.count8(x,y,isOpaque)<=alone );
+			this.processPairs( speckles, (x,y) => this.setPixel(x,y,0x00000000) );
+			count += speckles.length/2;
+		}
+		console.log('despeckle removed',count);
+	}
+	edgeFade(thicknessPct,threshold) {
+		let thickness = Math.round(this.xLen * thicknessPct);
 		let result = [];
 		let isDone = [];
+		let xLen = this.xLen;
 		let isOpaque = (x,y,i) => {
-			if( !this.inBounds(x,y) || isDone[y*this.xLen+x] ) {
+			if( !this.inBounds(x,y) || isDone[y*xLen+x] ) {
 				return false;
 			}
 			let a = this.getPixel(x,y) & 0xFF;
@@ -246,30 +440,31 @@ class ImageProxy {
 		}
 		let layer = 0;
 		while( layer < thickness ) {
-			let edges = this.gather( 0, (x,y,i) => isOpaque(x,y) && this.count8(x,y,isOpaque)<8 );
-			for( let i=0 ; i<edges.length ; i+=2 ) {
-				let x = edges[i+0];
-				let y = edges[i+1];
+			let edges = this.gather( 0, (x,y) => isOpaque(x,y) && this.count8(x,y,isOpaque)<8 );
+			//console.log( 'edgeFade '+layer+' = '+(edges.length/2) );
+			this.processPairs( edges, (x,y) => {
 				let hex = this.getPixel(x,y);
 				let a = Math.floor( (hex & 0xFF) * ((layer+1)/(thickness+1)) );
 				hex = ((hex & ~0xFF) | (a&0xFF)) >>> 0;
 				result.push( x, y, hex );
-				isDone[y*this.xLen+x] = 1;
-			}
+				isDone[y*xLen+x] = true;
+			});
 			++layer;
 		}
 		return result;
 	}
 
-	outline(thickness,threshold,color,glow) {
+	outline(thicknessPct,threshold,color,glow) {
+		let thickness = Math.round(this.xLen * thicknessPct);
 		let result = [];
 		let hasPixel = [];
+		let xLen = this.xLen;
 		let isOpaque = (x,y,i) => {
 			if( !this.inBounds(x,y) ) {
 				return false;
 			}
 			let a = this.getPixel(x,y) & 0xFF;
-			return a>threshold || hasPixel[y*this.xLen+x];
+			return a>threshold || hasPixel[y*xLen+x];
 		}
 		let totalThickness = thickness;
 		while( thickness>0 ) {
@@ -283,7 +478,7 @@ class ImageProxy {
 				let x = edges[i+0];
 				let y = edges[i+1];
 				result.push( x, y, hex );
-				hasPixel[y*this.xLen+x] = 1;
+				hasPixel[y*xLen+x] = 1;
 			}
 			--thickness;
 		}
@@ -350,17 +545,53 @@ x = px + heightAboveFloor/2;
 async function filterImageInPlace(image,filter) {
 	//console.log( "The image is "+image.bitmap.width+'x'+image.bitmap.height );
 
+	let proxy = new ImageProxy(image);
+
 	image.background(0x00000000);
 
-	let dimSquare = Math.max(image.bitmap.width,image.bitmap.height);
-	if( dimSquare != image.bitmap.width || dimSquare != image.bitmap.height ) {
-		console.log('resize from '+image.bitmap.width+'x'+image.bitmap.height+' to '+dimSquare+'x'+dimSquare);
-		image.contain(dimSquare,dimSquare);
+	if( filter.cropMargin ) {
+		proxy.cropMargin( filter.cropMargin );
 	}
-	let dim = Math.ceil(dimSquare/filter.size) * filter.size;
+
+	if( filter.bgRemove ) {
+		proxy.bgRemove( filter.bgRemove );
+	}
+
+	if( filter.ungradient ) {
+		proxy.ungradient( filter.ungradient );
+	}
+
+	if( filter.strip ) {
+		proxy.strip( filter.strip );
+	}
+
+	if( filter.despeckle ) {
+		proxy.despeckle( filter.despeckle );
+	}
+
+	if( filter.autocrop !== undefined && filter.autocrop !== false && filter.autocrop !== null ) {
+		proxy.autocrop( filter.autocrop, filter.strip || 0xA0 );
+	}
+
+	if( filter.resize !== false ) {
+		let margin = filter.outline && filter.outline.thickness ? filter.outline.thickness : 0;
+		let dimSquare = Math.max(image.bitmap.width,image.bitmap.height);
+		dimSquare = Math.round(dimSquare*(1+(2*margin)));
+
+		if( dimSquare != image.bitmap.width || dimSquare != image.bitmap.height ) {
+			console.log('resize from '+image.bitmap.width+'x'+image.bitmap.height+' to '+dimSquare+'x'+dimSquare+'; margin '+margin);
+			let x = Math.floor((dimSquare-image.bitmap.width) * 0.5);
+			let y = Math.floor((dimSquare-image.bitmap.height) * 0.5);
+			let temp = await jimpCreate(dimSquare,dimSquare);
+			temp.blit( image, x, y );
+			image = temp;
+			proxy.image = image;
+		}
+	}
+
+	let dim = filter.size || 92;
 	image.scaleToFit(dim,dim,jimp.RESIZE_HERMITE);
-
-
+	console.log('scale to '+dim+'x'+dim);
 
 	if( filter.flying ) { filter.outline.flying = filter.flying; } 
 	if( filter.glow ) 	{ filter.shadow = false; filter.outline.glow = true; filter.outline.color = filter.glow; } 
@@ -368,11 +599,11 @@ async function filterImageInPlace(image,filter) {
 	if( filter.normalize ) {
 		image.normalize();
 	}
+	if( filter.contrast ) {
+		image.contrast( filter.contrast );
+	}
 	if( filter.brightness ) {
 		image.brightness( filter.brightness );
-	}
-	if( filter.contrast ) {
-		image.brightness( filter.contrast );
 	}
 	if( filter.desaturate ) {
 		image.color([
@@ -380,17 +611,7 @@ async function filterImageInPlace(image,filter) {
 		]);
 	}
 	if( filter.recolor ) {
-		image.color( filter.recolor );
-	}
-
-	let proxy = new ImageProxy(image);
-
-	if( filter.sweepFn ) {
-		proxy.sweep( filter.sweepFn );
-	}
-
-	if( filter.strip ) {
-		proxy.strip( filter.strip );
+		image.color( Array.isArray(filter.recolor) ? filter.recolor : [filter.recolor] );
 	}
 
 	let blits = [];
@@ -409,6 +630,8 @@ async function filterImageInPlace(image,filter) {
 		let blitList = blits.shift();
 		proxy.blit( blitList );
 	}
+
+	return image;
 }
 
 function asyncRequest(url) {
@@ -423,8 +646,20 @@ function asyncRequest(url) {
 	});
 }
 
+function stringify(s) {
+	return JSON.stringify(s,null,"\t");
+}
 
-async function processAsNeeded(fileName,dirSpec) {
+let lfsHandle = null;
+function lfsDefer() {
+	clearTimeout(lfsHandle);
+	lfsHandle = setTimeout( () => {
+		console.log('Saving lastFilterSent.');
+		fs.writeFile(lfsFileName,stringify(LastFilterSent),'utf8',()=>{});
+	},5000);
+}
+
+async function processImageAsNeeded(fileName,dirSpec,forceProcessing) {
 
 	while( fileLocks[fileName] ) {
 		console.log('Waiting on locked file '+fileName);
@@ -435,31 +670,39 @@ async function processAsNeeded(fileName,dirSpec) {
 	let image = null;
 	try {
 		let filter = Object.deepAssign( {}, FilterDefault, dirSpec, FilterSpec[fileName] );
-		let filterString = JSON.stringify(filter);
+		let filterString = stringify(filter);
 
 		let sourcePath = getSourcePath(fileName);
 		let image;
 
 		if( filter.url ) {
-			if( !fs.existsSync(sourcePath) ) {
+			let lastFilter = JSON.parse(LastFilterSent[fileName] || '{}');
+			if( !fs.existsSync(sourcePath) || filter.url!==lastFilter.url ) {
+				console.log('Fetching',filter.url);
 				image = await jimpRead(filter.url);
 				await jimpWrite( sourcePath, image );		// This handles conversion to the new image type, eg jpg to png
 			}
 		}
 
-		let isOutOfDate = !!image || filterString !== LastFilterSent[fileName] || await testTimestamps(fileName);
-		if( isOutOfDate ) {
+		let isFirstLoad = image;
+		let isFilterChange  = filterString !== LastFilterSent[fileName];
+		let isOutOfDate = await testTimestamps(fileName);
+		if( forceProcessing || isFirstLoad || isFilterChange || isOutOfDate ) {
 			image = image || await jimpRead(sourcePath);
-			console.log( 'Filtering '+sourcePath );
+			console.log( 'Filtering '+sourcePath+' due to '+(isFirstLoad?'first load ':'')+(isFilterChange?'filter change ':'')+(isOutOfDate?'out of date':'forceProcessing') );
 			console.log( filterString );
-			await filterImageInPlace(image,filter);
+			image = await filterImageInPlace(image,filter);
 			let targetPath = getTargetPath(fileName);
 			console.log( 'Writing to '+targetPath );
 			await jimpWrite( targetPath, image );
 			LastFilterSent[fileName] = filterString;
+			lfsDefer();
 		}
 	}
-	catch( e ) {		
+	catch( e ) {
+		if( !e ) {
+			console.log('e is',e);
+		}
 		if( e.benign || e.errno==-2 ) {
 			console.log( 'Allow '+e.details );
 		}
@@ -496,6 +739,30 @@ async function loadFilterSpec(filePath) {
 	});
 }
 
+function readFile(fileName ) {
+	fs.readFile(filePath, 'utf8', function(err, data) {  
+		if (err) throw err;
+		const sandbox = {
+			FilterSpec: null,
+			DirSpec: null,
+			FilterDefault: null
+		};
+		try {
+			const script = new vm.Script( data );
+			const context = new vm.createContext(sandbox);
+			script.runInContext( context, { lineOffset: 0, displayErrors: true } );
+			FilterSpec    = sandbox.FilterSpec;
+			DirSpec       = sandbox.DirSpec;
+			FilterDefault = sandbox.FilterDefault;
+		}
+		catch(e) {
+			console.log('filters.js',e.message,'in line', e.stack.split('<anonymous>:')[1].split('\n\n')[0]);
+			FilterSpec = null;	
+		}
+	});
+
+}
+
 function getDirSpec(fileName) {
 	let dirSpec = false;
 	Object.each( DirSpec, (value,dir) => {
@@ -520,6 +787,17 @@ async function run() {
 		console.log( 'Done reloading '+filterFilePath );
 	});
 
+	// Someday we should be ultra-thorough and, if the app has changed timestamp, compare against its date all.
+	// For now just use /force/* - see below.
+	// let appFilePath = 'app.js';
+	// let appTimeMs = await getFileTimeMs(appFilePath);
+
+	try {
+		LastFilterSent = JSON.parse(fs.readFileSync(lfsFileName, 'utf8'));
+	} catch(e) {
+		LastFilterSent = {};
+	}
+
 	app.use(function(req, res, next) {
 		res.header("Access-Control-Allow-Origin", "*");
 		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -527,20 +805,18 @@ async function run() {
 	});
 
 
-	app.get('/tiles/*', async (req, res, next) => {
+	let processImage = async (req, res, forceProcessing, next) => {
 		let fileName = req.params[0];
+		let filePath = app.cwd+'/tiles/'+fileName;
+
 		if( !FilterSpec ) {
 			console.log('Invalid FilterSpec. Unable to serve',fileName);
 			return next(e);
 		}
 		try {
-			let fileName = req.params[0];
-			let filePath = app.cwd+'/tiles/'+fileName;
 			let dirSpec = getDirSpec(fileName);
-			console.log(dirSpec);
 			if( dirSpec ) {
-				console.log( "processing "+filePath );
-				await processAsNeeded(fileName,dirSpec);
+				await processImageAsNeeded(fileName,dirSpec,forceProcessing);
 			}
 			console.log( "sending "+filePath );
 			res.sendFile( filePath );
@@ -548,7 +824,10 @@ async function run() {
 			console.log('Error processing',fileName);
 			return next(e);
 		}
-	});
+	}
+
+	app.get('/tiles/*', async (req, res, next) => await processImage(req,res,false,next));
+	app.get('/force/*', async (req, res, next) => await processImage(req,res,true,next));
 
 
 	let port = 3010;

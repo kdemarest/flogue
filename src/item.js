@@ -154,16 +154,16 @@ class Item {
 					console.assert( !isNaN(this.effect.value) );
 				}
 			}
-			this.effect = EffectPermutationEngine.permute( this.level, this.effect, this.permute );
+			this.effect = EffectPermutationEngine.permute( depth, this.level, this, this.effect, this.permute );
 		}
 
 		if( this.hasInventory ) {
 			this.inventory = [];
 		}
 
-		if( this.inventoryLoot ) {
+		if( this.carrying ) {
 			console.assert(this.hasInventory);
-			this.lootTake( this.inventoryLoot, this.level );
+			Inventory.lootTo( this, this.carrying, this.level );
 			this.inventory.forEach( item => {
 				if( !item.isTreasure ) {
 					debugger
@@ -228,7 +228,7 @@ class Item {
 			if( item.effect.op=='damage' ) {
 				return String.combine(' ',chance,Math.floor(item.effect.value),item.effect.damageType);
 			}
-			return String.combine(' ',chance,item.effect.name + (item.effect.permuteName ? '**' : ''));
+			return String.combine(' ',chance,item.effect.name);
 		}
 		function getQuick(perksApplied) {
 			let q = item.getQuick();
@@ -241,7 +241,7 @@ class Item {
 				}
 				perksApplied.push(...effect.perksApplied);
 			}
-			return ['(clumsy)','','(quick)'][q];
+			return q!=Quick.NORMAL ? QuickName[q] : '';
 		}
 		function getDamage(perksApplied) {
 			let effectRaw = item.isWeapon ? item.getEffectOnAttack() : (item.effect && item.effect.op=='damage' ? item.effect : null);
@@ -292,7 +292,7 @@ class Item {
 		if( perksApplied.length && item.isSword ) {
 			//debugger;
 		}
-		return {
+		let info ={
 			item: 			item,
 			typeId: 		item.typeId,
 			level: 			item.level,
@@ -310,16 +310,22 @@ class Item {
 			reach: 			item.reach > 1 ? 'reach '+item.reach : '',
 			sneak: 			(owner.sneakAttackMult||2)<=2 ? '' : 'Sneak x'+Math.floor(owner.sneakAttackMult),
 			armor: 			exArmor,
-			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? '('+item.effect.effectShape+')' : '',
+			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? item.effect.effectShape : '',
 			bonus: 			getBonus(),
+			duration:		item.duration,
 			effect: 		item.effect ? (item.effect.name || item.effect.typeId) : '',
 			effectAbout:	item.effect && item.effect.about ? item.effect.about : '',
-			permutation: 	item.effect && item.effect.permuteName ? item.effect.permuteName : '',
+			permuteDesc: 	item.effect && item.effect.permuteDesc ? item.effect.permuteDesc : '',
 			recharge: 		item.rechargeTime ? Math.floor(item.rechargeTime) : '',
 			rechargeLeft: 	rechargeImg(),
+			deathReturn:	(observer && observer.deathReturn && observer.deathReturn.altarId==item.id ? 'YOU RESPAWN HERE' : ''),
 			price: 			Rules.priceWhen(buySell,item),
 			priceWithCommas: Rules.priceWhen(buySell,item).toLocaleString(),
 		};
+		if( item.infoFn ) {
+			item.infoFn(info);
+		}
+		return info;
 	}
 
 	isAt(x,y,area) {
@@ -338,6 +344,10 @@ class Item {
 	}
 	isRecharged() {
 		return this.rechargeTime === undefined || !this.rechargeLeft;
+	}
+	rechargePercent() {
+		if( !this.hasRecharge() ) return 1;
+		return 1 - (this.rechargeLeft||0)/this.rechargeTime;
 	}
 	resetRecharge() {
 		if( this.rechargeTime ) {
@@ -366,11 +376,11 @@ class Item {
 		// we can just assume that the sprites will need regenerating.
 		imageDirty(this);
 	}
+	getDodge() {
+		return this.dodge || Quick.CLUMSY;
+	}
 	getQuick() {
-		if( this.quick !== undefined ) {
-			return this.quick;
-		}
-		return 1;
+		return this.quick || Quick.NORMAL;
 	}
 	getEffectOnAttack() {
 		if( this._effectOnAttack ) {
@@ -387,7 +397,7 @@ class Item {
 			duration:1,
 			xDuration:1,
 			xDamage:1,
-			quick:1,
+			quick:Quick.NORMAL,
 			name:1
 		});
 
@@ -401,19 +411,6 @@ class Item {
 			effect.duration = 0;
 		}
 		return new Effect( this.level, effect, this, this.rechargeTime );
-	}
-	lootGenerate( lootSpec, level ) {
-		let itemList = [];
-		new Picker(level).pickLoot( lootSpec, item=>{
-			itemList.push(item);
-		});
-		return itemList;
-	}
-
-	lootTake( lootSpec, level ) {
-		let itemList = this.lootGenerate( lootSpec, level );
-		itemList.forEach( item => item.giveTo(this,this.x,this.y) );
-		return null;
 	}
 
 	isImmune(damageType) {
@@ -488,23 +485,25 @@ class Item {
 	}
 
 	calcArmorEffect(damageType,isRanged) {
-		if( !this.isArmor && !this.isShield ) {
-			debugger;
-			return 0;
-		}
-		if( this.isArmor && !ArmorDefendsAgainst.includes(damageType) ) {
-			return 0;
-		}
-		if( this.isShield && !ShieldDefendsAgainst.includes(damageType) ) {
-			return 0;
-		}
 		let armorEffect = {
 			item: this,
 			damageType: damageType,
 			isRanged: isRanged,
 			armor: this.armor
 		};
+		if( !this.isArmor && !this.isShield ) {
+			debugger;
+			return armorEffect;
+		}
+		if( this.isArmor && !ArmorDefendsAgainst.includes(damageType) ) {
+			return armorEffect;
+		}
+		if( this.isShield && !ShieldDefendsAgainst.includes(damageType) ) {
+			return armorEffect;
+		}
+		console.assert( Number.isFinite(armorEffect.armor) );
 		Perk.apply( 'armor', armorEffect);
+		console.assert( Number.isFinite(armorEffect.armor) );
 		return armorEffect;
 	}
 	bunchId() {
@@ -553,7 +552,11 @@ class Item {
 
 		if( assureWalkableDrop ) {
 			let mayDrop = pWalk(entity,true);
-			[x,y] = entity.spiralFind( x, y, (x,y,tile) => mayDrop(x,y) === Problem.NONE );
+			[x,y] = entity.spiralFind(
+				x,
+				y,
+				(x,y,tile) => mayDrop(x,y) === Problem.NONE
+			);
 		}
 
 		let hadNoOwner = !this.owner;
@@ -705,15 +708,21 @@ class Item {
 		this.dead = true;
 		return true;
 	}
+	isEdibleBy(entity) {
+		return this.isEdible && entity.eat &&  entity.eat.includes(this.matter);
+	}
+	recharge(rechargeRate=1,ignoreCriteria=false) {
+		if( this.rechargeLeft > 0 ) {
+			if( ignoreCriteria || !this.rechargeCriteria || this.rechargeCriteria.call(this) ) {
+				this.rechargeLeft = Math.clamp(this.rechargeLeft-rechargeRate,0,this.rechargeTime);
+			}
+		}
+	}
 	tick( dt, rechargeRate = 1) {
 		let list = this.owner.itemList || this.owner.inventory;
 		// WARNING! This assert is useful for making sure of inventory integrity, but VERY slow.
 		//console.assert( list.find( i => i.id == this.id ) );
-		if( this.rechargeLeft > 0 ) {
-			if( !this.rechargeCriteria || this.rechargeCriteria.call(this) ) {
-				this.rechargeLeft = Math.max(0,this.rechargeLeft-rechargeRate);
-			}
-		}
+		this.recharge(rechargeRate);
 		if( this.onTick ) {
 			this.onTick.call(this,dt);
 		}
@@ -724,6 +733,41 @@ class Item {
 			}
 		}
 	}
+
+	// Charges decrement to zero and eliminate the effect from the item.
+	checkCharges(result) {
+		if( result.success && Number.isFinite(this.charges) ) {
+			this.charges = Math.max(0,this.charges-1);
+			if( this.charges <= 0 ) {
+				tell(mSubject,this,' runs out of ',this.effect.name,'.');
+				this.effect = false;
+				result.itemUncharged = true;
+			}
+		}
+	}
+
+	// Durability decrements to zero and destroys the item.
+	checkDurability(result) {
+		if( !this.dead && Number.isFinite(this.durability) && this.durability > 0 ) {
+			this.durability = Math.max(0,this.durability-1);
+		}
+
+		if( !this.dead && Number.isFinite(this.durability) && this.durability <= 0 ) {
+			tell(mSubject,this,' breaks!');
+			this.destroy();
+			result.itemBroken = true;
+		}
+	}
+
+	// breakChance has a uniform chance to break, unchanged by level
+	checkBreakChance(result) {
+		if( !this.dead && this.breakChance && Math.chance(this.breakChance) ) {
+			tell(mSubject,this,' ',mVerb,this.breakVerb||'break','!');
+			this.destroy();
+			result.itemBroke = true;
+		}
+	}
+
 	// It is kind of weird that you can send in an effect here, but items
 	// are allowed to have lots of them. Its just that we are triggering
 	// item.effect MOST of the time. In particular, ammo from bows does this...
@@ -734,21 +778,20 @@ class Item {
 				success: false
 			}
 		}
+
+		// If we need recharging but are not yet ready
 		if( !this.isRecharged() ) {
 			return {
 				status: 'triggerNotRecharged',
 				success: false
 			}
 		}
-		let result = effectApply( effect, target, source, this, context );
 
-		if( (result.success || context == 'throw') && typeof this.charges =='number' ) {
-			this.charges = Math.max(0,this.charges-1);
-			if( this.charges <= 0 && this.destroyOnLastCharge ) {
-				this.destroy();
-				result.destroyedItemAfterUse = true;
-			}
-		}
+		// Apply the effect passed in. Might not be the effect of the item.
+		let result = effectApply( effect, target, source, this, context );
+		this.checkCharges(result);
+		this.checkDurability(result);
+		this.checkBreakChance(result);
 		return result;
 	}
 }
@@ -764,7 +807,6 @@ Item.getBlockType = function(item,damageType) {
 	if( item.isSpell ) 		return BlockType.NOBLOCK;
 	return BlockType.PHYSICAL;
 }
-
 
 return {
 	Item: Item

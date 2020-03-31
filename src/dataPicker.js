@@ -292,9 +292,8 @@ class Picker {
 		return choice;
 	}
 
-	// picks it, but doesn't give it to anyone.
-	// A lootSpec can be a string of the form 3x 40% weapon.dagger, or
-	// { count: n, chance: 60, id: 'weapon.dagger', inject: { anyvar: value, ... }
+	// Picks loot using the supplyMixed spec, but doesn't give it to anyone.
+	// See Array.supplyParse for full details.
 	pickLoot(supplyMixed,callback) {
 		let supplyArray = Array.supplyParse(supplyMixed);		
 		let makeList = new Finder( Array.supplyToMake(supplyArray,Rules.xLootFrequency) );
@@ -379,12 +378,22 @@ class Picker {
 	}
 }
 
-/**
-This filters three ways:
-1. You can specify what to include, such as typeId, variety, material and quality.
-2. You can require any characteristic that starts with 'is' or 'may' like isBow or mayThrow
-3. You can reverse either of those with a !isBow or !mayShoot
-**/
+/*
+	A filterString, also called a TypeFilter, specifies limits as to what may be picked.
+	The format is:
+		itemType[.variety][.material][.quality][.effect] [isFlag] [mayFlag] [bitEffectId] [ofMatter]
+		- Every part is optional except itemType.
+		- TypeFilter "any" means to pick any isTreasure type.
+		- Must be of type itemType, of the named variety, material, quality or effect.
+		isFlag mayFlag
+		-  Flag(s) must exist in the item, variety, material and quality.
+		ofMatter
+		- This matter type must exist in the quality, material, variety or item
+		bitEffectId
+		- This effect must exist on the item, variety, material or quality. See monsterPreProcess.
+
+	You may prefix flags with ! to make sure it lacks this flag
+*/
 Picker.filterStringParse = function(filterString) {
 	if( filterString ) { filterString = filterString.trim(); }
 	let nopTrue = () => true;

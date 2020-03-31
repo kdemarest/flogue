@@ -55,6 +55,26 @@ Perk.visual = function(effect) {
 }
 */
 
+Perk.preview = function(legacyId) {
+	let perkList = LegacyList[legacyId];
+	if( !perkList ) {
+		return ['No Perks'];
+	}
+
+	let perkPreview = [];
+	for( let level=0 ; level<20 ; ++level ) {
+		Object.each( perkList, (perk,perkId) => {
+			if( perk.level !== level ) {
+				return;
+			}
+			perkPreview.push( perk.name );
+		});
+	}
+	return perkPreview;
+}
+
+
+
 Perk.grant = function(entity, legacyId, level) {
 
 	function zapSingular(entity,singularId) {
@@ -78,11 +98,25 @@ Perk.grant = function(entity, legacyId, level) {
 			entity.itemCreateByType( perk.item, perk.item.presets || {} );
 		}
 		if( perk.loot ) {
-			entity.lootTake( perk.loot, level, null, true );
+			Inventory.lootTo( entity, perk.loot, level, null, true );
+		}
+		if( !perk.skill && !perk.item && !perk.loot ) {
+			entity.itemCreateByType( {
+				name: perk.name,
+				description: perk.description,
+				singularId: perk.singularId,
+				typeId: 'skill',
+				isItemType: true,
+				isSkillPassive: true,
+				img: 'gui/icons/skill.png',
+				icon: "skill.png"
+			}, {});
+
 		}
 		if( perk.effect ) {
 			effectApply(perk.effect,entity,entity,null);
 		}
+		tell(mSubject,entity,mVerb,'gain','a perk: ',perk.name);
 		return perk;
 	}
 

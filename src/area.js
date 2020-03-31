@@ -593,8 +593,10 @@ class Area {
 	tick(speed) {
 		let player = this.entityList.find( e=>e.userControllingMe ) || {};
 		if( player ) {
-			this.pathClip.setCtr(player.x,player.y,MapVis*2);
-			this.thinkClip.setCtr(player.x,player.y,MapVis*5);
+			// it is a little hinky, but we need to make sure that critters that are too far away don't
+			// consume our CPU calculating paths.
+			this.pathClip.setCtr(player.x,player.y,MapVisDefault*2);
+			this.thinkClip.setCtr(player.x,player.y,MapVisDefault*5);
 		}
 
 		this.animationManager.delay.reset();

@@ -53,6 +53,7 @@
 <script src="gab.js" charset="utf-8"></script>
 <script src="deed.js" charset="utf-8"></script>
 <script src="item.js" charset="utf-8"></script>
+<script src="inventory.js" charset="utf-8"></script>
 <script src="entity.js" charset="utf-8"></script>
 <script src="perk.js" charset="utf-8"></script>
 <script src="anim.js" charset="utf-8"></script>
@@ -142,7 +143,9 @@ function main() {
 
 		let world = new World();
 		let area = world.createArea(null,startingDepth,ThemeList[themeId],true,[]);
-		this.takeControlOf( new Entity( area.depth, MonsterTypeList[playerTypeId], config.playerInject, area.jobPicker ) );
+		let player = new Entity( area.depth, MonsterTypeList[playerTypeId], config.playerInject, area.jobPicker );
+		player.visibilityDistance = MapVisDefault;
+		this.takeControlOf( player );
 		Gab.observer = this.entity;
 		this.entity.gateTo(area,...area.map.pickPosToStartGame(playerMarkerId));
 		Narrative.addRecipient(

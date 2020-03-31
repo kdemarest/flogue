@@ -5,11 +5,12 @@ Module.add('dataItems',function(){
 // http://waifu2x.udp.jp/
 
 const Matter = {
+	ether: 		{ damage: { } },
 	metal: 		{ damage: { corrode: 1, smite: 1} },
 	stone: 		{ damage: { bash: 1, smite: 1} },
 	chitin: 	{ damage: { bash: 1, smite: 1} },
 	glass: 		{ damage: { bash: 1, corrode: 1 } },
-	gem: 		{ damage: { bash: 0.5 } },
+	crystal: 	{ damage: { bash: 0.5 } },
 	leather: 	{ damage: { cut: 1, claw: 1, chop: 1, corrode: 1, rot: 2 } },
 	cloth: 		{ damage: { cut: 1, claw: 1, chop: 1, corrode: 1, rot: 2 } },
 	wax: 		{ damage: { cut: 1, claw: 1, chop: 1, bash: 0.5, burn: 2, corrode: 1, rot: 2 } },
@@ -74,38 +75,124 @@ const ImgSigns = {
 
 // do NOT assign NullEffects to make something have no effects. Instead, give it effectChance of 0.0001
 const NullEfects = { eInert: { level: 0, rarity: 1 } };
-const PotionEffects = Object.filter(EffectTypeList, (e,k)=>['eDarkVision','eCureDisease','eCurePoison','eOdorless','eStink','eSenseSmell','eSeeInvisible','eSenseXray','eFlight',
-	'eHaste','eResistance','eInvisibility','eIgnore','eVulnerability','eSlow','eBlindness','eConfusion','eRage','eHealing','ePanic','eBravery',
-	'eRegeneration','eWater','eBurn','ePoison','eFreeze','eAcid'].includes(k) );
+const PotionEffects = Object.filter(EffectTypeList, (e,k)=>[
+	// Senses things are potions because they affect your physical ability
+	'eDarkVision','eSenseSmell','eSeeInvisible','eSenseXray','eBlindness',
+	// Healing your body in any way also makes sense
+	'eHealing','eCureDisease','eCurePoison','eOdorless','eRegeneration',
+	// Drinking something that makes you physcially change - faster, slower, invisible, smelly
+	'eHaste','eSlow','eInvisibility','eStink',
+	// These seem less legit to me. It could be that something else should provide resistances
+	'eResistance','eIgnore','eVulnerability',
+	// Not as good.
+	'eFlight',
+	// Certain kinds of mind alteration, that you could achieve with drugs IRL
+	'eConfusion','eRage','ePanic','eBravery',
+	// Splash damage from water or acid is sensible. Maybe we should make them generally blast2 or better.
+	'eWater','eAcid',
+	// Poison only makes sense when imbibed. As splash damage? Not great.
+	'ePoison',
+	// What would these really be? I'm thinking that maybe darts need to do this.
+	'eBurn','eFreeze'	
+	].includes(k) );
+
 const SpellEffects = Object.filter(EffectTypeList, (e,k)=>[
-	'ePossess','eStun','eBlink','eTeleport','eStartle','eHesitate','eBlindness','eLight','eSenseXray','eSenseLiving','eMentalFence',
-	'eSenseTreasure','eSlow','eHealing','ePoison','eWater','eBurn','eFreeze','eShock','eSmite','eSmite3','eRot','eLeech','eRage','ePanic','eConfusion','eShove','eInvisibility'].includes(k) );
-const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSenseSmell','eOdorless','eRegeneration','eResistance','eSenseTreasure','eMobility','eSeeInvisible'].includes(k) );
-const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eStartle','ePoison','eBurn','eFreeze','eShock','eLeech','eBlindness','eSlow','ePanic','eConfusion','eShove','eSmite'].includes(k) );
+	'ePossess','eStun','eBlink','eTeleport','eStartle','eHesitate','eBlindness','eLight','eSenseXray','eSenseLiving',
+	'eMentalFence','eSenseTreasure','eSlow','eHealing','ePoison','eWater','eBurn','eFreeze','eShock','eSmite',
+	'eSmite3','eRot','eLeech','eRage','ePanic','eConfusion','eShove','eInvisibility'
+	].includes(k) );
+
+const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	// Since rings are rarest, most of their capabilities are awesome, with senseTreasure being the odd man out.
+	'eSenseSmell','eOdorless','eRegeneration','eResistance','eSenseTreasure','eMobility','eSeeInvisible'
+	].includes(k) );
+
+// Weapons only keep their magic for a little while. Apply runes in order to re-enhance them
+const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	// Energy damage is classic magic for weapons.
+	'eBurn','eFreeze','eShock',
+	// Can we find a way to apply poison potions to weapons? If you 'use' a poison potion it applies to currently held weapon?
+	'ePoison',
+	// The trope of the life-sucking weapon.
+	'eLeech',
+	// This can only really be justified because it is a rune you're applying to the weapon
+	'eSmite',
+	// We should consider making these characteristics of certain weapons
+	'eShove',		// Staves
+	'eStun',		// Clubs, maces
+	// 'eShatter',	// hammers can shatter stiff armor or like a carapace?
+	].includes(k));
 //const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSmite','eSmite3','eSmite5','eSmite7','ePoison','eBurn','eFreeze','eBlindness','eSlow','eConfusion'].includes(k) );
-const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eShove','eDeflect','eDeflectRot','eResistance'].includes(k) );
-const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance','eLight','eSeeInvisible','eDarkVision','eMentalFence','eBravery','eClearMind','eStalwart','eIronWill'].includes(k) );
-const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eRegeneration', 'eResistance'].includes(k) );
-const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eInvisibility', 'eOdorless', 'eRechargeFast', 'eResistance'].includes(k) );
-const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBlock'].includes(k) );
-const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eOdorless','eJump2','eJump3','eRegeneration', 'eIgnore', 'eFlight', 'eResistance'].includes(k) );
+
+const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	'eStun','eShove','eDeflect','eDeflectRot','eResistance'
+	].includes(k) );
+
+const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	// All armor can provide resistances, but it probably isn't their best use.
+	'eResistance',
+	// A shining beacon of light for the player.
+	'eLight',
+	// A couple of permanently useful visions you might want, but smell and xray are purposely omitted.
+	'eSeeInvisible','eDarkVision',
+	// Helms protect the mind from Confusion, Hesitation, Panic, and possession
+	'eClearMind','eStalwart','eBravery','eIronWill',
+	// Complete protection against every mental attack
+	'eMentalFence',
+	// Multiple armor pieces and rings can provide regen, each adding 1%
+	'eRegeneration', 
+	].includes(k) );
+
+const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	// Multiple armor pieces and rings can provide regen, each adding 1%
+	'eRegeneration',
+	// All armor can provide resistances, but it probably isn't their best use.
+	'eResistance'
+	].includes(k) );
+
+const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	'eInvisibility', 'eOdorless', 'eRechargeFast', 'eResistance'
+	].includes(k) );
+
+const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	'eBlock'
+	].includes(k) );
+
+const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	// Multiple armor pieces and rings can provide regen, each adding 1%
+	'eOdorless','eJump2','eJump3','eRegeneration','eIgnore','eFlight','eResistance'
+	].includes(k) );
 
 // Gaps in the bow effects are shock (reserved for darts), and stun/slow/shove (reserved for slings)
-const BowEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eBurn','eFreeze','eAcid','ePoison','eSmite'].includes(k) );
+const BowEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	// Classic energy damage, and piercing will poison. Rot's idea is something gets into your blood.
+	'eBurn','eFreeze','ePoison','eRot'
+	].includes(k) );
 
-// Slings are meant for short range non-stab damage and anything that feals "heavy" is their realm.
-const SlingEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eStun','eSlow','eShove'].includes(k) );
+// Slings are meant for short range bashing.  that feals "heavy" is their realm.
+const SlingEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	// These would happen if you were hit on the head, or hit very hard with a blunt trauma
+	'eStun','eShove',
+	// Because it is biblical, and because slinging does a bit less than arrows.
+	'eSmite'
+	].includes(k) );
 
-// Darts have the general concept of being tipped with a solutions, so all the mental effects are on them.
-const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eShock','eAcid','eStun','eStartle','eHesitate','eBlindness','eSlow'].includes(k) );
-const GemEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eMentalWall','eClearMind','eStalwart','eDarkVision','eSmite','ePossess','eRage','eLight','eSenseTreasure','eSenseLiving','eSeeInvisible'].includes(k) );
+const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+	// Darts have the general concept of being tipped with a solution, so all the mental effects are on them.
+	'ePoison','eStun','eStartle','eHesitate','eBlindness','eSlow'
+	].includes(k) );
+
+const GemEffects = Object.filter(EffectTypeList, (e,k)=>[
+	'inert','eMentalWall','eClearMind','eStalwart','eDarkVision','eSmite','ePossess','eRage',
+	'eLight','eSenseTreasure','eSenseLiving','eSeeInvisible'
+	].includes(k) );
 
 const WeaponMaterialList = Fab.add( '', {
 	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot', name: 'iron', matter: 'metal' },
 	"silver": 		{ level:  5, toMake: 'silver ingot', name: 'silver', matter: 'metal' },
 	"ice": 			{ level: 25, toMake: 'ice block', name: 'ice', matter: 'liquid' },
-	"glass": 		{ level: 40, toMake: 'malachite', name: 'glass', matter: 'glass' },
-	"lunarium": 	{ level: 55, toMake: 'lunarium ingot', name: 'lunarium', matter: 'metal' },
+	"lunarium": 	{ level: 40, toMake: 'lunarium ingot', name: 'lunarium', matter: 'metal' },
+	"glass": 		{ level: 55, toMake: 'malachite', name: 'glass', matter: 'glass' },
 	"deepium": 		{ level: 70, toMake: 'deepium ingot', name: 'deepium', matter: 'metal' },
 	"solarium": 	{ level: 85, toMake: 'solarium ingot', name: 'solarium', matter: 'metal' },
 });
@@ -114,18 +201,18 @@ const BowMaterialList = Fab.add( '', {
 	"ash": 			{ level:  0 /* very important this be zero!*/ },
 	"oak": 			{ level:  5 },
 	"maple": 		{ level: 25 },
-	"yew": 			{ level: 40 },
-	"lunarium": 	{ level: 55 },
+	"lunarium": 	{ level: 40 },
+	"yew": 			{ level: 55 },
 	"deepium": 		{ level: 70 },
 	"solarium": 	{ level: 85 },
 });
 
 const ArrowMaterialList = Fab.add( '', {
 	"ash": 			{ level:  0 /* very important this be zero!*/ },
-	"oak": 			{ level: 15 },
+	"oak": 			{ level:  5 },
 	"maple": 		{ level: 25 },
-	"yew": 			{ level: 40 },
-	"lunarium": 	{ level: 55 },
+	"lunarium": 	{ level: 40 },
+	"yew": 			{ level: 55 },
 	"deepium": 		{ level: 70 },
 	"solarium": 	{ level: 85 },
 });
@@ -138,14 +225,15 @@ const AmmoList = Fab.add( '', {
 		noLevelVariance: true,
 		attackVerb: 'shoot',
 		bunchSize: 8,
-		breakChance: 20,
+		breakChance: 50,
+		breakVerb: false,	// silently breaks.
 		damageType: DamageType.STAB,
 		xDamage: 0.4,	// Needs to be 0.4 or better so tht the different ammo types can be distinguished.
 		isArrow: true,
 		matter: 'wood',
 		materials: ArrowMaterialList,
 		name: '{material} arrow${+plus}',
-		quick: 0,
+		quick: Quick.NORMAL,
 		slot: Slot.AMMO,
 		img: 'UNUSED/spells/components/bolt.png',
 		flyingImg: StickerList.arrowInFlight.img,
@@ -162,7 +250,7 @@ const AmmoList = Fab.add( '', {
 		matter: 'stone',
 		isRock: true,
 		isSlingable: true,
-		quick: 2,
+		quick: Quick.NORMAL,
 		name: 'rock${+plus}',
 		mayThrow: true,
 		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
@@ -179,7 +267,7 @@ const AmmoList = Fab.add( '', {
 		damageType: DamageType.BASH,
 		isSlingStone: true,
 		isSlingable: true,
-		quick: 2,
+		quick: Quick.NIMBLE,
 		name: 'rock${+plus}',
 		mayThrow: true,
 		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
@@ -194,7 +282,7 @@ const AmmoList = Fab.add( '', {
 		xDamage: 0.30,
 		damageType: DamageType.STAB,
 		matter: 'metal',
-		quick: 2,
+		quick: Quick.LITHE,
 		name: 'dart${+plus}{?effect}',
 		chanceEffectFires: 100,	// Here is the key element of darts,
 		slot: false,
@@ -219,10 +307,10 @@ const WeaponList = Fab.add( '', {
 	"bow": {
 		level:  0,
 		rarity: 1.0,
-		xDamage: 0.5,
+		xDamage: 0.5,	// The needs to be low, because the arrow takes up the rest or the damage.
 		xPrice: 1.4,
 		matter: 'wood',
-		quick: 0,
+		quick: Quick.NORMAL,
 		effectChance: 0.80,
 		materials: BowMaterialList,
 		effects: BowEffects,
@@ -238,15 +326,15 @@ const WeaponList = Fab.add( '', {
 		attackVerb: 'shoot',
 		img: 'item/weapon/ranged/bow1.png'
 	},
-	// Although the Stealth Bow does much less damage it is Quick, so it is useful against nimble creatures.
-	// It still has the limitation of doing stabbing-only damage.
+	// Although the Stealth Bow does much less damage it won't give away your location.
+	// We'll probably get rid of this entirely.
 	"stealthBow": {		// Less damage but it can hit nimble creatures.
 		level:  0,
 		rarity: 0.5,
 		xDamage: 0.3,
 		xPrice: 3.0,
 		matter: 'wood',
-		quick: 2,		// Here is what the stealth bow is all about.
+		quick: Quick.NORMAL,
 		effectChance: 0.80,
 		materials: BowMaterialList,
 		effects: BowEffects,
@@ -270,7 +358,7 @@ const WeaponList = Fab.add( '', {
 		xDamage: 0.4,
 		xPrice: 1.4,
 		matter: 'leather',
-		quick: 0,
+		quick: Quick.NORMAL,
 		effectChance: 0.80,
 		effects: SlingEffects,
 		chanceEffectFires: 20,
@@ -282,16 +370,17 @@ const WeaponList = Fab.add( '', {
 		ammoSpec: 'ammo.slingStone',
 		ammoDamage: 'combine',
 		ammoEffect: 'addMine',
-		ammoQuick:  'mine',
+		ammoQuick:  'theirs',
 		attackVerb: 'sling',
 		img: 'item/weapon/ranged/bow1.png'
 	},
+	// The lithe melee and ranged weapon that stabs but seldom has special effects.
 	"dagger": {
 		level: 3,
 		rarity: 0.5,
 		xDamage: 0.70,
 		damageType: DamageType.STAB,
-		quick: 2,
+		quick: Quick.LITHE,
 		effectChance: 0.30,
 		chanceEffectFires: 50,
 		mayThrow: true,
@@ -300,7 +389,7 @@ const WeaponList = Fab.add( '', {
 		img: 'item/weapon/dagger.png',
 		scale: 0.7
 	},
-
+	// Lithe, and does very special smite damage instead of cut or stab.
 	"solarBlade": {
 		level: 0,
 		rarity: 0,
@@ -308,7 +397,7 @@ const WeaponList = Fab.add( '', {
 		damageType: DamageType.SMITE,
 		glow: 1,
 		light: 3,
-		quick: 2,
+		quick: Quick.LITHE,
 		attackVerb: 'smite',
 		isSoulCollector: true,
 		isUnique: true,
@@ -321,10 +410,10 @@ const WeaponList = Fab.add( '', {
 	"hands": {
 		level: 0,
 		rarity: 0,
-		xDamage: 0.5,
+		xDamage: 0.3,
 		damageType: DamageType.BASH,
 		noDrop: true,
-		quick: 2,
+		quick: Quick.LITHE,
 		materials: { flesh: {} },
 		effects: { eInert: EffectTypeList.eInert},
 		matter: 'flesh',
@@ -338,7 +427,7 @@ const WeaponList = Fab.add( '', {
 		xDamage: 0.8,
 		damageType: DamageType.CLAW,
 		noDrop: true,
-		quick: 2,
+		quick: Quick.LITHE,
 		materials: { flesh: {} },
 		effects: { eInert: EffectTypeList.eInert},
 		matter: 'flesh',
@@ -348,10 +437,10 @@ const WeaponList = Fab.add( '', {
 	"bite": {
 		level: 0,
 		rarity: 0,
-		xDamage: 0.8,
+		xDamage: 1.0,
 		damageType: DamageType.BITE,
 		noDrop: true,
-		quick: 2,
+		quick: Quick.LITHE,
 		materials: { flesh: {} },
 		effects: { eInert: EffectTypeList.eInert},
 		matter: 'flesh',
@@ -363,7 +452,7 @@ const WeaponList = Fab.add( '', {
 		rarity: 0.1,
 		xDamage: 0.70,
 		damageType: DamageType.STAB,
-		quick: 0,
+		quick: Quick.CLUMSY,
 		attackVerb: 'strike',
 		mineSpeed: 1.0,
 		effects: { eInert: EffectTypeList.eInert},
@@ -375,91 +464,153 @@ const WeaponList = Fab.add( '', {
 		xDamage: 0.70,
 		matter: 'wood',
 		damageType: DamageType.BASH,
-		quick: 1,
+		quick: Quick.NORMAL,
 		isClub: true,
 		attackVerb: 'smash',
 		img: 'item/weapon/club.png'
 	},
+	// The only lithe bashing weapon. Modest damage, but at least it bashes.
+	"staff": {
+		level: 0,
+		rarity: 1.0,
+		xDamage: 0.60,
+		matter: 'wood',
+		damageType: DamageType.BASH,
+		quick: Quick.LITHE,
+		isStaff: true,
+		attackVerb: 'whack',
+		img: 'item/weapon/club.png'
+	},
+	// The standard weapon. It does regular damage, cutting, and can harm creatures up to nimble.
 	"sword": {
 		level: 1,
 		rarity: 1.0,
 		xDamage: 1.00,
 		damageType: DamageType.CUT,
-		quick: 2,
+		quick: Quick.NIMBLE,
 		isSword: 1,
 		img: 'item/weapon/long_sword1.png'
 	},
+	// More damage than a sword, but only Quick.NORMAL
+	"broadsword": {
+		level: 3,
+		rarity: 0.5,
+		xDamage: 1.10,
+		damageType: DamageType.CUT,
+		quick: Quick.NORMAL,
+		isSword: 1,
+		img: 'item/weapon/long_sword1.png'
+	},
+	// More damage than sword or broadsword, but Quick.CLUMSY
 	"greatsword": {
 		level: 5,
 		rarity: 0.3,
-		xDamage: 1.10,
+		xDamage: 1.20,
 		damageType: DamageType.CUT,
 		isSword: 1,
-		quick: 0,
+		quick: Quick.CLUMSY,
 		img: 'item/weapon/long_sword2.png'
+	},
+	"rapier": {
+		level: 1,
+		rarity: 0.2,
+		xDamage: 0.90,
+		damageType: DamageType.STAB,
+		quick: Quick.LITHE,
+		isSword: 1,
+		img: 'item/weapon/long_sword1.png'
 	},
 	"mace": {
 		level: 3,
 		rarity: 1.0,
 		xDamage: 0.90,
 		damageType: DamageType.BASH,
-		quick: 1,
+		quick: Quick.NIMBLE,
 		img: 'item/weapon/mace1.png'
 	},
+	// Most damage in the game, but clumsy.
 	"hammer": {
 		level: 4,
 		rarity: 0.4,
-		xDamage: 1.15,
+		xDamage: 1.30,
 		damageType: DamageType.BASH,
-		quick: 0,
+		quick: Quick.CLUMSY,
 		img: 'item/weapon/hammer.png'
 	},
+	// Standard damage chopping weapon, throwable, but only NORMAL speed. Needs big swings.
 	"axe": {
 		level: 2,
-		rarity: 0.6,
+		rarity: 1.0,
 		xDamage: 1.00,
 		damageType: DamageType.CHOP,
-		quick: 1,
+		quick: Quick.NORMAL,
 		mayThrow: true,
 		range: 5,
 		attackVerb: 'strike',
 		img: 'item/weapon/battle_axe1.png'
 	},
+	// Higher damage chopper, but Quick.CLUMSY
+	"battleAxe": {
+		level: 5,
+		rarity: 0.2,
+		xDamage: 1.10,
+		damageType: DamageType.CHOP,
+		quick: Quick.CLUMSY,
+		attackVerb: 'strike',
+		img: 'item/weapon/battle_axe1.png'
+	},
+	// Stabbing, throwable,, nimble reach weapon. A solid choice, if you're ok with the weaker damage
 	"spear": {
 		level: 8,
 		rarity: 0.9,
 		xDamage: 0.70,
 		matter: 'wood',
 		damageType: DamageType.STAB,
-		quick: 1,
+		quick: Quick.NIMBLE,
 		reach: 2,
 		mayThrow: true,
 		range: 6,
 		attackVerb: 'strike',
 		img: 'item/weapon/spear2.png'
 	},
+	// The cutting weapon with reach and better damage than spear, but not throwable.
 	"pike": {
 		level: 12,
 		rarity: 0.7,
 		xDamage: 0.90,
 		matter: 'wood',
-		damageType: DamageType.STAB,
-		quick: 0,
+		damageType: DamageType.CUT,
+		quick: Quick.CLUMSY,
 		reach: 2,
 		img: 'item/weapon/bardiche1.png'
 	},
+	// Damage as good as a hammer, plus reach and close throw, but also clumsy; meant to be demon-like
 	"pitchfork": {
-		level: 20,
+		level: 16,
 		rarity: 0.5,
-		xDamage: 1.20,
+		xDamage: 1.30,
 		matter: 'wood',
 		damageType: DamageType.STAB,
-		quick: 0,
+		quick: Quick.CLUMSY,
 		reach: 2,
 		mayThrow: true,
-		range: 4,
+		range: 5,
 		img: 'item/weapon/trident1.png'
-	},});
+	},
+	// Extra spines give a bit of extra damage, like a souped-up spear but not as nimble.
+	"trident": {
+		level: 12,
+		rarity: 0.5,
+		xDamage: 1.10,
+		matter: 'metal',
+		damageType: DamageType.STAB,
+		quick: Quick.NORMAL,
+		reach: 2,
+		mayThrow: true,
+		range: 5,
+		img: 'item/weapon/trident1.png'
+	},
+});
 
 let BlockType = {
 	PHYSICAL: 	'physical',
@@ -484,9 +635,9 @@ const ShieldMaterials = Fab.add( '', {
 	"woodSM": 	{ level:  0, block: '', name: "wood", matter: 'wood' },
 	"silverSM":	{ level:  5, block: 'divine', name: "silver", matter: 'metal' },
 	"iron": 	{ level: 10, block: 'reach', name: 'iron', matter: 'metal' },
-	"beryl": 	{ level: 15, block: 'elemental', name: 'beryl', matter: 'gem' },
+	"beryl": 	{ level: 15, block: 'elemental', name: 'beryl', matter: 'crystal' },
 	"pearl": 	{ level: 20, block: 'elemental,reach', name: 'pearl', matter: 'glass' },
-	"opal": 	{ level: 30, block: 'elemental,divine', name: 'opal', matter: 'gem' },
+	"opal": 	{ level: 30, block: 'elemental,divine', name: 'opal', matter: 'crystal' },
 	"solarium2": { level: 40, block: 'elemental,reach,divine', name: 'solarium', matter: 'metal' },
 });
 
@@ -590,8 +741,8 @@ const GloveList = Fab.add( '', {
 	"studdedGloves": 	{ level:  9, rarity: 1.0 },
 	"trollHideGloves": 	{ level: 14, rarity: 1.0, name: 'troll hide gloves',
 							effect: { op: 'add', stat: 'immune', value: 'frogSpine' } },
-	"scale": 			{ level: 24, rarity: 1.0, matter: 'metal' },
-	"chain": 			{ level: 34, rarity: 1.0, matter: 'metal' }
+	"scaleGauntlets":	{ level: 24, rarity: 1.0, matter: 'metal' },
+	"chainGauntlets":	{ level: 34, rarity: 1.0, matter: 'metal' }
 });
 
 
@@ -625,7 +776,7 @@ const OreList = Fab.add( '', {
 	"oreCopper": 	{ level: 10, rarity: 0.6, name: "copper ore", refinesTo: "ingotCopper", img: 'ore/oreMetalOrange.png', scale: 0.5 },
 	"oreSilver": 	{ level: 15, rarity: 0.5, name: "silver ore", refinesTo: "ingotSilver", img: 'ore/oreMetalWhite.png', scale: 0.5 },
 	"oreGold": 		{ level: 20, rarity: 0.3, name: "gold ore", refinesTo: "ingotGold", img: 'ore/oreMetalYellow.png', scale: 0.5 },
-	"orePlatinum": { level: 25, rarity: 0.3, name: "malachite ore", refinesTo: "ingotMalachite", img: 'ore/oreMetalBlue.png', scale: 0.5 },
+	"orePlatinum":  { level: 25, rarity: 0.3, name: "malachite ore", refinesTo: "ingotMalachite", img: 'ore/oreMetalBlue.png', scale: 0.5 },
 	"oreLunarium": 	{ level: 30, rarity: 0.2, name: "lunarium ore", refinesTo: "ingotLunarium", img: 'ore/oreGemCyan.png', scale: 0.5 },
 	"oreSolarium": 	{ level: 35, rarity: 0.1, name: "solarium ore", refinesTo: "ingotSolarium", img: 'ore/oreGemYellow.png', scale: 0.5 },
 	"oreDeepium": 	{ level: 40, rarity: 0.1, name: "deepium ore", refinesTo: "ingotDeepium", img: 'ore/oreGemBlack.png', scale: 0.5 },
@@ -672,13 +823,13 @@ const PlantQualityList = Fab.add( '', {
 });
 
 const PlantList = Fab.add( '', {
-	"wheatPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.wheat', img: "plant/wheatPlant.png" },
-	"barleyPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.barley', img: "plant/barleyPlant.png" },
-	"carrotPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.carrot', img: "plant/carrotPlant.png" },
-	"potatoPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.potato', img: "plant/potatoPlant.png" },
-	"peaPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.peas', img: "plant/peaPlant.png" },
-	"beanPlant": 		{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.bean', img: "plant/beanPlant.png" },
-	"cabbagePlant": 	{ level:  0, rarity:  1.0, needLight: 9, harvestLoot: '5x 50% stuff.cabbage', img: "plant/cabbagePlant.png" },
+	"wheatPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '2x stuff.wheat', img: "plant/wheatPlant.png" },
+	"barleyPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '3x stuff.barley', img: "plant/barleyPlant.png" },
+	"carrotPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '1x stuff.carrot', img: "plant/carrotPlant.png" },
+	"potatoPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '1x stuff.potato, 50% stuff.potato', img: "plant/potatoPlant.png" },
+	"peaPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 3, harvestLoot: '1x stuff.pea, 2x 50% stuff.pea', img: "plant/peaPlant.png" },
+	"beanPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 3, harvestLoot: '1x stuff.bean, 2x 50% stuff.bean', img: "plant/beanPlant.png" },
+	"cabbagePlant": 	{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '1x stuff.cabbage', img: "plant/cabbagePlant.png" },
 });
 
 const MushroomList = Fab.add( '', {
@@ -688,6 +839,22 @@ const MushroomList = Fab.add( '', {
 	"grollotusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.grollotus', img: "mushroom/grollotus.png" },
 	"klinulusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.klinulus', flip: 50, img: "mushroom/klinulus.png" },
 	"rhodotusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.rhodotus', img: "mushroom/rhodotus.png" },
+});
+
+const SeedList = Fab.add( '', {
+	"wheatSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.wheatPlant' },
+	"barleySeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.barleyPlant' },
+	"carrotSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.carrotPlant' },
+	"potatoSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.potatoPlant' },
+	"peaSeed": 			{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.peaPlant' },
+	"beanSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.beanPlant' },
+	"cabbageSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.cabbagePlant' },
+	"amanitaSeed": 		{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.amanitaMushroom' },
+	"blurellaSeed": 	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.blurellaMushroom' },
+	"coxilliaSeed": 	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.coxilliaMushroom' },
+	"grollotusSeed":	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.grollotusMushroom' },
+	"klinulusSeed": 	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.klinulusMushroom' },
+	"rhodotusSeed": 	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.rhodotusMushroom' },
 });
 
 // Artifact, Relic, Talisman, Amulet
@@ -701,13 +868,13 @@ const StuffList = Fab.add( '', {
 		effects: { eInert: EffectTypeList.eInert},
 		img: 'item/stuff/shovel.png'
 	},
-	"candleLamp": 		{ rarity: 0.6, matter: 'wax', xPrice: 10, slot: Slot.HIP, light:  4, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  4, name: 'light 4', icon: EffectTypeList.eLight.icon }, useVerb: 'clip on', img: "item/stuff/candle.png" },
-	"torch": 			{ rarity: 1.0, matter: 'wood', xPrice:  4, slot: Slot.HIP, light:  6, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 6, name: 'light 6', icon: EffectTypeList.eLight.icon }, isTorch: true, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/torch.png" },
-	"lamp": 			{ rarity: 0.4, matter: 'metal', xPrice: 10, slot: Slot.HIP, light:  8, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  8, name: 'light 8', icon: EffectTypeList.eLight.icon }, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/lamp.png" },
-	"lantern": 			{ rarity: 0.2, matter: 'metal', xPrice: 10, slot: Slot.HIP, light: 10, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light 10', icon: EffectTypeList.eLight.icon }, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/lantern.png" },
-	"voidCandle": 		{ rarity: 0.3, matter: 'wax', xPrice: 10, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 4, name: 'shroud', icon: EffectTypeList.eDark.icon }, useVerb: 'clip on', img: "item/stuff/voidCandle.png" },
-	"voidLamp": 		{ rarity: 0.2, matter: 'metal', xPrice: 10, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 6, name: 'shroud', icon: EffectTypeList.eDark.icon }, useVerb: 'clip on', img: "item/stuff/darkLamp.png" },
-	"voidLantern": 		{ rarity: 0.1, matter: 'metal', xPrice: 10, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 8, name: 'shroud', icon: EffectTypeList.eDark.icon }, useVerb: 'clip on', img: "item/stuff/darkLantern.png" },
+	"candleLamp": 		{ rarity: 0.6, matter: 'wax',   xPrice:  2, slot: Slot.HIP, light:  4, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  4, name: 'light 4', icon: EffectTypeList.eLight.icon }, useVerb: 'clip on', img: "item/stuff/candle.png" },
+	"torch": 			{ rarity: 1.0, matter: 'wood',  xPrice:  4, slot: Slot.HIP, light:  6, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light 6', icon: EffectTypeList.eLight.icon }, isTorch: true, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/torch.png" },
+	"lamp": 			{ rarity: 0.4, matter: 'metal', xPrice:  6, slot: Slot.HIP, light:  8, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  8, name: 'light 8', icon: EffectTypeList.eLight.icon }, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/lamp.png" },
+	"lantern": 			{ rarity: 0.2, matter: 'metal', xPrice:  8, slot: Slot.HIP, light: 10, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value: 10, name: 'light 10', icon: EffectTypeList.eLight.icon }, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/lantern.png" },
+	"voidCandle": 		{ rarity: 0.3, matter: 'wax',   xPrice:  2, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 4, name: 'shroud', icon: EffectTypeList.eDark.icon }, useVerb: 'clip on', img: "item/stuff/voidCandle.png" },
+	"voidLamp": 		{ rarity: 0.2, matter: 'metal', xPrice:  4, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 6, name: 'shroud', icon: EffectTypeList.eDark.icon }, useVerb: 'clip on', img: "item/stuff/darkLamp.png" },
+	"voidLantern": 		{ rarity: 0.1, matter: 'metal', xPrice:  8, slot: Slot.HIP, triggerOnUse: true, effect: { op: 'set', stat: 'dark', value: 8, name: 'shroud', icon: EffectTypeList.eDark.icon }, useVerb: 'clip on', img: "item/stuff/darkLantern.png" },
 	"lumpOfMeat": 		{ rarity: 1.0, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, img: "item/food/chunk.png" },
 	"trollHide": 		{ rarity: 0.5, matter: 'leather', img: "item/armour/troll_hide.png" },
 	"bone": 			{ rarity: 1.0, matter: 'bone', mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: "item/food/bone.png" },
@@ -737,7 +904,7 @@ const StuffList = Fab.add( '', {
 	"scarabCarapace": 	{ rarity: 1.0, matter: 'chitin', },
 	"darkEssence": 		{ rarity: 0.1, matter: 'special', },
 	"facetedEye": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
-	"sunCrystal":   	{ rarity: 0.6, matter: 'gem', mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "item/stuff/sunCrystal.png", mayTargetPosition: true,
+	"sunCrystal":   	{ rarity: 0.6, matter: 'crystal', mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "item/stuff/sunCrystal.png", mayTargetPosition: true,
 							effect: {
 								name: 'radiance',
 								op: 'damage',
@@ -770,15 +937,17 @@ const StuffList = Fab.add( '', {
 	"batWing": 			{ rarity: 1.0, matter: 'flesh', },
 	"frogSpine": 		{ rarity: 0.8, matter: 'flesh', },
 	"wool": 			{ rarity: 1.0, matter: 'flesh', isFabricIngredient: true },
-	"ingotIron": 		{ rarity: 1.0, matter: 'metal', name: 'iron ingot' },
-	"ingotCopper": 		{ rarity: 0.9, matter: 'metal', name: 'copper ingot' },
-	"ingotSilver": 		{ rarity: 0.8, matter: 'metal', name: 'silver ingot' },
-	"ingotGold": 		{ rarity: 0.7, matter: 'metal', name: 'gold ingot' },
-	"ingotTin": 		{ rarity: 1.0, matter: 'metal', name: 'tin ingot' },
-	"ingotMalachite": 	{ rarity: 0.6, matter: 'metal', name: 'malachite ingot' },
-	"ingotLunarium": 	{ rarity: 0.5, matter: 'metal', name: 'lunarium ingot' },
-	"ingotSolarium": 	{ rarity: 0.4, matter: 'metal', name: 'solarium ingot' },
-	"ingotDeepium": 	{ rarity: 0.3, matter: 'metal', name: 'deepium ingot' },
+
+	"ingotTin": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, name: 'tin ingot' },
+	"ingotIron": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, name: 'iron ingot' },
+	"ingotCopper": 		{ level:  5, rarity: 0.9, matter: 'metal', isIngot: true, name: 'copper ingot' },
+	"ingotSilver": 		{ level:  5, rarity: 0.8, matter: 'metal', isIngot: true, name: 'silver ingot' },
+	"ingotGold": 		{ level: 15, rarity: 0.7, matter: 'metal', isIngot: true, name: 'gold ingot' },
+	"ingotLunarium": 	{ level: 40, rarity: 0.5, matter: 'metal', isIngot: true, name: 'lunarium ingot' },
+	"ingotMalachite": 	{ level: 55, rarity: 0.6, matter: 'metal', isIngot: true, name: 'malachite ingot' },
+	"ingotDeepium": 	{ level: 70, rarity: 0.3, matter: 'metal', isIngot: true, name: 'deepium ingot' },
+	"ingotSolarium": 	{ level: 85, rarity: 0.4, matter: 'metal', isIngot: true, name: 'solarium ingot' },
+
 	"wheat": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/wheat.png" },
 	"barley": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/barley.png" },
 	"carrot": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/carrot.png" },
@@ -792,8 +961,27 @@ const StuffList = Fab.add( '', {
 	"grollotus": 		{ rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: "mushroom/grollotus.png" },
 	"klinulus": 		{ rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: "mushroom/klinulus.png" },
 	"rhodotus": 		{ rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: "mushroom/rhodotus.png" },
-
 });
+
+/*
+This is a rapid producer of identical entires, but the truth is, that things are just much clearer and more
+flexible if I type it all out, as above.
+()=>{
+	let result = {};
+	let plantList = ['wheat','barley','carrot','potato','pea','bean','cabbage'];
+	plantList.forEach( plantId => {
+		result[plantId]        = { rarity: 1.0, matter: 'plant', isEdible: true, img: 'plant/'+plantId+'.png' };
+		result[plantId+'Seed'] = { rarity: 1.0, matter: 'plant', isSeed:   true, img: 'plant/seed.png', scale: 0.3, creates: 'stuff.'+plantId };
+	});
+
+	let mushroomList = ['amanita','blurella','coxillia','grollotus','klinulus','rhodotus'];
+	mushroomList.forEach( mushroomId => {
+		result[mushroomId]			= { rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: 'mushroom/'+mushroomId+'.png' },
+		result[mushroomId+'Seed']	= { rarity: 1.0, matter: 'fungus', isSeed:   true, scale: 0.3, creates: 'stuff.'+mushroomId, img: 'plant/seed.png' }
+	});
+	return result;
+}()
+*/
 
 StuffList.snailTrail.onTick = function() {
 	if( this.owner.isMap ) {
@@ -881,16 +1069,47 @@ const CoffinStates = {
 
 const NulImg = { img: '' };
 
-// Item Events
-// onPickup - fired just before an item is picked up. Return false to disallow the pickup.
-// onTick - fires each time a full turn has passed, for every item, whether in the world or in an inventory. 
+/*
+Item Events
+onPickup() 				- fired just before an item is picked up. Return false to disallow the pickup.
+onTick(dt) 				- fires each time a full turn has passed, for every item, whether in the world or in an inventory. 
+onBump(toucher,self)	- when any entity bumps into this. Remember that self might be a temporary tile proxy
+onPutInWorld(x,y,map)	- when an item is put into the world, either from the void to from an inventory.
+onGiveToEntity(x,y,recipient)	- when an item is given to a creature.
+onAttacked(attacker,amount,damageType) - when attacked.
+
+// Here are typical item values
+// symbol			- the text character used to represent this thing
+// charges			- decrements when item effect is used successfully. At zero removes the item's effect completely.
+// durability		- decrements when item used successfully. At zero item is destroyed.
+// breakChance		- upon item effect use, rolls a chance to break and if so the item is destroyed.
+// mayWalk			- creatures can walk over it
+// mayFly			- creatures can fly over it
+// mayPickup		- can be picked up into inventory
+// mayThrow			- you can throw this
+// opacity			- how well can normal sight see past this thing? 0.0 clear through 1.0 opaque
+// img, imgChoices	- images ou can show for this item
+// isDecor			- this may not go in a container.
+// isWall			- generally impassable.
+// isFloor			- passable.
+// isGate			- leads to another level. Needs a gateDir and gateInverse.
+// qualities		- 1 of 3 things the picker randomizes on an item
+// materials		- 2 of 3 things the picker randomizes on an item
+// varieties		- 3 of 3 things the picker randomizes on an item
+// effects			- The list of all effects this thing is allowed to have.
+// effectWhen		- DEPRECATED
+// scale			- adjustment to the image size
+// isContainer		- you can acquire the inventory of this object by bumping it.
+// hasInventory		- carries inventory. But you might not be able to get to it. See isContainer.
+// carrying	- the loot this thing gets when it is first generated
+*/
 
 const ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
 // GATEWAYS
 	"stairsDown": { symbol: '>', name: "stairs down", 	isGate: 1, gateDir: 1, gateInverse: 'stairsUp', isStairsDown: true, mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
 	"stairsUp":   { symbol: '<', name: "stairs up", 	isGate: 1, gateDir: -1, gateInverse: 'stairsDown', isStairsUp: true, mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
-	"gateway":    { symbol: 'O', name: "gateway", 		isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "dc-dngn/gateways/dngn_enter_dis.png" },
+	"gateway":    { symbol: 'O', name: "gateway", 		isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "decor/gateStone.png" },
 	"portal":     { symbol: '0', name: "portal", 		isGate: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
 	"pitDrop": 	  { symbol: SYM, name: "pit drop", 		isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
 // DOOR
@@ -1002,9 +1221,9 @@ const ItemTypeList = {
 		isContainer: true,
 		isRemovable: true,
 		state: 'shut',	// This is required to stop the user from "seeing inside" with mouse hover.
-		inventoryLoot: '3x 20% any',
+		carrying: '3x 20% any',
 		hasInventory: true,
-		scale: 0.40,
+		scale: 0.80,
 		img: 'decor/barrel.png'
 	},
 	"chest": {
@@ -1024,7 +1243,7 @@ const ItemTypeList = {
 			empty: { img: 'decor/chestEmpty.png' }
 		},
 		imgGet: (self,img) => img || self.imgChoices[self.state].img,
-		inventoryLoot: '5x 50% any',
+		carrying: '5x 50% any',
 		hasInventory: true
 	},
 	"coffin": {
@@ -1044,7 +1263,7 @@ const ItemTypeList = {
 			empty: { img: 'decor/coffinEmpty.png' }
 		},
 		imgGet: (self,img) => img || self.imgChoices[self.state].img,
-		inventoryLoot: '30% weapon, 30% armor, 30% coin, 5% helm, 5% bracers, 5% boots, 5% ring',
+		carrying: '30% weapon, 30% armor, 30% coin, 5% helm, 5% bracers, 5% boots, 5% ring',
 		hasInventory: true
 	},
 	"altar": {
@@ -1057,12 +1276,14 @@ const ItemTypeList = {
 		light: 4,
 		glow: true,
 		hasInventory: true,
+		hideInventory: true,
 		isDecor: true,
 		isSolarAltar: true,
 		rechargeTime: 12,
 		healMultiplier: 3.0,
-		sign: "This golden alter to Solarus glows faintly.\nTouch it to heal or level up.",
+		sign: "This golden alter to Solarus glows faintly.\nTouch it to heal, level up, and set your respawn point.",
 		effect: {
+			name: 'holy healing',
 			op: 'heal',
 			xDamage: 6.00,
 			healingType: DamageType.SMITE,
@@ -1078,6 +1299,8 @@ const ItemTypeList = {
 		mayPickup: false,
 		name: "fountain",
 		isDecor: true,
+		isWaterSource: true,
+		sign: "Water streams from this beautiful fountain.",
 		img: "dc-dngn/dngn_blue_fountain.png"
 	},
 	"fontSolar": {
@@ -1091,6 +1314,7 @@ const ItemTypeList = {
 		light: 10,
 		glow: 1,
 		isDecor: true,
+		sign: "Glorious light streams from this strange rift in reality.",
 		img: "dc-dngn/mana/fontSolar.png"
 	},
 	"fontDeep": {
@@ -1107,7 +1331,9 @@ const ItemTypeList = {
 		effectPeriodic: EffectTypeList.eRot,
 		dark: 10,
 		glow: 1,
+		lightDestroys: 3,
 		isDecor: true,
+		sign: "Sinister anti-light plagues this unsettling rift in reality.",
 		img: "dc-dngn/mana/fontDeep.png"
 	},
 // ORE VEINS
@@ -1134,16 +1360,22 @@ const ItemTypeList = {
 		mayFly: 		true,
 		mayPickup: 		false,
 		mayHarvest: 	true,
-		rechargeTime: 	1000,
-		name: 	'{state} {variety}',
+		harvestReps:	1,
+		rechargeTime: 	40,
+		name: 			'{state} {variety}',
 		properNoun: 	true,
+		growing:		false,
 		state: 			'wilted',
-		states: 		{ wilted: { isWilted: true }, thriving: { isWilted: false } },
+		states: 		{ wilted: { growing: false }, thriving: { growing: true } },
 		varieties: 		PlantList,
 		matter: 		'plant',
 		isPlant:		true,
+		sign: 			"",
+		signLack: 		"This plant needs more light to grow.",
+		signFine: 		"This plant is growing well.",
+		signMature: 	"This plant is ready to harvest.",
 		icon: 			'skill.png',
-		imgGet: 		(self,img) => (img || (self.isWilted ? self.imgChoices.wilted.img : self.variety.img)),
+		imgGet: 		(self,img) => (img || (self.growing ? self.variety.img : self.imgChoices.wilted.img)),
 		imgChoices: 	{ wilted: { img: 'plant/wilted.png' } },
 	},
 	"mushroom": 	{
@@ -1153,21 +1385,42 @@ const ItemTypeList = {
 		mayFly: 		true,
 		mayPickup: 		false,
 		mayHarvest: 	true,
+		harvestReps:	1,
 		rechargeTime: 	400,
-		name: 	'{variety}',
+		name: 			'{variety}',
 		varieties: 		MushroomList,
 		matter: 		'fungus',
 		isMushroom:		true,
 		icon: 			'skill.png',
 	},
+	"seed": {
+		symbol: 		SYM,
+		rarity: 		0,
+		isSeed:			true,
+		mayWalk: 		true,
+		mayFly: 		true,
+		mayPickup: 		true,
+		name: 			'{variety}',
+		varieties: 		SeedList,
+		icon: 			'skill.png',
+		img:			"plant/seed.png"
+	},
 // FAKES and SKILLS
 	"skill": 	{ symbol: SYM, isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "skill.png" },
 	"fake":   	{ symbol: SYM, isFake: true, name: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
 // CORPSE
-	"corpse":   { symbol: SYM, name: "remains of a {mannerOfDeath} {usedToBe}", rarity: 1,
-				isCorpse: true,
-				zOrder: Tile.zOrder.CORPSE,
-				img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
+	"corpse":   {
+		symbol: SYM,
+		name: "{matter} remains of a {mannerOfDeath} {usedToBe}",
+		matter: "REPLACE THIS MATTER",
+		rarity: 0,			// Never generates, because the Grocer job picks from .isEdible
+		isCorpse: true,
+		isEdible: true,
+		zOrder: Tile.zOrder.CORPSE,
+		scale: 0.50,
+		img: 'mon/corpse.png',
+		icon: "corpse.png"
+	},
 // KEYS
 	"key": {
 		symbol: 		'k',
@@ -1198,7 +1451,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		name:		 	'potion${?effect}{+plus}',
 		matter: 		'glass',
-		charges: 		1,
+		durability: 	1,
 		xDamage: 		1.5,	// Single use, so more damage.
 		light: 			3,
 		glow: 			true,
@@ -1208,7 +1461,6 @@ const ItemTypeList = {
 		effects: 		PotionEffects,
 		effectWhen: 	{ isHarm: 'throw', DEFAULT: 'quaff'},
 		mayThrow: 		true,
-		destroyOnLastCharge: true,
 		imgGet: 		(self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png",
 		imgChoices: 	ImgPotion,
 		icon: 			'potion.png'
@@ -1223,6 +1475,7 @@ const ItemTypeList = {
 		effectWhen: 	'cast',
 		mayCast: 		true,
 		isSpell: 		true,
+		isMagic:		true,
 		range: 			Rules.rangeSpell,
 		img: 			"item/scroll/scroll.png",
 		icon: 			'spell.png'
@@ -1242,7 +1495,7 @@ const ItemTypeList = {
 		symbol: 		"g",
 		isTreasure: 	1,
 		name:		 	'{quality} {variety}${+plus}{?effect}',
-		matter: 		'gem',
+		matter: 		'crystal',
 		qualities: 		GemQualityList,
 		varieties: 		GemList,
 		effects: 		GemEffects,
@@ -1250,6 +1503,8 @@ const ItemTypeList = {
 		isGem: 			true,
 		mayThrow: 		1,
 		mayGaze: 		1,
+		breakChance:	33,
+		breakVerb:		'shatter',
 		range: 			Rules.RANGED_WEAPON_DEFAULT_RANGE,
 		mayTargetPosition: 1,
 		autoCommand: 	Command.USE,
@@ -1536,7 +1791,7 @@ ItemTypeList.oreVein.onBump = function(entity,self) {
 ItemTypeList.altar.onBump = function(toucher,self) {
 	let delay = 0;
 	if( self.inventory && self.inventory.length ) {
-		toucher.inventoryTake( self.inventory, self, false, item => {
+		Inventory.giveTo( toucher, self.inventory, self, false, item => {
 			delay += 0.2;
 		});
 	}
@@ -1703,7 +1958,7 @@ ItemTypeList.chest.onBump = function(toucher,self) {
 				let allow = self.onLoot(self,toucher);
 				if( allow === false ) return;
 			}
-			toucher.inventoryTake(self.inventory, self, false); //, item => {
+			Inventory.giveTo( toucher, self.inventory, self, false); //, item => {
 			Anim.Fountain(toucher.id,self,20,1.0,4,StickerList.coinSingle.img);
 		}
 		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
@@ -1720,7 +1975,7 @@ ItemTypeList.barrel.onBump = function(toucher,self) {
 			if( allow === false ) return;
 		}
 //		let delay = 0;
-		toucher.inventoryTake(self.inventory, self, false ); //, item => {
+		Inventory.giveTo( toucher, self.inventory, self, false ); //, item => {
 //			new Anim({},{
 //				at: 		self,
 //				img: 		item.imgGet ? item.imgGet(item) : item.img,
@@ -1778,10 +2033,14 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 		let f = new Finder(entity.inventory).filter( item => item.rechargeTime && item.rechargeLeft > 0 );
 		if( f.count ) {
 			let item = pick(f.all);
-			item.rechargeLeft = 0;
+			item.recharge(3);
 			tell( mSubject|mPossessive|mCares,entity,' ',mObject,item,' suddenly recharges.' );
 		}
 	});
+}
+
+ItemTypeList.plant.onPutInWorld = function() {
+	this.resetRecharge();
 }
 
 ItemTypeList.plant.rechargeCriteria = function() {
@@ -1789,7 +2048,18 @@ ItemTypeList.plant.rechargeCriteria = function() {
 }
 
 ItemTypeList.plant.onTick = function() {
-	let state = this.rechargeCriteria.call(this) ? 'thriving' : 'wilted';
+	let pct = this.rechargePercent();
+	this.scale = 0.1+(0.15*pct);
+	if( this.spriteList && this.spriteList[0] ) {
+		this.spriteList[0].baseScale = this.scale;
+	}
+
+	if( this.isRecharged() ) {
+		this.sign = this.signMature;
+		return;
+	}
+	let hasLight = this.rechargeCriteria.call(this);
+	let state = hasLight ? 'thriving' : 'wilted';
 	if( this.state !== state ) {
 		this.stateCounter = (this.stateCounter||0)+1;
 		if( this.stateCounter >= 20 ) {
@@ -1799,14 +2069,13 @@ ItemTypeList.plant.onTick = function() {
 	else {
 		this.stateCounter = 0;
 	}
-	if( this.rechargeTime && this.isWilted && (this.rechargeLeft||0) < this.rechargeTime ) {
-		this.rechargeLeft = (this.rechargeLeft||0) + 1;
-	}
+
+	this.sign = this.growing ? this.signFine : this.signLack;
 }
 
 ItemTypeList.mushroom.onTick = function() {
-	let pct = 1 - (this.rechargeLeft||0)/this.rechargeTime;
-	this.scale = 0.2+(0.3*pct);
+	let pct = this.rechargePercent();
+	this.scale = 0.1+(0.15*pct);
 	if( this.spriteList && this.spriteList[0] ) {
 		this.spriteList[0].baseScale = this.scale;
 	}
@@ -1815,12 +2084,16 @@ ItemTypeList.mushroom.onTick = function() {
 ItemTypeList.fontDeep.onTick = function(dt) {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).shotClear().nearMe(4);
 	let self = this;
+
+	// Drain nearby magic items.
 	nearby.forEach( entity => {
 		let effect = new Effect(entity.area.depth,this.effectDrain,this,this.rechargeTime);
 		effect.chargeless = true;
 		effect.showOnset = false;
 		effectApply(effect,entity,this,null,'tick');
 	});
+
+	// Rot nearby creatures. That might heal certain creatures.
 	if( this.isRecharged() ) {
 		nearby.forEach( entity => {
 			let effect = new Effect(entity.area.depth,this.effectPeriodic,this,this.rechargeTime);
@@ -1830,6 +2103,12 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 			Anim.Homing(this.id,entity,self,effect.icon,45,6,0.5,5);
 		});
 		this.resetRecharge();
+	}
+
+	let light = this.map.getLightAt(this.x,this.y);
+	if( light >= this.lightDestroys ) {
+		tell( mSubject, this, 'explodes with a force you can feel in your soul. This area feels less impure.' );
+		this.destroy();
 	}
 }
 

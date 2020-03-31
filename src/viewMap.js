@@ -5,7 +5,7 @@ let MONSTER_SCALE_VARIANCE_MIN = 0.75;
 let MONSTER_SCALE_VARIANCE_MAX = 1.00;
 
 
-function handleScent(map,px,py,senseSmell,ofs) {
+function handleScent(map,px,py,senseSmell,ofs,visibilityDistance) {
 
 	guiMessage( 'overlayRemove', { groupId: 'scent' } );
 
@@ -13,7 +13,7 @@ function handleScent(map,px,py,senseSmell,ofs) {
 		return;
 	}
 
-	let d = MapVis;
+	let d = visibilityDistance;
 	let d2 = (d*2)+1
 	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
 		let ty = y-(py-d);
@@ -54,7 +54,7 @@ function handlePerception(observer,visCache,map,px,py,sensePerception,senseAlert
 
 	let f = observer.findAliveOthersNearby(MaxVis*2).filter( e => observer.isMyEnemy(e) && !observer.isHiddenEntity(e) );
 
-	let d = MapVis;
+	let d = observer.visibilityDistance;
 	let d2 = (d*2)+1
 	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
 		let ty = y-(py-d);
@@ -107,7 +107,7 @@ function createDrawList(observer,drawListCache) {
 	//let convert = { '#': '█' };
 	let py = observer.y;
 	let px = observer.x;
-	let d = MapVis;
+	let d =  observer.visibilityDistance;
 	let d2 = (d*2)+1
 	let a = drawListCache || [];
 
@@ -125,7 +125,7 @@ function createDrawList(observer,drawListCache) {
 	}
 
 	let ofs = (observer.senseSmell && (observer.sensePerception || observer.senseAlert)) ? 0.2 : 0;
-	handleScent(map,px,py,observer.senseSmell,ofs);
+	handleScent(map,px,py,observer.senseSmell,ofs,observer.visibilityDistance);
 	handlePerception(observer,visCache,map,px,py,observer.sensePerception,observer.senseAlert,ofs);
 
 	let visId = {};
@@ -357,9 +357,9 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,indexOrder=0,senseDarkVisi
 				if( entity.isMonsterType && !entity.scale) {
 					sprite.baseScale *= Math.rand(MONSTER_SCALE_VARIANCE_MIN,MONSTER_SCALE_VARIANCE_MAX);
 				}
-				if( entity.isMushroom ) {
-					sprite.baseScale *= Math.rand(0.6,1.0);
-				}
+//				if( entity.isMushroom ) {
+//					sprite.baseScale *= Math.rand(0.6,1.0);
+//				}
 			}
 			let sprite = entity.spriteList[i];
 			let onStage = !entity.invisible || senseInvisible;
@@ -464,7 +464,6 @@ class ViewMap extends ViewObserver {
 		for( let i=0 ; i<256 ; ++i ) {
 			this.randList.push( Math.randInt( 0, 1023 ) );
 		}
-		//this.setDimensions(Tile.DIM,MapVis);
 		this.hookEvents();
 		_viewMap = this;
 
@@ -594,28 +593,13 @@ class ViewMap extends ViewObserver {
 //			child.transform.scale.set( child.baseScale );
 //		}
 //	}
-	setDimensions(dim=Tile.DIM,maxVis=MapVis) {
-		MaxVis = maxVis;
-		let oldDim = Tile.DIM;
-		Tile.DIM = dim;
-		this.sd = MaxVis;
-		this.d = ((this.sd*2)+1);
-		console.assert( !isNaN(this.d) );
-		let tileWidth  = Tile.DIM * this.d;
-		let tileHeight = Tile.DIM * this.d;
-
-		this.app.renderer.view.style.width = tileWidth + "px";
-		this.app.renderer.view.style.height = tileHeight + "px";
-		this.app.renderer.resize(tileWidth,tileHeight);
-
-		this.resizeAllSprites(oldDim);
-	}
 	setZoom(_zoom) {
-		this.zoom = _zoom % 3;
+		this.zoom = _zoom % 4;
 		let oldDim = Tile.DIM;
-		if( this.zoom == 0 ) { this.setDimensions(32,11); }
-		if( this.zoom == 1 ) { this.setDimensions(48,8); }
-		if( this.zoom == 2 ) { this.setDimensions(64,6) }
+		if( this.zoom == 0 ) { this.setMapVis(11); }
+		if( this.zoom == 1 ) { this.setMapVis(8); }
+		if( this.zoom == 2 ) { this.setMapVis(6) }
+		if( this.zoom == 3 ) { this.setMapVis(3) }
 	}
 
 	worldOverlayAdd(groupId,x,y,area,img) {
@@ -638,6 +622,41 @@ class ViewMap extends ViewObserver {
 		return this.observer.area.animationManager.remove(fn);
 	}
 
+	setMapVis(mapVis) {
+		console.assert( mapVis );
+		this.observer.visibilityDistance = mapVis;
+		MaxVis = mapVis;	// This is questionable - it limits how far monsters can perceive you, which maybe shouldn't change with screen sizing
+
+		Gui.layout({
+			'#mapContainer': {
+				height: self => $(window).height() - self.offset().top
+			}
+		});
+
+		let w = $('#mapContainer').width();
+		let h = $('#mapContainer').height();
+		let smallestDim = Math.min(w,h);
+		let mapTileDim = mapVis*2+1;
+
+		let oldDim = Tile.DIM;
+		Tile.DIM = Math.floor(smallestDim / mapTileDim);
+
+		this.sd = MaxVis;
+		this.d = ((this.sd*2)+1);
+
+		console.assert( !isNaN(this.d) );
+		let tileWidth  = Tile.DIM * this.d;
+		let tileHeight = Tile.DIM * this.d;
+
+		this.app.renderer.view.style.width = tileWidth + "px";
+		this.app.renderer.view.style.height = tileHeight + "px";
+		this.app.renderer.resize(tileWidth,tileHeight);
+
+		this.resizeAllSprites(oldDim);
+
+		this.render();
+	}
+
 	message(msg,payload) {
 		super.message(msg,payload);
 		if( msg=='zoom' ) {
@@ -645,19 +664,7 @@ class ViewMap extends ViewObserver {
 			this.render();
 		}
 		if( msg == 'resize' ) {
-			Gui.layout({
-				'#mapContainer': {
-					height: self => $(window).height() - self.offset().top
-				}
-			});
-
-			let w = $('#mapContainer').width();
-			let h = $('#mapContainer').height();
-			let smallestDim = Math.min(w,h);
-			let mapTileDim = MapVis*2+1;
-			let newDim = Math.floor(smallestDim / mapTileDim);
-			this.setDimensions(newDim,MapVis);
-			this.render();
+			this.setMapVis(this.observer.visibilityDistance);
 		}
 		if( msg == 'overlayRemove' ) {
 			this.worldOverlayRemove( a => a.groupId==payload.groupId );

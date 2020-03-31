@@ -110,46 +110,41 @@ ConfigList.ken = () => {
 		friendDensity: 	0.000001,
 	}
 
-//	MonsterTypeList.player.inventoryLoot.push('30x weapon ofMetal, 10x stuff ofLiquid, 10x gloves ofLeather');
-
-//	MonsterTypeList.player.inventoryLoot.push('100x potion, 100x helm, 100x armor, 100x spell, 100x gem, 100x weapon, 100x cloak, 100x gloves, 100x ammo, 100x shield, 100x ring');
-//	MonsterTypeList.player.inventoryLoot.push('100x helm.dwarven');
-//	MonsterTypeList.player.inventoryLoot.push('10x coin');
-
-//	MonsterTypeList.player.inventoryLoot.push('4x potion.eHealing, 4x potion.eSenseXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
-//	MonsterTypeList.player.inventoryLoot.push('2x potion.eHealing, 4x potion, 2x gem, 2x spell, 1x potion.eSeeInvisible, 3x weapon, weapon.sling, 30x ammo.slingStone, weapon.bow, 40x ammo.arrow, spell.eFreeze');
+//	MonsterTypeList.player.carrying.push('100x potion, 100x helm, 100x armor, 100x spell, 100x gem, 100x weapon, 100x cloak, 100x gloves, 100x ammo, 100x shield, 100x ring');
+//	MonsterTypeList.player.carrying.push('4x potion.eHealing, 4x potion.eSenseXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing');
+//	MonsterTypeList.player.carrying.push('2x potion.eHealing, 4x potion, 2x gem, 2x spell, 1x potion.eSeeInvisible, 3x weapon, weapon.sling, 30x ammo.slingStone, weapon.bow, 40x ammo.arrow, spell.eFreeze');
 //	MonsterTypeList.player.experience = 100;
-//	MonsterTypeList.player.inventoryLoot.push('6x weapon, 50x ammo.arrow, 2x stuff.shovel, stuff.lantern, stuff.candleLamp, stuff.lamp, 2x stuff.solarOrbS, 2x stuff.solarOrbM, 2x stuff.solarOrbL, stuff.sunCrystal');
 
-
-//	MonsterTypeList.player.inventoryWear = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 5x weapon, weapon.bow, ammo.arrow';
-
-
-	Object.assign( Rules, {
+//	Object.assign( Rules, {
 //		xLootFrequency: 0.80,
 //		xEffectChance: 4.0
-	});
+//	});
 
 	// soldier, brawler, monk, archer, ninja, not quite blaster
-	MonsterTypeList.player.legacyId = 'soldier';
-//	MonsterTypeList.player.inventoryLoot.push('5x spell, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
-//	MonsterTypeList.player.inventoryLoot.push('spell.eTeleport, spell.eBlink');
+	playerInject = { level: 20 };
+	MonsterTypeList.player.legacyId = 'ninja';
+//	MonsterTypeList.player.carrying.push('5x spell, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
+//	MonsterTypeList.player.carrying.push('spell.eTeleport, spell.eBlink');
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;
 //	MonsterTypeList.player.senseSmell = 200;
 //	MonsterTypeList.player.senseDarkVision = 8;
-	MonsterTypeList.player.light = 2;
+//	MonsterTypeList.player.light = 2;
 
-	PlaceTypeList.surfaceSunTemple.symbols.Z = 'weapon.hammer';
+	MonsterTypeList.player.wearing = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon, weapon.bow';
+	MonsterTypeList.player.carrying.push( '20x seed, 40x ammo.arrow, 4x potion.eBurn');
 
-	// If you are doing graphics work, use this. Otherwise comment it out to get faster performance.
-	IMG_BASE = 'http://localhost:3010/tiles/';
+	//PlaceTypeList.surfaceSunTemple.symbols.Z = 'arborian'; //'weapon.hammer';
+
+	// If you are doing graphics work comment these in.
+	//IMG_BASE = 'http://localhost:3010/force/';	// forces reprocessing of all images.
+	IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
 	return {
-//		startingDepth: 1,
+		startingDepth: 0,
 //		themeId: 'kenDwarfTown',
 		saveBattery: true,
-		playerInject: { level: 10 }
+		playerInject: playerInject
 	}
 }
 

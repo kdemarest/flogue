@@ -90,6 +90,9 @@ class DataConditioner {
 	}
 
 	checkSupply(supplyMixed,sourceId,allowTilesAndMonsters) {
+		if( !supplyMixed ) {
+			return;
+		}
 		let picker = new Picker(0);
 		let supplyArray = Array.supplyParse(supplyMixed);		
 		for( let i=0 ; i<supplyArray.length ; ++i ) {
@@ -114,16 +117,19 @@ class DataConditioner {
 
 	validateLoot() {
 
+		let check = entity => {
+			this.checkSupply(entity.carrying,entity.typeId);
+			this.checkSupply(entity.wearing,entity.typeId);
+			this.checkSupply(entity.loot,entity.typeId);
+			this.checkSupply(entity.harvestLoot,entity.typeId);
+			this.checkSupply(entity.lootOnDrop,entity.typeId);
+		}
+
 		let picker = new Picker(0);
-		Object.each( MonsterTypeList, m => {
-			let supplyMixed = Array.supplyConcat( m.inventoryLoot, m.inventoryWear );
-			this.checkSupply(supplyMixed,m.typeId);
-		});
+		Object.each( MonsterTypeList, check );
 
 		Object.each( ItemTypeList, item => {
-			if( item.inventoryLoot ) {
-				this.checkSupply(item.inventoryLoot,item.typeId);
-			}
+			check(item);
 			if( item.ammoType ) {
 				if( !item.ammoSpec ) {
 					console.log( 'Item '+item.typeId+' needs an ammoSpec!' );
@@ -137,6 +143,14 @@ class DataConditioner {
 				}
 			}
 		});
+
+		Object.each( JobTypeList, check );
+
+		Object.each( PlaceTypeList, place => {
+			Object.each( place.symbols || {}, check );
+			Object.each( place.monsterTypes || {}, check );
+		});
+
 	}
 
 	mergePlaceTypesToGlobals() {
@@ -243,8 +257,8 @@ class DataConditioner {
 						supply.pick.forEach( typeFilter => add( typeFilter.split('.')[0] ) );
 					}
 					else {
-						if( supply.inventoryLoot ) {
-							this.checkSupply( supply.inventoryLoot, place.typeId+':'+supply.typeFilter );
+						if( supply.carrying ) {
+							this.checkSupply( supply.carrying, place.typeId+':'+supply.typeFilter );
 						}
 						add( supply.typeFilter.split('.')[0] );
 					}

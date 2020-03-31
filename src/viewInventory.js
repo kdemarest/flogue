@@ -150,7 +150,7 @@ class ViewInventory extends ViewObserver {
 
 		console.assert( this.div[0] );
 		
-		this.inventoryRaw = this.inventoryFn().isReal();
+		this.inventoryRaw = this.inventoryFn().isReal(true);
 		if( this.allowFilter && this.filterId ) {
 			let filterId = this.filterId;
 			this.inventoryRaw.filter( item => ItemFilterGroup[filterId].includes(item.typeId) );
@@ -285,14 +285,25 @@ class ViewInventory extends ViewObserver {
 			lastTypeId = item.typeId;;
 
 			cell.slot = td( spc, 'slotSpacer', 
+				(!this.observer.isUser() ? '' :
 				(item.inSlot ? icon('marked.png') : 
 				(item.slot ? icon('unmarked.png') : 
 				(!this.everSeen[item.id]?'<span class="newItem">NEW</span>' : ''
-				)))
+				))))
 			);
+
+			let exDescription = String.combine(
+				' ',
+				ex.description,
+				ex.reach,
+				ex.aoe,
+				ex.permuteDesc?'<span class="statNotice">'+ex.permuteDesc+'</span>':'',
+				ex.rechargeLeft
+			);
+
 			cell.key  			= td( spc, 'right', this.inventorySelector.charAt(i)+'.' );
 			cell.icon 			= td( spc, '', ex.icon );
-			cell.description 	= td( spc, '', String.combine(' ',ex.description,ex.reach,ex.aoe,ex.rechargeLeft) );
+			cell.description 	= td( spc, '', exDescription );
 			cell.armor 			= td( spc, 'ctr', ex.armor );
 			cell.damage 		= td( spc, 'right', ex.damage ) + td( spc, '', ex.damageType );
 			cell.bonus 			= td( spc, 'right', ex.bonus );

@@ -263,9 +263,21 @@ Module.add('utilities',function(){
 		return result;
 	}
 
-	//
-	// Supplies can be of the form 3x 50% itemType.variety.material.quality.effect isFlag mayFlag
-	//
+/*
+Supplies can come in two forms: String and Object. Both can be encapsulated in an array if you wish to 
+describe a list of supplies.
+
+STRING FORM
+	3x 50% TypeFilter permuteCode
+	- every part is optional except TypeFilter
+	- Rolls 4 times, with 10% chance to appear each time.
+	- The permuteCode cooresponds one of 1,L,V,2,3,4,5,6,F to force certain permutations.
+	- TypeFilter is a filter string. See filterStringParse for dtails.
+
+ARRAY FORM
+	{ count: n, chance: 60, id: 'weapon.dagger', permute: 'L', typeFilter: 'itemType.etc.etc' }
+	Instead of typeFilter it may contain { pick: [ 'floor', 'pit', 'mist' ] } to choose one of those randomly
+*/
 
 	let ChParser = /\s*([\d]+x)*\s*(\d+%)*\s*([^/,]+)(\/([a-zA-Z0-9$]+\s*)|\s*,?)/g;
 	Array.supplyParse = function(supplyMixed) {
@@ -389,7 +401,11 @@ Module.add('utilities',function(){
 	}
 
 	String.calcName = function(obj) {
-		obj.namePattern = obj.namePattern || obj.name || String.uncamelTypeId(obj.typeId || 'NOTYPE');
+		// When calculating names for effects, they should have a name, but if not you can try to use their op.
+		obj.namePattern = obj.namePattern || obj.name || String.uncamelTypeId(obj.typeId || obj.op || '');
+		if( !obj.namePattern ) {
+			debugger;
+		}
 		obj.name  = String.tokenReplace(obj.namePattern,obj);
 		obj.aboutPattern = obj.aboutPattern || obj.about || '';
 		obj.about = String.tokenReplace(obj.aboutPattern,obj);

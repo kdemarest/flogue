@@ -248,9 +248,12 @@ class ViewFull {
 	constructor(divId,divToExpand) {
 		this.divToExpand = divToExpand;
 		this.isFull = false;
-		this.image = ['screenExpand.png','screenContract.png']
+		function imageGet(index) {
+			let iconList = ['screenExpand.png','screenContract.png']
+			return IMG_BASE+'gui/icons/'+iconList[index];
+		}
 		let self = this;
-		let myDiv = $('<img class="guiButton" src="'+IMG_BASE+'gui/icons/'+this.image[0]+'">').appendTo($(divId));
+		let myDiv = $('<img class="guiButton" src="'+imageGet(0)+'">').appendTo($(divId));
 		myDiv
 		.show()
 		.click( function(e) {
@@ -261,7 +264,7 @@ class ViewFull {
 				self.exit();
 			}
 			self.isFull = !self.isFull;
-			$(myDiv).attr("src",self.image[self.isFull?1:0]);
+			$(myDiv).attr("src",imageGet(self.isFull?1:0));
 		});
 		// Super special-case for Cmd-Enter, which enters and exits full screen.
 		$(document).keydown( function(e) {

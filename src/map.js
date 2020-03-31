@@ -613,6 +613,14 @@ class Map extends SimpleMap {
 		if( this.itemList.includes(item) ) {
 			debugger;
 		}
+
+		if( item.onPutInWorld ) {
+			item.onPutInWorld.call(item,x,y,this);
+		}
+
+		if( item.dead ) {
+			return null;
+		}
 		// NUANCE! You must set the item's x,y in order for _addToListAndBunch to bunch properly.
 		item.x = x;
 		item.y = y;
@@ -620,6 +628,7 @@ class Map extends SimpleMap {
 			this.itemListHidden.push(item);
 			return item;
 		}
+
 		item = item._addToListAndBunch(this.itemList);
 		let lPos = y*this.xLen+x;
 		this.itemLookup[lPos] = (this.itemLookup[lPos] || []);

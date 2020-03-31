@@ -1,5 +1,9 @@
 Module.add('deed',function() {
 
+/*
+Maybe someday every single act in the game should become an effect, and we just compose
+them as they happen, and then execute them.
+*/
 
 class Effect {
 	constructor( depth, effectRaw, item=null, rechargeTime=0 ) {
@@ -365,21 +369,19 @@ function makeFilledCircle(x0, y0, radius, fn) {
 	return count;
 }
 
-function calcQuick(source,item,effect) {
-	let quick;
-	if( quick === undefined && effect.quick!==undefined ) {
-		quick = effect.quick;
+function getQuickBest(source,item,effect) {
+	// When you are using an item of a certain quickness, 
+	// You can't wield an item any 
+	if( effect.quick ) {
+		return effect.quick;
 	}
-	if( quick === undefined && item && item.quick !== undefined ) {
-		quick = item.quick;
+	if( item ) {
+		return item.getQuick();
 	}
-	if( source && source.quick !== undefined ) {
-		quick = source.quick;
+	if( source && source.getQuick ) {
+		return source.getQuick();
 	}
-	if( quick === undefined ) {
-		quick = 1;	// Not zero, which is slow. We assume average nimbleness for attempts
-	}
-	return quick;
+	return Quick.NORMAL;
 }
 
 let globalEffectDepth = 0;
@@ -551,7 +553,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 				effect.damageType = shooter.effect.damageType;
 			}
 			if( shooter.ammoQuick == 'mine' ) {
-				effect.quick = shooter.quick;
+				effect.quick = shooter.getQuick();
 			}
 			if( shooter.ammoEffect == 'addMine' && shooter.effect ) {
 				secondary.push( {effect: shooter.effect, chance: shooter.chanceEffectFires } );
@@ -661,10 +663,21 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 
 	// Another way to miss is to have the target simply dodge your attack.
 	if( target.isMonsterType || target.isItemType ) {
-		let quick = calcQuick(source,item,effect);
-		let dodge = target.dodge>=0 ? target.dodge : 0;
-		if( !effect.isSecondary && dodge > quick && !isSelf && isHarm ) {
-			tell( mSubject,target,' '+(dodge==2 ? 'nimbly ' : ''),mVerb,'dodge',' ',mObject|mPossessive|mCares,source ? source : ( item ? item : effect),(quick==0 ? ' clumsy' : '')+' '+(item?item.name.replace(/\$/,''):'attack') );
+		let quick = getQuickBest(source,item,effect);
+		let dodge = target.getDodge();
+		let missChance = [0,60,80,90][Math.clamp(dodge-quick,0,3)];
+		if( !effect.isSecondary && !isSelf && isHarm && Math.chance(missChance) ) {
+			tell(
+				mSubject,
+				target,
+				' '+['','','','nimbly','lithely'][dodge],
+				mVerb,
+				'dodge',
+				' ',
+				mObject|mPossessive|mCares,
+				source ? source : ( item ? item : effect),
+				['','clumsy','','nimble',''][quick]+' '+(item?item.name.replace(/\$/,''):'attack')
+			);
 
 			if( source ) {
 				let dx = target.x - source.x;
@@ -925,6 +938,7 @@ let resultDeniedDueToType = {
 	status: 'deniedDueToType',
 	success: false
 }
+
 DeedManager.addHandler(DeedOp.COMMAND,function() {
 	if( !monsterTarget(this) ) return resultDeniedDueToType;
 	this.target.command = this.value;
@@ -934,10 +948,12 @@ DeedManager.addHandler(DeedOp.COMMAND,function() {
 		success: true
 	};
 });
+
 DeedManager.addHandler(DeedOp.HEAL,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return this.target.takeHealing(this.source,this.value,this.healingType);
 });
+
 DeedManager.addHandler(DeedOp.DAMAGE,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	let isOngoing = this.onsetDone && (this.duration === true || this.duration > 1);
@@ -957,20 +973,24 @@ DeedManager.addHandler(DeedOp.DAMAGE,function() {
 	// suddenly disappears again. Do NOT end the effect over this.
 	return result;
 });
+
 DeedManager.addHandler(DeedOp.SHOVE,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return this.target.takeShove(this.source,this.item,this.value);
 });
+
 DeedManager.addHandler(DeedOp.TELEPORT,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	console.assert(this.source);
 	this.landing = this.landing || this.source.commandTarget2;
 	return this.target.takeTeleport(this.landing);
 });
+
 DeedManager.addHandler(DeedOp.STRIP,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return !!this.target.takeStripDeeds(this.stripFn);
 });
+
 DeedManager.addHandler(DeedOp.POSSESS,function() {
 	if( !this.target.isMonsterType ) return resultDeniedDueToType;
 	if( this.source.isPossessing ) {
@@ -988,6 +1008,7 @@ DeedManager.addHandler(DeedOp.POSSESS,function() {
 	result.endNow = !result.success;
 	return result;
 });
+
 DeedManager.addHandler(DeedOp.SUMMON,function() {
 	if( this.target.isMap ) return resultDeniedDueToType;
 	if( this.hasSummoned ) {
@@ -1050,7 +1071,7 @@ DeedManager.addHandler(DeedOp.DRAIN,function() {
 	let entity = this.target;
 	let anyDrained = false;
 	entity.inventory.forEach( item => {
-		if( item.hasRecharge() && item.isRecharged() ) {
+		if( item.hasRecharge() && item.isRecharged() && !item.isSkill ) {
 			item.resetRecharge() 
 			anyDrained = true;
 		}

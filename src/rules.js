@@ -115,9 +115,6 @@ let Rules = new class {
 			this.WEAPON_EFFECT_DAMAGE_PERCENT_MAX
 		) / 100;
 	}
-	chanceToShatter(level) {
-		return 33;
-	}
 	pickRechargeTime(level,item) {
 		let xRecharge = xCalc(item,item,'xRecharge','*');
 		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/Rules.DEPTH_SPAN)*Rules.EXTRA_RECHARGE_AT_DEPTH_MAX);
@@ -243,7 +240,8 @@ Rules.ItemBag = (function() {
 		gloves: [	 0.5, 	 0.50,	  1.0,	['variety','effect'], ],
 		boots: 	[	 2.0, 	 0.15,	  1.8,	['variety','effect'], ],
 		ring: 	[	 2.0, 	 0.50,	  6.0,	['material','effect'], ],
-		stuff: 	[	10.0, 	  0.0,	  0.4,	['variety'], ],
+		stuff: 	[	 9.0, 	  0.0,	  0.4,	['variety'], ],
+		seed: 	[	 1.0, 	  0.0,	  0.1,	['variety'], ],
 		part: 	[	 0.0, 	  0.0,	  0.4,	['variety'], ],
 	};
 	return Object.convert(raw,(row,key) => {

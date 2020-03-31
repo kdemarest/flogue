@@ -379,13 +379,13 @@ return {
 			delete player.userControllingMe.priorArea;
 
 			player.level = test.depth;
-			if( player.inventoryLoot ) {
-				player.lootTake( player.inventoryLoot, player.level, null, true );
+			if( player.carrying ) {
+				Inventory.lootTo( player, player.carrying, player.level, null, true );
 			}
 			console.assert( player.inventory.length >= 1 );	// 1 due to the natural melee weapon.
 
-			if( player.inventoryWear ) {
-				player.lootTake( player.inventoryWear, player.level, null, true, item => {
+			if( player.wearing ) {
+				Inventory.lootTo( player, player.wearing, player.level, null, true, item => {
 					if( player.mayDon(item) ) {
 						player.don(item,item.slot);
 					}

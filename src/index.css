@@ -172,6 +172,11 @@ body {
 	padding-right: 6px;
 }
 
+#guiInfo span.infoPerk {
+	font-size: 12px;
+	white-space: pre-wrap;
+}
+
 .notAllowed {
 	color: red;
 }
@@ -438,9 +443,12 @@ body {
 .unlit {
 	color: gray;
 }
-.jump {
+.statAlert {
 	color: black;
 	background-color: orange;
+}
+.statNotice {
+	color: orange;
 }
 .poison {
 	color: black;

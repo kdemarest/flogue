@@ -104,8 +104,8 @@ let TypeIdToSymbol = {};
 let SYM = 111;
 
 // If you change this, you must also chance the .css class .tile
-let MapVis = 8;		// The vision distance used when actually drawing your map display, casting light etc.
-let MaxVis = 8;		// The vision distance max any monster can see
+let MapVisDefault = 8;	// The vision distance used when actually drawing your map display, casting light etc.
+let MaxVis = 8;			// The vision distance max any monster can see
 
 // Pathfinding and terrain isProblem
 let Problem = {
@@ -148,12 +148,13 @@ Gab = {
 };
 
 const StickerList = {
-	wallProxy: { img: "dc-dngn/wallProxy.png" },
-	observerProxy: { img: "gems/Gem Type2 Yellow.png" },
-	enemyProxy: { img: "gems/Gem Type2 Red.png" },
-	friendProxy: { img: "gems/Gem Type2 Green.png" },
-	gateProxy: { img: "gems/Gem Type2 Green.png" },
-	gateDownProxy: { img: "gems/Gem Type2 Purple.png" },
+	mmWall: { img: "dc-dngn/wallProxy.png" },
+	mmObserver: { img: "gems/Gem Type2 Yellow.png" },
+	mmEnemy: { img: "gems/Gem Type2 Red.png" },
+	mmFriend: { img: "gems/Gem Type2 Green.png" },
+	mmGate: { img: "gems/Gem Type2 Green.png" },
+	mmGateDown: { img: "gems/Gem Type2 Purple.png" },
+	mmGateTown: { img: "gems/Gem Type2 Blue.png" },
 	unvisitedMap: { img: "gui/mapUnvisited.png" },
 	invUnmarked: { img: "gui/icons/unmarked.png" },
 	invMarked: { img: "gui/icons/marked.png" },
@@ -218,6 +219,14 @@ const StickerList = {
 	rotIcon: { img: 'gui/icons/eRot.png' },
 };
 
+const Quick = {
+	CLUMSY: 1,
+	NORMAL: 2,
+	NIMBLE: 3,
+	LITHE: 4
+}
+const QuickName = ['','clumsy','normal','nimble','lithe'];
+
 // Probably should do this at some point.
 //const Travel = { WALK: 1, FLY: 2, SWIM: 4 };
 
@@ -246,11 +255,11 @@ const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
 const Job = { SMITH: "smith", BREWER: "brewer", ARMORER: "armorer", LAPIDARY: "lapidary", JEWELER: "jeweler" };
 const Slot = { HEAD: "head", NECK: "neck", ARMS: "arms", HANDS: "hands", FINGERS: "fingers", WAIST: "waist", HIP: "hip", FEET: "feet", ARMOR: "armor", WEAPON: "weapon", AMMO: "ammo", SHIELD: "shield", SKILL: "skill" };
-const PickIgnore  = ['mud','forceField'];
-const PickVuln    = [DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
-const PickResist  = [DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
-const PickDeflect = [DamageType.CUT,DamageType.STAB,DamageType.CHOP,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.SMITE,DamageType.ROT];
-const PickBlock   = [DamageType.CUT,DamageType.STAB,DamageType.CHOP,DamageType.BASH];
+const PickIgnore  		= ['mud','forceField'];
+const PickVuln    		= [DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
+const PickResist  		= [DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
+const PickDeflect 		= [DamageType.CUT,DamageType.STAB,DamageType.CHOP,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.SMITE,DamageType.ROT];
+const PickBlock   		= [DamageType.CUT,DamageType.STAB,DamageType.CHOP,DamageType.BASH];
 
 // IMMUNITY and RESISTANCE!
 // Note that you can be immune to almost anything that is a string. That is, you can be immune to a DamageType,
@@ -315,14 +324,15 @@ let EffectTypeList = {
 	eStartle: 		{ isDeb: 1, level:  0, rarity: 1.00, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.PANICKED, isHarm: 1, xDuration: 0.2, icon: 'gui/icons/eFear.png', about: 'Startles the target, causing them to briefly flee.' },
 	eVulnerability: { isDeb: 1, level:  0, rarity: 1.00, op: 'add', isHarm: 1, stat: 'vuln', requires: (e,effect)=>e.isImmune && !e.isImmune(effect.value),
 					valuePick: () => pick(PickVuln), isHarm: 1, xDuration: 2.0, name: 'vulnerability to {value}', icon: 'gui/icons/eVuln.png', about: 'Target will suffer double harm from {value}.' },
+	// eNoseless - note there is no way to debuff the ability to smell. You must instead mask your own scent.
 	eSlow: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'sub', isHarm: 1, stat: 'speed', value: 0.5, xDuration: 0.3, requires: e=>e.speed>0.5, icon: 'gui/icons/eSlow.png', about: 'Target will act half as frequently.' },
 	eBlindness: 	{ isDeb: 1, level:  0, rarity: 0.30, op: 'set', isHarm: 1, stat: 'senseBlind', value: true, xDuration: 0.25, requires: e=>!e.senseBlind, icon: 'gui/icons/eBlind.png', about: 'Target becomes blind.' },
 	eConfusion: 	{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.CONFUSED, xDuration: 0.3, icon: 'gui/icons/eAttitude.png', about: 'Target becomes confused, stumbling about randomly.' },
 	ePanic: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.PANICKED, xDuration: 1.0, icon: 'gui/icons/eFear.png', about: 'Target panics and runs in fear.' },
 	eRage: 			{ isDeb: 1, level:  0, rarity: 0.20, op: 'set', stat:'attitude', isHarm: 1, value: Attitude.ENRAGED, xDuration: 0.5, icon: 'gui/icons/eAttitude.png', about: 'Target becomes enraged, attacking friend and foe alike.' },
 	ePossess: 		{ isDeb: 1, level:  0, rarity: 0.20, op: 'possess', isHarm: 1, xDuration: 5.0, noPermute: true, icon: 'gui/icons/ePossess.png', about: 'Takes over the target\'s mind, putting you in their body.' },
-	eDrain: 		{ isDeb: 1, level:  0, rarity: 0.40, op: 'drain', isHarm: 1, value: 'all', icon: 'gui/icons/eDrain.png' },
-	eImmobilize: 	{ isDeb: 1, level:  0, rarity: 0.40, op: 'set', isHarm: 1, stat: 'immobile', value: 1, requires: e=>!e.immobile, icon: 'gui/icons/eImmobile.png', about: 'Makes a target unable to move for their spot.' },
+	eImmobilize: 	{ isDeb: 1, level:  0, rarity: 0.40, op: 'set',     isHarm: 1, stat: 'immobile', value: 1, xDuration: 1.0, requires: e=>!e.immobile, icon: 'gui/icons/eImmobile.png', about: 'Makes a target unable to move for their spot.' },
+	eDrain: 		{ isDeb: 1, level:  0, rarity: 0.40, op: 'drain',   isHarm: 1, value: 'all', icon: 'gui/icons/eDrain.png' },
 
 // Healing
 	eHealing: 		{ isHel: 1, level:  0, rarity: 1.00, op: 'heal', xDamage: 6.00, isHelp: 1, duration: 0, healingType: DamageType.SMITE, icon: 'gui/icons/eHeal.png', about: 'Heals a target with holy force.' },
@@ -336,11 +346,13 @@ let EffectTypeList = {
 	eBurn: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.BURN, doesTiles: true, doesItems: true, icon: 'gui/icons/eBurn.png', about: 'Burns the target.' },
 	eFreeze: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.80, isHarm: 1, duration: 0, damageType: DamageType.FREEZE, doesTiles: true, doesItems: true, icon: 'gui/icons/eFreeze.png', about: 'Freezes the target.' },
 	eShock: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, damageType: DamageType.SHOCK, doesItems: true, icon: 'gui/icons/eShock.png', about: 'Shocks the target with electricity.' },
-	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.90, isHarm: 1, duration: 0, damageType: DamageType.CORRODE, doesItems: true, icon: 'gui/icons/eCorrode.png', about: 'Corrodes the target with acid.' },
 	eSmite: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.SMITE, doesItems: true, name: 'smite', icon: 'gui/icons/eSmite.png', about: 'Smites the target with holy might.' },
-	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.ROT, doesItems: true, icon: 'gui/icons/eRot.png', about: 'Rots the target with evil putrescence.' },
+	eRot: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.2, isHarm: 1,
+					duration: 5, damageType: DamageType.ROT, doesItems: true, icon: 'gui/icons/eRot.png', about: 'Rots the target with evil putrescence for {duration} rounds.' },
+	eAcid: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.30, isHarm: 1, 
+					duration: 3, damageType: DamageType.CORRODE, doesItems: true, icon: 'gui/icons/eCorrode.png', about: 'Corrodes the target with acid for {duration} rounds.' },
 	ePoison: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.50, isHarm: 1, isPoison: 1,
-					duration: 10, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png', about: 'Poisons the target, inflicting ongoing harm.' },
+					duration: 10, damageType: DamageType.POISON, icon: 'gui/icons/ePoison.png', about: 'Poisons the target for {duration} rounds.' },
 	ePoisonForever: { isDmg: 1, level:  0, rarity: 0.01, op: 'damage', xDamage: 0.05, isHarm: 1, isPoison: 1,
 					duration: true, damageType: DamageType.POISON, name: 'mortal poison', icon: 'gui/icons/ePoison.png', about: 'Poisons the target forever.' },
 	eLeech: 		{ isDmg: 1, level:  0, rarity: 0.30, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, isLeech: 1, damageType: DamageType.ROT, healingType: DamageType.SMITE, icon: 'gui/icons/eLeech.png', about: 'Leeches health from the target into the aggressor.' },
@@ -450,11 +462,13 @@ return {
 	SymbolToType: SymbolToType,
 	TypeIdToSymbol: TypeIdToSymbol,
 	SYM: SYM,
-	MapVis: MapVis,
+	MapVisDefault: MapVisDefault,
 	MaxVis: MaxVis,
 	Problem: Problem,
 	Tile: Tile,
 	Gab: Gab,
+	Quick: Quick,
+	QuickName: QuickName,
 	StickerList: StickerList,
 	MiscImmunity: MiscImmunity,
 	DamageType: DamageType,

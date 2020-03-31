@@ -49,9 +49,8 @@ class ViewInfo extends ViewObserver {
 			}
 		}
 
-		function itemSummarize(you,item,comp,header=true) {
+		function itemSummarize(ex,you,item,comp,header=true) {
 			let mine = you.inventory.find(i=>i.id==item.id)
-			let ex = item.explain(null,you);
 			let s = '';
 			if( header ) {
 				let lvl = !item.isTreasure ? '' : ' Level '+item.level+'<br>Value '+ex.priceWithCommas;
@@ -64,15 +63,21 @@ class ViewInfo extends ViewObserver {
 				if( ex.description2 ) {
 					s += ex.description2+'<br>';
 				}
+				if( ex.deathReturn ) {
+					s += '<span class="statAlert">'+ex.deathReturn+'</span><br>';
+				}
 				//if( item.effect && item.effect.stat && !item.isWeapon ) {
 				//	s += item.effect.stat+' '+(''+item.effect.value).split(',').join(', ')+'<br>';
 				//}
 				//s += 'Value: '+ex.priceWithCommas+'<br>';
 //				s += String.combine(' ',ex.effect,ex.permute,ex.effect || ex.permute ? '<br>' : '');
 			}
+			if( ex.duration ) {
+				s += "Duration: "+ex.duration;
+			}
 			let dam='',arm='';
 			if( ex.damage ) {
-				dam = String.combine(' ',ex.damage,ex.damageType+' damage',ex.aoe);
+				dam = String.combine(' ',ex.damage,ex.damageType+' damage',ex.aoe,ex.quick?', '+ex.quick:'');
 				if( comp ) {
 					if( comp.damage > item.damage ) dam = '<span class="worse">'+dam+'</span>';
 					if( comp.damage < item.damage ) dam = '<span class="better">'+dam+'</span>';
@@ -101,7 +106,8 @@ class ViewInfo extends ViewObserver {
 		if( entity.isItemType ) {
 			let item = entity;
 			let s = '<div class="monColor">';
-			s += itemSummarize(you,item,false,!item.inventory && item.isTreasure);
+			let ex = item.explain(null,you);
+			s += itemSummarize(ex,you,item,false,true/*!item.inventory && item.isTreasure*/);
 
 			// Compare it to any item I have in the same slot this belongs in.
 			if( item.slot && !you.inventory.find(i=>i.id==item.id) ) {
@@ -110,7 +116,7 @@ class ViewInfo extends ViewObserver {
 				f.forEach( i=>{ s += '<br>'+itemSummarize(you,i,item); });
 			}
 			// If the item has inventory, tell what it is.
-			if( item.inventory ) {
+			if( item.inventory && !item.hideInventory ) {
 				s += '<div class="invList">';
 				if( item.state == 'shut' ) {
 					s += 'Contents unknown';
@@ -132,6 +138,9 @@ class ViewInfo extends ViewObserver {
 				let sign = typeof item.sign == 'function' ? item.sign() : item.sign;
 				s += sign.replace(/\n/g,'<br>');
 			}
+			if( ex.infoPostfix ) {
+				s += ex.infoPostfix;
+			}
 			s += "</div>";
 			s += '<div id="favMessage"></div>';
 			$(this.infoDivId).show().html(s);
@@ -152,7 +161,7 @@ class ViewInfo extends ViewObserver {
 		s += '<table>';
 		s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
 		if( !entity.isUser() ) {
-			s += tRow('Activity:',(entity.brainState && entity.brainState.activity ? entity.brainState.activity : entity.attitude)+(this.enemyIsPresent?'*':''));
+			s += tRow('Activity:',(entity.brainState && entity.brainState.activity ? entity.brainState.activity : (entity.attitude|'uncertain'))+(this.enemyIsPresent?'*':''));
 		}
 		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
 		if( entity.isUser() ) {
@@ -161,7 +170,14 @@ class ViewInfo extends ViewObserver {
 			let weaponEx = weapon.explain(null,entity);
 			let ammo = entity.getFirstItemInSlot(Slot.AMMO);
 			let ex = ammo ? ammo.explain(null,entity) : false;
-			s += tRow( "Armor:", Math.floor(entity.calcReduction(DamageType.CUT,false)*Rules.armorVisualScale)+"M, "+Math.floor(entity.calcReduction(DamageType.STAB,true)*Rules.armorVisualScale)+"R" );
+
+			let arMelee = Math.floor(entity.calcReduction(DamageType.CUT,false)*Rules.armorVisualScale);
+			let arRanged = Math.floor(entity.calcReduction(DamageType.STAB,true)*Rules.armorVisualScale);
+			let arString = arMelee+"M, "+arRanged+"R";
+			if( arMelee <= 0 ) {
+				arString = '<span class="statAlert">'+arString+'</span>';
+			}
+			s += tRow( "Armor:", arString );
 			s += tRow( "Shield:", 
 				(entity.shieldBonus?'<span class="shieldBonus">':'')+
 				Math.floor(bc*100)+'%'+
@@ -169,16 +185,16 @@ class ViewInfo extends ViewObserver {
 				" to block"
 			);
 			s += tRow( "Damage:", String.combine( ' ', weaponEx.damage||0, weaponEx.damageType, weaponEx.quick, weaponEx.reach, weaponEx.sneak ) );
-			s += tRow( "Ammo:", ex ? ex.description : 'none ready' );
+			s += tRow( "Ammo:", ex ? ex.description : '<span class="statNotice">none ready</span>' );
 			s += tRow( "Coins:", Math.floor(entity.coinCount||0) );
 		}
 		s += '</table>';
 
 
-		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast' : '');
-		let nim = entity.dodge >= 2 ? ', lithe' : (entity.dodge==1 ? ', nimble' : '');
-		s += (entity.chargeAttackMult && entity.chargeDist>0) ? '<span class="jump">CHARGING</span>' :
-			(entity.jump>0 ? '<span class="jump">JUMPING</span>' :
+		let spd = entity.speed<1 ? ', slow' : ( entity.speed>1 ? ', fast '+entity.speed : '');
+		let nim = entity.getDodge() == Quick.CLUMSY ? ', clumsy' : (entity.getDodge()==Quick.NIMBLE ? ', nimble' : '');
+		s += (entity.chargeAttackMult && entity.chargeDist>0) ? '<span class="statAlert">CHARGING</span>' :
+			(entity.jump>0 ? '<span class="statAlert">JUMPING</span>' :
 			(entity.travelMode !== 'walk' ? '<b>'+entity.travelMode+'ing</b>' :
 			entity.travelMode+'ing'))+spd+nim+'<br>';
 
@@ -217,6 +233,8 @@ class ViewInfo extends ViewObserver {
 		s += summaryImmune.length ? '<div class="monDetail">Immune:</div>'+summaryImmune.join(', ')+'<br>' : '';
 		s += entity.resist ? '<div class="monDetail">Resist:</div>'+entity.resist.split(',').join(', ')+'<br>' : '';
 		s += entity.vuln ? '<div class="monDetail">Weak:</div>'+entity.vuln.split(',').join(', ')+'<br>' : '';
+
+		// Perks owned
 		let p = '';
 		if( entity.perkList ) {
 			Object.each(entity.perkList, perk => {
@@ -226,8 +244,8 @@ class ViewInfo extends ViewObserver {
 				if( !p ) {
 					p += '<span>PERKS</span><br>';
 				}
-				let allow = Perk.allow(perk,{source:entity}) ? '' : ' class="notAllowed"';
-				p += '<span'+allow+'>'+perk.name+'</span><br>';
+				let allow = Perk.allow(perk,{source:entity}) ? '' : ' notAllowed';
+				p += '<span class="infoPerk'+allow+'">'+perk.name+'<br>'+perk.description+'</span><br>';
 			});
 		}
 		s += p;
