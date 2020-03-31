@@ -1378,6 +1378,7 @@ const ItemTypeList = {
 		imgGet: 		(self,img) => (img || (self.growing ? self.variety.img : self.imgChoices.wilted.img)),
 		imgChoices: 	{ wilted: { img: 'plant/wilted.png' } },
 	},
+// Mushrooms
 	"mushroom": 	{
 		symbol: 		SYM,
 		rarity: 		0,
@@ -1393,9 +1394,11 @@ const ItemTypeList = {
 		isMushroom:		true,
 		icon: 			'skill.png',
 	},
+// Seeds for plants and mushrooms
 	"seed": {
 		symbol: 		SYM,
-		rarity: 		0,
+		rarity: 		0.1,
+		isTreasure:		true,
 		isSeed:			true,
 		mayWalk: 		true,
 		mayFly: 		true,
@@ -1405,6 +1408,20 @@ const ItemTypeList = {
 		icon: 			'skill.png',
 		img:			"plant/seed.png"
 	},
+	"vial": {
+		symbol:			SYM,
+		name: 			'Empty glass vial',
+		rarity:			0,
+		isTreasure:		true,
+		isVial:			true,
+		matter:			'glass',
+		mayWalk: 		true,
+		mayFly: 		true,
+		mayPickup: 		true,
+		icon: 			'skill.png',
+		img:			"item/potion/silver.png"
+	},
+
 // FAKES and SKILLS
 	"skill": 	{ symbol: SYM, isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "skill.png" },
 	"fake":   	{ symbol: SYM, isFake: true, name: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
@@ -1998,6 +2015,19 @@ ItemTypeList.barrel.onBump = function(toucher,self) {
 	});
 
 	self.destroy();
+}
+
+ItemTypeList.fountain.onBump = function(toucher,self) {
+	if( !toucher || !toucher.inventory ) {
+		return;
+	}
+	let vial = new Finder(toucher.inventory,toucher).filter(item=>item.isVial).first;
+	if( !vial ) {
+		tell(mSubject,toucher,' could fill a vial with water, if you had an empty vial.');
+		return;
+	}
+	Inventory.lootTo( toucher, 'potion.eWater', toucher.map.level || self.level || 1, self, true );
+	tell(mSubject,toucher,' ',mVerb,'fill',' a vial with water from the fountain.');
 }
 
 ItemTypeList.fontSolar.onTick = function(dt) {

@@ -241,7 +241,8 @@ Rules.ItemBag = (function() {
 		boots: 	[	 2.0, 	 0.15,	  1.8,	['variety','effect'], ],
 		ring: 	[	 2.0, 	 0.50,	  6.0,	['material','effect'], ],
 		stuff: 	[	 9.0, 	  0.0,	  0.4,	['variety'], ],
-		seed: 	[	 1.0, 	  0.0,	  0.1,	['variety'], ],
+		seed: 	[	 0.9, 	  0.0,	  0.1,	['variety'], ],
+		vial: 	[	 0.1, 	  0.0,	  0.1,	['variety'], ],
 		part: 	[	 0.0, 	  0.0,	  0.4,	['variety'], ],
 	};
 	return Object.convert(raw,(row,key) => {

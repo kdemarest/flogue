@@ -132,7 +132,7 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.light = 2;
 
 	MonsterTypeList.player.wearing = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon, weapon.bow';
-	MonsterTypeList.player.carrying.push( '20x seed, 40x ammo.arrow, 4x potion.eBurn');
+	MonsterTypeList.player.carrying.push( '20x seed, 40x ammo.arrow, 4x potion.eBurn, 6x vial');
 
 	//PlaceTypeList.surfaceSunTemple.symbols.Z = 'arborian'; //'weapon.hammer';
 

@@ -37,7 +37,7 @@ let JobTypeList = {
 		carrying: 
 			'6x 70% potion.eHealing, 2x 90% potion.eCureDisease, 2x 90% potion.eCurePoison, 2x 90% potion.eSeeInvisible, '+
 			'1x 50% potion.eFlight, 1x 50% potion.eHaste, 1x 50% potion.eInvisibility, '+
-			'20x 50% potion, 10x 50% stuff ofLiquid, , 10x seed'
+			'20x 50% potion, 10x 50% stuff ofLiquid, 10x seed, 8x 80% vial'
 	},
 	botanist: {
 		name: 'botanist',
@@ -173,7 +173,7 @@ let JobTypeList = {
 		buyTest: item => item.isTreasure,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "I sell goods of all kinds!",
-		carrying: '10x stuff, 10x 50% stuff, 5x 50% ammo.dart, 2x stuff isLight'
+		carrying: '10x stuff, 10x 50% stuff, 5x 50% ammo.dart, 2x stuff isLight, 5x 50% vial'
 	},
 	// Miners have enough ore for the player to manufacture things, and they also carry metal objects and pickaxes.
 	miner: {

@@ -552,7 +552,9 @@ class Item {
 
 		if( assureWalkableDrop ) {
 			let mayDrop = pWalk(entity,true);
-			[x,y] = entity.spiralFind(
+			let spiralFind = entity.spiralFind;
+			[x,y] = spiralFind.call(
+				entity,
 				x,
 				y,
 				(x,y,tile) => mayDrop(x,y) === Problem.NONE
