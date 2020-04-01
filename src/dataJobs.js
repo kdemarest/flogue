@@ -175,6 +175,17 @@ let JobTypeList = {
 		sign: "I sell goods of all kinds!",
 		carrying: '10x stuff, 10x 50% stuff, 5x 50% ammo.dart, 2x stuff isLight, 5x 50% vial'
 	},
+	glassBlower: {
+		name: 'glass blower',
+		isMerchant: true,
+		isMinor: true,
+		attitude: Attitude.AWAIT,
+		tether: 2,
+		buyTest: item => item.isTreasure && item.matter=='glass',
+		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
+		sign: "I blow glass objects of both delicacy and strength!",
+		carrying: '2x weapon ofGlass, 2x armor ofGlass, 2x helm ofGlass, 2x shield ofGlass, 2x boots ofGlass, 2x bracers ofGlass, 12x 90% vial'
+	},
 	// Miners have enough ore for the player to manufacture things, and they also carry metal objects and pickaxes.
 	miner: {
 		name: 'miner',
@@ -185,7 +196,7 @@ let JobTypeList = {
 		buyTest: item => item.isOre || item.isArmor || item.isWeapon || item.ofMetal,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Raw material from the depths!",
-		carrying: '20x ore, 20x 50% ore, 10x stuff ofMetal, 2x weapon.pickaxe, 2x stuff isLight'
+		carrying: '20x ore, 20x 50% ore' //, 10x stuff ofMetal, 2x weapon.pickaxe' // This made them use dark lamps!!! , 2x stuff isLight'
 	},
 	evangelist: {
 		name: 'evangelist',

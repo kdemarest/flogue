@@ -4,9 +4,22 @@ class Gui {
 	constructor(getPlayer) {
 		this.getPlayer = getPlayer;
 		this.view = {};
+		this.cached = {};
+
 		let self = this;
 		window.guiMessage = function(message,payload,target) {
 			self.message(message,payload,target);
+		}
+		window.guiCachedRender = (divId,s,classList) => {
+			Object.each( classList, state => {
+				if( $(divId).hasClass != state ) {
+					$(divId).toggleClass(state);
+				}
+			});
+			if( s !== self.cached[divId] ) {
+				$(divId).show().html(s);
+				self.cached[divId] = s;
+			}
 		}
 	}
 

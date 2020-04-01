@@ -590,23 +590,33 @@ body {
 	border-collapse: separate;
 	margin-left: 6px;
 }
+.inv table {
+	table-layout: fixed;
+}
+
+#guiInventory.inv thead tr th, #guiInventory.inv thead tr td, #guiInventory.inv tbody tr th, #guiInventory.inv tbody tr td{
+	table-layout: fixed;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
 .inv thead tr td {
-	font-size: 18px;
+	font-size: 16px;
 	font-weight: 400;
 	padding-bottom: 10px;
-	white-space: nowrap;
 }
+
 .inv thead tr td:hover {
 	background-color: rgb(110,110,110,0.73);
 	cursor: pointer;
 }
+
 .inv thead tr td img{
 	height: 18px;
 }
 
 .inv thead tr td.invSlot {
 	width: 35px;
-	display: inline-block;	/* sadly this was REQUIRED for layout to NOT scale the width of the td */
 }
 .inv thead tr td.invKey {
 	width: 24px;
@@ -619,20 +629,20 @@ body {
 	width: 256px;
 }
 .inv thead tr td.invArmor {
-	qwidth: 70px;
+	width: 74px;
 	text-align: center;
 }
 .inv thead tr td.invDamage {
-	qwidth: 98px;
+	width: 98px;
 	text-align: center;
 	padding-left: 6px;
 }
 .inv thead tr td.invBonus {
-	qwidth: 64px;
+	width: 64px;
 	padding-left: 6px;
 }
 .inv thead tr td.invCharges {
-	qwidth: 54px;
+	width: 58px;
 	padding-left: 6px;
 }
 .inv thead tr td.invPrice {
@@ -646,16 +656,17 @@ body {
 }
 .inv tbody tr td:nth-child(2) {
 	padding-right: 6px;
-	font-size: 20px;
 }
 .inv tbody tr td:nth-child(3) {
 	padding-right: 4px;
-	font-size: 18px;
 }
 .inv tbody tr td:nth-child(6) {
 	padding-right: 3px;
 }
 
+.inv tbody tr td {
+	font-size: 16px;
+}
 
 .inv tbody tr {
 	border-radius: 6px;

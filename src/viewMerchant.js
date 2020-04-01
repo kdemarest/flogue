@@ -64,20 +64,6 @@ class ViewMerchant extends ViewInventory {
 	}
 	message( msg, payload ) {
 		super.message(msg,payload);
-		if( msg == 'resize' ) {
-			Gui.layout( {
-				'#guiMerchant': {
-					height: self => $(window).height() - self.offset().top
-				},
-				'#guiMerchant .invBody': {
-					height: self => $(window).height() - self.offset().top
-				},
-				'#guiMerchant .invBodyScroll': {
-					height: self => $(window).height() - self.offset().top
-				}
-			});
-			$('#guiMerchant .invBodyScroll').scrollTop(this.scrollPos);
-		}
 	}
 	render() {
 		if( !this.mode ) {

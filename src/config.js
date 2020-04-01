@@ -86,7 +86,7 @@ ConfigList.ken = () => {
 		scapeId: 	'kenTinyCave',
 		palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
 		rREQUIRED: 	'mushrooms, shopOpenAir',
-		jobPick: 	{ layman: 10, sentry: 3, grocer: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1 },
+		jobPick: 	{ miner: 3, grocer: 1, botanist: 1, glassBlower: 1 },
 		monsters: 	['isDwarf'],
 		enemyDensity: 	0.00,
 		friendDensity: 	0.01,
@@ -138,11 +138,11 @@ ConfigList.ken = () => {
 
 	// If you are doing graphics work comment these in.
 	//IMG_BASE = 'http://localhost:3010/force/';	// forces reprocessing of all images.
-	IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
+	//IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
 	return {
-		startingDepth: 0,
-//		themeId: 'kenDwarfTown',
+		startingDepth: 1,
+		themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: playerInject
 	}

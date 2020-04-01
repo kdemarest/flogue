@@ -342,7 +342,7 @@ let EffectTypeList = {
 	eCureDisease: 	{ isHel: 1, level:  0, rarity: 1.00, op: 'strip', stripFn: deed=>deed.isDisease, isHelp: 1, duration: 0, icon: 'gui/icons/eHeal.png', about: 'Cures any disease on the target.' },
 // Damage
 	eBash: 			{ isDmg: 1, level:  0, rarity: 0.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.BASH, doesItems: true, icon: 'gui/icons/damageBash.png', about: 'Inflicts blunt trauma on the target.' },
-	eWater: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.WATER, doesTiles: true, doesItems: true, icon: 'gui/icons/eWater.png', about: 'Wets the target with water. Most demons hate this.' },
+	eWater: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.WATER, doesTiles: true, doesItems: true, icon: 'gui/icons/eWater.png', about: 'Wets the target with water. Fire creatures hate this, plants love it, and everyone else doesn\'t care.' },
 	eBurn: 			{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 1.00, isHarm: 1, duration: 0, damageType: DamageType.BURN, doesTiles: true, doesItems: true, icon: 'gui/icons/eBurn.png', about: 'Burns the target.' },
 	eFreeze: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.80, isHarm: 1, duration: 0, damageType: DamageType.FREEZE, doesTiles: true, doesItems: true, icon: 'gui/icons/eFreeze.png', about: 'Freezes the target.' },
 	eShock: 		{ isDmg: 1, level:  0, rarity: 1.00, op: 'damage', xDamage: 0.70, isHarm: 1, duration: 0, damageType: DamageType.SHOCK, doesItems: true, icon: 'gui/icons/eShock.png', about: 'Shocks the target with electricity.' },

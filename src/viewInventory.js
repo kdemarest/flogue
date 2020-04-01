@@ -18,7 +18,19 @@ class ViewInventory extends ViewObserver {
 		this.colFilter = colFilter || {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1};
 		this.sortColId = 'icon';
 		this.sortAscending = true;
+
+		this.heightHelper = { height: self => $(window).height() - self.offset().top };
+
+		$(this.inventoryDivId).append('<div class="invCategories"></div>');
+		$(this.inventoryDivId).append('<div class="invHeader"></div>');
+		$(this.inventoryDivId).append('<div class="invSecret" style="visibility:hidden; position: absolute;"></div>');
+		$(this.inventoryDivId).append('<div class="invBody"></div>');
 	}
+
+	selector(affix) {
+		return this.inventoryDivId+affix;
+	}
+
 	getItemByKey(keyPressed) {
 		let n = this.inventorySelector.indexOf(keyPressed);
 		if( n>=0 && n<this.inventory.count ) {
@@ -32,6 +44,9 @@ class ViewInventory extends ViewObserver {
 		this.visibleFn = visibleFn;
 		return this.div.is(":visible");
 	}
+	divId(innerDivId) {
+		return this.inventoryDivId+innerDivId;
+	}
 	get div() {
 		return $(this.inventoryDivId);
 	}
@@ -44,21 +59,18 @@ class ViewInventory extends ViewObserver {
 		}
 		this.div.hide();
 	}
+	doLayout() {
+		let layout = {};
+		layout[this.selector('')]					= this.heightHelper;
+		layout[this.selector(' .invBody')]			= this.heightHelper;
+		layout[this.selector(' .invBodyScroll')]	= this.heightHelper;
+		Gui.layout(layout);
+		$(this.selector(' .invBodyScroll')).scrollTop(this.scrollPos);
+	}
 	message( msg, payload ) {
 		super.message(msg,payload);
 		if( msg == 'resize' ) {
-			Gui.layout( {
-				'#guiInventory': {
-					height: self => $(window).height() - self.offset().top
-				},
-				'#guiInventory .invBody': {
-					height: self => $(window).height() - self.offset().top
-				},
-				'#guiInventory .invBodyScroll': {
-					height: self => $(window).height() - self.offset().top
-				}
-			});
-			$('#guiInventory .invBodyScroll').scrollTop(this.scrollPos);
+			this.doLayout();
 		}
 	}
 
@@ -104,10 +116,7 @@ class ViewInventory extends ViewObserver {
 				if( a.id > b.id ) return 1;
 				return 0;
 			}
-			//let f = '';
-			let n = compare();
-			//console.log(f+': '+n);
-			return n;
+			return compare();
 		}
 
 		function doSort(inventory,explainFn,sortFn,asc) {
@@ -141,45 +150,116 @@ class ViewInventory extends ViewObserver {
 			return '<td'+c+'>'+text+'</td>';
 		}
 
-		let observer = this.observer;
-
-		if( !this.visibleFn || !this.visibleFn() ) {
-			this._hide();
-			return;
+		let generateCategories = ( allowFilter, isFilterFn, renderFn ) => {
+			let cat = $('<div></div>');
+			if( allowFilter ) {
+				$(document).off( '.ItemFilter' );
+				ItemFilterOrder.map( filterId => {
+					let typeIcon =  $(icon( filterId=='' ? 'all.png' : ItemTypeList[filterId].icon ));
+					if( allowFilter && isFilterFn(filterId) ) {
+						typeIcon.addClass('iconLit');
+					}
+					typeIcon.on( 'click.ItemFilter', null, function() {
+						$('#'+this.invCategories+' img').removeClass('iconLit');
+						renderFn(filterId);
+					});
+					typeIcon.appendTo(cat);
+				});
+			}
+			return cat;
 		}
 
-		console.assert( this.div[0] );
-		
-		this.inventoryRaw = this.inventoryFn().isReal(true);
-		if( this.allowFilter && this.filterId ) {
-			let filterId = this.filterId;
-			this.inventoryRaw.filter( item => ItemFilterGroup[filterId].includes(item.typeId) );
+		let generateCellValues = ( observer, item, ex, sortColId, letter, isNew, mode) => {
+			let exDescription = String.combine(
+				' ',
+				ex.description,
+				ex.reach,
+				ex.aoe,
+				ex.permuteDesc?'<span class="statNotice">'+ex.permuteDesc+'</span>':'',
+				ex.rechargeLeft
+			);
+			let exSlot =(!observer.isUser() ? '' :
+				(item.inSlot ? icon('marked.png') : 
+				(item.slot ? icon('unmarked.png') : 
+				(!isNew?'<span class="newItem">NEW</span>' : ''
+				))));
+
+			let spc = sortColId == 'icon' && lastTypeId && lastTypeId!=item.typeId;
+			lastTypeId = item.typeId;;
+
+			let cell = {};
+			cell.slot			= td( spc, 'slotSpacer', exSlot );
+			cell.key  			= td( spc, 'right', letter+'.' );
+			cell.icon 			= td( spc, '', ex.icon );
+			cell.description 	= td( spc, '', exDescription );
+			cell.armor 			= td( spc, 'ctr', ex.armor );
+			cell.damage 		= td( spc, 'right', ex.damage ) + td( spc, '', ex.damageType );
+			cell.bonus 			= td( spc, 'right', ex.bonus );
+			cell.charges 		= td( spc, 'ctr', ex.recharge || '&nbsp;' );
+			cell.price 			= td( spc, 'right'+(mode=='buy' && ex.price>observer.coinCount?' tooExpensive':''), ex.priceWithCommas || '&nbsp;' );
+
+			return cell;
 		}
 
-		this.inventory = new Finder(this.inventoryRaw.all);
-		let self = this;
+		let generateHeadContent = (hide) => {
+			return '<thead style="'+(hide?'visibility:collapse;':'')+'">'+
+			'<tr>'+
+			colJoin(this.colFilter,colHead,colId=>self.sortColId==colId ? sortIcon : '')+
+			'</tr>'+
+			'</thead>';
+		};
 
-		let cat = $('<div class="invCategories"></div>');
-		if( this.allowFilter ) {
-			$(document).off( '.ItemFilter' );
-			ItemFilterOrder.map( filterId => {
-				let typeIcon =  $(icon( filterId=='' ? 'all.png' : ItemTypeList[filterId].icon ));
-				typeIcon.appendTo(cat)
-				if( self.allowFilter && self.filterId==filterId ) {
-					typeIcon.addClass('iconLit');
+		let adjustColumnWidths = (table,tableFixed) => {
+			let real = $('thead tr td',table);
+			let fixed = $('thead tr td',tableFixed);
+			for( let index=0 ; index < real.length ; ++index ) {
+				console.log(index,$(real[index]).width());
+				$(real[index]).width( $(real[index]).width()+'px' );
+			}
+			// This is done separately because we need to know what the
+			// column widths REALLY became, from the browser layout engine.
+			for( let index=0 ; index < real.length ; ++index ) {
+				console.log(index,$(real[index]).width());
+				$(fixed[index]).width( $(real[index]).width()+'px' );
+			}
+		};
+
+		let onClickHead = (e) => {
+			let parts = e.target.className.match( /inv(\S+)/ );
+			if( !parts ) {
+				if( !$(e.target).parent().attr("class") ) {
+					return;
 				}
-				typeIcon.on( 'click.ItemFilter', null, function() {
-					$('.invCategories img').removeClass('iconLit');
-					self.filterId = filterId;
-					self.render();
-				})
-				.appendTo(cat);
-			});
+				parts = $(e.target).parent().attr("class").match( /inv(\S+)/ );
+			}
+			let last = this.sortColId;
+			let next = (parts[1] || '').toLowerCase();
+			if( sortFn[next] ) {
+				this.sortColId = next;
+				this.sortAscending = this.sortColId !== last ? sortDirectionDefault[next] : !this.sortAscending;
+				this.render();
+			}
 		}
 
-		let headerDiv = $('<div></div>');
-		if( this.headerComponent ) {
-			this.headerComponent(headerDiv);
+		let onScrollBody = function() {
+			self.scrollPos = $(this).scrollTop();
+		}
+
+		let onClickBody = (event,item) => {
+			event.commandItem = item;
+			this.onItemChoose(event);
+		}
+
+		let onMouseoverBody = (event,item) => {
+			//console.log( 'ViewInventory mouseover' );
+			guiMessage( 'show', item );
+			guiMessage( 'favoriteCandidate', item );
+			$("#favMessage").html("Press 0-9 to favorite");
+		}
+
+		let onMouseoutBody = (event,item) =>{
+			guiMessage( 'hide' );
+			guiMessage( 'favoriteCandidate', null );
 		}
 
 		let colHead = {
@@ -216,59 +296,108 @@ class ViewInventory extends ViewObserver {
 			price: false
 		}
 
-		let invBody = $('<div class="invBody"></div>');
-
-		let sortIcon = '<img src="'+IMG_BASE+StickerList[this.sortAscending?'sortAscending':'sortDescending'].img+'">';
-		let tHeadContent = (hide) => {
-			return '<thead style="'+(hide?'visibility:hidden;':'')+'"><tr>'+colJoin(this.colFilter,colHead,colId=>self.sortColId==colId ? sortIcon : '')+'</tr></thead>';
-		};
-		let tableFixed = $( '<table class="inv" style="z-index: 101;"></table>' ).appendTo(invBody);
-		let tHeadFixed = $(tHeadContent(false))
-			.appendTo(tableFixed)
-			.click( function(e) {
-				let parts = e.target.className.match( /inv(\S+)/ );
-				if( !parts ) {
-					parts = $(e.target).parent().attr("class").match( /inv(\S+)/ );
-				}
-				let last = self.sortColId;
-				let next = (parts[1] || '').toLowerCase();
-				if( sortFn[next] ) {
-					self.sortColId = next;
-					self.sortAscending = self.sortColId !== last ? sortDirectionDefault[next] : !self.sortAscending;
-					self.render();
-				}
-			});
-
-		let invBodyScroll = $('<div class="invBodyScroll"></div>')
-			.appendTo(invBody)
-			.scroll( function() {
-				self.scrollPos = $(this).scrollTop();
-			});
-
-		let table = $( '<table class="inv"></table>' ).appendTo(invBodyScroll);
-		let tHead = $(tHeadContent(true))
-			.appendTo(table);
-
-		$(this.div).empty();
-		if( headerDiv ) $(headerDiv).appendTo(this.div);
-		if( cat ) $(cat).appendTo(this.div);
-		$(invBody).appendTo(this.div);
-		setTimeout( () => {
-			$('thead',table).css( 'visibility', 'hidden' );
-			let real = $('thead tr td',table);
-			let fixed = $('thead tr td',tableFixed);
-			for( let index=0 ; index < real.length ; ++index ) {
-				$(real[index]).width( $(real[index]).width()+'px' );
-				$(fixed[index]).width( $(real[index]).width()+'px' );
+		class Ghost {
+			constructor() {
+				this.cache = {};
 			}
-			$(real).empty();
-		}, 1 );
+			render(source,target) {
+				let targetContent = $(target).html();
+				let sourceContent = '<div>'+$(source).html()+'</div>';
+				if( targetContent != sourceContent ) {
+					$(target).empty();
+					$(source).appendTo(target);
+				}
+			}
+		}
+
+		//
+		// Function start
+		//
 
 
+		if( !this.visibleFn || !this.visibleFn() ) {
+			this._hide();
+			return;
+		}
+
+		let ghost = new Ghost();
+		let self = this;
+		let observer = this.observer;
+
+		console.assert( this.div[0] );
+		
+		this.inventoryRaw = this.inventoryFn().isReal(true);
+		if( this.allowFilter && this.filterId ) {
+			this.inventoryRaw.filter( item => ItemFilterGroup[this.filterId].includes(item.typeId) );
+		}
+
+		this.inventory = new Finder(this.inventoryRaw.all);
+
+
+		//
+		// Categories
+		//
+		let catDiv = generateCategories(
+			this.allowFilter,
+			(filterId) => this.filterId==filterId,
+			(filterId) => { this.filterId=filterId; this.render(); }
+		);
+		ghost.render( catDiv, this.selector(' .invCategories') );
+
+		//
+		// Middle Header
+		// For use by subclasses
+		//
+		let headerDiv = $('<div></div>');
+		if( this.headerComponent ) {
+			this.headerComponent(headerDiv);
+		}
+		ghost.render( headerDiv, this.selector(' .invHeader') );
+
+		//
+		// Inventory
+		//
+		let divBody = $('<div></div>');
+
+		let sortIcon   = '<img src="'+IMG_BASE+StickerList[this.sortAscending?'sortAscending':'sortDescending'].img+'">';
+
+		//
+		// Table Fixed Header
+		// Contains the visible header, that never scrolls
+		//
+		let tableFixed = $( '<table class="inv" style="z-index: 101;"></table>' ).appendTo(divBody);
+		let tHeadFixed = $(generateHeadContent(false))
+			.appendTo(tableFixed)
+			.click( onClickHead )
+
+		//
+		// Scrollable Div
+		// Contains the actual data with a hidden header
+		//
+		let divBodyScroll = $('<div class="invBodyScroll"></div>')
+			.appendTo(divBody)
+			.scroll( onScrollBody );
+
+		// The crazy invSecret stuff makes an invisible table so that we can let HTML
+		// adjust column sizes. Then we manage the column widths, and move its contents into
+		// the visible div invBody at the last moment.
+
+		$(this.selector(' .invSecret')).show().empty();
+		ghost.render( divBody, this.selector(' .invSecret') );
+
+		//
+		// Table Scrollable Header
+		//
+		let table = $( '<table class="inv"></table>' ).appendTo(divBodyScroll);
+		let tHead = $(generateHeadContent(true)).appendTo(table);
+		adjustColumnWidths(table,tableFixed);
+
+		//
+		// Table Scrollable Body
+		//
 		let tBody = $('<tbody></tbody>').appendTo(table);
 		let lastTypeId = '';
 
-		//console.log("Sorting by "+this.sortColId);
 		this.inventory.result = doSort(
 			this.inventory,
 			item => item.explain(this.mode,observer),
@@ -278,61 +407,35 @@ class ViewInventory extends ViewObserver {
 
 		for( let i=0 ; i<this.inventory.count ; ++i ) {
 			let item = this.inventory.all[i];
-			let ex = item.explain(this.mode,observer);
+			let ex   = item.explain(this.mode,observer);
+			let cell = generateCellValues( observer, item, ex, this.sortColId, this.inventorySelector.charAt(i), this.everSeen[item.id], this.mode );
+			let s    = '<tr>'+colJoin(this.colFilter,cell)+'</tr>';
 
-			let cell = {};
-			let spc = this.sortColId == 'icon' && lastTypeId && lastTypeId!=item.typeId;
-			lastTypeId = item.typeId;;
-
-			cell.slot = td( spc, 'slotSpacer', 
-				(!this.observer.isUser() ? '' :
-				(item.inSlot ? icon('marked.png') : 
-				(item.slot ? icon('unmarked.png') : 
-				(!this.everSeen[item.id]?'<span class="newItem">NEW</span>' : ''
-				))))
-			);
-
-			let exDescription = String.combine(
-				' ',
-				ex.description,
-				ex.reach,
-				ex.aoe,
-				ex.permuteDesc?'<span class="statNotice">'+ex.permuteDesc+'</span>':'',
-				ex.rechargeLeft
-			);
-
-			cell.key  			= td( spc, 'right', this.inventorySelector.charAt(i)+'.' );
-			cell.icon 			= td( spc, '', ex.icon );
-			cell.description 	= td( spc, '', exDescription );
-			cell.armor 			= td( spc, 'ctr', ex.armor );
-			cell.damage 		= td( spc, 'right', ex.damage ) + td( spc, '', ex.damageType );
-			cell.bonus 			= td( spc, 'right', ex.bonus );
-			cell.charges 		= td( spc, 'ctr', ex.recharge || '&nbsp;' );
-			cell.price 			= td( spc, 'right'+(this.mode=='buy' && ex.price>this.observer.coinCount?' tooExpensive':''), ex.priceWithCommas || '&nbsp;' );
-
-			let s = '<tr>'+colJoin(this.colFilter,cell)+'</tr>';
-
-			$(s).appendTo(tBody).click( event => {
-				event.commandItem = item;
-				this.onItemChoose(event);
-			})
-			.mouseover( event => {
-				//console.log( 'ViewInventory mouseover' );
-				guiMessage( 'show', item );
-				guiMessage( 'favoriteCandidate', item );
-				$("#favMessage").html("Press 0-9 to favorite");
-			})
-			.mouseout( event => {
-				guiMessage( 'hide' );
-				guiMessage( 'favoriteCandidate', null );
-			});
+			$(s).appendTo(tBody)
+				.click(		event => onClickBody(event,item) )
+				.mouseover(	event => onMouseoverBody(event,item) )
+				.mouseout(	event => onMouseoutBody(event,item) )
+			;
 		}
 		if( !this.inventory.count ) {
 			$("<tr><td colspan=4>Pick up some items by walking upon them.</td></tr>").appendTo(tBody);
 		}
 		this.userSawInventory = true;
+
+		// We can hid invSecret now because we've gotten the results of its layout exercise.
+		$(this.selector(' .invSecret')).hide();
+		ghost.render( divBody, this.selector(' .invBody') );
 		this.div.show();
-		setTimeout( () => guiMessage('resize'), 1 );
+
+		// So this is weird. Apparently, until you ACTUALLY show the div, you don't have 
+		// your final column widths and table height and so on.
+		adjustColumnWidths(table,tableFixed);
+		this.doLayout();
+
+		// And even worse, the heights are deceptive until you've actually rendered.
+		// And still worse, doing the render on the very next frame didn't work. Only
+		// when I gave it a fill second did the scroll bar properly adjust to screen bottom.
+		setTimeout( () => this.doLayout(), 1000 );
 	}
 }
 

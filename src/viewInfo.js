@@ -28,10 +28,16 @@ class ViewInfo extends ViewObserver {
 			}
 		}
 
-		$(this.infoDivId).empty().removeClass('monColor healthWarn healthCritical');
+		let classList = {
+			monColor: 0,
+			healthWarn: 0,
+			healthCritical: 0
+		};
+
 		if( entity.isTileType ) {
 			return;
 		}
+
 
 		let specialMessage = '';
 		if( entity.id !== you.id ) {
@@ -44,7 +50,7 @@ class ViewInfo extends ViewObserver {
 			}
 			if( specialMessage ) {
 				let s = '<div class="monColor">'+specialMessage+'</div>';
-				$(this.infoDivId).show().html(s);
+				guiCachedRender(this.infoDivId,s,classList);
 				return;
 			}
 		}
@@ -103,7 +109,7 @@ class ViewInfo extends ViewObserver {
 			return s;
 		}
 
-		if( entity.isItemType ) {
+		let renderItemType = () => {
 			let item = entity;
 			let s = '<div class="monColor">';
 			let ex = item.explain(null,you);
@@ -111,9 +117,19 @@ class ViewInfo extends ViewObserver {
 
 			// Compare it to any item I have in the same slot this belongs in.
 			if( item.slot && !you.inventory.find(i=>i.id==item.id) ) {
-				let f = you.getItemsInSlot(item.slot);
+				let f;
+				f = you.getItemsInSlot(item.slot).filter(i=>i.typeId==item.typeId);
+				if( !f.count ) {
+					f = you.getItemsInSlot(item.slot);
+				}
+				if( !f.count ) {
+					f = you.getItemsInSlot(item.slot);
+				}
 				if( f.count ) { s += '<hr>'; }
-				f.forEach( i=>{ s += '<br>'+itemSummarize(you,i,item); });
+				f.forEach( i=>{
+					let ex = i.explain(null,you);
+					s += '<br>'+itemSummarize(ex,you,i,item);
+				});
 			}
 			// If the item has inventory, tell what it is.
 			if( item.inventory && !item.hideInventory ) {
@@ -143,8 +159,11 @@ class ViewInfo extends ViewObserver {
 			}
 			s += "</div>";
 			s += '<div id="favMessage"></div>';
-			$(this.infoDivId).show().html(s);
-			return;
+			return s;
+		}
+
+		if( entity.isItemType ) {
+			return guiCachedRender( this.infoDivId, renderItemType(), classList );
 		}
 
 		let s = "";
@@ -253,19 +272,19 @@ class ViewInfo extends ViewObserver {
 			s += debug ? (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'') : '';
 //			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');
 //			$('#guiPathDebug').html(entity.path ? entity.path.render().join('\n') : '');
-			$(this.infoDivId).addClass('monColor');
+			classList.monColor = 1;
 		}
 		else {
 			let healthRatio = entity.health/entity.healthMax;
 			if( healthRatio < 0.15 ) {
-				$(this.infoDivId).addClass('healthCritical');
+				classList.healthCritical = 1;
 			}
 			else
 			if( healthRatio < 0.35 ) {
-				$(this.infoDivId).addClass('healthWarn');
+				classList.healthWarn = 1;
 			}
 		}
-		$(this.infoDivId).show().append(s);
+		guiCachedRender(this.infoDivId,s,classList);
 
 	}
 
