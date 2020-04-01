@@ -131,7 +131,7 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.senseDarkVision = 8;
 //	MonsterTypeList.player.light = 2;
 
-	MonsterTypeList.player.wearing = 'armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon, weapon.bow';
+	MonsterTypeList.player.wearing = 'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow';
 	MonsterTypeList.player.carrying.push( '20x seed, 40x ammo.arrow, 4x potion.eBurn, 6x vial');
 
 	//PlaceTypeList.surfaceSunTemple.symbols.Z = 'arborian'; //'weapon.hammer';
@@ -141,8 +141,8 @@ ConfigList.ken = () => {
 	//IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
 	return {
-		startingDepth: 1,
-		themeId: 'kenDwarfTown',
+		startingDepth: 9,
+		//themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: playerInject
 	}

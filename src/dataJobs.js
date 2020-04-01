@@ -81,7 +81,7 @@ let JobTypeList = {
 		buyTest: item => item.isArmor || item.isShield || item.isOre || item.ofMetal,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "Come back safe and sound!",
-		carrying: '15x 50% armor, 6x 50% helm, 6x 50% bracers, 4x 50% shield, 20x 50% armor'
+		carrying: '15x 50% armor, 6x 50% helm, 6x 50% bracers, 15x 50% shield, 20x 50% armor'
 	},
 	clothier: {
 		name: 'clothier',
@@ -173,7 +173,7 @@ let JobTypeList = {
 		buyTest: item => item.isTreasure,
 		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
 		sign: "I sell goods of all kinds!",
-		carrying: '10x stuff, 10x 50% stuff, 5x 50% ammo.dart, 2x stuff isLight, 5x 50% vial'
+		carrying: '10x stuff, 10x 50% stuff, 5x 50% ammo.dart, 2x stuff isLight, 7x 50% vial, 5x 50% charm'
 	},
 	glassBlower: {
 		name: 'glass blower',
@@ -196,7 +196,7 @@ let JobTypeList = {
 		buyTest: item => item.isOre || item.isArmor || item.isWeapon || item.ofMetal,
 		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 		sign: "Raw material from the depths!",
-		carrying: '20x ore, 20x 50% ore' //, 10x stuff ofMetal, 2x weapon.pickaxe' // This made them use dark lamps!!! , 2x stuff isLight'
+		carrying: '20x ore, 20x 50% ore, 2x weapon.pickaxe' // This made them use dark lamps!!! , 2x stuff isLight'
 	},
 	evangelist: {
 		name: 'evangelist',

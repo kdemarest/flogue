@@ -63,6 +63,9 @@ class Finder {
 		Array.shuffle(this.result);
 		return this;
 	}
+	random() {
+		return this.result[Math.randInt(0,this.result.length-1)];
+	}
 	at(x,y) {
 		return this.filter( e => e.x==x && e.y==y );
 	}

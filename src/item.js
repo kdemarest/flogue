@@ -312,6 +312,7 @@ class Item {
 			armor: 			exArmor,
 			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? item.effect.effectShape : '',
 			bonus: 			getBonus(),
+			condition:		Number.isFinite(item.durability) && item.durability < 50 ? '<span class="statAlert">&nbsp;frail&nbsp;</span>' : '',
 			duration:		item.duration,
 			effect: 		item.effect ? (item.effect.name || item.effect.typeId) : '',
 			effectAbout:	item.effect && item.effect.about ? item.effect.about : '',
@@ -470,7 +471,7 @@ class Item {
 		}
 		return result;
 	}
-	calcBlockChance(blockType,isRanged,shieldBonus) {
+	calcBlockChance(blockType,isRanged,isBraced,braceBonus) {
 		if( !isRanged ) {
 			return 0;
 		}
@@ -478,8 +479,8 @@ class Item {
 			return 0;
 		}
 		let blockChance = xCalc(this,this,'xBlock','*');
-		if( shieldBonus=='stand' ) {
-			blockChance = blockChance + (1-blockChance)*0.50;
+		if( isBraced ) {
+			blockChance = blockChance + (1-blockChance)*(braceBonus||0.50);
 		}
 		return blockChance;
 	}
@@ -551,14 +552,27 @@ class Item {
 		let assureWalkableDrop = entity.isMap && this.isTreasure && !this.allowPlacementOnBlocking;
 
 		if( assureWalkableDrop ) {
+			console.assert(Number.isFinite(x) && Number.isFinite(y));
+			console.log('a');
 			let mayDrop = pWalk(entity,true);
+			console.log('b');
 			let spiralFind = entity.spiralFind;
+			console.log('c');
+			if( !spiralFind ) {
+				debugger;
+			}
+			console.log('d');
+			let checkMayDrop = (x,y,tile) => {
+				return mayDrop(x,y) === Problem.NONE;
+			}
+			console.log('e');
 			[x,y] = spiralFind.call(
 				entity,
 				x,
 				y,
-				(x,y,tile) => mayDrop(x,y) === Problem.NONE
+				checkMayDrop
 			);
+			console.log('f');
 		}
 
 		let hadNoOwner = !this.owner;

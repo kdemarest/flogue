@@ -29,7 +29,7 @@ Module.add('inventory',function() {
 			// WARNING: We have to give the item to the entity before calling onEach, because what if
 			// it needs to unbunch? That can only happen 
 			if( onEachRaw ) { onEachRaw(item); }
-			let possiblyAggregatedItem = item.giveTo( target, target.x, target.y);
+			let possiblyAggregatedItem = item.giveTo( target, target.isMap ? originatingEntity.x : target.x, target.isMap ? originatingEntity.y : target.y);
 			if( onEachGiven ) { onEachGiven(possiblyAggregatedItem); }
 		});
 

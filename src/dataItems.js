@@ -190,9 +190,9 @@ const GemEffects = Object.filter(EffectTypeList, (e,k)=>[
 const WeaponMaterialList = Fab.add( '', {
 	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot', name: 'iron', matter: 'metal' },
 	"silver": 		{ level:  5, toMake: 'silver ingot', name: 'silver', matter: 'metal' },
-	"ice": 			{ level: 25, toMake: 'ice block', name: 'ice', matter: 'liquid' },
+	"ice": 			{ level: 25, toMake: 'ice block', name: 'ice', matter: 'liquid', durability: Rules.weaponDurability(20) },
 	"lunarium": 	{ level: 40, toMake: 'lunarium ingot', name: 'lunarium', matter: 'metal' },
-	"glass": 		{ level: 55, toMake: 'malachite', name: 'glass', matter: 'glass' },
+	"glass": 		{ level: 55, toMake: 'malachite', name: 'glass', matter: 'glass', breakChance: Rules.weaponBreakChance(20) },
 	"deepium": 		{ level: 70, toMake: 'deepium ingot', name: 'deepium', matter: 'metal' },
 	"solarium": 	{ level: 85, toMake: 'solarium ingot', name: 'solarium', matter: 'metal' },
 });
@@ -653,8 +653,12 @@ const ArmorList = Fab.add( '', {
 	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00, ingredientId: 'chitin', img: 'item/armour/chain_mail2.png' },
 	"chitin": 		{ level: 35, rarity: 1.0, xArmor: 1.00, matter: 'chitin', ingredientId: 'chitin', img: 'item/armour/elven_leather_armor.png' },
 	"dwarven": 		{ level: 45, rarity: 1.0, xArmor: 1.00, ingredientId: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
-	"ice": 			{ level: 50, rarity: 1.0, xArmor: 1.00, matter: 'liquid', ingredientId: 'ice block', img: 'item/armour/elven_ringmail.png' },
-	"glass": 		{ level: 55, rarity: 1.0, xArmor: 1.00, matter: 'glass', ingredientId: 'malachite', img: 'item/armour/crystal_plate_mail.png' },
+	"ice": 			{ level: 50, rarity: 1.0, xArmor: 1.00, matter: 'liquid', ingredientId: 'ice block', img: 'item/armour/elven_ringmail.png',
+					durability: Rules.armorDurability(40)
+					},
+	"glass": 		{ level: 55, rarity: 1.0, xArmor: 1.00, matter: 'glass', ingredientId: 'malachite', img: 'item/armour/crystal_plate_mail.png',
+					breakChance: Rules.armorBreakChance(40)
+					},
 	"demon": 		{ level: 65, rarity: 1.0, xArmor: 1.00, ingredientId: 'malachite', img: 'item/armour/orcish_platemail.png' },
 	"lunar": 		{ level: 50, rarity: 1.0, xArmor: 1.00, ingredientId: 'lunarium ingot', img: 'item/armour/blue_dragon_scale_mail.png' },
 	"deep": 		{ level: 80, rarity: 1.0, xArmor: 1.00, ingredientId: 'deepium ingot', img: 'item/armour/gold_dragon_armour.png' },
@@ -686,8 +690,8 @@ const HelmList = Fab.add( '', {
 	"chitin": 		{ level: 25, rarity: 1.0, xArmor: 1.00 },
 	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00 },
 	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.00 },
-	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid' },
-	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass' },
+	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid', durability: Rules.armorDurability(20) },
+	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass', breakChance: Rules.armorBreakChance(20) },
 	"demon": 		{ level: 50, rarity: 1.0, xArmor: 1.00 },
 	"lunar": 		{ level: 55, rarity: 1.0, xArmor: 1.00 },
 	"solar": 		{ level: 60, rarity: 1.0, xArmor: 1.00 },
@@ -706,8 +710,8 @@ const BracerList = Fab.add( '', {
 	"chitin": 		{ level: 25, rarity: 1.0, xArmor: 1.00, matter: 'chitin' },
 	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00 },
 	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.00 },
-	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid' },
-	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass' },
+	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid', durability: Rules.armorDurability(20) },
+	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass', breakChance: Rules.armorBreakChance(20) },
 	"demon": 		{ level: 50, rarity: 1.0, xArmor: 1.00 },
 	"lunar": 		{ level: 55, rarity: 1.0, xArmor: 1.00 },
 	"solar": 		{ level: 60, rarity: 1.0, xArmor: 1.00 },
@@ -726,8 +730,8 @@ const BootList = Fab.add( '', {
 	"chitin": 		{ level: 25, rarity: 1.0, xArmor: 1.00, matter: 'chitin' },
 	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
 	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
-	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid' },
-	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass' },
+	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid', durability: Rules.armorDurability(20) },
+	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass', breakChance: Rules.armorBreakChance(20) },
 	"demon": 		{ level: 50, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
 	"lunar": 		{ level: 55, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
 	"solar": 		{ level: 60, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
@@ -857,6 +861,37 @@ const SeedList = Fab.add( '', {
 	"rhodotusSeed": 	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.rhodotusMushroom' },
 });
 
+const CharmList = Fab.add( '', {
+	"centurionFigurine":{ level: 44, rarity: 0.1, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/solarCenturionFigurine.png',
+						effect: { op: 'summon', value: 'solarCenturion', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
+						},
+	"bearFigurine": 	{ level: 9, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
+						effect: { op: 'summon', value: 'bear', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
+						},
+	"dogFigurine": 		{ level: 0, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
+						effect: { op: 'summon', value: 'dog', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
+						},
+	"viperFigurine": 	{ level: 24, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
+						effect: { op: 'summon', value: 'viper', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
+						},
+	"sunCrystal":   	{ rarity: 0.6, matter: 'crystal', mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "item/stuff/sunCrystal.png", mayTargetPosition: true,
+							effect: {
+								name: 'radiance',
+								op: 'damage',
+								xDamage: 1.0,
+								effectShape: EffectShape.BLAST5,
+								effectFilter: eff=>eff.target.team==Team.EVIL,
+								damageType: DamageType.SMITE,
+								icon: 'gui/icons/eSmite.png',
+								iconOver: 'effect/lightRayCircle.png',
+								iconOverScale: 5.0,
+							}
+						},
+	"solarOrbS":   		{ rarity: 1.0, matter: 'energy', xPrice: 4.0, mayThrow: true, range: 6, mayTargetPosition: true, light: 12, glow: 1, scale: 0.3, img: "item/stuff/solarOrb.png", name: 'small solar orb' },
+	"solarOrbM":   		{ rarity: 0.6, matter: 'energy', xPrice: 5.0, mayThrow: true, range: 5, mayTargetPosition: true, light: 15, glow: 1, scale: 0.4, img: "item/stuff/solarOrb.png", name: 'medium solar orb' },
+	"solarOrbL":   		{ rarity: 0.2, matter: 'energy', xPrice: 7.0, mayThrow: true, range: 4, mayTargetPosition: true, light: 18, glow: 1, scale: 0.5, img: "item/stuff/solarOrb.png", name: 'large solar orb' },
+});
+
 // Artifact, Relic, Talisman, Amulet
 
 const StuffList = Fab.add( '', {
@@ -889,37 +924,9 @@ const StuffList = Fab.add( '', {
 	"pinchOfEarth": 	{ rarity: 1.0, matter: 'stone', img: 'item/weapon/ranged/rock.png' },
 	"impBrain": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true },
 	"ogreDrool": 		{ rarity: 1.0, matter: 'liquid', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
-	"centurionFigurine":{ level: 44, rarity: 0.1, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/solarCenturionFigurine.png',
-						effect: { op: 'summon', value: 'solarCenturion', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
-						},
-	"bearFigurine": 	{ level: 9, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
-						effect: { op: 'summon', value: 'bear', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
-						},
-	"dogFigurine": 		{ level: 0, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
-						effect: { op: 'summon', value: 'dog', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
-						},
-	"viperFigurine": 	{ level: 24, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
-						effect: { op: 'summon', value: 'viper', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
-						},
 	"scarabCarapace": 	{ rarity: 1.0, matter: 'chitin', },
 	"darkEssence": 		{ rarity: 0.1, matter: 'special', },
 	"facetedEye": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
-	"sunCrystal":   	{ rarity: 0.6, matter: 'crystal', mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "item/stuff/sunCrystal.png", mayTargetPosition: true,
-							effect: {
-								name: 'radiance',
-								op: 'damage',
-								xDamage: 1.0,
-								effectShape: EffectShape.BLAST5,
-								effectFilter: eff=>eff.target.team==Team.EVIL,
-								damageType: DamageType.SMITE,
-								icon: 'gui/icons/eSmite.png',
-								iconOver: 'effect/lightRayCircle.png',
-								iconOverScale: 5.0,
-							}
-						},
-	"solarOrbS":   		{ rarity: 1.0, matter: 'energy', xPrice: 4.0, mayThrow: true, range: 6, mayTargetPosition: true, light: 12, glow: 1, scale: 0.3, img: "item/stuff/solarOrb.png", name: 'small solar orb' },
-	"solarOrbM":   		{ rarity: 0.6, matter: 'energy', xPrice: 5.0, mayThrow: true, range: 5, mayTargetPosition: true, light: 15, glow: 1, scale: 0.4, img: "item/stuff/solarOrb.png", name: 'medium solar orb' },
-	"solarOrbL":   		{ rarity: 0.2, matter: 'energy', xPrice: 7.0, mayThrow: true, range: 4, mayTargetPosition: true, light: 18, glow: 1, scale: 0.5, img: "item/stuff/solarOrb.png", name: 'large solar orb' },
 	"trollBlood": 		{ rarity: 0.6, matter: 'liquid' },
 	"spinneret": 		{ rarity: 0.4, matter: 'flesh', bitPoison: true },
 	"chitin": 			{ rarity: 1.0, matter: 'chitin', },
@@ -1374,7 +1381,7 @@ const ItemTypeList = {
 		signLack: 		"This plant needs more light to grow.",
 		signFine: 		"This plant is growing well.",
 		signMature: 	"This plant is ready to harvest.",
-		icon: 			'skill.png',
+		icon: 			'plant.png',
 		imgGet: 		(self,img) => (img || (self.growing ? self.variety.img : self.imgChoices.wilted.img)),
 		imgChoices: 	{ wilted: { img: 'plant/wilted.png' } },
 	},
@@ -1392,7 +1399,7 @@ const ItemTypeList = {
 		varieties: 		MushroomList,
 		matter: 		'fungus',
 		isMushroom:		true,
-		icon: 			'skill.png',
+		icon: 			'plant.png',
 	},
 // Seeds for plants and mushrooms
 	"seed": {
@@ -1405,7 +1412,7 @@ const ItemTypeList = {
 		mayPickup: 		true,
 		name: 			'{variety}',
 		varieties: 		SeedList,
-		icon: 			'skill.png',
+		icon: 			'plant.png',
 		img:			"plant/seed.png"
 	},
 	"vial": {
@@ -1418,7 +1425,7 @@ const ItemTypeList = {
 		mayWalk: 		true,
 		mayFly: 		true,
 		mayPickup: 		true,
-		icon: 			'skill.png',
+		icon: 			'charm.png',
 		img:			"item/potion/silver.png"
 	},
 
@@ -1535,6 +1542,7 @@ const ItemTypeList = {
 		isTreasure: 1,
 		name:		 	'{material} {variety}${+plus}{?effect}',
 		matter: 		'metal',
+		durability:		4*100,
 		materials: 		WeaponMaterialList,
 		varieties: 		WeaponList,
 		effects: 		WeaponEffects,
@@ -1550,6 +1558,7 @@ const ItemTypeList = {
 		symbol: 		'm',
 		isTreasure: 	1,
 		name: 	'{material} {variety}${+plus}{?effect}',
+		durability:		4*100,
 		varieties: 		AmmoList,
 		donBunches: 	true,
 		isWeapon: 		true,
@@ -1563,6 +1572,7 @@ const ItemTypeList = {
 		symbol: 		'x',
 		isTreasure: 	1,
 		name: 			"{material} {variety} shield${+plus}{?effect}",
+		durability:		8000,
 		matter: 		'metal',
 		block: 			'physical',
 		varieties: 		ShieldList,
@@ -1583,6 +1593,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		name:		 	"{variety} helm${+plus}{?effect}",
 		matter: 		'metal',
+		durability:		Math.floor(4*60/5),
 		varieties: 		HelmList,
 		effects: 		HelmEffects,
 		effectWhen: 	'use',
@@ -1601,6 +1612,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		name:		 	"{variety} armor${+plus}{?effect}",
 		matter: 		'metal',
+		durability:		Rules.armorDurability(100),
 		varieties: 		ArmorList,
 		effects: 		ArmorEffects,
 		effectWhen: 	{ isHarm: 'backsies', DEFAULT: 'use' },
@@ -1619,6 +1631,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		name:		 	"{variety}${+plus}{?effect}",
 		matter: 		'cloth',
+		durability:		Rules.armorDurability(100),
 		varieties: 		CloakList,
 		effects: 		CloakEffects,
 		effectWhen: 	'use',
@@ -1638,6 +1651,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		name:		 	"{variety} bracers{+plus}{?effect}",
 		matter: 		'metal',
+		durability:		Rules.armorDurability(100),
 		varieties: 		BracerList,
 		effects: 		BracersEffects,
 		effectWhen: 	'use',
@@ -1656,6 +1670,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		name:		 	"{variety}$",
 		matter: 		'leather',
+		durability:		Rules.armorDurability(100),
 		varieties: 		GloveList,
 		effectWhen: 	'use',
 		slot: 			Slot.HANDS,
@@ -1671,6 +1686,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		name:		 	"{variety} boots{+plus}{?effect}",
 		matter: 		'leather',
+		durability:		Rules.armorDurability(100),
 		varieties: 		BootList,
 		slot: 			Slot.FEET,
 		isBoots: 		true,
@@ -1702,6 +1718,16 @@ const ItemTypeList = {
 		imgGet: (self, img) => (img || self.material.img || 'gold'),
 		imgChoices: 	RingMaterialList,
 		icon: 			'ring.png'
+	},
+	"charm": {
+		symbol: 		SYM,
+		isTreasure: 	1,
+		isCharm: 		1,
+		name:		 	"{variety}${?effect}",
+		varieties: 		CharmList,
+		imgGet: (self, img) => (img || (self ? self.variety.img : '') || 'item/misc/misc_rune.png'),
+		imgChoices: 	CharmList,
+		icon: 			'charm.png'
 	},
 	"stuff": {
 		symbol: 		't',
@@ -1741,8 +1767,8 @@ const ItemTypeList = {
 })();
 
 
-const ItemSortOrder = ['skill','weapon','ammo','helm','armor','cloak','bracers','gloves','boots','shield','ring','potion','gem','spell','ore','stuff','part','key'];
-const ItemFilterOrder = ['','skill','weapon','armor','shield','potion','spell','ring','gem','ore','stuff'];
+const ItemSortOrder = ['skill','weapon','ammo','helm','armor','cloak','bracers','gloves','boots','shield','ring','potion','gem','spell','charm','ore','plant','mushroom','stuff','part','key'];
+const ItemFilterOrder = ['','skill','weapon','armor','shield','potion','spell','ring','gem','ore','charm','stuff'];
 const ItemFilterGroup = {
 	skill:  ['skill'],
 	weapon: ['weapon','ammo'],
@@ -1753,7 +1779,8 @@ const ItemFilterGroup = {
 	gem:    ['gem'],
 	ore:    ['ore'],
 	spell:  ['spell'],
-	stuff:  ['stuff','part','key']
+	charm:  ['charm'],
+	stuff:  ['stuff','part','key','plant','mushroom']
 };
 
 
@@ -2142,7 +2169,7 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 	}
 }
 
-StuffList.sunCrystal.onTick = function(dt) {
+CharmList.sunCrystal.onTick = function(dt) {
 	if( this.owner.isMap ) {
 		let tile = adhoc(this.map.tileTypeGet(this.x,this.y),this.map,this.x,this.y);
 		effectApply(this.effect,tile,this.ownerOfRecord,this,'tick');

@@ -245,7 +245,7 @@ class ViewFavorites extends ViewObserver {
 			let text = ex.description;
 			let lit = observer.isItemSelected(item) && item.isRecharged();
 			let unlit = !item.isRecharged();
-			let s = '<div class="item'+(unlit?' unlit':(lit?' lit':''))+'">'+img+hotkey+' '+text+'</div>';
+			let s = '<div class="item'+(unlit?' unlit':(lit?' lit':''))+'">'+img+hotkey+' '+[ex.condition,text].join(' ')+'</div>';
 
 
 			$(s).appendTo(this.divId).on( 'click.view', null, event => {

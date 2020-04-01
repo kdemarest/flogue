@@ -83,7 +83,7 @@ class ViewInfo extends ViewObserver {
 			}
 			let dam='',arm='';
 			if( ex.damage ) {
-				dam = String.combine(' ',ex.damage,ex.damageType+' damage',ex.aoe,ex.quick?', '+ex.quick:'');
+				dam = String.combine(' ',ex.damage,ex.damageType+' damage',ex.aoe,ex.quick,ex.condition);
 				if( comp ) {
 					if( comp.damage > item.damage ) dam = '<span class="worse">'+dam+'</span>';
 					if( comp.damage < item.damage ) dam = '<span class="better">'+dam+'</span>';
@@ -184,7 +184,7 @@ class ViewInfo extends ViewObserver {
 		}
 		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
 		if( entity.isUser() ) {
-			let bc = shield ? shield.calcBlockChance('any',true,entity.shieldBonus) : 0;
+			let bc = shield ? shield.calcBlockChance('any',true,entity.isBraced,entity.braceBonus) : 0;
 			let weapon = entity.calcDefaultWeapon();
 			let weaponEx = weapon.explain(null,entity);
 			let ammo = entity.getFirstItemInSlot(Slot.AMMO);
@@ -198,9 +198,9 @@ class ViewInfo extends ViewObserver {
 			}
 			s += tRow( "Armor:", arString );
 			s += tRow( "Shield:", 
-				(entity.shieldBonus?'<span class="shieldBonus">':'')+
+				(entity.isBraced?'<span class="shieldBonus">':'')+
 				Math.floor(bc*100)+'%'+
-				(entity.shieldBonus?'</span>':'')+
+				(entity.isBraced?'</span>':'')+
 				" to block"
 			);
 			s += tRow( "Damage:", String.combine( ' ', weaponEx.damage||0, weaponEx.damageType, weaponEx.quick, weaponEx.reach, weaponEx.sneak ) );

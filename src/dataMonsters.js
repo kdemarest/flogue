@@ -379,6 +379,7 @@ const MonsterTypeList = {
 		naturalWeapon: {
 			typeFilter: 'weapon.hands',
 		},
+		braceBonus: 0,
 		carrying: '',
 		wearing: '',
 		isChosenOne: true,

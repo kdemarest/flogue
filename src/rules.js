@@ -34,6 +34,8 @@ let Rules = new class {
 		this.blockVisualScale 				= 100;
 		this.tooCloseDefault				= 4;
 		this.noticeableLightRatio 			= 0.5;
+		this.expectedHitsPerMonster			= 4;
+		this.numTypesOfArmor				= 5;
 
 		this.effectShapePriceMult = {
 			single: 1.0,
@@ -44,6 +46,19 @@ let Rules = new class {
 			blast6: 6.0
 		};
 	}
+	armorDurability(fightsToLast) {
+		return Math.floor( fightsToLast * this.expectedHitsPerMonster / this.numTypesOfArmor );
+	}
+	weaponDurability(fightsToLast) {
+		return Math.floor( fightsToLast * this.expectedHitsPerMonster );
+	}
+	armorBreakChance(avgFightsToLast) {
+		return (100.0/(avgFightsToLast*this.expectedHitsPerMonster)) * this.numTypesOfArmor;
+	}
+	weaponBreakChance(avgFightsToLast) {
+		return (100.0/(avgFightsToLast*this.expectedHitsPerMonster));
+	}
+
 	 playerHealth(playerLevel) {
 	 	return 90+(10*playerLevel);
 	 }
@@ -240,7 +255,8 @@ Rules.ItemBag = (function() {
 		gloves: [	 0.5, 	 0.50,	  1.0,	['variety','effect'], ],
 		boots: 	[	 2.0, 	 0.15,	  1.8,	['variety','effect'], ],
 		ring: 	[	 2.0, 	 0.50,	  6.0,	['material','effect'], ],
-		stuff: 	[	 9.0, 	  0.0,	  0.4,	['variety'], ],
+		stuff: 	[	 8.0, 	  0.0,	  0.4,	['variety'], ],
+		charm: 	[	 1.0, 	  0.0,	  0.8,	['variety'], ],
 		seed: 	[	 0.9, 	  0.0,	  0.1,	['variety'], ],
 		vial: 	[	 0.1, 	  0.0,	  0.1,	['variety'], ],
 		part: 	[	 0.0, 	  0.0,	  0.4,	['variety'], ],

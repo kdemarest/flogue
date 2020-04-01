@@ -1860,11 +1860,38 @@ class Entity {
 			amount *= attacker.chargeAttackMult;
 		}
 
+		//
+		// Sneak Bonus
+		//
 		// Sneak damage only can happen for Quick.LITHE weapons, the very fastest. Otherwise there is a whooshing sound that victim would hear
 		let isSneak = false;
 		if( !isOngoing && !isCharge && attacker && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=Quick.LITHE ) {
 			isSneak = true;
 			amount *= attacker.sneakAttackMult||2;	// perk touches stat directly.
+		}
+
+		//
+		// Harm Armor
+		//
+		let armorHit = null;
+		let armorBroke = false;
+		if( this.inventory ) {
+			let armorList = new Finder(this.inventory).filter( item => item.inSlot && (item.isArmor || item.isShield) );
+			// You can wear up to six types of armor, and we need them all to wear out evenly no matter how much
+			// armor you're wearing. Hence this selection method.
+			let index = Math.randInt(0,6);
+			if( index < armorList.count ) {
+				armorHit = armorList.result[index];
+				let result = {};
+				armorHit.checkDurability(result);
+				armorHit.checkBreakChance(result);
+				if( armorHit.dead ) {
+					armorBroke = result;
+				}
+				if( !armorBroke ) {
+					tell(mSubject|mPossessive,this,' ',mObject,armorHit,' was hit.');
+				}
+			}
 		}
 
 		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
@@ -1874,9 +1901,16 @@ class Entity {
 		let isRanged = !isOngoing && ( (attacker && this.getDistance(attacker.x,attacker.y) > 1) || (item && item.rangeDuration) );
 		let reduction = this.calcReduction(damageType,isRanged);
 
+
+		//
+		// Apply Reduction
+		//
 		reduction = Math.min(0.8,reduction);
 		amount = Math.max(1,Math.floor(amount*(1.00-reduction)));
 
+		//
+		// Apply V, I, and R
+		//
 		// This is NOT as thorough as the testing in applyEffect(). We should probably
 		// figure out some way to merge all such tests together.
 		let isVuln='',isImmune='',isResist='';
@@ -1907,6 +1941,9 @@ class Entity {
 		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
 
+		//
+		// Animation of the Attack
+		//
 		if( amount > 0 ) {
 			let dx = this.x - (attacker ? attacker.x : this.x);
 			let dy = this.y - (attacker ? attacker.y : this.y);
@@ -2022,6 +2059,9 @@ class Entity {
 			}
 		}
 
+		//
+		// Health Reduced
+		//
 		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
 		this.health -= amount;
@@ -2099,6 +2139,8 @@ class Entity {
 			isResist: 	isResist,
 			isVuln: 	isVuln,
 			isRetaliation: isRetaliation,
+			armorHit:	armorHit,
+			armorBroke:	armorBroke,
 			killed: 	this.health <= 0,
 		}
 	}
@@ -2549,7 +2591,6 @@ class Entity {
 			result.status = 'gazeUnable';
 			return result;
 		}
-		this.shieldBonus = 'stand';
 		item.x = this.x;
 		item.y = this.y;
 		tell(mSubject,this,' ',mVerb,'gaze',' into ',mObject,item,'.');
@@ -2758,7 +2799,6 @@ class Entity {
 		return result;
 	}
 	actQuaff(item) {
-		this.shieldBonus = 'stand';
 		item.x = this.x;
 		item.y = this.y;
 		tell(mSubject,this,' ',mVerb,'quaff',' ',mObject,item);
@@ -2836,7 +2876,6 @@ class Entity {
 			dropCount: 0,
 			success: false
 		}
-		this.shieldBonus = 'stand';
 		if( item.isPlot || item.noDrop ) {
 			tell( mSubject,this,' ',mVerb,'may',' not drop the ',mObject,item,'.' );
 			result.isPlot = true;
@@ -2878,7 +2917,7 @@ class Entity {
 	}
 
 	actWait() {
-		this.shieldBonus = 'stand';
+		this.isBraced = true;
 		tell(mSubject|mCares,this,' ',mVerb,'wait','.');
 		return {
 			status: 'wait',
@@ -3156,6 +3195,8 @@ class Entity {
 		// ACTUAL MOVEMENT OF THE MONSTER
 		//=======================
 		this.setPosition(x,y);
+		this.isStill  = false;
+		this.isBraced = false;
 
 		if( this.findAliveOthersAt(x,y).count ) {
 			debugger;
@@ -3441,7 +3482,8 @@ class Entity {
 		console.assert(priorTileType);
 
 		if( timePasses ) {
-			this.shieldBonus = '';
+			this.isStill = true;
+			this.isBraced = false;	// Here is where the Hoplite will get advantages.
 			if( this.bumpCount ) {
 				// If the user ever isn't adjscent to you, then you must be relieved of bump obligations.
 				let f = this.findAliveOthersNearby().isId(this.bumpBy).nearMe(1);

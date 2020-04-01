@@ -1037,7 +1037,7 @@ PlaceTypeList.surfaceSunTemple = {
 			properName: 'Beowulf',
 			title: 'the bear',
 			carrying: [
-				'2x stuff.bearFigurine, weapon.sword, 2x potion.eHealing, 4x stuff.lumpOfMeat',
+				'2x charm.bearFigurine, weapon.sword, 2x potion.eHealing, 4x stuff.lumpOfMeat',
 			],
 		}),
 		'9': starterChest({
@@ -1045,7 +1045,7 @@ PlaceTypeList.surfaceSunTemple = {
 			properName: 'Bindi',
 			title: 'the Balanced',
 			carrying: [
-				'2x stuff.bearFigurine, weapon.sword, 2x potion.eHealing, 4x stuff.lumpOfMeat',
+				'1x weapon.staff, 2x potion.eHealing, 4x stuff.lumpOfMeat',
 				{ typeFilter: 'key', keyId: 'Solar Temple door' }
 			],
 		}),

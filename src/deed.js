@@ -722,7 +722,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	if( !effect.isSecondary && target.isMonsterType && !isSelf && isHarm ) {
 		let shield 		= target.getFirstItemInSlot(Slot.SHIELD);
 		let blockType 	= Item.getBlockType(item,effect.damageType);
-		let block 		= shield ? shield.calcBlockChance(blockType,isRanged,target.shieldBonus) : 0;
+		let block 		= shield ? shield.calcBlockChance(blockType,isRanged,target.isBraced) : 0;
 		if( Math.chance(block*100) ) {
 			tell(mSubject,target,' ',mVerb,'catch',' ',mObject,item || {name:'blow'},' with ',mSubject|mPossessive,target,' ',mObject|mPossessed,shield);
 			// Overlay a shield icon to show it happened.

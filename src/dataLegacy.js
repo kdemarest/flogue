@@ -110,6 +110,7 @@ LegacyList.airMage = compose('air mage',[
 //===================================================
 // Archer
 //
+// High Concept: Master of the bow
 LegacyList.archer = compose( 'archer', [
 	range( [1,3,5,7,9,11,13,15,17,19], (level,index) => ({
 		name: 'Marksman +'+((index+1)*10)+'%',
@@ -349,6 +350,7 @@ LegacyList.brawler = compose('brawler',[
 // Rapidly learn what ingredients make which potions
 // When you brew potions you make more of them, and they last longer
 // Gain ever-full font, which has ever-decreasing recharge time
+// Ability to brew in the field - no gear required
 LegacyList.brewer = compose('brewer',[
 ]);
 
@@ -360,20 +362,40 @@ LegacyList.brewer = compose('brewer',[
 // Holy healing has generous recharge, plus you get +1% regen each level. 
 // Any weapon with smite, in your hands, becomes all-smite damage
 // Any light you hold extends +1/2/3/4/5/6 distance
-// Your water potion bonus is second only to the Druid
+// Your water potion bonus is great when you make them.
 LegacyList.cleric = compose('cleric',[
 ]);
 
 //===================================================
 // Decimage
 //
+// High Concept: Decimate enemies with the power of untamed magic
+// Shatter weapons and natural weapons
+// Weaken armor, even natural armor, by temporarily cracking it
+// Magic missiles fly from your hands. Shocking and corroding are your baliwicks
+// Dissolve doors, chests, and objects
+// Destroy some walls
 LegacyList.decimage = compose('decimage',[
 ]);
 
 //===================================================
 // Druid
 //
-// Warp doors off their hinges
+// High Concept: Bring wholesome life to the lifeless underground
+// You can teleport to your "private garden" (a personal level)
+// There you discover and tend plants that you will use in combat, to create effects, and green the levels
+// Plants that damage are like tower defense. Vines delay, thorns harm, brambles AoE damage, poison spines
+// Bush you can hide in
+// Grows his own weapons, eg staves wrapped with brambles; plant that overwhelms scents
+// You plant things in dead bodies. You want rotten meat.
+// You regain power by planting, nurturing, growing, and also dwelling within green spaces
+// Discover new seeds over time - throw a seed and it lives, growing in 3, 2, 1 or 0 rounds
+// Your more powerful emplacement plants take time to grow. You must give them light and water to grow.
+// Allied creatures may appear in your greened spaces, like lithe faeries that sleep your foes. Not pets. Won't leave area.
+// Evenutally create water, but always low-level because it isn't about harming demons, its about nourishing plants.
+// Root networks give tremor sense, and teleport you among certain types of plants
+// Warp the wood of doors and weapons, temporarily ruining both
+// At high levels you leave a trail of green grass everywhere.
 LegacyList.druid = compose('druid',[
 ]);
 
@@ -393,18 +415,41 @@ LegacyList.earthMage = compose('earthMage',[
 //===================================================
 // Enchanter
 //
+// High Concept: Empower your weapons and armor
+// Add pluses and effects to weapons and armor.
+// Create and recharge items and charms, like figurines
+// Even enchant yourself with your choice of benefits, like resistances and immunities
 LegacyList.enchanter = compose('enchanter',[
 ]);
 
 //===================================================
 // Hoplite
 //
+// High Concept: Stand firm with you shield to avert all attacks
+// Stand still to deflect initial onslaughts with +30% deflect
+// Become near-immune to ranged attacks
+// Brace your shield for big defense bonuses when fighting
+// Bonuses to range 2 spears. At highest level augment range 2 weapons to range 3 when braced
+// Can't use bows while braced
 LegacyList.hoplite = compose('hoplite',[
 ]);
 
 //===================================================
 // Illusionist
 //
+// High Concept: What is reality except what you claim it to be?
+// Deceive others into acting against their best interests
+// Mimic: inanimate objects, to be ignored, or food, to lure them to you for surprise attack
+// At higher levels you can move every 3rd round as an inanimate object and nobody will think anything of it
+// Reshape - gather creature samples then to look like them
+// Mirror image - which of you should they hit? Any interaction dispels, notably AoE dispells many
+// Faux face makes an enemy look like they're you, and you like them. They're allies attack them!
+// Beauty spell makes you able to get better prices
+// Displacement make you seem to be elsewhere, causing 50% miss chance
+// Grim reaper illusion fears because all creatures fear death
+// Change scent - to that of another creature, maybe something they fear. Red ooze goes to older spots on the scent path instead of newer.
+// Lure with illusory food, illusory noises, or whatever the creature desires
+// Distort Perception confuses creatures
 LegacyList.illusionist = compose('illusionist',[
 ]);
 
@@ -627,20 +672,36 @@ LegacyList.ninja = compose( 'ninja', [
 //
 // High Concept: Tap the multiverse of planes to overcome all
 // Banish demons, gate in elementals, or tag monsters for recall. You can't control them, but summon them to fight what they hate
+// Easily summon things less than your level, but for beefy stuff you must touch them for x rounds to "mark" them.
 // Mega travel with blink, teleport, mega-blink, and mark/recall to Dwarf villages
 // Become ethereal, attack while ethereal
 // Visit the Solar plane as a base of operations, caching infinite loot with ease
+// Constantly unlocking new planes to access, and get resources. Some planes, when you visit, recharge your stuff. Fire plane recharges or empowers fire potions.
 LegacyList.planarMage = compose('planarMage',[
 ]);
 
 //===================================================
 // Possessor
 //
-// High Concept: The body is just a vehicle, the mind, easily overcome
+// High Concept: The body is just a vehicle, and others' minds easily evicted
 // Possess tougher things longer, and overcome possession resistance
 // Make body safer, like by hiding it in containers; then suicide
 // Eventually leave your body entirely, and use illusion spells to look OK to drawves
 LegacyList.possessor = compose('possessor',[
+]);
+
+//===================================================
+// Priest
+//
+// High Concept: Beseech your god humbly to thrive in adversity
+// You must actually pray from time to time, a kind of meditation, to restore your spells
+// Sacrifice is a skill. It lets you select an item from inventory and sacrifice it to your god.
+// God requires: spare creature, sacrifice item, heal sick, evangelize, convert person
+// God requires: fight under imposed duress like blind or half health, or with god's chosen weapon
+// When god requires something impossible, like killing a demon with a dagger, he'll subtly help you succeed
+// Lots of light. Followers, who you've convinced of the justness of your cause, fight for you.
+// Create temp mana fonts
+LegacyList.priest = compose('priest',[
 ]);
 
 //===================================================
@@ -705,10 +766,23 @@ LegacyList.soldier = compose('soldier',[
 //
 // High Concept: Anything can be tamed, if you transcend human beliefs
 // Tame rares, patiently feeding them, persuading them, even killing some and understanding their habeology
+// You might have to return to the same creature multiple days in a row, feeding it without being killed
+// Habeology of one creature type (isEarthChild) will give insight into others
 // acquire their senses, see what they see on your map and in real time
 // Extraordinary heal and resurrect of pets. Name them.
 // Get 1, 2 then 3 favored pets who never die while you live.
 LegacyList.tamer = compose('tamer',[
+]);
+
+//===================================================
+// Temporalist
+//
+// High Concept: Control time, against which all are helpless
+// Stop others' time - freeze their movement, then their reality. Early you can't attack those in stasis. Later you can.
+// Gain time to have extra moves, then extra attacks
+// Rewind your person time to an earlier location/mind state/health level.
+// Restore weapons?
+LegacyList.temporalist = compose('temporalist',[
 ]);
 
 //===================================================
@@ -730,6 +804,9 @@ LegacyList.thermaturge = compose('thermaturge',[
 // Repair damage, back to 80/60/40/20 then unable to repair; repair during battle
 // Augment constructs HP, resistances, mech wings, and eventually give them an inventory to use goods
 // So strong they break weapons often. Never get armor/helms/boots/rings/etc.
+// 2x2 construct that can bash away any wall with four surrounding squares being not-wall
+// Learn weaknesses of constructs you face. You get habeology of automatons
+// Alter their programming to become neutral. never gain them as pets, but maybe pirate for parts.
 LegacyList.tinker = compose('tinker',[
 ]);
 
