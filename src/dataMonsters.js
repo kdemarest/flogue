@@ -333,6 +333,9 @@ let PlayerImages = {
 // vuln		- as immune, except what you are vulnerable to for double damage
 // sneakAttackMult - The multiplier when this creature successfully sneak attacks. Requires Quick.LITHE weapons.
 
+// immortal		- will never die, and can't drop below 1 health
+// invilnerable	- suffers no damage or negative status effects
+
 // naturalWeapon
 //  - by default assigned as a 'fake', isNatural, quick=2, reach 1, damageType=core.naturalDamage
 //  - however you can override with any weapon description you like. See the Daiacrid for an ornate example.
@@ -366,6 +369,15 @@ let PlayerImages = {
 
 // imgChoices	- If you want to get fancier than just using core.img you can put some image choices here.
 // imgGet		- pairs with imgChoices to determine what to show.
+
+// Statuses
+// breathStopped	- if you require breath you'll start taking damage after Rules.breathLimitToDamage
+// catchThrown
+// catchShot
+// stopThrown
+// stopShot
+// stopIncoming
+
 
 const MonsterTypeList = {
 
@@ -587,6 +599,7 @@ const MonsterTypeList = {
 	},
 	"daispine": {	// (stab)
 		core: [ SYM,  4, '3:5', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daispine.png', 'it' ],
+		breathIgnore: true,
 		glow: 1,
 		light: 2,
 		immune: DemonImmunity,
@@ -646,6 +659,7 @@ const MonsterTypeList = {
 		glow: 1,
 		light: 7,
 		isDemon: true,
+		breathIgnore: true,
 		carrying: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		resist: DemonResistance,
@@ -674,6 +688,7 @@ const MonsterTypeList = {
 		immune: DemonImmunity+','+DamageType.SHOCK,
 		isDemon: true,
 		isDailectra: true,
+		breathIgnore: true,
 		carrying: '',
 		loot: '3x gem',
 		resist: DemonResistance,
@@ -745,6 +760,7 @@ const MonsterTypeList = {
 				icon: 'gui/icons/eRot.png'
 			}
 		},
+		breathIgnore: true,
 		immune: DemonImmunity,
 		isDemon: true,
 		isDaikay: true,
@@ -784,6 +800,7 @@ const MonsterTypeList = {
 		core: [ SYM, 69, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daibozle.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
+		breathIgnore: true,
 		carrying: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		naturalWeapon: {
@@ -796,6 +813,7 @@ const MonsterTypeList = {
 	},
 	"daisteria": {	// (panic)
 		core: [ SYM, 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daisteria.png', 'it' ],
+		breathIgnore: true,
 		immune: DemonImmunity,
 		isDemon: true,
 		isDaisteria: true,
@@ -811,6 +829,7 @@ const MonsterTypeList = {
 	"daiffury": {	// (enrage)
 		core: [ SYM, 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifury.png', 'it' ],
 		immune: DemonImmunity,
+		breathIgnore: true,
 		isDemon: true,
 		isDaifury: true,
 		carrying: '',
@@ -1268,12 +1287,23 @@ const MonsterTypeList = {
 	},
 
 // LUNAR
+	"lunarMoth": {
+		core: [ SYM, 4, '2:20', 'lunar', 'freeze', 'animalHunter', 'noped', 'dc-mon/animals/butterfly.png', '*' ],
+		name: "lunar moth",
+		immune: DamageType.FREEZE,
+		carrying: '',
+		isLunarChild: true,
+		loot: '10% gem, 40% lunarEssence',
+		rarity: 1.0,
+		vuln: LunarVulnerabilities
+	},
 	"lunarOne": {
 		core: [ SYM, 12, '3:10', 'lunar', 'freeze', 'sentient', 'humanoid', 'dc-mon/deep_elf_demonologist.png', '*' ],
 		name: "lunar one",
 		immune: DamageType.FREEZE,
 		carrying: '3x 50% potion.eFreeze',
 		isLunarChild: true,
+		isLunarOne: true,
 		loot: '2x 50% coin, 40% lunarEssence',
 		rarity: 1.0,
 		vuln: LunarVulnerabilities
@@ -1576,6 +1606,20 @@ function monsterPreProcess(typeId,m) {
 		isMushroom:		'fungus'
 	}
 	m.matter = m.matter || Object.findByFlag( m, matterDefaults ) || 'flesh';
+
+	let breathIgnore = {
+		isLunarChild:	true,
+		isElemental: 	true,
+		isConstruct: 	true,
+		isIncorporeal: 	true,
+		isUndead: 		true,
+		isOoze: 		true,
+		isPlant:		40,
+	};
+	if( Object.findByFlag( m, breathIgnore ) ) {
+		m.breathIgnore = Object.findByFlag( m, breathIgnore );
+	}
+
 
 	// There is code that assumes that all monsters have, at least, an emptyinventory.
 	m.carrying = m.carrying || [];

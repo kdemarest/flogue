@@ -92,7 +92,9 @@ Module.add('dataMason',function() {
 			//console.log(supply.typeFilter,supply);
 		});
 		let pos = ''+x+','+y;
-		if( injectList[pos] ) {
+		if( injectList[pos] && Array.isArray(injectList[pos]) && !injectList[pos][0].toThemeId ) {
+			// This might happen then you are making a portal and both the plan and the
+			// theme specify data to inject into the object. That is OK.
 			debugger;
 		}
 		injectList[pos] = injectList[pos] || [];
@@ -1611,7 +1613,10 @@ Module.add('dataMason',function() {
 				roster.sort( (a,b) => tileCount(b)-tileCount(a) );	// make biggest first - that is your best chance.
 				makeRoster(roster);
 			} while( !placePicker.isEmpty() && numPlaceTiles > 0 && --reps );
-			if( !reps ) debugger;
+			if( !reps ) {
+				console.log("Warning: your floor density was too high.");
+				debugger;
+			}
 		}
 /*
 		quotaMakePositioned(quota,injectList,mapOffset) {

@@ -21,8 +21,8 @@ class Picker {
 					ok = monsterConstraint(m);
 				}
 				else {
-					for( let stat of monsterConstraint ) {
-						ok = ok || m[stat];		// like 'isAnimal' or 'isUndead'
+					for( let statOrTypeId of monsterConstraint ) {
+						ok = ok || m[statOrTypeId] || m.typeId==statOrTypeId;		// like 'isAnimal' or 'isUndead'
 					}
 				}
 				if( !ok ) {

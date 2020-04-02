@@ -167,6 +167,11 @@ Module.add('utilities',function(){
 			fn(obj[key],key);
 		}
 	}
+	Object.map = function(obj,fn) {
+		let result = {};
+		Object.each(obj,(value,key)=>result[key]=fn(value,key));
+		return result;
+	}
 	Object.merge = function(target,source,ignore) {
 		if( source ) {
 			for( let key in source ) {
@@ -403,6 +408,9 @@ ARRAY FORM
 	String.calcName = function(obj) {
 		// When calculating names for effects, they should have a name, but if not you can try to use their op.
 		obj.namePattern = obj.namePattern || obj.name || String.uncamelTypeId(obj.typeId || obj.op || '');
+		if( obj.namePattern == obj.op ) {
+			console.log('fallback to op');
+		}
 		if( !obj.namePattern ) {
 			debugger;
 		}

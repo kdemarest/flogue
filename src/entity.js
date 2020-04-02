@@ -205,8 +205,11 @@ class Entity {
 			Gab.entityPostProcess(this);
 		}
 		tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
+
+		// Any visibility cache flushing should happen here.
 		if( this.isUser() ) {
 			area.castLight();
+			guiMessage('newArea');
 		}
 		if( this.legacyId && !this.perkList ) {
 			this.grantPerks();
@@ -533,6 +536,7 @@ class Entity {
 		}
 
 		if( doVis ) {
+			//console.log('calcVis for',this.area.id,'at',this.x,'x',this.y);
 			this.visCache = this.area.vis.calcVis(
 				this.x,
 				this.y,
@@ -1875,7 +1879,7 @@ class Entity {
 		//
 		let armorHit = null;
 		let armorBroke = false;
-		if( this.inventory ) {
+		if( this.inventory && this.damageType!=DamageType.SUFFOCATE ) {
 			let armorList = new Finder(this.inventory).filter( item => item.inSlot && (item.isArmor || item.isShield) );
 			// You can wear up to six types of armor, and we need them all to wear out evenly no matter how much
 			// armor you're wearing. Hence this selection method.
@@ -1889,7 +1893,7 @@ class Entity {
 					armorBroke = result;
 				}
 				if( !armorBroke ) {
-					tell(mSubject|mPossessive,this,' ',mObject,armorHit,' was hit.');
+					//tell(mSubject|mPossessive,this,' ',mObject,armorHit,' was hit.');
 				}
 			}
 		}
@@ -2065,6 +2069,9 @@ class Entity {
 		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) ); 
 		this.health -= amount;
+		if( this.invulnerable ) {
+			entity.health = Math.max(1,entity.healthMax)
+		}
 		if( this.immortal ) {
 			this.health = Math.max(1,this.health);
 		}
@@ -2089,14 +2096,19 @@ class Entity {
 		if( !isOngoing && this.onAttacked && !noBacksies ) {
 			quiet = this.onAttacked.call(this,attacker,amount,damageType);
 		}
-		if( !isOngoing && !quiet && attacker ) {
+		if( !isOngoing && !quiet ) {
 			let attackVerb = damageType;
 			let qualifier = '';
 			if( item && item.attackVerb && effect.isEffectOnAttack ) {
 				attackVerb = item.attackVerb;
 				qualifier = ' '+damageType;
 			}
-			tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+qualifier+' damage!'+(isSneak?' Sneak attack!' : '')+(isCharge?' Charge attack!' : '') );
+			if( attacker ) {
+				tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+qualifier+' damage!'+(isSneak?' Sneak attack!' : '')+(isCharge?' Charge attack!' : '') );
+			}
+			else {
+				tell(mSubject|mCares,{name:effect.name||'something'},' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+qualifier+' damage!'+(isSneak?' Sneak attack!' : '')+(isCharge?' Charge attack!' : '') );
+			}
 		}
 
 		let isRetaliation = 0;
@@ -2145,7 +2157,7 @@ class Entity {
 		}
 	}
 
-	takeShove(attacker,item,distance) {
+	takeShove(attacker,item,distance,towards=1) {
 		let source = attacker || item.ownerOfRecord;
 		let sx = this.x;
 		let sy = this.y;
@@ -2174,8 +2186,8 @@ class Entity {
 		let fy = this.y;
 		let distanceRemaining = distance;
 		while( success && distanceRemaining-- ) {
-			fx += dx/dist;
-			fy += dy/dist;
+			fx += dx/dist*towards;
+			fy += dy/dist*towards;
 			success = this.moveTo(Math.round(fx),Math.round(fy),false,null).success;
 			if( !success ) { bonked = true; break; }
 		}
@@ -2518,9 +2530,24 @@ class Entity {
 		item = item.giveToSingly(this.map,target.x,target.y);
 
 		// Can we catch the thrown item?
-		if( Math.chance(target.catchThrown||0) ) {
-			item.giveTo( target, target.x, target.y );
-			tell(mSubject,this,' ',mVerb,'throw',' ',mObject,item,' and ',mSubject,target,' ',mVerb,'catch',' it!');
+		if( Math.chance(target.catchThrown||target.stopThrown||target.stopIncoming||0) ) {
+			let whoDidIt = target;
+			if( target.isMonsterType ) {
+				let deed = target.deedFind( deed=>['catchThrown','stopThrown','stopIncoming'].includes(deed.stat) );
+				if( deed ) {
+					whoDidIt = deed;
+				}
+			}
+			let verb = target.catchThrown ? 'catch' : 'stop';
+			if( target.catchThrown ) {
+				item.giveTo( target, target.x, target.y );
+			}
+			else {
+				let dir = Direction.predictable(this.x-target.x,this.y-target.y);
+				item.giveTo( target.map, target.x+Direction.add[dir].x, target.y+Direction.add[dir].y ); 
+			}
+
+			tell(mSubject,this,' ',mVerb,'throw',' ',mObject,item,' and ',mSubject,whoDidIt,' ',mVerb,verb,' it!');
 			result.caught = true;
 			result.catcher = target;
 			result.success = true;
@@ -2696,9 +2723,15 @@ class Entity {
 		}
 
 		// Can the target catch the shot?
-		if( Math.chance(target.catchShot||0) ) {
+		if( Math.chance(target.catchShot||target.stopShot||target.stopIncoming||0) ) {
 			delete ammo.shooter;
-			ammo.giveTo( target, target.x, target.y );
+			if( target.catchShot ) {
+				ammo.giveTo( target, target.x, target.y );
+			}
+			else {
+				let dir = Direction.predictable(this.x-target.x,this.y-target.y);
+				ammo.giveTo( target.map, target.x+Direction.add[dir].x, target.y+Direction.add[dir].y ); 
+			}
 			tell(mSubject,this,' ',mVerb,'shoot',' ',mObject,ammo,' and ',mSubject,target,' ',mVerb,'catch',' it!');
 			result.caught = true;
 			result.catcher = target;
@@ -2933,12 +2966,13 @@ class Entity {
 		let world = this.area.world;
 		if( gate ) {
 			tell(mSubject,this,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
-			world.linkGatesAndCreateArea(gate);
-			console.assert(gate.toAreaId && gate.toPos );
+			world.createAreaFromGate(gate);
+			console.assert(gate.toArea && (gate.toGate || gate.oneway));
 			let newArea = world.getAreaById(gate.toAreaId);
 			console.assert(newArea);
 
-			result.gateResult = this.gateTo( newArea, gate.toPos.x, gate.toPos.y);
+			let pos = gate.oneway ? [gate.x,gate.y] : [gate.toGate.x,gate.toGate.y];
+			result.gateResult = this.gateTo( newArea, pos[0], pos[1] );
 
 			if( gate.killMeWhenDone ) {
 				result.killedGate = true;
@@ -2989,14 +3023,16 @@ class Entity {
 		}
 		this.x = x;
 		this.y = y;
+		let areaChanged = false;
 		if( !this.area || this.area.id !== area.id ) {
 			if( this.area ) {
 				// DANGER! Doing this while within a loop across the entityList will result in pain!
 				Array.filterInPlace( this.area.entityList, entity => entity.id!=this.id );
 			}
 			this.area = area;
-			let fnName = this.isUser() ? 'unshift' : 'push';
+			let fnName = this.isUser() ? 'unshift' : 'push';	// the player happens to always be pushed to first in the list.
 			this.area.entityList[fnName](this);
+			areaChanged = true;
 		}
 
 		this.map._entityInsert(this);
@@ -3145,6 +3181,18 @@ class Entity {
 		console.assert(tileTypeHere);
 		let tileType = this.map.tileTypeGet(x,y);
 		console.assert(tileType);
+
+		// For slowing the movement of a character
+		if( this.movementSlow ) {
+			this.movementLost = (this.movementLost||0)-1;
+			if( this.movementLost <= 0 ) {
+				this.movementLost = this.movementSlow;
+				return {
+					status: 'lost movement',
+					success: false
+				}
+			}
+		}
 
 		// Does this tile type always do something to you when you depart any single instance of it?
 		if( tileTypeHere.onDepart ) {
@@ -3472,6 +3520,34 @@ class Entity {
 			}
 		}
 
+		if( timePasses ) {
+			if( (this.breathStopped || this.map.isAirless) && this.breathIgnore!==true && !this.isImmune(DamageType.SUFFOCATE) ) {
+				this.breathLast = (this.breathLast||0)+1;
+			}
+			else {
+				this.breathLast = 0;
+			}
+			let limit = this.breathIgnore===true ? Rules.breathLimitToDamage : (this.breathIgnore||0)
+			if( this.breathLast > limit ) {
+				let effect = {
+					name: 'suffocate',
+					op: 'damage',
+					value: Rules.breathDamage(this.health),
+					damageType: DamageType.SUFFOCATE,
+					duration: 0
+				};
+				let deed = this.deedFind(deed=>deed.damageType==DamageType.SUFFOCATE);
+				let source = deed ? deed.source : this.map;
+				effectApply( effect, this, source, null, 'onBreath' );
+			}
+		}
+
+		if( timePasses ) {
+			this.map.passiveEffectList.forEach( effect => {
+				effectApply( effect, this, this.map, null, 'onMapPassive' );
+			});
+		}
+
 		if( this.vocalize ) {
 			tell(...this.vocalize);
 			this.vocalize = false;
@@ -3536,7 +3612,7 @@ class Entity {
 					if( stairs ) {
 						let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
 							toAreaId: stairs.toAreaId,
-							themeId: stairs.themeId,
+							toThemeId: stairs.toThemeId,
 							killMeWhenDone: true
 						});
 						this.command = Command.ENTERGATE;

@@ -264,7 +264,7 @@ SimpleMap.fillTextMap = function(xLen,yLen,symbol) {
 
 
 class Map extends SimpleMap {
-	constructor(area,tileRaw,itemList) {
+	constructor(area,tileRaw,itemList,mapVars) {
 		super(tileRaw,true,TileTypeList.wallCave.symbol);
 		this.area = area;
 		this.actionCount = 0;
@@ -286,7 +286,11 @@ class Map extends SimpleMap {
 		this.scentLookup = [];
 		this.siteLookup = [];
 		this.lightCache = [];
-		
+		this.isAirless = false;
+		this.passiveEffectList = [];
+		this.name = "Earth";
+		Object.assign( this, mapVars );
+
 		this.initSprites();
 	}
 	get entityList() {

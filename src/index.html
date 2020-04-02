@@ -128,12 +128,11 @@ function main() {
 		this.tickWorld(timePasses);
 	}.bind(User);
 
-	User.startGame = function(startingDepth,themeId,playerTypeId,playerMarkerId,onAssetsReady) {
-		themeId = themeId || Plan.determineTheme(startingDepth,true);
-		playerTypeId = playerTypeId || 'player';
+	User.startGame = function(startingDepth,startingThemeId,playerTypeId,playerMarkerId,onAssetsReady) {
+		startingDepth  = (startingDepth||0);
+		playerTypeId   = playerTypeId || 'player';
 		playerMarkerId = playerMarkerId || 'playerStartHere';
-
-		let gui = new Gui( ()=>this.entity );
+		let gui        = new Gui( ()=>this.entity );
 		gui.create(
 			(event) => { this.onEvent(event); }
 		);
@@ -141,9 +140,13 @@ function main() {
 
 		this.commandHandler = new UserCommandHandler(this,gui.view.inventory,gui.view.range);
 
-		let world = new World();
-		let area = world.createArea(null,startingDepth,ThemeList[themeId],true,[]);
-		let player = new Entity( area.depth, MonsterTypeList[playerTypeId], config.playerInject, area.jobPicker );
+		let planList  = new PlanList(PlanData)
+		let world     = new World(planList);
+		let themeId   = startingThemeId || world.plan.findFirst(plan=>plan.depth==startingDepth).themeId;
+		let planFind  = plan => plan.depth == startingDepth && plan.themeId == themeId;
+		let plan      = world.plan.findFirst(planFind) || world.plan.add({areaId: 'user', depth:startingDepth, themeId: themeId});
+		let area      = world.createArea(plan.areaId);
+		let player    = new Entity( area.depth, MonsterTypeList[playerTypeId], config.playerInject, area.jobPicker );
 		player.visibilityDistance = MapVisDefault;
 		this.takeControlOf( player );
 		Gab.observer = this.entity;

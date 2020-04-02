@@ -139,7 +139,7 @@ class ViewMiniMap extends ViewObserver {
 					if( entity.gateDir !== undefined && (!entity.invisible || observer.senseInvisible) ) {
 						let stickerId = 'mmGate';
 						if( entity.gateDir>0 ) stickerId = 'mmGateDown';
-						if( ThemeList[entity.themeId].isTown ) stickerId = 'mmGateTown';
+						if( ThemeList[entity.toThemeId].isTown ) stickerId = 'mmGateTown';
 						drawLate.push({
 							entity:StickerList[stickerId], x:x, y:y, scale:large(3), ctr:true
 						});

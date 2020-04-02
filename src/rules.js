@@ -36,6 +36,7 @@ let Rules = new class {
 		this.noticeableLightRatio 			= 0.5;
 		this.expectedHitsPerMonster			= 4;
 		this.numTypesOfArmor				= 5;
+		this.breathLimitToDamage			= 6;
 
 		this.effectShapePriceMult = {
 			single: 1.0,
@@ -57,6 +58,10 @@ let Rules = new class {
 	}
 	weaponBreakChance(avgFightsToLast) {
 		return (100.0/(avgFightsToLast*this.expectedHitsPerMonster));
+	}
+
+	breathDamage(health) {
+		return Math.floor(health*0.30) + 2;
 	}
 
 	 playerHealth(playerLevel) {

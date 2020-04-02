@@ -1,257 +1,234 @@
 Module.add('plan',function() {
 
-let Plan = (new class {
-	constructor() {
-	}
+let PlanData = {
+	'core.0': {
+		themeId:	'surface',
+		links:		'',
+		make:		''
+	},
+	'core.1': {
+		themeId:	'coreCavernRooms',
+		links:		'core.2,wildlands,dwarfTown,refugeeCamp,moonTheme',
+		make:		'fontSolar'
+	},
+	'core.2': {
+		themeId:	'corePits',
+		links:		'core.3,wildlands,dwarfTown,refugeeCampSlaughter',
+		make:		'fontSolar'
+	},
+	'core.3': {
+		themeId:	'coreRooms',
+		links:		'core.4,wildlands,spooky,refugeeCampSlaughter',
+		make:		'fontDeep'
+	},
+	'core.4': {
+		themeId:	'coreMaze',
+		links:		'core.5,wildlands,dwarfTown,hellTheme',
+		make:		'fontSolar'
+	},
+	'core.5': {
+		themeId:	'coreBridges',
+		links:		'core.6,wildlands,dwarfGoblinBattle',
+		make:		'fontDeep'
+	},
+	'core.6': {
+		themeId:	'coreSea',
+		links:		'core.7,wildlands,dwarfTown',
+		make:		'fontDeep'
+	},
+	'core.7': {
+		themeId:	'coreMorphousRooms',
+		links:		'core.8,wildlands,dwarfTown',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.8': {
+		themeId:	'coreCavernRooms',
+		links:		'core.9,wildlands,spooky',
+		make:		'fontSolar'
+	},
+	'core.9': {
+		themeId:	'coreMixedRooms',
+		links:		'core.10,wildlands,dwarfTown,spooky',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.10': {
+		themeId:	'coreMorphousRooms',
+		links:		'core.11,wildlands,dwarfTown',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.11': {
+		themeId:	'coreMixedRooms',
+		links:		'core.12,wildlands,dwarfTown,spooky',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.12': {
+		themeId:	'coreMixedRooms',
+		links:		'core.13,wildlands,dwarfTown,spooky',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.13': {
+		themeId:	'coreMorphousRooms',
+		links:		'core.14,wildlands,dwarfTown,spooky',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.14': {
+		themeId:	'coreMixedRooms',
+		links:		'core.15,wildlands,dwarfTown',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.15': {
+		themeId:	'coreBridges',
+		links:		'core.16,wildlands,dwarfTown',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.16': {
+		themeId:	'coreMixedRooms',
+		links:		'core.17,wildlands,dwarfTown',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.17': {
+		themeId:	'coreMixedRooms',
+		links:		'core.18,wildlands,dwarfTown',
+		make:		'fontSolar,fontDeep'
+	},
+	'core.18': {
+		themeId:	'coreHellTheme',
+		links:		'core.19,wildlands,dwarfTown',
+		make:		'fontDeep,fontDeep'
+	},
+	'core.19': {
+		themeId:	'coreFinalLevel',
+		links:		'',
+		make:		'fontDeep,fontDeep,fontDeep'
+	},
+};
 
-	getPlan(key,depth) {
-		let plan = {
-			core: {
-				0: {
-					themeId: 'surface',
-					make: [
-					]
-				},
-				1: {
-					themeId: 'coreCavernRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'gateway', themeId: 'refugeeCamp' },
-						{ typeFilter: 'fontSolar' },
-					]
-				},
-				2: {
-					themeId: 'corePits',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'gateway', themeId: 'refugeeCampSlaughter' },
-						{ typeFilter: 'fontSolar' },
-					]
-				},
-				3: {
-					themeId: 'coreRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'spooky' },
-						{ typeFilter: 'gateway', themeId: 'refugeeCampSlaughter' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				4: {
-					themeId: 'coreMaze',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'portal', themeId: 'hellscape'  },
-						{ typeFilter: 'fontSolar' },
-					]
-				},
-				5: {
-					themeId: 'coreBridges',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfGoblinBattle' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				6: {
-					themeId: 'coreSea',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				7: {
-					themeId: 'coreMorphousRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				8: {
-					themeId: 'coreCavernRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'spooky' },
-						{ typeFilter: 'fontSolar' },
-					]
-				},
-				9: {
-					themeId: 'coreMixedRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'gateway', themeId: 'spooky' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				10: {
-					themeId: 'coreMorphousRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				11: {
-					themeId: 'coreMixedRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'gateway', themeId: 'spooky' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				12: {
-					themeId: 'coreMixedRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'gateway', themeId: 'spooky' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				13: {
-					themeId: 'coreMorphousRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'gateway', themeId: 'spooky' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				14: {
-					themeId: 'coreMixedRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				15: {
-					themeId: 'coreBridges',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				16: {
-					themeId: 'coreMixedRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				17: {
-					themeId: 'coreMixedRooms',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'fontSolar' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				18: {
-					themeId: 'coreHellscape',
-					make: [
-						{ typeFilter: 'gateway', themeId: 'wildlands' },
-						{ typeFilter: 'gateway', themeId: 'dwarfTown' },
-						{ typeFilter: 'fontDeep' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				19: {
-					themeId: 'coreFinalLevel',
-					make: [
-						{ typeFilter: 'fontDeep' },
-						{ typeFilter: 'fontDeep' },
-						{ typeFilter: 'fontDeep' },
-					]
-				},
-				default: {
-					themeId: 'coreCavernRooms',
-					make: [
-						{ typeFilter: 'gateway' },
-						{ typeFilter: 'fontDeep' },
-					]
-				}
-			},
-			limb: {
-				default: {
-					themeId: null,
-					make: [
-						{ typeFilter: 'gateway' },
-					]
-				}
-			}
-		};
-		let p = plan[key][depth] || plan[key].default;
-		if( p.make && key=='core' ) {
-			if( depth > Rules.DEPTH_MIN ) p.make.push( { typeFilter: 'stairsUp' } );
-			if( depth < Rules.DEPTH_MAX ) p.make.push( { typeFilter: 'stairsDown' } );
+function planParse(raw) {
+	let cut = (s,delim) => {
+		let temp = s.split(delim);
+		if( temp.length == 1 && temp[0]=='' ) {
+			return [];
 		}
+		return temp;
+	}
+	let cutMake = (m,delim) => {
+		return (Array.isArray(m) ? m : cut(m,delim) )
+			.map( entry=>typeof entry == 'object' ? entry : { typeFilter: entry } );
+	}
+	let getDepth = (s) => {
+		let d = s.split('.')[1];
+		return d===undefined ? null : parseInt(d);
+	}
+	let deduceGateType = (from,to) => {
+		if( from.depth > to.depth ) return 'stairsUp';
+		if( from.depth < to.depth ) return 'stairsDown';
+		return (ThemeList[to.themeId] ? ThemeList[to.themeId].gateType : '') || 'gateway';
+	}
+	let planList = {};
+	Object.each( raw, (data,myAreaId) => {
+		let p = planList[myAreaId] = {};
+		console.assert( myAreaId !== undefined );
+		Object.assign( p, {
+			areaId:		myAreaId,
+			themeId:	data.themeId || (1/0),
+			depth:		getDepth(myAreaId),
+			gateList:	Object.assign( {}, data.gateList || {} ),
+			make:		cutMake(data.make,',')
+		});
+		let linkList = cut(data.links,',');
+		linkList.forEach( areaId => {
+			console.assert( areaId !== undefined );
+			let themeId = areaId;
+			if( getDepth(areaId) === null ) {
+				areaId += '.'+p.depth;
+			}
+			console.assert( areaId !== undefined );
+			planList[areaId] = planList[areaId] || {};
+			Object.assign( planList[areaId], {
+				areaId:		areaId,
+				themeId:	themeId,
+				depth:		getDepth(areaId),
+				gateList:	{}, //{ [myAreaId]: myAreaId },
+				make:		[]
+			});
+			p.gateList[areaId] = areaId;
+		});
+	});
+	// Assure all the back-links.
+	Object.each( planList, plan => {
+		Object.each( plan.gateList, (X,areaId) => {
+			let toGateType = deduceGateType(planList[plan.areaId],planList[areaId]);
+			console.assert( areaId != plan.areaId );
+			plan.gateList[areaId] = {
+				toAreaId:		areaId,
+				//toGateId:		'gate'+(this.gateCount++),
+				toGateType:		toGateType
+			}
+		});
+	});
+	return Object.map( planList, planData => new Plan(planData) );
+}
 
-		return p;
+class Plan {
+	constructor(data) {
+		Object.assign(
+			this,
+			{
+				areaId:		null,
+				themeId:	null,
+				depth:		0,
+				gateList:	{},
+				make:		[]
+			},
+			data
+		);
+	}
+	get theme() {
+		return ThemeList[this.themeId];
+	}
+}
+
+class PlanList {
+	constructor() {
+		//this.gateCount = 0;
+		this.list = planParse(PlanData);
 	}
 
-	shapeWorld(currentAreaId,depth,theme,isCore,gateList=[]) {
+	get(areaId) {
+		return this.list[areaId];
+	}
 
-		let plan = this.getPlan(isCore?'core':'limb',depth) || {};
+	findFirst(fn) {
+		return Object.find( this.list, fn );
+	}
+	add(data) {
+		console.assert( !this.list[data.areaId] );
+		let plan = this.list[data.areaId] = new Plan( Object.assign(data) );	
+		return plan;
+	}
 
-		let tileQuota = [];
+	quotaAdd(quota,toAreaId) {
 
-		// Create gates that link to this gate
-		gateList.forEach( gate => {
-			if( gate.gateInverse == false ) {
-				return;
-			}
-			console.assert(currentAreaId);
-			// Prune this gate from the plan because we're making the required type.
-			if( plan.make ) {
-				let found = false;
-				Array.filterInPlace( plan.make, supply => {
-					if( !found && supply.typeFilter.split('.')[0] == gate.gateInverse ) {
-						found = true;
-						return false;
-					}
-					return true;
-				});
-			}
-			// Vertical gates match locations. Horizontal don't.
-			tileQuota.push(
-				Object.assign({
-					typeId: gate.gateInverse,
-					symbol: TypeIdToSymbol[gate.gateInverse],
-					inject: { typeFilter: gate.gateInverse, toAreaId: currentAreaId, toGateId: gate.id }
-				},
-					gate.gateDir && !theme.inControl ? { x:gate.x, y:gate.y } : { putAnywhere: true }
-				)
-			);
-			console.log( "Quota: "+gate.gateInverse+" leading to "+currentAreaId+" / "+gate.id );
+		let plan = this.get(toAreaId);
+		Object.each( plan.gateList, gate => {
+			console.assert( gate.toAreaId !== toAreaId );
+			quota.push({
+				typeId: gate.toGateType,
+				symbol: TypeIdToSymbol[gate.toGateType],
+				putAnywhere: true,
+				inject: {
+					typeFilter: gate.toGateType,
+					toAreaId:	gate.toAreaId,
+				}
+			});
 		});
 
 		// The theme may choose to control what happens there. Typically the surface does this,
 		// but not others. In general the PLAN should control.
-		if( isCore && !theme.inControl && plan.make ) {
+		if( !plan.theme.inControl && plan.make ) {
 			plan.make.forEach( supply => {
 				let typeId = supply.typeFilter.split('.')[0];
-				tileQuota.push({
+				quota.push({
 					typeId: typeId,
 					symbol: TypeIdToSymbol[typeId],
 					putAnywhere: true,
@@ -260,18 +237,10 @@ let Plan = (new class {
 			});
 		}
 
-		tileQuota.forEach( q => { q.fromQuota=true; q.inject.fromQuota=true; } );
-		return tileQuota;
+		quota.forEach( q => { q.fromQuota=true; q.inject.fromQuota=true; } );
+		return quota;
 	}
-	determineTheme(depth,isCore) {
-		let plan = this.getPlan(isCore?'core':'limb',depth);
-
-		if( plan && plan.themeId ) {
-			let themeId = plan.themeId;
-			console.log( "Theme from plan is "+themeId );
-			return themeId;
-		}
-
+	themePick(depth,isCore) {
 		let themePickList = Object.filter( ThemeList, theme => !theme.isUnique);
 		console.assert(!Object.isEmpty(themePickList));
 		let themeId = pick( themePickList ).typeId;
@@ -280,10 +249,11 @@ let Plan = (new class {
 		return themeId;
 	}
 
-}());
+}
 
 return {
-	Plan: Plan
+	PlanData: PlanData,
+	PlanList: PlanList
 }
 
 });

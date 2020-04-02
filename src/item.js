@@ -198,7 +198,16 @@ class Item {
 	}
 	get area() {
 		if( !this.owner ) debugger;
-		return this.owner.area;
+		return this.owner.area;			// works if owner is monster, map or item
+	}
+	get toTheme() {
+		return this.toThemeId ? ThemeList[this.toThemeId] : undefined;
+	}
+	get toArea() {
+		return this.toAreaId ? this.area.world.areaList[this.toAreaId] : undefined;
+	}
+	get toGate() {
+		return this.toArea ? this.toArea.getGate(this.toGateId) : undefined;
 	}
 	get map() {
 		return this.area.map;
@@ -553,26 +562,20 @@ class Item {
 
 		if( assureWalkableDrop ) {
 			console.assert(Number.isFinite(x) && Number.isFinite(y));
-			console.log('a');
 			let mayDrop = pWalk(entity,true);
-			console.log('b');
 			let spiralFind = entity.spiralFind;
-			console.log('c');
 			if( !spiralFind ) {
 				debugger;
 			}
-			console.log('d');
 			let checkMayDrop = (x,y,tile) => {
 				return mayDrop(x,y) === Problem.NONE;
 			}
-			console.log('e');
 			[x,y] = spiralFind.call(
 				entity,
 				x,
 				y,
 				checkMayDrop
 			);
-			console.log('f');
 		}
 
 		let hadNoOwner = !this.owner;
@@ -638,12 +641,7 @@ class Item {
 		if( Gab && hadNoOwner ) {
 			Gab.entityPostProcess(this);
 		}
-		// We wait this long to determine theme because, before this, we don't know
-		// what area we're in and hence no depth or whether we're core. But MOST gates already
-		// know what their theme is, from the plan.
-		if( this.gateDir !== undefined && !this.themeId ) {
-			this.themeId = Plan.determineTheme(this.area.depth+this.gateDir,this.gateDir ? this.area.isCore : false);
-		}
+
 		let result = this.owner._itemTake(this,x,y);
 		// WARNING! At this point the item could be destroyed.
 		if( result && !result.dead && result.isContainer ) {

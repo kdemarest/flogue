@@ -327,7 +327,12 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		injectList.push(...theme.injectList);
 	}
 
-	area.map = new Map(area,masonMap.renderToString(),[]);
+	area.map = new Map(
+		area,
+		masonMap.renderToString(),
+		[],
+		theme.mapVars
+	);
 	area.entityList = [];
 	let isFriendFn = (e) => !isEnemyFn(e);
 
@@ -363,7 +368,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	});
 
 	totalFriends += populateInRooms( area.siteList, area.map, preferNone, owedFriends-totalFriends, safeToMake, makeMonster, isFriendFn, site => {
-		return !(site.isPlace && site.place.comesWithMonsters);
+		return !(site.isPlace && (site.place.comesWithMonsters || site.place.forbidFriends));
 	});
 
 	totalItems += populateInRooms( area.siteList, area.map, preferAlcoves, owedItems-totalItems, safeToMake, makeItem, e=>e.isTreasure, site => {
@@ -397,7 +402,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 //		console.log( "Site "+site.id+" ["+site.marks.length+"] monsters: "+site.denizenList.length+" items: "+site.treasureList.length );
 //	});
 
-	area.gateList = area.map.itemList.filter( item => item.gateDir !== undefined );
+	console.log('Area',area.id,'has gates',area.gateList);
 
 	if( Gab ) {
 		Gab.entityPostProcess(area);
@@ -520,6 +525,7 @@ class Area {
 		this.isArea = true;
 		this.depth = depth;
 		this.theme = theme;
+		this.world = null;
 		this.map = null;
 		this.entityList = null;
 		this.siteList = null;
@@ -558,6 +564,9 @@ class Area {
 	build(tileQuota) {
 		this.animationManager = new AnimationManager();
 		return areaBuild(this,this.theme,tileQuota, (e) => e.team==Team.EVIL );
+	}
+	get gateList() {
+		return this.map.itemList.filter( item => item.isGate );
 	}
 	getGate(id) {
 		let g = this.gateList.filter( g => g.id==id );

@@ -129,7 +129,6 @@ Light.RayCircle = function(maxDist) {
 
 Light.Caster = class {
 	constructor() {
-		this.opacityLookup = null;;
 		this.lightMap = [];
 	}
 	cast(map,opacityLookup,x,y,light) {

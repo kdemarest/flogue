@@ -1114,11 +1114,30 @@ onAttacked(attacker,amount,damageType) - when attacked.
 const ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
 // GATEWAYS
-	"stairsDown": { symbol: '>', name: "stairs down", 	isGate: 1, gateDir: 1, gateInverse: 'stairsUp', isStairsDown: true, mayPickup: false, useVerb: 'descend', img: "dc-dngn/gateways/stone_stairs_down.png" },
+	"stairsDown": {
+		symbol: '>',
+		name: "stairs down",
+		isGate: 1,
+		gateDir: 1,
+		gateInverse: 'stairsUp',
+		isStairsDown: true,
+		mayPickup: false,
+		useVerb: 'descend',
+		img: "dc-dngn/gateways/stone_stairs_down.png"
+	},
 	"stairsUp":   { symbol: '<', name: "stairs up", 	isGate: 1, gateDir: -1, gateInverse: 'stairsDown', isStairsUp: true, mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
 	"gateway":    { symbol: 'O', name: "gateway", 		isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "decor/gateStone.png" },
-	"portal":     { symbol: '0', name: "portal", 		isGate: 1, gateDir: 0, gateInverse: 'portal', mayPickup: false, useVerb: 'touch', img: "dc-dngn/gateways/dngn_portal.png" },
-	"pitDrop": 	  { symbol: SYM, name: "pit drop", 		isGate: 1, gateDir: 1, gateInverse: false, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
+	"portal":     {
+		symbol: '0',
+		name: "portal",
+		isGate: 1,
+		gateDir: 0,
+		gateInverse: 'portal',
+		mayPickup: false,
+		useVerb: 'touch',
+		img: "dc-dngn/gateways/dngn_portal.png"
+	},
+	"pitDrop": 	  { symbol: '`', name: "pit drop", 		isGate: 1, gateDir: 1, oneway: true, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
 // DOOR
 	"door":       { symbol: '+', mayWalk: true,  mayFly: true, opacity: 0,
 					name: "{state} door",

@@ -5,7 +5,7 @@ class Vis {
 		this.getMapFn = getMapFn;
 		this.opacityLookup = [];	// Warning! The Light.Caster needs this to not change.
 		this.populateLookup();
-		this.shootCache = {};
+		//this.shootCache = {};
 	}
 	populateLookup() {
 		let map = this.getMapFn();
@@ -28,6 +28,9 @@ class Vis {
 			return false;
 		}
 		return this.opacityLookup[y*map.xLen+x] = opacity;
+	}
+	flush(visGrid) {
+		// maybe we will never need this. It would flush the opacityLookup.
 	}
 	/**
 	This pre-generates the little arc segments for every single block in a square
@@ -81,6 +84,7 @@ class Vis {
 		let rayCircle = new Light.RayCircle( senseSight * senseSight );
 		let atCenter = true;
 
+		let numVisible = 0;
 		let onVisit = (arc,x,y) => {
 			let isVisible = atCenter || rayCircle.arcTest( arc.left, arc.right, arc.nearDist, arc.span*0.05 );
 			if( !isVisible ) return;
@@ -89,6 +93,7 @@ class Vis {
 				remember(x,y);
 			}
 			visGrid[y][x] = true;
+			++numVisible;
 
 			let opacityHere = this.opacityLookup[y*xLen+x];
 			if( opacityHere>0 && !atCenter ) {
@@ -97,7 +102,6 @@ class Vis {
 			atCenter = false;
 		}
 		Light.arcListTraverse( map, px, py, senseSight, onVisit );
-
 		return visGrid;
 	}
 }

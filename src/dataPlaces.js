@@ -82,6 +82,24 @@ PaletteList.stoneRooms = {
 	passageFloor: 	'floorDirt',
 }
 
+PaletteList.plain = {
+	floor: 			'floorDirt',
+	wall:  			'wallCave',
+	fillFloor: 		'floorDirt',
+	fillWall: 		'wallCave',
+	outlineWall: 	'wallCave',
+	passageFloor: 	'floorDirt',
+}
+
+PaletteList.moon = {
+	floor: 			'floorDirt',
+	wall:  			'wallCave',
+	fillFloor: 		'floorDirt',
+	fillWall: 		'wallCave',
+	outlineWall: 	'wallCave',
+	passageFloor: 	'floorDirt',
+}
+
 
 // Theme caps are for a 40x40 area. These will be ratiod to the size of the actual map.
 // prefer - means that, when a pick choice needs to happen, that theme strongly (maybe 100%) prefers to chose that.
@@ -203,10 +221,18 @@ ScapeList.snowyPlains = () => ({
 	architecture: 		"plains",
 });
 
+ScapeList.moonscape = () => ({
+	dim: 				30,
+	architecture: 		"cave",
+	floorDensity: 		0.80,
+	seedPercent: 		0.001,
+
+});
+
 let ThemeDefault = () => ({
 	isUnique: 		false,
 
-	palette: 		PaletteList.DEFUALT,
+	palette: 		PaletteList.DEFAULT,
 
 	architecture: 	"cave",
 	floorDensity: 	0.68,
@@ -224,6 +250,7 @@ let ThemeDefault = () => ({
 
 ThemeList.surface = {
 	name: 			'the solar temple on the surface',
+	description:	'a temple built to an ancient sun god.',
 	isUnique: 		true,
 	inControl: 		true,
 	scapeId: 		'snowyPlains',
@@ -237,13 +264,14 @@ ThemeList.surface = {
 }
 
 ThemeList.coreCavernRooms = {
+	description:	'cavernous rooms',
 	scapeId: 		'caveRoomsNarrowlyConnected', //'caveRoomsWellConnected',
 	palette: 		{ basis: 'jaggedCave' },
 	placeDensity: 	0.50,
 	rREQUIRED: 		'goblinGathering',
 	rCOMMON: 		'mushrooms, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'secretChest, hoard_shade, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rRARE: 			'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
@@ -251,12 +279,13 @@ ThemeList.coreCavernRooms = {
 }
 
 ThemeList.wildlands = {
+	name:			'cave wildlands',
 	scapeId: 		'caveWildlands', //'caveRoomsWellConnected',
 	palette: 		{ basis: 'jaggedCave' },
 	placeDensity: 	0.10,
 	rCOMMON: 		'mushrooms, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater,'+
 					'secretChest, hoard_shade, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle,'+
-					'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre,'+
+					'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre,'+
 					'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon','isConstruct'],
 	enemyDensity: 	0.05,
@@ -264,6 +293,7 @@ ThemeList.wildlands = {
 }
 
 ThemeList.refugeeCamp = {
+	name:		'a refugee camp',
 	scapeId: 	'caveBroadWinding',
 	palette: 	{ basis: 'jaggedCave' },
 	rCOMMON: 	'camp_refugee',
@@ -278,6 +308,8 @@ ThemeList.refugeeCamp = {
 }
 
 ThemeList.refugeeCampSlaughter = {
+	name:		'camp Remembrance',
+	description:'a refugee camp at the edge of wild caves',
 	scapeId: 	'caveSpacious',
 	palette: 	{ basis: 'jaggedCave' },
 	placeDensity: 	0.70,
@@ -293,6 +325,7 @@ ThemeList.refugeeCampSlaughter = {
 }
 
 ThemeList.dwarfVillage = {
+	description:'a modest dwarven village carved from natural caves',
 	isDwarfish: true,
 	isTown: 	true,
 	scapeId: 	'caveTownSmall',
@@ -311,6 +344,7 @@ ThemeList.dwarfVillage = {
 }
 
 ThemeList.dwarfTown = {
+	description:'a bustling, large dwarven town',
 	isDwarfish: true,
 	isTown: 	true,
 	scapeId: 	'caveTown',
@@ -330,36 +364,44 @@ ThemeList.dwarfTown = {
 }
 
 ThemeList.corePits = {
+	name:		'treacherous pits',
+	description:'a cavernous region of treacherous pits',
 	scapeId: 	'caveBroadWinding',
 	palette: 	{ basis: 'jaggedCave' },
 	rREQUIRED: 	'floodPitLarge, 3x floodPit, 4x mushrooms',
 	rCOMMON: 	'floodPit, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold',
 	rUNCOMMON: 	'mushrooms, secretChest, camp_human, antHive, tinyRoom, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, floodWater',
-	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rRARE: 		'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreBridges = {
+	name:		'strange bridges',
+	description:'strange bridges streching over a massive abyss',
 	palette: 	{ basis: 'jaggedCave', outlineWall:'pit', fillWall: 'pit' },
 	scapeId: 	'caveMazeLike',
 	rCOMMON: 	'floodPit, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodWater',
 	rUNCOMMON: 	'mushrooms, secretChest, camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 		'goblinGathering, tinyRoom, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rRARE: 		'goblinGathering, tinyRoom, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreMaze = {
+	name:		'maze',
+	description:'twisting cave passaves all different',
 	scapeId: 	'caveMazeLike',
 	palette: 	{ basis: 'jaggedCave' },
 	rCOMMON: 	'mushrooms, demonNest, hoard_shade, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom, barrelStorage',
 	rUNCOMMON: 	'secretChest, floodPit, camp_goblin, den_kobold, nest_bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 		'camp_human, goblinGathering, portal, circle, ruin, swamp, firePit, floodOre, floodWater',
+	rRARE: 		'camp_human, goblinGathering, hellPortal, circle, ruin, swamp, firePit, floodOre, floodWater',
 	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.dwarfGoblinBattle = {
+	name:		'battle cavern',
+	description:'the site of a battle between dwarves and goblin forces',
 	dim: 				30,
 	architecture: 		"cave",
 	floorDensity: 		0.88,
@@ -376,16 +418,19 @@ ThemeList.dwarfGoblinBattle = {
 }
 
 ThemeList.coreCavernSomewhatOpen = {
+	name:		'broad, winding caverns',
 	scapeId: 	'caveBroadWinding',
 	palette: 	{ basis: 'jaggedCave' },
 	rCOMMON: 	'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 	'secretChest, camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 		'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre, barrelStorage',
+	rRARE: 		'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre, barrelStorage',
 	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreSea = {
+	name:				'underground sea',
+	description:		'a vast sea stretches away',
 	dim: 				90,
 	architecture: 		"cave",
 	floorDensity: 		0.58,
@@ -402,6 +447,8 @@ ThemeList.coreSea = {
 }
 
 ThemeList.coreSwamp = {
+	name:				'swamplands',
+	description:		'muddy, grim swamp land fed by dripping ground water',
 	dim: 				30,
 	architecture: 		"cave",
 	floorDensity: 		0.28,
@@ -414,6 +461,7 @@ ThemeList.coreSwamp = {
 }
 
 ThemeList.coreRooms = {
+	name:				'rooms of shaped stone',
 	dim: 				40,
 	architecture: 		"rooms",
 	floorDensity: 		0.25,
@@ -428,7 +476,7 @@ ThemeList.coreRooms = {
 	palette: 		{ basis: 'stoneRooms' },
 	rCOMMON: 		'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'mushrooms, secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rRARE: 			'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
@@ -436,6 +484,7 @@ ThemeList.coreRooms = {
 }
 
 ThemeList.coreMorphousRooms = {
+	name:				'amorphous stone rooms',
 	dim: 				40,
 	architecture: 		"rooms",
 	floorDensity: 		0.40,
@@ -449,7 +498,7 @@ ThemeList.coreMorphousRooms = {
 	palette: 		{ basis: 'stoneRooms' },
 	rCOMMON: 		'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rRARE: 			'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
@@ -457,6 +506,8 @@ ThemeList.coreMorphousRooms = {
 }
 
 ThemeList.coreMixedRooms = {
+	name:				'mixed rooms',
+	description:		'cave mixed with carved rooms',
 	dim: 				40,
 	architecture: 		"rooms",
 	floorDensity: 		0.40,
@@ -470,14 +521,16 @@ ThemeList.coreMixedRooms = {
 	palette: 		{ basis: 'stoneRooms' },
 	rCOMMON: 		'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 			'goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rRARE: 			'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
 }
 
-ThemeList.coreHellscape = {
+ThemeList.coreHellTheme = {
+	name:				'hellish abyss',
+	description:		'land of poisonous fumes, pits and forboding',
 	dim: 				80,
 	architecture: 		"cave",
 	floorDensity: 		0.58,
@@ -497,6 +550,8 @@ ThemeList.coreHellscape = {
 }
 
 ThemeList.coreFinalLevel = {
+	name:				'deep temple',
+	description:		'the looming temple of a dark god',
 	dim: 				80,
 	architecture: 		"rooms",
 	floorDensity: 		0.30,
@@ -518,17 +573,61 @@ ThemeList.coreFinalLevel = {
 	friendDensity: 	0.05,
 }
 
-ThemeList.spooky = {
-	scapeId: 	'caveRandom',
-	palette: 	{ basis: 'stoneRooms' },
-	rCOMMON: 	'graveYard, nest_bat, floodMist',
-	rUNCOMMON: 	'ruin, nest_viper',
-	rRARE: 		'shaft, fountain1, camp_human, swamp',
-	rEPIC: 		'portal',
-	prefer: 	['mist'],
-	monsters: 	['isUndead'],
+ThemeList.hellTheme = {
+	name:			'firey plains',
+	description:	'grim plains framed by fire',
+	dim: 			80,
+	architecture: 	"cave",
+	floorDensity: 	0.58,
+	seedPercent: 	0.30,
+	passageWander: 	50,
+	passageWidth2: 	50,
+	placeDensity: 	0.05,
+	palette: 		{ basis: 'jaggedCave' },
+	rREQUIRED:  	'6x demonNest',
+	rCOMMON: 		'mushrooms, hoard_shade, demonNest, firePit',
+	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
+	rRARE: 			'secretChest, etherHive',
+	prefer: 		['flames','mud'],
+	monsters: 		['isDemon','isPlanar','isInsect'],
+	enemyDensity: 	0.04,
+	friendDensity: 	0.01,
+	gateType:		'portal',
 }
 
+ThemeList.spooky = {
+	name:				'lurking death',
+	description:		'pall of death hangs over this place',
+	scapeId: 		'caveRandom',
+	palette: 		{ basis: 'stoneRooms' },
+	rCOMMON: 		'graveYard, nest_bat, floodMist',
+	rUNCOMMON: 		'ruin, nest_viper',
+	rRARE: 			'shaft, fountain1, camp_human, swamp',
+	rEPIC: 			'hellPortal',
+	prefer: 		['mist'],
+	monsters: 		['isUndead'],
+}
+
+ThemeList.moonTheme = {
+	name:			'moon',
+	description:	'a bleak and lifeless plain framed by stars',
+	isUnique: 		true,
+	scapeId: 		'moonscape',
+	palette: 		{ basis: 'moon' },
+	rCOMMON: 		'mushrooms, garden, floodOre',	// floodOpen
+	enemyDensity: 	0.00,
+	friendDensity: 	0.01,
+	itemDensity: 	0.005,
+	monsters: 		['isLunarOne'], //['lunarMoth','isLunarChild'],
+	gateType:		'portal',
+	mapVars:	{
+		name: 'Moon',
+		isAirless: true,
+		passiveEffectList: [
+			{ name: 'vacuum', op: 'damage', value: 10, duration: 0, damageType: DamageType.FREEZE }
+		]
+	}
+}
 
 //=========================
 /*
@@ -563,16 +662,6 @@ ThemeList.ruins = {
 	rRARE: 		'floodWater, swamp, demonNest',
 	rEPIC: 		'portal',
 	monsters: 	['isEarthChild','isAnimal'],
-}
-
-ThemeList.hellscape = {
-	scapeId: 	'caveRandom',
-	rCOMMON: 	'demonNest, firePit',
-	rUNCOMMON: 	'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
-	rRARE: 		'etherHive',
-	prefer: 	['flames','mud'],
-	monsters: 	['isDemon','isPlanar'],
-	//items: 		['isGem'],
 }
 
 ThemeList.lunarColony = {
@@ -690,23 +779,6 @@ ppp
 	}
 }
 
-PlaceTypeList.gatePortal = {
-	map:
-`
-...
-.P.
-...
-`,
-	rarity: rUNCOMMON,
-	isUtility: true,
-	forbidEnemies: true,
-	forbidTreasure: true,
-	flags: { rotate: false },
-	symbols: {
-		P: 'portal',
-	}
-}
-
 PlaceTypeList.fontSolar = {
 	map:
 `
@@ -740,6 +812,14 @@ PlaceTypeList.fontDeep = {
 	symbols: {
 		D: 'fontDeep',
 	}
+}
+
+PlaceTypeList.floodOpen = {
+	floodId: 'floor',
+	tilePercent: 0.01,
+	sparkId: 'water',
+	sparkLimit: 4000,
+	sparkDensity: 0.01
 }
 
 PlaceTypeList.floodMud = {
@@ -947,6 +1027,24 @@ let starterChest = function(inject) {
 	return [Object.assign( {}, basics, inject )];
 }
 
+PlaceTypeList.moonEntry = {
+	map:
+`
+...
+.X.
+...
+`,
+	flags: { isUnique: true, rotate: false },
+	isUtility: true,
+	forbidEnemies: true,
+	forbidFriends: true,
+	forbidTreasure: true,
+	symbols: {
+		'X': { typeFilter: 'marker', markerId: 'playerStartHere' }
+	}
+}
+
+
 PlaceTypeList.surfaceSunTemple = {
 	map:
 `
@@ -959,11 +1057,11 @@ PlaceTypeList.surfaceSunTemple = {
   #....................#
  ##....................##
  #......................#
- #....b......123456789.b########
+ #....b...1234567890AB.b########
 ##.......Z..............#..d..##
 #f...b....X.a...........o...l.S#
 ##......................#.....##
- #....b......0ABCDEFGH.b########
+ #....b...CDEFGHIHKLMN.b########
  #......................#
  ##....................##
   #....................#
@@ -982,7 +1080,27 @@ PlaceTypeList.surfaceSunTemple = {
 		toucher.grantPerks();
 	},
 	symbols: {
+/*
+			legacyId: '',
+			properName: '',
+			title: '',
+			carrying: ['',
+			],
+*/
+
 		'1': starterChest({
+			legacyId: 'airMage',
+			properName: 'Aeronia',
+			title: 'the typhoon',
+			carrying: ['weapon.dagger, 10x weapon.dart, cloak.eRechargeFast',
+			]
+		}),
+		'1': starterChest({
+			legacyId: 'airMage',
+			properName: 'Aeronia',
+			title: 'the typhoon',
+			carrying: ['',
+			],
 			legacyId: 'soldier',
 			properName: 'Hathgar',
 			title: 'the mighty',
@@ -1106,6 +1224,48 @@ PlaceTypeList.surfaceSunTemple = {
 			]
 		}),
 		'H': starterChest({
+			properName: 'Nobody',
+			title: 'the nothing',
+			carrying: [
+				'2x potion.eHealing',
+			]
+		}),
+		'I': starterChest({
+			properName: 'Nobody',
+			title: 'the nothing',
+			carrying: [
+				'2x potion.eHealing',
+			]
+		}),
+		'J': starterChest({
+			properName: 'Nobody',
+			title: 'the nothing',
+			carrying: [
+				'2x potion.eHealing',
+			]
+		}),
+		'K': starterChest({
+			properName: 'Nobody',
+			title: 'the nothing',
+			carrying: [
+				'2x potion.eHealing',
+			]
+		}),
+		'L': starterChest({
+			properName: 'Nobody',
+			title: 'the nothing',
+			carrying: [
+				'2x potion.eHealing',
+			]
+		}),
+		'M': starterChest({
+			properName: 'Nobody',
+			title: 'the nothing',
+			carrying: [
+				'2x potion.eHealing',
+			]
+		}),
+		'M': starterChest({
 			properName: 'Nobody',
 			title: 'the nothing',
 			carrying: [
@@ -1565,7 +1725,25 @@ PlaceTypeList.balgursChamber = {
 		c: 'chest',
 	}
 }
-PlaceTypeList.portal = {
+
+PlaceTypeList.gatePortal = {
+	map:
+`
+...
+.P.
+...
+`,
+	rarity: rUNCOMMON,
+	isUtility: true,
+	forbidEnemies: true,
+	forbidTreasure: true,
+	flags: { rotate: false },
+	symbols: {
+		P: 'portal',
+	}
+}
+
+PlaceTypeList.hellPortal = {
 	map:
 `
   MMMMM  
@@ -1588,7 +1766,25 @@ MM,,,,,MM
 		c: 'chest',
 	},
 	inject: {
-		portal: { themeId: 'hellscape' }
+		portal: { toThemeId: 'hellTheme' }
+	}
+}
+
+PlaceTypeList.moonPortal = {
+	map:
+`
+...
+.P.
+...
+`,
+	isUtility: true,
+	forbidEnemies: true,
+	forbidTreasure: true,
+	symbols: {
+		P: 'portal',
+	},
+	inject: {
+		portal: { toThemeId: 'moonTheme', origin: 'PlaceTypeList' }
 	}
 }
 
@@ -1730,7 +1926,7 @@ xrx+xrx
 	},
 	inject: {
 		dwarf: { name: "dwarf herald", attitude: Attitude.WANDER, tether: 3, jobId: 'isSentry'  },
-		gateway: { themeId: 'dwarfTown' },
+		gateway: { toThemeId: 'dwarfTown' },
 		r: [ { typeFilter: 'stuff.torch' }, { typeFilter: 'wallStone' } ]
 	}
 }

@@ -80,6 +80,21 @@ ConfigList.ken = () => {
 		itemDensity:    0.01,
 	}
 
+	ThemeList.kenMoon = {
+		scapeId: 	'kenCave',
+		palette: 	{ basis: 'jaggedCave', passageFloor: 'floorDirt' },
+		mapVars:	{
+			name: 'Moon',
+			isAirless: true,
+			passiveEffectList: [
+				{ name: 'vacuum', op: 'damage', value: 10, duration: 0, damageType: DamageType.FREEZE }
+			]
+		},
+		enemyDensity: 	0.00,
+		friendDensity: 	0.01,
+		itemDensity:    0.01,
+	}
+
 	ThemeList.kenDwarfTown = {
 		isDwarfish: true,
 		isTown: 	true,
@@ -121,7 +136,7 @@ ConfigList.ken = () => {
 //	});
 
 	// soldier, brawler, monk, archer, ninja, not quite blaster
-	playerInject = { level: 20 };
+	playerInject = { level: 20, immortal: true, invulnerable: true };
 	MonsterTypeList.player.legacyId = 'ninja';
 //	MonsterTypeList.player.carrying.push('5x spell, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
 //	MonsterTypeList.player.carrying.push('spell.eTeleport, spell.eBlink');
@@ -141,8 +156,8 @@ ConfigList.ken = () => {
 	//IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
 	return {
-		startingDepth: 9,
-		//themeId: 'kenDwarfTown',
+		startingDepth: 1,
+		//themeId: 'moon',
 		saveBattery: true,
 		playerInject: playerInject
 	}

@@ -1,83 +1,96 @@
 Module.add('world',function() {
 
 class World {
-	constructor() {
+	constructor(plan) {
+		this.plan = plan;
 		this.areaList = {};
 		// Hack of convenience...
 		Gab.world = this;
 	}
 
-	createArea(currentAreaId,depth,theme,isCore,gateList) {
-		console.assert(depth !== undefined && !isNaN(depth));
+	quotaAddGates(quota,toAreaId) {
+		let incomingGateItemList = [];
 
-		theme = Object.assign(
+		// Scan gates in all areas that want to link to this areaId.
+		Object.each( this.areaList, area => {
+			incomingGateItemList.push( ...area.gateList.filter( item=>item.toAreaId==toAreaId && !item.oneway ) );
+		});
+
+		// This creates a so-called "quota" that the Mason will use to force into
+		// existence the right items, in the right places. In this case gates.
+		// Vertical gates match locations. Horizontal don't.
+		incomingGateItemList.forEach( item => {
+			let typeId = item.gateInverse;
+			let gateBasics = {
+				typeId: typeId,
+				symbol: TypeIdToSymbol[typeId],
+				inject: {
+					typeFilter: typeId,
+					toAreaId:   item.area.id,
+					toGateId:   item.id
+				}
+			}
+			let theme = this.plan.get(toAreaId).theme;
+			let gateLocation = item.gateDir && !theme.inControl ? { x:item.x, y:item.y } : { putAnywhere: true };
+			quota.push( Object.assign( {}, gateBasics, gateLocation ) );
+		});
+		return quota;
+	}
+
+
+	linkGates(area) {
+		// Link all the gates we can.
+		area.gateList.forEach( gate => {
+			if( gate.toGate ) {
+				gate.toGate.toGateId = gate.id;
+				console.log( gate.area.id,'/',gate.id,'<==>',gate.toGate.area.id,'/',gate.toGate.id );
+			}
+			else {
+				console.log( gate.area.id,'/',gate.id,' still not linked' );
+			}
+		});
+		area.gateList.forEach( gate => {
+			gate.toThemeId = gate.toThemeId || this.plan.get(gate.toAreaId).themeId;
+		});
+
+	}
+
+	createArea(toAreaId) {
+
+		let plan  = this.plan.get(toAreaId);
+		let themeMerged = Object.assign(
 			{},
 			ThemeDefault(),
-			theme,
-			{ depth: depth },
-			theme.scapeId ? ScapeList[theme.scapeId]() : {}
+			plan.theme,
+			{ depth: plan.depth },
+			plan.theme.scapeId ? ScapeList[plan.theme.scapeId]() : {}
 		);
 
-		console.log( "\nCreating area "+theme.typeId+" at depth "+depth+" core="+isCore );
-		let tileQuota = Plan.shapeWorld(currentAreaId,depth,theme,isCore,gateList);
-		let areaId = isCore ? 'area.core.'+depth : 'area.'+theme.typeId+'.'+depth+'.'+GetTimeBasedUid();
-		let area = new Area(areaId,depth,theme);
-		area.isCore = isCore;
-		area.world = this;
-		this.areaList[areaId] = area;	// critical that this happen BEFORE the .build() so that the theme is set for the picker.
-		area.build(tileQuota)
-		return area;
+		console.log( "\nCreating area",plan, themeMerged );
+		let quota = [];
+		this.quotaAddGates( quota, toAreaId );
+		this.plan.quotaAdd( quota, toAreaId );
+		console.log(quota);
+		let toArea = new Area(toAreaId,plan.depth,themeMerged);
+		toArea.world = this;
+		this.areaList[toAreaId] = toArea;	// critical that this happen BEFORE the .build() so that the theme is set for the picker.
+		toArea.build( quota );
+
+		this.linkGates(toArea);
+
+		return toArea;
 	}
-	linkGatesAndCreateArea(gate) {
-		let curArea = gate.area;
-		let toArea = this.areaList[gate.toAreaId];
-		if( !toArea ) {
-			console.log( "Gate "+gate.id+" has no toAreaId" );
-			let isCore = curArea.isCore && gate.gateDir!=0;
-			let depth = curArea.depth + gate.gateDir;
-			console.assert(gate.themeId);
-			let theme = ThemeList[gate.themeId];
-			let gateList = curArea.gateList.filter( g => {
-				return (g.id == gate.id) || (isCore && g.gateDir == gate.gateDir);
+	createAreaFromGate(gate) {
+		if( !this.plan.get(gate.toAreaId) ) {
+			// we could spontaneously add this area to the plan.
+			console.assert(gate.allowAreaCreate);
+			this.plan.add({
+				areaId:  gate.toAreaId,
+				depth:   gate.area.depth,
+				themeId: gate.themeId
 			});
-			console.log( "gateList: "+gateList.length );
-
-			toArea = this.createArea(curArea.id,depth,theme,isCore,gateList);
 		}
-
-		gate.toAreaId = toArea.id;
-
-		if( gate.gateInverse !== false ) {
-			let g = toArea.gateList.filter( foreignGate => foreignGate.toGateId==gate.id );
-			if( !g[0] ) {
-				g = toArea.gateList.filter( foreignGate => {
-					return foreignGate.typeId == gate.gateInverse && (!foreignGate.toAreaId || foreignGate.toAreaId==curArea.id)
-				});
-			}
-			let gate2 = g[0];
-			if( !gate2 ) {
-				console.log( "No receiving gate. Creating one." );
-				let pos = toArea.map.pickPosEmpty();
-				gate2 = toArea.map.itemCreateByTypeId(pos[0],pos[1],gate.gateInverse,{});
-				toArea.gateList.push(gate2);
-			}
-			// Always set these, since even if it was a found gate it should still properly link...
-			gate2.toAreaId = curArea.id;
-			gate2.toGateId = gate.id;
-			gate2.toPos = { x: gate.x, y: gate.y };
-			console.assert( gate2.toAreaId && gate2.toGateId );
-			gate.toGateId = gate2.id;
-			gate.toPos = { x: gate2.x, y: gate2.y };
-			console.log( "Gates linked." );
-		}
-		else {
-			// need to adjust this by the level relative offset
-			console.log( "Gate has no inverse. Using toPos instead." );
-			gate.toPos = { x: gate.x, y: gate.y };
-		}
-
-		console.assert( gate.toAreaId );
-		console.assert( gate.toGateId || gate.toPos );
+		return gate.toArea || this.createArea( gate.toAreaId );
 	}
 	getAreaById(areaId) {
 		return this.areaList[areaId];

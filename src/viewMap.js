@@ -549,10 +549,8 @@ class ViewMap extends ViewObserver {
 		});
 	}
 
-	resizeAllSprites(oldDim) {
-		if( oldDim == Tile.DIM ) {
-			return;
-		}
+	resizeAllSprites() {
+
 		let area = this.observer.area;
 		area.entityList.forEach( entity => {
 			spriteDeathCallback(entity.spriteList);
@@ -595,7 +593,6 @@ class ViewMap extends ViewObserver {
 //	}
 	setZoom(_zoom) {
 		this.zoom = _zoom % 4;
-		let oldDim = Tile.DIM;
 		if( this.zoom == 0 ) { this.setMapVis(11); }
 		if( this.zoom == 1 ) { this.setMapVis(8); }
 		if( this.zoom == 2 ) { this.setMapVis(6) }
@@ -638,7 +635,6 @@ class ViewMap extends ViewObserver {
 		let smallestDim = Math.min(w,h);
 		let mapTileDim = mapVis*2+1;
 
-		let oldDim = Tile.DIM;
 		Tile.DIM = Math.floor(smallestDim / mapTileDim);
 
 		this.sd = MaxVis;
@@ -652,7 +648,7 @@ class ViewMap extends ViewObserver {
 		this.app.renderer.view.style.height = tileHeight + "px";
 		this.app.renderer.resize(tileWidth,tileHeight);
 
-		this.resizeAllSprites(oldDim);
+		this.resizeAllSprites();
 
 		this.render();
 	}
@@ -665,6 +661,12 @@ class ViewMap extends ViewObserver {
 		}
 		if( msg == 'resize' ) {
 			this.setMapVis(this.observer.visibilityDistance);
+		}
+		if( msg == 'newArea' ) {
+			if( this.observer ) {
+				this.setMapVis(this.observer.visibilityDistance);
+				this.render();
+			}
 		}
 		if( msg == 'overlayRemove' ) {
 			this.worldOverlayRemove( a => a.groupId==payload.groupId );
@@ -705,6 +707,12 @@ class ViewMap extends ViewObserver {
 
 		for( let child of this.app.stage.children ) {
 			child.visible = false;
+		}
+
+		if( observer.godSight ) {
+			for( let child of this.app.stage.children ) {
+				child.visible = true;
+			}
 		}
 
 		let wx = (this.observer.x-this.sd);
@@ -775,7 +783,6 @@ class ViewMap extends ViewObserver {
 			this.pixiCreate();
 		}
 		let observer = this.observer;
-		let area = observer.area;
 		let drawList = createDrawList(observer,this.drawListCache);
 		this.draw(drawList);
 		if( this.pixiTimerPaused ) {

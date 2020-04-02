@@ -41,10 +41,19 @@ Gab = (new function(priorGab) {
 	}
 	
 	let sign4Type = {
-		stairsUp: 	(e)=> () => 'These stairs ascend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.EXECUTE)+'" to ascend.',
-		stairsDown: (e)=> () => 'These stairs descend to '+getAreaName(e.themeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.EXECUTE)+'" to descend.',
-		gateway: 	(e)=> () => 'To '+getAreaName(e.themeId,e.toAreaId)+'\nHit "'+commandToKey(Command.EXECUTE)+'" to enter.',
-		portal: 	(e) => 'This portal pulses with an aura of menace.'
+		stairsUp: 	(e)=> () => {
+			return 'These stairs ascend to '+getAreaName(e.toThemeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.EXECUTE)+'" to ascend.'
+		},
+		stairsDown: (e)=> () => {
+			return 'These stairs descend to '+getAreaName(e.toThemeId,e.toAreaId)+'.\nHit "'+commandToKey(Command.EXECUTE)+'" to descend.'
+		},
+		gateway: 	(e)=> () => {
+			return 'To '+getAreaName(e.toThemeId,e.toAreaId)+'\nHit "'+commandToKey(Command.EXECUTE)+'" to enter.';
+		},
+		portal:		(e)=> () => {
+			let description = e.toArea ? (e.toArea.description||e.toArea.name) : e.toTheme.description||e.toTheme.name||'the unknown';
+			return 'Through this portal lies '+description+'.\nHit "'+commandToKey(Command.EXECUTE)+'" to enter.'
+		}
 	}
 
 	function signFor(e) {
@@ -64,8 +73,10 @@ Gab = (new function(priorGab) {
 	function entityPostProcess(entity) {
 		if( entity.isArea ) {
 			let area = entity;
+			area.description = area.theme.description || '';
 			if( area.theme.name ) {
 				area.name = area.theme.name;
+				entity.name = area.name;		
 			}
 			else {
 				if( area.theme.isTown ) {
@@ -105,7 +116,8 @@ Gab = (new function(priorGab) {
 		"corrode": "corroded",
 		"poison": "poisoned",
 		"smite": "smitten",
-		"rot": "rotted"
+		"rot": "rotted",
+		"suffocate": 'suffocated'
 	};
 
 

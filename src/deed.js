@@ -218,6 +218,9 @@ let DeedManager = (new class {
 		this.statsThatCauseMapRenders = { senseBlind:1, senseLiving:1, senseInvisible: 1, sensePerception:1, senseAlert:1, senseDarkVision:1, senseXray:1, senseSmell:1 }
 	}
 	add(effect) {
+//		if( effect.damageType == DamageType.FREEZE ) {
+//			debugger;
+//		}
 		let result = {};
 		if( this.handler[effect.op] ) {
 			// I like it this way because it leaves handler completely undefined otherwise.
@@ -376,6 +379,9 @@ function getQuickBest(source,item,effect) {
 		return effect.quick;
 	}
 	if( item ) {
+		if( item.isTileType ) {
+			return Quick.LITHE;
+		}
 		return item.getQuick();
 	}
 	if( source && source.getQuick ) {
@@ -518,6 +524,7 @@ let effectApply = function(effect,target,source,item,context) {
 
 let _effectApplyTo = function(effect,target,source,item,context) {
 
+
 	function testContextHarm(context) {
 		return context == Command.SHOOT || context == Command.ATTACK;
 	}
@@ -562,13 +569,6 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		Perk.apply( 'secondary', effect, { secondary: secondary } );
 	}
 
-	let result = {
-		effect: 		effect,
-		effectResult: 	null,
-		status: 		null,
-		success: 		false
-	};
-
 	function hasCoords(e) {
 		return !e.inVoid && e.x!==undefined;
 	}
@@ -577,6 +577,18 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		result.status = status;
 		result.success = success;
 		return result;
+	}
+
+	let result = {
+		effect: 		effect,
+		effectResult: 	null,
+		status: 		null,
+		success: 		false
+	};
+
+	if( target.invulnerable && (isHarm || effect.isDeb) ) {
+		tell(mSubject|mCares,target,' is invulnerable.');
+		return makeResult('invulnerable',false);
 	}
 
 	let delayId = effect.groupDelayId || (item ? item.id : (source ? source.id : target.id));
@@ -724,7 +736,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		let blockType 	= Item.getBlockType(item,effect.damageType);
 		let block 		= shield ? shield.calcBlockChance(blockType,isRanged,target.isBraced) : 0;
 		if( Math.chance(block*100) ) {
-			tell(mSubject,target,' ',mVerb,'catch',' ',mObject,item || {name:'blow'},' with ',mSubject|mPossessive,target,' ',mObject|mPossessed,shield);
+			tell(mSubject,target,' ',mVerb,'block',' ',mObject,item || {name:'blow'},' with ',mSubject|mPossessive,target,' ',mObject|mPossessed,shield);
 			// Overlay a shield icon to show it happened.
 			new Anim( {}, {
 				follow: 	target,
@@ -976,7 +988,7 @@ DeedManager.addHandler(DeedOp.DAMAGE,function() {
 
 DeedManager.addHandler(DeedOp.SHOVE,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
-	return this.target.takeShove(this.source,this.item,this.value);
+	return this.target.takeShove(this.source,this.item,this.value,this.pull?-1:1);
 });
 
 DeedManager.addHandler(DeedOp.TELEPORT,function() {

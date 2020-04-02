@@ -217,6 +217,7 @@ const StickerList = {
 	poisonIcon: { img: 'gui/icons/ePoison.png' },
 	smiteIcon: { img: 'gui/icons/eSmite.png' },
 	rotIcon: { img: 'gui/icons/eRot.png' },
+	suffocateIcon: { img: 'gui/icons/eSmite.png' },
 };
 
 const Quick = {
@@ -234,7 +235,9 @@ const MiscImmunity = { SPEED: "speed", STUN: "stun", IMMOBILE: "immobile", GAS: 
 
 
 // WARNING: the damage type names are re-used in their icon names in StickerList. Maintain both.
-const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", CHOP: "chop", BASH: "bash", BURN: "burn", FREEZE: "freeze", WATER: "water", LIGHT: "light", SHOCK: "shock", CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot" };
+const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", CHOP: "chop", BASH: "bash",
+					BURN: "burn", FREEZE: "freeze", WATER: "water", LIGHT: "light", SHOCK: "shock",
+					CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot", SUFFOCATE: 'suffocate' };
 const Damage = {
 	All: 		Object.values(DamageType).join(',')+','+Object.values(MiscImmunity).join(','),
 	Misc: 		Object.values(MiscImmunity).join(','),

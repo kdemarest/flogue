@@ -46,6 +46,12 @@ class DataConditioner {
 			extractRarityHash(theme,rEPIC,theme.rEPIC);
 			extractRarityHash(theme,rLEGENDARY,theme.rLEGENDARY);
 
+			console.assert( theme.floorDensity||0  < 1.0);
+			console.assert( theme.placeDensity||0  < 1.0);
+			console.assert( theme.seedDensity||0   < 1.0);
+			console.assert( theme.enemyDensity||0  < 0.3);
+			console.assert( theme.friendDensity||0 < 0.3);
+			console.assert( theme.itemDensity||0   < 0.3);
 			console.assert( theme.palette );
 			console.assert( !theme.palette.basis || PaletteList[theme.palette.basis] );
 			theme.palette = Object.assign( {}, PaletteList.DEFAULT, PaletteList[theme.palette.basis], theme.palette );

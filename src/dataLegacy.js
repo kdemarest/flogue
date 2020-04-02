@@ -32,6 +32,9 @@ function perkDataCondition(perk, level, index, singularId ) {
 			img: 'gui/icons/skill.png',
 			icon: "skill.png"
 		});
+		if( perk.haltHere ) {
+			debugger;
+		}
 		perk.skill.singularId = perk.singularId;
 		perk.skill.description = perk.description;
 		perk.skill.name = perk.skill.name || perk.name;
@@ -48,6 +51,7 @@ function perkDataCondition(perk, level, index, singularId ) {
 		}
 	}
 	if( perk.effect ) {
+		perk.effect.name = perk.effect.name || perk.name;
 		perk.effect.duration = perk.effect.duration===undefined ? true : perk.effect.duration;
 		perk.effect.singularId = perk.singularId;
 	}
@@ -103,7 +107,75 @@ By default like perks do NOT stack - they are each assigned a singularId and tha
 // Assisted jump, fly, speedier run +25%, +50%
 // Deflect incoming arrows, potions, etc with a passive wind defense
 // Throw or shoot things longer distances: darts, potions, maybe not arrows
+// On the moon air mages lose all their powers
 LegacyList.airMage = compose('air mage',[
+
+	range( [1,8,16], (level,index) => ({
+		name: 'Shove gust '+Number.roman(index+1),
+		skill: {
+			needsTarget: true,
+			rechargeTime: 50,
+			range: 5,
+			effect: { op: 'shove', value: index+2, duration: 0, isDeb: 1, isHarm: 1 }
+
+		},
+		description: 'Air buffets enemies away.'
+	}) ),
+	range( [2,7], (level,index) => ({
+		name: 'Wind Leap '+Number.roman(index+1),
+		effect: { op: 'set', stat: 'jumpMax', value: 2+index, isHelp: 1 },
+		description: 'Whirling air carries your jumps farther.'
+	}) ),
+	range( [5], (level,index) => ({
+		name: 'Pulling gust '+Number.roman(index+1),
+		skill: {
+			needsTarget: true,
+			rechargeTime: 50,
+			range: 8,
+			effect: { op: 'shove', pull: true, value: index+2, duration: 0, isDeb: 1, isHarm: 1 }
+
+		},
+		description: 'A sudden gust brings enemies closer.'
+	}) ),
+	range( [3,17], (level,index) => ({
+		name: 'grounding wind '+Number.roman(index+1),
+		effect: { op: 'set', stat: 'stopThrown', value: 50+index*25 },
+		description: 'Wind has a '+(50+index*25)+'% chance to shove thrown objects to the ground.'
+	}) ),
+	range( [4,19], (level,index) => ({
+		name: 'Slowing zephyr '+Number.roman(index+1),
+		skill: {
+			needsTarget: true,
+			rechargeTime: 50,
+			range: 8,
+			effect: { op: 'set', stat: 'movementSlow', value: 4-index, duration: 12, isDeb: 1 }
+		},
+		description: 'A zephyr opposes enemy movements, slowing their travel'+Math.percent(1/(4-index))+'%.'
+	}) ),
+	range( [6], (level,index) => ({
+		name: 'Steal breath '+Number.roman(index+1),
+		skill: {
+			needsTarget: true,
+			rechargeTime: 50,
+			range: 5,
+			effect: { op: 'set', stat: 'breathStopped', value: true, duration: Rules.breathLimitToDamage + 4, isHarm: 1 }
+		},
+		description: 'Suck the breath from your victim for '+(Rules.breathLimitToDamage + 4)+' rounds.'
+	}) ),
+	range( [12], (level,index) => ({
+		name: 'Air bubble',
+		effect: { op: 'set', stat: 'breathIgnore', value: 40, duration: true, isHelp: 1 },
+		description: 'An air bubble follows you, giving '+40+' rounds of extra breath.'
+	}) ),
+/*
+	eOdorless
+	eFlight
+	eHaste
+	eDeflect (or increase his dodge)
+	blockChance
+	eStun
+	immune suffocate
+*/
 ]);
 
 
@@ -360,7 +432,7 @@ LegacyList.brewer = compose('brewer',[
 // High Concept: You can't be killed if you're already healed!
 // You are a tank, and meant to fight, but you heal very well both during and after
 // Holy healing has generous recharge, plus you get +1% regen each level. 
-// Any weapon with smite, in your hands, becomes all-smite damage
+// Any weapon with smite, in your hands, becomes all-smite damage; at early levels your hands do smite damage.
 // Any light you hold extends +1/2/3/4/5/6 distance
 // Your water potion bonus is great when you make them.
 LegacyList.cleric = compose('cleric',[
@@ -416,9 +488,17 @@ LegacyList.earthMage = compose('earthMage',[
 // Enchanter
 //
 // High Concept: Empower your weapons and armor
-// Add pluses and effects to weapons and armor.
+// Add pluses and effects to weapons and armor. Can have an isDmg and an isBuf.
+// Items get inventory, and you 'enchant' by interacting with the item as if it were a merchant, and on hits all items check their inventories and do their enchantments.
+// Can strip an enchantment from an item, and transfer it to another item.
 // Create and recharge items and charms, like figurines
-// Even enchant yourself with your choice of benefits, like resistances and immunities
+// Enchant squares in the world?
+// Even enchant yourself with resistances and immunities: but you can only have 1/2/3 of each at a time.
+// Maybe you can enchant things other people can't, like 
+// You can disenchant things! Goblin altar magical suppression halts whatever effect that thing does, and more, fire resistance on demon squares.
+// Disenchant constructs and they stop acting for a while, disenchant innate abilities as long as they're magical.
+// Strip enemy buffs
+// Disenchant a dark or light font and it stops working for a while.
 LegacyList.enchanter = compose('enchanter',[
 ]);
 
@@ -456,6 +536,7 @@ LegacyList.illusionist = compose('illusionist',[
 //===================================================
 // Monk
 //
+// High Concept: Self discipline makes your body a lethal weapon
 let noChestArmor = e => e.source && e.source.isMonsterType && !e.source.anySlotFilled([Slot.ARMOR]);
 let handsEmpty = e => e.source && e.source.isMonsterType && !e.source.anySlotFilled([Slot.WEAPON,Slot.SHIELD,Slot.HANDS]);
 
