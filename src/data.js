@@ -286,6 +286,7 @@ let EffectTypeList = {
 	eSenseSmell: 	{ isTac: 1, level:  0, rarity: 1.00, op: 'set', stat: 'senseSmell', value: 100, isHelp: true, name: 'bloodhound', icon: 'gui/icons/eFragrance.png', about: 'Sharpen your sense of smell.' },
 	eTeleport: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'teleport', range2: 0, random: true, duration: 0, xRecharge: 2.0, isHelp: true, name: 'teleport', icon: 'gui/icons/eTeleport.png', about: 'Teleport a target to a new location.' },
 	eBlink: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'teleport', targetMe: true, range2: 5, random: false, duration: 0, xRecharge: 2.0, isHelp: true, name: 'blink', icon: 'gui/icons/eTeleport.png', about: 'Teleport yourself a short distance.' },
+	eGate: 			{ isTac: 1, level:  0, rarity: 1.00, op: 'gate', targetMe: true, random: false, duration: 0, xRecharge: 2.0, isHelp: true, name: 'return', icon: 'gui/icons/eTeleport.png', about: 'Gate to somewhere else.' },
 	eOdorless: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'scentReduce', value: Rules.SCENT_AGE_LIMIT, isHelp: true, name: 'no scent', icon: 'gui/icons/eFragrance.png', about: 'Hide your scent from olfactory hunters.' },
 	eStink: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'stink', value: 0.8, isHarm: true, name: 'stink', icon: 'gui/icons/eFragrance.png', about: 'Increase the scent of a target to overwhelming levels, hiding other scents.' },
 //	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },

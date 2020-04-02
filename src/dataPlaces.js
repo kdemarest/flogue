@@ -330,8 +330,8 @@ ThemeList.dwarfVillage = {
 	isTown: 	true,
 	scapeId: 	'caveTownSmall',
 	palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
-	rREQUIRED: 	'garden, gatewayFromDwarves',
-	rCOMMON: 	'garden, mushrooms, dwarfTemple, dwarfSmithy, shopSmall, shopOpenAir, dwarfHouseSmall',
+	rREQUIRED: 	'garden, gatewayFromDwarves, dwarfTemple',
+	rCOMMON: 	'garden, mushrooms, dwarfSmithy, shopSmall, shopOpenAir, dwarfHouseSmall',
 	rUNCOMMON: 	'floodOreSmall, floodPitSmall, dwarfHouse, barrelStorage',
 	rRARE: 		'firePit, floodWater',
 	jobPick: 	{ layman: 3, miner: 2, sentry: 3, grocer: 1, botanist: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1},
@@ -351,7 +351,7 @@ ThemeList.dwarfTown = {
 	palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
 	rREQUIRED: 	'2x garden, mushrooms, dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
 				'gatewayFromDwarves, 2x dwarfHouseSmall, 2x dwarfHouse, '+
-				'70% dwarfTemple, 30% den_dog, 10% camp_human',
+				'dwarfTemple, 30% den_dog, 10% camp_human',
 	rCOMMON: 	'mushrooms, garden, floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall, barrelStorage',
 	rUNCOMMON: 	'floodPit, dwarfHouse',
 	rRARE: 		'firePit, floodWater',

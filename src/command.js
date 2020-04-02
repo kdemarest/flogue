@@ -28,6 +28,9 @@ function commandForItemAttack(weapon) {
 
 
 function commandForItem(item) {
+	if( item.command ) {
+		return item.command;
+	}
 	if( item.isPotion ) {
 		return item.effect && item.effect.isHarm ? Command.THROW : Command.QUAFF;
 	}
@@ -191,7 +194,7 @@ CmdTable[Command.DEBUGKILL] = {
 };
 CmdTable[Command.USE] = {
 	needsItem: true,
-	itemFilter: observer => () =>  new Finder(observer.inventory).filter( item => item.slot ),
+	itemFilter: observer => () =>  new Finder(observer.inventory).filter( item => item.slot || item.command=='use' ),
 	passesTimeOnExecution: false
 };
 CmdTable[Command.GAZE] = {

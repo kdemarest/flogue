@@ -101,7 +101,6 @@ class HumanUser {
 		this.entity.userControllingMe = this;
 	}
 	onAreaChange(area) {
-		guiMessage('setArea',area);
 		this.priorArea = this.entity.area;
 	}
 }

@@ -925,6 +925,8 @@ const StuffList = Fab.add( '', {
 	"impBrain": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true },
 	"ogreDrool": 		{ rarity: 1.0, matter: 'liquid', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
 	"scarabCarapace": 	{ rarity: 1.0, matter: 'chitin', },
+	"markOfReturn": 	{ rarity: 0.0, matter: 'stone', isMarkOfReturn: true, noPermute: true, command: Command.TRIGGER, name: 'mark of return',
+						effect: { name: 'return', op: 'gate', duration: 0, isTac: true } },
 	"darkEssence": 		{ rarity: 0.1, matter: 'special', },
 	"facetedEye": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
 	"trollBlood": 		{ rarity: 0.6, matter: 'liquid' },
@@ -1908,6 +1910,19 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 	}
 	else {
 		tell( mCares,toucher,mSubject,self,' ',mVerb,'is',' not glowing at the moment.');
+	}
+
+	if( toucher.isChosenOne ) {
+		let item = toucher.findItem(item=>item.teleportId==self.id);
+		if( !item ) {
+			item = toucher.itemCreate('stuff.markOfReturn');
+			item.giveTo(toucher,toucher.x,toucher.y);
+		}
+		item.teleportId = self.id;
+		item.effect.areaId =toucher.area.id;
+		item.effect.x = toucher.x;
+		item.effect.y = toucher.y;
+		tell( mCares,toucher,mSubject,self,' ',mVerb,'grant',' ',mObject,toucher,' a Mark of Return.');
 	}
 }
 

@@ -180,19 +180,11 @@ class Entity {
 		}
 	}
 	gateTo(area,x,y) {
-		if( this.area && this.area.id == area.id ) {
-			return {
-				status: 'alreadyInArea',
-				success: false
-			};
-		}
+		let hadNoArea = !this.area;
+		let sameArea = this.area && area.id == this.area.id;
+
 		console.assert( x!==undefined && y!==undefined );
 
-		if( this.isUser() ) {
-			this.userControllingMe.onAreaChange( area );
-		}
-
-		let hadNoArea = !this.area;
 		let c = !area.map.inBounds(x,y) ? true : GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
 		if( c ) {
 			[x,y] = area.map.spiralFind( x, y, (x,y,tile) => {
@@ -204,13 +196,19 @@ class Entity {
 		if( Gab && hadNoArea ) {
 			Gab.entityPostProcess(this);
 		}
-		tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
+		if( !sameArea ) {
+			tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
+		}
 
 		// Any visibility cache flushing should happen here.
-		if( this.isUser() ) {
+		if( this.isUser() && !sameArea ) {
+			this.userControllingMe.onAreaChange( area );
 			area.castLight();
-			guiMessage('newArea');
+			guiMessage('setArea',area);
 		}
+
+		// Yes, this is odd, but it must be here because the perklist grants require the player to
+		// be present in the world.
 		if( this.legacyId && !this.perkList ) {
 			this.grantPerks();
 		}
@@ -263,6 +261,9 @@ class Entity {
 			return this.userControllingMe.isItemSelected(item);
 		}
 		return false;
+	}
+	findItem(fn) {
+		return new Finder(this.inventory).find(fn);
 	}
 	fling(itemList) {
 		let self = this;
@@ -2245,6 +2246,55 @@ class Entity {
 		}
 	}
 
+	takeGate(effect) {
+		let newArea = this.area.world.createAreaAsNeeded(
+			effect.areaId,
+			() => {
+				console.assert(effect.allowAreaCreate)
+				return {
+					areaId:  effect.areaId,
+					depth:   effect.depth!==undefined ? effect.depth : this.area.depth,
+					themeId: effect.themeId
+				}
+			}
+		);
+		console.assert(newArea);
+		if( effect.gateId ) {
+			let gate = this.map.findItem(this).filter(i=>i.id==effect.gateId).first;
+			let pos = gate.oneway ? [gate.x,gate.y] : [gate.toGate.x,gate.toGate.y];
+			effect.x = pos[0];
+			effect.y = pos[1];
+		}
+
+		let result = this.gateTo( newArea, effect.x, effect.y );
+		result.endNow = true;
+		return result;
+	}
+
+	takeTeleport(landing) {
+		let xOld = this.x;
+		let yOld = this.y;
+
+		if( !landing ) {
+			let safeSpot = pVerySafe(this.map);
+			let pos = this.map.pickPosBy(1,1,1,1,safeSpot);
+			if( pos !== false ) {
+				landing = { x: pos[0], y: pos[1] };
+			}
+		}
+		if( landing ) {
+			this.moveTo(landing.x,landing.y);
+		}
+		return {
+			status: landing ? 'teleported' : 'noteleport',
+			success: !!landing,
+			xOld: xOld,
+			yOld: yOld,
+			x: this.x,
+			y: this.y
+		}
+	}
+
 	takeBePossessed(effect,toggle) {
 
 		let fieldsToTransfer = { control:1, name:1, team: 1, brainMindset: 1, brainAbility: 1, visCache: 1, experience: 1, isChosenOne: 1, strictAmmo: true };
@@ -2397,6 +2447,11 @@ class Entity {
 //		console.log( this.typeId+' picked '+(weapon.typeId || weapon.name)+' with recharge '+weapon.rechargeLeft );
 
 		return weapon;
+	}
+
+	itemCreate(lootSpec) {
+		let itemList = Inventory.lootGenerate(lootSpec,this.level);
+		return  itemList[0];
 	}
 
 	itemCreateByType(type,presets,inject) {
@@ -2963,16 +3018,20 @@ class Entity {
 			status: 'entergate',
 			success: false
 		};
-		let world = this.area.world;
 		if( gate ) {
 			tell(mSubject,this,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
-			world.createAreaFromGate(gate);
-			console.assert(gate.toArea && (gate.toGate || gate.oneway));
-			let newArea = world.getAreaById(gate.toAreaId);
-			console.assert(newArea);
-
-			let pos = gate.oneway ? [gate.x,gate.y] : [gate.toGate.x,gate.toGate.y];
-			result.gateResult = this.gateTo( newArea, pos[0], pos[1] );
+			let gateEffect = {
+				op:			'gate',
+				duration:	0,
+				isTac:		true,
+				areaId:		gate.toAreaId,
+				gateId:		gate.id,
+				depth:   	gate.area.depth,
+				themeId:	gate.themeId,
+				oneway:		gate.oneway,
+				allowAreaCreate: gate.allowAreaCreate
+			};
+			effectApply( gateEffect, this );
 
 			if( gate.killMeWhenDone ) {
 				result.killedGate = true;

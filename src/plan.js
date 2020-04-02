@@ -3,7 +3,7 @@ Module.add('plan',function() {
 let PlanData = {
 	'core.0': {
 		themeId:	'surface',
-		links:		'',
+		links:		'core.1',
 		make:		''
 	},
 	'core.1': {

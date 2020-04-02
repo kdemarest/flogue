@@ -933,6 +933,7 @@ let DeedOp = {
 	DAMAGE: 	'damage',
 	SHOVE: 		'shove',
 	TELEPORT: 	'teleport',
+	GATE:		'gate',
 	STRIP: 		'strip',
 	POSSESS: 	'possess',
 	SUMMON: 	'summon',
@@ -996,6 +997,11 @@ DeedManager.addHandler(DeedOp.TELEPORT,function() {
 	console.assert(this.source);
 	this.landing = this.landing || this.source.commandTarget2;
 	return this.target.takeTeleport(this.landing);
+});
+
+DeedManager.addHandler(DeedOp.GATE,function() {
+	if( !monsterTarget(this) ) return resultDeniedDueToType;
+	return this.target.takeGate(this);
 });
 
 DeedManager.addHandler(DeedOp.STRIP,function() {

@@ -662,7 +662,7 @@ class ViewMap extends ViewObserver {
 		if( msg == 'resize' ) {
 			this.setMapVis(this.observer.visibilityDistance);
 		}
-		if( msg == 'newArea' ) {
+		if( msg == 'setArea' ) {
 			if( this.observer ) {
 				this.setMapVis(this.observer.visibilityDistance);
 				this.render();

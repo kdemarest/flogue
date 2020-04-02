@@ -44,6 +44,7 @@ class World {
 			if( gate.toGate ) {
 				gate.toGate.toGateId = gate.id;
 				console.log( gate.area.id,'/',gate.id,'<==>',gate.toGate.area.id,'/',gate.toGate.id );
+				console.log(gate,gate.toGate);
 			}
 			else {
 				console.log( gate.area.id,'/',gate.id,' still not linked' );
@@ -53,6 +54,10 @@ class World {
 			gate.toThemeId = gate.toThemeId || this.plan.get(gate.toAreaId).themeId;
 		});
 
+	}
+
+	planExists(areaId) {
+		return this.plan.get(areaId);
 	}
 
 	createArea(toAreaId) {
@@ -80,6 +85,14 @@ class World {
 
 		return toArea;
 	}
+	createAreaAsNeeded(areaId,planFn) {
+		if( !this.planExists(areaId) ) {
+			// we could spontaneously add this area to the plan.
+			this.plan.add( planFn() );
+		}
+		return this.areaList[areaId] || this.createArea( areaId );
+	}
+
 	createAreaFromGate(gate) {
 		if( !this.plan.get(gate.toAreaId) ) {
 			// we could spontaneously add this area to the plan.
