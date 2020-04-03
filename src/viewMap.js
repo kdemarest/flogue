@@ -592,11 +592,12 @@ class ViewMap extends ViewObserver {
 //		}
 //	}
 	setZoom(_zoom) {
-		this.zoom = _zoom % 4;
+		this.zoom = _zoom % 5;
 		if( this.zoom == 0 ) { this.setMapVis(11); }
 		if( this.zoom == 1 ) { this.setMapVis(8); }
 		if( this.zoom == 2 ) { this.setMapVis(6) }
-		if( this.zoom == 3 ) { this.setMapVis(3) }
+		if( this.zoom == 3 ) { this.setMapVis(4) }
+		if( this.zoom == 4 ) { this.setMapVis(3) }
 	}
 
 	worldOverlayAdd(groupId,x,y,area,img) {

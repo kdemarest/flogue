@@ -78,7 +78,7 @@ const TileTypeList = {
 		mayJump: true,
 		wantsBridge: true,
 		name: "water",
-		img: "dc-dngn/water/dngn_shoals_shallow_water1.png"
+		img: "decor/water.png" //dc-dngn/water/dngn_shoals_shallow_water1.png"
 	},
 	"grass": {
 		symbol: SYM,

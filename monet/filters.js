@@ -79,6 +79,7 @@ FilterSpec = {
 	"effect/dartInFlight.png": 		{ shadow: false },
 	"effect/lightRayCircle.png": 	{ normalize: false, shadow: false, outline: false },
 	"effect/fire.png": 				{ normalize: false, shadow: false, outline: false, brightness: 0.01 },
+	"decor/water.png":				{ shadow: false, outline: false, normalize: false, brightness: -0.6, url: 'https://i.pinimg.com/originals/26/e3/2d/26e32d921f8820b4e459d27888276d4a.jpg' }
 }
 
 DirSpec = {

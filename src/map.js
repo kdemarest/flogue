@@ -447,13 +447,21 @@ class Map extends SimpleMap {
 	}
 	pickPosToStartGame(atMarker) {
 		let f = new Finder(this.itemList).filter( item => item.markerId == atMarker );
-		if( !f.count ) {
+		if( !f.first ) {
 			console.log( "No player start marker found. Searching for stairsUp." );
 			f = new Finder(this.itemList).filter( item => item.typeId=='stairsUp' );
-			if( !f.first ) {
-				f = new Finder(this.itemList).filter( item => item.typeId=='stairsDown' );
-				console.assert(f.first);
-			}
+		}
+		if( !f.first ) {
+			f = new Finder(this.itemList).filter( item => item.typeId=='stairsDown' );
+		}
+		if( !f.first ) {
+			let entity = {};
+			let maySafelyExist = pWalk(this,true);
+			let x,y;
+			[x,y] = this.spiralFind(1,1,(x,y,tile) => {
+				return maySafelyExist(x,y) === Problem.NONE
+			});
+			f = { first: {x:x,y:y} };
 		}
 		return [f.first.x,f.first.y];
 	}

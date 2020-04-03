@@ -136,7 +136,11 @@ ConfigList.ken = () => {
 //	});
 
 	// soldier, brawler, monk, archer, ninja, not quite blaster
-	playerInject = { level: 20, immortal: true, invulnerable: true };
+	playerInject = {
+		level: 20,
+		//immortal: true,
+		//invulnerable: true
+	};
 	MonsterTypeList.player.legacyId = 'ninja';
 //	MonsterTypeList.player.carrying.push('5x spell, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
 //	MonsterTypeList.player.carrying.push('spell.eTeleport, spell.eBlink');
@@ -157,7 +161,7 @@ ConfigList.ken = () => {
 
 	return {
 		startingDepth: 1,
-		//themeId: 'moon',
+		themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: playerInject
 	}

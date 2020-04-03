@@ -837,7 +837,8 @@ const PlantList = Fab.add( '', {
 });
 
 const MushroomList = Fab.add( '', {
-	"amanitaMushroom": 		{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.amanita', flip: 50, img: "mushroom/amanita.png" },
+	"amanitaMushroom": 		{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.amanita', flip: 50, img: "mushroom/amanita.png",
+		effectOnHarvest: Object.assign({},EffectTypeList.ePoison,{xDamage:0.3}) },
 	"blurellaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.blurella', flip: 50, img: "mushroom/blurella.png" },
 	"coxilliaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.coxillia', flip: 50, img: "mushroom/coxillia.png" },
 	"grollotusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.grollotus', img: "mushroom/grollotus.png" },
@@ -2171,6 +2172,25 @@ ItemTypeList.mushroom.onTick = function() {
 		this.spriteList[0].baseScale = this.scale;
 	}
 }
+
+MushroomList.blurellaMushroom.onHarvest = function(harvester,item) {
+}
+
+// amanitaMushroom
+//	"blurellaMushroom":
+//	"coxilliaMushroom":
+//	"grollotusMushroom":
+//	"klinulusMushroom":
+//	"rhodotusMushroom":
+
+
+ItemTypeList.mushroom.onHarvest = function(harvester,item) {
+	if( !item.effectOnHarvest || !harvester.mustBreathe() ) {
+		return;
+	}
+	effectApply(item.effectOnHarvest,harvester,item);
+}
+
 
 ItemTypeList.fontDeep.onTick = function(dt) {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).shotClear().nearMe(4);

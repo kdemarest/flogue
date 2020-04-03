@@ -2493,8 +2493,17 @@ class Entity {
 				success: false
 			};
 		}
+
+		let harvestState = (item.onHarvest || nop)(this,item);
+		if( harvestState == 'disallow' ) {
+			return { status: 'harvest', success: false };
+		}
+
+		let itemList = [];
+		if( harvestState != 'noLoot' ) {
+			itemList = Inventory.lootTo( this, item.harvestLoot, this.area.depth, item, false );
+		}
 		item.resetRecharge();
-		let itemList = Inventory.lootTo( this, item.harvestLoot, this.area.depth, item, false );
 		item.harvestReps = Math.max(0,(item.harvestReps||0)-1);
 		if( !item.harvestReps ) {
 			item.destroy();
@@ -3555,6 +3564,10 @@ class Entity {
 		return f.first;
 	}
 
+	mustBreathe() {
+		return this.breathIgnore!==true && !this.isImmune(DamageType.SUFFOCATE);
+	}
+
 	act(timePasses=true) {
 		let dir = Direction.fromCommand(this.command);
 		if( this.isDead() ) {
@@ -3579,8 +3592,10 @@ class Entity {
 			}
 		}
 
+
+
 		if( timePasses ) {
-			if( (this.breathStopped || this.map.isAirless) && this.breathIgnore!==true && !this.isImmune(DamageType.SUFFOCATE) ) {
+			if( (this.breathStopped || this.map.isAirless) && this.mustBreathe() ) {
 				this.breathLast = (this.breathLast||0)+1;
 			}
 			else {
@@ -3737,6 +3752,9 @@ class Entity {
 		this.commandTarget = null;
 		this.commandTarget2 = null;
 	}
+}
+
+function nop() {
 }
 
 function bonk(entity,target) {
