@@ -1349,9 +1349,10 @@ Module.add('dataMason',function() {
 			let siteMarks = [];
 //				console.log('Placed at ('+x+','+y+')');
 			if( place.floodId ) {
+				console.assert( place.floodId );
 				let floodTile = TypeIdToSymbol[typeIdRemap(place.floodId)];
-				let sparkTile = TypeIdToSymbol[typeIdRemap(place.sparkId)];
-				let sparkDensity = place.sparkDensity || 0;
+				let sparkTile = place.sparkId ? TypeIdToSymbol[typeIdRemap(place.sparkId)] : null;
+				let sparkDensity = sparkTile !== null ? place.sparkDensity || 0 : 0;
 				let sparkLimit = place.sparkLimit;
 				let tilesMade = map.floodSpread( x, y, tileCount(place), sparkTile, sparkLimit, sparkDensity, false, 
 					(x,y,t) => { siteMarks.push(x,y); t.tile=floodTile; } );

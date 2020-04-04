@@ -90,7 +90,15 @@ class Entity {
 			jobId = jobPickFn(jobFilter);
 			values.jobId = jobId;	// because values has the highest priority.
 		}
-		let jobData = Object.merge( {}, JobTypeList[jobId], { type:1, typeId:1, baseType:1, level:1, rarity:1, name:1, namePattern:1 } );
+		let jobData = Object.merge( {}, JobTypeList[jobId], {
+			type:1,
+			typeId:1,
+			baseType:1,
+			level:1,
+			rarity:1,
+			name:1,
+			namePattern:1
+		} );
 		jobData.carrying = Array.supplyConcat( monsterType.carrying, inits.carrying, jobData.carrying, inject?inject.carrying:null, values.carrying );
 
 		Object.assign( this, monsterType, inits, jobData, inject || {}, values );
@@ -736,7 +744,7 @@ class Entity {
 			item.destroy();
 			return null;
 		}
-		if( item.autoEquip && this.mayDon(item) ) {
+		if( item.autoEquip && !this.neverAutoEquip && this.mayDon(item) ) {
 			item = this.don(item,item.slot);
 		}
 		return item;
@@ -1279,7 +1287,7 @@ class Entity {
 			let best = {};
 			let picker = new Picker(this.area.depth);
 			this.inventory.forEach( item => {
-				if( !item.slot || item.isWeapon || !this.bodySlots[item.slot] ) {
+				if( !item.slot || item.isWeapon || item.thinkDon===false || !this.bodySlots[item.slot] ) {
 					return;
 				}
 				let price = item.price;
@@ -2108,7 +2116,7 @@ class Entity {
 				tell(mSubject|mCares,attacker,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+qualifier+' damage!'+(isSneak?' Sneak attack!' : '')+(isCharge?' Charge attack!' : '') );
 			}
 			else {
-				tell(mSubject|mCares,{name:effect.name||'something'},' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+qualifier+' damage!'+(isSneak?' Sneak attack!' : '')+(isCharge?' Charge attack!' : '') );
+				tell(mSubject|mCares,effect,' ',mVerb,attackVerb,' ',mObject|mCares,this,amount<=0 ? ' with no effect!' : ' for '+amount+qualifier+' damage!'+(isSneak?' Sneak attack!' : '')+(isCharge?' Charge attack!' : '') );
 			}
 		}
 
