@@ -650,14 +650,26 @@ class ViewMap extends ViewObserver {
 		this.app.renderer.resize(tileWidth,tileHeight);
 
 		this.resizeAllSprites();
-
+		if( this.observer ) {
+			this.observer.area.castLight();
+		}
 		this.render();
 	}
 
 	message(msg,payload) {
 		super.message(msg,payload);
-		if( msg=='zoom' ) {
+		if( msg=='zoomInc' ) {
 			this.setZoom(this.zoom+1);
+			this.render();
+		}
+		if( msg=='zoomPush' ) {
+			this.zoomStack = (this.zoomStack || []);
+			this.zoomStack.push(this.zoom);
+			this.setZoom(payload.zoom);
+			this.render();
+		}
+		if( msg=='zoomPop' ) {
+			this.setZoom(this.zoomStack.pop());
 			this.render();
 		}
 		if( msg == 'resize' ) {
@@ -785,6 +797,10 @@ class ViewMap extends ViewObserver {
 		}
 		let observer = this.observer;
 		let drawList = createDrawList(observer,this.drawListCache);
+		if( observer.zoom && observer.zoom != this.zoom ) {
+			this.setZoom(observer.zoom);
+		}
+
 		this.draw(drawList);
 		if( this.pixiTimerPaused ) {
 			this.app.ticker.start()

@@ -35,8 +35,13 @@ class Gui {
 
 	add(viewId,view) {
 		this.view[viewId] = view;
+		view._onRemove = () => {
+			view.onClose ? view.onClose() : null;
+			Gui.keyHandler.remove( viewId );
+			delete this.view[viewId];
+		}
+		return view;
 	}
-
 
 	create(onItemChoose) {
 		this.onItemChoose = onItemChoose;
@@ -65,9 +70,10 @@ class Gui {
 		//console.log(message);
 		if( message == 'open' ) {
 			payload.onItemChoose = this.onItemChoose;
-			payload.onClose = ()=>delete this.view[viewClass];
 			let viewClass = payload.viewClass;
-			this.add(viewClass,new window[viewClass](payload));
+			let view = new window[viewClass](payload);
+			this.add(viewClass,view);
+			view.onOpen ? view.onOpen(payload.entity) : null;
 		}
 		Object.each( this.view, (view,viewId) => {
 			if( view.message && (!target || target==viewId) ) {
@@ -138,6 +144,11 @@ Gui.keyHandler = new class {
 		this.handlerList = this.handlerList.filter( handler => handler.id !== id );
 	}
 }
+
+Gui.remove = function(view) {
+	view._onRemove();
+}
+
 
 return {
 	Gui: Gui

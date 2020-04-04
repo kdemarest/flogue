@@ -291,6 +291,8 @@ class Entity {
 		if( this.dead && this.isUser() ) {
 			return;
 		}
+
+		// Immortals can never die.
 		if( this.immortal ) {
 			this.health = Math.max(1,this.health);
 			delete this.vanish;
@@ -299,6 +301,8 @@ class Entity {
 		if( this.dead ) {
 			debugger;
 		}
+
+		// Tell anyone who cares that they died
 		let deathPhrase = this.deathPhrase;
 		if( !deathPhrase ) {
 			deathPhrase = [mSubject,this,' ',mVerb,this.vanish?'vanish':'die'];
@@ -316,7 +320,9 @@ class Entity {
 		// grip. BUT ypu want to keep any effects from worn objects, so if you are the target
 		// just leave the deed in place. You also want ongoing damage to continue.
 		DeedManager.end( deed => {
-			return deed.source && deed.op !== 'damage' && deed.source.id == this.id && deed.target.id !== this.id;
+			let kill = deed.source && deed.source.id == this.id && deed.op !== 'damage' && deed.target.id !== this.id;
+			kill = kill || (deed.target.id == this.id && (!deed.source || deed.source.id!=this.id));
+			return kill;
 		});
 
 		if( this.oldMe ) {
@@ -3387,7 +3393,7 @@ class Entity {
 						viewClass: 'ViewCraft',
 						craftId: this.commandItem.craftId,
 						crafter: this.commandItem.owner,
-						customer: this
+						entity: this
 					});
 					result.status = 'ViewCraft';
 					result.success = true;
@@ -3403,22 +3409,12 @@ class Entity {
 				if( f.first && this.isUser() && f.first.isMerchant ) {
 					guiMessage( 'open', {
 						viewClass: 'ViewMerchant',
-						entity: f.first,
-						self: this
+						entity: this,
+						merchant: f.first,
 					});
-					//this.guiViewCreator = { entity: f.first };
 					result.status = 'ViewMerchant';
 					result.success = true;
 				}
-//				if( f.first && this.isUser() && f.first.isTalker ) { //isMerchant ) {
-//					guiMessage( 'open', {
-//						viewClass: 'ViewTalk',
-//						me: f.first,
-//						you: this
-//					});
-					//this.guiViewCreator = { entity: f.first };
-//					result.success = true;
-//				}
 				return result;
 			}
 			case Command.EAT: {

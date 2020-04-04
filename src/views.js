@@ -269,7 +269,7 @@ class ViewZoom {
 	constructor(divId) {
 		let myDiv = $('<img class="guiButton" src="'+IMG_BASE+'gui/icons/magnify.png">').appendTo($(divId));
 		myDiv.click( function() {
-			guiMessage('zoom',null,'map');
+			guiMessage('zoomInc');
 		});
 	}
 }

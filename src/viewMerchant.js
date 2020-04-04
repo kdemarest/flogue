@@ -4,14 +4,19 @@ class ViewMerchant extends ViewInventory {
 	constructor(p) {
 		super('#guiMerchant',null,p.colFilter || p.entity.colFilter);
 		this.onEvent = p.onItemChoose;
-		this.merchant = p.entity;
+		this.merchant = p.merchant;
 		//this.buyTest = p.buyTest || p.entity.buyTest;
 		this.allowFilter = p.allowFilter || p.entity.allowFilter;
-		this.onClose = p.onClose;
 		this.mode = null;
 		Gui.keyHandler.add( 'ViewMerchant', this.onKeyDown.bind(this) );
 
 		guiMessage('clearSign');
+	}
+	onOpen(entity) {
+		guiMessage('zoomPush',{zoom:5});
+	}
+	onClose() {
+		guiMessage('zoomPop');
 	}
 	onKeyDown(e) {
 		if( e.key == 'Escape' ) {
@@ -45,9 +50,7 @@ class ViewMerchant extends ViewInventory {
 		$('#guiNarrative').removeClass('dim');
 		this.div.hide();
 		$(document).off( '.ViewMerchant' );
-		Gui.keyHandler.remove( 'ViewMerchant' );
-		this.onClose();
-		delete this;
+		Gui.remove(this);
 	}
 	onItemChoose(event) {
 		event.command = this.mode == 'buy' ? Command.BUY : Command.SELL;

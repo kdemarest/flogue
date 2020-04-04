@@ -137,7 +137,7 @@ ConfigList.ken = () => {
 
 	// soldier, brawler, monk, archer, ninja, not quite blaster
 	playerInject = {
-		level: 0,
+		level: 10,
 		//immortal: true,
 		//invulnerable: true
 	};
@@ -154,15 +154,15 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.carrying.push( '20x seed, 40x ammo.arrow, 4x potion.eBurn, 6x vial');
 //	MonsterTypeList.player.carrying.push( '4x weapon.sword, 5x seed');
 
-	//PlaceTypeList.surfaceSunTemple.symbols.Z = 'arborian'; //'weapon.hammer';
+	PlaceTypeList.surfaceSunTemple.symbols.Z = 'daikay'; //'weapon.hammer';
 
 	// If you are doing graphics work comment these in.
 	//IMG_BASE = 'http://localhost:3010/force/';	// forces reprocessing of all images.
 	//IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
 	return {
-		startingDepth: 1,
-//		themeId: 'kenDwarfTown',
+		startingDepth: 0,
+		//themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: playerInject
 	}

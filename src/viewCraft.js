@@ -235,8 +235,7 @@ class ViewCraft extends ViewInventory {
 		this.onEvent = p.onItemChoose;
 		this.craftId = p.craftId;
 		this.crafter = p.crafter;
-		this.customer = p.customer;
-		this.onClose = p.onClose;
+		this.customer = p.entity;
 		this.ingredientList = new IngredientList(this.maxIngredients);
 		Object.each(this,(fn,id)=>{
 			if( typeof fn === 'function' ) {
@@ -265,9 +264,7 @@ class ViewCraft extends ViewInventory {
 		$('#guiNarrative').removeClass('dim');
 		this.div.hide();
 		$(document).off( '.ViewCraft' );
-		Gui.keyHandler.remove( 'ViewCraft' );
-		this.onClose();
-		delete this;
+		Gui.remove(this);
 	}
 
 	onItemChoose(event) {

@@ -82,6 +82,15 @@ PaletteList.stoneRooms = {
 	passageFloor: 	'floorDirt',
 }
 
+PaletteList.spookyRooms = {
+	floor: 			'floorDirt',
+	wall:  			'wallCave',
+	fillFloor: 		'floorDirt',
+	fillWall: 		'wallCave',
+	outlineWall: 	'wallCave',
+	passageFloor: 	'floorDirt',
+}
+
 PaletteList.plain = {
 	floor: 			'floorDirt',
 	wall:  			'wallCave',
@@ -228,6 +237,23 @@ ScapeList.moonscape = () => ({
 	seedPercent: 		0.001,
 
 });
+
+/*
+Themes intend you let you theme an area, as follows:
+name
+description
+scapeId			- What is the landscape like, in terms of size, preferred architecture, etc.
+palette			- what exact types are the wall, floor, etc.
+	placeDensity: 	0.50,
+	rREQUIRED: 		'goblinGathering',
+	rCOMMON: 		'mushrooms, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rUNCOMMON: 		'secretChest, hoard_shade, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 			'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 			'graveYard',
+	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
+	enemyDensity: 	0.05,
+	friendDensity: 	0.01,
+*/
 
 let ThemeDefault = () => ({
 	isUnique: 		false,
@@ -596,13 +622,14 @@ ThemeList.hellTheme = {
 }
 
 ThemeList.spooky = {
-	name:				'lurking death',
-	description:		'pall of death hangs over this place',
+	name:			'taste of living death',
+	description:	'pall of death hangs over this place',
 	scapeId: 		'caveRandom',
-	palette: 		{ basis: 'stoneRooms' },
+	palette: 		{ basis: 'spookyRooms' },
 	rCOMMON: 		'graveYard, nest_bat, floodMist',
 	rUNCOMMON: 		'ruin, nest_viper',
 	rRARE: 			'shaft, fountain1, camp_human, swamp',
+	rREQUIRED:		'floodMist,floodMist,floodMist',
 	rEPIC: 			'hellPortal',
 	prefer: 		['mist'],
 	monsters: 		['isUndead'],
@@ -678,6 +705,21 @@ ThemeList.sunPlane = {
 	rEPIC: 		'portal',
 	monsters: 	['isSunChild','isPlanar'],
 }
+*/
+
+/*
+
+
+Flood Type
+You can make places that flood and area with something, then pick random "spark" locations and
+further flood a different tile around those.
+
+floodId			- the tile type to flood with
+tilePercent		- what percentage of the entire level should get this treatment
+sparkId			- what tile type will the interior island "sparks" be
+sparkDensity	- What percentage of this flooded area should get sparks?
+sparkLimit		- timeout if your attempt to generate sparks exceeds this
+
 */
 
 PlaceTypeList.gateUpMinimal = {
@@ -813,6 +855,7 @@ PlaceTypeList.fontDeep = {
 		D: 'fontDeep',
 	}
 }
+
 
 PlaceTypeList.floodOpen = {
 	floodId: 'floor',

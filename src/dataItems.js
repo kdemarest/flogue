@@ -1922,13 +1922,13 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 
 	// Grant a Mark of Return.
 	if( toucher.isChosenOne ) {
-		let item = toucher.findItem(item=>item.teleportId==self.id);
+		let item = toucher.findItem(item=>item.teleportId=='altar');
 		if( !item ) {
 			item = toucher.itemCreate('stuff.markOfReturn');
 			item.giveTo(toucher,toucher.x,toucher.y);
 			tell( mCares,toucher,mSubject,self,' ',mVerb,'grant',' ',mObject,toucher,' a Mark of Return.');
+			item.teleportId = 'altar';
 		}
-		item.teleportId = self.id;
 		item.effect.areaId =toucher.area.id;
 		item.effect.x = toucher.x;
 		item.effect.y = toucher.y;

@@ -8,7 +8,7 @@ let PlanData = {
 	},
 	'core.1': {
 		themeId:	'coreCavernRooms',
-		links:		'core.2,spooky,spooky,spooky,spooky,wildlands,dwarfTown,refugeeCamp,moonTheme',
+		links:		'core.2,wildlands,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,refugeeCamp,moonTheme',
 		make:		'fontSolar'
 	},
 	'core.2': {
