@@ -113,10 +113,13 @@ Perk.grant = function(entity, legacyId, level) {
 			}, {});
 
 		}
-		if( perk.effect ) {
-			effectApply(perk.effect,entity,entity,null);
+		if( perk.onGain && typeof perk.onGain == 'object' ) {
+			effectApply(perk.onGain,entity,entity,null);
 		}
-		tell(mSubject,entity,mVerb,'gain','a perk: ',perk.name);
+		if( perk.onGain && typeof perk.onGain == 'function' ) {
+			perk.onGain(entity);
+		}
+		tell(mSubject,entity,' ',mVerb,'gain',' a perk: ',perk.name);
 		return perk;
 	}
 

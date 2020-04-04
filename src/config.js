@@ -132,16 +132,16 @@ ConfigList.ken = () => {
 
 //	Object.assign( Rules, {
 //		xLootFrequency: 0.80,
-//		xEffectChance: 4.0
+//		xLootEffectChance: 4.0
 //	});
 
 	// soldier, brawler, monk, archer, ninja, not quite blaster
 	playerInject = {
-		level: 20,
+		level: 0,
 		//immortal: true,
 		//invulnerable: true
 	};
-	MonsterTypeList.player.legacyId = 'ninja';
+//	MonsterTypeList.player.legacyId = 'ninja';
 //	MonsterTypeList.player.carrying.push('5x spell, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
 //	MonsterTypeList.player.carrying.push('spell.eTeleport, spell.eBlink');
 //	MonsterTypeList.player.sensePerception = true;
@@ -150,8 +150,9 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.senseDarkVision = 8;
 //	MonsterTypeList.player.light = 2;
 
-	MonsterTypeList.player.wearing = 'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow';
-	MonsterTypeList.player.carrying.push( '20x seed, 40x ammo.arrow, 4x potion.eBurn, 6x vial');
+//	MonsterTypeList.player.wearing = 'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow';
+//	MonsterTypeList.player.carrying.push( '20x seed, 40x ammo.arrow, 4x potion.eBurn, 6x vial');
+//	MonsterTypeList.player.carrying.push( '4x weapon.sword, 5x seed');
 
 	//PlaceTypeList.surfaceSunTemple.symbols.Z = 'arborian'; //'weapon.hammer';
 
@@ -160,8 +161,8 @@ ConfigList.ken = () => {
 	//IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
 	return {
-		startingDepth: 1,
-		themeId: 'kenDwarfTown',
+//		startingDepth: 1,
+//		themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: playerInject
 	}

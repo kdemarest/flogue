@@ -129,7 +129,7 @@ class Picker {
 
 						// Order here MUST be the same as in Item constructor.
 						let effectChance = v.effectChance!==undefined ? v.effectChance : (m.effectChance!==undefined ? m.effectChance : (q.varietyChance!==undefined ? q.varietyChance : item.effectChance || 0));
-						effectChance = Math.clamp(effectChance * Rules.xEffectChance, 0.0, 1.0);
+						effectChance = Math.clamp(effectChance * Rules.xLootEffectChance, 0.0, 1.0);
 						let appearTotal = 0;
 						let rarityTotal = 0;
 						//if( depth == 5 ) debugger;

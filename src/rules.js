@@ -14,18 +14,41 @@ let Rules = new class {
 			WEAPON_EFFECT_DAMAGE_PERCENT: 15,	// Damage done is that case should be only x% of regular damage.
 			WEAPON_EFFECT_DAMAGE_PERCENT_MAX: 30
 		});
+		// Regulates the span of damage and capabilities
 		this.DEPTH_SPAN = (this.DEPTH_MAX-this.DEPTH_MIN)+1;
+
+		this.maxCharacterLevel				= 100;
+
+		// Dial this to make all lootPicks more or less frequent. However, loot with 100% chance to appear is
+		// assumed to be mandatory, so it will always appear.
 		this.xLootFrequency 				= 1;
-		this.xEffectChance 					= 1;
+
+		// Adjusts how often items that might have effects actually do. See .effectChance in the item data.
+		this.xLootEffectChance 				= 1;
+
+		// Things that recharge and can be used again in 5 rounds should do less damage than things that take longer,
+		// while things that take a really long time to recharge are allowed to have much more damage.
 		this.DAMAGE_BONUS_FOR_RECHARGE		= 0.05;	// Should reflect that, with 5 slots used, you can do x more damage than a standard weapon
+
+		// Unless the weapon specifies otherwise, it gets this range.
 		this.RANGED_WEAPON_DEFAULT_RANGE 	= 7;
 		this.rangePotion 					= 5;
 		this.rangeSpell 					= 6;
+
+		// How long effects last, unless an xDuration is specified
 		this.DEFAULT_EFFECT_DURATION 		= 10;
+
+		// This is really a tweak that makes pricing look reasonable to a human being.
 		this.PRICE_MULT_BASE  				= 10;
+
+		// When you are selling, you get paid less than when you buy, because you are a loot monster.
 		this.PRICE_MULT_SELL 				= 0.3;
+
+		// How far monsters with dark vision see, by default
 		this.MONSTER_DARK_VISION 			= 6;
 		this.MONSTER_SIGHT_DISTANCE 		= 6;
+
+		// How many turns should an average spell require in order to recharge. Relates to DAMAGE_BONUS_FOR_RECHARGE
 		this.SPELL_RECHARGE_TIME 			= 10;
 		this.EXTRA_RECHARGE_AT_DEPTH_MAX    = 10;
 		this.COMBAT_EXPIRATION 				= 6;
@@ -137,6 +160,8 @@ let Rules = new class {
 	}
 	pickRechargeTime(level,item) {
 		let xRecharge = xCalc(item,item,'xRecharge','*');
+		// This variant recharge causes stacking havoc. We need to separate spells into named
+		// variants to clarify the problem.
 		return !item.rechargeTime ? 0 : Math.floor(item.rechargeTime*xRecharge+(level/Rules.DEPTH_SPAN)*Rules.EXTRA_RECHARGE_AT_DEPTH_MAX);
 	}
 

@@ -412,6 +412,7 @@ const WeaponList = Fab.add( '', {
 		rarity: 0,
 		xDamage: 0.3,
 		damageType: DamageType.BASH,
+		isHands: true,
 		noDrop: true,
 		quick: Quick.LITHE,
 		materials: { flesh: {} },
@@ -419,7 +420,6 @@ const WeaponList = Fab.add( '', {
 		matter: 'flesh',
 		name: 'hands{?effect}',
 		slot: false,
-		isHands: true
 	},
 	"claws": {
 		level: 0,
@@ -1272,7 +1272,7 @@ const ItemTypeList = {
 			empty: { img: 'decor/chestEmpty.png' }
 		},
 		imgGet: (self,img) => img || self.imgChoices[self.state].img,
-		carrying: '5x 50% any',
+		carrying: '7x 20% any',
 		hasInventory: true
 	},
 	"coffin": {
@@ -1329,7 +1329,7 @@ const ItemTypeList = {
 		name: "fountain",
 		isDecor: true,
 		isWaterSource: true,
-		sign: "Water streams from this beautiful fountain.",
+		sign: "Water streams from this beautiful fountain. You can fill empty vials here.",
 		img: "dc-dngn/dngn_blue_fountain.png"
 	},
 	"fontSolar": {
@@ -1855,6 +1855,8 @@ ItemTypeList.oreVein.onBump = function(entity,self) {
 
 
 ItemTypeList.altar.onBump = function(toucher,self) {
+
+	// Give inventory, specifically the Solar Blade
 	let delay = 0;
 	if( self.inventory && self.inventory.length ) {
 		Inventory.giveTo( toucher, self.inventory, self, false, item => {
@@ -1862,6 +1864,7 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 		});
 	}
 
+	// Reveal starter chests
 	if( self.unhide ) {
 		let label = self.unhide;
 		let hidList = [].concat( self.map.itemListHidden );
@@ -1872,6 +1875,7 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 		delete self.unhide;
 	}
 
+	// Death Return
 	if( toucher.isChosenOne && ( !toucher.deathReturn || !self.isAtTarget(toucher.deathReturn) ) ) {
 		tell(mSubject|mCares,toucher,' will return here upon death.');
 		toucher.deathReturn = {
@@ -1895,11 +1899,14 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 		return;
 	}
 
+	// Level Up
 	if( toucher.isMonsterType && toucher.experience!==undefined ) {
 		if( toucher.levelUp() ) {
 			return;
 		}
 	}
+
+	// Heal the player
 	if( !self.rechargeLeft) {
 		if( toucher.health >= toucher.healthMax ) {
 			tell( mSubject|mCares,toucher,' ',mVerb,'is',' already at full health.');
@@ -1913,17 +1920,18 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 		tell( mCares,toucher,mSubject,self,' ',mVerb,'is',' not glowing at the moment.');
 	}
 
+	// Grant a Mark of Return.
 	if( toucher.isChosenOne ) {
 		let item = toucher.findItem(item=>item.teleportId==self.id);
 		if( !item ) {
 			item = toucher.itemCreate('stuff.markOfReturn');
 			item.giveTo(toucher,toucher.x,toucher.y);
+			tell( mCares,toucher,mSubject,self,' ',mVerb,'grant',' ',mObject,toucher,' a Mark of Return.');
 		}
 		item.teleportId = self.id;
 		item.effect.areaId =toucher.area.id;
 		item.effect.x = toucher.x;
 		item.effect.y = toucher.y;
-		tell( mCares,toucher,mSubject,self,' ',mVerb,'grant',' ',mObject,toucher,' a Mark of Return.');
 	}
 }
 
@@ -2089,6 +2097,7 @@ ItemTypeList.fountain.onBump = function(toucher,self) {
 		return;
 	}
 	Inventory.lootTo( toucher, 'potion.eWater', toucher.map.level || self.level || 1, self, true );
+	self.destroy();
 	tell(mSubject,toucher,' ',mVerb,'fill',' a vial with water from the fountain.');
 }
 

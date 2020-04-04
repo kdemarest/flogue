@@ -59,11 +59,11 @@ class HumanUser {
 		fav( '5', () => f().filter(item=>item.isPotion && item.effect && item.effect.op == 'heal' && !item.isFake ) );
 		let spellList = this.entity.getCastableSpellList();
 		let i = 0;
-		i += fav( '6', () => spellList, i ) ? 1 : 0;
-		i += fav( '7', () => spellList, i ) ? 1 : 0;
-		i += fav( '8', () => spellList, i ) ? 1 : 0;
-		i += fav( '9', () => spellList, i ) ? 1 : 0;
-		i += fav( '0', () => spellList, i ) ? 1 : 0;
+		i += fav( '6', () => f().filter( item=>item.isSpell || item.isAutoFavorite), i ) ? 1 : 0;
+		i += fav( '7', () => f().filter( item=>item.isSpell || item.isAutoFavorite), i ) ? 1 : 0;
+		i += fav( '8', () => f().filter( item=>item.isSpell || item.isAutoFavorite), i ) ? 1 : 0;
+		i += fav( '9', () => f().filter( item=>item.isSpell || item.isAutoFavorite), i ) ? 1 : 0;
+		i += fav( '0', () => f().filter( item=>item.isSpell || item.isAutoFavorite), i ) ? 1 : 0;
 	}
 	isItemSelected(item) {
 		return this.commandHandler.cmd.commandItem && this.commandHandler.cmd.commandItem.id == item.id;

@@ -175,7 +175,7 @@ class Entity {
 		return this.baseType[stat];
 	}
 	grantPerks() {
-		for( let i=0 ; i<this.level ; ++i ) {
+		for( let i=0 ; i<=this.level ; ++i ) {
 			Perk.grant( this, this.legacyId, i );
 		}
 	}
@@ -2456,7 +2456,7 @@ class Entity {
 
 	itemCreateByType(type,presets,inject) {
 		if( type.isRandom ) debugger;
-		if( !this.level ) debugger;
+		if( !Number.isFinite(this.level) || (this.level<0 || this.level>Rules.maxCharacterLevel) ) debugger;
 		let item = new Item( this.level, type, presets, inject );
 		item = item.giveTo(this,this.x,this.y);
 		return item;

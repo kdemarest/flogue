@@ -50,10 +50,10 @@ function perkDataCondition(perk, level, index, singularId ) {
 			perk.skill.useVerb = perk.skill.useVerb || 'activate';
 		}
 	}
-	if( perk.effect ) {
-		perk.effect.name = perk.effect.name || perk.name;
-		perk.effect.duration = perk.effect.duration===undefined ? true : perk.effect.duration;
-		perk.effect.singularId = perk.singularId;
+	if( perk.onGain && typeof perk.onGain=='object' ) {
+		perk.onGain.name = perk.onGain.name || perk.name;
+		perk.onGain.duration = perk.onGain.duration===undefined ? true : perk.onGain.duration;
+		perk.onGain.singularId = perk.singularId;
 	}
 	return perk;
 }
@@ -63,7 +63,7 @@ function range(array,fn) {
 	let result = {};
 	let singularId = GetTimeBasedUid();
 	array.forEach( (level,index) => {
-		result[level] = perkDataCondition( fn(level,index), level, index, singularId );
+		result[level] = perkDataCondition( fn(index,level), level-1, index, singularId );
 	});
 	return result;
 }
@@ -110,7 +110,7 @@ By default like perks do NOT stack - they are each assigned a singularId and tha
 // On the moon air mages lose all their powers
 LegacyList.airMage = compose('air mage',[
 
-	range( [1,8,16], (level,index) => ({
+	range( [1,8,16], (index) => ({
 		name: 'Shove gust '+Number.roman(index+1),
 		skill: {
 			needsTarget: true,
@@ -121,12 +121,12 @@ LegacyList.airMage = compose('air mage',[
 		},
 		description: 'Air buffets enemies away.'
 	}) ),
-	range( [2,7], (level,index) => ({
+	range( [2,7], (index) => ({
 		name: 'Wind Leap '+Number.roman(index+1),
-		effect: { op: 'set', stat: 'jumpMax', value: 2+index, isHelp: 1 },
+		onGain: { op: 'set', stat: 'jumpMax', value: 2+index, isHelp: 1 },
 		description: 'Whirling air carries your jumps farther.'
 	}) ),
-	range( [5], (level,index) => ({
+	range( [5], (index) => ({
 		name: 'Pulling gust '+Number.roman(index+1),
 		skill: {
 			needsTarget: true,
@@ -137,12 +137,12 @@ LegacyList.airMage = compose('air mage',[
 		},
 		description: 'A sudden gust brings enemies closer.'
 	}) ),
-	range( [3,17], (level,index) => ({
+	range( [3,17], (index) => ({
 		name: 'grounding wind '+Number.roman(index+1),
-		effect: { op: 'set', stat: 'stopThrown', value: 50+index*25 },
+		onGain: { op: 'set', stat: 'stopThrown', value: 50+index*25 },
 		description: 'Wind has a '+(50+index*25)+'% chance to shove thrown objects to the ground.'
 	}) ),
-	range( [4,19], (level,index) => ({
+	range( [4,19], (index) => ({
 		name: 'Slowing zephyr '+Number.roman(index+1),
 		skill: {
 			needsTarget: true,
@@ -152,7 +152,7 @@ LegacyList.airMage = compose('air mage',[
 		},
 		description: 'A zephyr opposes enemy movements, slowing their travel'+Math.percent(1/(4-index))+'%.'
 	}) ),
-	range( [6], (level,index) => ({
+	range( [6], (index) => ({
 		name: 'Steal breath '+Number.roman(index+1),
 		skill: {
 			needsTarget: true,
@@ -162,9 +162,9 @@ LegacyList.airMage = compose('air mage',[
 		},
 		description: 'Suck the breath from your victim for '+(Rules.breathLimitToDamage + 4)+' rounds.'
 	}) ),
-	range( [12], (level,index) => ({
+	range( [12], (index) => ({
 		name: 'Air bubble',
-		effect: { op: 'set', stat: 'breathIgnore', value: 40, duration: true, isHelp: 1 },
+		onGain: { op: 'set', stat: 'breathIgnore', value: 40, duration: true, isHelp: 1 },
 		description: 'An air bubble follows you, giving '+40+' rounds of extra breath.'
 	}) ),
 /*
@@ -184,14 +184,14 @@ LegacyList.airMage = compose('air mage',[
 //
 // High Concept: Master of the bow
 LegacyList.archer = compose( 'archer', [
-	range( [1,3,5,7,9,11,13,15,17,19], (level,index) => ({
+	range( [1,3,5,7,9,11,13,15,17,19], (index) => ({
 		name: 'Marksman +'+((index+1)*10)+'%',
 		apply: (when,e)=>when=='damage' && e.source && e.item && (e.item.isBow || e.item.isArrow)
 			? e.value = ( e.value * (1+((index+1)*0.10)) + (e.item.plus||0) )
 			: false,
 		description: 'Bow shots do additional damage as your eagle eye finds weakness.'
 	}) ),
-	range( [2,18], (level,index) => ({
+	range( [2,18], (index) => ({
 		name: 'Multi Shot x'+(index+2),
 		skill: {
 			rechargeTime: 50,
@@ -200,7 +200,7 @@ LegacyList.archer = compose( 'archer', [
 		},
 		description: 'Rain arrows upon foes in a burst of speed'
 	}) ),
-	range( [4,14], (level,index) => ({
+	range( [4,14], (index) => ({
 		name: 'Dash '+(3+index)+'x',
 		skill: {
 			rechargeTime: 20,
@@ -209,7 +209,7 @@ LegacyList.archer = compose( 'archer', [
 		},
 		description: 'Move multiple times in a row. Any other action cancels the dash.'
 	}) ),
-	range( [6], (level,index) => ({
+	range( [6], (index) => ({
 		name: 'Nimble shots',
 		singularId: 'nimShot',
 		apply: (when,e)=>when=='quick' && e.source && e.item && (e.item.isBow || e.item.isArrow)
@@ -217,19 +217,19 @@ LegacyList.archer = compose( 'archer', [
 			: false,
 		description: 'Faster shots now hit nimble creatures.'
 	}) ),
-	range( [8], (level,index) => ({
+	range( [8], (index) => ({
 		name: 'Blind Shot',
 		effect: { op: 'set', stat: 'blindShot', value: true, duration: true },
 		description: 'Never miss when attacking enemies you can not see.'
 	}) ),
-	range( [10], (level,index) => ({
+	range( [10], (index) => ({
 		name: 'Elemental Arrows',
 		apply: (when,e)=>when=='shooter' && e.item && e.item.isBow
 			? e.item.ammoDamageType = 'convey'
 			: false,
 		description: 'Your arrow\'s entire damage now aligns with the bow\'s bonus effect.'
 	}) ),
-	range( [12], (level,index) => ({
+	range( [12], (index) => ({
 		name: 'Lithe shots',
 		singularId: 'nimShot',
 		apply: (when,e)=>when=='quick' && e.source && e.item && (e.item.isBow || e.item.isArrow)
@@ -237,7 +237,7 @@ LegacyList.archer = compose( 'archer', [
 			: false,
 		description: 'Faster shots now hit lithe and nimble creatures.'
 	}) ),
-	range( [16], (level,index) => ({
+	range( [16], (index) => ({
 		name: 'Exploding Shot',
 		apply: (when,e)=>when=='effectShape' && e.source && source.explodingShot && e.item && e.item.isArrow && (e.effectShape==EffectShape.SINGLE || !e.effectShape)
 			? e.effectShape = EffectShape.BLAST3
@@ -285,16 +285,16 @@ LegacyList.assassin = compose('assassin',[
 // Blaster
 //
 LegacyList.blaster = compose( 'blaster', [
-	range( [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19], (level,index) => ({
-		name: 'Craft Explosives '+Number.roman(level),
-		effect: { op: 'set', stat: 'skillOrdner', value: level, duration: true },
+	range( [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19], (index) => ({
+		name: 'Craft Explosives '+Number.roman(index+1),
+		onGain: { op: 'set', stat: 'skillOrdner', value: index+1, duration: true },
 		skill: {
 			craftId: 'ordner',
 			passesTime: false,
 		},
-		description: 'Gain skill level '+level+' creating ordnance.'
+		description: 'Gain skill level '+(index+1)+' creating ordnance.'
 	}) ),
-	range( [2,8,14], (level,index) => ({
+	range( [2,8,14], (index) => ({
 		name: 'Blast '+Number.roman(index+1),
 		apply: (when,e)=>{
 /*
@@ -317,25 +317,25 @@ LegacyList.blaster = compose( 'blaster', [
 		},
 		description: 'Craft potions to blast in a radius of '+(3+index)
 	}) ),
-	range( [3,9,15], (level,index) => ({
+	range( [3,9,15], (index) => ({
 		name: 'Build mines '+Number.roman(index+1),
-		effect: { op: 'set', stat: 'skillOrdnerMine', value: [EffectShape.SINGLE,EffectShape.BLAST2,EffectShape.BLAST3][index] },
+		onGain: { op: 'set', stat: 'skillOrdnerMine', value: [EffectShape.SINGLE,EffectShape.BLAST2,EffectShape.BLAST3][index] },
 		description: 'Convert a potion into a mine that explodes in radius '+(index+1)+'.'
 	}) ),
-	range( [4,7,11], (level,index) => ({
+	range( [4,7,11], (index) => ({
 		name: 'Far toss '+Number.roman(index+1),
-		effect: { op: 'set', stat: 'potionRange', value: 6+index },
+		onGain: { op: 'set', stat: 'potionRange', value: 6+index },
 		description: 'Throw potions '+(index+1)+' tiles farther.'
 	}) ),
 /*	
-	range( [5,10,16], (level,index) => ({
+	range( [5,10,16], (index) => ({
 		name: 'Magician Blast '+Number.roman(index+1),
 		skill: {
 			craftId: 'ordner',
 			passesTime: false,
 		},
 allow the use to select a point to blink to...
-		effect: { op: 'set', stat: 'skillOrdnerMine', value: [EffectShape.BLAST2,EffectShape.BLAST3,EffectShape.BLAST4][index] },
+		onGain: { op: 'set', stat: 'skillOrdnerMine', value: [EffectShape.BLAST2,EffectShape.BLAST3,EffectShape.BLAST4][index] },
 		description: 'Smash the potion at your feet and blink away, affecting all within '+(2+index)+' tiles.'
 	}) ),
 */
@@ -345,21 +345,21 @@ allow the use to select a point to blink to...
 // Brawler
 //
 LegacyList.brawler = compose('brawler',[
-	range( [1,5,9,13,17], (level,index) => ({
+	range( [1,5,9,13,17], (index) => ({
 		name: 'Bruiser +'+((index+3)*20)+'%',
 		apply: (when,e)=>when=='damage' && e.source && e.item && e.item.isClub
 			? e.value = ( Rules.pickDamage(e.source.level,0,e.item) * (1+((index+3)*0.20)) + (e.item.plus||0) ) * (e.source.visciousWhack||1)
 			: false,
 		description: 'Heavy handed bashing with club weapons.'
 	}) ),
-	range( [3,7,11,15,19], (level,index) => ({
+	range( [3,7,11,15,19], (index) => ({
 		name: 'Hurler +'+((index+3)*20)+'%',
 		apply: (when,e) => when=='damage' && e.source && e.item && e.item.isRock
 			? e.value = Rules.pickDamage(e.source.level,0,e.item) * (1+((index+3)*0.20)) + (e.item.plus||0)
 			: false,
 		description: 'Hurl rocks with mortal effect.'
 	}) ),
-	range( [10], (level,index) => ({
+	range( [10], (index) => ({
 		name: 'Shove',
 		skill: {
 			needsTarget: true,
@@ -369,7 +369,7 @@ LegacyList.brawler = compose('brawler',[
 		},
 		description: 'Push enemies backward'
 	}) ),
-	range( [2,14], (level,index) => ({
+	range( [2,14], (index) => ({
 		name: 'Stunning blow '+((index+1)*10)+'%',
 		apply: (when,e,details) => when=='secondary' && e.isEffect && e.item && (e.item.isClub || e.item.isRock) && e.op=='damage' ? 
 			details.secondary.push( {
@@ -379,21 +379,21 @@ LegacyList.brawler = compose('brawler',[
 			: false,
 		description: 'Stun foes with your overpowering club and rock bashes.'
 	}) ),
-	range( [6,12], (level,index) => ({
+	range( [6,12], (index) => ({
 		name: 'Vigor +'+((index+1)*20)+'',
-		effect: { op: 'add', stat: 'healthMax', value: (index+1)*20, duration: true },
+		onGain: { op: 'add', stat: 'healthMax', value: (index+1)*20, duration: true },
 		description: 'Permanently gain health.'
 	}) ),
-	range( [4], (level,index) => ({
+	range( [4], (index) => ({
 		name: 'Resist Bash',
-		effect: { op: 'add', stat: 'resist', value: DamageType.BASH, duration: true },
+		onGain: { op: 'add', stat: 'resist', value: DamageType.BASH, duration: true },
 	}) ),
-	range( [8], (level,index) => ({
+	range( [8], (index) => ({
 		name: 'Shoulder Rush 1.5x',
-		effect: { op: 'set', stat: 'chargeAttackMult', value: 1.5, duration: true },
+		onGain: { op: 'set', stat: 'chargeAttackMult', value: 1.5, duration: true },
 		description: 'Charge at least two squares in a straight line to inflict double damage.'
 	}) ),
-	range( [16], (level,index) => ({
+	range( [16], (index) => ({
 		name: 'Bull Rush 3',
 		skill: {
 			needsTarget: true,
@@ -403,7 +403,7 @@ LegacyList.brawler = compose('brawler',[
 		},
 		description: 'A quick charge that catches enemies off guard.'
 	}) ),
-	range( [18], (level,index) => ({
+	range( [18], (index) => ({
 		name: 'Viscious Whack 2x',
 		skill: {
 			needsTarget: true,
@@ -539,39 +539,58 @@ LegacyList.illusionist = compose('illusionist',[
 // High Concept: Self discipline makes your body a lethal weapon
 let noChestArmor = e => e.source && e.source.isMonsterType && !e.source.anySlotFilled([Slot.ARMOR]);
 let handsEmpty = e => e.source && e.source.isMonsterType && !e.source.anySlotFilled([Slot.WEAPON,Slot.SHIELD,Slot.HANDS]);
+let monkHandSkill = (damageType) => ({
+	slot: Slot.SKILL,
+	isMonkHandSkill: true,
+	isAutoFavorite: true,
+	damageType: damageType,
+	effect: {
+		op: 'custom',
+		duration: true,
+		customFn: function() {
+			let doffList = new Finder( this.source.inventory ).filter( item => item.isMonkHandSkill && item.inSlot && item.damageType != damageType );
+			doffList.forEach( item => this.source.doff(item) );
+			this.source.findItem( item=>item.isHands ).damageType = damageType;
+		}
+	}
+});
 
 LegacyList.monk = compose( 'monk', [
-	range( [1,5], (level,index) => ({
-		name: 'Stone Hands +'+((index+1)*20)+'%',
-		singularId: 'monkHands',
-		allow: handsEmpty,
-		apply: (when,e) => {
-			if( when=='damage' && e.source && e.item && e.item.isHands ) {
-				let ok = handsEmpty(e);
-				e.value = ok ? Rules.pickDamage(e.source.level,0,e.item) * (1+((index+1)*0.20)) : Rules.pickDamage(1,0,e.item);
-			}
+	range( [1,5,10,15,20], (index,level) => ({
+		name: 'Open Hand Technique '+Number.roman(index+1),
+		singularId: 'monkOpenHand',
+		onGain: (entity) => {
+			let hands = entity.findItem(i=>i.isHands);
+			hands.damage  = Rules.playerDamage(level) * (1+((index+1)*0.20));
 		},
-		description: 'Your hands strike like stone. Hands must be empty.'
+		description: 'Your hands become weapons capable of major damage.'
 	})),
-	range( [9,13], (level,index) => ({
-		name: 'Chopping Hands +'+((index+3)*20)+'%',
-		singularId: 'monkHands',
-		allow: handsEmpty,
-		apply: (when,e) => {
-			if( e.source && e.item && e.item.isHands ) {
-				let ok = handsEmpty(e);
-				if( when=='damageType' ) {
-					e.item.damageType = ok ? DamageType.CHOP : DamageType.BASH;
-					e.damageType = ok ? DamageType.CHOP : DamageType.BASH;
-				}
-				if( when=='damage' ) {
-					e.value = ok ? Rules.pickDamage(e.source.level,0,e.item) * (1+((index+3)*0.20)) : Rules.pickDamage(1,0,e.item);
-				}
-			}
-		},
-		description: 'Your strikes chop like an axe for extra damage. Hands must be empty.'
+	range( [1], (index,level) => ({
+		name: 'Stone Hands '+Number.roman(index+1),
+		skill: monkHandSkill( DamageType.BASH ),
+		description: 'Your hands bash like stone.'
 	})),
-	range( [2,6,10,14], (level,index) => ({
+	range( [5], (index,level) => ({
+		name: 'Stabbing Hands '+Number.roman(index+1),
+		skill: monkHandSkill( DamageType.STAB ),
+		description: 'Your hands stab like a knife.'
+	})),
+	range( [9], (index) => ({
+		name: 'Chopping Hands '+Number.roman(index+1),
+		skill: monkHandSkill( DamageType.CHOP ),
+		description: 'Your strikes chop like an axe.'
+	})),
+	range( [13], (index) => ({
+		name: 'Shocking Hands '+Number.roman(index+1),
+		skill: monkHandSkill( DamageType.SHOCK ),
+		description: 'Your strikes jolt with electricity.'
+	})),
+	range( [19], (index) => ({
+		name: ' '+Number.roman(index+1),
+		skill: monkHandSkill( DamageType.LIGHT ),
+		description: 'Your hands become pure light.'
+	})),
+	range( [2,6,10,14], (index) => ({
 		name: 'Jaguar Technique '+Number.roman(index+1),
 		singularId: 'monkJaguar',
 		allow: noChestArmor,
@@ -582,35 +601,35 @@ LegacyList.monk = compose( 'monk', [
 		},
 		description: 'Move like the jaguar for '+((index+1)*4)+' turns to outpace opponents. No chest armor allowed.'
 	})),
-	range( [3,7,11], (level,index) => ({
+	range( [3,7,11], (index,level) => ({
 		name: 'Refocus Harm '+Number.roman(index+1),
 		allow: noChestArmor,
 		apply: (when,e) => when=='armor' && noChestArmor(e) ? e.armor = Rules.playerArmor(level+1) : false,
 		description: 'You move like wind to deflect '+Rules.playerArmor(level+1)+'% of damage. No chest armor.'
 	})),
-	range( [16], (level,index) => ({
+	range( [16], (index) => ({
 		name: 'Jaguar Essence',
 		singularId: 'monkJaguar',
 		allow: noChestArmor,
-		effect: { op: 'max', stat: 'speed', value: 2, duration: true, contingent: noChestArmor },
+		onGain: { op: 'max', stat: 'speed', value: 2, duration: true, contingent: noChestArmor },
 		description: 'Become one with the jaguar to move faster permanently. No chest armor allowed.'
 	})),
-	range( [17], (level,index) => ({
+	range( [17], (index) => ({
 		name: 'Attunement',
-		effect: { op: 'set', stat: 'senseLiving', value: true, duration: true },
+		onGain: { op: 'set', stat: 'senseLiving', value: true, duration: true },
 		description: 'You sense all living energy.'
 	})),
-	range( [18], (level,index) => ({
+	range( [18], (index) => ({
 		name: 'Resist Energies',
-		effect: { op: 'add', stat: 'resist', value: Damage.Elemental, duration: true },
+		onGain: { op: 'add', stat: 'resist', value: Damage.Elemental, duration: true },
 		description: 'You resist damage from all elemental energies.'
 	})),
-	range( [19], (level,index) => ({
-		name: 'Divine strike',
-		apply: (when,e)=> when=='damageType' && e.item && e.item.isHands ? e.damageType = e.item.damageType = DamageType.SMITE : false,
-		description: 'Your strikes smite with divine power.'
-	})),
-	range( [4,12], (level,index) => ({
+//	range( [19], (index) => ({
+//		name: 'Divine strike',
+//		apply: (when,e)=> when=='damageType' && e.item && e.item.isHands ? e.damageType = e.item.damageType = DamageType.SMITE : false,
+//		description: 'Your strikes smite with divine power.'
+//	})),
+	range( [4,12], (index) => ({
 		name: 'Peaceful Chi '+Number.roman(index+1),
 		skill: {
 			rechargeTime: 50,
@@ -626,7 +645,7 @@ LegacyList.monk = compose( 'monk', [
 		},
 		description: 'Radiate peace into the hearts of your opponents.'
 	})),
-	range( [8,15], (level,index) => ({
+	range( [8,15], (index) => ({
 		name: 'Healing Trance '+Number.roman(index+1),
 		skill: {
 			rechargeTime: 100,
@@ -668,16 +687,16 @@ LegacyList.neuromancer = compose('neuromancer',[
 // Avoid scent hunters by reducing and then eliminating your scent
 // Eventually become invisible at will
 LegacyList.ninja = compose( 'ninja', [
-	range( [1], (level,index) => ({
+	range( [1], (index) => ({
 		name: 'Intuition',
 		skill: {
-			slot: Slot.SKILL,
+			slot: Slot.SKILL,	// means you san see if it is selected.
 			passesTime: false,
 			effect: { op: 'set', stat: 'sensePerception', value: true, duration: true }
 		},
 		description: 'Intuition tells you what areas are being watched.'
 	}) ),
-	range( [2,6,12,17], (level,index) => ({
+	range( [2,6,12,17], (index) => ({
 		name: 'Sneak '+Number.roman(index+1),
 		skill: {
 			rechargeTime: 40,
@@ -686,19 +705,19 @@ LegacyList.ninja = compose( 'ninja', [
 		},
 		description: 'Enemy sight distance reduced by '+(index+2)+' as you sneak. However, if your light is bright they will see you!'
 	}) ),
-	range( [3,7,13], (level,index) => ({
+	range( [3,7,13], (index) => ({
 		name: 'Nimble Catch '+Number.roman(index+1),
 		singluarId: 'nimbleCatch',
-		effect: { op: 'max', stat: 'catchThrown', value: 50+index*25, duration: true },
+		onGain: { op: 'max', stat: 'catchThrown', value: 50+index*25, duration: true },
 		description: 'You catch thrown objects '+(50+index*25)+'% of the time.'
 	}) ),
-	range( [4,9,15], (level,index) => ({
+	range( [4,9,15], (index) => ({
 		name: 'Shot Catch '+Number.roman(index+1),
 		singluarId: 'shotCatch',
-		effect: { op: 'max', stat: 'catchShot', value: 50+index*25, duration: true },
+		onGain: { op: 'max', stat: 'catchShot', value: 50+index*25, duration: true },
 		description: 'You catch shot objects '+(50+index*25)+'% of the time.'
 	}) ),
-	range( [5,14], (level,index) => ({
+	range( [5,14], (index) => ({
 		name: 'Odorless Step '+Number.roman(index+1),
 		singularId: 'ninjaOdor',
 		skill: {
@@ -708,7 +727,7 @@ LegacyList.ninja = compose( 'ninja', [
 		},
 		description: 'Take '+(2+index*2)+' steps without leaving a scent trail.'
 	}) ),
-	range( [10], (level,index) => ({
+	range( [10], (index) => ({
 		name: 'Delicacy',
 		skill: {
 			slot: Slot.SKILL,
@@ -717,7 +736,7 @@ LegacyList.ninja = compose( 'ninja', [
 		},
 		description: 'Delicate sense reveals how close is "too close".'
 	}) ),
-	range( [8,11,16], (level,index) => ({
+	range( [8,11,16], (index) => ({
 		name: 'Dark Vision '+Number.roman(index+1),
 		skill: {
 			slot: Slot.SKILL,
@@ -726,7 +745,7 @@ LegacyList.ninja = compose( 'ninja', [
 		},
 		description: 'See in the dark '+(4+index*2)+' squares.'
 	}) ),
-	range( [18], (level,index) => ({
+	range( [18], (index) => ({
 		name: 'Odorless',
 		singularId: 'ninjaOdor',
 		skill: {
@@ -736,7 +755,7 @@ LegacyList.ninja = compose( 'ninja', [
 		},
 		description: 'Become odorless at will.'
 	}) ),
-	range( [19], (level,index) => ({
+	range( [19], (index) => ({
 		name: 'Invisible',
 		skill: {
 			slot: Slot.SKILL,
@@ -800,12 +819,12 @@ LegacyList.ranger = compose('ranger',[
 //
 // High Concept: Sword and armor are my meat and potatoes
 LegacyList.soldier = compose('soldier',[
-	range( [1,3,5,7,9,11,13,15,17,19], (level,index) => ({
+	range( [1,3,5,7,9,11,13,15,17,19], (index) => ({
 		name: 'Swordsmanship +'+((index+1)*10)+'%',
 		apply: (when,e)=>when=='damage' && e.item && e.item.isSword && e.op=='damage' ? e.value *= 1+(index+1)*0.10 : false,
 		description: 'Inflict more damage with sword style weapons.'
 	}) ),
-	range( [2,6,14,18], (level,index) => ({
+	range( [2,6,14,18], (index) => ({
 		name: 'Shower of Blows '+(2+index)+'x',
 		skill: {
 			rechargeTime: 50,
@@ -814,7 +833,7 @@ LegacyList.soldier = compose('soldier',[
 		},
 		description: 'Shower melee and reach attacks upon enemies'
 	}) ),
-	range( [10], (level,index) => ({
+	range( [10], (index) => ({
 		name: 'Power Shove x'+(3+index),
 		skill: {
 			needsTarget: true,
@@ -824,7 +843,7 @@ LegacyList.soldier = compose('soldier',[
 		},
 		description: 'Force enemies to fall back, even into pits'
 	}) ),
-	range( [1,4,12], (level,index) => ({
+	range( [1,4,12], (index) => ({
 		name: 'Dash '+(3+index)+'x',
 		skill: {
 			rechargeTime: 20,
@@ -833,7 +852,7 @@ LegacyList.soldier = compose('soldier',[
 		},
 		description: 'Move multiple times in a row. Any other action cancels the dash.'
 	}) ),
-	range( [8,16], (level,index) => ({
+	range( [8,16], (index) => ({
 		name: 'Armor Skill +'+((index+1)*20)+'%',
 		apply: (when,e) => {
 			return when=='armor' ? e.armor *= 1+(index+1)*0.20 : false;

@@ -624,6 +624,7 @@ const MonsterTypeList = {
 	},
 	"daifahng": {	// (bite)
 		core: [ SYM, 14, '8:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifahng.png', 'it' ],
+		dodge: Quick.CLUMSY,
 		immune: DemonImmunity,
 		isDemon: true,
 		carrying: '',

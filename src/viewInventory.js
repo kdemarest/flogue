@@ -213,13 +213,13 @@ class ViewInventory extends ViewObserver {
 			let real = $('thead tr td',table);
 			let fixed = $('thead tr td',tableFixed);
 			for( let index=0 ; index < real.length ; ++index ) {
-				console.log(index,$(real[index]).width());
+				//console.log(index,$(real[index]).width());
 				$(real[index]).width( $(real[index]).width()+'px' );
 			}
 			// This is done separately because we need to know what the
 			// column widths REALLY became, from the browser layout engine.
 			for( let index=0 ; index < real.length ; ++index ) {
-				console.log(index,$(real[index]).width());
+				//console.log(index,$(real[index]).width());
 				$(fixed[index]).width( $(real[index]).width()+'px' );
 			}
 		};

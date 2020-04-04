@@ -1,5 +1,19 @@
 Module.add('item',function() {
 
+/*
+Items have these features:
+
+autoEquip		- undef; Should this item be equipped the moment you pick it up?
+isAutoFavorite	- undef; Should we make this a favorite in the spells favorites area?
+
+Events:
+
+
+
+
+*/
+
+
 // ITEM
 class Item {
 	constructor(depth,itemType,presets,inject) {
@@ -364,6 +378,13 @@ class Item {
 			this.rechargeLeft = this.rechargeTime;
 		}
 	}
+	recharge(rechargeRate=1,ignoreCriteria=false) {
+		if( this.rechargeLeft > 0 ) {
+			if( ignoreCriteria || !this.rechargeCriteria || this.rechargeCriteria.call(this) ) {
+				this.rechargeLeft = Math.clamp(this.rechargeLeft-rechargeRate,0,this.rechargeTime);
+			}
+		}
+	}
 	isVariety(typeFilter) {
 		let parts = typeFilter.split('.');
 		console.assert( parts.length );
@@ -724,13 +745,6 @@ class Item {
 	}
 	isEdibleBy(entity) {
 		return this.isEdible && entity.eat &&  entity.eat.includes(this.matter);
-	}
-	recharge(rechargeRate=1,ignoreCriteria=false) {
-		if( this.rechargeLeft > 0 ) {
-			if( ignoreCriteria || !this.rechargeCriteria || this.rechargeCriteria.call(this) ) {
-				this.rechargeLeft = Math.clamp(this.rechargeLeft-rechargeRate,0,this.rechargeTime);
-			}
-		}
 	}
 	tick( dt, rechargeRate = 1) {
 		let list = this.owner.itemList || this.owner.inventory;

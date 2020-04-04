@@ -938,7 +938,8 @@ let DeedOp = {
 	POSSESS: 	'possess',
 	SUMMON: 	'summon',
 	DRAIN: 		'drain',
-	KILLLABEL: 	'killLabel'
+	KILLLABEL: 	'killLabel',
+	CUSTOM:		'custom'
 }
 
 let monsterTarget = function(effect) {
@@ -1117,6 +1118,12 @@ DeedManager.addHandler(DeedOp.KILLLABEL,function() {
 		success: count > 0,
 		count: count
 	}
+});
+
+DeedManager.addHandler(DeedOp.CUSTOM,function() {
+	if( this.target.isMonster ) return resultDeniedDueToType;
+	let result = this.customFn.call(this);
+	return Object.assign({ status: 'custom' }, result);
 });
 
 return {
