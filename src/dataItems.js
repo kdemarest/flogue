@@ -927,7 +927,7 @@ const StuffList = Fab.add( '', {
 	"ogreDrool": 		{ rarity: 1.0, matter: 'liquid', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
 	"scarabCarapace": 	{ rarity: 1.0, matter: 'chitin', },
 	"markOfReturn": 	{ rarity: 0.0, matter: 'stone', isMarkOfReturn: true, noPermute: true, command: Command.TRIGGER, name: 'mark of return',
-						effect: { name: 'return', op: 'gate', duration: 0, isTac: true } },
+						effect: { name: 'return', op: 'gate', twoWay: true, duration: 0, isTac: true, description: 'Use this to return to a marked location, and then use it AGAIN to return to you origin point.' } },
 	"darkEssence": 		{ rarity: 0.1, matter: 'special', },
 	"facetedEye": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
 	"trollBlood": 		{ rarity: 0.6, matter: 'liquid' },

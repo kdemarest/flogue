@@ -154,7 +154,7 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.carrying.push( '20x seed, 40x ammo.arrow, 4x potion.eBurn, 6x vial');
 //	MonsterTypeList.player.carrying.push( '4x weapon.sword, 5x seed');
 
-	PlaceTypeList.surfaceSunTemple.symbols.Z = 'daikay'; //'weapon.hammer';
+	//PlaceTypeList.surfaceSunTemple.symbols.Z = 'daikay'; //'weapon.hammer';
 
 	// If you are doing graphics work comment these in.
 	//IMG_BASE = 'http://localhost:3010/force/';	// forces reprocessing of all images.

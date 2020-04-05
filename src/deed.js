@@ -965,7 +965,7 @@ DeedManager.addHandler(DeedOp.COMMAND,function() {
 
 DeedManager.addHandler(DeedOp.HEAL,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
-	return this.target.takeHealing(this.source,this.value,this.healingType);
+	return this.target.takeHealing(this.source||this.item,this.value,this.healingType);
 });
 
 DeedManager.addHandler(DeedOp.DAMAGE,function() {
@@ -1002,7 +1002,16 @@ DeedManager.addHandler(DeedOp.TELEPORT,function() {
 
 DeedManager.addHandler(DeedOp.GATE,function() {
 	if( !monsterTarget(this) ) return resultDeniedDueToType;
-	return this.target.takeGate(this);
+	let oldPosition = {
+		areaId: this.target.area.id,
+		x: this.target.x,
+		y: this.target.y
+	};
+	let result = this.target.takeGate(this);
+	if( this.item && this.item.effect && this.item.effect.twoWay ) {
+		Object.assign( this.item.effect, oldPosition );
+	}
+	return result;
 });
 
 DeedManager.addHandler(DeedOp.STRIP,function() {
