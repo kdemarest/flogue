@@ -707,12 +707,53 @@ class Entity {
 		if( (item.bunch||1) > 1 && !item.donBunches ) {
 			item = item._unbunch();
 		}
-		tell(mSubject,this,' ',mVerb,item.useVerb,' ',mObject,item);
-		item.inSlot = slot;
-		if( item.triggerWhenDon() ) {
-			item.trigger(this,this,Command.USE);
+
+		let finishDonning = () => {
+			if( !item.dead && item.owner.id == this.id ) {
+				tell(mSubject,this,' ',mVerb,item.useVerb,' ',mObject,item);
+				item.inSlot = slot;
+				if( item.triggerWhenDon() ) {
+					item.trigger(this,this,Command.USE);
+				}
+			}
 		}
-		return item;
+
+		if( !item.donDuration || this.inVoid || !this.area) {
+			finishDonning();
+		}
+		else {
+			let updateProgress = (timeLeft)=>{
+				let sentence = [mSubject,this,' ',mVerb,'need',' '+timeLeft+' more rounds to '+item.useVerb+' the ',mObject,item];
+				tell(...sentence);
+				this.sign = tellGet(this,sentence);
+			}
+			tell(mSubject,this,' ',mVerb,'begin',' ',item.useVerb+'ing',' ',mObject,item)
+			updateProgress(item.donDuration);
+			let donArmorEffect = {
+				op: 'set',
+				stat: 'attitude',
+				value: Attitude.BUSY,
+				duration: item.donDuration,
+				description: 'putting on '+item.typeId,
+				icon: item.icon,
+				onTick: function() {
+					updateProgress(this.timeLeft);
+				},
+				onEnd: (deed) => {
+					if( deed.completed() ) {
+						finishDonning();
+					}
+					delete this.sign;
+				}
+			}
+			effectApply( donArmorEffect, this, this, null );
+		}
+
+
+		return {
+			don: item,
+			duration: item.donDuration
+		};
 	}
 
 	_itemRemove(item) {
@@ -2855,7 +2896,7 @@ class Entity {
 					let doffResult = this.doff(itemToRemove.first);
 					result.doff.push(doffResult);
 				}
-				result.don = this.don(item,item.slot);
+				result.donResult = this.don(item,item.slot);
 				result.success = true;
 			}
 		}

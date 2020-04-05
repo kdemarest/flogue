@@ -30,7 +30,7 @@ function perkDataCondition(perk, level, index, singularId ) {
 			isItemType: true,
 			isSkill: true,
 			img: 'gui/icons/skill.png',
-			icon: "skill.png"
+			icon: "/gui/icons/skill.png"
 		});
 		if( perk.haltHere ) {
 			debugger;
@@ -586,7 +586,7 @@ LegacyList.monk = compose( 'monk', [
 		description: 'Your strikes jolt with electricity.'
 	})),
 	range( [19], (index) => ({
-		name: ' '+Number.roman(index+1),
+		name: 'Luminous Hands '+Number.roman(index+1),
 		skill: monkHandSkill( DamageType.LIGHT ),
 		description: 'Your hands become pure light.'
 	})),
@@ -595,9 +595,9 @@ LegacyList.monk = compose( 'monk', [
 		singularId: 'monkJaguar',
 		allow: noChestArmor,
 		skill: {
-			rechargeTime: 30-(index*4),
+			rechargeTime: 30,
 			passesTime: false,
-			effect: { op: 'max', stat: 'speed', value: 2, duration: ((index+1)*4), contingent: noChestArmor },
+			effect: { op: 'max', stat: 'speed', value: 2, duration: 5+index*2, contingent: noChestArmor },
 		},
 		description: 'Move like the jaguar for '+((index+1)*4)+' turns to outpace opponents. No chest armor allowed.'
 	})),

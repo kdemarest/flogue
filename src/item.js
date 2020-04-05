@@ -236,7 +236,7 @@ class Item {
 			return String.fromCharCode(64+ItemSortOrder.indexOf(typeId));
 		}
 		function icon(file) {
-			return file ? '<img src="'+IMG_BASE+'gui/icons/'+file+'">' : '';
+			return file ? '<img src="'+IMG_BASE+file+'">' : '';
 		}
 		function rechargeImg() {
 			if( !item.rechargeTime ) return '';

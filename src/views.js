@@ -92,7 +92,10 @@ class ViewSign extends ViewObserver {
 		}
 		let lastBumpedId = observer.lastBumpedId; 
 		let signList = { count:0 };
-		if( lastBumpedId ) {
+		if( observer.sign ) {
+			signList = new Finder([observer]).filter(e=>e.sign);
+		}
+		if( !signList.count && lastBumpedId ) {
 			// The last entity I bumped, within 3 
 			signList = new Finder(observer.entityList,observer).excludeMe().filter(e=>e.sign && e.id==lastBumpedId).nearMe(3);
 		}
@@ -105,22 +108,26 @@ class ViewSign extends ViewObserver {
 			signList = new Finder(observer.map.itemList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
 		}
 
-		let signId = signList.first ? signList.first.id : '';
-		if( signId !== this.lastSignId ) {
-			if( !signList.first ) {
-				$(this.divId).hide();
-				guiMessage( 'hide' );
-				observer.seeingSignOf = null;
-			}
-			else {
-				let sign = typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
-				$(this.divId).show().html(sign);
-				//console.log( 'ViewSign render' );
-				guiMessage( 'show', signList.first );
-				observer.seeingSignOf = signList.first;
-			}
-			this.lastSignId = signId;
+		let signRemove = () => {
+			$(this.divId).hide();
+			guiMessage( 'hide' );
+			observer.seeingSignOf = null;
 		}
+
+		let signId = signList.first ? signList.first.id : '';
+		let sign   = !signList.first ? '' : typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
+		if( !signList.first || !sign ) {
+			signRemove();
+		}
+		else {
+			if( sign !== this.lastSign || signId !== this.lastSignId ) {
+				$(this.divId).show().html(sign);
+				guiMessage( 'show', signList.first );
+				this.lastSign = sign;
+			}
+			observer.seeingSignOf = signList.first;
+		}
+		this.lastSignId = signId;
 	}
 }
 
@@ -239,7 +246,7 @@ class ViewFavorites extends ViewObserver {
 				img = '<img class="itemRecharge" src="'+IMG_BASE+StickerList['slice'+pct].img+'">';
 			}
 			if( item.slot ) {
-				img = '<img class="itemRecharge" src="'+IMG_BASE+'gui/icons/'+(item.inSlot?'marked':'unmarked')+'.png">';
+				img = '<img class="itemRecharge" src="'+IMG_BASE+(item.inSlot?'gui/icons/marked':'gui/icons/unmarked')+'.png">';
 			}
 			let ex = item.explain(null,observer);
 			let text = ex.description;
@@ -279,8 +286,8 @@ class ViewFull {
 		this.divToExpand = divToExpand;
 		this.isFull = false;
 		function imageGet(index) {
-			let iconList = ['screenExpand.png','screenContract.png']
-			return IMG_BASE+'gui/icons/'+iconList[index];
+			let iconList = ['gui/icons/screenExpand.png','gui/icons/screenContract.png']
+			return IMG_BASE+iconList[index];
 		}
 		let self = this;
 		let myDiv = $('<img class="guiButton" src="'+imageGet(0)+'">').appendTo($(divId));

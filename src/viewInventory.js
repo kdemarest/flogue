@@ -130,7 +130,7 @@ class ViewInventory extends ViewObserver {
 		}
 
 		function icon(file) {
-			return '<img src="'+IMG_BASE+'gui/icons/'+file+'">';
+			return '<img src="'+IMG_BASE+file+'">';
 		}
 
 		function colJoin( colFilter, colList, afterFn ) {
@@ -155,7 +155,7 @@ class ViewInventory extends ViewObserver {
 			if( allowFilter ) {
 				$(document).off( '.ItemFilter' );
 				ItemFilterOrder.map( filterId => {
-					let typeIcon =  $(icon( filterId=='' ? 'all.png' : ItemTypeList[filterId].icon ));
+					let typeIcon =  $(icon( filterId=='' ? '/gui/icons/all.png' : ItemTypeList[filterId].icon ));
 					if( allowFilter && isFilterFn(filterId) ) {
 						typeIcon.addClass('iconLit');
 					}
@@ -179,8 +179,8 @@ class ViewInventory extends ViewObserver {
 				ex.rechargeLeft
 			);
 			let exSlot =(!observer.isUser() ? '' :
-				(item.inSlot ? icon('marked.png') : 
-				(item.slot ? icon('unmarked.png') : 
+				(item.inSlot ? icon('gui/icons/marked.png') : 
+				(item.slot ? icon('gui/icons/unmarked.png') : 
 				(!isNew?'<span class="newItem">NEW</span>' : ''
 				))));
 

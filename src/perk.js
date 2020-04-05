@@ -109,7 +109,7 @@ Perk.grant = function(entity, legacyId, level) {
 				isItemType: true,
 				isSkillPassive: true,
 				img: 'gui/icons/skill.png',
-				icon: "skill.png"
+				icon: "/gui/icons/skill.png"
 			}, {});
 
 		}

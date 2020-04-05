@@ -22,6 +22,7 @@ let Narrative = (new class {
 		if( !sentence.subject ) {
 			debugger;
 		}
+		let toldList = [];
 		this.recipientList.map( recipient => {
 			let observer = recipient.observerFn();
 			let observerCares = sentence.doesObserverCare(observer.id);
@@ -35,6 +36,7 @@ let Narrative = (new class {
 
 			if( cp || observer.observeDistantEvents ) {
 				let message = (cp?'':'FAR: ')+sentence.refine(observer);
+				toldList.push( {recipient: recipient, message: message} );
 				if( this.accumulate ) {
 					recipient.buffer.unshift(message);
 				}
@@ -47,16 +49,22 @@ let Narrative = (new class {
 				recipient.receiveFn(message,recipient.history);
 			}
 		});
+		return toldList;
 	}
 }());
 
+function tellGet(observer,sentenceArray) {
+	return new Sentence(...sentenceArray).refine(observer);
+}
+
 function tell() {
-	Narrative.tell(...arguments);
+	return Narrative.tell(...arguments);
 }
 
 return {
 	Narrative: Narrative,
-	tell: tell
+	tell: tell,
+	tellGet: tellGet
 }
 
 });

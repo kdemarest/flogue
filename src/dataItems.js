@@ -1403,7 +1403,7 @@ const ItemTypeList = {
 		signLack: 		"This plant needs more light to grow.",
 		signFine: 		"This plant is growing well.",
 		signMature: 	"This plant is ready to harvest.",
-		icon: 			'plant.png',
+		icon: 			'/gui/icons/plant.png',
 		imgGet: 		(self,img) => (img || (self.growing ? self.variety.img : self.imgChoices.wilted.img)),
 		imgChoices: 	{ wilted: { img: 'plant/wilted.png' } },
 	},
@@ -1421,7 +1421,7 @@ const ItemTypeList = {
 		varieties: 		MushroomList,
 		matter: 		'fungus',
 		isMushroom:		true,
-		icon: 			'plant.png',
+		icon: 			'/gui/icons/plant.png',
 	},
 // Seeds for plants and mushrooms
 	"seed": {
@@ -1434,7 +1434,7 @@ const ItemTypeList = {
 		mayPickup: 		true,
 		name: 			'{variety}',
 		varieties: 		SeedList,
-		icon: 			'plant.png',
+		icon: 			'/gui/icons/plant.png',
 		img:			"plant/seed.png"
 	},
 	"vial": {
@@ -1447,13 +1447,13 @@ const ItemTypeList = {
 		mayWalk: 		true,
 		mayFly: 		true,
 		mayPickup: 		true,
-		icon: 			'charm.png',
+		icon: 			'/gui/icons/charm.png',
 		img:			"item/potion/silver.png"
 	},
 
 // FAKES and SKILLS
-	"skill": 	{ symbol: SYM, isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "skill.png" },
-	"fake":   	{ symbol: SYM, isFake: true, name: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "corpse.png" },
+	"skill": 	{ symbol: SYM, isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "/gui/icons/skill.png" },
+	"fake":   	{ symbol: SYM, isFake: true, name: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "/gui/icons/corpse.png" },
 // CORPSE
 	"corpse":   {
 		symbol: SYM,
@@ -1465,7 +1465,7 @@ const ItemTypeList = {
 		zOrder: Tile.zOrder.CORPSE,
 		scale: 0.50,
 		img: 'mon/corpse.png',
-		icon: "corpse.png"
+		icon: "/gui/icons/corpse.png"
 	},
 // KEYS
 	"key": {
@@ -1477,7 +1477,7 @@ const ItemTypeList = {
 		isKey: 			true,
 		noSell: 		true,
 		img: 			"UNUSED/other/key.png",
-		icon: 			'key.png'
+		icon: 			'/gui/icons/key.png'
 	},
 // TREASURE
 	"coin": 	{
@@ -1490,7 +1490,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		imgGet: 		CoinImgFn,
 		imgChoices: 	CoinStacks,
-		icon: 			'coin.png'
+		icon: 			'/gui/icons/coin.png'
 	},
 	"potion":   {
 		symbol: 		'p',
@@ -1509,7 +1509,7 @@ const ItemTypeList = {
 		mayThrow: 		true,
 		imgGet: 		(self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png",
 		imgChoices: 	ImgPotion,
-		icon: 			'potion.png'
+		icon: 			'/gui/icons/potion.png'
 	},
 	"spell":    {
 		symbol: 		's',
@@ -1524,7 +1524,7 @@ const ItemTypeList = {
 		isMagic:		true,
 		range: 			Rules.rangeSpell,
 		img: 			"item/scroll/scroll.png",
-		icon: 			'spell.png'
+		icon: 			'/gui/icons/spell.png'
 	},
 	"ore": 		{
 		symbol: 		'o',
@@ -1535,7 +1535,7 @@ const ItemTypeList = {
 		isOre: 			true,
 		imgGet: 		(self,img) => (img || self.variety.img || "ore"),
 		imgChoices: 	OreList,
-		icon: 			'ore.png'
+		icon: 			'/gui/icons/ore.png'
 	},
 	"gem": 		{
 		symbol: 		"g",
@@ -1557,7 +1557,7 @@ const ItemTypeList = {
 		imgGet: 		(self,img) => (img || self.variety.img || "Gem Type2 Black"),
 		imgChoices: 	GemList,
 		scale: 			0.3,
-		icon: 			'gem.png'
+		icon: 			'/gui/icons/gem.png'
 	},
 	"weapon": 	{
 		symbol: 'w',
@@ -1574,7 +1574,7 @@ const ItemTypeList = {
 		useVerb: 		'wield',
 		mayTargetPosition: true,
 		img: 			"item/weapon/dagger.png",
-		icon: 			'weapon.png'
+		icon: 			'/gui/icons/weapon.png'
 	},
 	"ammo": 	{
 		symbol: 		'm',
@@ -1588,7 +1588,7 @@ const ItemTypeList = {
 		slot: 			Slot.AMMO,
 		useVerb: 		'ready',
 		img: 			"item/weapon/dagger.png",
-		icon: 			'ammo.png'
+		icon: 			'/gui/icons/ammo.png'
 	},
 	"shield": {
 		symbol: 		'x',
@@ -1608,7 +1608,7 @@ const ItemTypeList = {
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
 		img: 			"item/armour/shields/shield3_round.png",
-		icon: 			'shield.png'
+		icon: 			'/gui/icons/shield.png'
 	},
 	"helm": {
 		symbol: 		'h',
@@ -1627,7 +1627,7 @@ const ItemTypeList = {
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
 		img: 			"item/armour/headgear/helmet2_etched.png",
-		icon: 			'helm.png'
+		icon: 			'/gui/icons/helm.png'
 	},
 	"armor": {
 		symbol: 		'a',
@@ -1640,13 +1640,14 @@ const ItemTypeList = {
 		effectWhen: 	{ isHarm: 'backsies', DEFAULT: 'use' },
 		slot: 			Slot.ARMOR,
 		isArmor: 		true,
-		xArmor: 0.60,
+		donDuration:	6,
+		xArmor: 		0.60,
 		useVerb: 		'wear',
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
 		imgGet: 		(self, img) => (img || self.variety.img || "item/armour/chain_mail1.png"),
 		imgChoices: 	ArmorList,
-		icon: 			'armor.png'
+		icon: 			'/gui/icons/armor.png'
 	},
 	"cloak": {
 		symbol: 		'c',
@@ -1666,7 +1667,7 @@ const ItemTypeList = {
 		effectDecorate: { duration: true },
 		imgGet: 		(self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"),
 		imgChoices: 	CloakList,
-		icon: 			'armor.png'
+		icon: 			'/gui/icons/armor.png'
 	},
 	"bracers": {
 		symbol: 		'b',
@@ -1685,7 +1686,7 @@ const ItemTypeList = {
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
 		img: 			"UNUSED/armour/gauntlet1.png",
-		icon: 			'bracers.png'
+		icon: 			'/gui/icons/bracers.png'
 	},
 	"gloves": {
 		symbol: 		'l',
@@ -1701,7 +1702,7 @@ const ItemTypeList = {
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
 		img: 			"UNUSED/armour/glove4.png",
-		icon: 			'gloves.png'
+		icon: 			'/gui/icons/gloves.png'
 	},
 	"boots": {
 		symbol: 		'z',
@@ -1719,8 +1720,8 @@ const ItemTypeList = {
 		useVerb: 		'wear',
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
-		img: "item/armour/boots2_jackboots.png",
-		icon: 'boots.png'
+		img:			"item/armour/boots2_jackboots.png",
+		icon:			'/gui/icons/boots.png'
 	},
 	"ring": {
 		symbol: 		'r',
@@ -1739,7 +1740,7 @@ const ItemTypeList = {
 		effectDecorate: { duration: true },
 		imgGet: (self, img) => (img || self.material.img || 'gold'),
 		imgChoices: 	RingMaterialList,
-		icon: 			'ring.png'
+		icon: 			'/gui/icons/ring.png'
 	},
 	"charm": {
 		symbol: 		SYM,
@@ -1749,7 +1750,7 @@ const ItemTypeList = {
 		varieties: 		CharmList,
 		imgGet: (self, img) => (img || (self ? self.variety.img : '') || 'item/misc/misc_rune.png'),
 		imgChoices: 	CharmList,
-		icon: 			'charm.png'
+		icon: 			'/gui/icons/charm.png'
 	},
 	"stuff": {
 		symbol: 		't',
@@ -1759,7 +1760,7 @@ const ItemTypeList = {
 		varieties: 		StuffList,
 		imgGet: (self, img) => (img || (self ? self.variety.img : '') || 'item/misc/misc_rune.png'),
 		imgChoices: 	StuffList,
-		icon: 			'stuff.png'
+		icon: 			'/gui/icons/stuff.png'
 	},
 	// INGREDIENTS
 
@@ -1771,10 +1772,11 @@ const ItemTypeList = {
 		varieties:		{},
 		name:			'{variety}$',
 		img: 			'item/misc/misc_rune.png',
-		icon: 			'stuff.png'
+		icon: 			'/gui/icons/stuff.png'
 	},
 
 };
+
 
 (() => {
 	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
@@ -1783,8 +1785,8 @@ const ItemTypeList = {
 		if( !itemType.isTreasure ) continue;
 		console.assert( !itemType.xPrice && !itemType.effectChance );
 		console.assert( Rules.ItemBag[typeId] );
-		ItemTypeList[typeId].xPrice 		= Rules.ItemBag[typeId].xPrice;
-		ItemTypeList[typeId].effectChance	= Rules.ItemBag[typeId].cEff;
+		itemType.xPrice 		= Rules.ItemBag[typeId].xPrice;
+		itemType.effectChance	= Rules.ItemBag[typeId].cEff;
 	}
 })();
 

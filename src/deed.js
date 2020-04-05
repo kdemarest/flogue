@@ -94,6 +94,9 @@ class Deed {
 	applyEffect() {
 		if( this.contingent ) {
 			if( !this.contingent(this) ) {
+				if( this.item && this.item.hasRecharge ) {
+					this.item.rechargeLeft = 0;
+				}
 				return {
 					result: 'failed contingency',
 					success: false
@@ -924,7 +927,9 @@ let deedTell = function(target,stat,oldValue,newValue ) {
 	}
 	let teller = Gab.describeStatChange;
 	let content = (teller[stat] || teller._generic_)(target,null,oldValue,newValue);
-	tell(...content);
+	if( content ) {
+		tell(...content);
+	}
 }
 
 let DeedOp = {

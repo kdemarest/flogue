@@ -76,7 +76,7 @@ class PixiImageRepo {
 				add(type.img);
 			}
 			if( type.icon ) {
-				add( 'gui/icons/'+type.icon );
+				add( type.icon );
 			}
 		}
 

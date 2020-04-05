@@ -63,7 +63,7 @@ Gab = (new function(priorGab) {
 		if( e.isNamed ) {
 			let s = e.name+' the '+(e.jobId ? String.capitalize(e.typeId)+' '+String.capitalize(e.jobId) : String.capitalize(e.typeId));
 			if( e.brainMaster ) {
-				s += '('+(new Sentence(mSubject|mPossessive,e.brainMaster,' '+(e.isAnimal?'pet':'slave')).refine(observer))+')';
+				s += '('+tellGet(observer,[mSubject|mPossessive,e.brainMaster,' '+(e.isAnimal?'pet':'slave')])+')';
 			}
 			s += JobTypeList[e.jobId] ? '\n'+JobTypeList[e.jobId].sign+'\nHit [Enter] to talk.' : '';
 			return s;
@@ -150,6 +150,8 @@ Gab = (new function(priorGab) {
 			return [mSubject,subj,' ',mSubject|mVerb,'begin',' to ',newValue,'.'];
 		},
 		attitude: function(subj,obj,oldValue,newValue) {
+			if( newValue == 'busy' ) return;
+			if( oldValue == 'busy' ) return;
 			return [mSubject,subj,' ',mSubject|mVerb,'become',' ',newValue,'.'];
 		},
 		senseBlind: function(subj,obj,oldValue,newValue) {
