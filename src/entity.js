@@ -3637,8 +3637,9 @@ class Entity {
 			}
 		}
 
-
-
+		//
+		// Breathing
+		//
 		if( timePasses ) {
 			if( (this.breathStopped || this.map.isAirless) && this.mustBreathe() ) {
 				this.breathLast = (this.breathLast||0)+1;
@@ -3661,12 +3662,18 @@ class Entity {
 			}
 		}
 
+		//
+		// Passive map effects 
+		//
 		if( timePasses ) {
 			this.map.passiveEffectList.forEach( effect => {
 				effectApply( effect, this, this.map, null, 'onMapPassive' );
 			});
 		}
 
+		//
+		// Vocalizing whatever you have to say
+		//
 		if( this.vocalize ) {
 			tell(...this.vocalize);
 			this.vocalize = false;
@@ -3676,23 +3683,33 @@ class Entity {
 		let priorTileType = this.map.tileTypeGet(this.x,this.y);
 		console.assert(priorTileType);
 
+		//
+		// Reset stillness, bracing, and bump
+		//
 		if( timePasses ) {
 			this.isStill = true;
 			this.isBraced = false;	// Here is where the Hoplite will get advantages.
 			if( this.bumpCount ) {
-				// If the user ever isn't adjscent to you, then you must be relieved of bump obligations.
+				// If the user ever isn't adjacent to you, then you must be relieved of bump obligations.
 				let f = this.findAliveOthersNearby().isId(this.bumpBy).nearMe(1);
 				if( !f.first ) this.bumpCount=0;
 			}
 		}
 
+		//
+		// Move a direction, or take an action
+		//
 		if( Direction.fromCommand(this.command) !== false ) {
+			// This should be the ONE AND ONLY call to moveDir.
 			this.commandResult = this.moveDir(dir,this.commandItem,true);
 		}
 		else {
 			this.commandResult = this.actOnCommand();
 		}
 
+		//
+		// Charging
+		//
 		if( !this.jump && Command.Movement.includes(this.command) && this.commandResult.success ) {
 			if( dir === this.lastDir ) {
 				this.chargeDist = (this.chargeDist||0)+1;
