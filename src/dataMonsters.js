@@ -1482,7 +1482,7 @@ MonsterTypeList.redOoze.onMove = function(x,y) {
 }
 
 MonsterTypeList.daitox.onTick = function() {
-	let tile = adhoc(this.map.tileTypeGet(this.x,this.y),this.map,this.x,this.y);
+	let tile = this.map.tileGet(this.x,this.y);
 	effectApply(this.effectOngoing,tile,this,null,'tick');
 }
 
@@ -1648,6 +1648,9 @@ function monsterPreProcess(typeId,m) {
 		if( !part ) {
 			return;
 		}
+		// NOTE: The rarities are not being set here, because what SHOULD
+		// happen is that parts get generated only when there is a recipe 
+		// that uses them.
 		let inject = {
 			typeId:		m.typeId+String.capitalize(partId),				// goblinHeart
 			name:		m.typeId+' '+(part.name||partId),				// goblin heart, ooze slime

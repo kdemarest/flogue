@@ -3284,12 +3284,13 @@ class Entity {
 		if( collider ) {
 			this.lastBumpedId = collider.id;
 			if( collider.isTable ) {
+				// Look for a merchant on the far side of the table. Special case.
 				let bx = x + (collider.x-this.x);
 				let by = y + (collider.y-this.y);
 				let e = this.findAliveOthersAt(bx,by).first;
 				if( e ) bump(e,false);
 			}
-			let bumpResult = (collider.onBump || bonk)(this,adhoc(collider,this.map,x,y));
+			let bumpResult = (collider.onBump || bonk)(this,!collider.isTileType ? collider : this.map.tileProxy(collider,x,y));
 			return {
 				status: 'bumped',
 				collider: collider,
@@ -3319,7 +3320,7 @@ class Entity {
 
 		// Does this tile type always do something to you when you depart any single instance of it?
 		if( tileTypeHere.onDepart ) {
-			if( tileTypeHere.onDepart(this,adhoc(tileTypeHere,this.map,xOld,yOld)) === false ) {
+			if( tileTypeHere.onDepart(this,this.map.tileGet(xOld,yOld)) === false ) {
 				return {
 					status: 'stoppedOnDepart',
 					success: false
@@ -3329,7 +3330,7 @@ class Entity {
 
 		// Are we leaving this TYPE of tile entirely? Like leaving water, fire or mud?
 		if( tileType.name != tileTypeHere.name && tileTypeHere.onDepartType ) {
-			if( tileTypeHere.onDepartType(this,adhoc(tileTypeHere,this.map,xOld,yOld),adhoc(tileType,this.map,x,y)) === false ) {
+			if( tileTypeHere.onDepartType(this,this.map.tileGet(xOld,yOld),this.map.tileGet(x,y)) === false ) {
 				return {
 					status: 'stoppedOnDepartType',
 					success: false
@@ -3339,7 +3340,7 @@ class Entity {
 
 		// Are we entering a new tile TYPE?
 		if( tileType.name != tileTypeHere.name && tileType.onEnterType ) {
-			if( tileType.onEnterType(this,adhoc(tileType,this.map,x,y),tileTypeHere,xOld,yOld) === false ) {
+			if( tileType.onEnterType(this,this.map.tileGet(x,y),this.map.tileGet(xOld,yOld),xOld,yOld) === false ) {
 				return {
 					status: 'stoppedOnEnterType',
 					success: false
@@ -3407,6 +3408,52 @@ class Entity {
 		return result;
 	}
 
+	handleExecute() {
+		let result = {
+			status: 'execute',
+			success: false
+		};
+		
+		//
+		// Crafting Dialog
+		//
+		if( this.commandItem && this.commandItem.craftId ) {
+			guiMessage( 'open', {
+				viewClass: 'ViewCraft',
+				craftId: this.commandItem.craftId,
+				crafter: this.commandItem.owner,
+				entity: this
+			});
+			result.status = 'ViewCraft';
+			result.success = true;
+			return result;
+
+		}
+
+		//
+		// Enter a gate
+		//
+		let gate = this.map.findItemAt(this.x,this.y).filter( item => item.gateDir!==undefined ).first;
+		if( gate ) {
+			return this.actEnterGate(gate);
+		}
+
+		//
+		// Merchant Dialog
+		//
+		let f = this.findAliveOthersNearby().filter( e=>e.id==this.lastBumpedId || (this.seeingSignOf && this.seeingSignOf.id == e.id) );
+		if( f.first && this.isUser() && f.first.isMerchant ) {
+			guiMessage( 'open', {
+				viewClass: 'ViewMerchant',
+				entity: this,
+				merchant: f.first,
+			});
+			result.status = 'ViewMerchant';
+			result.success = true;
+		}
+		return result;
+	}
+
 	actOnCommand() {
 		if( this.command == undefined ) debugger;
 
@@ -3425,38 +3472,7 @@ class Entity {
 				return this.actEnterGate(gate);
 			}
 			case Command.EXECUTE: {
-				let result = {
-					status: 'execute',
-					success: false
-				};
-				if( this.commandItem && this.commandItem.craftId ) {
-					guiMessage( 'open', {
-						viewClass: 'ViewCraft',
-						craftId: this.commandItem.craftId,
-						crafter: this.commandItem.owner,
-						entity: this
-					});
-					result.status = 'ViewCraft';
-					result.success = true;
-					return result;
-
-				}
-				let gate = this.map.findItemAt(this.x,this.y).filter( item => item.gateDir!==undefined ).first;
-				if( gate ) {
-					return this.actEnterGate(gate);
-				}
-
-				let f = this.findAliveOthersNearby().filter( e=>e.id==this.lastBumpedId || (this.seeingSignOf && this.seeingSignOf.id == e.id) );
-				if( f.first && this.isUser() && f.first.isMerchant ) {
-					guiMessage( 'open', {
-						viewClass: 'ViewMerchant',
-						entity: this,
-						merchant: f.first,
-					});
-					result.status = 'ViewMerchant';
-					result.success = true;
-				}
-				return result;
+				return this.handleExecute();
 			}
 			case Command.EAT: {
 				let result = this.actEat(this.commandItem.single());
@@ -3720,6 +3736,9 @@ class Entity {
 			delete this.chargeDist;
 		}
 
+		//
+		// Jumping
+		//
 		if( timePasses ) {
 			let tileType = this.map.tileTypeGet(this.x,this.y);
 			console.assert(tileType);
@@ -3741,7 +3760,13 @@ class Entity {
 			else
 			if( this.jump )	// What if they just took off boots or something?
 				delete this.jump;
+		}
 
+		//
+		// Pits
+		//
+		if( timePasses ) {
+			let tileType = this.map.tileTypeGet(this.x,this.y);
 			if( !this.jump && tileType.isPit && this.travelMode == 'walk') {
 				if( this.isUser() ) {
 					let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
@@ -3764,19 +3789,22 @@ class Entity {
  				}
 			}
 
+			//
+			// OnTouch Events
+			//
 			// Important for this to happen after we establish whether you are jumping at this moment.
 			if( tileType.onTouch ) {
-				tileType.onTouch(this,adhoc(tileType,this.map,this.x,this.y));
+				tileType.onTouch(this,this.map.tileGet(this.x,this.y));
 			}
 			this.map.findItemAt(this.x,this.y).forEach( item => {
 				if( item.onTouch ) {
 					item.onTouch( this, item );
 				}
-				if( item.isMine ) {
-					item.trigger(this,null,'tripped');
-				}
 			});
 
+			//
+			// Ambient Light Damage
+			//
 			if( this.lightHarms ) {
 				let light = this.map.getLightAt(this.x,this.y);
 				if( light >= this.lightHarms ) {
@@ -3793,11 +3821,15 @@ class Entity {
 				}
 			}
 
+			//
+			// OnTick
+			//
 			if( this.onTick ) {
 				this.onTick.call(this);
 			}
 		}
 
+		// Just making sure we don't have any item weirdness.
 		this.inventory.forEach( item => {
 			console.assert( item.owner.id == this.id );
 			console.assert( item.ownerOfRecord.id == this.id );

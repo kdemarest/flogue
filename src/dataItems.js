@@ -187,9 +187,10 @@ const GemEffects = Object.filter(EffectTypeList, (e,k)=>[
 	'eLight','eSenseTreasure','eSenseLiving','eSeeInvisible'
 	].includes(k) );
 
+
 const WeaponMaterialList = Fab.add( '', {
-	"iron": 		{ level:  0 /* very important this be zero!*/, toMake: 'iron ingot', name: 'iron', matter: 'metal' },
-	"silver": 		{ level:  5, toMake: 'silver ingot', name: 'silver', matter: 'metal' },
+	"iron": 		{ level:  0 /* very important this be zero!*/, name: 'iron', matter: 'metal' },
+	"silver": 		{ level:  5, toMake: 'ingotSilver', name: 'silver', matter: 'metal' },
 	"ice": 			{ level: 25, toMake: 'ice block', name: 'ice', matter: 'liquid', durability: Rules.weaponDurability(20) },
 	"lunarium": 	{ level: 40, toMake: 'lunarium ingot', name: 'lunarium', matter: 'metal' },
 	"glass": 		{ level: 55, toMake: 'malachite', name: 'glass', matter: 'glass', breakChance: Rules.weaponBreakChance(20) },
@@ -198,13 +199,13 @@ const WeaponMaterialList = Fab.add( '', {
 });
 
 const BowMaterialList = Fab.add( '', {
-	"ash": 			{ level:  0 /* very important this be zero!*/ },
-	"oak": 			{ level:  5 },
-	"maple": 		{ level: 25 },
-	"lunarium": 	{ level: 40 },
-	"yew": 			{ level: 55 },
-	"deepium": 		{ level: 70 },
-	"solarium": 	{ level: 85 },
+	"ash": 			{ level:  0, fixins: 'wood' },		// level MUST be zero
+	"oak": 			{ level:  5, fixins: 'wood' },
+	"maple": 		{ level: 25, fixins: 'wood' },
+	"lunarium": 	{ level: 40, fixins: 'ingotLunarium' },
+	"yew": 			{ level: 55, fixins: 'wood' },
+	"deepium": 		{ level: 70, fixins: 'ingotDeepium' },
+	"solarium": 	{ level: 85, fixins: 'ingotSolarium' },
 });
 
 const ArrowMaterialList = Fab.add( '', {
@@ -299,7 +300,7 @@ const AmmoList = Fab.add( '', {
 	},
 });
 
-const WeaponList = Fab.add( '', {
+const WeaponVarietyList = Fab.add( '', {
 	// Bows damage combines bow+ammo, and when their effect does damage they take on more of that than weapons.
 	// Arrows are considered slow, so a stealth bow that does less damage is needed for nimble or lithe opponents.
 	// Since their primary damage is stab anything that wants some ranged protection can resist or immune to stab and do pretty well.
@@ -475,6 +476,7 @@ const WeaponList = Fab.add( '', {
 		rarity: 1.0,
 		xDamage: 0.60,
 		matter: 'wood',
+		materials: BowMaterialList,
 		damageType: DamageType.BASH,
 		quick: Quick.LITHE,
 		isStaff: true,
@@ -642,27 +644,27 @@ const ShieldMaterials = Fab.add( '', {
 });
 
 const ArmorList = Fab.add( '', {
-	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather', ingredientId: 'leather', img: 'item/armour/animal_skin1.png' },
-	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather', ingredientId: 'leather', img: 'item/armour/animal_skin2.png' },
-	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather', ingredientId: 'leather', img: 'item/armour/leather_armour1.png' },
-	"studded": 		{ level:  3, rarity: 1.0, xArmor: 0.90, matter: 'leather', ingredientId: 'iron ingot', img: 'item/armour/banded_mail2.png' },
-	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95, ingredientId: 'iron ingot', img: 'item/armour/scale_mail1.png' },
-	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00, ingredientId: 'iron ingot', img: 'item/armour/chain_mail1.png' },
-	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00, ingredientId: 'iron ingot', img: 'item/armour/plate_mail1.png' },
-	"trollHideArmor": { level: 20, rarity: 1.0, xArmor: 1.00, ingredientId: 'troll hide', img: 'item/armour/troll_leather_armour.png' },
-	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00, ingredientId: 'chitin', img: 'item/armour/chain_mail2.png' },
-	"chitin": 		{ level: 35, rarity: 1.0, xArmor: 1.00, matter: 'chitin', ingredientId: 'chitin', img: 'item/armour/elven_leather_armor.png' },
-	"dwarven": 		{ level: 45, rarity: 1.0, xArmor: 1.00, ingredientId: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
-	"ice": 			{ level: 50, rarity: 1.0, xArmor: 1.00, matter: 'liquid', ingredientId: 'ice block', img: 'item/armour/elven_ringmail.png',
+	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather', img: 'item/armour/animal_skin1.png' },
+	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather', img: 'item/armour/animal_skin2.png' },
+	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather', img: 'item/armour/leather_armour1.png' },
+	"studded": 		{ level:  3, rarity: 1.0, xArmor: 0.90, matter: 'leather', fixins: 'iron ingot', img: 'item/armour/banded_mail2.png' },
+	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95, fixins: 'ingotIron', img: 'item/armour/scale_mail1.png' },
+	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00, fixins: 'ingotIron', img: 'item/armour/chain_mail1.png' },
+	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00, fixins: 'ingotIron', img: 'item/armour/plate_mail1.png' },
+	"trollHideArmor": { level: 20, rarity: 1.0, xArmor: 1.00, fixins: 'troll hide', img: 'item/armour/troll_leather_armour.png' },
+	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00, fixins: 'chitin', img: 'item/armour/chain_mail2.png' },
+	"chitin": 		{ level: 35, rarity: 1.0, xArmor: 1.00, matter: 'chitin', fixins: 'chitin', img: 'item/armour/elven_leather_armor.png' },
+	"dwarven": 		{ level: 45, rarity: 1.0, xArmor: 1.00, fixins: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
+	"ice": 			{ level: 50, rarity: 1.0, xArmor: 1.00, matter: 'liquid', fixins: 'ice block', img: 'item/armour/elven_ringmail.png',
 					durability: Rules.armorDurability(40)
 					},
-	"glass": 		{ level: 55, rarity: 1.0, xArmor: 1.00, matter: 'glass', ingredientId: 'malachite', img: 'item/armour/crystal_plate_mail.png',
+	"glass": 		{ level: 55, rarity: 1.0, xArmor: 1.00, matter: 'glass', fixins: 'malachite', img: 'item/armour/crystal_plate_mail.png',
 					breakChance: Rules.armorBreakChance(40)
 					},
-	"demon": 		{ level: 65, rarity: 1.0, xArmor: 1.00, ingredientId: 'malachite', img: 'item/armour/orcish_platemail.png' },
-	"lunar": 		{ level: 50, rarity: 1.0, xArmor: 1.00, ingredientId: 'lunarium ingot', img: 'item/armour/blue_dragon_scale_mail.png' },
-	"deep": 		{ level: 80, rarity: 1.0, xArmor: 1.00, ingredientId: 'deepium ingot', img: 'item/armour/gold_dragon_armour.png' },
-	"solar": 		{ level: 85, rarity: 1.0, xArmor: 1.00, ingredientId: 'solarium ingot', img: 'item/armour/crystal_plate_mail.png' },
+	"demon": 		{ level: 65, rarity: 1.0, xArmor: 1.00, fixins: 'malachite', img: 'item/armour/orcish_platemail.png' },
+	"lunar": 		{ level: 50, rarity: 1.0, xArmor: 1.00, fixins: 'lunarium ingot', img: 'item/armour/blue_dragon_scale_mail.png' },
+	"deep": 		{ level: 80, rarity: 1.0, xArmor: 1.00, fixins: 'deepium ingot', img: 'item/armour/gold_dragon_armour.png' },
+	"solar": 		{ level: 85, rarity: 1.0, xArmor: 1.00, fixins: 'solarium ingot', img: 'item/armour/crystal_plate_mail.png' },
 });
 
 const CloakList = Fab.add( '', {
@@ -1566,7 +1568,7 @@ const ItemTypeList = {
 		matter: 		'metal',
 		durability:		4*100,
 		materials: 		WeaponMaterialList,
-		varieties: 		WeaponList,
+		varieties: 		WeaponVarietyList,
 		effects: 		WeaponEffects,
 		effectWhen: 	'attack',
 		slot: 			Slot.WEAPON,
@@ -1769,7 +1771,7 @@ const ItemTypeList = {
 		matter: 		'stone',
 		isPart: 		1,
 		isTreasure:		1,
-		varieties:		{},
+		varieties:		{},	// This gets auto-filled during the monsterPreProcess()
 		name:			'{variety}$',
 		img: 			'item/misc/misc_rune.png',
 		icon: 			'/gui/icons/stuff.png'
@@ -2229,14 +2231,14 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 
 	let light = this.map.getLightAt(this.x,this.y);
 	if( light >= this.lightDestroys ) {
-		tell( mSubject, this, 'explodes with a force you can feel in your soul. This area feels less impure.' );
+		tell( mSubject, this, 'explodes with a force you can feel in your soul. This area feels clean.' );
 		this.destroy();
 	}
 }
 
 CharmList.sunCrystal.onTick = function(dt) {
 	if( this.owner.isMap ) {
-		let tile = adhoc(this.map.tileTypeGet(this.x,this.y),this.map,this.x,this.y);
+		let tile = this.map.tileGet(this.x,this.y);
 		effectApply(this.effect,tile,this.ownerOfRecord,this,'tick');
 	}
 }

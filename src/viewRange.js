@@ -33,7 +33,7 @@ class ViewRange extends ViewObserver {
 				let entity = 
 					new Finder(area.entityList,observer).canTargetEntity().shotClear().at(x,y).first || 
 					new Finder(area.map.itemList,observer).canTargetEntity().shotClear().at(x,y).first || 
-					adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
+					area.map.tileGet(x,y);
 				//console.log( "viewRange is showing "+entity.name );
 				guiMessage('show',entity);
 			}

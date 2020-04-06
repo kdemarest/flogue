@@ -84,18 +84,6 @@
 
 <script>
 
-
-function adhoc(tileType,map,x,y) {
-	if( !tileType.isTileType || tileType.isPosition ) {
-		// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
-		// This also means no permanent data can exist in them. Meanwhile, items and
-		// persistent in the map item list.
-		return tileType;
-	}
-	return Object.assign({},tileType,{x:x,y:y,area:map.area,map:map,isPosition:true});
-}
-
-
 function main() {
 	Module.realize();
 	let User = new HumanUser();

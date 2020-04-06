@@ -37,7 +37,7 @@ class Item {
 			xArmor:1,
 			xDamage:1,
 			xDuration:1,
-			ingredientId:1,
+			fixins:1,
 			type:1,
 			typeId:1
 		};

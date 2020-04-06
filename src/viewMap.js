@@ -526,7 +526,7 @@ class ViewMap extends ViewObserver {
 			let entity =
 				new Finder(area.entityList,observer).at(x,y).canTargetEntity().first ||
 				new Finder(area.map.itemList,observer).at(x,y).canTargetEntity().first ||
-				adhoc(area.map.tileTypeGet(x,y),area.map,x,y);
+				area.map.tileGet(x,y);
 			if( !entity ) {
 				return;
 			}

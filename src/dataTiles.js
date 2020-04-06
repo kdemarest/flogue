@@ -412,6 +412,7 @@ TileTypeList.bridge.imgChoose = function(map,x,y) {
 	this.img = this.imgChoices.EW.img;
 }
 
+
 return {
 	TileTypeList: TileTypeList,
 	TouchDamage: TouchDamage

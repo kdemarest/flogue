@@ -15,6 +15,7 @@ localhost:3010/force/mon/frog.png
 */
 
 const util 		= require('util');
+const path 		= require('path');
 const fs 		= require('fs');
 const vm		= require('vm');
 const request	= require('request');
@@ -739,29 +740,6 @@ async function loadFilterSpec(filePath) {
 	});
 }
 
-function readFile(fileName ) {
-	fs.readFile(filePath, 'utf8', function(err, data) {  
-		if (err) throw err;
-		const sandbox = {
-			FilterSpec: null,
-			DirSpec: null,
-			FilterDefault: null
-		};
-		try {
-			const script = new vm.Script( data );
-			const context = new vm.createContext(sandbox);
-			script.runInContext( context, { lineOffset: 0, displayErrors: true } );
-			FilterSpec    = sandbox.FilterSpec;
-			DirSpec       = sandbox.DirSpec;
-			FilterDefault = sandbox.FilterDefault;
-		}
-		catch(e) {
-			console.log('filters.js',e.message,'in line', e.stack.split('<anonymous>:')[1].split('\n\n')[0]);
-			FilterSpec = null;	
-		}
-	});
-
-}
 
 function getDirSpec(fileName) {
 	let dirSpec = false;
@@ -771,6 +749,54 @@ function getDirSpec(fileName) {
 		}
 	});
 	return dirSpec;
+}
+
+let Portrait = new class {
+	constructor() {
+		this.portraitDir = '.';
+		this.fetchUrl = 'https://www.thispersondoesnotexist.com/image';
+		this.htmlFile = 'portrait.html';
+		this.tempFile = 'portraitTemp.png';
+		this.template = null;
+		this.portraitList = [];
+	}
+	portraitPath(name) {
+		return path.join(__dirname,this.portraitDir,name);
+	}
+	async preload() {
+		fs.readdir(this.portraitPath(''), (err, files) => {
+			if (err) {
+				return console.log('Unable to scan directory: ' + err);
+			} 
+			files.forEach( file => {
+				if( !file.match( /\.png$/i ) ) {
+					return;
+				}
+				//console.log( file );
+				this.portraitList.push( file );
+			});
+		});
+	}
+
+	async loadHtml() {
+		this.template = await fs.promises.readFile(this.htmlFile, 'utf8');
+		//console.log(this.template);
+	}
+	async fetch(cwd,req,res,next) {
+		let image = await jimpRead(this.fetchUrl);
+		await jimpWrite( this.portraitPath(this.tempFile), image );
+		await this.loadHtml();
+		let html = this.template.replace( '[/*FILE_LIST*/]', JSON.stringify(this.portraitList) );
+		res.send( html );
+	}
+	async saveAs(nameRaw) {
+		let count = 0;
+		let name = () => nameRaw+count+'.png';
+		while( fs.existsSync(this.portraitPath(name())) ) ++count;
+		await fs.promises.rename( this.portraitPath(this.tempFile), this.portraitPath(name()) );
+		this.portraitList.unshift(name().replace('.png',''));
+	}
+
 }
 
 async function run() {
@@ -826,8 +852,20 @@ async function run() {
 		}
 	}
 
+	await Portrait.preload();
+	await Portrait.loadHtml();
+	let portrait = async function(req,res,next) {
+		if( req.query.name ) {
+			Portrait.saveAs(req.query.name);
+		}
+		Portrait.fetch(app.cwd,req,res,next);
+	}
+
+	app.use('/public', express.static(path.join(__dirname, '.')));
+	app.use('/src', express.static(path.join(__dirname, '../src')));
 	app.get('/tiles/*', async (req, res, next) => await processImage(req,res,false,next));
 	app.get('/force/*', async (req, res, next) => await processImage(req,res,true,next));
+	app.get('/portrait', async (req, res, next) => await portrait(req,res,true,next));
 
 
 	let port = 3010;

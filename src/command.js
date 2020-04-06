@@ -319,7 +319,7 @@ class UserCommandHandler {
 				if( !mayTargetPos ) {
 					return this.cmd.cancel();
 				}
-				target = new Finder( [adhoc(observer.map.tileTypeGet(x,y),observer.map,x,y)] );
+				target = new Finder( [observer.map.tileGet(x,y)] );
 			}
 			this.cmd[member] = target.first;
 			this.viewRange.clear();

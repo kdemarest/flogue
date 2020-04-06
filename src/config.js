@@ -137,12 +137,12 @@ ConfigList.ken = () => {
 
 	// soldier, brawler, monk, archer, ninja, not quite blaster
 	playerInject = {
-		level: 10,
+		level: 20,
 		//immortal: true,
 		//invulnerable: true
 	};
-	MonsterTypeList.player.legacyId = 'monk';
-//	MonsterTypeList.player.carrying.push('5x spell, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
+	MonsterTypeList.player.legacyId = 'blaster';
+	MonsterTypeList.player.carrying.push('10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
 //	MonsterTypeList.player.carrying.push('spell.eTeleport, spell.eBlink');
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;
@@ -161,8 +161,8 @@ ConfigList.ken = () => {
 	//IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
 	return {
-		startingDepth: 0,
-		//themeId: 'kenDwarfTown',
+		startingDepth: 1,
+		themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: playerInject
 	}

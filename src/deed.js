@@ -503,7 +503,7 @@ let effectApply = function(effect,target,source,item,context) {
 					if( itemList.count ) {
 						targetList.push(...itemList.all);
 					}
-					targetList.push( adhoc(area.map.tileTypeGet(x,y),area.map,x,y) );
+					targetList.push( area.map.tileGet(x,y) );
 					targetList.forEach( t => {
 						let r = _effectApplyTo(effect,t,source,item,context);
 						result.list.push( r );
@@ -769,7 +769,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	//   - freeze when target is in fire
 	if( effect.op == 'damage' && !target.isMap ) {
 		// This must be made a position because tell() can't assess its position otherwise!
-		let tile = adhoc( target.map.tileTypeGet(target.x,target.y), target.map, target.x, target.y );
+		let tile = target.map.tileGet( target.x, target.y );
 		if( tile.isWater && effect.damageType == DamageType.BURN ) {
 			tell(mSubject,target,' can not be affected by '+effect.damageType+'s while in ',mObject,tile);
 			Anim.FloatUp(delayId,target,StickerList.ePoof.img);

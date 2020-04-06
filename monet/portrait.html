@@ -1,0 +1,85 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="../src/minireset.css">
+<script src="../src/jquery.3.3.1.js" charset="utf-8"></script>
+<script src="../src/utilModule.js" charset="utf-8"></script>
+<script src="../src/utilities.js" charset="utf-8"></script>
+<script src="../src/rules.js" charset="utf-8"></script>
+<script src="../src/data.js" charset="utf-8"></script>
+<script src="../src/dataJobs.js" charset="utf-8"></script>
+<script src="../src/dataLegacy.js" charset="utf-8"></script>
+
+
+<script>
+	// To test this file alone, visit
+	// http://localhost:3010/public/portrait.html
+
+	let fileList = [/*FILE_LIST*/];
+
+	function peopleReplace(id,sourceList) {
+		let list = [];
+		Object.each( sourceList, (data,key) => {
+			list.push(key);
+		});
+		$(id).html( list.join('<br>') );
+		return list;
+	}
+
+	function main() {
+		Module.realize();
+
+		peopleReplace( '#legacies', LegacyList );
+		peopleReplace( '#jobs', JobTypeList );
+
+		$("#nameInput").on("change keyup paste", function() {
+			let inputName = $(this).val();
+			let list = !inputName ? [] : fileList.filter( fileName => inputName.toLowerCase() == fileName.toLowerCase().substring(0,inputName.length) );
+			$('#nameMatchHead').html( list.length+' match' );
+			$('#nameMatches').html( list.join('<br>') );
+})
+	}
+	$(document).ready( () => {
+		setTimeout( main, 0 );
+	});
+
+</script>
+</head>
+<body>
+	<table>
+		<tr>
+			<td>
+				<img style="width:400px" src='/public/portraitTemp.png'>
+				<form action="/portrait" method="get">
+					<input id="nameInput" type="text" id="name" name="name" autofocus>
+					<button type="submit">Keep?</button>
+				</form>
+				<i>Just hit Enter for another</i>
+				<br>
+				<div><b><span id="nameMatchHead"></span></b><span>[m|f]Race[Description]</span></div>
+				<div id="nameMatches"></div>
+			</td>
+			<td valign="top">
+				<pre>
+PEOPLE
+Human
+Elf (asian)
+Dwarf (thick face, kinky hair)
+Lunar (colored hair)
+Orc/Goblin (wide dark face)
+Gnome (hats)
+
+JOBS
+<div id='jobs'></div>
+				</pre>
+			</td>
+			<td valign="top">
+				<pre>
+LEGACIES
+<div id='legacies'></div>
+				</pre>
+			</td>
+		</tr>
+	</table>
+
+</body>
+</html>

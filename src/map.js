@@ -236,6 +236,19 @@ class SimpleMap {
 		y += Direction.add[dir].y;
 		return this.tileTypeGet(x,y);
 	}
+	tileProxy(tileType,x,y) {
+		if( !tileType.isTileType || tileType.isPosition || tileType === false ) {
+			// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
+			// This also means no permanent data can exist in them.
+			return tileType;
+		}
+		return Object.assign({},tileType,{x:x,y:y,area:this.area,map:this,isPosition:true});
+	}
+	// It gives you a tile that has an (x,y) and can be written to without harming the tile prototype.
+	tileGet(tileType,x,y) {
+		return this.tileProxy( this.tileTypeGet(x,y), x, y );
+	}
+
 	renderToString() {
 		let s = '';
 		this.traverse( (x,y) => {
@@ -403,7 +416,7 @@ class Map extends SimpleMap {
 	toEntity(x,y,adhocEntity) {
 		this.tileEntity[y] = this.tileEntity[y] || [];
 		if( !this.tileEntity[y][x] ) {
-			adhocEntity = adhocEntity || adhoc( SymbolToType[this.tileSymbolGet(x,y)], this, x, y );
+			adhocEntity = adhocEntity || this.tileGet(x,y);
 			this.tileEntity[y][x] = adhocEntity;
 			//console.log('Tile entity ('+x+','+y+') '+adhocEntity.typeId);
 		}

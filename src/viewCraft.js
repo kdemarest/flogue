@@ -5,6 +5,7 @@ let Craft = {};
 function toBit(effectId) {
 	return 'bit'+String.capitalize(effectId.slice(1));
 }
+
 function filterMatch(item) {
 	if( ItemTypeList[this.firstId] && !item.typeId === this.firstId ) {
 		return false;
@@ -38,6 +39,59 @@ function filterMatch(item) {
 
 	return true;
 }
+
+/*
+we can loop through all items.varieties, .materials etc and verify that every single named thing has a fixin
+this can also stand in for matter, so if the varietyId or materialId is not found, we just check the matter.
+const FixinsList = {
+	iron: 'ingotIron',
+	silver: 'ingotSilver',
+	ice: 'iceBlock',
+	lunarium: 'ingotLunarium',
+	deepium: 'ingotDeepium',
+	solarium 'ingotSolarium',
+	ash: 'wood',
+	oak: 'wood',
+	maple: 'wood',
+	yew: 'wood',
+	// Matter mappings
+	leather: 'part isSkin',
+	glass: 'part isGlass'
+	//and so on
+};
+
+
+we need to just have little algorithms that build custom recipes by type. One for potions, one for weapons, etc.
+The final piece of the Recipe.itemType['more'] is ALWAYS in the order Variety/Material/Quality/Effect
+Use the word fixins to represent the materials that make a thing.
+
+for each PotionEffect {
+	find the Part that says it makes this effect
+		Recipe.potion['eFlight'] = 'potion.eWater, part isWing';
+
+^^ the great thing about doing it this way is that, based on the recipes we've got selected, we could  adjust
+the above to say, if we kill an ogre, part isWing becomes part isOgre isWing, which of course can't exist
+so we skip it.
+
+REMEMBER that Picker.itemTraverse takes a fn and will generously call us back for each thing it finds
+that fits each criteris in the recipe. That way we can tell, during data conditioning, if any such part exists.
+
+
+for each weapon.varieties
+	// don't forget to let each variety's personal materials list override the default materials
+	weapon.materials.forEach( material => {
+		// don't forget to let each variety's personal effects list override the default effects
+		for each weapon.effects
+			*** Except we shouldn't even consiter letting one forge effects directly into the weapon!
+			*** That should be something else entirely.
+			let m = material.
+			Recipe.weapon['sword_iron'] = '2x ingotIron (low damage is 1 ingot, >0.5 is 2, and >1.0 is 3)
+			Recipe.weapon['bow_ash'] = 'wood'
+
+similar drill for armor and so on.
+
+
+*/
 
 class Recipe {
 	constructor() {

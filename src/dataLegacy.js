@@ -288,6 +288,8 @@ LegacyList.blaster = compose( 'blaster', [
 	range( [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19], (index) => ({
 		name: 'Craft Explosives '+Number.roman(index+1),
 		onGain: { op: 'set', stat: 'skillOrdner', value: index+1, duration: true },
+		isAutoFavorite: true,
+		rechargeTime: 5,
 		skill: {
 			craftId: 'ordner',
 			passesTime: false,
