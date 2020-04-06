@@ -28,10 +28,10 @@ ConfigList.ken = () => {
 	});
 
 	ScapeList.kenRooms = theme => ({
-		dim: 				60,
+		dim: 				30,
 		architecture: 		"rooms",
 		floorDensity: 		0.45,
-		circleChance: 		10,
+		shapeChances: 		{ circle: 0.1, rect: 0.9 },
 		overlapChance: 		10,
 		preferDoors: 		true,
 		passageWander: 		30,
@@ -42,7 +42,7 @@ ConfigList.ken = () => {
 		dim: 				160,
 		architecture: 		"rooms",
 		floorDensity: 		0.35,
-		circleChance: 		60,
+		shapeChances: 		{ circle: 0.6, rect: 0.4 },
 		overlapChance: 		20,
 		preferDoors: 		true,
 		passageWander: 		30,
@@ -109,10 +109,10 @@ ConfigList.ken = () => {
 	}
 
 	ThemeList.kenTheme = {
-		scapeId: 		'kenCave',	//'kenRooms',
-		palette: 		{ basis: 'jaggedCave' },
-//		palette: 		{ basis: 'stoneRooms' },
-//		rREQUIRED: 		'4x kenPlace',
+		scapeId: 		'kenRooms',		// 'kenCave' or 'kenRooms',
+//		palette: 		{ basis: 'jaggedCave' },
+		palette: 		{ basis: 'stoneRooms' },
+		rREQUIRED: 		'miniMaze',
 		placeDensity: 	0.00001,
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
 //		rUNCOMMON: 		'antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, floodWater, pitEncircle',
@@ -142,7 +142,7 @@ ConfigList.ken = () => {
 		//invulnerable: true
 	};
 	MonsterTypeList.player.legacyId = 'blaster';
-	MonsterTypeList.player.carrying.push('10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
+	MonsterTypeList.player.carrying.push('stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater');
 //	MonsterTypeList.player.carrying.push('spell.eTeleport, spell.eBlink');
 //	MonsterTypeList.player.sensePerception = true;
 //	MonsterTypeList.player.senseAlert = true;
@@ -154,15 +154,15 @@ ConfigList.ken = () => {
 //	MonsterTypeList.player.carrying.push( '20x seed, 40x ammo.arrow, 4x potion.eBurn, 6x vial');
 //	MonsterTypeList.player.carrying.push( '4x weapon.sword, 5x seed');
 
-	//PlaceTypeList.surfaceSunTemple.symbols.Z = 'daikay'; //'weapon.hammer';
+//	PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'portal', toThemeId: 'coreCavernRooms' }; //'daikay'; //'weapon.hammer';
 
 	// If you are doing graphics work comment these in.
 	//IMG_BASE = 'http://localhost:3010/force/';	// forces reprocessing of all images.
 	//IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
 	return {
-		startingDepth: 1,
-		themeId: 'kenDwarfTown',
+		startingDepth: 0,
+		themeId: 'kenTheme',
 		saveBattery: true,
 		playerInject: playerInject
 	}

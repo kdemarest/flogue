@@ -225,7 +225,7 @@ class PlanList {
 
 		// The theme may choose to control what happens there. Typically the surface does this,
 		// but not others. In general the PLAN should control.
-		if( !plan.theme.inControl && plan.make ) {
+		if( !plan.theme.iDescribeMyGates && plan.make ) {
 			plan.make.forEach( supply => {
 				let typeId = supply.typeFilter.split('.')[0];
 				quota.push({

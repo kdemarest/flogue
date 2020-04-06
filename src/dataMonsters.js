@@ -431,7 +431,7 @@ const MonsterTypeList = {
 		senseSight: 3,
 	},
 	"dwarf": {
-		core: [ SYM, 0, '3:10', 'good', 'bash', 'sentient', 'humanoid', 'dc-mon/dwarf.png', '*' ],
+		core: [ SYM, 0, '3:10', 'good', 'bash', 'sentient', 'humanoid', 'mon/dwarf/dwarfWarrior.png', '*' ],
 		name: "Fili",
 		isSunChild: true,
 		isDwarf: true,

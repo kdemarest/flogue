@@ -58,7 +58,9 @@ Pick.Table = class {
 		}
 		return this;
 	}
-	// scans the hash and builds its table from whatever fn returns as the probability for each item
+	// scans the hash and builds its table from whatever
+	// - hash is something like { thing1: anyStructOrData, thing2: anyStructOrData }
+	// - fn returns as the probability for each item
 	scanHash(hash,fn) {
 		this.makeBlank();
 		this.sourceHash = hash;

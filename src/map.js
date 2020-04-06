@@ -245,7 +245,7 @@ class SimpleMap {
 		return Object.assign({},tileType,{x:x,y:y,area:this.area,map:this,isPosition:true});
 	}
 	// It gives you a tile that has an (x,y) and can be written to without harming the tile prototype.
-	tileGet(tileType,x,y) {
+	tileGet(x,y) {
 		return this.tileProxy( this.tileTypeGet(x,y), x, y );
 	}
 

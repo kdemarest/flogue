@@ -1765,11 +1765,49 @@ Module.add('dataMason',function() {
 		}
 	}
 
-	function generateRoomChamber(map,x,y,xLen,yLen,circ,filler) {
-		return circ ? map.fillCircle(x,y,xLen,filler) : map.fillRect(x,y,xLen,yLen,filler);
+	function locationPick(map,dims) {
+		let x,y;
+		[x,y] = map.randPos(1);
+		let xLen = dims.xLenFn();
+		let yLen = dims.yLenFn(xLen);
+		x = Math.min(x,map.xLen-xLen);
+		y = Math.min(y,map.yLen-yLen);
+		return [x,y,xLen,yLen];
 	}
 
-	function makeRooms(map,percentToEat,circleChance,overlapChance,siteList) {
+	let ShapePalette = {};
+
+	ShapePalette.circle = function(map,overlapChance,filler) {
+		let xLenMaxDefault = Math.clamp(Math.floor(map.xLen/3.2),2,12);
+		let xLenMax = Math.min(xLenMaxDefault,map.xLen-2);
+
+		let x,y,xLen,yLen;
+		[x,y,xLen,yLen] = locationPick(map, {
+			xLenFn: () => Math.floor(Math.randInt(2,xLenMax) / 2),
+			yLenFn: (xLen) => xLen
+		});
+		let overlap = map.fillCircle(x,y,xLen+1,overlapTest);
+		if( overlap && !Math.chance(overlapChance) ) return false;
+		map.fillCircle(x,y,xLen,filler);
+		return true;
+	}
+
+	ShapePalette.rect = function(map,overlapChance,filler) {
+		let xLenMaxDefault = Math.clamp(Math.floor(map.xLen/3.2),2,12);
+		let xLenMax = Math.min(xLenMaxDefault,map.xLen-2);
+
+		let x,y,xLen,yLen;
+		[x,y,xLen,yLen] = locationPick(map, {
+			xLenFn: () => Math.floor(Math.randInt(2,xLenMax)),
+			yLenFn: (xLen) => Math.randInt(Math.floor(Math.max(2,xLen/2)),Math.floor(Math.min(xLenMax,xLen*2)))
+		});
+		let overlap = map.fillRect(x-1,y-1,xLen+1,yLen+1,overlapTest);
+		if( overlap && !Math.chance(overlapChance) ) return false;
+		map.fillRect(x,y,xLen,yLen,filler);
+		return true;
+	}
+
+	function makeRooms(map,percentToEat,guide,overlapChance,siteList) {
 
 		percentToEat = Math.clamp(percentToEat||0,0.01,1.0);
 		let floorToMake = Math.max(1,Math.ceil(map.area() * percentToEat));
@@ -1786,17 +1824,9 @@ Module.add('dataMason',function() {
 		let xLenMax = Math.min(xLenMaxDefault,map.xLen-2);
 		let reps = map.area();
 		while( floorMade < floorToMake && --reps ) {
-			let circ = Math.chance(circleChance);
-			let x,y;
-			[x,y] = map.randPos(1);
-			let xLen = Math.floor(Math.randInt(2,xLenMax) / (circ?2:1));
-			let yLen = circ ? xLen : Math.randInt(Math.floor(Math.max(2,xLen/2)),Math.floor(Math.min(xLenMax,xLen*2)));
-			x = Math.min(x,map.xLen-xLen);
-			y = Math.min(y,map.yLen-yLen);
-			let overlap = circ ? map.fillCircle(x,y,xLen+1,overlapTest) : map.fillRect(x-1,y-1,xLen+1,yLen+1,overlapTest);
-			if( overlap && !Math.chance(overlapChance) ) continue;
-
-			let made = generateRoomChamber(map,x,y,xLen,yLen,circ,weakFill);
+			let shapePicker = new Pick.Table().scanHash(ShapePalette,(X,shapeId)=>(guide.shapeChances[shapeId]||0));
+			let shapeBuilder = shapePicker.pick();
+			let made = shapeBuilder(map,overlapChance,weakFill);
 			floorMade += made;
 		}
 	}
@@ -1844,6 +1874,16 @@ Module.add('dataMason',function() {
 		}
 	}
 
+	let architectureList = {
+		'cave': {
+			build: (map,guide) => makeAmoeba(map,guide.floorDensity,guide.seedPercent,guide.mustConnect)
+		},
+		'rooms': {
+			build: (map,guide) => makeRooms(map,guide.floorDensity,guide,guide.overlapChance||20)
+		}
+	};
+
+
 	function masonConstruct(theme,quota,injectList,siteList,onStep) {
 		let drawZones = false;
 		function render() {
@@ -1863,12 +1903,8 @@ Module.add('dataMason',function() {
 		let numPlaceTiles = Math.floor(map.xLen*map.yLen*theme.floorDensity*theme.placeDensity);
 		positionPlaces(theme.depth,map,numPlaceTiles,quota,theme.rREQUIRED,theme.rarityHash,injectList,siteList,mapOffset);
 
-		if( theme.architecture == 'cave' ) {
-			makeAmoeba(map,theme.floorDensity,theme.seedPercent,theme.mustConnect);
-		}
-		if( theme.architecture == 'rooms' ) {
-			makeRooms(map,theme.floorDensity,theme.circleChance||0,theme.overlapChance||20);
-		}
+		console.assert( architectureList[theme.architecture] );
+		architectureList[theme.architecture].build(map,theme);
 
 		map.assembleSites(siteList);
 		map.connectAll(siteList,theme.passageWander,theme.preferDoors,theme.passageWdth2||0,theme.passageWidth3||0);

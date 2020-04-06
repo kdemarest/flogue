@@ -1,5 +1,11 @@
 Module.add('dataPicker',function() {
 
+/**
+
+
+
+*/
+
 class Picker {
 	constructor(depth) {
 		console.assert(depth>=0);
@@ -47,10 +53,11 @@ class Picker {
 		return table.length ? table : closest;
 	}
 
-	//**
-	// itemTypeId is allowed to be empty, although it will make the search take substantially longer.
-	// filter should be an instance of filterStringParam() above.
-	//**
+/**
+	itemTraverse
+	- itemTypeId is allowed to be empty, although it will make the search take substantially longer.
+	- filter should be an instance of filterStringParam() above.
+*/
 	itemTraverse( itemTypeId, filter, fn ) {
 		let depth = this.depth;
 		let count = 0;
@@ -237,18 +244,10 @@ class Picker {
 	}
 
 	
-	//**
-	// depth 		- the depth of the map you are on.
-	// itemTypeId	- potion, spell, armor, ring, etc. Leave blank and it will pick one.
-	// filterString - often empty, can contain both limits on what ids are getting picked, as well as requirements that the
-	// 		item have (or not have) certain flags. Here are examples:
-	// 		'isTreasure'		- only picks items marked with isTreasure
-	// 		'!isTreasure'		- makes sure the picked item is not treasure
-	// 		'dagger'			- only picks items that have 'dagger' as the typeId of the item, variety, material, quality or effect
-	//		'potion.eHealing'	- a healing potion will be selected
-	//		'!healing'			- an item that does NOT have the healing effect
-	//**
-
+/**
+pickItem()
+	filterString - See Picker.filterStringParse for details
+*/
 	pickItem(filterString,criteriaFn,defaultToCoins=true) {
 		let filter = Picker.filterStringParse(filterString);
 		let itemTypeId;
@@ -292,8 +291,10 @@ class Picker {
 		return choice;
 	}
 
-	// Picks loot using the supplyMixed spec, but doesn't give it to anyone.
-	// See Array.supplyParse for full details.
+/**
+	Picks loot using the supplyMixed spec, but doesn't give it to anyone.
+	See Array.supplyParse for full details.
+*/
 	pickLoot(supplyMixed,callback) {
 		let supplyArray = Array.supplyParse(supplyMixed);		
 		let makeList = new Finder( Array.supplyToMake(supplyArray,Rules.xLootFrequency) );
@@ -378,8 +379,11 @@ class Picker {
 	}
 }
 
-/*
-	A filterString, also called a TypeFilter, specifies limits as to what may be picked.
+/**
+	Filter Strings
+
+	A filterString, also called a TypeFilter, specifies limits as to what may be picked. You can specify a specific
+	item type, or you can specify broad or narrow categories to filer.
 	The format is:
 		itemType[.variety][.material][.quality][.effect] [isFlag] [mayFlag] [bitEffectId] [ofMatter]
 		- Every part is optional except itemType.

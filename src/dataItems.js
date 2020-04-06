@@ -4,6 +4,10 @@ Module.add('dataItems',function(){
 // To upscale images, a decent upscaler appears to be:
 // http://waifu2x.udp.jp/
 
+//Do a full scan through https://www.pngfind.com/freepng/axe/ to find
+//plents of PNG-ified image of decor
+
+
 const Matter = {
 	ether: 		{ damage: { } },
 	metal: 		{ damage: { corrode: 1, smite: 1} },
@@ -949,6 +953,7 @@ const StuffList = Fab.add( '', {
 	"batWing": 			{ rarity: 1.0, matter: 'flesh', },
 	"frogSpine": 		{ rarity: 0.8, matter: 'flesh', },
 	"wool": 			{ rarity: 1.0, matter: 'flesh', isFabricIngredient: true },
+	"magicMap":			{ rarite: 1.0, matter: 'paper', effect: EffectTypeList.eMap, charges: 1, command: Command.TRIGGER, description: "One glance at this magic map will reveal the structure of whatever level you are on, but the map will vanish." },
 
 	"ingotTin": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, name: 'tin ingot' },
 	"ingotIron": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, name: 'iron ingot' },
@@ -1140,7 +1145,7 @@ const ItemTypeList = {
 		gateInverse: 'portal',
 		mayPickup: false,
 		useVerb: 'touch',
-		img: "dc-dngn/gateways/dngn_portal.png"
+		img: "effect/portal.png" //"dc-dngn/gateways/dngn_portal.png"
 	},
 	"pitDrop": 	  { symbol: '`', name: "pit drop", 		isGate: 1, gateDir: 1, oneway: true, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
 // DOOR

@@ -37,7 +37,7 @@ ScapeList.testSingleRoom = () => ({
 ThemeList.testSimpleRoom = {
 	name: 			'simple one-room theme',
 	isUnique: 		true,
-	inControl: 		true,
+	iDescribeMyGates: true,
 	scapeId: 		'testSingleRoom',
 	palette: 		{ basis: 'stoneRooms' },
 	rREQUIRED: 		'testRoom',

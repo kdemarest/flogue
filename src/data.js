@@ -256,7 +256,6 @@ const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked
 				AWAIT: "await", WORSHIP: "worshipping",
 				AGGRESSIVE: "aggressive", PATROL: "patroling", HUNT: "hunting", HESITANT: "hesitant", WANDER: "wandering" };
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
-const Job = { SMITH: "smith", BREWER: "brewer", ARMORER: "armorer", LAPIDARY: "lapidary", JEWELER: "jeweler" };
 const Slot = { HEAD: "head", NECK: "neck", ARMS: "arms", HANDS: "hands", FINGERS: "fingers", WAIST: "waist", HIP: "hip", FEET: "feet", ARMOR: "armor", WEAPON: "weapon", AMMO: "ammo", SHIELD: "shield", SKILL: "skill" };
 const PickIgnore  		= ['mud','forceField'];
 const PickVuln    		= [DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.POISON,DamageType.SMITE,DamageType.ROT];
@@ -289,7 +288,7 @@ let EffectTypeList = {
 	eGate: 			{ isTac: 1, level:  0, rarity: 1.00, op: 'gate', targetMe: true, random: false, duration: 0, xRecharge: 2.0, isHelp: true, name: 'return', icon: 'gui/icons/eTeleport.png', about: 'Gate to somewhere else.' },
 	eOdorless: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'scentReduce', value: Rules.SCENT_AGE_LIMIT, isHelp: true, name: 'no scent', icon: 'gui/icons/eFragrance.png', about: 'Hide your scent from olfactory hunters.' },
 	eStink: 		{ isTac: 1, level:  0, rarity: 1.00, op: 'max', stat: 'stink', value: 0.8, isHarm: true, name: 'stink', icon: 'gui/icons/eFragrance.png', about: 'Increase the scent of a target to overwhelming levels, hiding other scents.' },
-//	eMap: 			{ isTac: 1, level:  null, rarity: 0.50, op: 'fillMinimap', isPlayerOnly: 1, name: 'map' },
+	eMap: 			{ isTac: 1, level:  0, rarity: 0.50, op: 'custom', customFn: ()=>guiMessage('revealMinimap') },
 // Buff
 	eFlight: 		{ isBuf: 1, level:  0, rarity: 0.20, op: 'set', stat: 'travelMode', value: 'fly', isHelp: 1, requires: e=>e.travelMode==e.baseType.travelMode,
 					additionalDoneTest: (self) => { return self.target.map.tileTypeGet(self.target.x,self.target.y).mayWalk; }, icon: 'gui/icons/eFly.png', about: 'Fly above pits and many traps.' },
@@ -482,7 +481,6 @@ return {
 	ShieldDefendsAgainst: ShieldDefendsAgainst,
 	Attitude: Attitude,
 	Team: Team,
-	Job: Job,
 	Slot: Slot,
 	PickIgnore: PickIgnore,
 	EffectTypeList: EffectTypeList,

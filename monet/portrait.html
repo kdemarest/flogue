@@ -21,21 +21,38 @@
 		Object.each( sourceList, (data,key) => {
 			list.push(key);
 		});
-		$(id).html( list.join('<br>') );
+		list.sort();
+		let visual = list.map( word => {
+			let f = [];
+			fileList.forEach( file => {
+				let w = file.split('.')[0];
+				if( w.toLowerCase().includes(word.toLowerCase()) ) {
+					w = w.replace( /\.(png|jpg)/i, '' );
+					w = w.replace( new RegExp( word, 'i' ), '' );
+					w = w.replace( /[0-9]/, '' );
+					f.push(w);
+				}
+			});
+			return '<span class="word">'+word+'['+f.join(', ')+']'+'</span>'
+		});
+		$(id).html( visual.join('<br>') );
 		return list;
 	}
 
 	function main() {
 		Module.realize();
 
-		peopleReplace( '#legacies', LegacyList );
-		peopleReplace( '#jobs', JobTypeList );
+		let legacyList = peopleReplace( '#legacies', LegacyList );
+		let jobList    = peopleReplace( '#jobs', JobTypeList );
 
 		$("#nameInput").on("change keyup paste", function() {
 			let inputName = $(this).val();
-			let list = !inputName ? [] : fileList.filter( fileName => inputName.toLowerCase() == fileName.toLowerCase().substring(0,inputName.length) );
+			fileList.sort();
+			let testFileMatch = fileName => inputName.toLowerCase() == fileName.toLowerCase().substring(0,inputName.length);
+			let list = !inputName ? [] : fileList.filter( testFileMatch );
 			$('#nameMatchHead').html( list.length+' match' );
 			$('#nameMatches').html( list.join('<br>') );
+
 })
 	}
 	$(document).ready( () => {
@@ -48,14 +65,14 @@
 	<table>
 		<tr>
 			<td>
-				<img style="width:400px" src='/public/portraitTemp.png'>
+				<img style="max-width:400px" src='/public/[PORTRAIT_TEMP_FILE]'>
 				<form action="/portrait" method="get">
 					<input id="nameInput" type="text" id="name" name="name" autofocus>
 					<button type="submit">Keep?</button>
 				</form>
 				<i>Just hit Enter for another</i>
 				<br>
-				<div><b><span id="nameMatchHead"></span></b><span>[m|f]Race[Description]</span></div>
+				<div><b><span id="nameMatchHead"></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b><span>[m|f]Race[Description]</span></div>
 				<div id="nameMatches"></div>
 			</td>
 			<td valign="top">

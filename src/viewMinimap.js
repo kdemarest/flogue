@@ -41,7 +41,7 @@ class ViewMiniMap extends ViewObserver {
 		if( msg == 'resetMiniMap' ) {
 			this.setArea(payload);
 		}
-		if( msg == 'reveal' ) {
+		if( msg == 'revealInvisible' ) {
 			let target = payload;
 			this.drawn[target.y*this.xLen+target.x] = null;
 			if( target.isWall ) {
@@ -50,6 +50,17 @@ class ViewMiniMap extends ViewObserver {
 				let c0 = canvas0.getContext("2d");
 				this.draw(c0,StickerList.mmWall,target.x,target.y,this.scale);
 			}
+		}
+		if( msg == 'revealMinimap' ) {
+			let map = this.observer.map;
+			map.traverse( (x,y) => {
+				let mapMemory = this.observer.mapMemory;
+				if( mapMemory ) {
+					let type = map.findItemAt(x,y).filter( item=>!item.isTreasure ).first || map.tileTypeGet(x,y);
+					let mPos = y*map.xLen+x;
+					mapMemory[mPos] = type;
+				}
+			});
 		}
 	}
 	draw( c, entity, x, y, scale, ctr ) {

@@ -418,14 +418,14 @@ LegacyList.brawler = compose('brawler',[
 ]);
 
 //===================================================
-// Brewer
+// Alchemist
 //
 // High Concept: Chemistry leads the way to power.
 // Rapidly learn what ingredients make which potions
 // When you brew potions you make more of them, and they last longer
 // Gain ever-full font, which has ever-decreasing recharge time
 // Ability to brew in the field - no gear required
-LegacyList.brewer = compose('brewer',[
+LegacyList.alchemist = compose('alchemist',[
 ]);
 
 //===================================================

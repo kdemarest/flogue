@@ -31,7 +31,7 @@ class World {
 				}
 			}
 			let theme = this.plan.get(toAreaId).theme;
-			let gateLocation = item.gateDir && !theme.inControl ? { x:item.x, y:item.y } : { putAnywhere: true };
+			let gateLocation = item.gateDir && !theme.iDescribeMyGates ? { x:item.x, y:item.y } : { putAnywhere: true };
 			quota.push( Object.assign( {}, gateBasics, gateLocation ) );
 		});
 		return quota;
@@ -63,6 +63,7 @@ class World {
 	createArea(toAreaId) {
 
 		let plan  = this.plan.get(toAreaId);
+		console.assert( plan.theme );
 		let themeMerged = Object.assign(
 			{},
 			ThemeDefault(),

@@ -54,6 +54,7 @@ FilterSpec = {
 	"mon/human/solarPriest2.png": 	{ strip: 0xA0 },
 	"mon/human/solarPriest3.png": 	{ strip: 0xA0 },
 	"mon/human/soldier.png": 		{ strip: 0xA0, normalize: 1, brightness: 0.06 },
+	"mon/dwarf/dwarfWarrior.png":	{ ungradient: 0x20, despeckle: 3, brightness: 0.05, contrast: 0.3, desaturate:-0.5,edgeFade: 0.03, shadow:false, url: "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/8eccb115-fdb3-4d95-9b2e-5653ada13056/d8ias6v-25a4b47d-8b37-4690-bdf6-ce5c69f140f0.jpg/v1/fill/w_1280,h_1426,q_75,strp/dwarf_warrior_for_dragonheim_rpg_by_ortizfreelance_d8ias6v-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTQyNiIsInBhdGgiOiJcL2ZcLzhlY2NiMTE1LWZkYjMtNGQ5NS05YjJlLTU2NTNhZGExMzA1NlwvZDhpYXM2di0yNWE0YjQ3ZC04YjM3LTQ2OTAtYmRmNi1jZTVjNjlmMTQwZjAuanBnIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.eo3JdQwanjjgpTlireObu11SFr2HHgPLkmRlZuP2qCM" },
 	"mon/corpse.png":				{ bgRemove: {find:0,remove:10,percent:0.002}, recolor: {apply:'red',params:[90]}, edgeFade:0.03, url: 'https://cdn.mos.cms.futurecdn.net/u8wSHMmMMXzZuAFBCmcsCK.jpg' },
 	"item/stuff/darkLantern.png": 	{ shadow: { xRatio: 0.8 } },
 	"item/stuff/solarOrb.png": 		{ shadow: false, outline: false },
@@ -79,6 +80,7 @@ FilterSpec = {
 	"effect/dartInFlight.png": 		{ shadow: false },
 	"effect/lightRayCircle.png": 	{ normalize: false, shadow: false, outline: false },
 	"effect/fire.png": 				{ normalize: false, shadow: false, outline: false, brightness: 0.01 },
+	"effect/portal.png":			{ autocrop: false, normalize: false, shadow: false, outline: false },
 	"decor/water.png":				{ shadow: false, outline: false, normalize: false, brightness: -0.6, url: 'https://i.pinimg.com/originals/26/e3/2d/26e32d921f8820b4e459d27888276d4a.jpg' }
 }
 
@@ -101,6 +103,13 @@ DirSpec = {
 	"mushroom/":  {
 		size: 96
 	},
+}
+
+PortraitImport = {
+	size: 384,
+	quality: 92,
+	tempFile: 'portraitTemp.jpg',
+	extension: '.jpg'
 }
 
 FilterDefault = {

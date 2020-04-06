@@ -114,7 +114,7 @@ PaletteList.moon = {
 // prefer - means that, when a pick choice needs to happen, that theme strongly (maybe 100%) prefers to chose that.
 ScapeList.plainScape = () => ({
 	dim: 				60,
-	architecture: 		"plain",
+	architecture: 		"cave",
 	floorDensity: 		95,
 	seedPercent: 		0.001,
 });
@@ -227,7 +227,7 @@ ScapeList.caveVillage = () => ({
 
 ScapeList.snowyPlains = () => ({
 	dim: 				40,
-	architecture: 		"plains",
+	architecture: 		"cave",
 });
 
 ScapeList.moonscape = () => ({
@@ -278,7 +278,7 @@ ThemeList.surface = {
 	name: 			'the solar temple on the surface',
 	description:	'a temple built to an ancient sun god.',
 	isUnique: 		true,
-	inControl: 		true,
+	iDescribeMyGates: true,
 	scapeId: 		'snowyPlains',
 	palette: 		{ basis: 'stoneRooms' },
 	rREQUIRED: 		'surfaceSunTemple',
@@ -312,7 +312,7 @@ ThemeList.wildlands = {
 	rCOMMON: 		'mushrooms, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater,'+
 					'secretChest, hoard_shade, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle,'+
 					'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre,'+
-					'graveYard',
+					'graveYard, miniMaze',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon','isConstruct'],
 	enemyDensity: 	0.05,
 	friendDensity: 	0.01,
@@ -351,18 +351,18 @@ ThemeList.refugeeCampSlaughter = {
 }
 
 ThemeList.dwarfVillage = {
-	description:'a modest dwarven village carved from natural caves',
-	isDwarfish: true,
-	isTown: 	true,
-	scapeId: 	'caveTownSmall',
-	palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
-	rREQUIRED: 	'garden, gatewayFromDwarves, dwarfTemple',
-	rCOMMON: 	'garden, mushrooms, dwarfSmithy, shopSmall, shopOpenAir, dwarfHouseSmall',
-	rUNCOMMON: 	'floodOreSmall, floodPitSmall, dwarfHouse, barrelStorage',
-	rRARE: 		'firePit, floodWater',
-	jobPick: 	{ layman: 3, miner: 2, sentry: 3, grocer: 1, botanist: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1},
-	prefer: 	['pit'],
-	monsters: 	['isDwarf'],
+	description:	'a modest dwarven village carved from natural caves',
+	isDwarfish:		true,
+	isTown: 		true,
+	scapeId: 		'caveTownSmall',
+	palette: 		{ basis: 'jaggedCave', passageFloor: 'floorStone' },
+	rREQUIRED: 		'garden, gatewayFromDwarves, dwarfTemple',
+	rCOMMON: 		'garden, mushrooms, dwarfSmithy, shopSmall, shopOpenAir, dwarfHouseSmall',
+	rUNCOMMON: 		'floodOreSmall, floodPitSmall, dwarfHouse, barrelStorage',
+	rRARE: 			'firePit, floodWater',
+	jobPick: 		{ layman: 3, miner: 2, sentry: 3, grocer: 1, botanist: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1},
+	prefer: 		['pit'],
+	monsters: 		['isDwarf'],
 	placeDensity:   0.70,
 	enemyDensity: 	0.00,
 	friendDensity: 	0.01,
@@ -370,20 +370,20 @@ ThemeList.dwarfVillage = {
 }
 
 ThemeList.dwarfTown = {
-	description:'a bustling, large dwarven town',
-	isDwarfish: true,
-	isTown: 	true,
-	scapeId: 	'caveTown',
-	palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
-	rREQUIRED: 	'2x garden, mushrooms, dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
-				'gatewayFromDwarves, 2x dwarfHouseSmall, 2x dwarfHouse, '+
-				'dwarfTemple, 30% den_dog, 10% camp_human',
-	rCOMMON: 	'mushrooms, garden, floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall, barrelStorage',
-	rUNCOMMON: 	'floodPit, dwarfHouse',
-	rRARE: 		'firePit, floodWater',
-	jobPick: 	{ layman: 3, miner: 2, sentry: 3, grocer: 1, botanist: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1, glassBlower: 1 },
-	prefer: 	['pit'],
-	monsters: 	['isDwarf'],
+	description:	'a large bustling dwarven town',
+	isDwarfish: 	true,
+	isTown: 		true,
+	scapeId: 		'caveTown',
+	palette: 		{ basis: 'jaggedCave', passageFloor: 'floorStone' },
+	rREQUIRED: 		'2x garden, mushrooms, dwarfSmithy, dwarfPlaza, market, shopLarge, shopSmall, 2x shopOpenAir, 2x floodOre, floodPit, '+
+					'gatewayFromDwarves, 2x dwarfHouseSmall, 2x dwarfHouse, '+
+					'dwarfTemple, 30% den_dog, 10% camp_human',
+	rCOMMON: 		'mushrooms, garden, floodOre, market, shopLarge, shopSmall, shopOpenAir, dwarfHouseSmall, barrelStorage',
+	rUNCOMMON: 		'floodPit, dwarfHouse',
+	rRARE: 			'firePit, floodWater',
+	jobPick: 		{ layman: 3, miner: 2, sentry: 3, grocer: 1, botanist: 1, clothier: 1, bowyer: 1, brewer:1 ,scribe:1, armorer: 1, smith: 1, cobbler: 1, gaunter: 1, lapidary: 1, jeweler: 1, peddler: 1, glassBlower: 1 },
+	prefer: 		['pit'],
+	monsters: 		['isDwarf'],
 	enemyDensity: 	0.00,
 	friendDensity: 	0.01,
 	itemDensity:    0.0001,
@@ -416,11 +416,11 @@ ThemeList.coreBridges = {
 
 ThemeList.coreMaze = {
 	name:		'maze',
-	description:'twisting cave passaves all different',
+	description:'twisting cave passages all different',
 	scapeId: 	'caveMazeLike',
 	palette: 	{ basis: 'jaggedCave' },
 	rCOMMON: 	'mushrooms, demonNest, hoard_shade, nest_blueScarab, trollBridge, nest_viper, camp_ogre, etherHive, tinyRoom, barrelStorage',
-	rUNCOMMON: 	'secretChest, floodPit, camp_goblin, den_kobold, nest_bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rUNCOMMON: 	'secretChest, floodPit, camp_goblin, den_kobold, nest_bat, antHive, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, miniMaze',
 	rRARE: 		'camp_human, goblinGathering, hellPortal, circle, ruin, swamp, firePit, floodOre, floodWater',
 	monsters: 	['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
@@ -448,7 +448,7 @@ ThemeList.coreCavernSomewhatOpen = {
 	scapeId: 	'caveBroadWinding',
 	palette: 	{ basis: 'jaggedCave' },
 	rCOMMON: 	'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
-	rUNCOMMON: 	'secretChest, camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rUNCOMMON: 	'secretChest, camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, miniMaze',
 	rRARE: 		'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre, barrelStorage',
 	rEPIC: 		'graveYard, lunarEmbassy',
 	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
@@ -466,7 +466,7 @@ ThemeList.coreSea = {
 	palette: 			{ basis: 'jaggedCave', outlineWall: 'water', fillWall: 'floorDirt' },
 	rREQUIRED: 			'mushrooms, floodWater',
 	rCOMMON: 			'floodWaterSmall',
-	rUNCOMMON: 			'floodWall',
+	rUNCOMMON: 			'floodWall,miniMaze',
 	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon'],
 	enemyDensity: 		0.005,
 	itemDensity: 		0.005,
@@ -491,7 +491,7 @@ ThemeList.coreRooms = {
 	dim: 				40,
 	architecture: 		"rooms",
 	floorDensity: 		0.25,
-	circleChance: 		10,
+	shapeChances: 		{ circle: 0.1, rect: 0.9 },
 	overlapChance: 		10,
 	preferDoors: 		true,
 	passageWander: 		30,
@@ -499,13 +499,13 @@ ThemeList.coreRooms = {
 	passageWidth3: 		0,
 	placeDensity: 		0.35,
 	passageWander: 		20,
-	palette: 		{ basis: 'stoneRooms' },
-	rCOMMON: 		'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
-	rUNCOMMON: 		'mushrooms, secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 			'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
-	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
-	enemyDensity: 	0.05,
+	palette: 			{ basis: 'stoneRooms' },
+	rCOMMON: 			'hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rUNCOMMON: 			'miniMaze, mushrooms, secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 				'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 				'graveYard',
+	monsters: 			['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
+	enemyDensity: 		0.05,
 	friendDensity: 	0.01,
 }
 
@@ -514,21 +514,21 @@ ThemeList.coreMorphousRooms = {
 	dim: 				40,
 	architecture: 		"rooms",
 	floorDensity: 		0.40,
-	circleChance: 		100,
+	shapeChances: 		{ circle: 1.0, rect: 0.0 },
 	overlapChance: 		100,
 	preferDoors: 		true,
 	passageWander: 		20,
 	passageWidth2: 		0,
 	passageWidth3: 		0,
 	placeDensity: 		0.35,
-	palette: 		{ basis: 'stoneRooms' },
-	rCOMMON: 		'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
-	rUNCOMMON: 		'secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 			'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
-	rEPIC: 			'graveYard',
-	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
-	enemyDensity: 	0.05,
-	friendDensity: 	0.01,
+	palette: 			{ basis: 'stoneRooms' },
+	rCOMMON: 			'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rUNCOMMON: 			'secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rRARE: 				'miniMaze, goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rEPIC: 				'graveYard',
+	monsters: 			['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
+	enemyDensity: 		0.05,
+	friendDensity: 		0.01,
 }
 
 ThemeList.coreMixedRooms = {
@@ -537,7 +537,7 @@ ThemeList.coreMixedRooms = {
 	dim: 				40,
 	architecture: 		"rooms",
 	floorDensity: 		0.40,
-	circleChance: 		50,
+	shapeChances: 		{ circle: 0.5, rect: 0.5 },
 	overlapChance: 		10,
 	preferDoors: 		true,
 	passageWander: 		50,
@@ -547,7 +547,7 @@ ThemeList.coreMixedRooms = {
 	palette: 		{ basis: 'stoneRooms' },
 	rCOMMON: 		'mushrooms, hoard_shade, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
 	rUNCOMMON: 		'secretChest, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 			'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
+	rRARE: 			'miniMaze, goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
@@ -565,8 +565,8 @@ ThemeList.coreHellTheme = {
 	passageWidth2: 		50,
 	placeDensity: 		0.05,
 	palette: 		{ basis: 'jaggedCave' },
-	rREQUIRED:  	'6x demonNest',
-	rCOMMON: 		'mushrooms, hoard_shade, demonNest, firePit',
+	rREQUIRED:  	'6x demonNest, miniMaze',
+	rCOMMON: 		'mushrooms, hoard_shade, demonNest, firePit, miniMaze',
 	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
 	rRARE: 			'secretChest, etherHive',
 	prefer: 		['flames','mud'],
@@ -581,7 +581,7 @@ ThemeList.coreFinalLevel = {
 	dim: 				80,
 	architecture: 		"rooms",
 	floorDensity: 		0.30,
-	circleChance: 		100,
+	shapeChances: 		{ circle: 1.0, rect: 0.0 },
 	overlapChance: 		20,
 	preferDoors: 		false,
 	passageWander: 		100,
@@ -590,7 +590,7 @@ ThemeList.coreFinalLevel = {
 	placeDensity: 		0.10,
 	palette: 		{ basis: 'stoneRooms' },
 	rREQUIRED: 		'balgursChamber',
-	rCOMMON: 		'demonNest, firePit',
+	rCOMMON: 		'demonNest, firePit, miniMaze',
 	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
 	rRARE: 			'etherHive',
 	prefer: 		['flames','mud'],
@@ -610,9 +610,9 @@ ThemeList.hellTheme = {
 	passageWidth2: 	50,
 	placeDensity: 	0.05,
 	palette: 		{ basis: 'jaggedCave' },
-	rREQUIRED:  	'6x demonNest',
+	rREQUIRED:  	'6x demonNest, miniMaze',
 	rCOMMON: 		'mushrooms, hoard_shade, demonNest, firePit',
-	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle',
+	rUNCOMMON: 		'nest_blueScarab, nest_redScarab, collonade, ruin, fountain1, floodPit, pitEncircle, miniMaze',
 	rRARE: 			'secretChest, etherHive',
 	prefer: 		['flames','mud'],
 	monsters: 		['isDemon','isPlanar','isInsect'],
@@ -628,7 +628,7 @@ ThemeList.spooky = {
 	palette: 		{ basis: 'spookyRooms' },
 	rCOMMON: 		'graveYard, nest_bat, floodMist',
 	rUNCOMMON: 		'ruin, nest_viper',
-	rRARE: 			'shaft, fountain1, camp_human, swamp',
+	rRARE: 			'shaft, fountain1, camp_human, swamp, miniMaze',
 	rREQUIRED:		'floodMist,floodMist,floodMist',
 	rEPIC: 			'hellPortal',
 	prefer: 		['mist'],
@@ -656,69 +656,80 @@ ThemeList.moonTheme = {
 	}
 }
 
-//=========================
 /*
-ThemeList.cavern = {
-	scapeId: 	'caveRandom',
-	rREQUIRED: 	'gatewayToDwarves',
-	rCOMMON: 	'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
-	rUNCOMMON: 	'camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
-	rRARE: 		'den_dog, goblinGathering, demonNest, portal, circle, ruin, swamp, etherHive, firePit',
-	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isLunarChild']
-}
+PlaceType
+=========================================
 
-ThemeList.thePits = {
-	scapeId: 	'caveRandom',
-	rCOMMON: 	'floodPit',
-	monsters: 	['isUndead'],
-	placeDensity: 0.5
-}
-
-ThemeList.spookyPits = {
-	scapeId: 	'caveRandom',
-	rCOMMON: 	'floodPit',
-	monsters: 	['isUndead'],
-	placeDensity: 0.5
-}
-
-ThemeList.ruins = {
-	scapeId: 	'caveRandom',
-	rCOMMON: 	'camp_ogre, camp_goblin, nest_blueScarab, nest_redScarab',
-	rUNCOMMON: 	'collonade, ruin, fountain1, antHive, floodPit, pitEncircle',
-	rRARE: 		'floodWater, swamp, demonNest',
-	rEPIC: 		'portal',
-	monsters: 	['isEarthChild','isAnimal'],
-}
-
-ThemeList.lunarColony = {
-	scapeId: 	'caveRandom',
-	rCOMMON: 	'lunarEmbassy',
-	rRARE: 		'etherHive',
-	rEPIC: 		'portal',
-	monsters: 	['isLunarChild','isPlanar'],
-}
-
-ThemeList.sunPlane = {
-	scapeId: 	'caveRandom',
-	rREQUIRED: 	'sunDiscipleTemple',
-	rEPIC: 		'portal',
-	monsters: 	['isSunChild','isPlanar'],
-}
-*/
-
-/*
+	// Various flags
+	rarity: rUNCOMMON			// Utility places always need to specify their rarity relative to other utilities of similar purpose.
+	isUtility: undefined,		// These are never randomly selected. The Plan must specify something that exists within the space.
+	forbidEnemies: undefined,	// Never generate enemies in this place?
+	forbidTreasure: undefined,	// Never generate treasure in this place?
 
 
-Flood Type
-You can make places that flood and area with something, then pick random "spark" locations and
-further flood a different tile around those.
+Mapped Form
 
-floodId			- the tile type to flood with
-tilePercent		- what percentage of the entire level should get this treatment
-sparkId			- what tile type will the interior island "sparks" be
-sparkDensity	- What percentage of this flooded area should get sparks?
-sparkLimit		- timeout if your attempt to generate sparks exceeds this
+	// An optional string that describes the walls, floor, and placement of everything in the area.
+	// There are default symbols for everything, but the main ones are
+		# Wall     . Floor     + Door
+	map:
+		"#+##\n"+
+		"#x.#\n"+
+		"#g.D\n"+
+		"####",
+	// can this thing be rotated?
+	flags: { rotate: true }
+	// These are letters on your map. To customize you can insert a typeFilter that describes what sort of thing it is (using a supplySpec)
+	// and all other variables that are to get merged into the monster/item/time once it is created.
+	symbols: {
+		g: 'goblin',
+		x: 'brazier',
+		'D': { typeFilter: 'door', state: 'shut' },
+	},
+	// Does this place need any stickers to support spells or whatever?
+	stickers: {
+		darkPower: { img: "effect/bolt08.png", scale: 0.6, xAnchor: 0.5, yAnchor: 0.5 }
+	},
+	// Define any new tile types this place uses.
+	tileTypes: {
+		masterStatue:    { mayWalk: false, mayFly: true, opacity: 0, name: "master statue", img: "dc-mon/statues/silver_statue.png"},
+	},
+	// Define any new items that this place requires.
+	itemTypes: {
+		goblinAltar: { mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png", neverPick: true }
+	},
+	// Define any monster types you need that don't already exist.
+	monsterTypes: {
+		goblinPriest: { ... see the MonsterType documentation }
+	},
+	// Describe special attributes for anything getting placed, monster, item, or tile.
+	// Note that this goes by TYPE and so all things of that type will get the injection.
+	inject: {
+		ogre: { attitude: Attitude.AWAIT, tether: 8, tooClose: 2 },
+		portal: { toThemeId: 'hellTheme' }
+	}
+
+Flooded Form
+
+	You can make places that flood and area with something, then pick random "spark" locations and
+	further flood a different tile around those.
+
+	floodId			- the tile type to flood with
+	tilePercent		- what percentage of the entire level should get this treatment
+	sparkId			- what tile type will the interior island "sparks" be
+	sparkDensity	- What percentage of this flooded area should get sparks?
+	sparkLimit		- timeout if your attempt to generate sparks exceeds this
+
+Maze Form
+
+	isMaze: true,		// Generate a little maze in this area.
+	xLen: 16,			
+	yLen: 16,
+	makeWalled: false,	// Should a wall be generated surrounding this mini maze?
+	wallSymbol:  '#',
+	floorSymbol: '.',
+	supply: '8x gem',	// Any specialy loot to generate in this maze?
+
 
 */
 
@@ -855,6 +866,29 @@ PlaceTypeList.fontDeep = {
 		D: 'fontDeep',
 	}
 }
+
+PlaceTypeList.miniMaze = {
+	isMaze: true,
+	xLen: 16,
+	yLen: 16,
+	makeWalled: false,
+	wallSymbol:  '#',
+	floorSymbol: '.',
+	supply: '8x gem',
+	flags: { rotate: true },
+	symbols: {
+	},
+	stickers: {
+	},
+	tileTypes: {
+	},
+	itemTypes: {
+	},
+	monsterTypes: {
+	},
+	inject: {
+	}
+};
 
 
 PlaceTypeList.floodOpen = {

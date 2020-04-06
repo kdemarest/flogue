@@ -702,7 +702,7 @@ class Entity {
 	don(item,slot) {
 		if( item.inSlot || !item.slot ) {
 			debugger;
-			return;
+			return item;
 		}
 		if( (item.bunch||1) > 1 && !item.donBunches ) {
 			item = item._unbunch();
@@ -750,10 +750,7 @@ class Entity {
 		}
 
 
-		return {
-			don: item,
-			duration: item.donDuration
-		};
+		return item;
 	}
 
 	_itemRemove(item) {
@@ -792,7 +789,7 @@ class Entity {
 			return null;
 		}
 		if( item.autoEquip && !this.neverAutoEquip && this.mayDon(item) ) {
-			item = this.don(item,item.slot);
+			item = this.don(item,item.slot) || item;
 		}
 		return item;
 	}
@@ -3587,14 +3584,7 @@ class Entity {
 					this.senseTreasure = false;
 					this.senseLiving = false;
 				}
-				this.map.traverse( (x,y) => {
-					let mapMemory = this.mapMemory;
-					if( mapMemory ) {
-						let type = this.map.findItemAt(x,y).filter( item=>!item.isTreasure ).first || this.map.tileTypeGet(x,y);
-						let mPos = y*this.map.xLen+x;
-						mapMemory[mPos] = type;
-					}
-				});
+				guiMessage('revealMinimap');
 				break;
 			}
 			case Command.DEBUGANIM: {
@@ -3856,7 +3846,7 @@ function bonk(entity,target) {
 	if( target.isWall && target.invisible && target.isPosition ) {
 //		target.wasBonked = true;
 		target.invisible = false;
-		guiMessage( 'reveal', target );
+		guiMessage( 'revealInvisible', target );
 	}
 }
 

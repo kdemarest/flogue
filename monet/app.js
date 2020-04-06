@@ -41,6 +41,7 @@ let lfsFileName = pathSource+'lastFilterSent.json';
 let DirSpec = {};
 let FilterSpec = {};
 let FilterDefault = {};
+let PortraitImport = {};
 let LastFilterSent = {};
 
 let RectTemplate = {
@@ -681,7 +682,7 @@ async function processImageAsNeeded(fileName,dirSpec,forceProcessing) {
 			if( !fs.existsSync(sourcePath) || filter.url!==lastFilter.url ) {
 				console.log('Fetching',filter.url);
 				image = await jimpRead(filter.url);
-				await jimpWrite( sourcePath, image );		// This handles conversion to the new image type, eg jpg to png
+				await jimpWrite( sourcePath, image );		// This handles conversion to the new image type automagically
 			}
 		}
 
@@ -723,15 +724,17 @@ async function loadFilterSpec(filePath) {
 		const sandbox = {
 			FilterSpec: null,
 			DirSpec: null,
-			FilterDefault: null
+			FilterDefault: null,
+			PortraitImport: null,
 		};
 		try {
 			const script = new vm.Script( data );
 			const context = new vm.createContext(sandbox);
 			script.runInContext( context, { lineOffset: 0, displayErrors: true } );
-			FilterSpec    = sandbox.FilterSpec;
-			DirSpec       = sandbox.DirSpec;
-			FilterDefault = sandbox.FilterDefault;
+			FilterSpec     = sandbox.FilterSpec;
+			DirSpec        = sandbox.DirSpec;
+			FilterDefault  = sandbox.FilterDefault;
+			PortraitImport = sandbox.PortraitImport;
 		}
 		catch(e) {
 			console.log('filters.js',e.message,'in line', e.stack.split('<anonymous>:')[1].split('\n\n')[0]);
@@ -753,29 +756,61 @@ function getDirSpec(fileName) {
 
 let Portrait = new class {
 	constructor() {
-		this.portraitDir = '.';
-		this.fetchUrl = 'https://www.thispersondoesnotexist.com/image';
+		this.portraitDir = '../tsrc/portrait';
 		this.htmlFile = 'portrait.html';
-		this.tempFile = 'portraitTemp.png';
 		this.template = null;
 		this.portraitList = [];
+	}
+	get fetchUrl() {
+		return PortraitImport.fetchUrl || 'https://www.thispersondoesnotexist.com/image';
+	}
+	get tempFile() {
+		return PortraitImport.tempFile || 'portraitTemp'+PortraitImport.extension;
 	}
 	portraitPath(name) {
 		return path.join(__dirname,this.portraitDir,name);
 	}
-	async preload() {
+	async preload(overrideExtension) {
+		let extensionRegex = new RegExp( /\.(png|jpg)$/, 'i' ); 
 		fs.readdir(this.portraitPath(''), (err, files) => {
+			//console.log(files);
 			if (err) {
 				return console.log('Unable to scan directory: ' + err);
 			} 
 			files.forEach( file => {
-				if( !file.match( /\.png$/i ) ) {
+				if( !file.match( extensionRegex ) ) {
+					//console.log('excluding',file);
 					return;
 				}
-				//console.log( file );
+				//console.log( 'adding',file );
 				this.portraitList.push( file );
 			});
 		});
+	}
+
+
+	async oneTimeConvert(req,res) {
+		let ext = '.png';
+		this.preload(ext);
+		console.log('oneTimeConvert of',this.portraitList.length,'from',this.portraitPath(''),' *'+ext);
+		let result = '';
+		console.log('Please wait for this operation');
+		for( let index in this.portraitList ) {
+			let file = this.portraitList[index];
+			let image = await jimpRead(this.portraitPath(file));
+
+			await image
+				.resize(PortraitImport.size, PortraitImport.size) // resize
+				.quality(PortraitImport.quality) // set JPEG quality
+			;
+
+			file = file.split('.')[0]+PortraitImport.extension;
+			let s = 'write '+this.portraitPath(file)+'<br>';
+			console.log(s);
+			result += s;
+			await jimpWrite( this.portraitPath(file), image );
+		}
+		res.send(result);
 	}
 
 	async loadHtml() {
@@ -783,20 +818,34 @@ let Portrait = new class {
 		//console.log(this.template);
 	}
 	async fetch(cwd,req,res,next) {
+		console.log('Fetching new face');
 		let image = await jimpRead(this.fetchUrl);
-		await jimpWrite( this.portraitPath(this.tempFile), image );
+		console.log('saving temp to',this.tempFile);
+
+		await image
+			.resize(PortraitImport.size, PortraitImport.size) // resize
+    		.quality(PortraitImport.quality) // set JPEG quality
+    	;
+
+		await jimpWrite( this.tempFile, image );
+
+		// Load and send the HTML
 		await this.loadHtml();
-		let html = this.template.replace( '[/*FILE_LIST*/]', JSON.stringify(this.portraitList) );
+		console.log('html file is',this.htmlFile);
+		let html = this.template
+			.replace( '[/*FILE_LIST*/]', JSON.stringify(this.portraitList) )
+			.replace( '[PORTRAIT_TEMP_FILE]', this.tempFile )
+		;
 		res.send( html );
 	}
 	async saveAs(nameRaw) {
 		let count = 0;
-		let name = () => nameRaw+count+'.png';
+		let name = () => nameRaw+count+PortraitImport.extension;
 		while( fs.existsSync(this.portraitPath(name())) ) ++count;
-		await fs.promises.rename( this.portraitPath(this.tempFile), this.portraitPath(name()) );
-		this.portraitList.unshift(name().replace('.png',''));
+		console.log('renaming',this.tempFile, this.portraitPath(name()) );
+		await fs.promises.rename( this.tempFile, this.portraitPath(name()) );
+		this.portraitList.unshift(name().replace(PortraitImport.extension,''));
 	}
-
 }
 
 async function run() {
@@ -861,15 +910,53 @@ async function run() {
 		Portrait.fetch(app.cwd,req,res,next);
 	}
 
-	app.use('/public', express.static(path.join(__dirname, '.')));
-	app.use('/src', express.static(path.join(__dirname, '../src')));
+	//
+	// For regular image processing
+	//
 	app.get('/tiles/*', async (req, res, next) => await processImage(req,res,false,next));
 	app.get('/force/*', async (req, res, next) => await processImage(req,res,true,next));
+
+	//
+	// For interactively viewing and choosing portraits
+	//
+	app.use('/public', express.static(path.join(__dirname, '.')));
+	app.use('/src',  express.static(path.join(__dirname, '../src')));
 	app.get('/portrait', async (req, res, next) => await portrait(req,res,true,next));
 
+	app.get('/oneTimeConvert', async (req,res,next) => { Portrait.oneTimeConvert(req,res); } );
 
 	let port = 3010;
 	app.listen(port, () => console.log('Monet listening on port '+port+'.'))
 }
 
 run();
+
+/*
+To Do:
+- recipe generation code
+- figure out how to generate faces using nothgin but a random seed, so save download time
+- figure out how to put stuff on faces, like a monocle, hat, beard, etc.
+
+Interesting art tools
+https://trianglify.io/ - creates a poly mesh with pretty colors
+
+Style Transfer
+https://magenta.tensorflow.org/blog/2018/12/20/style-transfer-js/
+
+Make faces low poly
+https://snorpey.github.io/triangulation/
+
+Nice cartoon and style processing. Use their "Artsy" tool and choose "Underpainting DLX"
+https://www.befunky.com/create/
+
+Tensorflow facial recognition in NodeJS
+https://github.com/justadudewhohacks/face-api.js
+
+Face Crafting Code
+https://github.com/SummitKwan/transparent_latent_gan
+https://blog.insightdatascience.com/generating-custom-photo-realistic-faces-using-ai-d170b1b59255
+DEmo: https://www.kaggle.com/kdemarest/tl-gan-demo/edit
+
+*/
+
+
