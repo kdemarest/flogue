@@ -2,6 +2,7 @@ Module.add('user',function() {
 
 class HumanUser {
 	constructor() {
+		// WARNING: It is important not to depend on any other data in this constructor.
 		this.isHumanUser = true;
 		this.entity = null;
 		this.priorArea = null;

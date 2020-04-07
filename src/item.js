@@ -56,7 +56,7 @@ class Item {
 			levelRaw: levelRaw,
 			healthMax: Rules.monsterHealth(level,hitsToKillItem),
 			typeId: itemType.typeId,
-			id: GetUniqueEntityId(itemType.typeId,depth),
+			id: Date.makeEntityId(itemType.typeId,depth),
 			inVoid: true,
 			owner: null,
 			x:null,
@@ -686,7 +686,7 @@ class Item {
 		Object.setPrototypeOf( item, Item.prototype );
 		item.owner = null;
 		item.bunch = amount;
-		item.id = GetUniqueEntityId(item.typeId,item.depth);
+		item.id = Date.makeEntityId(item.typeId,item.depth);
 		item.spriteList = [];
 		item.isUnbunching = true;
 		this.bunch = this.bunch - amount;

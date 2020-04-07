@@ -13,29 +13,6 @@ equal to the highest level monster appearing
 jobPick: as each is made it is decremented, meaning that sooner or later all of the types will get made. It
 then resets again.
 
-PlaceTypeList.uniqueIdentity = {
-	// The map can use any symbols yu want. Just re-map them in the 'symbols' area below.
-	// However, . and # are generally floor and wall, just to avoid confusion.
-	map:
-`
-.......
-`,
-	symbols: {
-		A: 'typeId'
-		B: { typeFilter: 'weapon.sword', isSpecial: true },
-		C: [ 'floor, 5x weapon.arrow, 50% potion', { chance: 20, typeFilter: 'ammo.dart', hasMagicTip: true }, ...]
-	},
-	stickers: {
-	},
-	tileTypes: {
-	},
-	itemTypes: {
-	},
-	monsterTypes: {
-	},
-	inject: {
-	}
-};
 */
 let rCOMMON 	= 1.00;
 let rUNCOMMON 	= 0.50;
@@ -669,6 +646,9 @@ PlaceType
 
 Mapped Form
 
+	Note that PlaceTypes are allowed to add to the global repositories of types.
+	However: .rules, .damageType, and .attitude will NOT allow you to overwrite any global values. An exception will throw.
+
 	// An optional string that describes the walls, floor, and placement of everything in the area.
 	// There are default symbols for everything, but the main ones are
 		# Wall     . Floor     + Door
@@ -677,8 +657,10 @@ Mapped Form
 		"#x.#\n"+
 		"#g.D\n"+
 		"####",
+
 	// can this thing be rotated?
 	flags: { rotate: true }
+
 	// These are letters on your map. To customize you can insert a typeFilter that describes what sort of thing it is (using a supplySpec)
 	// and all other variables that are to get merged into the monster/item/time once it is created.
 	symbols: {
@@ -686,20 +668,24 @@ Mapped Form
 		x: 'brazier',
 		'D': { typeFilter: 'door', state: 'shut' },
 	},
+
 	// Does this place need any stickers to support spells or whatever?
-	stickers: {
+	stickerList: {
 		darkPower: { img: "effect/bolt08.png", scale: 0.6, xAnchor: 0.5, yAnchor: 0.5 }
 	},
+
 	// Define any new tile types this place uses.
-	tileTypes: {
+	tileTypeList: {
 		masterStatue:    { mayWalk: false, mayFly: true, opacity: 0, name: "master statue", img: "dc-mon/statues/silver_statue.png"},
 	},
+
 	// Define any new items that this place requires.
-	itemTypes: {
+	itemTypeList: {
 		goblinAltar: { mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png", neverPick: true }
 	},
+
 	// Define any monster types you need that don't already exist.
-	monsterTypes: {
+	monsterTypeList: {
 		goblinPriest: { ... see the MonsterType documentation }
 	},
 	// Describe special attributes for anything getting placed, monster, item, or tile.
@@ -878,16 +864,6 @@ PlaceTypeList.miniMaze = {
 	flags: { rotate: true },
 	symbols: {
 	},
-	stickers: {
-	},
-	tileTypes: {
-	},
-	itemTypes: {
-	},
-	monsterTypes: {
-	},
-	inject: {
-	}
 };
 
 
@@ -1041,15 +1017,13 @@ PlaceTypeList.goblinGathering = {
 		P: 'goblinPriest',
 		x: 'brazier'
 	},
-	stickers: {
+	stickerList: {
 		darkPower: { img: "effect/bolt08.png", scale: 0.6, xAnchor: 0.5, yAnchor: 0.5 }
 	},
-	tileTypes: {
-	},
-	itemTypes: {
+	itemTypeList: {
 		goblinAltar: { mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png", neverPick: true }
 	},
-	monsterTypes: {
+	monsterTypeList: {
 		goblinPriest: {
 			core: [ SYM, 1, '3:10', 'evil', 'rot', 'sentient', 'humanoid', 'mon/earth/goblinPriest.png', '*' ],
 			attitude: Attitude.WORSHIP,
@@ -1070,7 +1044,7 @@ PlaceTypeList.goblinGathering = {
 	}
 };
 
-PlaceTypeList.goblinGathering.itemTypes.goblinAltar.onTick = function(dt) {
+PlaceTypeList.goblinGathering.itemTypeList.goblinAltar.onTick = function(dt) {
 	if( !this.rechargeLeft ) {
 		let f = new Finder(this.area.entityList,this).filter(e=>e.isGoblin && e.health<e.healthMax/2).shotClear().near(this.x,this.y,6);
 		if( f.count ) {
@@ -1949,7 +1923,7 @@ xxxxxxxxxxx...........
 		r: 'ring',
 		p: 'potion',
 	},
-	tileTypes: {
+	tileTypeList: {
 		masterStatue:    { mayWalk: false, mayFly: true, opacity: 0, name: "master statue", img: "dc-mon/statues/silver_statue.png"},
 		kingStatue:    { mayWalk: false, mayFly: true, opacity: 0, name: "king statue", img: "dc-mon/statues/wucad_mu_statue.png"},
 	}

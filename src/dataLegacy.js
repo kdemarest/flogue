@@ -61,7 +61,7 @@ function perkDataCondition(perk, level, index, singularId ) {
 
 function range(array,fn) {
 	let result = {};
-	let singularId = GetTimeBasedUid();
+	let singularId = Date.makeUid();
 	array.forEach( (level,index) => {
 		result[level] = perkDataCondition( fn(index,level), level-1, index, singularId );
 	});

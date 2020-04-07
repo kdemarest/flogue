@@ -283,7 +283,14 @@ class ViewTester {
 		let outputDivId = '#testResults';
 		$(divId).empty();
 
-		let input = $('<input id="testId" type="text" value="playFullGame">')
+		let inputConfig = $('<input id="configId" type="text" value="">')
+			.appendTo(divId)
+			.html(Config.getConfigId())
+			.change( function() {
+				Config.setConfigId( $(this).val() );
+			});
+
+		let inputTest = $('<input id="testId" type="text" value="playFullGame">')
 			.appendTo(divId)
 			.keydown( function(e) {
 				e.stopPropagation();
@@ -300,7 +307,7 @@ class ViewTester {
 		$('<button>GO</button>')
 			.appendTo(divId)
 			.click( function() {
-				run( $(input).val() );
+				run( $(inputTest).val() );
 			});
 		$('<button>ALL</button><br>')
 			.appendTo(divId)

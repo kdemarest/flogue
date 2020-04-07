@@ -31,6 +31,7 @@
 <script src="utilPick.js" charset="utf-8"></script>
 <script src="utilChance.js" charset="utf-8"></script>
 <script src="time.js" charset="utf-8"></script>
+<script src="plugin.js" charset="utf-8"></script>
 <script src="rules.js" charset="utf-8"></script>
 <script src="dataFab.js" charset="utf-8"></script>
 <script src="data.js" charset="utf-8"></script>
@@ -84,7 +85,8 @@
 
 <script>
 
-function main() {
+async function main() {
+	// This executes the initializers for all the static .js files
 	Module.realize();
 	let User = new HumanUser();
 
@@ -116,21 +118,23 @@ function main() {
 		this.tickWorld(timePasses);
 	}.bind(User);
 
-	User.startGame = function(startingDepth,startingThemeId,playerTypeId,playerMarkerId,onAssetsReady) {
-		startingDepth  = (startingDepth||0);
-		playerTypeId   = playerTypeId || 'player';
-		playerMarkerId = playerMarkerId || 'playerStartHere';
-		let gui        = new Gui( ()=>this.entity );
+	User.startGame = function(config,onAssetsReady) {
+		let startingDepth  = config.startingDepth || 0;
+		let playerTypeId   = config.playerTypeId || 'player';
+		let playerMarkerId = config.playerMarkerId || 'playerStartHere';
+
+		let gui = new Gui( ()=>this.entity );
 		gui.create(
 			(event) => { this.onEvent(event); }
 		);
 		this.gui = gui;
+		guiMessage('saveBattery',config.saveBattery);
 
 		this.commandHandler = new UserCommandHandler(this,gui.view.inventory,gui.view.range);
 
 		let planList  = new PlanList(PlanData)
 		let world     = new World(planList);
-		let themeId   = startingThemeId || world.plan.findFirst(plan=>plan.depth==startingDepth).themeId;
+		let themeId   = config.themeId || world.plan.findFirst(plan=>plan.depth==startingDepth).themeId;
 		let planFind  = plan => plan.depth == startingDepth && plan.themeId == themeId;
 		let plan      = world.plan.findFirst(planFind) || world.plan.add({areaId: 'user', depth:startingDepth, themeId: themeId});
 		let area      = world.createArea(plan.areaId);
@@ -155,21 +159,30 @@ function main() {
 		}, 20);
 	}.bind(User);
 
-	// This should be done before anything else so that even the config 
-	let config = new Config('ken',{
-		startingDepth: 0
-	});
+	let configId = Config.getConfigId();
+	let config = new Config(configId);
 	window.config = config;
 
-	new DataConditioner();
+	configId ? PluginManager.addForLoad(config.id,'config.'+config.id+'.js') : null;
+	await PluginManager.loadAll();
+	
+	// This executes the initializers for all the plugins
+	Module.realize();
+
+	// We condition the heck out of our data, and we have to do it in the right order.
+	let dataConditioner = new DataConditioner();
+	PluginManager.forEach( plugin => {
+		dataConditioner.mergeToGlobals(plugin);
+	});
+	dataConditioner.mergePlaceTypesToGlobals();
+	dataConditioner.conditionAll();
+
 	window.ImageRepo =  new PixiImageRepo(PIXI.loader);
 	ImageRepo.load();
 
+	// We should convert all this to promises.
 	User.startGame(
-		config.startingDepth,
-		config.themeId,
-		config.playerTypeId,
-		config.playerMarkerId,
+		config,
 		(user) => {
 			guiMessage( 'observer', user.entity );
 			$('#guiLoading').hide();

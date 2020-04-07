@@ -213,7 +213,7 @@ let sSine = function(pct,scale) {
 
 class Anim {
 	constructor(sticker,data) {
-		Object.assign(this,{ scale: 1, isAnim: 1 }, sticker, data, { id: GetTimeBasedUid() } );
+		Object.assign(this,{ scale: 1, isAnim: 1 }, sticker, data, { id: Date.makeUid() } );
 		this.isAnimation = true;
 		this.dead = false;
 		this.delta = 0;
@@ -635,7 +635,7 @@ class AnimationDelay {
 		return this.duration[id] || 0;
 	}
 	makeGroup(id,durationAdd=0) {
-		let groupId = id+GetTimeBasedUid();
+		let groupId = id+Date.makeUid();
 		this.duration[groupId] = this.get(id);
 		this.group[groupId] = true;
 		this.duration[id] = this.get(id) + durationAdd;

@@ -825,7 +825,7 @@ Module.add('dataMason',function() {
 						// anymore. ALSO if all of this passage was transferred to other sites, it will be empty.
 						if( marks.length ) {
 							siteList.push({
-								id: 'passage.'+GetTimeBasedUid(),
+								id: 'passage.'+Date.makeUid(),
 								marks: marks,
 								isPassage: true,
 								site0: site0,
@@ -940,7 +940,7 @@ Module.add('dataMason',function() {
 
 			function addRoom(marks,nearSiteId) {
 				let s = {
-					id: 'room.'+GetTimeBasedUid(),
+					id: 'room.'+Date.makeUid(),
 					marks: marks,
 					isRoom: true
 				};
@@ -960,7 +960,7 @@ Module.add('dataMason',function() {
 				}
 				else {
 					addSite({
-						id: 'near.'+siteId+'.'+GetTimeBasedUid(),
+						id: 'near.'+siteId+'.'+Date.makeUid(),
 						marks: marks,
 						isNear: siteId,
 					});
@@ -1387,7 +1387,7 @@ Module.add('dataMason',function() {
 
 		function addSite( place, siteMarks ) {
 			let site = {
-				id: place.typeId+'.'+GetTimeBasedUid(),
+				id: place.typeId+'.'+Date.makeUid(),
 				marks: siteMarks,
 				isPlace: true,
 				placeId: place.typeId,

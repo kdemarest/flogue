@@ -239,7 +239,7 @@ TestList.playFullGame = {
 			closeEnough: closeEnough,
 			stallLimit: 4,
 			name: desire.name,
-			id: 'DEST.'+desire.name+'.'+GetTimeBasedUid(),
+			id: 'DEST.'+desire.name+'.'+Date.makeUid(),
 			onArrive: onArrive,
 			onStall: onStall
 		};

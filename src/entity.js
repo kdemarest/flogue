@@ -46,6 +46,15 @@ function GlobalFindFirstCollider(me,travelMode,map,x,y,ignoreEntity) {
 	return null;
 }
 
+function validCoords(target) {
+	let ok = true;
+	ok = ok && typeof target.x == 'number' && !isNaN(target.x);
+	ok = ok && typeof target.y == 'number' && !isNaN(target.y);
+	ok = ok && target.area && target.area.isArea;
+	return ok;
+}
+
+
 //
 // ENTITY (monsters, players etc)
 //
@@ -62,7 +71,7 @@ class Entity {
 		// Use the average!
 		let level = 	isPlayer ? depth : Math.round( (depth+monsterType.level) / 2 );
 		let inits =    { inVoid: true, inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [] };
-		let values =   { id: GetUniqueEntityId(monsterType.typeId,level) };
+		let values =   { id: Date.makeEntityId(monsterType.typeId,level) };
 
 
 		if( isPlayer ) {
@@ -1296,7 +1305,7 @@ class Entity {
 					closeEnough: 0,
 					stallLimit: 2,
 					name: desire.name,
-					id: 'DEST.'+desire.name+'.'+GetTimeBasedUid()
+					id: 'DEST.'+desire.name+'.'+Date.makeUid()
 				};
 			}
 			this.brainState.activity = 'Heading towards '+desire.name+'.';
@@ -1364,7 +1373,7 @@ class Entity {
 			closeEnough: closeEnough,
 			stallLimit: stallLimit,
 			name: name || 'desination '+(site ? site.id : '')+' ('+x+','+y+')',
-			id: 'DEST.'+(site ? site.id : GetTimeBasedUid())
+			id: 'DEST.'+(site ? site.id : Date.makeUid())
 		};
 		return destination;
 	}
@@ -1391,7 +1400,7 @@ class Entity {
 			closeEnough: 2,
 			stallLimit: 4,
 			name: 'desination '+(site ? site.id : '')+' ('+x+','+y+')',
-			id: 'DEST.'+(site ? site.id : GetTimeBasedUid())
+			id: 'DEST.'+(site ? site.id : Date.makeUid())
 		};
 		this.record( 'New dest '+site.id+' ('+x+','+y+')' );
 		return destination;
@@ -1405,7 +1414,7 @@ class Entity {
 		});
 		let sparseHash = Object.filter( packHash, size => size<packSize );
 		if( Object.isEmpty(sparseHash) ) {
-			return 'pack.'+GetTimeBasedUid();
+			return 'pack.'+Date.makeUid();
 		}
 		let packId = Object.keys(sparseHash)[0];
 		return packId;

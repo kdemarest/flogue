@@ -1,5 +1,6 @@
 // STATIC UTILITY FUNCTIONS
 Module.add('utilities',function(){
+
 	Math.clamp = function(value,min,max) {
 		return Math.max(min,Math.min(max,value));
 	}
@@ -457,100 +458,117 @@ ARRAY FORM
 		});
 	}
 
+	Date.makeUid = (function() {
+		let codes = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		let counter = 0;
+
+		return function() {
+			counter = (counter+1)%100000;	// assumes we won't make more than n items in the same millisecond
+			let n = Math.floor(Date.now()/1000)*100000 + counter;
+			let uid = '';
+			while( n > 0 ) {
+				let q = n - Math.floor(n/codes.length)*codes.length;
+				n = Math.floor(n/codes.length);
+				uid += codes.charAt(q);
+			}
+			return uid;
+		}
+	})();
+
+	Date.makeEntityId = (function() {
+		let humanNameList = null;
+		let shuffled = false;
+
+		return function(typeId,level) {
+			if( !shuffled && getHumanNameList ) {
+				humanNameList = Array.shuffle(getHumanNameList());
+				shuffled = true;
+			}
+
+			let id = (humanNameList?pick(humanNameList)+'.':'')+typeId+(level?'.'+level:'')+'.'+Date.makeUid();
+			return id;
+		}
+
+	})();
+
 });
 
 Module.add('utilities2',function() {
 
-let GetTimeBasedUid = (function() {
-	let codes = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-	let counter = 0;
-
-	return function() {
-		counter = (counter+1)%100000;	// assumes we won't make more than n items in the same millisecond
-		let n = Math.floor(Date.now()/1000)*100000 + counter;
-		let uid = '';
-		while( n > 0 ) {
-			let q = n - Math.floor(n/codes.length)*codes.length;
-			n = Math.floor(n/codes.length);
-			uid += codes.charAt(q);
-		}
-		return uid;
-	}
-})();
-
-let GetUniqueEntityId = (function() {
-	let humanNameList = null;
-	let shuffled = false;
-
-	return function(typeId,level) {
-		if( !shuffled && getHumanNameList ) {
-			humanNameList = Array.shuffle(getHumanNameList());
-			shuffled = true;
-		}
-
-		let id = (humanNameList?pick(humanNameList)+'.':'')+typeId+(level?'.'+level:'')+'.'+GetTimeBasedUid();
-		return id;
-	}
-
-})();
-
-
-function validCoords(target) {
-	let ok = true;
-	ok = ok && typeof target.x == 'number' && !isNaN(target.x);
-	ok = ok && typeof target.y == 'number' && !isNaN(target.y);
-	ok = ok && target.area && target.area.isArea;
-	return ok;
-}
-
-function pick(listRaw) {
-	let list = listRaw;
-	if( typeof list == 'object' && !Array.isArray(list) ) {
-		var keys = Object.keys(list);
-		if( keys.length <= 0 ) {
+	let Cookie = {
+		set: function(name,value,days) {
+			var expires = "";
+			if( days === undefined ) {
+				days = 365*10;
+			}
+			if (days) {
+				var date = new Date();
+				date.setTime(date.getTime() + (days*24*60*60*1000));
+				expires = "; expires=" + date.toUTCString();
+			}
+			document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+		},
+		get: function(name) {
+			var nameEQ = name + "=";
+			var ca = document.cookie.split(';');
+			for(var i=0;i < ca.length;i++) {
+				var c = ca[i];
+				while (c.charAt(0)==' ') c = c.substring(1,c.length);
+				if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+			}
 			return null;
+		},
+		erase: function(name) {   
+			document.cookie = name+'=; Max-Age=-99999999;';  
 		}
-		let n;
-		do {
-			n = Math.randInt(0,keys.length);
-		} while( list[keys[n]].neverPick );
-
-	    return list[keys[n]];
 	}
-	return list.length==0 ? null : list[Math.randInt(0,list.length)];
-}
 
+	function pick(listRaw) {
+		let list = listRaw;
+		if( typeof list == 'object' && !Array.isArray(list) ) {
+			var keys = Object.keys(list);
+			if( keys.length <= 0 ) {
+				return null;
+			}
+			let n;
+			do {
+				n = Math.randInt(0,keys.length);
+			} while( list[keys[n]].neverPick );
 
-function shootRange(x1,y1,x2,y2,testFn,onStep) {
-	// Define differences and error check
-	var dx = Math.abs(x2 - x1);
-	var dy = Math.abs(y2 - y1);
-	var sx = (x1 < x2) ? 1 : -1;
-	var sy = (y1 < y2) ? 1 : -1;
-	var err = dx - dy;
-
-	let ok = true;
-	if( onStep ) onStep(x1,y1,ok);
-	while (!((x1 == x2) && (y1 == y2))) {
-		var e2 = err << 1;
-		if (e2 > -dy) {
-			err -= dy;
-			x1 += sx;
+		    return list[keys[n]];
 		}
-		if (e2 < dx) {
-			err += dx;
-			y1 += sy;
-		}
-		ok = ok && testFn(x1,y1);
+		return list.length==0 ? null : list[Math.randInt(0,list.length)];
+	}
+
+
+	function shootRange(x1,y1,x2,y2,testFn,onStep) {
+		// Define differences and error check
+		var dx = Math.abs(x2 - x1);
+		var dy = Math.abs(y2 - y1);
+		var sx = (x1 < x2) ? 1 : -1;
+		var sy = (y1 < y2) ? 1 : -1;
+		var err = dx - dy;
+
+		let ok = true;
 		if( onStep ) onStep(x1,y1,ok);
+		while (!((x1 == x2) && (y1 == y2))) {
+			var e2 = err << 1;
+			if (e2 > -dy) {
+				err -= dy;
+				x1 += sx;
+			}
+			if (e2 < dx) {
+				err += dx;
+				y1 += sy;
+			}
+			ok = ok && testFn(x1,y1);
+			if( onStep ) onStep(x1,y1,ok);
+		}
+		return ok;
 	}
-	return ok;
-}
 
 	return {
-		GetTimeBasedUid: GetTimeBasedUid,
-		GetUniqueEntityId: GetUniqueEntityId,
-		validCoords: validCoords,
+		Cookie: Cookie,
 		pick: pick,
 		shootRange: shootRange
 	}

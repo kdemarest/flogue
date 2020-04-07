@@ -2,7 +2,9 @@ Module.add('dataConditioner',function() {
 
 class DataConditioner {
 	constructor() {
-		this.mergePlaceTypesToGlobals();
+	}
+
+	conditionAll() {
 		this.fabAllData();
 		this.determinePlaceLevels();
 		this.determineAndValidatePlaceSymbolHash();
@@ -159,46 +161,69 @@ class DataConditioner {
 
 	}
 
+	mergeToGlobals(obj) {
+
+		function mergeSimple(target,source) {
+			Object.each( source, (value,key) => {
+				if( target[key] ) throw "Illegal to overwrite "+key;
+			});
+			Object.assign(target,source);
+		}
+
+		function merge(targetList,typeList,isMonster) {
+			for( let typeId in typeList ) {
+				let merge = targetList[typeId] && typeList[typeId].mergeWithExistingData;
+				console.assert( !targetList[typeId] || merge );
+				let type = typeList[typeId];
+				if( type.basis ) {
+					console.assert( targetList[type.basis] || typeList[type.basis] );
+				}
+
+				if( typeof type == 'function' ) {
+					targetList[typeId] = typeList[typeId];
+				}
+				else {
+					targetList[typeId] = Object.assign(
+						merge ? targetList[typeId] : {},
+						type.basis ? targetList[type.basis] || typeList[type.basis] || {} : {},
+						type
+					);
+				}
+				typeList[typeId] = targetList[typeId];
+
+				if( isMonster ) {
+					// Do this AFTER any merge due to "basis", notably for the body slots.
+					monsterPreProcess(typeId,targetList[typeId]);
+				}
+			}
+		}
+
+		console.assert( !obj.effectList );
+
+		Object.assign( window.config, obj.config );
+
+		mergeSimple( Rules, 		obj.rules);
+
+		mergeSimple( DamageType,	obj.damageType);
+		mergeSimple( Attitude,		obj.attitude);
+
+		merge( StickerList,		obj.stickerList );
+		merge( EffectTypeList,	obj.effectTypeList );
+		merge( TileTypeList, 	obj.tileTypeList );
+		merge( ItemTypeList,	obj.itemTypeList );
+		merge( MonsterTypeList,	obj.monsterTypeList, true );
+		merge( PlaceTypeList,   obj.placeTypeList );
+		merge( ScapeList,       obj.scapeList );
+		merge( ThemeList,       obj.themeList );
+	}
+
 	mergePlaceTypesToGlobals() {
 
 		for( let placeId in PlaceTypeList ) {
 			let place = PlaceTypeList[placeId];
 			place.id = placeId;
 
-			function mergeSimple(a,b) {
-				Object.assign(a,b);
-			}
-
-			function merge(targetList,typeList,isMonster) {
-				for( let typeId in typeList ) {
-					console.assert( !targetList[typeId] );
-					let type = typeList[typeId];
-					if( type.basis ) {
-						console.assert( targetList[type.basis] || typeList[type.basis] );
-					}
-
-					targetList[typeId] = Object.assign(
-						{},
-						type.basis ? targetList[type.basis] || typeList[type.basis] || {} : {},
-						type
-					);
-					typeList[typeId] = targetList[typeId];
-
-					if( isMonster ) {
-						// Do this AFTER any merge due to "basis", notably for the body slots.
-						monsterPreProcess(typeId,targetList[typeId]);
-					}
-				}
-			}
-
-			mergeSimple( DamageType,	place.damageType);
-			mergeSimple( Attitude,		place.attitude);
-
-			merge( StickerList,		place.stickers );
-			merge( EffectTypeList,	place.effectList );
-			merge( TileTypeList, 	place.tileTypes );
-			merge( ItemTypeList,	place.itemTypes );
-			merge( MonsterTypeList,	place.monsterTypes, true );
+			this.mergeToGlobals( place );
 		}
 	}
 

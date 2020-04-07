@@ -376,20 +376,20 @@ let spriteMakeInWorld = function(entity,xWorld,yWorld,indexOrder=0,senseDarkVisi
 				//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
 			}
 			if( doTint ) {
-				if( !config.saveBattery ) {
+				if( !ViewMap.saveBattery ) {
 					sprite.filters = this.desaturateFilterArray;
 				}
 				sprite.tint = 0xAAAAFF;
 			}
 			else
 			if( doGrey ) {
-				if( !config.saveBattery ) {
+				if( !ViewMap.saveBattery ) {
 					sprite.filters = this.desaturateFilterArray;
 				}
 				sprite.tint = 0xFFFFFF;
 			}
 			else {
-				if( !config.saveBattery ) {
+				if( !ViewMap.saveBattery ) {
 					sprite.filters = this.resetFilterArray;
 				}
 				sprite.tint = 0xFFFFFF;
@@ -658,6 +658,9 @@ class ViewMap extends ViewObserver {
 
 	message(msg,payload) {
 		super.message(msg,payload);
+		if( msg=='saveBattery' ) {
+			ViewMap.saveBattery = payload;
+		}
 		if( msg=='zoomInc' ) {
 			this.setZoom(this.zoom+1);
 			this.render();
