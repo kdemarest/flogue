@@ -449,6 +449,7 @@ ARRAY FORM
 			if( typeof obj[key] == 'object' ) {
 				if( obj[key] ) {
 					if( obj[key].name === false || obj[key].name === '' ) return '';
+					if( !obj[key].name && !obj[key].typeId ) debugger;
 					let name = obj[key].name || String.uncamelTypeId(obj[key].typeId || 'NOTYPE2');
 					return (useOf && name ? ' of ' : '')+(name || 'NONAME ['+key+']');
 				}

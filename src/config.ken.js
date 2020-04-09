@@ -151,9 +151,9 @@ Module.add('config.ken',function(X,moduleId) {
 		//light: 2,
 		//experience: 100,
 		inject: {
-			level: 20,
+			//level: 20,
 			//immortal: true,
-			invulnerable: true
+			//invulnerable: true
 		}
 	}
 
@@ -163,7 +163,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 4,
+		startingDepth: 0,
 		//themeId: 'kenTheme',
 		saveBattery: true,
 		playerInject: player.inject

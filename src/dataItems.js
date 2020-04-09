@@ -2048,6 +2048,11 @@ ItemTypeList = Type.establish( 'ItemType', {
 		Type.giveTypeIds(itemType.materials);
 		Type.giveTypeIds(itemType.varieties);
 		Type.giveTypeIds(itemType.qualities);
+		Object.each( itemType.varieties, variety=>{
+			// The bow and others override the main weapon material lists, so these need typeIds as well.
+			Type.giveTypeIds(variety.materials);
+		});
+
 		itemType.xPrice 		= Rules.ItemBag[itemType.typeId].xPrice;
 		itemType.effectChance	= Rules.ItemBag[itemType.typeId].cEff;
 	},
