@@ -32,7 +32,7 @@ class World {
 			}
 			let theme = this.plan.get(toAreaId).theme;
 			let gateLocation = item.gateDir && !theme.iDescribeMyGates ? { x:item.x, y:item.y } : { putAnywhere: true };
-			quota.push( Object.assign( {}, gateBasics, gateLocation ) );
+			quota.push( Object.assign( {}, gateBasics, gateLocation, { why: 'area '+item.area.id+' connects to me' } ) );
 		});
 		return quota;
 	}
@@ -66,7 +66,6 @@ class World {
 		console.assert( plan.theme );
 		let themeMerged = Object.assign(
 			{},
-			ThemeDefault(),
 			plan.theme,
 			{ depth: plan.depth },
 			plan.theme.scapeId ? ScapeList[plan.theme.scapeId]() : {}
@@ -93,7 +92,7 @@ class World {
 		}
 		return this.areaList[areaId] || this.createArea( areaId );
 	}
-
+/*
 	createAreaFromGate(gate) {
 		if( !this.plan.get(gate.toAreaId) ) {
 			// we could spontaneously add this area to the plan.
@@ -106,6 +105,7 @@ class World {
 		}
 		return gate.toArea || this.createArea( gate.toAreaId );
 	}
+*/
 	getAreaById(areaId) {
 		return this.areaList[areaId];
 	}

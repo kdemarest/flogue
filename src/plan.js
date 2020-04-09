@@ -8,7 +8,7 @@ let PlanData = {
 	},
 	'core.1': {
 		themeId:	'coreCavernRooms',
-		links:		'core.2,wildlands,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,refugeeCamp,moonTheme',
+		links:		'core.2,wildlands,dwarfTown,refugeeCamp,moonTheme',
 		make:		'fontSolar'
 	},
 	'core.2': {
@@ -23,7 +23,7 @@ let PlanData = {
 	},
 	'core.4': {
 		themeId:	'coreMaze',
-		links:		'core.5,wildlands,dwarfTown,hellTheme',
+		links:		'core.5,wildlands,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,hellTheme',
 		make:		'fontSolar'
 	},
 	'core.5': {
@@ -33,7 +33,7 @@ let PlanData = {
 	},
 	'core.6': {
 		themeId:	'coreSea',
-		links:		'core.7,wildlands,dwarfTown',
+		links:		'core.7,wildlands,dwarfTown,moonTheme',
 		make:		'fontDeep'
 	},
 	'core.7': {
@@ -63,7 +63,7 @@ let PlanData = {
 	},
 	'core.12': {
 		themeId:	'coreMixedRooms',
-		links:		'core.13,wildlands,dwarfTown,spooky',
+		links:		'core.13,wildlands,dwarfTown,moonTheme',
 		make:		'fontSolar,fontDeep'
 	},
 	'core.13': {
@@ -219,6 +219,7 @@ class PlanList {
 				inject: {
 					typeFilter: gate.toGateType,
 					toAreaId:	gate.toAreaId,
+					why:		'plan contained gate'
 				}
 			});
 		});
@@ -232,7 +233,8 @@ class PlanList {
 					typeId: typeId,
 					symbol: TypeIdToSymbol[typeId],
 					putAnywhere: true,
-					inject: supply
+					inject: supply,
+					why: 'theme has iDescribeMyGates'
 				});
 			});
 		}

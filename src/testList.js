@@ -2,7 +2,7 @@ Module.add('testList',function() {
 
 let TestList = {};
 
-PlaceTypeList.testRoom = {
+Type.register('PlaceType',{ testRoom : {
 	map:
 `
 #########
@@ -26,7 +26,7 @@ PlaceTypeList.testRoom = {
 		'2': { typeFilter: 'marker', markerId: 'dist2' },
 		'3': { typeFilter: 'marker', markerId: 'dist3' },
 	}
-};
+}});
 
 
 ScapeList.testSingleRoom = () => ({
@@ -34,7 +34,7 @@ ScapeList.testSingleRoom = () => ({
 	architecture: 		"none",
 });
 
-ThemeList.testSimpleRoom = {
+Type.register( 'Theme', { testSimpleRoom: {
 	name: 			'simple one-room theme',
 	isUnique: 		true,
 	iDescribeMyGates: true,
@@ -44,7 +44,7 @@ ThemeList.testSimpleRoom = {
 	enemyDensity: 	0.0,
 	friendDensity: 	0.0,
 	itemDensity: 	0.0,
-}
+}});
 
 // CheckPlayerBasics
 // Player can get instantiated, with a bunch of items in inventory and wielded.

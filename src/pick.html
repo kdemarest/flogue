@@ -50,7 +50,7 @@ When a specific thing is requested, then the rarities of its basis are considere
 isTreasure - generates as loot on monsters, and in random map loot generation
 isDecor		- objects that can be dropped directly on the map. Really, these should probably be reserved to Places.
 
-oreVein, as a map item, is special. It comes in 'clusterSize' in a sigmoid.
+vein, as a map item, is special. It comes in 'clusterSize' in a sigmoid.
 */
 
 
@@ -105,7 +105,7 @@ function drawItemByLevel(title,itemTypeId,setting={}) {
 	let groupIdDefault = {
 		potion: 	'effects',
 		spell: 		'effects',
-		oreVein: 	'varieties',
+		vein: 		'varieties',
 		ore: 		'varieties',
 		weapon: 	'materials'
 	};
@@ -187,8 +187,8 @@ function drawAllItemStatistics() {
 	drawItemByLevel('Potions: Debuffs','potion',{ usage: 'isDeb'});
 	drawItemByLevel('Potions: Heals','potion',{ usage: 'isHel'});
 	drawItemByLevel('Spells: All','spell');
-	drawItemByLevel('OreVein: All','oreVein');
-	drawItemByLevel('OreVein: All (excluding oreNone)','oreVein',{ filterFn: item=>item.presets.variety.typeId!='oreNone' });
+	drawItemByLevel('Vein: All','vein');
+	drawItemByLevel('Vein: All (excluding veinNone)','vein',{ filterFn: item=>item.presets.variety.typeId!='veinNone' });
 	drawItemByLevel('Ore: All','ore');
 	drawItemByLevel('Gems: All, by variety','gem', { groupId: 'varieties' });
 	drawItemByLevel('Gems: All, by quality','gem', { groupId: 'qualities' });

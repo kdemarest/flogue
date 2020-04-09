@@ -62,7 +62,13 @@ class Picker {
 		let depth = this.depth;
 		let count = 0;
 		let one = { nothing: { skip:1, level: 0, rarity: 1 } };	// be sure effectChance is undefined in here!!
-		let oneInert = { typeId: 'eInert', name: 'inert', level: 0, rarity: 0, isInert: 1 };
+		let oneInert = {
+			typeId: 'eInert',
+			name: 'inert',
+			level: 0,
+			rarity: 0,		// Keep me. This appears weaird, because code below checks for 0, but we LATER check again for eInert
+			isInert: 1
+		};
 		let l0 = { level: 0 };
 		let r1 = { rarity: 1 };
 		let done = {};
@@ -85,6 +91,9 @@ class Picker {
 
 			let vRarityTotal = 0;
 			let vAppearTotal = 0;
+			if( item.typeId == 'mushroomBread' ) {
+				debugger;
+			}
 			let varietyArray = Object.values( item.varieties || one );
 			for( let vIndex=0 ; vIndex < varietyArray.length ; ++vIndex ) {
 				let v = varietyArray[vIndex];
@@ -149,30 +158,35 @@ class Picker {
 							let level = Math.max(0,(item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.isInert ? 0 : (e.level||0)));
 							let appear = ChanceToAppear.Ramp(level,depth);
 
-							let rarity = (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
+							let rarity;
 							if( v.rarity === 0 || m.rarity === 0 || q.rarity === 0 || e.rarity === 0 ) {
 								rarity = 0;
 							}
+							else {
+								rarity = (v.rarity||1) * (m.rarity||1) * (q.rarity||1) * (e.rarity||1);
 
-							// Scale to depth...
-							if( rarity > 0.0 && rarity < 1.0 ) {
-								let delta = 1.0 - rarity;
-								let pct = Math.clamp(depth/Rules.DEPTH_SPAN,0.0,1.0);
-								rarity = rarity + delta*pct;
-								console.assert( rarity >= 0 );
-							}
+								// Scale to depth... Note that rarity of 1.0 means "don't consider me"
+								if( rarity > 0.0 && rarity < 1.0 ) {
+									let delta = 1.0 - rarity;
+									let pct = Math.clamp(depth/Rules.DEPTH_SPAN,0.0,1.0);
+									rarity = rarity + delta*pct;
+									console.assert( rarity >= 0 );
+								}
 
-							//when a certian weapon has a GREATER effectChance, then its inert chance is SMALLER, meaning
-							//that OVERALL you see it less! So it is important for the CUMULATIVE chance of one thing to be the same
-							// as the cumulative chance for another. The only way to scale this is to multiple by effectChance. Maybe.
+								//when a certian weapon has a GREATER effectChance, then its inert chance is SMALLER, meaning
+								//that OVERALL you see it less! So it is important for the CUMULATIVE chance of one thing to be the same
+								// as the cumulative chance for another. The only way to scale this is to multiple by effectChance. Maybe.
 
-							if( effectChance ) {
-								rarity *= effectChance / effectArray.length
+								if( effectChance ) {
+									rarity *= effectChance / effectArray.length
+								}
 							}
 
 							// noneChance is specifically for ore to force there to be
 							// lots of ore that is normal. The regular ore gets the flag isNone
 							// so that this little piece of code can work.
+							//
+							// WARNING: This might be ignored because, wouldn't all ore have ei == 'eInert', which is checked next?
 							let didNone = false;
 							if( noneChance && v.isNone ) {
 								didNone = true;
@@ -193,7 +207,7 @@ class Picker {
 								rarity = effectChance<=0 ? 100000 : (rarityTotal / effectChance)-rarityTotal;	// if div by zero, fix the item type list!
 								console.assert( rarity >= 0 );
 								// Use the .max here because, what if ALL other entities have a 'never appear' level problem?
-								appear = appearTotal / (effectArray.length-1);	// an average
+								appear = appearTotal / ((effectArray.length-1)||1);	// an average
 								if( !appear ) {
 									// None of the effects on this item were low enough level, probably
 									// so just use inert as level zero and re-calculate.

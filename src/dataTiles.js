@@ -1,25 +1,43 @@
 Module.add('dataTiles',function(){
 
+let TileTypeList = Type.establish( 'TileType', {
+	typeIdUnique:	true,
+	useSymbols:		true,
+	defaults: {
+		isTileType: true
+	}
+});
+
 const ImgBridges = {
 	NS: { img: "dc-dngn/bridgeNS.png" },
 	EW: { img: "dc-dngn/bridgeEW.png" }
 }
 
+// Tile Events
+// onTouch - fires each round a monster is standing on a tile. Also fires when you WAIT or LOSE TURN upon a tile.
+// onBump - fires when you bonk into a non-passable tile.
+// onDepart - fires every single time you leave this tile, whether you're heading into another similar tile or not
+//				return false to stop the movement.
+// onDepartType - fires when you are leaving this tile type, like stepping out of fire or mud or water.
+//				return false to stop the movement.
+// onEnterType - if you are entering a tile type from another tile NOT of the same type.
+//				return false to stop the movement.
 
-const TileTypeList = {
-	"floorCave":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "cave floor",
+
+Type.register('TileType',{
+	"floorCave":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "cave floor",
 					img: "decor/floorSlate.png",
 					isFloor: true },
-	"floorDirt":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "dirt floor",
+	"floorDirt":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "dirt floor",
 					img: "decor/floorDirt.png",
 					isFloor: true },
-	"floorSlate":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "slate floor",
+	"floorSlate":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "slate floor",
 					img: "decor/floorSlate.png",
 					isFloor: true },
-	"floorStone":  { symbol: SYM, mayWalk: true,  mayFly: true,  opacity: 0, name: "stone floor",
+	"floorStone":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "stone floor",
 					img: "dc-dngn/floor/rect_gray1.png", isFloor: true
 					},
-	"wallCave":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "cave wall", 
+	"wallCave":   { mayWalk: false, mayFly: false, opacity: 1, name: "cave wall", 
 					addFloor: true,
 					imgChoices: {
 						0: { img: "decor/boulder1.png" },
@@ -28,7 +46,7 @@ const TileTypeList = {
 						3: { img: "decor/boulder4.png" },
 					},
 					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true },
-	"wallJagged":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "jagged wall", 
+	"wallJagged":   { mayWalk: false, mayFly: false, opacity: 1, name: "jagged wall", 
 					addFloor: true,
 					imgChoices: {
 						0: { img: "decor/jagged1.png" },
@@ -37,7 +55,7 @@ const TileTypeList = {
 						3: { img: "decor/jagged4.png" },
 					},
 					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true, scale: 0.7 },
-	"wallStone":   { symbol: SYM, mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall",
+	"wallStone":   { mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall",
 					img: "dc-dngn/floor/pedestal_full.png", isWall: true, wantsDoor: true
 					},
 	"pit": {
@@ -55,7 +73,6 @@ const TileTypeList = {
 		img: "dc-dngn/pit.png"
 	},
 	"bridge": {
-		symbol: SYM,
 		mayWalk: true,
 		mayFly: true,
 		opacity: 0,
@@ -81,7 +98,6 @@ const TileTypeList = {
 		img: "decor/water.png" //dc-dngn/water/dngn_shoals_shallow_water1.png"
 	},
 	"grass": {
-		symbol: SYM,
 		mayWalk: true,
 		mayFly: true,
 		opacity: 0,
@@ -90,7 +106,6 @@ const TileTypeList = {
 		isFloor: true
 	},
 	"glass": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: false,
 		opacity: 0,
@@ -99,7 +114,6 @@ const TileTypeList = {
 		isWall: true
 	},
 	"shaft": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: true,
 		opacity: 0,
@@ -110,7 +124,6 @@ const TileTypeList = {
 		img: "dc-dngn/dngn_trap_shaft.png"
 	},
 	"flames": {
-		symbol: SYM,
 		mayWalk: true,
 		mayFly: true,
 		opacity: 0.26,
@@ -131,7 +144,6 @@ const TileTypeList = {
 		img: "effect/fire.png"
 	},
 	"lava": {
-		symbol: SYM,
 		mayWalk: true,
 		mayFly: true,
 		maySwim: true,
@@ -153,7 +165,6 @@ const TileTypeList = {
 		img: "UNUSED/features/dngn_lava.png"
 	},
 	"mist": {
-		symbol: SYM,
 		mayWalk: true,
 		mayFly: true,
 		opacity: 0.34,
@@ -164,7 +175,6 @@ const TileTypeList = {
 		layer: 3
 	},
 	"mud": {
-		symbol: SYM,
 		mayWalk: true,
 		mayFly: true,
 		opacity: 0,
@@ -174,7 +184,6 @@ const TileTypeList = {
 		img: "dc-dngn/floor/dirt0.png"
 	},
 	"ghostStone": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: false,
 		opacity: 0,
@@ -188,7 +197,6 @@ const TileTypeList = {
 		}
 	},
 	"obelisk": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: false,
 		opacity: 0,
@@ -202,7 +210,6 @@ const TileTypeList = {
 		}
 	},
 	"crystal": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: false,
 		opacity: 0,
@@ -217,7 +224,6 @@ const TileTypeList = {
 		}
 	},
 	"forcefield": {
-		symbol: SYM,
 		mayWalk: true,
 		mayFly: true,
 		opacity: 1,
@@ -227,7 +233,7 @@ const TileTypeList = {
 		addFloor: true,
 		img: "spells/air/static_discharge.png"
 	},
-};
+});
 
 
 

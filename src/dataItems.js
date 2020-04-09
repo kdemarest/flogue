@@ -7,7 +7,6 @@ Module.add('dataItems',function(){
 //Do a full scan through https://www.pngfind.com/freepng/axe/ to find
 //plents of PNG-ified image of decor
 
-
 const Matter = {
 	ether: 		{ damage: { } },
 	metal: 		{ damage: { corrode: 1, smite: 1} },
@@ -29,11 +28,6 @@ const Matter = {
 	energy: 	{ damage: { } },
 	special: 	{ damage: { } },
 };
-
-const ItemTypeDefaults = {
-	mayWalk: true, mayFly: true, opacity: 0,
-	img: null
-}
 
 const ImgPotion = {
 	eWater: 		{ img: "cyan" },
@@ -192,7 +186,7 @@ const GemEffects = Object.filter(EffectTypeList, (e,k)=>[
 	].includes(k) );
 
 
-const WeaponMaterialList = Fab.add( '', {
+const WeaponMaterialList = ({ //Type.establish('WeaponMaterial',{},{
 	"iron": 		{ level:  0 /* very important this be zero!*/, name: 'iron', matter: 'metal' },
 	"silver": 		{ level:  5, toMake: 'ingotSilver', name: 'silver', matter: 'metal' },
 	"ice": 			{ level: 25, toMake: 'ice block', name: 'ice', matter: 'liquid', durability: Rules.weaponDurability(20) },
@@ -201,8 +195,9 @@ const WeaponMaterialList = Fab.add( '', {
 	"deepium": 		{ level: 70, toMake: 'deepium ingot', name: 'deepium', matter: 'metal' },
 	"solarium": 	{ level: 85, toMake: 'solarium ingot', name: 'solarium', matter: 'metal' },
 });
+ResistanceList.push(WeaponMaterialList);
 
-const BowMaterialList = Fab.add( '', {
+const BowMaterialList = ({ //Type.establish('BowMaterial',{},{
 	"ash": 			{ level:  0, fixins: 'wood' },		// level MUST be zero
 	"oak": 			{ level:  5, fixins: 'wood' },
 	"maple": 		{ level: 25, fixins: 'wood' },
@@ -211,8 +206,9 @@ const BowMaterialList = Fab.add( '', {
 	"deepium": 		{ level: 70, fixins: 'ingotDeepium' },
 	"solarium": 	{ level: 85, fixins: 'ingotSolarium' },
 });
+ResistanceList.push(BowMaterialList);
 
-const ArrowMaterialList = Fab.add( '', {
+const ArrowMaterialList = ({ //Type.establish('ArrowMaterial',{},{
 	"ash": 			{ level:  0 /* very important this be zero!*/ },
 	"oak": 			{ level:  5 },
 	"maple": 		{ level: 25 },
@@ -223,7 +219,7 @@ const ArrowMaterialList = Fab.add( '', {
 });
 
 
-const AmmoList = Fab.add( '', {
+const AmmoVarietyList = ({ //Type.establish('AmmoVariety',{},{
 	"arrow":     	{
 		level:  0,
 		rarity: 1.0,
@@ -304,7 +300,7 @@ const AmmoList = Fab.add( '', {
 	},
 });
 
-const WeaponVarietyList = Fab.add( '', {
+const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	// Bows damage combines bow+ammo, and when their effect does damage they take on more of that than weapons.
 	// Arrows are considered slow, so a stealth bow that does less damage is needed for nimble or lithe opponents.
 	// Since their primary damage is stab anything that wants some ranged protection can resist or immune to stab and do pretty well.
@@ -629,7 +625,7 @@ let BlockType = {
 };
 
 // Shield blocking in the xBlock plus 20%*level/MAX_DEPTH
-const ShieldList = Fab.add( '', {
+const ShieldVarietyList = ({ //Type.establish('ShieldVariety',{},{
 	"buckler":     	{ level:  0, rarity: 1.0, xArmor: 0.70, xBlock: 0.20, img: 'item/shield/shieldBuckler.png' },
 	"targe":     	{ level:  5, rarity: 1.0, xArmor: 0.80, xBlock: 0.25, block: 'thrown', img: 'item/shield/shieldTarge.png' },
 	"heater":     	{ level: 10, rarity: 0.8, xArmor: 0.90, xBlock: 0.30, block: 'thrown,shot', img: 'item/shield/shieldHeater.png' },
@@ -637,7 +633,7 @@ const ShieldList = Fab.add( '', {
 	"pavise":     	{ level: 40, rarity: 0.1, xArmor: 1.20, xBlock: 0.40, block: 'thrown,shot', img: 'item/shield/shieldPavise.png' },
 });
 
-const ShieldMaterials = Fab.add( '', {
+const ShieldMaterialList = ({ //Type.establish('ShieldMaterial',{},{
 	"woodSM": 	{ level:  0, block: '', name: "wood", matter: 'wood' },
 	"silverSM":	{ level:  5, block: 'divine', name: "silver", matter: 'metal' },
 	"iron": 	{ level: 10, block: 'reach', name: 'iron', matter: 'metal' },
@@ -647,7 +643,7 @@ const ShieldMaterials = Fab.add( '', {
 	"solarium2": { level: 40, block: 'elemental,reach,divine', name: 'solarium', matter: 'metal' },
 });
 
-const ArmorList = Fab.add( '', {
+const ArmorVarietyList = ({ //Type.establish('ArmorVariety',{},{
 	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather', img: 'item/armour/animal_skin1.png' },
 	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather', img: 'item/armour/animal_skin2.png' },
 	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather', img: 'item/armour/leather_armour1.png' },
@@ -671,7 +667,7 @@ const ArmorList = Fab.add( '', {
 	"solar": 		{ level: 85, rarity: 1.0, xArmor: 1.00, fixins: 'solarium ingot', img: 'item/armour/crystal_plate_mail.png' },
 });
 
-const CloakList = Fab.add( '', {
+const CloakVarietyList = ({ //Type.establish('CloakVariety',{},{
 	"corduroyCloak": 	{ level:  0, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
 	"canvasCloak": 		{ level: 10, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
 	"linenCloak": 		{ level: 20, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
@@ -684,7 +680,7 @@ const CloakList = Fab.add( '', {
 });
 
 
-const HelmList = Fab.add( '', {
+const HelmVarietyList = ({ //Type.establish('HelmVariety',{},{
 	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather' },
 	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather' },
 	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather' },
@@ -704,7 +700,7 @@ const HelmList = Fab.add( '', {
 	"deep": 		{ level: 65, rarity: 1.0, xArmor: 1.00 },
 });
 
-const BracerList = Fab.add( '', {
+const BracerVarietyList = ({ //Type.establish('BracerVariety',{},{
 	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather' },
 	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather' },
 	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather' },
@@ -724,7 +720,7 @@ const BracerList = Fab.add( '', {
 	"deep": 		{ level: 65, rarity: 1.0, xArmor: 1.00 },
 });
 
-const BootList = Fab.add( '', {
+const BootVarietyList = ({ //Type.establish('BootVariety',{},{
 	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50 },
 	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80 },
 	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85 },
@@ -744,7 +740,7 @@ const BootList = Fab.add( '', {
 	"deep": 		{ level: 65, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
 });
 
-const GloveList = Fab.add( '', {
+const GloveVarietyList = ({ //Type.establish('GloveVariety',{},{
 	"furGloves": 		{ level:  0, rarity: 1.0 },
 	"leatherGloves": 	{ level:  1, rarity: 1.0 },
 	"assassinGloves": 	{ level:  0, rarity: 0.3, effect: EffectTypeList.eAssassin },
@@ -757,29 +753,29 @@ const GloveList = Fab.add( '', {
 
 
 
-const OreVeinList = Fab.add( '', {
-	"oreVeinCoal": 		{ level:  0, rarity:  1.0, name: "coal vein", mineId: 'coal', img: 'ore/oreLumpBlack.png' },
-	"oreVeinTin": 		{ level:  5, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin', img: 'ore/oreMetalWhite.png' },
-	"oreVeinIron": 		{ level: 10, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron', img: 'ore/oreMetalBlack.png' },
-	"oreVeinCopper": 	{ level: 25, rarity:  0.6, name: "copper ore vein", mineId: 'oreCopper', img: 'ore/oreMetalOrange.png' },
-	"oreVeinSilver": 	{ level: 30, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver', img: 'ore/oreMetalWhite.png' },
-	"oreVeinGold": 		{ level: 45, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold', img: 'ore/oreMetalYellow.png' },
-	"oreVeinPlatinum": 	{ level: 55, rarity:  0.3, name: "platinum ore vein", mineId: 'orePlatinum', img: 'ore/oreMetalBlue.png' },
-	"oreVeinLunarium": 	{ level: 75, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'ore/oreGemCyan.png' },
-	"oreVeinSolarium": 	{ level: 60, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium', img: 'ore/oreGemYellow.png' },
-	"oreVeinDeepium": 	{ level: 85, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium", img: 'ore/oreGemBlack.png' },
-	"oreVeinGarnet": 	{ level: 20, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", img: 'ore/oreGemPurple.png', isGemOre: true },
-	"oreVeinOpal": 		{ level: 35, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", img: 'ore/oreGemWhite.png', isGemOre: true },
-	"oreVeinRuby": 		{ level: 40, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", img: 'ore/oreGemRed.png', isGemOre: true },
-	"oreVeinEmerald": 	{ level: 50, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", img: 'ore/oreGemGreen.png', isGemOre: true },
-	"oreVeinSapphire": 	{ level: 65, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", img: 'ore/oreGemBlue.png', isGemOre: true },
-	"oreVeinDiamond": 	{ level: 80, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", img: 'ore/oreGemWhite.png', isGemOre: true },
+const VeinVarietyList = ({ //Type.establish('VeinVariety',{},{
+	"veinCoal": 		{ level:  0, rarity:  1.0, name: "coal vein", mineId: 'coal', img: 'ore/oreLumpBlack.png' },
+	"veinTin": 		{ level:  5, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin', img: 'ore/oreMetalWhite.png' },
+	"veinIron": 		{ level: 10, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron', img: 'ore/oreMetalBlack.png' },
+	"veinCopper": 	{ level: 25, rarity:  0.6, name: "copper ore vein", mineId: 'oreCopper', img: 'ore/oreMetalOrange.png' },
+	"veinSilver": 	{ level: 30, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver', img: 'ore/oreMetalWhite.png' },
+	"veinGold": 		{ level: 45, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold', img: 'ore/oreMetalYellow.png' },
+	"veinPlatinum": 	{ level: 55, rarity:  0.3, name: "platinum ore vein", mineId: 'orePlatinum', img: 'ore/oreMetalBlue.png' },
+	"veinLunarium": 	{ level: 75, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'ore/oreGemCyan.png' },
+	"veinSolarium": 	{ level: 60, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium', img: 'ore/oreGemYellow.png' },
+	"veinDeepium": 	{ level: 85, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium", img: 'ore/oreGemBlack.png' },
+	"veinGarnet": 	{ level: 20, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", img: 'ore/oreGemPurple.png', isGemOre: true },
+	"veinOpal": 		{ level: 35, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", img: 'ore/oreGemWhite.png', isGemOre: true },
+	"veinRuby": 		{ level: 40, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", img: 'ore/oreGemRed.png', isGemOre: true },
+	"veinEmerald": 	{ level: 50, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", img: 'ore/oreGemGreen.png', isGemOre: true },
+	"veinSapphire": 	{ level: 65, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", img: 'ore/oreGemBlue.png', isGemOre: true },
+	"veinDiamond": 	{ level: 80, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", img: 'ore/oreGemWhite.png', isGemOre: true },
 	// must be last!
-	"oreNone": 			{ level:  0, rarity: 0.001, isNone: true, name: "ore vein", img: 'ore/oreVein.png' },
+	"veinNone": 			{ level:  0, rarity: 0.001, isNone: true, name: "ore vein", img: 'ore/oreVein.png' },
 });
 
 
-const OreList = Fab.add( '', {
+const OreVarietyList = ({ //Type.establish('OreVariety',{},{
 	"coal": 		{ level:  0, rarity: 1.0, name: "coal", img: 'ore/oreLumpBlack.png', scale: 0.5, isFuel: true },
 	"oreTin": 		{ level:  2, rarity: 1.0, name: "tin ore", refinesTo: "ingotTin", img: 'ore/oreMetalWhite.png', scale: 0.5 },
 	"oreIron": 		{ level:  5, rarity: 0.8, name: "iron ore", refinesTo: "ingotIron", img: 'ore/oreMetalBlack.png', scale: 0.5 },
@@ -792,7 +788,7 @@ const OreList = Fab.add( '', {
 	"oreDeepium": 	{ level: 40, rarity: 0.1, name: "deepium ore", refinesTo: "ingotDeepium", img: 'ore/oreGemBlack.png', scale: 0.5 },
 });
 
-const GemQualityList = Fab.add( '', {
+const GemQualityList = ({ //Type.establish('GemQuality',{},{
 	"flawed": 		{ level:  0, rarity: 1.0, xPrice: 0.5 },
 	"average": 		{ level:  5, rarity: 0.8, xPrice: 1.0 },
 	"large": 		{ level: 10, rarity: 0.6, xPrice: 1.2 },
@@ -800,7 +796,7 @@ const GemQualityList = Fab.add( '', {
 	"sublime": 		{ level: 20, rarity: 0.2, xPrice: 2.0 }
 });
 
-const GemList = Fab.add( '', {
+const GemVarietyList = ({ //Type.establish('GemVariety',{},{
 	"garnet": 		{ level:  0, rarity:  0.3, img: "gems/Gem Type1 Red.png" },
 	"opal": 		{ level:  3, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"turquoise": 	{ level:  6, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
@@ -827,48 +823,7 @@ const GemList = Fab.add( '', {
 	"diamond": 		{ level: 75, rarity:  0.1, img: "gems/Gem Type3 Black.png" },
 });
 
-const PlantQualityList = Fab.add( '', {
-	"wilted": 		{ level:  0, rarity: 1.0 },
-	"thriving": 	{ level:  0, rarity: 1.0 },
-});
-
-const PlantList = Fab.add( '', {
-	"wheatPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '2x stuff.wheat', img: "plant/wheatPlant.png" },
-	"barleyPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '3x stuff.barley', img: "plant/barleyPlant.png" },
-	"carrotPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '1x stuff.carrot', img: "plant/carrotPlant.png" },
-	"potatoPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '1x stuff.potato, 50% stuff.potato', img: "plant/potatoPlant.png" },
-	"peaPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 3, harvestLoot: '1x stuff.pea, 2x 50% stuff.pea', img: "plant/peaPlant.png" },
-	"beanPlant": 		{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 3, harvestLoot: '1x stuff.bean, 2x 50% stuff.bean', img: "plant/beanPlant.png" },
-	"cabbagePlant": 	{ level:  0, rarity:  1.0, needLight: 6, harvestReps: 1, harvestLoot: '1x stuff.cabbage', img: "plant/cabbagePlant.png" },
-});
-
-const MushroomList = Fab.add( '', {
-	"amanitaMushroom": 		{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.amanita', flip: 50, img: "mushroom/amanita.png",
-		effectOnHarvest: Object.assign({},EffectTypeList.ePoison,{xDamage:0.3}) },
-	"blurellaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.blurella', flip: 50, img: "mushroom/blurella.png" },
-	"coxilliaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.coxillia', flip: 50, img: "mushroom/coxillia.png" },
-	"grollotusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.grollotus', img: "mushroom/grollotus.png" },
-	"klinulusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.klinulus', flip: 50, img: "mushroom/klinulus.png" },
-	"rhodotusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.rhodotus', img: "mushroom/rhodotus.png" },
-});
-
-const SeedList = Fab.add( '', {
-	"wheatSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.wheatPlant' },
-	"barleySeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.barleyPlant' },
-	"carrotSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.carrotPlant' },
-	"potatoSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.potatoPlant' },
-	"peaSeed": 			{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.peaPlant' },
-	"beanSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.beanPlant' },
-	"cabbageSeed": 		{ rarity: 1.0, matter: 'plant', scale: 0.3, lootOnDrop: 'plant.cabbagePlant' },
-	"amanitaSeed": 		{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.amanitaMushroom' },
-	"blurellaSeed": 	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.blurellaMushroom' },
-	"coxilliaSeed": 	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.coxilliaMushroom' },
-	"grollotusSeed":	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.grollotusMushroom' },
-	"klinulusSeed": 	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.klinulusMushroom' },
-	"rhodotusSeed": 	{ rarity: 1.0, matter: 'fungus', scale: 0.3, lootOnDrop: 'mushroom.rhodotusMushroom' },
-});
-
-const CharmList = Fab.add( '', {
+const CharmVarietyList = ({ //Type.establish('CharmVariety',{},{
 	"centurionFigurine":{ level: 44, rarity: 0.1, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/solarCenturionFigurine.png',
 						effect: { op: 'summon', value: 'solarCenturion', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
 						},
@@ -901,7 +856,7 @@ const CharmList = Fab.add( '', {
 
 // Artifact, Relic, Talisman, Amulet
 
-const StuffList = Fab.add( '', {
+const StuffVarietyList = ({ //Type.establish('StuffVariety',{},{
 	"shovel": {
 		rarity: 0.2,
 		matter: 'wood',
@@ -924,7 +879,6 @@ const StuffList = Fab.add( '', {
 	"viperVenom": 		{ rarity: 0.6, matter: 'liquid', img: "UNUSED/other/acid_venom.png" },
 	"dogCollar": 		{ rarity: 1.0, matter: 'leather', isJewelry: true, img: 'item/misc/collar.png' },
 	"skull": 			{ rarity: 1.0, matter: 'bone', mayThrow: true, mayTargetPosition: true, isEdible: true, isBone: true, img: 'item/stuff/skull.png' },
-	"mushroomBread": 	{ rarity: 1.0, matter: 'plant', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/bread_ration.png'},
 	"demonScale": 		{ rarity: 0.2, matter: 'flesh', img: 'item/misc/demonEye.png' },
 	"demonEye": 		{ rarity: 0.2, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, isGem: true, img: 'item/misc/demonEye.png' },
 	"ghoulFlesh": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/chunk_rotten.png' },
@@ -965,69 +919,36 @@ const StuffList = Fab.add( '', {
 	"ingotDeepium": 	{ level: 70, rarity: 0.3, matter: 'metal', isIngot: true, name: 'deepium ingot' },
 	"ingotSolarium": 	{ level: 85, rarity: 0.4, matter: 'metal', isIngot: true, name: 'solarium ingot' },
 
-	"wheat": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/wheat.png" },
-	"barley": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/barley.png" },
-	"carrot": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/carrot.png" },
-	"potato": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/potato.png" },
-	"pea": 				{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/pea.png" },
-	"bean": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/bean.png" },
-	"cabbage": 			{ rarity: 1.0, matter: 'plant', isEdible: true, img: "plant/cabbage.png" },
-	"amanita": 			{ rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: "mushroom/amanita.png" },
-	"blurella": 		{ rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: "mushroom/blurella.png" },
-	"coxillia": 		{ rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: "mushroom/coxillia.png" },
-	"grollotus": 		{ rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: "mushroom/grollotus.png" },
-	"klinulus": 		{ rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: "mushroom/klinulus.png" },
-	"rhodotus": 		{ rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: "mushroom/rhodotus.png" },
 });
 
-/*
-This is a rapid producer of identical entires, but the truth is, that things are just much clearer and more
-flexible if I type it all out, as above.
-()=>{
-	let result = {};
-	let plantList = ['wheat','barley','carrot','potato','pea','bean','cabbage'];
-	plantList.forEach( plantId => {
-		result[plantId]        = { rarity: 1.0, matter: 'plant', isEdible: true, img: 'plant/'+plantId+'.png' };
-		result[plantId+'Seed'] = { rarity: 1.0, matter: 'plant', isSeed:   true, img: 'plant/seed.png', scale: 0.3, creates: 'stuff.'+plantId };
-	});
-
-	let mushroomList = ['amanita','blurella','coxillia','grollotus','klinulus','rhodotus'];
-	mushroomList.forEach( mushroomId => {
-		result[mushroomId]			= { rarity: 1.0, matter: 'fungus', isFungus: true, isEdible: true, scale: 0.3, img: 'mushroom/'+mushroomId+'.png' },
-		result[mushroomId+'Seed']	= { rarity: 1.0, matter: 'fungus', isSeed:   true, scale: 0.3, creates: 'stuff.'+mushroomId, img: 'plant/seed.png' }
-	});
-	return result;
-}()
-*/
-
-StuffList.snailTrail.onTick = function() {
+StuffVarietyList.snailTrail.onTick = function() {
 	if( this.owner.isMap ) {
 		this.map.scentClear(this.x,this.y);
 	}
 }
 
-StuffList.snailSlime.onTick = function() {
+StuffVarietyList.snailSlime.onTick = function() {
 	if( this.owner.isMap ) {
 		this.map.scentClear(this.x,this.y);
 	}
 }
 
-StuffList.acidTrail.isProblem 	= TouchDamage.isProblem;
-StuffList.acidTrail.onTouch 	= TouchDamage.onTouchWalk;
-StuffList.acidSlime.isProblem 	= TouchDamage.isProblem;
-StuffList.acidSlime.onTouch 	= TouchDamage.onTouchWalk;
-StuffList.poisonSlime.isProblem = TouchDamage.isProblem;
-StuffList.poisonSlime.onTouch 	= TouchDamage.onTouchWalk;
+StuffVarietyList.acidTrail.isProblem 	= TouchDamage.isProblem;
+StuffVarietyList.acidTrail.onTouch 	= TouchDamage.onTouchWalk;
+StuffVarietyList.acidSlime.isProblem 	= TouchDamage.isProblem;
+StuffVarietyList.acidSlime.onTouch 	= TouchDamage.onTouchWalk;
+StuffVarietyList.poisonSlime.isProblem = TouchDamage.isProblem;
+StuffVarietyList.poisonSlime.onTouch 	= TouchDamage.onTouchWalk;
 
 
-const RingMaterialList = Fab.add( '', {
+const RingMaterialList = ({ //Type.establish('RingMaterial',{},{
 	"brass": 	{ level: 0, img: 'item/ring/brass.png' },
 	"copper": 	{ level: 1, img: 'item/ring/bronze.png' },
 	"silver": 	{ level: 3, img: 'item/ring/silver.png' },
 	"gold": 	{ level: 7, img: 'item/ring/gold.png' }
 });
 
-const RingList = Fab.add( '', {
+const RingVarietyList = ({ //Type.establish('RingVariety',{},{
 	"garnetSetting": 	{ level:  0, rarity:  0.3, name: 'garnet' },
 	"opalSetting": 		{ level:  5, rarity:  0.3, name: 'opal' },
 	"rubySetting": 		{ level: 20, rarity:  0.2, name: 'ruby' },
@@ -1036,7 +957,7 @@ const RingList = Fab.add( '', {
 	"diamondSetting": 	{ level: 80, rarity:  0.1, name: 'diamond' }
 });
 
-const CoinStacks = Fab.add( '', {
+const CoinStacks = ({ //Type.establish('CoinStack',{},{
 	coinOne: 	{ img: "coin01" },
 	coinThree: 	{ img: "coin01" },
 	coinTen: 	{ img: "coinTen" },
@@ -1121,7 +1042,7 @@ onAttacked(attacker,amount,damageType) - when attacked.
 // carrying	- the loot this thing gets when it is first generated
 */
 
-const ItemTypeList = {
+let ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
 // GATEWAYS
 	"stairsDown": {
@@ -1160,10 +1081,9 @@ const ItemTypeList = {
 					imgGet: (self,img) => img || self.imgChoices[self.state].img
 				},
 // MARKERS
-	"marker": 	  { symbol: SYM, name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
+	"marker": 	  { name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
 // DECOR
 	"columnBroken": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: false,
 		mayPickup: false,
@@ -1173,7 +1093,6 @@ const ItemTypeList = {
 		img: "dc-dngn/crumbled_column.png"
 	},
 	"columnStump": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: true,
 		mayPickup: false,
@@ -1183,7 +1102,6 @@ const ItemTypeList = {
 		img: "dc-dngn/granite_stump.png"
 	},
 	"brazier": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: true,
 		mayPickup: false,
@@ -1198,7 +1116,6 @@ const ItemTypeList = {
 		imgGet: (self,img) => img || self.imgChoices[self.state].img
 	},
 	"table": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: true,
 		mayPickup: false,
@@ -1212,7 +1129,6 @@ const ItemTypeList = {
 		imgGet: (self, img) => img || self.img
 	},
 	"sign": {
-		symbol: SYM,
 		mayWalk: true,
 		mayFly: true,
 		opacity: 0,
@@ -1227,7 +1143,6 @@ const ItemTypeList = {
 		imgGet: (self, img) => img || self.img
 	},
 	"bed": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: true,
 		opacity: 0,
@@ -1246,7 +1161,6 @@ const ItemTypeList = {
 		imgGet: (self, img) => img || self.img
 	},
 	"barrel": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: true,
 		opacity: 0,
@@ -1263,7 +1177,6 @@ const ItemTypeList = {
 		img: 'decor/barrel.png'
 	},
 	"chest": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: true,
 		opacity: 0,
@@ -1283,7 +1196,6 @@ const ItemTypeList = {
 		hasInventory: true
 	},
 	"coffin": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: true,
 		mayPickup: false,
@@ -1303,7 +1215,6 @@ const ItemTypeList = {
 		hasInventory: true
 	},
 	"altar": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: false,
 		rarity: 1,
@@ -1328,7 +1239,6 @@ const ItemTypeList = {
 		img: "dc-dngn/altars/dngn_altar_shining_one.png"
 	},
 	"fountain": {
-		symbol: SYM,
 		mayWalk: false,
 		mayFly: true,
 		rarity: 1,
@@ -1373,7 +1283,7 @@ const ItemTypeList = {
 		img: "dc-dngn/mana/fontDeep.png"
 	},
 // ORE VEINS
-	"oreVein":    {
+	"vein":    {
 		symbol: 	'v',
 		mayWalk: 	false,
 		mayFly: 	false,
@@ -1384,68 +1294,11 @@ const ItemTypeList = {
 		noneChance: 0.90,
 		imgGet: 	(self,img) => (img || self.variety.img || "oreVein"),
 		matter: 	'stone',
-		imgChoices: OreVeinList,
-		varieties: 	OreVeinList,
+		imgChoices: VeinVarietyList,
+		varieties: 	VeinVarietyList,
 		mineSwings: 14
 	},
-// Plants
-	"plant": 	{
-		symbol: 		SYM,
-		rarity: 		0,
-		mayWalk: 		true,
-		mayFly: 		true,
-		mayPickup: 		false,
-		mayHarvest: 	true,
-		harvestReps:	1,
-		rechargeTime: 	40,
-		name: 			'{state} {variety}',
-		properNoun: 	true,
-		growing:		false,
-		state: 			'wilted',
-		states: 		{ wilted: { growing: false }, thriving: { growing: true } },
-		varieties: 		PlantList,
-		matter: 		'plant',
-		isPlant:		true,
-		sign: 			"",
-		signLack: 		"This plant needs more light to grow.",
-		signFine: 		"This plant is growing well.",
-		signMature: 	"This plant is ready to harvest.",
-		icon: 			'/gui/icons/plant.png',
-		imgGet: 		(self,img) => (img || (self.growing ? self.variety.img : self.imgChoices.wilted.img)),
-		imgChoices: 	{ wilted: { img: 'plant/wilted.png' } },
-	},
-// Mushrooms
-	"mushroom": 	{
-		symbol: 		SYM,
-		rarity: 		0,
-		mayWalk: 		true,
-		mayFly: 		true,
-		mayPickup: 		false,
-		mayHarvest: 	true,
-		harvestReps:	1,
-		rechargeTime: 	400,
-		name: 			'{variety}',
-		varieties: 		MushroomList,
-		matter: 		'fungus',
-		isMushroom:		true,
-		icon: 			'/gui/icons/plant.png',
-	},
-// Seeds for plants and mushrooms
-	"seed": {
-		symbol: 		SYM,
-		rarity: 		0.1,
-		isTreasure:		true,
-		isSeed:			true,
-		mayWalk: 		true,
-		mayFly: 		true,
-		mayPickup: 		true,
-		name: 			'{variety}',
-		varieties: 		SeedList,
-		icon: 			'/gui/icons/plant.png',
-		img:			"plant/seed.png"
-	},
 	"vial": {
-		symbol:			SYM,
 		name: 			'Empty glass vial',
 		rarity:			0,
 		isTreasure:		true,
@@ -1459,11 +1312,10 @@ const ItemTypeList = {
 	},
 
 // FAKES and SKILLS
-	"skill": 	{ symbol: SYM, isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "/gui/icons/skill.png" },
-	"fake":   	{ symbol: SYM, isFake: true, name: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "/gui/icons/corpse.png" },
+	"skill": 	{ isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "/gui/icons/skill.png" },
+	"fake":   	{ isFake: true, name: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "/gui/icons/corpse.png" },
 // CORPSE
 	"corpse":   {
-		symbol: SYM,
 		name: "{matter} remains of a {mannerOfDeath} {usedToBe}",
 		matter: "REPLACE THIS MATTER",
 		rarity: 0,			// Never generates, because the Grocer job picks from .isEdible
@@ -1538,10 +1390,10 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		name:		 	'{variety}',
 		matter: 		'stone',
-		varieties: 		OreList,
+		varieties: 		OreVarietyList,
 		isOre: 			true,
 		imgGet: 		(self,img) => (img || self.variety.img || "ore"),
-		imgChoices: 	OreList,
+		imgChoices: 	OreVarietyList,
 		icon: 			'/gui/icons/ore.png'
 	},
 	"gem": 		{
@@ -1550,7 +1402,7 @@ const ItemTypeList = {
 		name:		 	'{quality} {variety}${+plus}{?effect}',
 		matter: 		'crystal',
 		qualities: 		GemQualityList,
-		varieties: 		GemList,
+		varieties: 		GemVarietyList,
 		effects: 		GemEffects,
 		effectWhen: 	{ isHarm: 'throw', DEFAULT: 'gaze' },
 		isGem: 			true,
@@ -1562,7 +1414,7 @@ const ItemTypeList = {
 		mayTargetPosition: 1,
 		autoCommand: 	Command.USE,
 		imgGet: 		(self,img) => (img || self.variety.img || "Gem Type2 Black"),
-		imgChoices: 	GemList,
+		imgChoices: 	GemVarietyList,
 		scale: 			0.3,
 		icon: 			'/gui/icons/gem.png'
 	},
@@ -1588,7 +1440,7 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		name: 	'{material} {variety}${+plus}{?effect}',
 		durability:		4*100,
-		varieties: 		AmmoList,
+		varieties: 		AmmoVarietyList,
 		donBunches: 	true,
 		isWeapon: 		true,
 		isAmmo: 		true,
@@ -1604,8 +1456,8 @@ const ItemTypeList = {
 		durability:		8000,
 		matter: 		'metal',
 		block: 			'physical',
-		varieties: 		ShieldList,
-		materials: 		ShieldMaterials,
+		varieties: 		ShieldVarietyList,
+		materials: 		ShieldMaterialList,
 		effects: 		ShieldEffects,
 		effectWhen: 	'use',
 		slot: 			Slot.SHIELD,
@@ -1623,7 +1475,7 @@ const ItemTypeList = {
 		name:		 	"{variety} helm${+plus}{?effect}",
 		matter: 		'metal',
 		durability:		Math.floor(4*60/5),
-		varieties: 		HelmList,
+		varieties: 		HelmVarietyList,
 		effects: 		HelmEffects,
 		effectWhen: 	'use',
 		slot: 			Slot.HEAD,
@@ -1642,7 +1494,7 @@ const ItemTypeList = {
 		name:		 	"{variety} armor${+plus}{?effect}",
 		matter: 		'metal',
 		durability:		Rules.armorDurability(100),
-		varieties: 		ArmorList,
+		varieties: 		ArmorVarietyList,
 		effects: 		ArmorEffects,
 		effectWhen: 	{ isHarm: 'backsies', DEFAULT: 'use' },
 		slot: 			Slot.ARMOR,
@@ -1653,7 +1505,7 @@ const ItemTypeList = {
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
 		imgGet: 		(self, img) => (img || self.variety.img || "item/armour/chain_mail1.png"),
-		imgChoices: 	ArmorList,
+		imgChoices: 	ArmorVarietyList,
 		icon: 			'/gui/icons/armor.png'
 	},
 	"cloak": {
@@ -1662,7 +1514,7 @@ const ItemTypeList = {
 		name:		 	"{variety}${+plus}{?effect}",
 		matter: 		'cloth',
 		durability:		Rules.armorDurability(100),
-		varieties: 		CloakList,
+		varieties: 		CloakVarietyList,
 		effects: 		CloakEffects,
 		effectWhen: 	'use',
 		slot: 			Slot.ARMOR,
@@ -1673,7 +1525,7 @@ const ItemTypeList = {
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
 		imgGet: 		(self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"),
-		imgChoices: 	CloakList,
+		imgChoices: 	CloakVarietyList,
 		icon: 			'/gui/icons/armor.png'
 	},
 	"bracers": {
@@ -1682,7 +1534,7 @@ const ItemTypeList = {
 		name:		 	"{variety} bracers{+plus}{?effect}",
 		matter: 		'metal',
 		durability:		Rules.armorDurability(100),
-		varieties: 		BracerList,
+		varieties: 		BracerVarietyList,
 		effects: 		BracersEffects,
 		effectWhen: 	'use',
 		slot:			Slot.ARMS,
@@ -1701,7 +1553,7 @@ const ItemTypeList = {
 		name:		 	"{variety}$",
 		matter: 		'leather',
 		durability:		Rules.armorDurability(100),
-		varieties: 		GloveList,
+		varieties: 		GloveVarietyList,
 		effectWhen: 	'use',
 		slot: 			Slot.HANDS,
 		isGloves: 		true,
@@ -1717,7 +1569,7 @@ const ItemTypeList = {
 		name:		 	"{variety} boots{+plus}{?effect}",
 		matter: 		'leather',
 		durability:		Rules.armorDurability(100),
-		varieties: 		BootList,
+		varieties: 		BootVarietyList,
 		slot: 			Slot.FEET,
 		isBoots: 		true,
 		isArmor: 		true,
@@ -1736,7 +1588,7 @@ const ItemTypeList = {
 		name:		 	"{material} {variety} ring${+plus}{?effect}",
 		matter: 		'metal',
 		materials: 		RingMaterialList,
-		varieties: 		RingList,
+		varieties: 		RingVarietyList,
 		effects: 		RingEffects,
 		effectWhen: 	'use',
 		slot: 			Slot.FINGERS,
@@ -1750,13 +1602,12 @@ const ItemTypeList = {
 		icon: 			'/gui/icons/ring.png'
 	},
 	"charm": {
-		symbol: 		SYM,
 		isTreasure: 	1,
 		isCharm: 		1,
 		name:		 	"{variety}${?effect}",
-		varieties: 		CharmList,
+		varieties: 		CharmVarietyList,
 		imgGet: (self, img) => (img || (self ? self.variety.img : '') || 'item/misc/misc_rune.png'),
-		imgChoices: 	CharmList,
+		imgChoices: 	CharmVarietyList,
 		icon: 			'/gui/icons/charm.png'
 	},
 	"stuff": {
@@ -1764,9 +1615,9 @@ const ItemTypeList = {
 		isTreasure: 	1,
 		isStuff: 		1,
 		name:		 	"{variety}${?effect}",
-		varieties: 		StuffList,
+		varieties: 		StuffVarietyList,
 		imgGet: (self, img) => (img || (self ? self.variety.img : '') || 'item/misc/misc_rune.png'),
-		imgChoices: 	StuffList,
+		imgChoices: 	StuffVarietyList,
 		icon: 			'/gui/icons/stuff.png'
 	},
 	// INGREDIENTS
@@ -1783,19 +1634,6 @@ const ItemTypeList = {
 	},
 
 };
-
-
-(() => {
-	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
-	for( let typeId in ItemTypeList ) {
-		let itemType = ItemTypeList[typeId];
-		if( !itemType.isTreasure ) continue;
-		console.assert( !itemType.xPrice && !itemType.effectChance );
-		console.assert( Rules.ItemBag[typeId] );
-		itemType.xPrice 		= Rules.ItemBag[typeId].xPrice;
-		itemType.effectChance	= Rules.ItemBag[typeId].cEff;
-	}
-})();
 
 
 const ItemSortOrder = ['skill','weapon','ammo','helm','armor','cloak','bracers','gloves','boots','shield','ring','potion','gem','spell','charm','ore','plant','mushroom','stuff','part','key'];
@@ -1815,7 +1653,7 @@ const ItemFilterGroup = {
 };
 
 
-ItemTypeList.oreVein.onBump = function(entity,self) {
+ItemTypeList.vein.onBump = function(entity,self) {
 	let tool = entity.getFirstItemInSlot(Slot.WEAPON);
 	if( !tool || !tool.mineSpeed ) {
 		tell(mSubject,entity,' ',mVerb,'need',' a pickaxe to mine this ore.');
@@ -2149,66 +1987,6 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 	});
 }
 
-ItemTypeList.plant.onPutInWorld = function() {
-	this.resetRecharge();
-}
-
-ItemTypeList.plant.rechargeCriteria = function() {
-	return this.owner && this.owner.isMap && this.owner.getLightAt(this.x,this.y) >= this.needLight;
-}
-
-ItemTypeList.plant.onTick = function() {
-	let pct = this.rechargePercent();
-	this.scale = 0.1+(0.15*pct);
-	if( this.spriteList && this.spriteList[0] ) {
-		this.spriteList[0].baseScale = this.scale;
-	}
-
-	if( this.isRecharged() ) {
-		this.sign = this.signMature;
-		return;
-	}
-	let hasLight = this.rechargeCriteria.call(this);
-	let state = hasLight ? 'thriving' : 'wilted';
-	if( this.state !== state ) {
-		this.stateCounter = (this.stateCounter||0)+1;
-		if( this.stateCounter >= 20 ) {
-			this.setState( state );
-		}
-	}
-	else {
-		this.stateCounter = 0;
-	}
-
-	this.sign = this.growing ? this.signFine : this.signLack;
-}
-
-ItemTypeList.mushroom.onTick = function() {
-	let pct = this.rechargePercent();
-	this.scale = 0.1+(0.15*pct);
-	if( this.spriteList && this.spriteList[0] ) {
-		this.spriteList[0].baseScale = this.scale;
-	}
-}
-
-MushroomList.blurellaMushroom.onHarvest = function(harvester,item) {
-}
-
-// amanitaMushroom
-//	"blurellaMushroom":
-//	"coxilliaMushroom":
-//	"grollotusMushroom":
-//	"klinulusMushroom":
-//	"rhodotusMushroom":
-
-
-ItemTypeList.mushroom.onHarvest = function(harvester,item) {
-	if( !item.effectOnHarvest || !harvester.mustBreathe() ) {
-		return;
-	}
-	effectApply(item.effectOnHarvest,harvester,item);
-}
-
 
 ItemTypeList.fontDeep.onTick = function(dt) {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).shotClear().nearMe(4);
@@ -2241,16 +2019,68 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 	}
 }
 
-CharmList.sunCrystal.onTick = function(dt) {
+CharmVarietyList.sunCrystal.onTick = function(dt) {
 	if( this.owner.isMap ) {
 		let tile = this.map.tileGet(this.x,this.y);
 		effectApply(this.effect,tile,this.ownerOfRecord,this,'tick');
 	}
 }
 
+//
+// ItemTypeList
+//
+ItemTypeList = Type.establish( 'ItemType', {
+	typeIdUnique:	true,
+	useSymbols:		true,
+	defaults: {
+		isItemType: true,
+		mayWalk:	true,
+		mayFly:		true,
+		opacity:	0,
+		img:		null
+	},
+	onRegister: itemType => {
+		if( !itemType.isTreasure ) {
+			return;
+		}
+		console.assert( Rules.ItemBag[itemType.typeId] );
+		// Required to make the itemTraverse work.
+		Type.giveTypeIds(itemType.materials);
+		Type.giveTypeIds(itemType.varieties);
+		Type.giveTypeIds(itemType.qualities);
+		itemType.xPrice 		= Rules.ItemBag[itemType.typeId].xPrice;
+		itemType.effectChance	= Rules.ItemBag[itemType.typeId].cEff;
+	},
+	onMerge: (existing,incoming) => {
+		let list = ['materials','varieties','quality'];
+		let result = {};
+		list.forEach( field => {
+			if( existing[field] && incoming[field] ) {
+				result[field] = Object.assign( {}, existing[field], incoming[field] );
+			}
+		});
+		return result;
+	},
+	onFinalize: itemType => {
+		let picker = new Picker(0);
+		Type.checkLoot(itemType);
+		if( itemType.ammoType ) {
+			if( !itemType.ammoSpec ) {
+				console.log( 'Item '+itemType.typeId+' needs an ammoSpec!' );
+				debugger;
+			}
+			else {
+				let ammoType = picker.pickItem( itemType.ammoSpec, null, false );
+				if( !ammoType ) {
+					console.log( 'Item '+itemType.typeId+' has illegal ammoSpec ['+itemType.ammoSpec+']' );
+				}
+			}
+		}
+	}
+}, ItemTypeList);
+
 return {
 	Matter: Matter,
-	ItemTypeDefaults: ItemTypeDefaults,
 	ItemTypeList: ItemTypeList,
 	WeaponMaterialList: WeaponMaterialList,
 	BowMaterialList: BowMaterialList,

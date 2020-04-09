@@ -4,23 +4,25 @@ class Plugin {
 	constructor(id) {
 		this.id = id;
 		this.isPlugin = true;
-		this._validFields = ['id','isPlugin','config','rules','tileTypeList','itemTypeList','monsterTypeList','scapeList','placeTypeList','themeList'];
-		this.rules				= {};
-		this.config				= {};
-		this.tileTypeList		= {};
-		this.itemTypeList		= {};
-		this.monsterTypeList	= {};
-		this.scapeList			= {};
-		this.placeTypeList		= {};
-		this.themeList			= {};
+		this._validFields = ['id','isPlugin','Config','Rules','TileTypeList','ItemTypeList','MonsterTypeList','ScapeList','PlaceTypeList','ThemeList'];
+		this.Config				= {};
+		this.Rules				= {};
+		this.TileTypeList		= {};
+		this.ItemTypeList		= {};
+		this.MonsterTypeList	= {};
+		this.ScapeList			= {};
+		this.PlaceTypeList		= {};
+		this.ThemeList			= {};
 
 	}
 	validate() {
 		Object.each( this, (field,fieldId) => {
 			if( !this._validFields.includes(fieldId) && fieldId.substr(0,1) !== '_' ) {
 				throw "Plugin "+this.id+" has invalid field "+fieldId;
+				return false;
 			}
 		});
+		return true;
 	}
 }
 
@@ -43,6 +45,7 @@ let PluginManager = new class {
 		console.assert( plugin.id );
 		console.assert( plugin.id == this.status[plugin.id].id );
 		console.assert( !this.list[plugin.id] && this.status[plugin.id].loaded );
+		console.assert( plugin.validate() );
 		this.list[plugin.id] = plugin;
 	}
 	async load(pluginId) {

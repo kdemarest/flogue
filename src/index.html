@@ -30,11 +30,13 @@
 <script src="utilities.js" charset="utf-8"></script>
 <script src="utilPick.js" charset="utf-8"></script>
 <script src="utilChance.js" charset="utf-8"></script>
+<script src="utilPlugin.js" charset="utf-8"></script>
 <script src="time.js" charset="utf-8"></script>
-<script src="plugin.js" charset="utf-8"></script>
 <script src="rules.js" charset="utf-8"></script>
 <script src="dataFab.js" charset="utf-8"></script>
+<script src="types.js" charset="utf-8"></script>
 <script src="data.js" charset="utf-8"></script>
+<script src="dataEffects.js" charset="utf-8"></script>
 <script src="dataTiles.js" charset="utf-8"></script>
 <script src="dataItems.js" charset="utf-8"></script>
 <script src="dataMonsters.js" charset="utf-8"></script>
@@ -42,6 +44,7 @@
 <script src="dataLegacy.js" charset="utf-8"></script>
 <script src="dataHumanNames.js" charset="utf-8"></script>
 <script src="dataPlaces.js" charset="utf-8"></script>
+<script src="dataThemes.js" charset="utf-8"></script>
 <script src="dataConditioner.js" charset="utf-8"></script>
 <script src="dataPermute.js" charset="utf-8"></script>
 <script src="dataPicker.js" charset="utf-8"></script>
@@ -164,18 +167,19 @@ async function main() {
 	window.config = config;
 
 	configId ? PluginManager.addForLoad(config.id,'config.'+config.id+'.js') : null;
+	PluginManager.addForLoad('pkgPlantsBasic', 'pkgPlantsBasic.js');
 	await PluginManager.loadAll();
 	
-	// This executes the initializers for all the plugins
+	// This executes the initializers for all the plugins, putting the data in the PluginManager
 	Module.realize();
 
 	// We condition the heck out of our data, and we have to do it in the right order.
-	let dataConditioner = new DataConditioner();
-	PluginManager.forEach( plugin => {
-		dataConditioner.mergeToGlobals(plugin);
-	});
-	dataConditioner.mergePlaceTypesToGlobals();
-	dataConditioner.conditionAll();
+//	let dataConditioner = new DataConditioner();
+	Type.establish('PLUGINS',{});
+	Type.register('PLUGINS', PluginManager.list );
+	Type.merge();
+	Type.finalize();
+//	dataConditioner.conditionAll();
 
 	window.ImageRepo =  new PixiImageRepo(PIXI.loader);
 	ImageRepo.load();
@@ -201,7 +205,8 @@ async function main() {
 </head>
 <body>
 	<div id="guiLoading">
-		Flogue loading...
+		<img style="position: absolute; object-fit: cover; width: 100%;" src='../tiles/scene/intro.jpg'>
+		<span style="position: absolute; z-index:10;">Flogue loading...</span>
 	</div>
 	<div id="guiMain">
 		<div class='col0'>

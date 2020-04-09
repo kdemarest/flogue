@@ -7,7 +7,13 @@ Module.add('dataMonsters',function() {
 // onTouch - fires if somebody is over/upon you.
 // onHeal - fires when you get healing. return true to suppress the auto-generated message about healing.
 
-let PartList = Fab.add( '', {
+let PartList = Type.establish('Part',{
+	onRegister: (part) => {
+		part.name = part.name || part.partId;
+	}
+});
+
+Type.register('Part', {
 	blood: 		{
 		matter: 'liquid',
 		makes: ['eRechargeFast', 'eBlindness', 'eRage', 'eHealing', 'eRegeneration', 'eWater'],
@@ -122,70 +128,51 @@ let PartList = Fab.add( '', {
 		augs: { augAfterDamage:1 },
 	},
 });
-Object.each( PartList, (part,partId) => {
-	part.typeId = partId;
-	part.name = partId;
+
+let SpeciesList = Type.establish('Species',{
 });
 
-let SpeciesList = {};
-SpeciesList.isAnimal = {
-	parts: ['blood','eye','ear','nose','tongue','brain','bone','skull','tooth','claw','heart','liver'],
-}
-SpeciesList.isEarthChild = {
-	parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
-}
-SpeciesList.isSunChild = {
-	parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
-}
-SpeciesList.isLunarChild = {
-	parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
-}
-SpeciesList.isUndead = {
-	parts: ['eye','ear','tongue','brain','bone','skull','tooth','claw'],
-}
-SpeciesList.isDemon = {
-	parts: ['blood','eye','ear','nose','tongue','brain','bone','skull','tooth','claw','heart','liver'],
-}
-SpeciesList.isInsect = {
-	parts: ['eye','tongue','brain','gland','wing','chitin','icor'],
-}
-SpeciesList.isPlanar = {
-	parts: ['eye','tongue','brain','heart','liver','gland','icor'],
-}
-SpeciesList.isConstruct = {
-	parts: ['inductor','gear','strut','cam','oil'],
-}
-SpeciesList.isOoze = {
-	parts: ['slime'],
-}
-SpeciesList.isPlant = {
-	parts: ['*self*','leaf','sap','bark','flower'],
-}
-SpeciesList.isMushroom = {
-	parts: ['*self*','stem','gill'],
-}
+Type.register( 'Species', {
+	isAnimal: {
+		parts: ['blood','eye','ear','nose','tongue','brain','bone','skull','tooth','claw','heart','liver'],
+	},
+	isEarthChild: {
+		parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
+	},
+	isSunChild: {
+		parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
+	},
+	isLunarChild: {
+		parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
+	},
+	isUndead: {
+		parts: ['eye','ear','tongue','brain','bone','skull','tooth','claw'],
+	},
+	isDemon: {
+		parts: ['blood','eye','ear','nose','tongue','brain','bone','skull','tooth','claw','heart','liver'],
+	},
+	isInsect: {
+		parts: ['eye','tongue','brain','gland','wing','chitin','icor'],
+	},
+	isPlanar: {
+		parts: ['eye','tongue','brain','heart','liver','gland','icor'],
+	},
+	isConstruct: {
+		parts: ['inductor','gear','strut','cam','oil'],
+	},
+	isOoze: {
+		parts: ['slime'],
+	},
+	isPlant: {
+		parts: ['*self*','leaf','sap','bark','flower'],
+	},
+	isMushroom: {
+		parts: ['*self*','stem','gill'],
+	}
+});
 
 const Control = { AI: "ai", USER: "user", TESTER: "tester", EMPTY: "empty" };
 
-const MonsterTypeDefaults = {
-	level: 0, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
-	attitude: Attitude.AGGRESSIVE,
-	light: 0,
-	senseBlind: false, senseXray: false, senseTreasure: false, senseLiving: false,
-	invisible: false, senseInvisible: false,
-	control: Control.AI,
-	immune: '', resist: '', vuln: '',
-	stun: false,
-	personalEnemy: '',
-	reach: 1,
-	regenerate: 0,
-	speed: 1,
-	travelMode: 'walk', mayWalk: false, mayFly: false,
-	type: null, typeId: null,
-
-	//debug only
-	observeDistantEvents: false
-};
 
 
 let MentalAttack = [Attitude.ENRAGED, Attitude.CONFUSED, Attitude.PANICKED, Attitude.PACIFIED].join(',');
@@ -378,12 +365,210 @@ let PlayerImages = {
 // stopShot
 // stopIncoming
 
+function monsterTypePreProcess(typeId,m) {
+	console.assert(m.typeId==typeId);
+	console.assert(m.isMonsterType);
 
-const MonsterTypeList = {
+	let brain = null;
+	let body = null;
+	let naturalDamageType;
+	if( m.core ) {
+		m.level = m.core[0];
+		console.assert( Number.isFinite(m.level) );
+		m.power = m.core[1];
+		m.team  = m.core[2];
+		naturalDamageType = m.core[3];
+		brain = m.core[4];
+		body  = m.core[5];
+		m.img = m.core[6];
+		m.pronoun = m.core[7];
+		delete m.core;
+	}
+
+	console.assert( !brain || (BrainMindset[brain]!==undefined && BrainAbility[brain]!==undefined) );
+	console.assert( !body  || (BodyAbility[body]!==undefined && BodySlots[body]!==undefined) );
+
+	// OK, this sucks, but I set isMonsterType here AS WELL AS in fab, because the merge
+	// of monsters from places requires it.
+	m.brainMindset = String.combine(',',m.brainMindset,BrainMindset[brain]);
+	m.brainAbility = String.combine(',',m.brainAbility,BrainAbility[brain]);
+	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[body]);
+	m.bodySlots    = Object.assign( m.bodySlots || {}, BodySlots[body] );
+	m.brainState   = {};
+
+	let blood = {
+		isAnimal: 		'bloodRed',
+		isEarthChild: 	'bloodGreen',
+		isSunChild: 	'bloodRed',
+		isLunarChild: 	'bloodBlue',
+		isPlanar: 		'bloodYellow',
+		isInsect: 		'bloodYellow',
+		isUndead: 		'bloodWhite',
+		isDemon: 		'bloodBlack',
+		isOoze: 		'bloodBlack',
+	};
+	m.bloodId = m.bloodId || Object.findByFlag( m, blood ) || 'bloodRed';
+	if( !m.isSunChild && m.senseDarkVision===undefined ) {
+		m.senseDarkVision = m.senseDarkVision || Rules.MONSTER_DARK_VISION;
+	}
+	if( m.isLiving === undefined ) {
+		m.isLiving = !m.isUndead && !m.isConstruct && !m.isIncorporeal;
+	}
+	if( m.isMindless ) {
+		m.immune = String.arAdd(m.immune,MentalAttack+',possess');
+	}
+	if( !String.arIncludes(m.vuln||'',DamageType.WATER) && !String.arIncludes(m.resist||'',DamageType.WATER) ) {
+		m.immune = String.arAdd(m.immune,DamageType.WATER);
+	}
+	if( m.isDemon && m.lightHarms === undefined ) {
+		m.lightHarms = 8;
+	}
+	if( m.isIncorporeal && m.corpse===undefined ) {
+		m.corpse = false;
+	}
+	let eatDefaults = {
+		isIncorporeal:	['ether'],
+		isInsectivore:	['plant','fungus','liquid'],
+		isHerbivore:	['plant','fungus','liquid'],
+		isCarnivore:	['liquid','flesh','bone'],
+		isOmnivore:		['plant','fungus','liquid','flesh','bone'],
+		isScavenger:	['plant','fungus','liquid','flesh','bone','leather'],
+		isDog:			['liquid','flesh','bone', 'leather', 'cloth', 'chitin', 'ivory'],
+		isAnimal:		['plant','fungus','liquid','flesh','bone'],
+		isEarthChild:	['plant','fungus','liquid','flesh','bone'],
+		isSunChild:		['plant','fungus','liquid','flesh','bone'],
+		isLunarChild:	['plant','fungus','liquid','flesh','bone'],
+		isPlanar:		['plant','fungus','liquid','flesh','energy'],
+		isUndead: 		['flesh'],
+		isDemon: 		['liquid','flesh','bone','crystal'],
+		isOoze: 		['plant','fungus','liquid','flesh','bone','leather','crystal','wood','wax','cloth','chitin','paper','ivory'],
+	}
+
+	console.assert( !m.eat || Array.isArray(m.eat) );
+	if( m.eat === undefined ) {
+		m.eat = Object.findByFlag( m, eatDefaults ) || ['plant'];
+	}
+
+	// Most things are flesh, but there are definitely some that aren't
+	let matterDefaults = {
+		isSunChild:		'crystal',
+		isPlanar:		'energy',
+		isInsect:		'chitin',
+		isDemon: 		'chitin',
+		isOoze: 		'liquid',
+		isConstruct:	'metal',
+		isSkeleton:		'bone',
+		isMushroom:		'fungus'
+	}
+	m.matter = m.matter || Object.findByFlag( m, matterDefaults ) || 'flesh';
+
+	let breathIgnore = {
+		isLunarChild:	true,
+		isElemental: 	true,
+		isConstruct: 	true,
+		isIncorporeal: 	true,
+		isUndead: 		true,
+		isOoze: 		true,
+		isPlant:		40,
+	};
+	if( Object.findByFlag( m, breathIgnore ) ) {
+		m.breathIgnore = Object.findByFlag( m, breathIgnore );
+	}
+
+
+	// There is code that assumes that all monsters have, at least, an emptyinventory.
+	m.carrying = m.carrying || [];
+	m.carrying = Array.isArray(m.carrying) ? m.carrying : [m.carrying];
+
+	// Determine the creature's natural weapon and its damageType
+	let damType = naturalDamageType || m.naturalWeapon.damageType || DamageType.CUT;
+	m._naturalWeapon = m.naturalWeapon;
+	let natWeapon = Object.assign({
+		typeFilter: 'fake',
+		isNatural: true,
+		isMelee: true,
+		isWeapon: true,
+		quick: m.quick!==undefined ? m.quick : Quick.NIMBLE, // This is important, so that bite/claw critters can hit you if you're nimble
+		reach: m.reach || 1,
+		damageType: damType,
+	}, m.naturalWeapon );
+	m.naturalWeapon = natWeapon;
+
+	// Generate all the parts of this creature as items.
+	let species = Object.findByFlag( m, SpeciesList );
+	let partList = m.parts || species.parts;
+	partList.forEach( partId => {
+		let part = PartList[partId];
+		if( !part ) {
+			return;
+		}
+		// NOTE: The rarities are not being set here, because what SHOULD
+		// happen is that parts get generated only when there is a recipe 
+		// that uses them.
+		let inject = {
+			typeId:		m.typeId+String.capitalize(partId),				// goblinHeart
+			name:		m.typeId+' '+(part.name||partId),				// goblin heart, ooze slime
+			matter:		part.matter,									// matter: liquid or matter: flash
+		};
+		inject['is'+String.capitalize(m.typeId)] = true;				// isGoblin: true
+		inject['is'+String.capitalize(partId)] = true;					// isHeart: true or isSlime: true
+		if( part.makes ) {
+			part.makes.forEach( effectId => {
+				let bitId = 'bit'+String.capitalize(effectId.slice(1));		// bitInvisibility or bitFreeze
+				inject[bitId] = true;
+			});
+		}
+		if( part.augs ) {
+			Object.assign( inject, part.augs );
+		}
+		ItemTypeList.part.varieties[inject.typeId] = inject;
+	});
+
+	console.assert( m.stink===undefined || (m.stink>=0 && m.stink<=1) );
+}
+
+const monsterTypeDefaults = {
+	isMonsterType: true,
+	level: 0, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
+	attitude: Attitude.AGGRESSIVE,
+	light: 0,
+	senseBlind: false, senseXray: false, senseTreasure: false, senseLiving: false,
+	invisible: false, senseInvisible: false,
+	control: Control.AI,
+	immune: '', resist: '', vuln: '',
+	stun: false,
+	personalEnemy: '',
+	reach: 1,
+	regenerate: 0,
+	speed: 1,
+	travelMode: 'walk', mayWalk: false, mayFly: false,
+	type: null, typeId: null,
+
+	//debug only
+	observeDistantEvents: false
+};
+
+let MonsterTypeList = Type.establish( 'MonsterType', {
+	typeIdUnique:	true,
+	useSymbols:		true,
+	defaults: 		monsterTypeDefaults,
+	onRegister: (monsterType) => {
+		monsterTypePreProcess(monsterType.typeId,monsterType);
+	},
+	onFinalize: monsterType => {
+		Type.checkLoot(monsterType);
+		Type.checkResistance( monsterType.immune );
+		Type.checkResistance( monsterType.resist );
+		Type.checkResistance( monsterType.vuln );
+	}
+});
+
+Type.register( 'MonsterType', {
 
 // GOOD TEAM
 	"player": {
-		core: [ '@', 0, '3:10', 'good', 'cut', 'hero', 'humanoid', 'mon/human/solarPriest.png', 'he' ],
+		symbol: '@',
+		core: [ 0, '3:10', 'good', 'cut', 'hero', 'humanoid', 'mon/human/solarPriest.png', 'he' ],
 		attitude: Attitude.CALM,
 		brainMindset: 'pickup,open',
 		control: Control.USER,
@@ -415,7 +600,8 @@ const MonsterTypeList = {
 		},
 	},
 	"dog": {
-		core: [ 'd', 0, '10:10', 'good', 'bite', 'canine', 'quadruped', 'UNUSED/spells/components/dog2.png', '*'  ],
+		symbol: 'd',
+		core: [ 0, '10:10', 'good', 'bite', 'canine', 'quadruped', 'UNUSED/spells/components/dog2.png', '*'  ],
 		attitude: Attitude.HUNT,
 		dodge: Quick.NIMBLE,
 		isAnimal: true,
@@ -431,7 +617,7 @@ const MonsterTypeList = {
 		senseSight: 3,
 	},
 	"dwarf": {
-		core: [ SYM, 0, '3:10', 'good', 'bash', 'sentient', 'humanoid', 'mon/dwarf/dwarfWarrior.png', '*' ],
+		core: [ 0, '3:10', 'good', 'bash', 'sentient', 'humanoid', 'mon/dwarf/dwarfWarrior.png', '*' ],
 		name: "Fili",
 		isSunChild: true,
 		isDwarf: true,
@@ -443,7 +629,7 @@ const MonsterTypeList = {
 		brainPackAnimal: true
 	},
 	"mastiff": {
-		core: [ SYM, 69, '10:10', 'good', 'bite', 'canine', 'quadruped', 'UNUSED/spells/components/dog2.png', '*' ],
+		core: [ 69, '10:10', 'good', 'bite', 'canine', 'quadruped', 'UNUSED/spells/components/dog2.png', '*' ],
 		attitude: Attitude.HUNT,
 		dodge: Quick.NIMBLE,
 		isAnimal: true,
@@ -457,27 +643,27 @@ const MonsterTypeList = {
 		senseSmell: 200,
 	},
 	"human": {
-		core: [ SYM, 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'dc-mon/human.png', '*' ],
+		core: [ 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'dc-mon/human.png', '*' ],
 		attitude: Attitude.CALM,
 		isSunChild: true,
 		isNamed: true,
 		light: 4,
-		loot: '30% mushroomBread, 30% coin, 10% potion.eHealing',
+		loot: '30% stuff.mushroomBread, 30% coin, 10% potion.eHealing',
 		rarity: 0.10,
 	},
 	"philanthropist": {
-		core: [ SYM, 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'dc-mon/philanthropist.png', '*' ],
+		core: [ 0, '3:10', 'good', 'cut', 'sentient', 'humanoid', 'dc-mon/philanthropist.png', '*' ],
 		attitude: Attitude.CALM,
 		dodge: Quick.CLUMSY,
 		isSunChild: true,
 		isNamed: true,
 		light: 4,
-		loot: '30% mushroomBread, 50% coin, 10% potion.eHealing',
+		loot: '30% stuff.mushroomBread, 50% coin, 10% potion.eHealing',
 		rarity: 0.10,
 		sayPrayer: 'Get in line! Come to the left window for donations!'
 	},
 	"refugee": {
-		core: [ SYM, 0, '2:20', 'good', 'bash', 'sentient', 'humanoid', 'dc-mon/refugee.png', '*' ],
+		core: [ 0, '2:20', 'good', 'bash', 'sentient', 'humanoid', 'dc-mon/refugee.png', '*' ],
 		attitude: Attitude.FEARFUL,
 		isSunChild: true,
 		isNamed: true,
@@ -487,7 +673,7 @@ const MonsterTypeList = {
 		sayPrayer: "Oh god... What I wouldn't give for a steak."
 	},
 	"solarCenturion": {
-		core: [ SYM, 44, '4:20', 'good', 'stab', 'sentient', 'humanoid', 'mon/solarCenturion.png', 'he'  ],
+		core: [ 44, '4:20', 'good', 'stab', 'sentient', 'humanoid', 'mon/solarCenturion.png', 'he'  ],
 		attitude: Attitude.AGGRESIVE,
 		brainPath: true,
 		corpse: false,
@@ -507,7 +693,7 @@ const MonsterTypeList = {
 
 // EVIL TEAM
 	"avatarOfBalgur": {
-		core: [ SYM, 99, '25:2', 'evil', 'burn', 'sentient', 'humanoid', 'dc-mon/hell_knight.png', 'he' ],
+		core: [ 99, '25:2', 'evil', 'burn', 'sentient', 'humanoid', 'dc-mon/hell_knight.png', 'he' ],
 		isUnique: true,
 		neverPick: true,
 		immune: ['eShove',DamageType.BURN,Attitude.PANICKED].join(','),
@@ -519,7 +705,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"ambligryp": {
-		core: [ SYM, 29, '4:20', 'evil', 'bash', 'animalHunter', 'multiped', 'mon/insect/ambligryp.png', 'it' ],
+		core: [ 29, '4:20', 'evil', 'bash', 'animalHunter', 'multiped', 'mon/insect/ambligryp.png', 'it' ],
 		attitude: Attitude.HUNT,
 		gripChance: 25,
 		isInsect: true,
@@ -530,7 +716,7 @@ const MonsterTypeList = {
 		vuln: 'freeze,corrode',
 	},
 	"tinnamaton": {
-		core: [ SYM, 29, '4:12', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/tinnamaton.png', 'it' ],
+		core: [ 29, '4:12', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/tinnamaton.png', 'it' ],
 		scale: 0.55,
 		attitude: Attitude.AWAIT,
 		tooClose: 2,
@@ -544,7 +730,7 @@ const MonsterTypeList = {
 		vuln: ConstructVulnerability,
 	},
 	"brassamaton": {
-		core: [ SYM, 59, '6:3', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/brassamaton.png', 'it' ],
+		core: [ 59, '6:3', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/brassamaton.png', 'it' ],
 		scale: 0.8,
 		attitude: Attitude.AWAIT,
 		tooClose: 2,
@@ -559,7 +745,7 @@ const MonsterTypeList = {
 	},
 	"ghostScorpion": {
 		// make it so this goes insubstantial from time to time.
-		core: [ SYM, 39, '6:8', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/insect/boneScorpion.png', 'it' ],
+		core: [ 39, '6:8', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/insect/boneScorpion.png', 'it' ],
 		attitude: Attitude.AWAIT,
 		tooClose: 5,
 		isInsect: true,
@@ -574,7 +760,7 @@ const MonsterTypeList = {
 		vuln: DamageType.FREEZE,
 	},
 	"demon": {
-		core: [ SYM, 49, '3:5', 'evil', 'burn', 'sentient', 'humanoid', 'player/base/draconian_red_f.png', 'it' ],
+		core: [ 49, '3:5', 'evil', 'burn', 'sentient', 'humanoid', 'player/base/draconian_red_f.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		carrying: 'ammo.dart.eSlow',
@@ -584,7 +770,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daihundt": {
-		core: [ SYM, 15, '3:7', 'evil', 'bite', 'canine', 'quadruped', 'dc-mon/animals/hell_hound.png', 'it' ],
+		core: [ 15, '3:7', 'evil', 'bite', 'canine', 'quadruped', 'dc-mon/animals/hell_hound.png', 'it' ],
 		attitude: Attitude.HUNT,
 		brainMindset: 'ravenous',
 		dodge: Quick.NIMBLE,
@@ -598,7 +784,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daispine": {	// (stab)
-		core: [ SYM,  4, '3:5', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daispine.png', 'it' ],
+		core: [  4, '3:5', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daispine.png', 'it' ],
 		breathIgnore: true,
 		glow: 1,
 		light: 2,
@@ -612,7 +798,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daibelade": {	// (cut)
-		core: [ SYM,  9, '3:5', 'evil', 'cut', 'demon', 'wingedBiped', 'mon/demon/daibelade.png', 'it' ],
+		core: [  9, '3:5', 'evil', 'cut', 'demon', 'wingedBiped', 'mon/demon/daibelade.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		carrying: 'pitchfork',
@@ -623,7 +809,7 @@ const MonsterTypeList = {
 		scale: 1.4,
 	},
 	"daifahng": {	// (bite)
-		core: [ SYM, 14, '8:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifahng.png', 'it' ],
+		core: [ 14, '8:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifahng.png', 'it' ],
 		dodge: Quick.CLUMSY,
 		immune: DemonImmunity,
 		isDemon: true,
@@ -633,7 +819,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daicolasp": {	// (claw)
-		core: [ SYM, 19, '3:5', 'evil', 'claw', 'demon', 'wingedBiped', 'mon/demon/daicolasp.png', 'it' ],
+		core: [ 19, '3:5', 'evil', 'claw', 'demon', 'wingedBiped', 'mon/demon/daicolasp.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		carrying: '',
@@ -642,7 +828,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daimaul": {	// (bash)
-		core: [ SYM, 24, '3:5', 'evil', 'bash', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
+		core: [ 24, '3:5', 'evil', 'bash', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		glow: 1,
 		light: 1,
 		immune: DemonImmunity,
@@ -655,7 +841,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiskorsh": {	// (burn)
-		core: [ SYM, 29, '3:5', 'evil', 'burn', 'demon', 'wingedBiped', 'mon/demon/daiskorsh.png', 'it' ],
+		core: [ 29, '3:5', 'evil', 'burn', 'demon', 'wingedBiped', 'mon/demon/daiskorsh.png', 'it' ],
 		immune: DemonImmunity,
 		glow: 1,
 		light: 7,
@@ -667,7 +853,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability+','+DamageType.WATER,
 	},
 	"daileesh": {	// (leech)
-		core: [ SYM, 34, '4:10', 'evil', null, 'demon', 'wingedBiped', 'mon/demon/daileesh.png', 'it' ],
+		core: [ 34, '4:10', 'evil', null, 'demon', 'wingedBiped', 'mon/demon/daileesh.png', 'it' ],
 		attitude: Attitude.HUNT,
 		naturalWeapon: {
 			_effectOnAttack: EffectTypeList.eLeech
@@ -682,7 +868,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"dailectra": {	// (shock)
-		core: [ SYM, 39, '3:5', 'evil', 'shock', 'demon', 'wingedBiped', 'mon/demon/dailectra.png', 'it' ],
+		core: [ 39, '3:5', 'evil', 'shock', 'demon', 'wingedBiped', 'mon/demon/dailectra.png', 'it' ],
 		corpse: false,
 		glow: true,
 		light: 12,
@@ -696,7 +882,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiacrid": {	// (corrode)
-		core: [ SYM, 44, '3:16', 'evil', null, 'demon', 'quadruped', 'mon/demon/daiacrid.png', 'it' ],
+		core: [ 44, '3:16', 'evil', null, 'demon', 'quadruped', 'mon/demon/daiacrid.png', 'it' ],
 		naturalWeapon: {
 			reach: 6,
 			rechargeTime: 2,
@@ -725,7 +911,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daitox": {	// (poison)
-		core: [ SYM, 49, '3:20', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daitox.png', 'it' ],
+		core: [ 49, '3:20', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daitox.png', 'it' ],
 		immune: DemonImmunity+',poison',
 		isDemon: true,
 		isDaitox: true,
@@ -747,7 +933,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daikay": {	// (rot)
-		core: [ SYM, 54, '3:30', 'evil', null, 'demon', 'noped', 'mon/demon/daikay.png', 'it' ],
+		core: [ 54, '3:30', 'evil', null, 'demon', 'noped', 'mon/demon/daikay.png', 'it' ],
 		naturalWeapon: {
 			_effectOnAttack: {
 				op: 'damage',
@@ -772,7 +958,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daitraum": {	// (stun)
-		core: [ SYM, 59, '3:4', 'evil', 'bash', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
+		core: [ 59, '3:4', 'evil', 'bash', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		carrying: '',
@@ -785,7 +971,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daishulk": {	// (shove)
-		core: [ SYM, 64, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daishulk.png', 'it' ],
+		core: [ 64, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daishulk.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		carrying: '',
@@ -798,7 +984,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daibozle": {	// (confuse)
-		core: [ SYM, 69, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daibozle.png', 'it' ],
+		core: [ 69, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daibozle.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		breathIgnore: true,
@@ -813,7 +999,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daisteria": {	// (panic)
-		core: [ SYM, 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daisteria.png', 'it' ],
+		core: [ 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daisteria.png', 'it' ],
 		breathIgnore: true,
 		immune: DemonImmunity,
 		isDemon: true,
@@ -828,7 +1014,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiffury": {	// (enrage)
-		core: [ SYM, 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifury.png', 'it' ],
+		core: [ 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifury.png', 'it' ],
 		immune: DemonImmunity,
 		breathIgnore: true,
 		isDemon: true,
@@ -843,7 +1029,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"daiphant": {	// (slow)
-		core: [ SYM, 84, '5:12', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daiphant.png', 'it' ],
+		core: [ 84, '5:12', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daiphant.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		isDaiphant: true,
@@ -857,7 +1043,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"dailess": {	// (blind)
-		core: [ SYM, 89, '3:5', 'evil', 'bite', 'demon', 'multiped', 'mon/demon/dailess.png', 'it' ],
+		core: [ 89, '3:5', 'evil', 'bite', 'demon', 'multiped', 'mon/demon/dailess.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		isDailess: true,
@@ -871,7 +1057,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"dairain": {	// (drain)
-		core: [ SYM, 94, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/dairain.png', 'it' ],
+		core: [ 94, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/dairain.png', 'it' ],
 		immune: DemonImmunity,
 		isDemon: true,
 		isDairain: true,
@@ -885,7 +1071,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability,
 	},
 	"deepCentipede": {
-		core: [ SYM, 24, '4:20', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/insect/centipede.png', 'it' ],
+		core: [ 24, '4:20', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/insect/centipede.png', 'it' ],
 		attitude: Attitude.HUNT,
 		tooClose: 9,
 		isInsect: true,
@@ -901,7 +1087,7 @@ const MonsterTypeList = {
 		scentReduce: 50
 	},
 	"deepSpider": {
-		core: [ SYM, 59, '2:20', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/spider.png', 'it' ],
+		core: [ 59, '2:20', 'evil', 'stab', 'animalHunter', 'multiped', 'mon/spider.png', 'it' ],
 		attitude: Attitude.AWAIT,
 		tooClose: 7,
 		isInsect: true,
@@ -918,7 +1104,7 @@ const MonsterTypeList = {
 		vuln: DamageType.BASH,
 	},
 	"ethermite": {
-		core: [ SYM, 59, '3:12', 'evil', 'bite', 'animalHunter', 'noped', 'mon/planar/ethermite.png', '*' ],
+		core: [ 59, '3:12', 'evil', 'bite', 'animalHunter', 'noped', 'mon/planar/ethermite.png', '*' ],
 		attitude: Attitude.HUNT,
 		brainMindset: 'pack',
 		dodge: Quick.NIMBLE,
@@ -933,7 +1119,7 @@ const MonsterTypeList = {
 		vuln: 'glass'
 	},
 	"shade": {
-		core: [ SYM, 4, '1.5:16', 'evil', 'rot', 'undeadDumb', 'humanoid', 'mon/shade.png', '*' ],
+		core: [ 4, '1.5:16', 'evil', 'rot', 'undeadDumb', 'humanoid', 'mon/shade.png', '*' ],
 		attitude: Attitude.HUNT,
 		bloodId: 'bloodBlack',
 		immune: UndeadImmunity,
@@ -948,7 +1134,7 @@ const MonsterTypeList = {
 		vuln: DamageType.SMITE
 	},
 	"ghoul": {
-		core: [ SYM, 39, '1:2', 'evil', 'rot', 'undeadDumb', 'humanoid', 'dc-mon/undead/ghoul.png', 'it' ],
+		core: [ 39, '1:2', 'evil', 'rot', 'undeadDumb', 'humanoid', 'dc-mon/undead/ghoul.png', 'it' ],
 		attitude: Attitude.HUNT,
 		brainMindset: 'greedy',
 		dark: 2,
@@ -965,7 +1151,7 @@ const MonsterTypeList = {
 		senseSmell: 200,
 	},
 	"goblin": {
-		core: [ SYM, 1, '3:10', 'evil', 'cut', 'sentient', 'humanoid', 'mon/earth/goblin.png', '*' ],
+		core: [ 1, '3:10', 'evil', 'cut', 'sentient', 'humanoid', 'mon/earth/goblin.png', '*' ],
 		brainIgnoreClearShots: 70,
 		brainMindset: 'greedy',
 		greedField: 'isGem',
@@ -977,7 +1163,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh mighty Thagzog...',
 	},
 	"goblinWar": { 
-		core: [ SYM, 49, '3:8', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
+		core: [ 49, '3:8', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
 		attitude: Attitude.HUNT,
 		name: 'goblin warrior',
 		brainMindset: 'greedy',
@@ -990,7 +1176,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh warrior Thagzog...'
 	},
 	"goblinMut": {
-		core: [ SYM, 79, '3:8', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
+		core: [ 79, '3:8', 'evil', 'cut', 'sentient', 'humanoid', 'dc-mon/goblin.png', '*' ],
 		name: 'goblin mutant',
 		brainMindset: 'greedy',
 		dodge: Quick.NIMBLE,
@@ -1002,7 +1188,7 @@ const MonsterTypeList = {
 		sayPrayer: 'Oh mutant Thagzog...'
 	},
 	"imp": {
-		core: [ SYM, 39, '3:10', 'evil', 'claw', 'demon', 'humanoid', 'dc-mon/demons/imp.png', 'it' ],
+		core: [ 39, '3:10', 'evil', 'claw', 'demon', 'humanoid', 'dc-mon/demons/imp.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		dodge: Quick.NIMBLE,
 		glow: 1,
@@ -1015,7 +1201,7 @@ const MonsterTypeList = {
 		vuln: DemonVulnerability
 	},
 	"kobold": {
-		core: [ SYM, 14, '4:20', 'evil', 'cut', 'canine', 'humanoid', 'dc-mon/kobold.png', '*' ],
+		core: [ 14, '4:20', 'evil', 'cut', 'canine', 'humanoid', 'dc-mon/kobold.png', '*' ],
 		attitude: Attitude.HESITANT,
 		dodge: Quick.NIMBLE,
 		carrying: '2x dart.eInert',
@@ -1025,7 +1211,7 @@ const MonsterTypeList = {
 		senseSmell: 200,
 	},
 	"ogreKid": { 
-		core: [ SYM, 39, '6:8', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
+		core: [ 39, '6:8', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
 		name: "ogre child",
 		carrying: 'ammo.rock',
 		isEarthChild: true,
@@ -1035,7 +1221,7 @@ const MonsterTypeList = {
 		stink: 0.6,
 	},
 	"ogre": {
-		core: [ SYM, 69, '5:5', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
+		core: [ 69, '5:5', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
 		carrying: launcher({
 			ammoType: 'isRock',
 			ammoSpec: 'ammo.rock',
@@ -1054,7 +1240,7 @@ const MonsterTypeList = {
 		stink: 0.8,
 	},
 	"redOoze": {
-		core: [ SYM, 19, '3:3', 'evil', 'corrode', 'animalHunter', 'blob', 'dc-mon/jelly.png', 'it' ],
+		core: [ 19, '3:3', 'evil', 'corrode', 'animalHunter', 'blob', 'dc-mon/jelly.png', 'it' ],
 		name: "red ooze",
 		attitude: Attitude.HUNT,
 		brainMindset: 'ravenous',
@@ -1075,7 +1261,7 @@ const MonsterTypeList = {
 		vuln: OozeVulnerability,
 	},
 	"redFiddler": {
-		core: [ SYM, 29, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/redFiddler.png', 'it' ],
+		core: [ 29, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/redFiddler.png', 'it' ],
 		name: "red fiddler",
 		naturalWeapon: {
 			reach: 6,
@@ -1101,7 +1287,7 @@ const MonsterTypeList = {
 		vuln: 'glass'
 	},
 	"blueFiddler": {
-		core: [ SYM, 39, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/blueFiddler.png', 'it' ],
+		core: [ 39, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/blueFiddler.png', 'it' ],
 		name: "blue fiddler",
 		naturalWeapon: {
 			reach: 5,
@@ -1126,7 +1312,7 @@ const MonsterTypeList = {
 		vuln: 'glass'
 	},
 	"greenFiddler": {
-		core: [ SYM, 49, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/greenFiddler.png', 'it' ],
+		core: [ 49, '4:7', 'evil', null, 'animalHunter', 'multiped', 'mon/insect/greenFiddler.png', 'it' ],
 		name: "green fiddler",
 		naturalWeapon: {
 			reach: 6,
@@ -1152,7 +1338,7 @@ const MonsterTypeList = {
 		vuln: 'glass'
 	},
 	"blueScarab": {
-		core: [ SYM, 59, '2:30', 'evil', 'shock', 'animalHunter', 'multiped', 'mon/insect/blueScarab.png', 'it' ],
+		core: [ 59, '2:30', 'evil', 'shock', 'animalHunter', 'multiped', 'mon/insect/blueScarab.png', 'it' ],
 		name: "blue scarab",
 		dodge: Quick.NIMBLE,
 		glow: 3,
@@ -1166,7 +1352,7 @@ const MonsterTypeList = {
 		vuln: 'glass,'+DamageType.BURN
 	},
 	"redScarab": {
-		core: [ SYM, 19, '2:30', 'evil', 'burn', 'animalHunter', 'multiped', 'mon/insect/redScarab.png', 'it' ],
+		core: [ 19, '2:30', 'evil', 'burn', 'animalHunter', 'multiped', 'mon/insect/redScarab.png', 'it' ],
 		name: "red scarab",
 		dodge: Quick.NIMBLE,
 		glow: 3,
@@ -1180,7 +1366,7 @@ const MonsterTypeList = {
 		vuln: 'glass,'+DamageType.FREEZE
 	},
 	"arborian": {
-		core: [ SYM, 69, '6:5', 'evil', 'bash', 'simpleton', 'humanoid', 'mon/plant/arborian.png', 'it' ],
+		core: [ 69, '6:5', 'evil', 'bash', 'simpleton', 'humanoid', 'mon/plant/arborian.png', 'it' ],
 		dodge: Quick.CLUMSY,
 		glow: 3,
 		immune: PlantImmunity,
@@ -1190,7 +1376,7 @@ const MonsterTypeList = {
 		vuln: PlantVulnerability
 	},
 	"shadow": {
-		core: [ SYM, 79, '1:12', 'evil', 'rot', 'undead', 'humanoid', 'dc-mon/undead/shadow.png', 'it' ],
+		core: [ 79, '1:12', 'evil', 'rot', 'undead', 'humanoid', 'dc-mon/undead/shadow.png', 'it' ],
 		dark: 12,
 		immune: ShadowImmunity,
 		isUndead: true,
@@ -1200,7 +1386,7 @@ const MonsterTypeList = {
 		vuln: ['silver',DamageType.SMITE].join(',')
 	},
 	"skeleton": {
-		core: [ SYM, 19, '2:10', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
+		core: [ 19, '2:10', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		isUndead: true,
@@ -1209,7 +1395,7 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonArcher": {
-		core: [ SYM, 29, '2:10', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletonArcher.png', 'it' ],
+		core: [ 29, '2:10', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletonArcher.png', 'it' ],
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		carrying: [{ typeFilter:'weapon.bow', rechargeTime: 4, unreal: 1, name: 'unholy bow', isFake: true }],
@@ -1219,7 +1405,7 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"skeletonLg": {
-		core: [ SYM, 59, '2:8', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
+		core: [ 59, '2:8', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
 		name: 'ogre skeleton',
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
@@ -1231,7 +1417,7 @@ const MonsterTypeList = {
 		vuln: 'silver'+','+DamageType.SMITE
 	},
 	"soldierAnt": {
-		core: [ SYM, 1, '2:12', 'evil', 'bite', 'hivemind', 'multiped', 'mon/insect/giantAnt.png', 'it' ],
+		core: [ 1, '2:12', 'evil', 'bite', 'hivemind', 'multiped', 'mon/insect/giantAnt.png', 'it' ],
 		name: "soldier ant",
 		brainMindset: 'greedy',
 		greedField: 'isAntFood',
@@ -1243,7 +1429,7 @@ const MonsterTypeList = {
 		vuln: 'glass'+','+DamageType.FREEZE,
 	},
 	"spinyFrog": {
-		core: [ SYM, 39, '3:10', 'evil', 'stab', 'animal', 'quadruped', 'dc-mon/animals/spiny_frog.png', 'it' ],
+		core: [ 39, '3:10', 'evil', 'stab', 'animal', 'quadruped', 'dc-mon/animals/spiny_frog.png', 'it' ],
 		name: "spiny frog",
 		attitude: Attitude.WANDER,
 		tooClose: 1,
@@ -1254,7 +1440,7 @@ const MonsterTypeList = {
 		stink: 0.8,
 	},
 	"bear": {
-		core: [ SYM, 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/bear.png', 'it' ],
+		core: [ 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/bear.png', 'it' ],
 		name: "bear",
 		attitude: Attitude.WANDER,
 		tooClose: 3,
@@ -1265,7 +1451,7 @@ const MonsterTypeList = {
 		senseSmell: 200
 	},
 	"troll": {
-		core: [ SYM, 49, '5:4', 'evil', 'claw', 'animalHunter', 'humanoid', 'mon/troll.png', '*' ],
+		core: [ 49, '5:4', 'evil', 'claw', 'animalHunter', 'humanoid', 'mon/troll.png', '*' ],
 		brainMindset: 'ravenous',
 		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
@@ -1278,7 +1464,7 @@ const MonsterTypeList = {
 		vuln: DamageType.BURN
 	},
 	"viper": {
-		core: [ SYM, 44, '3:16', 'evil', 'bite', 'animalHunter', 'noped', 'dc-mon/animals/viper.png', 'it' ],
+		core: [ 44, '3:16', 'evil', 'bite', 'animalHunter', 'noped', 'dc-mon/animals/viper.png', 'it' ],
 		attitude: Attitude.HESITANT,
 		dodge: Quick.LITHE,
 		isAnimal: true,
@@ -1289,7 +1475,7 @@ const MonsterTypeList = {
 
 // LUNAR
 	"lunarMoth": {
-		core: [ SYM, 4, '2:20', 'lunar', 'freeze', 'animalHunter', 'noped', 'dc-mon/animals/butterfly.png', '*' ],
+		core: [ 4, '2:20', 'lunar', 'freeze', 'animalHunter', 'noped', 'dc-mon/animals/butterfly.png', '*' ],
 		name: "lunar moth",
 		immune: DamageType.FREEZE,
 		carrying: '',
@@ -1299,7 +1485,7 @@ const MonsterTypeList = {
 		vuln: LunarVulnerabilities
 	},
 	"lunarOne": {
-		core: [ SYM, 12, '3:10', 'lunar', 'freeze', 'sentient', 'humanoid', 'dc-mon/deep_elf_demonologist.png', '*' ],
+		core: [ 12, '3:10', 'lunar', 'freeze', 'sentient', 'humanoid', 'dc-mon/deep_elf_demonologist.png', '*' ],
 		name: "lunar one",
 		immune: DamageType.FREEZE,
 		carrying: '3x 50% potion.eFreeze',
@@ -1310,7 +1496,7 @@ const MonsterTypeList = {
 		vuln: LunarVulnerabilities
 	},
 	"lunarReaper": {
-		core: [ SYM, 9, '3:10', 'lunar', 'freeze', 'sentient' ,'humanoid', 'dc-mon/deep_elf_high_priest.png', '*' ],
+		core: [ 9, '3:10', 'lunar', 'freeze', 'sentient' ,'humanoid', 'dc-mon/deep_elf_high_priest.png', '*' ],
 		name: "lunar reaper",
 		immune: DamageType.FREEZE,
 		isLunarChild: true,
@@ -1323,7 +1509,7 @@ const MonsterTypeList = {
 
 // NEUTRAL TEAM
 	"bat": {
-		core: [ SYM, 1, '2:20', 'neutral', 'bite', 'animal', 'wingedBiped', 'dc-mon/animals/giant_bat.png', 'it' ],
+		core: [ 1, '2:20', 'neutral', 'bite', 'animal', 'wingedBiped', 'dc-mon/animals/giant_bat.png', 'it' ],
 		attitude: Attitude.WANDER,
 		dodge: Quick.LITHE,
 		isAnimal: true,
@@ -1335,7 +1521,7 @@ const MonsterTypeList = {
 		travelMode: "fly"
 	},
 	"giantSnail": {
-		core: [ SYM, 59, '10:100', 'neutral', 'rot', 'animal', 'noped', 'mon/snail.png', 'it' ],
+		core: [ 59, '10:100', 'neutral', 'rot', 'animal', 'noped', 'mon/snail.png', 'it' ],
 		imgChoices: { moving: { img: 'mon/snail.png' }, hiding: { img: 'mon/snailInShell.png' } },
 		imgGet: (self,img) => img || self.imgChoices[self.inShell?'hiding':'moving'].img,
 		attitude: Attitude.HUNT,
@@ -1352,14 +1538,14 @@ const MonsterTypeList = {
 		resistInShell: [DamageType.SHOCK,DamageType.SMITE,DamageType.ROT].join(',')
 	},
 	"sheep": {
-		core: [ SYM, 1, '1:20', 'neutral', 'bite', 'animalHerd', 'quadruped', 'dc-mon/animals/sheep.png', 'it' ],
+		core: [ 1, '1:20', 'neutral', 'bite', 'animalHerd', 'quadruped', 'dc-mon/animals/sheep.png', 'it' ],
 		attitude: Attitude.FEARFUL,
 		isAnimal: true,
 		isLivestock: true,
 		isSheep: true,
 		loot: '1x lumpOfMeat, 3x 50% wool',
 	}
-};
+});
 
 
 MonsterTypeList.spinyFrog.onAttacked = function(attacker,amount,damageType) {
@@ -1511,182 +1697,12 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 	}
 };
 
-function monsterPreProcess(typeId,m) {
-	m.typeId = typeId;
-
-	let brain = null;
-	let body = null;
-	let naturalDamageType;
-	if( m.core ) {
-		m.symbol = m.core[0];
-		m.level = m.core[1];
-		m.power = m.core[2];
-		m.team  = m.core[3];
-		naturalDamageType = m.core[4];
-		brain = m.core[5];
-		body  = m.core[6];
-		m.img = m.core[7];
-		m.pronoun = m.core[8];
-		delete m.core;
-	}
-
-	console.assert( !brain || (BrainMindset[brain]!==undefined && BrainAbility[brain]!==undefined) );
-	console.assert( !body  || (BodyAbility[body]!==undefined && BodySlots[body]!==undefined) );
-
-	// OK, this sucks, but I set isMonsterType here AS WELL AS in fab, because the merge
-	// of monsters from places requires it.
-	m.isMonsterType = true;
-	m.brainMindset = String.combine(',',m.brainMindset,BrainMindset[brain]);
-	m.brainAbility = String.combine(',',m.brainAbility,BrainAbility[brain]);
-	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[body]);
-	m.bodySlots    = Object.assign( m.bodySlots || {}, BodySlots[body] );
-	m.brainState   = {};
-
-	let blood = {
-		isAnimal: 		'bloodRed',
-		isEarthChild: 	'bloodGreen',
-		isSunChild: 	'bloodRed',
-		isLunarChild: 	'bloodBlue',
-		isPlanar: 		'bloodYellow',
-		isInsect: 		'bloodYellow',
-		isUndead: 		'bloodWhite',
-		isDemon: 		'bloodBlack',
-		isOoze: 		'bloodBlack',
-	};
-	m.bloodId = m.bloodId || Object.findByFlag( m, blood ) || 'bloodRed';
-	if( !m.isSunChild && m.senseDarkVision===undefined ) {
-		m.senseDarkVision = m.senseDarkVision || Rules.MONSTER_DARK_VISION;
-	}
-	if( m.isLiving === undefined ) {
-		m.isLiving = !m.isUndead && !m.isConstruct && !m.isIncorporeal;
-	}
-	if( m.isMindless ) {
-		m.immune = String.arAdd(m.immune,MentalAttack+',possess');
-	}
-	if( !String.arIncludes(m.vuln||'',DamageType.WATER) && !String.arIncludes(m.resist||'',DamageType.WATER) ) {
-		m.immune = String.arAdd(m.immune,DamageType.WATER);
-	}
-	if( m.isDemon && m.lightHarms === undefined ) {
-		m.lightHarms = 8;
-	}
-	if( m.isIncorporeal && m.corpse===undefined ) {
-		m.corpse = false;
-	}
-	let eatDefaults = {
-		isIncorporeal:	['ether'],
-		isInsectivore:	['plant','fungus','liquid'],
-		isHerbivore:	['plant','fungus','liquid'],
-		isCarnivore:	['liquid','flesh','bone'],
-		isOmnivore:		['plant','fungus','liquid','flesh','bone'],
-		isScavenger:	['plant','fungus','liquid','flesh','bone','leather'],
-		isDog:			['liquid','flesh','bone', 'leather', 'cloth', 'chitin', 'ivory'],
-		isAnimal:		['plant','fungus','liquid','flesh','bone'],
-		isEarthChild:	['plant','fungus','liquid','flesh','bone'],
-		isSunChild:		['plant','fungus','liquid','flesh','bone'],
-		isLunarChild:	['plant','fungus','liquid','flesh','bone'],
-		isPlanar:		['plant','fungus','liquid','flesh','energy'],
-		isUndead: 		['flesh'],
-		isDemon: 		['liquid','flesh','bone','crystal'],
-		isOoze: 		['plant','fungus','liquid','flesh','bone','leather','crystal','wood','wax','cloth','chitin','paper','ivory'],
-	}
-
-	console.assert( !m.eat || Array.isArray(m.eat) );
-	if( m.eat === undefined ) {
-		m.eat = Object.findByFlag( m, eatDefaults ) || ['plant'];
-	}
-
-	// Most things are flesh, but there are definitely some that aren't
-	let matterDefaults = {
-		isSunChild:		'crystal',
-		isPlanar:		'energy',
-		isInsect:		'chitin',
-		isDemon: 		'chitin',
-		isOoze: 		'liquid',
-		isConstruct:	'metal',
-		isSkeleton:		'bone',
-		isMushroom:		'fungus'
-	}
-	m.matter = m.matter || Object.findByFlag( m, matterDefaults ) || 'flesh';
-
-	let breathIgnore = {
-		isLunarChild:	true,
-		isElemental: 	true,
-		isConstruct: 	true,
-		isIncorporeal: 	true,
-		isUndead: 		true,
-		isOoze: 		true,
-		isPlant:		40,
-	};
-	if( Object.findByFlag( m, breathIgnore ) ) {
-		m.breathIgnore = Object.findByFlag( m, breathIgnore );
-	}
-
-
-	// There is code that assumes that all monsters have, at least, an emptyinventory.
-	m.carrying = m.carrying || [];
-	m.carrying = Array.isArray(m.carrying) ? m.carrying : [m.carrying];
-
-	// Determine the creature's natural weapon and its damageType
-	let damType = naturalDamageType || m.naturalWeapon.damageType || DamageType.CUT;
-	m._naturalWeapon = m.naturalWeapon;
-	let natWeapon = Object.assign({
-		typeFilter: 'fake',
-		isNatural: true,
-		isMelee: true,
-		isWeapon: true,
-		quick: m.quick!==undefined ? m.quick : Quick.NIMBLE, // This is important, so that bite/claw critters can hit you if you're nimble
-		reach: m.reach || 1,
-		damageType: damType,
-	}, m.naturalWeapon );
-	m.naturalWeapon = natWeapon;
-
-	// Generate all the parts of this creature as items.
-	let species = Object.findByFlag( m, SpeciesList );
-	let partList = m.parts || species.parts;
-	partList.forEach( partId => {
-		let part = PartList[partId];
-		if( !part ) {
-			return;
-		}
-		// NOTE: The rarities are not being set here, because what SHOULD
-		// happen is that parts get generated only when there is a recipe 
-		// that uses them.
-		let inject = {
-			typeId:		m.typeId+String.capitalize(partId),				// goblinHeart
-			name:		m.typeId+' '+(part.name||partId),				// goblin heart, ooze slime
-			matter:		part.matter,									// matter: liquid or matter: flash
-		};
-		inject['is'+String.capitalize(m.typeId)] = true;				// isGoblin: true
-		inject['is'+String.capitalize(partId)] = true;					// isHeart: true or isSlime: true
-		if( part.makes ) {
-			part.makes.forEach( effectId => {
-				let bitId = 'bit'+String.capitalize(effectId.slice(1));		// bitInvisibility or bitFreeze
-				inject[bitId] = true;
-			});
-		}
-		if( part.augs ) {
-			Object.assign( inject, part.augs );
-		}
-		ItemTypeList.part.varieties[inject.typeId] = inject;
-	});
-
-	console.assert( m.stink===undefined || (m.stink>=0 && m.stink<=1) );
-}
-
-(() => {
-	// 		core: [ '@', 1, '3:10', 'good', 'cut', 'dc-mon/elf.png', 'he' ],
-	for( let typeId in MonsterTypeList ) {
-		monsterPreProcess(typeId,MonsterTypeList[typeId]);
-	}
-})();
 
 return {
 	Control: Control,
 	PartList: PartList,
 	SpeciesList: SpeciesList,
-	MonsterTypeDefaults: MonsterTypeDefaults,
 	MonsterTypeList: MonsterTypeList,
-	monsterPreProcess: monsterPreProcess
 }
 
 });

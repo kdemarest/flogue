@@ -2,21 +2,21 @@ Module.add('config.ken',function(X,moduleId) {
 
 	let plugin = new Plugin('ken');
 
-	plugin.scapeList.kenCave = theme => ({
+	plugin.ScapeList.kenCave = theme => ({
 		dim: 				60,
 		architecture: 		"cave",
 		floorDensity: 		0.48,
 		seedPercent: 		0.20,
 		passageWander: 		0,
 	});
-	plugin.scapeList.kenTinyCave = theme => ({
+	plugin.ScapeList.kenTinyCave = theme => ({
 		dim: 				30,
 		architecture: 		"cave",
 		floorDensity: 		0.68,
 		seedPercent: 		0.20,
 		passageWander: 		0,
 	});
-	plugin.scapeList.kenCaveSpindle = theme => ({
+	plugin.ScapeList.kenCaveSpindle = theme => ({
 		dim: 				60,
 		architecture: 		"cave",
 		floorDensity: 		0.12,
@@ -26,7 +26,7 @@ Module.add('config.ken',function(X,moduleId) {
 		passageWidth3: 		0
 	});
 
-	plugin.scapeList.kenRooms = theme => ({
+	plugin.ScapeList.kenRooms = theme => ({
 		dim: 				30,
 		architecture: 		"rooms",
 		floorDensity: 		0.45,
@@ -37,7 +37,7 @@ Module.add('config.ken',function(X,moduleId) {
 		passageWidth2: 		10,
 		passageWidth3: 		0
 	});
-	plugin.scapeList.kenVast = theme => ({
+	plugin.ScapeList.kenVast = theme => ({
 		dim: 				160,
 		architecture: 		"rooms",
 		floorDensity: 		0.35,
@@ -49,7 +49,7 @@ Module.add('config.ken',function(X,moduleId) {
 		passageWidth3: 		0
 	});
 
-	plugin.placeTypeList.kenPlace = {
+	plugin.PlaceTypeList.kenPlace = {
 		isKenSpecial: true,
 		isMaze: true,
 		xLen: 16,
@@ -73,7 +73,7 @@ Module.add('config.ken',function(X,moduleId) {
 		}
 	};
 
-	plugin.themeList.kenSimple = {
+	plugin.ThemeList.kenSimple = {
 		scapeId: 	'kenCave',
 		palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
 		enemyDensity: 	0.00,
@@ -81,7 +81,7 @@ Module.add('config.ken',function(X,moduleId) {
 		itemDensity:    0.01,
 	}
 
-	plugin.themeList.kenMoon = {
+	plugin.ThemeList.kenMoon = {
 		scapeId: 	'kenCave',
 		palette: 	{ basis: 'jaggedCave', passageFloor: 'floorDirt' },
 		mapVars:	{
@@ -96,7 +96,7 @@ Module.add('config.ken',function(X,moduleId) {
 		itemDensity:    0.01,
 	}
 
-	plugin.themeList.kenDwarfTown = {
+	plugin.ThemeList.kenDwarfTown = {
 		isDwarfish: true,
 		isTown: 	true,
 		scapeId: 	'kenTinyCave',
@@ -109,7 +109,7 @@ Module.add('config.ken',function(X,moduleId) {
 		itemDensity:    0.0001,
 	}
 
-	plugin.themeList.kenTheme = {
+	plugin.ThemeList.kenTheme = {
 		scapeId: 		'kenRooms',		// 'kenCave' or 'kenRooms',
 //		palette: 		{ basis: 'jaggedCave' },
 		palette: 		{ basis: 'stoneRooms' },
@@ -126,7 +126,7 @@ Module.add('config.ken',function(X,moduleId) {
 		friendDensity: 	0.000001,
 	}
 
-	plugin.rules = {
+	plugin.Rules = {
 		//xLootFrequency: 0.80,
 		//xLootEffectChance: 4.0
 	}
@@ -151,9 +151,9 @@ Module.add('config.ken',function(X,moduleId) {
 		//light: 2,
 		//experience: 100,
 		inject: {
-			//level: 20,
+			level: 20,
 			//immortal: true,
-			//invulnerable: true
+			invulnerable: true
 		}
 	}
 
@@ -161,8 +161,8 @@ Module.add('config.ken',function(X,moduleId) {
 	//IMG_BASE = 'http://localhost:3010/force/';	// forces reprocessing of all images.
 	//IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
-	plugin.monsterTypeList.player = player;
-	plugin.config = {
+	plugin.MonsterTypeList.player = player;
+	plugin.Config = {
 		startingDepth: 4,
 		//themeId: 'kenTheme',
 		saveBattery: true,

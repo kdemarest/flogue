@@ -946,6 +946,7 @@ let DeedOp = {
 	KILLLABEL: 	'killLabel',
 	CUSTOM:		'custom'
 }
+ResistanceList.push(DeedOp);
 
 let monsterTarget = function(effect) {
 	return effect.target.isMonsterType;

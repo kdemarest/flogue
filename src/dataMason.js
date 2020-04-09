@@ -1395,6 +1395,7 @@ Module.add('dataMason',function() {
 				denizenList: [],
 				treasureList: []
 			};
+			if( place.typeId == 'moonPortal' ) debugger;
 			if( siteList.find(s=>s.id==site.id) ) debugger;
 			siteList.push(site);
 			// mark on the map which site belongs to whom.

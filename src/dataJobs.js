@@ -212,6 +212,17 @@ let JobTypeList = {
 	}
 }
 
+JobTypeList = Type.establish(
+	'JobType',
+	{
+		onFinalize: jobType => {
+			Type.checkLoot(jobType);
+		}
+	},
+	JobTypeList
+);
+
+
 return {
 	JobTypeList: JobTypeList
 }

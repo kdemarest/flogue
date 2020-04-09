@@ -3097,10 +3097,12 @@ class Entity {
 				areaId:		gate.toAreaId,
 				gateId:		gate.id,
 				depth:   	gate.area.depth,
-				themeId:	gate.themeId,
+				themeId:	gate.toThemeId,		// used to be .themeId. That can't have been right!
 				oneway:		gate.oneway,
 				allowAreaCreate: gate.allowAreaCreate
 			};
+			let gateEffectDebug = Object.assign({},gateEffect);
+			console.assert( gate.toAreaId || (gate.toThemeId && gate.allowAreaCreate) );
 			effectApply( gateEffect, this );
 
 			if( gate.killMeWhenDone ) {
