@@ -688,6 +688,9 @@ class ViewMap extends ViewObserver {
 				this.render();
 			}
 		}
+		if( msg == 'removeFromStage' ) {
+			spriteDeathCallback(payload.spriteList);
+		}
 		if( msg == 'overlayRemove' ) {
 			this.worldOverlayRemove( a => a.groupId==payload.groupId );
 		}

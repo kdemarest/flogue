@@ -214,6 +214,7 @@ class Entity {
 			Gab.entityPostProcess(this);
 		}
 		if( !sameArea ) {
+			guiMessage('removeFromStage',this);
 			tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
 		}
 

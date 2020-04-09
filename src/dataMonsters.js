@@ -606,7 +606,6 @@ Type.register( 'MonsterType', {
 		isAnimal: true,
 		isDog: true,
 		isPet: true,
-		watch: true,
 		isNamed: true,
 		jumpMax: 2,
 		loot: '30% dogCollar',
