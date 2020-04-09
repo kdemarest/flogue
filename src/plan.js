@@ -23,7 +23,7 @@ let PlanData = {
 	},
 	'core.4': {
 		themeId:	'coreMaze',
-		links:		'core.5,wildlands,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,dwarfTown,hellTheme',
+		links:		'core.5,wildlands,dwarfTown,hellTheme',
 		make:		'fontSolar'
 	},
 	'core.5': {
