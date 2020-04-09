@@ -394,7 +394,6 @@ function monsterTypePreProcess(typeId,m) {
 	m.brainAbility = String.combine(',',m.brainAbility,BrainAbility[brain]);
 	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[body]);
 	m.bodySlots    = Object.assign( m.bodySlots || {}, BodySlots[body] );
-	m.brainState   = {};
 
 	let blood = {
 		isAnimal: 		'bloodRed',
@@ -607,6 +606,7 @@ Type.register( 'MonsterType', {
 		isAnimal: true,
 		isDog: true,
 		isPet: true,
+		watch: true,
 		isNamed: true,
 		jumpMax: 2,
 		loot: '30% dogCollar',

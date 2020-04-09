@@ -218,7 +218,7 @@ class Item {
 		return this.toThemeId ? ThemeList[this.toThemeId] : undefined;
 	}
 	get toArea() {
-		return this.toAreaId ? this.area.world.areaList[this.toAreaId] : undefined;
+		return this.toAreaId ? this.area.world.area(this.toAreaId) : undefined;
 	}
 	get toGate() {
 		return this.toArea ? this.toArea.getGate(this.toGateId) : undefined;

@@ -5,7 +5,6 @@ class HumanUser {
 		// WARNING: It is important not to depend on any other data in this constructor.
 		this.isHumanUser = true;
 		this.entity = null;
-		this.priorArea = null;
 		this.commandHandler = null;
 		this.areaMap = {};
 		this.favoriteMap = {};
@@ -92,17 +91,14 @@ class HumanUser {
 		return this.areaMap[areaId];
 	}
 	takeControlOf(newEntity) {
-		if( newEntity.area && newEntity.area.id !== this.entity.area.id ) {
-			this.priorArea = this.entity.area;
-		}
 		if( this.entity ) {
 			this.entity.userControllingMe = null;
 		}
 		this.entity = newEntity;
 		this.entity.userControllingMe = this;
-	}
-	onAreaChange(area) {
-		this.priorArea = this.entity.area;
+		if( newEntity.area ) {
+			newEntity.area.world.setTickingAreas(newEntity.area.id);
+		}
 	}
 }
 

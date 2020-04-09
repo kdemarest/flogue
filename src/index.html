@@ -85,8 +85,15 @@
 <script src="testList.js" charset="utf-8"></script>
 <script src="tester.js" charset="utf-8"></script>
 <script src="config.js" charset="utf-8"></script>
+<script src="debugProxy.js" charset="utf-8"></script>
 
 <script>
+
+var Debug = new DebugProxy({
+	ai: true,
+});
+
+
 
 async function main() {
 	// This executes the initializers for all the static .js files
@@ -95,10 +102,11 @@ async function main() {
 
 	User.tickWorld = function(timePasses) {
 		Tester.tick(timePasses);
-		this.entity.area.tick( timePasses ? this.entity.speed : false );
-		if( timePasses && this.priorArea && this.priorArea.id !== this.entity.area.id ) {
-			this.priorArea.tick( this.entity.speed );
-		}
+		this.entity.area.world.traverse( area => {
+			if( area.isTicking ) {
+				area.tick( timePasses ? this.entity.speed : false );
+			}
+		});
 
 		this.autoFavorite();
 		this.gui.tick();

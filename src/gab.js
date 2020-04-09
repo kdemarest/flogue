@@ -24,8 +24,8 @@ Gab = (new function(priorGab) {
 	}
 
 	function getAreaName(themeId,areaId) {
-		if( areaId && self.world.areaList[areaId] ) {
-			return  self.world.areaList[areaId].name;
+		if( areaId && self.world.area(areaId) ) {
+			return  self.world.area(areaId).name;
 		}
 		let theme = ThemeList[themeId];
 		return  theme && theme.name ? theme.name : themeId;

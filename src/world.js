@@ -8,6 +8,16 @@ class World {
 		Gab.world = this;
 	}
 
+	traverse(fn) {
+		Object.each( this.areaList, area => fn(area) );
+	}
+
+	setTickingAreas(areaId) {
+		this.traverse( area => {
+			area.isTicking = area.connectsTo(areaId) || area.id==areaId;
+		});
+	}
+
 	quotaAddGates(quota,toAreaId) {
 		let incomingGateItemList = [];
 
@@ -90,23 +100,9 @@ class World {
 			// we could spontaneously add this area to the plan.
 			this.plan.add( planFn() );
 		}
-		return this.areaList[areaId] || this.createArea( areaId );
+		return this.area(areaId) || this.createArea( areaId );
 	}
-/*
-	createAreaFromGate(gate) {
-		if( !this.plan.get(gate.toAreaId) ) {
-			// we could spontaneously add this area to the plan.
-			console.assert(gate.allowAreaCreate);
-			this.plan.add({
-				areaId:  gate.toAreaId,
-				depth:   gate.area.depth,
-				themeId: gate.themeId
-			});
-		}
-		return gate.toArea || this.createArea( gate.toAreaId );
-	}
-*/
-	getAreaById(areaId) {
+	area(areaId) {
 		return this.areaList[areaId];
 	}
 }

@@ -274,6 +274,7 @@ let spriteDeathCallback = function(spriteList) {
 		sprite.refs--;
 		if( sprite.refs <= 0 ) {
 			_viewMap.app.stage.removeChild(sprite);
+			sprite.onStage = false;		// maybe needed?
 		}
 		return false;
 	});
@@ -579,7 +580,10 @@ class ViewMap extends ViewObserver {
 		Object.each( SymbolToType, type => spriteDeathCallback(type.spriteList) );
 
 		let temp = this.app.stage.children.slice();
-		temp.forEach( child => this.app.stage.removeChild(child) );
+		temp.forEach( child => {
+			this.app.stage.removeChild(child);
+			child.onStage = false;
+		});
 
 		// Clears the stage, for certain.
 	}

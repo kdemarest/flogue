@@ -16,7 +16,7 @@ class ViewInfo extends ViewObserver {
 			this.override(null);
 			this.render();
 		}
-	}
+	}	
 	render() {
 		let debug = false;
 		let you = this.trueObserver;
@@ -180,7 +180,7 @@ class ViewInfo extends ViewObserver {
 		s += '<table>';
 		s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
 		if( !entity.isUser() ) {
-			s += tRow('Activity:',(entity.brainState && entity.brainState.activity ? entity.brainState.activity : (entity.attitude|'uncertain'))+(this.enemyIsPresent?'*':''));
+			s += tRow('Activity:',(entity.activity ? entity.activity : (entity.attitude|'uncertain'))+(this.enemyIsPresent?'*':''));
 		}
 		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
 		if( entity.isUser() ) {

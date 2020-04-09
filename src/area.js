@@ -532,6 +532,7 @@ class Area {
 		this.picker = new Picker(depth);
 		this.pathClip = new ClipRect();
 		this.thinkClip = new ClipRect();
+		this.isTicking = false;
 
 		// NOTE: Move this into the areaBuild() at some point.
 		if( theme.jobPick ) {
@@ -564,6 +565,10 @@ class Area {
 	build(tileQuota) {
 		this.animationManager = new AnimationManager();
 		return areaBuild(this,this.theme,tileQuota, (e) => e.team==Team.EVIL );
+	}
+	connectsTo(areaId) {
+		let g = this.gateList.filter( g => g.toAreaId==areaId );
+		return g.length > 0;
 	}
 	get gateList() {
 		return this.map.itemList.filter( item => item.isGate );
