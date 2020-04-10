@@ -22,10 +22,10 @@ function filterMatch(item) {
 
 	if( this.killId.length && (
 		this.killId[item.typeId] ||
-		this.killId[item.variety?item.variety.typeId:''] ||
-		this.killId[item.material?item.material.typeId:''] ||
-		this.killId[item.quality?item.quality.typeId:''] ||
-		this.killId[item.effect?item.effect.typeId:''] )) {
+		(item.variety && this.killId[item.variety.typeId]) ||
+		(item.material && this.killId[item.material.typeId]) ||
+		(item.quality && this.killId[item.quality.typeId]) ||
+		(item.effect && this.killId[item.effect.typeId]) )) {
 		return false;
 	}
 
@@ -84,8 +84,6 @@ let RecipeGenerator = new class {
 	}
 
 	generateRecipePotion(itemType,variety,material,quality,effect) {
-//return;
-//if( effect.typeId !== 'eHaste' ) return;
 		Object.each( Type.Part, part => {
 			if( part.makes.includes(effect.typeId) ) {
 				this.add({
@@ -98,8 +96,6 @@ let RecipeGenerator = new class {
 
 	generateRecipeArmor(itemType,variety,material,quality,effect) {
 		if( variety.fixins && (effect.isInert || effect.nul) ) {
-//return;
-//if( variety.typeId !== 'fur' ) return;
 			this.add({
 				product: 'armor.'+variety.typeId,
 				ingredients:  variety.fixins
@@ -107,8 +103,19 @@ let RecipeGenerator = new class {
 		}
 	}
 
+	generateRecipeWeapon(itemType,variety,material,quality,effect) {
+		if( !(effect.isInert || effect.nul) ) {
+			return;
+		}
+		if( variety.fixins || material.fixins ) {
+			this.add({
+				product: String.combine( ',', 'weapon', variety.typeId, material.typeId ),
+				ingredients:  String.combine( ',', variety.fixins, material.fixins )
+			});
+		}
+	}
+
 	generateRecipeNamed(itemType,variety,material,quality,effect) {
-//return;
 		if( !effect.nul && !effect.isInert ) {
 			return;
 		}
@@ -144,6 +151,7 @@ let RecipeGenerator = new class {
 				});
 			});
 		});
+		console.log(RecipeList);
 	}
 }
 
@@ -174,7 +182,7 @@ let RecipeManager = new class {
 	determineOutcome(recipe,ingredientList) {
 		let outcome = {
 			recipe: recipe,
-			ingredientStatus: {},
+			ingredientStatus: [],	// WARNING: These link to the CSS, so don't change
 			extraIngredients: 0,
 			satisfied: false,
 		};
@@ -182,21 +190,25 @@ let RecipeManager = new class {
 		for( let r=0 ; r<recipe.requirements.length ; ++r ) {
 			for( let i=0 ; i<ingredientList.length ; ++i ) {
 				let item = ingredientList[i];
-				if( !item || outcome.ingredientStatus[item.id] ) {
+				if( !item || outcome.ingredientStatus[i] == 'consumed' ) {
 					continue;
 				}
 				let isMatch = recipe.requirements[r].match(item);
 				let isCount = recipe.requirements[r].count == (item.bunch||1);
 				if( isMatch && isCount ) {
-					outcome.ingredientStatus[item.id] = 'consumed';
+					outcome.ingredientStatus[i] = 'consumed';
 					metCount++;
 					break;
 				}
-				if( !isMatch ) {
-					outcome.extraIngredients++;
-				}
 			}
 		}
+		for( let i=0 ; i<ingredientList.length ; ++i ) {
+			if( outcome.ingredientStatus[i] != 'consumed' ) {
+				outcome.extraIngredients++;
+				outcome.ingredientStatus[i] = 'extra';
+			}
+		}
+
 		outcome.satisfied = (metCount >= recipe.requirements.length);
 		return outcome;
 	}
@@ -204,6 +216,9 @@ let RecipeManager = new class {
 	findOutcomes(craftId,ingredientList) {
 		let outcomeList = [];
 		Object.each( RecipeList, recipe => {
+//			if( recipe.product=='stuff.demonLeather' && ingredientList[0] ) {
+//				debugger;
+//			}
 			let outcome = this.determineOutcome(recipe,ingredientList);
 			if( outcome.satisfied ) {
 				outcomeList.push(outcome);
@@ -229,9 +244,10 @@ Craft.ordner = {
 	title: 'Ordnance Crafting',
 	colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 	allowFilter: false,
-	fetchCraftableItems: function() {
-		return new Finder(this.crafter.inventory).filter( item => {
-			return (item.isPotion || item.isPart) && !this.ingredientList.findId(item.id);
+	fetchCraftableItems: function(finder) {
+		return finder.filter( item => {
+//			return (item.isPotion || item.isPart) && !this.ingredientList.findId(item.id);
+			return item.isWood || item.isOre || item.isLeather || item.isDemonLeather || item.isPotion || item.isPart;
 		});
 	},
 	maxIngredients: 3
@@ -318,7 +334,12 @@ class ViewCraft extends ViewInventory {
 
 		guiMessage('clearSign');
 
-		this.prime( this.fetchCraftableItems, this.allowFilter, () => true );
+		let populateIngredientList = () => {
+			let finder = new Finder(this.crafter.inventory).filter( item => !this.ingredientList.findId(item.id) );
+			return this.fetchCraftableItems(finder);
+		};
+
+		this.prime( populateIngredientList, this.allowFilter, () => true );
 	}
 	onKeyDown(e) {
 		if( e.key == 'Escape' ) {
@@ -374,8 +395,9 @@ class ViewCraft extends ViewInventory {
 			let list = $('<div class="ingredientList"></div>');
 			let ingredientNone = { name: '<i>none selected</i>' }
 			this.ingredientList.forEach( (item,index) => {
+				let status = outcomeList.length ? outcomeList[0].ingredientStatus[index] : 'unused';
 				let name = item ? item.explain().name : ingredientNone.name;
-				$('<div class="ingredient">'+name+'</div>')
+				$('<div class="ingredient '+status+'">'+name+'</div>')
 					.on( 'click.ViewCraftHeader', null, e => {
 						this.ingredientList.reset(index);
 						guiMessage( 'hide' );
@@ -392,13 +414,11 @@ class ViewCraft extends ViewInventory {
 		}
 
 		let craftingArrow = () => {
-			let outcomeList = this.findOutcomes(this.craftId,this.ingredientList.list);
 			let recipe = outcomeList.length ? outcomeList[0].recipe : null;
 			return $('<div class="craftingArrow'+(recipe?' ready':'')+'"><img src="/tiles/gui/'+(recipe?'arrowOutlineGreen.png':'arrowOutline.png')+'"></div>');
 		}
 
 		let craftingProduct = () => {
-			let outcomeList = this.findOutcomes(this.craftId,this.ingredientList.list);
 			let recipe = outcomeList.length ? outcomeList[0].recipe : null;
 			let product = $('<div class="craftingProduct'+(recipe?' ready':'')+'"></div>');
 			let nameList = [];
@@ -424,7 +444,6 @@ class ViewCraft extends ViewInventory {
 			}
 			$('<div>'+nameList.join('<br>')+'</div>')
 				.on( 'click.ViewCraftHeader', null, e => {
-					let outcomeList = this.findOutcomes(this.craftId,this.ingredientList.list);
 					let recipe = outcomeList.length ? outcomeList[0].recipe : null;
 					if( !recipe ) return;
 					Inventory.lootTo( this.crafter, recipe.product, this.crafter.level, this.crafter );
@@ -439,6 +458,8 @@ class ViewCraft extends ViewInventory {
 				.appendTo(product);
 			return product;
 		}
+
+		let outcomeList = this.findOutcomes(this.craftId,this.ingredientList.list);
 
 		$(document).off( '.ViewCraftHeader' );
 		$('<div class="craftingHeader"></div>')

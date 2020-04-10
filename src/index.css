@@ -219,6 +219,14 @@ body {
 	border-width: 1px;
 }
 
+.ingredient.consumed {
+	color: #393;
+}
+
+.ingredient.extra {
+	color: #993;
+}
+
 .ingredient:hover {
 	background-color: rgb(110,110,110,0.73);
 	cursor: pointer;

@@ -191,7 +191,7 @@ const WeaponMaterialList = ({ //Type.establish('WeaponMaterial',{},{
 	"silver": 		{ level:  5, fixins: 'ingotSilver', name: 'silver', matter: 'metal' },
 	"ice": 			{ level: 25, fixins: 'ice block', name: 'ice', matter: 'liquid', durability: Rules.weaponDurability(20) },
 	"lunarium": 	{ level: 40, fixins: 'lunarium ingot', name: 'lunarium', matter: 'metal' },
-	"glass": 		{ level: 55, fixins: 'malachite', name: 'glass', matter: 'glass', breakChance: Rules.weaponBreakChance(20) },
+	"glass": 		{ level: 55, fixins: 'oreMalachite', name: 'glass', matter: 'glass', breakChance: Rules.weaponBreakChance(20) },
 	"deepium": 		{ level: 70, fixins: 'deepium ingot', name: 'deepium', matter: 'metal' },
 	"solarium": 	{ level: 85, fixins: 'solarium ingot', name: 'solarium', matter: 'metal' },
 });
@@ -208,14 +208,24 @@ const BowMaterialList = ({ //Type.establish('BowMaterial',{},{
 });
 ResistanceList.push(BowMaterialList);
 
-const ArrowMaterialList = ({ //Type.establish('ArrowMaterial',{},{
-	"ash": 			{ level:  0 /* very important this be zero!*/ },
-	"oak": 			{ level:  5 },
-	"maple": 		{ level: 25 },
-	"lunarium": 	{ level: 40 },
-	"yew": 			{ level: 55 },
-	"deepium": 		{ level: 70 },
-	"solarium": 	{ level: 85 },
+const SlingMaterialList = ({
+	"ash": 			{ level:  0, fixins: 'wood' /* very important this be zero!*/ },
+	"oak": 			{ level:  5, fixins: 'wood' },
+	"maple": 		{ level: 25, fixins: 'wood' },
+	"lunarium": 	{ level: 40, fixins: 'wood' },
+	"yew": 			{ level: 55, fixins: 'wood' },
+	"deepium": 		{ level: 70, fixins: 'wood' },
+	"solarium": 	{ level: 85, fixins: 'wood' },
+});
+
+const ArrowMaterialList = ({
+	"ash": 			{ level:  0, fixins: 'wood' /* very important this be zero!*/ },
+	"oak": 			{ level:  5, fixins: 'wood' },
+	"maple": 		{ level: 25, fixins: 'wood' },
+	"lunarium": 	{ level: 40, fixins: 'wood' },
+	"yew": 			{ level: 55, fixins: 'wood' },
+	"deepium": 		{ level: 70, fixins: 'wood' },
+	"solarium": 	{ level: 85, fixins: 'wood' },
 });
 
 
@@ -359,7 +369,9 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		xDamage: 0.4,
 		xPrice: 1.4,
 		matter: 'leather',
+		fixins: 'stuff.leather',
 		quick: Quick.NORMAL,
+		materials: SlingMaterialList,
 		effectChance: 0.80,
 		effects: SlingEffects,
 		chanceEffectFires: 20,
@@ -658,10 +670,10 @@ const ArmorVarietyList = ({ //Type.establish('ArmorVariety',{},{
 	"ice": 			{ level: 50, rarity: 1.0, xArmor: 1.00, matter: 'liquid', fixins: 'ice block', img: 'item/armour/elven_ringmail.png',
 					durability: Rules.armorDurability(40)
 					},
-	"glass": 		{ level: 55, rarity: 1.0, xArmor: 1.00, matter: 'glass', fixins: 'malachite', img: 'item/armour/crystal_plate_mail.png',
+	"glass": 		{ level: 55, rarity: 1.0, xArmor: 1.00, matter: 'glass', fixins: 'oreMalachite', img: 'item/armour/crystal_plate_mail.png',
 					breakChance: Rules.armorBreakChance(40)
 					},
-	"demon": 		{ level: 65, rarity: 1.0, xArmor: 1.00, fixins: 'malachite', img: 'item/armour/orcish_platemail.png' },
+	"demonHide":	{ level: 65, rarity: 1.0, xArmor: 1.00, fixins: 'oreMalachite, stuff.demonLeather', img: 'item/armour/orcish_platemail.png' },
 	"lunar": 		{ level: 50, rarity: 1.0, xArmor: 1.00, fixins: 'lunarium ingot', img: 'item/armour/blue_dragon_scale_mail.png' },
 	"deep": 		{ level: 80, rarity: 1.0, xArmor: 1.00, fixins: 'deepium ingot', img: 'item/armour/gold_dragon_armour.png' },
 	"solar": 		{ level: 85, rarity: 1.0, xArmor: 1.00, fixins: 'solarium ingot', img: 'item/armour/crystal_plate_mail.png' },
@@ -777,15 +789,15 @@ const VeinVarietyList = ({ //Type.establish('VeinVariety',{},{
 
 const OreVarietyList = ({ //Type.establish('OreVariety',{},{
 	"coal": 		{ level:  0, rarity: 1.0, name: "coal", img: 'ore/oreLumpBlack.png', scale: 0.5, isFuel: true },
-	"oreTin": 		{ level:  2, rarity: 1.0, name: "tin ore", refinesTo: "ingotTin", img: 'ore/oreMetalWhite.png', scale: 0.5 },
-	"oreIron": 		{ level:  5, rarity: 0.8, name: "iron ore", refinesTo: "ingotIron", img: 'ore/oreMetalBlack.png', scale: 0.5 },
-	"oreCopper": 	{ level: 10, rarity: 0.6, name: "copper ore", refinesTo: "ingotCopper", img: 'ore/oreMetalOrange.png', scale: 0.5 },
-	"oreSilver": 	{ level: 15, rarity: 0.5, name: "silver ore", refinesTo: "ingotSilver", img: 'ore/oreMetalWhite.png', scale: 0.5 },
-	"oreGold": 		{ level: 20, rarity: 0.3, name: "gold ore", refinesTo: "ingotGold", img: 'ore/oreMetalYellow.png', scale: 0.5 },
-	"orePlatinum":  { level: 25, rarity: 0.3, name: "malachite ore", refinesTo: "ingotMalachite", img: 'ore/oreMetalBlue.png', scale: 0.5 },
-	"oreLunarium": 	{ level: 30, rarity: 0.2, name: "lunarium ore", refinesTo: "ingotLunarium", img: 'ore/oreGemCyan.png', scale: 0.5 },
-	"oreSolarium": 	{ level: 35, rarity: 0.1, name: "solarium ore", refinesTo: "ingotSolarium", img: 'ore/oreGemYellow.png', scale: 0.5 },
-	"oreDeepium": 	{ level: 40, rarity: 0.1, name: "deepium ore", refinesTo: "ingotDeepium", img: 'ore/oreGemBlack.png', scale: 0.5 },
+	"oreTin": 		{ level:  2, rarity: 1.0, name: "tin ore", img: 'ore/oreMetalWhite.png', scale: 0.5 },
+	"oreIron": 		{ level:  5, rarity: 0.8, name: "iron ore", img: 'ore/oreMetalBlack.png', scale: 0.5 },
+	"oreCopper": 	{ level: 10, rarity: 0.6, name: "copper ore", img: 'ore/oreMetalOrange.png', scale: 0.5 },
+	"oreSilver": 	{ level: 15, rarity: 0.5, name: "silver ore", img: 'ore/oreMetalWhite.png', scale: 0.5 },
+	"oreGold": 		{ level: 20, rarity: 0.3, name: "gold ore", img: 'ore/oreMetalYellow.png', scale: 0.5 },
+	"oreMalachite": { level: 25, rarity: 0.3, name: "malachite shards", img: 'ore/oreGemGreen.png', scale: 0.5 },
+	"oreLunarium": 	{ level: 30, rarity: 0.2, name: "lunarium ore", img: 'ore/oreGemCyan.png', scale: 0.5 },
+	"oreSolarium": 	{ level: 35, rarity: 0.1, name: "solarium ore", img: 'ore/oreGemYellow.png', scale: 0.5 },
+	"oreDeepium": 	{ level: 40, rarity: 0.1, name: "deepium ore", img: 'ore/oreGemBlack.png', scale: 0.5 },
 });
 
 const GemQualityList = ({ //Type.establish('GemQuality',{},{
@@ -810,7 +822,7 @@ const GemVarietyList = ({ //Type.establish('GemVariety',{},{
 	"agate": 		{ level: 30, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"tourmaline": 	{ level: 33, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"peridot": 		{ level: 36, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"malachite": 	{ level: 39, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"malachite": 	{ level: 39, rarity:  0.3, img: "gems/Gem Type1 Green.png" },
 	"citrine": 		{ level: 42, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"jasper": 		{ level: 45, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"carnelian": 	{ level: 48, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
@@ -865,7 +877,9 @@ const StuffVarietyList = ({ //Type.establish('StuffVariety',{},{
 		effects: { eInert: EffectTypeList.eInert},
 		img: 'item/stuff/shovel.png'
 	},
-	"leather":			{ rarity: 0.6, matter: 'leather', xPrice:  0.1, isLeather: 1, recipe: 'part isSkin' },
+	"wood":				{ rarity: 0.6, matter: 'wood', xPrice:  0.1, isWood: 1 },
+	"leather":			{ rarity: 0.6, matter: 'leather', xPrice:  0.1, isLeather: 1, recipe: 'part isAnimal isSkin' },
+	"demonLeather":		{ rarity: 0.6, matter: 'leather', xPrice:  0.4, isDemonLeather: 1, recipe: 'part isDemon isSkin' },
 	"candleLamp": 		{ rarity: 0.6, matter: 'wax',   xPrice:  2, slot: Slot.HIP, light:  4, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  4, name: 'light 4', icon: EffectTypeList.eLight.icon }, useVerb: 'clip on', img: "item/stuff/candle.png" },
 	"torch": 			{ rarity: 1.0, matter: 'wood',  xPrice:  4, slot: Slot.HIP, light:  6, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light 6', icon: EffectTypeList.eLight.icon }, isTorch: true, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/torch.png" },
 	"lamp": 			{ rarity: 0.4, matter: 'metal', xPrice:  6, slot: Slot.HIP, light:  8, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  8, name: 'light 8', icon: EffectTypeList.eLight.icon }, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/lamp.png" },
@@ -905,20 +919,18 @@ const StuffVarietyList = ({ //Type.establish('StuffVariety',{},{
 	"acidSlime": 		{ rarity: 0.2, matter: 'liquid', alpha: 0.5, scale: 0.25, mayThrow: true, mayTargetPosition: true, img: 'item/stuff/acidSlime.png',
 						damageType: DamageType.CORRODE },
 	"lunarEssence": 	{ rarity: 0.6, matter: 'energy', },
-	"batWing": 			{ rarity: 1.0, matter: 'flesh', },
 	"frogSpine": 		{ rarity: 0.8, matter: 'flesh', },
 	"wool": 			{ rarity: 1.0, matter: 'flesh', isFabricIngredient: true },
 	"magicMap":			{ rarite: 1.0, matter: 'paper', effect: EffectTypeList.eMap, charges: 1, command: Command.TRIGGER, description: "One glance at this magic map will reveal the structure of whatever level you are on, but the map will vanish." },
 
-	"ingotTin": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, name: 'tin ingot' },
-	"ingotIron": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, name: 'iron ingot' },
-	"ingotCopper": 		{ level:  5, rarity: 0.9, matter: 'metal', isIngot: true, name: 'copper ingot' },
-	"ingotSilver": 		{ level:  5, rarity: 0.8, matter: 'metal', isIngot: true, name: 'silver ingot' },
-	"ingotGold": 		{ level: 15, rarity: 0.7, matter: 'metal', isIngot: true, name: 'gold ingot' },
-	"ingotLunarium": 	{ level: 40, rarity: 0.5, matter: 'metal', isIngot: true, name: 'lunarium ingot' },
-	"ingotMalachite": 	{ level: 55, rarity: 0.6, matter: 'metal', isIngot: true, name: 'malachite ingot' },
-	"ingotDeepium": 	{ level: 70, rarity: 0.3, matter: 'metal', isIngot: true, name: 'deepium ingot' },
-	"ingotSolarium": 	{ level: 85, rarity: 0.4, matter: 'metal', isIngot: true, name: 'solarium ingot' },
+	"ingotTin": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, fixins: '3x oreTin', name: 'tin ingot' },
+	"ingotIron": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, fixins: '3x oreIron', name: 'iron ingot' },
+	"ingotCopper": 		{ level:  5, rarity: 0.9, matter: 'metal', isIngot: true, fixins: '3x oreCopper', name: 'copper ingot' },
+	"ingotSilver": 		{ level:  5, rarity: 0.8, matter: 'metal', isIngot: true, fixins: '3x oreSilver', name: 'silver ingot' },
+	"ingotGold": 		{ level: 15, rarity: 0.7, matter: 'metal', isIngot: true, fixins: '3x oreGold', name: 'gold ingot' },
+	"ingotLunarium": 	{ level: 40, rarity: 0.5, matter: 'metal', isIngot: true, fixins: '3x oreLunarium', name: 'lunarium ingot' },
+	"ingotDeepium": 	{ level: 70, rarity: 0.3, matter: 'metal', isIngot: true, fixins: '3x oreDeepium', name: 'deepium ingot' },
+	"ingotSolarium": 	{ level: 85, rarity: 0.4, matter: 'metal', isIngot: true, fixins: '3x oreSolarium', name: 'solarium ingot' },
 
 });
 
@@ -1425,8 +1437,8 @@ let ItemTypeList = {
 		name:		 	'{material} {variety}${+plus}{?effect}',
 		matter: 		'metal',
 		durability:		4*100,
-		materials: 		WeaponMaterialList,
 		varieties: 		WeaponVarietyList,
+		materials: 		WeaponMaterialList,
 		effects: 		WeaponEffects,
 		effectWhen: 	'attack',
 		slot: 			Slot.WEAPON,

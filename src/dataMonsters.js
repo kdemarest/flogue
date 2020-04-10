@@ -511,12 +511,13 @@ function monsterTypePreProcess(typeId,m) {
 		// that uses them.
 		let inject = {
 			typeId:		m.typeId+String.capitalize(partId),				// goblinHeart
-			name:		m.typeId+' '+(part.name||partId),				// goblin heart, ooze slime
+			name:		(m.name||String.uncamelTypeId(m.typeId))+' '+(part.name||String.uncamelTypeId(partId)),				// goblin heart, ooze slime
 			matter:		part.matter,									// matter: liquid or matter: flash
 		};
 		inject[String.getIs(m.typeId)] = true;					// isGoblin: true
 		inject[String.getIs(m.typeId)] = true;					// isGoblin: true
 		inject[String.getIs(partId)] = true;					// isHeart: true or isSlime: true
+		inject[species.typeId] = true;							// isDemon, isAnimal, etc.
 		if( part.makes ) {
 			part.makes.forEach( effectId => {
 				let bitId = 'bit'+String.capitalize(effectId.slice(1));		// bitInvisibility or bitFreeze
@@ -1519,9 +1520,9 @@ Type.register( 'MonsterType', {
 		dodge: Quick.LITHE,
 		isAnimal: true,
 		isBat: true,
-		loot: '50% batWing',
-		brainPackAnimal: true,
+		loot: '',
 		parts: ['wing','ear','tongue','claw'],
+		brainPackAnimal: true,
 		senseInvisible: true,
 		senseLiving: true,
 		travelMode: "fly"

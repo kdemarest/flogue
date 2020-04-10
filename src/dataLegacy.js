@@ -294,7 +294,7 @@ LegacyList.blaster = compose( 'blaster', [
 			craftId: 'ordner',
 			passesTime: false,
 		},
-		description: 'Gain skill level '+(index+1)+' creating ordnance.'
+		description: 'Create bombs at skill level '+(index+1)+'.'
 	}) ),
 	range( [2,8,14], (index) => ({
 		name: 'Blast '+Number.roman(index+1),
