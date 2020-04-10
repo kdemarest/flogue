@@ -413,86 +413,131 @@ pickItem()
 	You may prefix flags with ! to make sure it lacks this flag
 */
 
-Picker.filterStringParse = function(filterString) {
-	let testKeepIdItemTypeIdFn = (itemTypeId) => {
-		return itemTypeId==self.firstId;
-	};
-	let testKeepIdManyFn = (...argList) => {
+let EMPTY = {};
+class SupplyFilter {
+	constructor() {
+		Object.assign( this, {
+			firstId: null,
+			keepIs: [],
+			killIs: [],
+			keepId: {},
+			killId: {},
+			testKeepId: null,
+			keepIdCount: 0,
+			specifiesId: false
+		});
+	}
+
+	match(item) {
+		if( ItemTypeList[this.firstId] && item.typeId !== this.firstId ) {
+			return false;
+		}
+
+		if( this.matter && this.matter !== matter ) {
+			return false;
+		}
+
+		if( !this.testMembers(item,EMPTY,EMPTY,EMPTY)  ) {
+			return false;
+		}
+
+		if( this.killId.length && (
+			this.killId[item.typeId] ||
+			(item.variety && this.killId[item.variety.typeId]) ||
+			(item.material && this.killId[item.material.typeId]) ||
+			(item.quality && this.killId[item.quality.typeId]) ||
+			(item.effect && this.killId[item.effect.typeId]) )) {
+			return false;
+		}
+
+		if( !this.testKeepId(
+			item.typeId,
+			item.variety?item.variety.typeId:'',
+			item.material?item.material.typeId:'',
+			item.quality?item.quality.typeId:'',
+			item.effect?item.effect.typeId:''
+		) ) {
+			return false;
+		}
+
+		return true;
+	}
+	testKeepIdItemTypeIdFn(itemTypeId) {
+		return itemTypeId==this.firstId;
+	}
+	testKeepIdManyFn(...argList) {
 		let count=0;
 		let arg;
 		while( argList.length ) {
 			let arg=argList.shift();
-			count += keepId[arg] ? 1 : 0;
+			count += this.keepId[arg] ? 1 : 0;
 		}
-		return count >= keepIdCount;
+		return count >= this.keepIdCount;
+	}
+	testMembers(i,v,m,q) {
+		for( let kill of this.killIs ) {
+			if( i[kill] || v[kill] || m[kill] || q[kill] ) return false;
+		}
+		let keepCount = 0;
+		for( let keep of this.keepIs ) {
+			if( i[keep] || v[keep] || m[keep] || q[keep] ) ++keepCount;
+		}
+		return keepCount >= this.keepIs.length;
 	}
 
-
-	if( filterString ) { filterString = filterString.trim(); }
-	let nopTrue = () => true;
-	let nop = () => {};
-
-	let self = {
-		killId: {},
-		testMembers: nopTrue,
-		testKeepId: nopTrue,
-		firstId: null,
-		specifiesId: false
-	};
-	if( typeof filterString != 'string' || !filterString ) {
-		return self;
-	}
-	let keepIs = [];
-	let killIs = [];
-	let keepId = {};
-	let killId = {};
-	filterString.replace( /\s*(!)*(is|may|bit|of)*(\S+|\S+)/g, function( whole, not, is, token ) {
-		if( is ) {
-			if( is == 'of' ) {
-				// special case hack to detect matter
-				self.matter = token.toLowerCase();
+	parse(filterString) {
+		if( typeof filterString != 'string' || !filterString ) {
+			return this;
+		}
+		if( filterString ) {
+			filterString = filterString.trim();
+		}
+		filterString.replace( /\s*(!)*(is|may|bit|of)*(\S+|\S+)/g, ( whole, not, is, token ) => {
+			if( is ) {
+				if( is == 'of' ) {
+					// special case hack to detect matter
+					this.matter = token.toLowerCase();
+				}
+				else {
+					(not ? this.killIs.push(is+token) : this.keepIs.push(is+token));
+				}
 			}
 			else {
-				(not ? killIs.push(is+token) : keepIs.push(is+token));
+				// Split by the dot
+				//console.log('processing '+token );
+				token.replace( /([^\s.]+)[\s.]*/g, ( whole, token ) =>{
+					//console.log('adding '+token );
+					this.specifiesId = true;
+					(not ? this.killId[token]=1 : this.keepId[token]=1);
+					this.firstId = this.firstId || token;
+				});
 			}
+		});
+		if( !this.killIs.length && !this.keepIs.length ) {
+			this.testMembers = () => true;
+		}
+		this.keepIdCount = Object.keys(this.keepId).length || 0;
+		if( this.keepIdCount == 1 && ItemTypeList[this.firstId] && this.keepId[this.firstId] ) {
+			this.testKeepId = this.testKeepIdItemTypeIdFn;
+		}
+		else
+		if( this.keepIdCount>0 ) {
+			this.testKeepId = this.testKeepIdManyFn;
 		}
 		else {
-			// Split by the dot
-			//console.log('processing '+token );
-			token.replace( /([^\s.]+)[\s.]*/g, function( whole, token ) {
-				//console.log('adding '+token );
-				self.specifiesId = true;
-				(not ? killId[token]=1 : keepId[token]=1);
-				self.firstId = self.firstId || token;
-			});
+			this.testKeepId = () => true;
 		}
-	});
-	if( killIs.length || keepIs.length ) {
-		self.testMembers = (i,v,m,q) => {
-			for( let kill of killIs ) {
-				if( i[kill] || v[kill] || m[kill] || q[kill] ) return false;
-			}
-			let keepCount = 0;
-			for( let keep of keepIs ) {
-				if( i[keep] || v[keep] || m[keep] || q[keep] ) ++keepCount;
-			}
-			return keepCount >= keepIs.length;
-		}
+
+		return this;
 	}
-	self.killId = killId;
-	self.keepId = keepId;
-	self.keepIs = keepIs;
-	self.killIs = killIs;
-	let keepIdCount = Object.keys(keepId).length || 0;
-	if( keepIdCount == 1 && ItemTypeList[self.firstId] && keepId[self.firstId] ) {
-		self.testKeepId = testKeepIdItemTypeIdFn;
-	}
-	else
-	if( keepIdCount>0 ) {
-		self.testKeepId = testKeepIdManyFn;
-	}
-	return self;
 }
+
+
+
+Picker.filterStringParse = function(filterString) {
+	return new SupplyFilter().parse(filterString);
+}
+
 
 return {
 	Picker: Picker

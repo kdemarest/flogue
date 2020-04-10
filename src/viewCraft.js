@@ -1,49 +1,10 @@
 Module.add('viewCraft',function() {
 
 let Craft = {};
-let EMPTY = {};
 
 function toBit(effectId) {
 	return 'bit'+String.capitalize(effectId.slice(1));
 }
-
-function filterMatch(item) {
-	if( ItemTypeList[this.firstId] && item.typeId !== this.firstId ) {
-		return false;
-	}
-
-	if( this.matter && this.matter !== matter ) {
-		return false;
-	}
-
-	if( !this.testMembers(item,EMPTY,EMPTY,EMPTY)  ) {
-		return false;
-	}
-
-	if( this.killId.length && (
-		this.killId[item.typeId] ||
-		(item.variety && this.killId[item.variety.typeId]) ||
-		(item.material && this.killId[item.material.typeId]) ||
-		(item.quality && this.killId[item.quality.typeId]) ||
-		(item.effect && this.killId[item.effect.typeId]) )) {
-		return false;
-	}
-
-	if( !this.testKeepId(
-		item.typeId,
-		item.variety?item.variety.typeId:'',
-		item.material?item.material.typeId:'',
-		item.quality?item.quality.typeId:'',
-		item.effect?item.effect.typeId:''
-	) ) {
-		return false;
-	}
-
-	return true;
-}
-// Old master of laketown disappeared into 'the waste' with a bunch of money
-// Laketown has powerful merchants, I know the five most important and their details, the guilds etc.
-// 
 
 let RecipeList = {};
 RecipeList = Type.establish('Recipe',{},RecipeList);
@@ -62,11 +23,13 @@ let RecipeGenerator = new class {
 		if( this.exists[recipe.ingredients] ) {
 			return;
 		}
+
+//		recipe.level = Math.max(0,(item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.isInert ? 0 : (e.level||0)));
+
 		let supply = Array.supplyParse(recipe.ingredients);
 		console.assert( supply.length > 0 );
 		supply.forEach( sup => {
-			let filter = Picker.filterStringParse(sup.typeFilter);
-			sup.match = filterMatch.bind(filter);
+			sup.filter = Picker.filterStringParse(sup.typeFilter);
 		});
 		recipe.requirements = supply;
 		RecipeList[recipe.product+'.'+Date.makeUid()] = recipe;
@@ -87,18 +50,18 @@ let RecipeGenerator = new class {
 		Object.each( Type.Part, part => {
 			if( part.makes.includes(effect.typeId) ) {
 				this.add({
-					product:		'potion.'+effect.typeId,
+					product:		this.makeSupplyId('potion',nul,nul,nul,effect),
 					ingredients:	'potion.eWater, part '+String.getIs(part.typeId)
 				});
 			}
 		});
-		}
+	}
 
 	generateRecipeArmor(itemType,variety,material,quality,effect) {
 		if( variety.fixins && (effect.isInert || effect.nul) ) {
 			this.add({
-				product: 'armor.'+variety.typeId,
-				ingredients:  variety.fixins
+				product:		this.makeSupplyId('armor',variety,nul,nul,EffectTypeList.eInert),
+				ingredients:	variety.fixins
 			});
 		}
 	}
@@ -109,8 +72,8 @@ let RecipeGenerator = new class {
 		}
 		if( variety.fixins || material.fixins ) {
 			this.add({
-				product: String.combine( ',', 'weapon', variety.typeId, material.typeId ),
-				ingredients:  String.combine( ',', variety.fixins, material.fixins )
+				product:		this.makeSupplyId('weapon',variety,material,nul,EffectTypeList.eInert),
+				ingredients:	String.combine( ',', variety.fixins, material.fixins )
 			});
 		}
 	}
@@ -193,7 +156,7 @@ let RecipeManager = new class {
 				if( !item || outcome.ingredientStatus[i] == 'consumed' ) {
 					continue;
 				}
-				let isMatch = recipe.requirements[r].match(item);
+				let isMatch = recipe.requirements[r].filter.match(item);
 				let isCount = recipe.requirements[r].count == (item.bunch||1);
 				if( isMatch && isCount ) {
 					outcome.ingredientStatus[i] = 'consumed';
@@ -203,7 +166,7 @@ let RecipeManager = new class {
 			}
 		}
 		for( let i=0 ; i<ingredientList.length ; ++i ) {
-			if( outcome.ingredientStatus[i] != 'consumed' ) {
+			if( ingredientList[i] && outcome.ingredientStatus[i] != 'consumed' ) {
 				outcome.extraIngredients++;
 				outcome.ingredientStatus[i] = 'extra';
 			}
