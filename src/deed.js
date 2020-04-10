@@ -1090,7 +1090,9 @@ DeedManager.addHandler(DeedOp.SUMMON,function() {
 		this.item.giveTo(entity,entity.x,entity.y);
 	}
 	this.onEnd = () => {
-		this.item.giveTo(entity.map,entity.x,entity.y);
+		if( this.item ) {
+			this.item.giveTo(entity.map,entity.x,entity.y);
+		}
 		Anim.FloatUp(entity.id,entity,StickerList.ePoof.img);
 		entity.vanish = true;
 	}

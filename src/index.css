@@ -237,6 +237,10 @@ body {
 	opacity: 1.0;
 }
 
+.craftingArrow.ready:hover {
+	cursor: pointer;
+}
+
 
 .craftingProduct {
 	display: inline-block;
@@ -251,11 +255,8 @@ body {
 	border: 2px solid #393;
 }
 
-.craftingProduct:hover {
-	cursor: pointer;
-}
-
 .craftingProduct.ready:hover {
+	cursor: pointer;
 	background-color: #393;
 }
 

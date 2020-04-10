@@ -103,6 +103,7 @@ let Type = new class {
 		if( typeDataList ) {
 			this.register(typeSymbol,typeDataList);
 		}
+		this[typeSymbol] = policy.accessor;
 		return policy.accessor;
 	}
 	register(typeSymbol,typeDataList) {

@@ -100,13 +100,13 @@ const SpellEffects = Object.filter(EffectTypeList, (e,k)=>[
 	'eSmite3','eRot','eLeech','eRage','ePanic','eConfusion','eShove','eInvisibility'
 	].includes(k) );
 
-const RingEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const RingEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Since rings are rarest, most of their capabilities are awesome, with senseTreasure being the odd man out.
 	'eSenseSmell','eOdorless','eRegeneration','eResistance','eSenseTreasure','eMobility','eSeeInvisible'
 	].includes(k) );
 
 // Weapons only keep their magic for a little while. Apply runes in order to re-enhance them
-const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Energy damage is classic magic for weapons.
 	'eBurn','eFreeze','eShock',
 	// Can we find a way to apply poison potions to weapons? If you 'use' a poison potion it applies to currently held weapon?
@@ -120,13 +120,13 @@ const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
 	'eStun',		// Clubs, maces
 	// 'eShatter',	// hammers can shatter stiff armor or like a carapace?
 	].includes(k));
-//const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['inert','eSmite','eSmite3','eSmite5','eSmite7','ePoison','eBurn','eFreeze','eBlindness','eSlow','eConfusion'].includes(k) );
+//const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['eSmite','eSmite3','eSmite5','eSmite7','ePoison','eBurn','eFreeze','eBlindness','eSlow','eConfusion'].includes(k) );
 
-const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>[
 	'eStun','eShove','eDeflect','eDeflectRot','eResistance'
 	].includes(k) );
 
-const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const HelmEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// All armor can provide resistances, but it probably isn't their best use.
 	'eResistance',
 	// A shining beacon of light for the player.
@@ -141,59 +141,59 @@ const HelmEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
 	'eRegeneration', 
 	].includes(k) );
 
-const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Multiple armor pieces and rings can provide regen, each adding 1%
 	'eRegeneration',
 	// All armor can provide resistances, but it probably isn't their best use.
 	'eResistance'
 	].includes(k) );
 
-const CloakEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const CloakEffects = Object.filter(EffectTypeList, (e,k)=>[
 	'eInvisibility', 'eOdorless', 'eRechargeFast', 'eResistance'
 	].includes(k) );
 
-const BracersEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const BracersEffects = Object.filter(EffectTypeList, (e,k)=>[
 	'eBlock'
 	].includes(k) );
 
-const BootsEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const BootsEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Multiple armor pieces and rings can provide regen, each adding 1%
 	'eOdorless','eJump2','eJump3','eRegeneration','eIgnore','eFlight','eResistance'
 	].includes(k) );
 
 // Gaps in the bow effects are shock (reserved for darts), and stun/slow/shove (reserved for slings)
-const BowEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const BowEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Classic energy damage, and piercing will poison. Rot's idea is something gets into your blood.
 	'eBurn','eFreeze','ePoison','eRot'
 	].includes(k) );
 
 // Slings are meant for short range bashing.  that feals "heavy" is their realm.
-const SlingEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const SlingEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// These would happen if you were hit on the head, or hit very hard with a blunt trauma
 	'eStun','eShove',
 	// Because it is biblical, and because slinging does a bit less than arrows.
 	'eSmite'
 	].includes(k) );
 
-const DartEffects = Object.filter(EffectTypeList, (e,k)=>['inert',
+const DartEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Darts have the general concept of being tipped with a solution, so all the mental effects are on them.
 	'ePoison','eStun','eStartle','eHesitate','eBlindness','eSlow'
 	].includes(k) );
 
 const GemEffects = Object.filter(EffectTypeList, (e,k)=>[
-	'inert','eMentalWall','eClearMind','eStalwart','eDarkVision','eSmite','ePossess','eRage',
+	'eMentalWall','eClearMind','eStalwart','eDarkVision','eSmite','ePossess','eRage',
 	'eLight','eSenseTreasure','eSenseLiving','eSeeInvisible'
 	].includes(k) );
 
 
 const WeaponMaterialList = ({ //Type.establish('WeaponMaterial',{},{
-	"iron": 		{ level:  0 /* very important this be zero!*/, name: 'iron', matter: 'metal' },
-	"silver": 		{ level:  5, toMake: 'ingotSilver', name: 'silver', matter: 'metal' },
-	"ice": 			{ level: 25, toMake: 'ice block', name: 'ice', matter: 'liquid', durability: Rules.weaponDurability(20) },
-	"lunarium": 	{ level: 40, toMake: 'lunarium ingot', name: 'lunarium', matter: 'metal' },
-	"glass": 		{ level: 55, toMake: 'malachite', name: 'glass', matter: 'glass', breakChance: Rules.weaponBreakChance(20) },
-	"deepium": 		{ level: 70, toMake: 'deepium ingot', name: 'deepium', matter: 'metal' },
-	"solarium": 	{ level: 85, toMake: 'solarium ingot', name: 'solarium', matter: 'metal' },
+	"iron": 		{ level:  0 /* very important this be zero!*/, fixins: 'ingotIron', name: 'iron', matter: 'metal' },
+	"silver": 		{ level:  5, fixins: 'ingotSilver', name: 'silver', matter: 'metal' },
+	"ice": 			{ level: 25, fixins: 'ice block', name: 'ice', matter: 'liquid', durability: Rules.weaponDurability(20) },
+	"lunarium": 	{ level: 40, fixins: 'lunarium ingot', name: 'lunarium', matter: 'metal' },
+	"glass": 		{ level: 55, fixins: 'malachite', name: 'glass', matter: 'glass', breakChance: Rules.weaponBreakChance(20) },
+	"deepium": 		{ level: 70, fixins: 'deepium ingot', name: 'deepium', matter: 'metal' },
+	"solarium": 	{ level: 85, fixins: 'solarium ingot', name: 'solarium', matter: 'metal' },
 });
 ResistanceList.push(WeaponMaterialList);
 
@@ -644,9 +644,9 @@ const ShieldMaterialList = ({ //Type.establish('ShieldMaterial',{},{
 });
 
 const ArmorVarietyList = ({ //Type.establish('ArmorVariety',{},{
-	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather', img: 'item/armour/animal_skin1.png' },
-	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather', img: 'item/armour/animal_skin2.png' },
-	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather', img: 'item/armour/leather_armour1.png' },
+	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather', fixins: 'part isSkin isAnimal', img: 'item/armour/animal_skin1.png' },
+	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather', fixins: '2x part isSkin isAnimal', img: 'item/armour/animal_skin2.png' },
+	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather', fixins: '2x stuff.leather', img: 'item/armour/leather_armour1.png' },
 	"studded": 		{ level:  3, rarity: 1.0, xArmor: 0.90, matter: 'leather', fixins: 'iron ingot', img: 'item/armour/banded_mail2.png' },
 	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95, fixins: 'ingotIron', img: 'item/armour/scale_mail1.png' },
 	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00, fixins: 'ingotIron', img: 'item/armour/chain_mail1.png' },
@@ -865,6 +865,7 @@ const StuffVarietyList = ({ //Type.establish('StuffVariety',{},{
 		effects: { eInert: EffectTypeList.eInert},
 		img: 'item/stuff/shovel.png'
 	},
+	"leather":			{ rarity: 0.6, matter: 'leather', xPrice:  0.1, isLeather: 1, recipe: 'part isSkin' },
 	"candleLamp": 		{ rarity: 0.6, matter: 'wax',   xPrice:  2, slot: Slot.HIP, light:  4, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  4, name: 'light 4', icon: EffectTypeList.eLight.icon }, useVerb: 'clip on', img: "item/stuff/candle.png" },
 	"torch": 			{ rarity: 1.0, matter: 'wood',  xPrice:  4, slot: Slot.HIP, light:  6, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  6, name: 'light 6', icon: EffectTypeList.eLight.icon }, isTorch: true, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/torch.png" },
 	"lamp": 			{ rarity: 0.4, matter: 'metal', xPrice:  6, slot: Slot.HIP, light:  8, isLight: 1, triggerOnUse: true, autoEquip: true, effect: { op: 'set', stat: 'light', value:  8, name: 'light 8', icon: EffectTypeList.eLight.icon }, allowPlacementOnBlocking: true, useVerb: 'clip on', img: "item/stuff/lamp.png" },

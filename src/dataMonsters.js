@@ -34,12 +34,17 @@ Type.register('Part', {
 		matter: 'flesh',
 		makes: ['eShove', 'eHesitate', 'eStartle'],
 	},
+	skin: 	{
+		matter: 'leather',
+		makes: [],
+	},
 	brain: 		{
 		matter: 'flesh',
 		makes: ['eSenseTreasure', 'eBravery', 'eClearMind', 'eStalwart', 'eMentalFence'],
 	},
 	bone: 		{
 		matter: 'bone',
+		makes: [],
 		augs: { augBlast:1 },
 	},
 	skull: 		{
@@ -134,22 +139,22 @@ let SpeciesList = Type.establish('Species',{
 
 Type.register( 'Species', {
 	isAnimal: {
-		parts: ['blood','eye','ear','nose','tongue','brain','bone','skull','tooth','claw','heart','liver'],
+		parts: ['blood','eye','ear','nose','tongue','skin','brain','bone','skull','tooth','claw','heart','liver'],
 	},
 	isEarthChild: {
 		parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
 	},
 	isSunChild: {
-		parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
+		parts: ['blood','brain','bone','skull','tooth','heart'],
 	},
 	isLunarChild: {
-		parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
+		parts: ['blood','brain','bone','skull','tooth','heart','liver'],
 	},
 	isUndead: {
 		parts: ['eye','ear','tongue','brain','bone','skull','tooth','claw'],
 	},
 	isDemon: {
-		parts: ['blood','eye','ear','nose','tongue','brain','bone','skull','tooth','claw','heart','liver'],
+		parts: ['blood','eye','ear','nose','tongue','skin','brain','bone','skull','tooth','claw','heart','liver'],
 	},
 	isInsect: {
 		parts: ['eye','tongue','brain','gland','wing','chitin','icor'],
@@ -509,8 +514,9 @@ function monsterTypePreProcess(typeId,m) {
 			name:		m.typeId+' '+(part.name||partId),				// goblin heart, ooze slime
 			matter:		part.matter,									// matter: liquid or matter: flash
 		};
-		inject['is'+String.capitalize(m.typeId)] = true;				// isGoblin: true
-		inject['is'+String.capitalize(partId)] = true;					// isHeart: true or isSlime: true
+		inject[String.getIs(m.typeId)] = true;					// isGoblin: true
+		inject[String.getIs(m.typeId)] = true;					// isGoblin: true
+		inject[String.getIs(partId)] = true;					// isHeart: true or isSlime: true
 		if( part.makes ) {
 			part.makes.forEach( effectId => {
 				let bitId = 'bit'+String.capitalize(effectId.slice(1));		// bitInvisibility or bitFreeze
@@ -1515,6 +1521,7 @@ Type.register( 'MonsterType', {
 		isBat: true,
 		loot: '50% batWing',
 		brainPackAnimal: true,
+		parts: ['wing','ear','tongue','claw'],
 		senseInvisible: true,
 		senseLiving: true,
 		travelMode: "fly"

@@ -124,7 +124,7 @@ class Picker {
 							continue;
 						}
 
-						if( !filter.testMembers(item) && !filter.testMembers(v) && !filter.testMembers(m) && !filter.testMembers(q) ) {
+						if( !filter.testMembers(item,v,m,q) ) { //!filter.testMembers(item) && !filter.testMembers(v) && !filter.testMembers(m) && !filter.testMembers(q) ) {
 							if( logging ) console.log( item.typeId+' lacks member' );
 							continue;
 						}
@@ -412,7 +412,22 @@ pickItem()
 
 	You may prefix flags with ! to make sure it lacks this flag
 */
+
 Picker.filterStringParse = function(filterString) {
+	let testKeepIdItemTypeIdFn = (itemTypeId) => {
+		return itemTypeId==self.firstId;
+	};
+	let testKeepIdManyFn = (...argList) => {
+		let count=0;
+		let arg;
+		while( argList.length ) {
+			let arg=argList.shift();
+			count += keepId[arg] ? 1 : 0;
+		}
+		return count >= keepIdCount;
+	}
+
+
 	if( filterString ) { filterString = filterString.trim(); }
 	let nopTrue = () => true;
 	let nop = () => {};
@@ -453,27 +468,28 @@ Picker.filterStringParse = function(filterString) {
 		}
 	});
 	if( killIs.length || keepIs.length ) {
-		self.testMembers = (item => {
-			for( let keep of keepIs ) if( !item[keep] ) return false;
-			for( let kill of killIs ) if( item[kill] ) return false;
-			return true;
-		});
+		self.testMembers = (i,v,m,q) => {
+			for( let kill of killIs ) {
+				if( i[kill] || v[kill] || m[kill] || q[kill] ) return false;
+			}
+			let keepCount = 0;
+			for( let keep of keepIs ) {
+				if( i[keep] || v[keep] || m[keep] || q[keep] ) ++keepCount;
+			}
+			return keepCount >= keepIs.length;
+		}
 	}
 	self.killId = killId;
 	self.keepId = keepId;
 	self.keepIs = keepIs;
 	self.killIs = killIs;
 	let keepIdCount = Object.keys(keepId).length || 0;
-	if( keepIdCount ) {
-		self.testKeepId = (...argList) => {
-			let count=0;
-			let arg;
-			while( argList.length ) {
-				let arg=argList.shift();
-				count += keepId[arg] ? 1 : 0;
-			}
-			return count >= keepIdCount;
-		}
+	if( keepIdCount == 1 && ItemTypeList[self.firstId] && keepId[self.firstId] ) {
+		self.testKeepId = testKeepIdItemTypeIdFn;
+	}
+	else
+	if( keepIdCount>0 ) {
+		self.testKeepId = testKeepIdManyFn;
 	}
 	return self;
 }

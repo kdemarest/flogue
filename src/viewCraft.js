@@ -1,13 +1,14 @@
 Module.add('viewCraft',function() {
 
 let Craft = {};
+let EMPTY = {};
 
 function toBit(effectId) {
 	return 'bit'+String.capitalize(effectId.slice(1));
 }
 
 function filterMatch(item) {
-	if( ItemTypeList[this.firstId] && !item.typeId === this.firstId ) {
+	if( ItemTypeList[this.firstId] && item.typeId !== this.firstId ) {
 		return false;
 	}
 
@@ -15,15 +16,16 @@ function filterMatch(item) {
 		return false;
 	}
 
-	if( !this.testMembers(item)  ) {
+	if( !this.testMembers(item,EMPTY,EMPTY,EMPTY)  ) {
 		return false;
 	}
 
-	if( this.killId[item.typeId] ||
+	if( this.killId.length && (
+		this.killId[item.typeId] ||
 		this.killId[item.variety?item.variety.typeId:''] ||
 		this.killId[item.material?item.material.typeId:''] ||
 		this.killId[item.quality?item.quality.typeId:''] ||
-		this.killId[item.effect?item.effect.typeId:''] ) {
+		this.killId[item.effect?item.effect.typeId:''] )) {
 		return false;
 	}
 
@@ -39,187 +41,198 @@ function filterMatch(item) {
 
 	return true;
 }
+// Old master of laketown disappeared into 'the waste' with a bunch of money
+// Laketown has powerful merchants, I know the five most important and their details, the guilds etc.
+// 
 
-/*
-we can loop through all items.varieties, .materials etc and verify that every single named thing has a fixin
-this can also stand in for matter, so if the varietyId or materialId is not found, we just check the matter.
-const FixinsList = {
-	iron: 'ingotIron',
-	silver: 'ingotSilver',
-	ice: 'iceBlock',
-	lunarium: 'ingotLunarium',
-	deepium: 'ingotDeepium',
-	solarium 'ingotSolarium',
-	ash: 'wood',
-	oak: 'wood',
-	maple: 'wood',
-	yew: 'wood',
-	// Matter mappings
-	leather: 'part isSkin',
-	glass: 'part isGlass'
-	//and so on
-};
+let RecipeList = {};
+RecipeList = Type.establish('Recipe',{},RecipeList);
 
+let nul = { nul: {nul:true} };	// not the same as inert!
 
-we need to just have little algorithms that build custom recipes by type. One for potions, one for weapons, etc.
-The final piece of the Recipe.itemType['more'] is ALWAYS in the order Variety/Material/Quality/Effect
-Use the word fixins to represent the materials that make a thing.
-
-for each PotionEffect {
-	find the Part that says it makes this effect
-		Recipe.potion['eFlight'] = 'potion.eWater, part isWing';
-
-^^ the great thing about doing it this way is that, based on the recipes we've got selected, we could  adjust
-the above to say, if we kill an ogre, part isWing becomes part isOgre isWing, which of course can't exist
-so we skip it.
-
-REMEMBER that Picker.itemTraverse takes a fn and will generously call us back for each thing it finds
-that fits each criteris in the recipe. That way we can tell, during data conditioning, if any such part exists.
-
-
-for each weapon.varieties
-	// don't forget to let each variety's personal materials list override the default materials
-	weapon.materials.forEach( material => {
-		// don't forget to let each variety's personal effects list override the default effects
-		for each weapon.effects
-			*** Except we shouldn't even consiter letting one forge effects directly into the weapon!
-			*** That should be something else entirely.
-			let m = material.
-			Recipe.weapon['sword_iron'] = '2x ingotIron (low damage is 1 ingot, >0.5 is 2, and >1.0 is 3)
-			Recipe.weapon['bow_ash'] = 'wood'
-
-similar drill for armor and so on.
-
-
-*/
-
-class Recipe {
+let RecipeGenerator = new class {
 	constructor() {
-		RecipeRepo.add(this);
+		this.exists = {};
 	}
-	matchCraft(craftId) {
-	}
-	matchItem(item) {
-	}
-	matchIngredients(ingredientList) {
-	}
-	productSample(crafter) {
-	}
-	product(crafter,ingredientList) {
-	}
-}
 
-let RecipeRepo = new class {
-	constructor() {
-		this.list = [];
-	}
 	add(recipe) {
-		this.list.push(recipe);
-	}
-	isCraftableItem(craftId,item) {
-		for( let i=0 ; i<this.list ; ++i ) {
-			if( this.list[i].matchCraft(craftId) && this.list[i].matchItem(item) ) {
-				return true;
-			}
-		}
-		return false;
-	}
-	findMatchingRecipe(craftId,ingredientList) {
-		for( let i=0 ; i<this.list ; ++i ) {
-			if( this.list[i].matchCraft(craftId) && this.list[i].matchIngredients(ingredientList) ) {
-				return this.list[i];
-			}
-		}
-	}
-}
+		console.assert(recipe.product);
+		console.assert(recipe.ingredients);
 
-class RecipePotion extends Recipe {
-	constructor(legalCrafters,product,requirements) {
-		super();
-		this.legalCrafters = legalCrafters;
-		this.product = product;	
-		let supply = Array.supplyParse(requirements);
+		if( this.exists[recipe.ingredients] ) {
+			return;
+		}
+		let supply = Array.supplyParse(recipe.ingredients);
+		console.assert( supply.length > 0 );
 		supply.forEach( sup => {
 			let filter = Picker.filterStringParse(sup.typeFilter);
 			sup.match = filterMatch.bind(filter);
 		});
-		this.require = supply;
+		recipe.requirements = supply;
+		RecipeList[recipe.product+'.'+Date.makeUid()] = recipe;
 	}
-	matchCraft(craftId) {
-		return this.byCraftId.includes(craftId);
+
+	makeSupplyId(itemType,variety=nul,material=nul,quality=nul,effect=nul) {
+		return String.combine(
+			'.',
+			itemType.typeId,
+			variety.nul?0:variety.typeId,
+			material.nul?0:material.typeId,
+			quality.nul?0:quality.typeId,
+			effect.nul?0:effect.typeId
+		);
 	}
-	matchItem(item) {
-		console.assert(item);
-		for( let index=0 ; index<this.require.length ; ++index ) {
-			if( this.require[index].match(item) && this.require[index].count == (item.bunch||1) ) {
-				return this.require[index];
+
+	generateRecipePotion(itemType,variety,material,quality,effect) {
+//return;
+//if( effect.typeId !== 'eHaste' ) return;
+		Object.each( Type.Part, part => {
+			if( part.makes.includes(effect.typeId) ) {
+				this.add({
+					product:		'potion.'+effect.typeId,
+					ingredients:	'potion.eWater, part '+String.getIs(part.typeId)
+				});
 			}
+		});
+		}
+
+	generateRecipeArmor(itemType,variety,material,quality,effect) {
+		if( variety.fixins && (effect.isInert || effect.nul) ) {
+//return;
+//if( variety.typeId !== 'fur' ) return;
+			this.add({
+				product: 'armor.'+variety.typeId,
+				ingredients:  variety.fixins
+			});
 		}
 	}
-	matchIngredients(ingredientList) {
-		let matchCount = 0;
-		ingredientList.forEach( item => {
-			matchCount += item && this.matchItem(item);
+
+	generateRecipeNamed(itemType,variety,material,quality,effect) {
+//return;
+		if( !effect.nul && !effect.isInert ) {
+			return;
+		}
+		if( variety.recipe ) {
+			this.add({
+				product:		this.makeSupplyId(itemType,variety),
+				ingredients:	variety.recipe
+			});
+			return;
+		}
+		if( itemType.recipe ) {
+			this.add({
+				product:		this.makeSupplyId(itemType),
+				ingredients:	itemType.recipe
+			});
+		}
+	}
+
+	generateRecipes() {
+		let effectInert = { eInert: { isInert: 1 } };
+		Object.each( ItemTypeList, itemType => {
+			Object.each( itemType.varieties || nul, variety => {
+				Object.each( variety.materials || itemType.materials || nul, material => {
+					Object.each( material.qualities || variety.qualities || itemType.materials || nul, quality => {
+						Object.manyEach( effectInert, quality.effects || material.effects || variety.effects || itemType.effects || null, effect => {
+							let callName = 'generateRecipe'+String.capitalize(itemType.typeId);
+							if( this[callName] ) {
+								this[callName]( itemType, variety, material, quality, effect );
+							}
+							this.generateRecipeNamed( itemType, variety, material, quality, effect );
+						});
+					});
+				});
+			});
 		});
-		return matchCount == this.require.length;
 	}
-	createSample(crafter,ingredientList) {
+}
+
+function test() {
+	let craftId = 'ordner';
+	{
+//		let ingredientList = [ { id: 'a', typeId: 'part', isSkin:1, variety: { typeId: 'leather' } }, null, null ];
+//		let recipe = RecipeManager.findOutcomes(craftId,ingredientList);
+//		console.assert(recipe);
+//		let item = RecipeManager.createSample({level:1},recipe);
+//		console.assert(item);
+	}
+//		{ id: 'a', typeId: 'part', isWing:1, variety: { typeId: 'something' } },
+
+}
+
+Type.establish('RecipeGenerator',{
+	onFinalize: X => {
+		RecipeGenerator.generateRecipes();
+		test();
+	}
+},{ fake: {} } );
+
+let RecipeManager = new class {
+	constructor() {
+		this.list = RecipeList;
+	}
+	determineOutcome(recipe,ingredientList) {
+		let outcome = {
+			recipe: recipe,
+			ingredientStatus: {},
+			extraIngredients: 0,
+			satisfied: false,
+		};
+		let metCount = 0;
+		for( let r=0 ; r<recipe.requirements.length ; ++r ) {
+			for( let i=0 ; i<ingredientList.length ; ++i ) {
+				let item = ingredientList[i];
+				if( !item || outcome.ingredientStatus[item.id] ) {
+					continue;
+				}
+				let isMatch = recipe.requirements[r].match(item);
+				let isCount = recipe.requirements[r].count == (item.bunch||1);
+				if( isMatch && isCount ) {
+					outcome.ingredientStatus[item.id] = 'consumed';
+					metCount++;
+					break;
+				}
+				if( !isMatch ) {
+					outcome.extraIngredients++;
+				}
+			}
+		}
+		outcome.satisfied = (metCount >= recipe.requirements.length);
+		return outcome;
+	}
+
+	findOutcomes(craftId,ingredientList) {
+		let outcomeList = [];
+		Object.each( RecipeList, recipe => {
+			let outcome = this.determineOutcome(recipe,ingredientList);
+			if( outcome.satisfied ) {
+				outcomeList.push(outcome);
+			}
+		});
+		outcomeList.sort( (a,b)=>a.extraIngredients>b.extraIngredients ? 1 : a.extraIngredients<b.extraIngredients ? -1 : 0 );
+		if( outcomeList.length >= 2 ) {
+			console.assert( outcomeList[0].extraIngredients <= outcomeList[1].extraIngredients );
+		}
+		return outcomeList;
+	}
+	createSample(crafter,recipe) {
 		let product = null;
-		new Picker(crafter.level).pickLoot(this.product,item => { product=item; });
-		return product;
-	}
-	create(crafter,ingredientList) {
-		let product;
-		new Picker(crafter.level).pickLoot(this.product,item => { product=item; });
-		tell( mSubject, crafter, ' ', mVerb, 'craft', ' ', mObject|mA, product, '.' );
-		ingredientList.forEach( item => item ? item.destroy() : null );
+		new Picker(crafter.level).pickLoot( recipe.product, item => { product=item; } );
 		return product;
 	}
 };
 
-/*
-class RecipePotionAugment extends Recipe {
-	constructor() {
-		super();
-	}
-	matchCraft(craftId) {
-		return craftId=='ordner';
-	}
-	matchItem(item) {
-		if( !item.effect ) return;
-		if( item.effect.typeId == '
-	}
-			let item = when=='recipe.ordner' ? e.ingredientList.first : false;
-			if( item && item.isPotion && e.ingredientList.count == 1 && item.effect && (item.effect.isDeb || item.effect.isDmg) ) {
-				let effectShape = [EffectShape.BLAST3,EffectShape.BLAST4,EffectShape.BLAST5][index];
-				e.found = {
-					augment:	e.ingredientList.first,
-					transform:	item => item.effect.effectShape = effectShape,
-					description: 'add blast area '+(3+index),
-				}
-			}
-*/
 
-function dataConditionRecipes() {
-	let legalCrafters = ['ordner'];
-	Object.each( ItemTypeList.potion.effects, potionEffect => {
-		if( !potionEffect.isInert ) {
-			new RecipePotion(
-				legalCrafters,
-				'potion.'+potionEffect.typeId,
-				"potion.eWater, "+toBit(potionEffect.typeId)
-			);
-		}
-	});
-}
 
 
 Craft.ordner = {
 	title: 'Ordnance Crafting',
 	colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
 	allowFilter: false,
-	itemFilter: function() {
-		return new Finder(this.crafter.inventory).filter( item => (item.isPotion || this.isCraftableItem(this.craftId,item)) && !this.ingredientList.findId(item.id) );
+	fetchCraftableItems: function() {
+		return new Finder(this.crafter.inventory).filter( item => {
+			return (item.isPotion || item.isPart) && !this.ingredientList.findId(item.id);
+		});
 	},
 	maxIngredients: 3
 };
@@ -250,6 +263,11 @@ class IngredientList {
 			this.reset(i);
 		}
 	}
+	destroy() {
+		this.list.forEach( item => !item || item.destroy() );
+		this.clear();
+	}
+
 	getOpenSlot() {
 		for( let i=0 ; i<this.list.length ; ++i ) {
 			if( !this.list[i] ) {
@@ -300,7 +318,7 @@ class ViewCraft extends ViewInventory {
 
 		guiMessage('clearSign');
 
-		this.prime( this.itemFilter, this.allowFilter, () => true );
+		this.prime( this.fetchCraftableItems, this.allowFilter, () => true );
 	}
 	onKeyDown(e) {
 		if( e.key == 'Escape' ) {
@@ -334,10 +352,7 @@ class ViewCraft extends ViewInventory {
 		this.ingredientList.set(index,item);
 		this.render();
 	}
-	isCraftableItem(craftId,item) {
-		return RecipeRepo.isCraftableItem(craftId,item);
-	}
-	findMatchingRecipe(craftId,ingredientList) {
+	findOutcomes(craftId,ingredientList) {
 		let effect = {
 			target: this.crafter,
 			source: this.crafter,
@@ -348,7 +363,7 @@ class ViewCraft extends ViewInventory {
 		if( effect.found ) {
 			return effect.found;
 		}
-		return RecipeRepo.findMatchingRecipe(craftId,ingredientList);
+		return RecipeManager.findOutcomes(craftId,ingredientList);
 	}
 	headerComponent(div) {
 		let title = () => {
@@ -377,34 +392,43 @@ class ViewCraft extends ViewInventory {
 		}
 
 		let craftingArrow = () => {
-			let recipe = this.findMatchingRecipe(this.craftId,this.ingredientList);
+			let outcomeList = this.findOutcomes(this.craftId,this.ingredientList.list);
+			let recipe = outcomeList.length ? outcomeList[0].recipe : null;
 			return $('<div class="craftingArrow'+(recipe?' ready':'')+'"><img src="/tiles/gui/'+(recipe?'arrowOutlineGreen.png':'arrowOutline.png')+'"></div>');
 		}
 
 		let craftingProduct = () => {
-			let recipe = this.findMatchingRecipe(this.craftId,this.ingredientList);
+			let outcomeList = this.findOutcomes(this.craftId,this.ingredientList.list);
+			let recipe = outcomeList.length ? outcomeList[0].recipe : null;
 			let product = $('<div class="craftingProduct'+(recipe?' ready':'')+'"></div>');
 			let nameList = [];
 			if( recipe ) {
-				let product = recipe.createSample(this.crafter,this.ingredientList);
-				let ex = product.explain();
-				let s = '';
-				s += ex.description+(ex.permutation?' '+ex.permutation:'')+'<br>';
-				if( ex.description2 ) {
-					s += ex.description2+'<br>';
+				let product = RecipeManager.createSample(this.crafter,recipe);
+				if( !product ) {
+					// you are not high enough level
+					nameList.push( 'Not high level' );
 				}
-				if( ex.perks ) {
-					s += ex.perks+'<br>';
+				else {
+					let ex = product.explain();
+					let s = '';
+					s += ex.description+(ex.permutation?' '+ex.permutation:'')+'<br>';
+					if( ex.description2 ) {
+						s += ex.description2+'<br>';
+					}
+					if( ex.perks ) {
+						s += ex.perks+'<br>';
+					}
+					s += recipe.description ? recipe.description+'<br>' : '';
+					nameList.push( s );
 				}
-				s += recipe.description ? recipe.description+'<br>' : '';
-				nameList.push( s );
 			}
 			$('<div>'+nameList.join('<br>')+'</div>')
 				.on( 'click.ViewCraftHeader', null, e => {
-					let recipe = this.findMatchingRecipe(this.craftId,this.ingredientList);
+					let outcomeList = this.findOutcomes(this.craftId,this.ingredientList.list);
+					let recipe = outcomeList.length ? outcomeList[0].recipe : null;
 					if( !recipe ) return;
-					let product = recipe.create(this.crafter,this.ingredientList);
-					ingredientList.clear();
+					Inventory.lootTo( this.crafter, recipe.product, this.crafter.level, this.crafter );
+					this.ingredientList.destroy();
 
 					$( ".craftingProduct" ).addClass('productMade');
 					setTimeout( () => {
@@ -440,9 +464,10 @@ class ViewCraft extends ViewInventory {
 	}
 }
 
+
 return {
 	ViewCraft: ViewCraft,
-	dataConditionRecipes: dataConditionRecipes
+	RecipeManager: RecipeManager
 }
 
 });

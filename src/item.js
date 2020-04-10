@@ -75,7 +75,7 @@ class Item {
 
 		console.assert( (this.matter && Matter[this.matter]) || !this.isTreasure);
 		if( this.matter ) {
-			inits['of'+String.capitalize(this.matter)] = true;
+			inits[String.getOf(this.matter)] = true;
 		}
 
 		this.health = this.healthMax;
@@ -209,6 +209,11 @@ class Item {
 		String.calcName(this);
 		//console.log('p=',this.namePattern);
 		//console.log('n=',this.name);
+
+		if( this.variety && this.variety.isWing && !this.isWing ) {
+			debugger;
+		}
+
 	}
 	get area() {
 		if( !this.owner ) debugger;

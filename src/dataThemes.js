@@ -218,7 +218,7 @@ function themeValidateAndCondition(theme) {
 	extractRarityHash(theme,rRARE,theme.rRARE);
 	extractRarityHash(theme,rEPIC,theme.rEPIC);
 	extractRarityHash(theme,rLEGENDARY,theme.rLEGENDARY);
-	console.log('rarityHash of',theme.typeId,theme.rarityHash);
+	//console.log('rarityHash of',theme.typeId,theme.rarityHash);
 
 
 	console.assert( theme.floorDensity||0  < 1.0);

@@ -142,7 +142,7 @@ Module.add('config.ken',function(X,moduleId) {
 		// soldier, brawler, monk, archer, ninja, not quite blaster
 		mergeWithExistingData: true,
 		legacyId: 'blaster',
-		carrying: '3x stuff.lumpOfMeat', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
+		carrying: '4x potion.eWater, 4x part isWing, 4x part isSkin', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
 		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow',
 		//sensePerception = true,
 		//senseAlert: true,
@@ -151,7 +151,7 @@ Module.add('config.ken',function(X,moduleId) {
 		//light: 2,
 		//experience: 100,
 		inject: {
-			//level: 20,
+			level: 5,
 			//immortal: true,
 			//invulnerable: true
 		}

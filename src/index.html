@@ -182,12 +182,10 @@ async function main() {
 	Module.realize();
 
 	// We condition the heck out of our data, and we have to do it in the right order.
-//	let dataConditioner = new DataConditioner();
 	Type.establish('PLUGINS',{});
 	Type.register('PLUGINS', PluginManager.list );
 	Type.merge();
 	Type.finalize();
-//	dataConditioner.conditionAll();
 
 	window.ImageRepo =  new PixiImageRepo(PIXI.loader);
 	ImageRepo.load();

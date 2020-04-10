@@ -74,6 +74,12 @@ Module.add('utilities',function(){
 		}
 		return s;
 	}
+	String.getIs = function(s) {
+		return 'is'+String.capitalize(s);
+	}
+	String.getOf = function(s) {
+		return 'of'+String.capitalize(s);
+	}
 	Array.filterInPlace = function(a, condition, thisArg) {
 		let j = 0;
 		// I made this a for loop to optimize speed.
@@ -165,7 +171,21 @@ Module.add('utilities',function(){
 	}
 	Object.each = function(obj,fn) {
 		for( let key in obj ) {
-			fn(obj[key],key);
+			if( fn(obj[key],key) === false ) {
+				break;
+			}
+		}
+	}
+	Object.manyEach = function() {
+		let fn = arguments[arguments.length-1];
+		for( let i=0 ; i<arguments.length-1 ; ++i ) {
+			let obj = arguments[i];
+			if( !obj ) continue;
+			for( let key in obj ) {
+				if( fn(obj[key],key) === false ) {
+					return false;
+				}
+			}
 		}
 	}
 	Object.map = function(obj,fn) {
