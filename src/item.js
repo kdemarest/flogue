@@ -359,7 +359,7 @@ class Item {
 
 	isAt(x,y,area) {
 		console.assert(area);
-		return this.x==x && this.y==y && this.area.id==area.id;
+		return Distance.isAt(this.x,this.y,x,y) && this.area.id==area.id;
 	}
 	isAtTarget(target) {
 		console.assert(target && target.area);

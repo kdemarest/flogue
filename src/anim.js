@@ -662,8 +662,13 @@ class AnimationManager {
 		this.list.push(anim);
 		return anim;
 	}
-	remove(fn) {
-		this.list.forEach( anim => { if( fn(anim) ) anim.die(); } );
+	remove(fn,note) {
+		this.list.forEach( anim => {
+			if( fn(anim) ) {
+				console.log('AnimationManager.removed ',anim.groupId,'note='+note);
+				anim.die(); 
+			}
+		});
 	}
 	tickRealtime(delta) {
 		this.list.map( anim => anim.tick(delta) );

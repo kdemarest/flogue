@@ -252,13 +252,13 @@ class ViewInventory extends ViewObserver {
 
 		let onMouseoverBody = (event,item) => {
 			//console.log( 'ViewInventory mouseover' );
-			guiMessage( 'show', item );
+			guiMessage( 'showInfo', item );
 			guiMessage( 'favoriteCandidate', item );
 			$("#favMessage").html("Press 0-9 to favorite");
 		}
 
 		let onMouseoutBody = (event,item) =>{
-			guiMessage( 'hide' );
+			guiMessage( 'hideInfo' );
 			guiMessage( 'favoriteCandidate', null );
 		}
 

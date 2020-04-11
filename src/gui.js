@@ -11,9 +11,9 @@ class Gui {
 			self.message(message,payload,target);
 		}
 		window.guiCachedRender = (divId,s,classList) => {
-			Object.each( classList, state => {
-				if( $(divId).hasClass != state ) {
-					$(divId).toggleClass(state);
+			Object.each( classList, (state,className) => {
+				if( $(divId).hasClass(className) != state ) {
+					$(divId).toggleClass(className);
 				}
 			});
 			if( s !== self.cached[divId] ) {

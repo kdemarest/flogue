@@ -212,7 +212,7 @@ let EffectTypeList = {
 	eFlight: {
 		isBuf: 1,
 		level: 0,
-		rarity: 0.20,
+		rarity: 1.00,
 		op: 'set',
 		stat: 'travelMode',
 		value: 'fly',

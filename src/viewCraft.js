@@ -295,7 +295,8 @@ class ViewCraft extends ViewInventory {
 		});
 		Gui.keyHandler.add( 'ViewCraft', this.onKeyDown.bind(this) );
 
-		guiMessage('clearSign');
+		guiMessage( 'clearSign' );
+		guiMessage( 'hideInfo' );
 
 		let populateIngredientList = () => {
 			let finder = new Finder(this.crafter.inventory).filter( item => !this.ingredientList.findId(item.id) );
@@ -363,12 +364,12 @@ class ViewCraft extends ViewInventory {
 				$('<div class="ingredient '+status+'">'+name+'</div>')
 					.on( 'click.ViewCraftHeader', null, e => {
 						this.ingredientList.reset(index);
-						guiMessage( 'hide' );
+						guiMessage( 'hideInfo' );
 						this.render();
 					})
 					.on( 'mouseover.ViewCraftHeader', null, event => {
 						if( item ) {
-							guiMessage( 'show', item );
+							guiMessage( 'showInfo', item );
 						}
 					})
 					.appendTo(list);

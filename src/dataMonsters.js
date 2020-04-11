@@ -324,6 +324,8 @@ let PlayerImages = {
 // resist	- as immune, except what you resist for half damage
 // vuln		- as immune, except what you are vulnerable to for double damage
 // sneakAttackMult - The multiplier when this creature successfully sneak attacks. Requires Quick.LITHE weapons.
+// isLarge  - resists shove due to being large.
+
 
 // immortal		- will never die, and can't drop below 1 health
 // invilnerable	- suffers no damage or negative status effects

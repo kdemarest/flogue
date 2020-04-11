@@ -221,9 +221,6 @@ let DeedManager = (new class {
 		this.statsThatCauseMapRenders = { senseBlind:1, senseLiving:1, senseInvisible: 1, sensePerception:1, senseAlert:1, senseDarkVision:1, senseXray:1, senseSmell:1 }
 	}
 	add(effect) {
-//		if( effect.damageType == DamageType.FREEZE ) {
-//			debugger;
-//		}
 		let result = {};
 		if( this.handler[effect.op] ) {
 			// I like it this way because it leaves handler completely undefined otherwise.
@@ -263,10 +260,6 @@ let DeedManager = (new class {
 	// effect starts, or one expires.
 	calcStat(target,stat,isOnset) {
 		let oldValue = target[stat];
-//		if( target.baseType[stat] === undefined ) {
-//			debugger;
-//		}
-//		if( stat == 'visciousWhack' ) debugger;
 		target[stat] = target.isMonsterType ? target.getBaseStat(stat) : target.baseType[stat];
 		for( let deed of this.deedList ) {
 			if( !deed.killMe && deed.target.id == target.id && deed.stat == stat ) {
@@ -334,6 +327,8 @@ let DeedManager = (new class {
 	}
 	tick(target,dt) {
 		// This makes sure that any deeds added while ticking do NOT actually tick this round.
+		// A better implementatio would probably be to duplicate the deedList array and
+		// process that. Duh.
 		this.deedList.map( deed => deed.doTick=true );
 		for( let deed of this.deedList ) {
 			if( (target === null && deed.target.isPosition) || (target && deed.target.id == target.id) ) {
@@ -495,7 +490,7 @@ let effectApply = function(effect,target,source,item,context) {
 					//Anim.At( x, y, area, effect.icon || StickerList.eGeneric.img, effect.rangeDuration );
 					let targetList = [];
 					let ignoreSourceId = source ? source.id : '';
-					let monsterList = new Finder(area.entityList).at(x,y).filter( entity => entity.id !== ignoreSourceId );
+					let monsterList = new Finder(area.entityList).isAt(x,y).filter( entity => entity.id !== ignoreSourceId );
 					if( monsterList.count ) {
 						targetList.push(...monsterList.all);
 					}

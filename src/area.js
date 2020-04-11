@@ -459,7 +459,7 @@ function tick(speed,map,entityListRaw,thinkClip) {
 			return;
 		}
 		player.calculateVisbility();
-		player.act(false);
+		player.act(0.0);
 		// Time is not passing, so do not tick items.
 		DeedManager.calc(player);
 		player.clearCommands();
@@ -480,7 +480,7 @@ function tick(speed,map,entityListRaw,thinkClip) {
 			if( thinkClip.contains(entity.x,entity.y) ) {
 				entity.calculateVisbility();
 				entity.think();
-				entity.act();
+				entity.act(1.0);
 			}
 			// DANGER! At this moment the entity might have changed areas!
 			tickItemList(entity.inventory,dt,entity.rechargeRate||1);

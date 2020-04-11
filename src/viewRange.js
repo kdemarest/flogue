@@ -5,84 +5,144 @@ class ViewRange extends ViewObserver {
 		super();
 		this.xOfs = 0;
 		this.yOfs = 0;
-		this.visibleFn = null;
-		this.rangeLimit = 0;
-		this.active = false;
+		this.picking = null;
 	}
-	clear() {
-		this.xOfs = 0;
-		this.yOfs = 0;
-		guiMessage('overlayRemove',{groupId: 'guiCrosshair'});
-		this.isShotClear = true;
+	get active() {
+		return true;	// this.active = this.visibleFn && this.visibleFn();
 	}
-	move(xAdd,yAdd) {
-		let x = this.xOfs + xAdd;
-		let y = this.yOfs + yAdd;
-		if( Math.abs(x) > this.rangeLimit || Math.abs(y) > this.rangeLimit ) {
-			return false;
-		}
-		this.xOfs = x;
-		this.yOfs = y;
+	moveByKeyboard(xAdd,yAdd) {
+		let xOfs = this.xOfs + xAdd;
+		let yOfs = this.yOfs + yAdd;
+		this.moveTo(xOfs,yOfs);
+	}
+	moveByMouse(xOfs,yOfs) {
+		this.moveTo(xOfs,yOfs);
+	}
+	moveTo(xOfs,yOfs) {
+		this.xOfs = xOfs;
+		this.yOfs = yOfs;
 
-		if( this.observer ) {
-			let observer = this.observer;
-			let area = observer.area;
-			x = observer.x + x;
-			y = observer.y + y;
-			if( observer.canTargetPosition(x,y) ) {
-				let entity = 
-					new Finder(area.entityList,observer).canTargetEntity().shotClear().at(x,y).first || 
-					new Finder(area.map.itemList,observer).canTargetEntity().shotClear().at(x,y).first || 
-					area.map.tileGet(x,y);
-				//console.log( "viewRange is showing "+entity.name );
-				guiMessage('show',entity);
-			}
+		if( !this.observer ) {
+			debugger;
+			return;
+		}
+
+		let observer = this.observer;
+		let area = observer.area;
+		let tx = observer.x + this.xOfs;
+		let ty = observer.y + this.yOfs;
+
+		let entity = null;
+		if( this.picking ) {
+			let isShotClear,inRange;
+			[isShotClear,inRange] = this.determineShot(observer.map,observer.x,observer.y,tx,ty);
+			entity = 
+				new Finder(area.entityList,observer).isAt(tx,ty).canTargetEntity().first || 
+				new Finder(area.map.itemList,observer).isAt(tx,ty).canTargetEntity().first || 
+				area.map.tileGet(tx,ty);
+
+			this.picking.rangeStatusFn({
+				isShotClear: isShotClear,
+				inRange: inRange,
+				xOfs: this.xOfs,
+				yOfs: this.yOfs
+			});
+		}
+		else {
+			entity = 
+				new Finder(area.entityList,observer).isAt(tx,ty).canPerceiveEntity().first || 
+				new Finder(area.map.itemList,observer).isAt(tx,ty).canPerceiveEntity().first || 
+				area.map.tileGet(tx,ty);
+		}
+		console.assert(entity);
+		guiMessage( 'showInfo', entity );
+		if( entity.isMonsterType ) {
+			console.log( entity.history.join('\n') );
+		}
+
+
+		let mapAsk = ''+this.xOfs+','+this.yOfs;
+		if( this.lastMapAsk != mapAsk ) {
+			this.render();
+			guiMessage('render',{},'map');
+			this.lastMapAsk = mapAsk;
 		}
 	}
-	primeRange(rangeLimit,cmd,visibleFn) {
-		let entity = this.observer;
-		this.visibleFn = visibleFn;
-		this.rangeLimit = rangeLimit;
-		if( !this.active ) {
-			let target;
-			if( cmd.commandItem && cmd.commandItem.effect && cmd.commandItem.effect.isHelp ) {
-				target = entity;
+	unprime() {
+		this.picking.rangeStatusFn({
+			isShotClear: true,
+			inRange: true,
+			xOfs: 0,
+			yOfs: 0
+		});
+		this.picking = null;
+		this.render();
+		guiMessage('render',{},'map');
+	}
+
+	prime(payload) {
+		let entity     = this.observer;
+		let wasPicking = !!this.picking;
+		let picking     = Object.assign({},payload);
+		if( !wasPicking ) {
+			let autoTarget;
+			if( picking.autoTargetMe ) {
+				autoTarget = entity;
 			}
 			else {
-				target =
-					entity.findAliveOthersNearby().isId(entity.lastAttackTargetId).canTargetEntity().nearMe(this.rangeLimit).first ||
-					entity.findAliveOthersNearby().isMyEnemy().canTargetEntity().nearMe(this.rangeLimit).byDistanceFromMe().first ||
-					entity.findAliveOthersNearby().isNotMyFriend().canTargetEntity().nearMe(this.rangeLimit).byDistanceFromMe().first;
+				autoTarget =
+					entity.findAliveOthersNearby().isId(entity.lastAttackTargetId).canTargetEntity().nearMe(picking.rangeLimit).first ||
+					entity.findAliveOthersNearby().isMyEnemy().canTargetEntity().nearMe(picking.rangeLimit).byDistanceFromMe().first ||
+					entity.findAliveOthersNearby().isNotMyFriend().canTargetEntity().nearMe(picking.rangeLimit).byDistanceFromMe().first;
 			}
-			if( target ) {
-				this.xOfs = target.x-entity.x;
-				this.yOfs = target.y-entity.y;
-			}
-			else {
-				this.xOfs = 0;
-				this.yOfs = 0;
-			}
-			this.move(0,0);
+			this.picking = picking;
+			let xOfs = autoTarget ? autoTarget.x-entity.x : 0;
+			let yOfs = autoTarget ? autoTarget.y-entity.y : 0;
+			this.moveTo(xOfs,yOfs);
 		}
+		this.render();
+		guiMessage('render',{},'map');
 	}
 	message( msg, payload ) {
 		super.message(msg,payload);
-		if( msg == 'pick' ) {
-			this.active = this.visibleFn && this.visibleFn();
-			if( this.active ) {
-				this.move(payload.xOfs-this.xOfs,payload.yOfs-this.yOfs);
-			}
+		if( msg == 'viewRangePrime' ) {
+			this.prime(payload);
+		}
+		if( msg == 'viewRangeUnprime' ) {
+			this.unprime();
+		}
+		if( msg == 'viewRangeKeyboard' ) {
+			let dir = payload;
+			this.moveByKeyboard(Direction.add[dir].x,Direction.add[dir].y);
+		}
+		if( msg == 'viewRangeMouse' ) {
+			this.moveByMouse(payload.xOfs,payload.yOfs); //(payload.xOfs-this.xOfs,payload.yOfs-this.yOfs);
 		}
 	}
 
-	drawRange(map,sx,sy,tx,ty) {
-		let self = this;
-		this.isShotClear = true;
-		let area = this.observer.area;
-		function test(x,y) {
+	determineShot(map,sx,sy,tx,ty,draw=null) {
+		let test = (x,y) => {
 			return map.tileTypeGet(x,y).mayFly;
 		}
-		function add(x,y,ok) {
+		let add = (x,y,ok) => {
+			let xOfs = x-this.observer.x;
+			let yOfs = y-this.observer.y;
+			if( this.picking && Math.abs(xOfs) > this.picking.rangeLimit || Math.abs(yOfs) > this.picking.rangeLimit ) {
+				inRange = false;
+				ok = false;
+			}
+			draw ? draw(x,y,ok) : null;
+			isShotClear = isShotClear && ok;
+		}
+		let inRange = true;
+		let isShotClear = true;
+		shootRange(sx,sy,tx,ty,test,add);
+		return [isShotClear,inRange];
+	}
+
+	drawRange(map,sx,sy,tx,ty) {
+		let area = this.observer.area;
+		function draw(x,y,ok) {
 			guiMessage('overlayAdd',{
 				groupId: 'guiCrosshair',
 				x:x,
@@ -90,25 +150,20 @@ class ViewRange extends ViewObserver {
 				area:area,
 				img:StickerList[ok?'crosshairYes':'crosshairNo'].img
 			});
-			self.isShotClear = self.isShotClear && ok;
 		}
-		shootRange(sx,sy,tx,ty,test,add);
+		this.determineShot(map,sx,sy,tx,ty,draw);
 	}
 
 	render() {
 		let observer = this.observer;
-		guiMessage( 'overlayRemove', { groupId: 'guiCrosshair' } );
-		this.active = this.visibleFn && this.visibleFn();
-		if( !this.active && this.activeLast ) {
-			// sadly this is the only way to know that we're no longer showing the range...
-			guiMessage('hide');
-		}
-		if( this.active ) {
+
+		// This just erases all the matching sprites
+		guiMessage( 'overlayRemove', { groupId: 'guiCrosshair', note: 'from viewRange' } );
+		if( this.picking ) {
 			//console.log("crosshair at "+(observer.x+this.xOfs)+','+(observer.y+this.yOfs));
-			console.log('drawRange');
+			//console.log('drawRange');
 			this.drawRange(observer.map,observer.x,observer.y,observer.x+this.xOfs,observer.y+this.yOfs);
 		}
-		this.activeLast = this.active;
 	}
 }
 

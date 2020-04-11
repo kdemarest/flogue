@@ -11,13 +11,13 @@ class ViewStatus extends ViewObserver {
 
 	message(msg,payload) {
 		super.message(msg,payload);
-		if( msg=='show' ) {
+		if( msg=='showInfo' ) {
 			let div = this.slotList.find( div => div.entityId==payload.id );
 			if( div ) {
 				$(div).addClass('isSelected');
 			}
 		}
-		if( msg=='hide' ) {
+		if( msg=='hideInfo' ) {
 			$('.health-bar').removeClass( 'isSelected' );
 		}
 	}
@@ -76,10 +76,10 @@ class ViewStatus extends ViewObserver {
 				.appendTo(self.divId)
 				.show()
 				.mouseover( function() {
-					guiMessage('show',entity);
+					guiMessage('showInfo',entity);
 				})
 				.mouseout( function() {
-					guiMessage('hide');
+					guiMessage('hideInfo');
 				});
 				div.entityId = entity.id;
 				div.entityLastHealth = entity.health;

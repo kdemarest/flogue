@@ -66,8 +66,8 @@ class Finder {
 	random() {
 		return this.result[Math.randInt(0,this.result.length-1)];
 	}
-	at(x,y) {
-		return this.filter( e => e.x==x && e.y==y );
+	isAt(x,y) {
+		return this.filter( e => Distance.isAt(e.x,e.y,x,y) );
 	}
 	near(x,y,rectDist=1) {
 		return this.filter( e => (Math.abs(e.x-x)<=rectDist && Math.abs(e.y-y)<=rectDist) );
@@ -177,11 +177,11 @@ class Finder {
 	farFromMe(rectDist=1) {
 		return this.far(this.me.x,this.me.y,rectDist);
 	}
-	canTargetEntity(x,y) {
-		return this.filter( e => this.me.canTargetEntity(e) );
-	}
 	canTargetPosition(x,y) {
 		return this.filter( e => this.me.canTargetPosition(x,y) );
+	}
+	canTargetEntity() {
+		return this.filter( e => this.me.canTargetEntity(e) );
 	}
 	canPerceiveEntity() {
 		return this.filter( e => this.me.canPerceiveEntity(e) );

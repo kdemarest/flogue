@@ -11,19 +11,23 @@ class Vis {
 		let map = this.getMapFn();
 		console.assert(map);
 		map.traverse( (x,y) => {
-			this.visSet( map, x, y, map.tileTypeGet(x,y).opacity||0 );
+			this._visSet( map, x, y, map.tileTypeGet(x,y).opacity||0 );
 		});
 		map.itemList.forEach( item => {
-			this.visSet( map, item.x, item.y, Math.max( this.visGet(map,item.x,item.y), item.opacity||0 ) );
+			let x = Math.floor(item.x);
+			let y = Math.floor(item.y);
+			this._visSet( map, x, y, Math.max( this._visGet(map,x,y), item.opacity||0 ) );
 		});
 	}
-	visGet(map,x,y) {
+	// For internal use only
+	_visGet(map,x,y) {
 		if( !map.inBounds(x,y) ) {
 			return false;
 		}
 		return this.opacityLookup[y*map.xLen+x];
 	}
-	visSet(map,x,y,opacity) {
+	// For internal use only
+	_visSet(map,x,y,opacity) {
 		if( !map.inBounds(x,y) ) {
 			return false;
 		}
@@ -49,19 +53,21 @@ class Vis {
 			return map.getLightAt(x,y,0) > 0 || Distance.isNear(x-px,y-py,senseDarkVision+0.5);
 		}
 		function remember(x,y) {
-			let pos = y*xLen+x;
 			let tile = map.tileTypeGet(x,y);
-			let temp = itemLookup[pos];
+			let temp = map.itemLookupGet(x,y);
 			let item = temp ? temp[0] : null;
 			if( item && item.invisible && !senseInvisible ) {
 				item = null;
 			}
+			let pos = Math.floor(y)*xLen+Math.floor(x);
 			mapMemory[pos] = item ? item : tile;
 		}
 
+		px = Math.floor(px);
+		py = Math.floor(py);
+
 		let map = this.getMapFn();
 		let xLen = map.xLen;
-		let itemLookup = map.itemLookup;
 		senseDarkVision = senseDarkVision || 0;
 
 		visGrid = visGrid || [];

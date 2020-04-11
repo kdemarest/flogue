@@ -27,6 +27,9 @@ const Distance = new class{
 	getSq(dx,dy) {
 		return Math.max(Math.abs(dx),Math.abs(dy));
 	}
+	isAt(x0,y0,x1,y1,dist=0.5) {
+		return this.isNear(x1-x0,y1-y0,dist);
+	}
 };
 
 const Direction = new class {

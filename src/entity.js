@@ -258,9 +258,11 @@ class Entity {
 	findAliveOthersAt(x,y) {
 		return new Finder( this.map.findEntityArrayAt(x,y).filter( e=>!e.isDead() && e.id!==this.id ), this, false );
 	}
+
+
 	findAliveOthersOrSelfAt(x,y) {
 		let f = this.findAliveOthersAt(x,y);
-		if( this.x == x && this.y == y ) {
+		if( Distance.isAt(this.x,this.y,x,y) ) {
 			f.append( this );
 		}
 		return f;
@@ -856,7 +858,7 @@ class Entity {
 	}
 	isAt(x,y,area) {
 		console.assert(area);
-		return this.x==x && this.y==y && this.area.id==area.id;
+		return Distance.isAt(this.x,this.y,x,y) && this.area.id==area.id;
 	}
 	isAtTarget(target) {
 		console.assert(target && target.area);
@@ -899,7 +901,7 @@ class Entity {
 	dirToBestScent(x,y,targetId) {
 		let _bestAge;
 		let dir = this.map.dirChoose( x, y, (x,y,bestAge) => {
-			let entity = this.map.scentGetEntity(x,y,this.senseSmell);
+			let entity = this.map.scentGetEntitySmelled(x,y,this.senseSmell);
 			if( !entity || entity.id !== targetId ) return false;
 			let age = this.map.scentGetAge(x,y);;
 			if( bestAge == null || age < bestAge ) {
@@ -1540,7 +1542,7 @@ class Entity {
 
 				let wasSmell = false;
 				if( !enemyList.count && this.senseSmell ) {
-					let smelled = this.map.scentGetEntity(this.x,this.y,this.senseSmell,this.id);
+					let smelled = this.map.scentGetEntitySmelled(this.x,this.y,this.senseSmell,this.id);
 					// Technically we should have to follow the scent trails of dead people
 					// around, but that is rather inconvenient.
 					if( smelled && !smelled.isDead() && this.isMyEnemy(smelled) ) {
@@ -2361,30 +2363,6 @@ class Entity {
 		return result;
 	}
 
-	takeTeleport(landing) {
-		let xOld = this.x;
-		let yOld = this.y;
-
-		if( !landing ) {
-			let safeSpot = pVerySafe(this.map);
-			let pos = this.map.pickPosBy(1,1,1,1,safeSpot);
-			if( pos !== false ) {
-				landing = { x: pos[0], y: pos[1] };
-			}
-		}
-		if( landing ) {
-			this.moveTo(landing.x,landing.y);
-		}
-		return {
-			status: landing ? 'teleported' : 'noteleport',
-			success: !!landing,
-			xOld: xOld,
-			yOld: yOld,
-			x: this.x,
-			y: this.y
-		}
-	}
-
 	takeBePossessed(effect,toggle) {
 
 		let fieldsToTransfer = { control:1, name:1, team: 1, brainMindset: 1, brainAbility: 1, visCache: 1, experience: 1, isChosenOne: 1, strictAmmo: true };
@@ -2454,6 +2432,30 @@ class Entity {
 			success: true
 		}
 	}
+
+	takeFallInPit() {
+		if( this.isUser() ) {
+			let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
+			if( stairs ) {
+				let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
+					toAreaId: stairs.toAreaId,
+					toThemeId: stairs.toThemeId,
+					killMeWhenDone: true
+				});
+				this.command = Command.ENTERGATE;
+				this.commandItem = gate;
+				this.commandResult.pitResult = this.actOnCommand();
+			}
+			// If there are no stairs, we simply don't know what to do so we
+			// leave you alone.
+		}
+		else {
+			this.deathPhrase = [mSubject,this,' ',mVerb,'vanish',' into the pit.'];
+			this.vanish = true;
+			this.commandResult.vanish = true;
+		}
+	}
+
 
 	isMyHusk(entity) {
 		return this.oldMe && this.oldMe.id == entity.id;
@@ -2553,7 +2555,7 @@ class Entity {
 	}
 
 	partsGenerate() {
-		let partCount = Math.randInt(1,3);
+		let partCount = Math.randInt(0,1);
 		let partFrom = 'is'+String.capitalize(this.typeId); 
 		return Inventory.lootGenerate( partCount+'x part '+partFrom, this.level )
 	}
@@ -3105,7 +3107,6 @@ class Entity {
 	}
 
 	actWait() {
-		this.isBraced = true;
 		tell(mSubject|mCares,this,' ',mVerb,'wait','.');
 		return {
 			status: 'wait',
@@ -3164,7 +3165,29 @@ class Entity {
 		if( this.isAt(x,y,area) ) {
 			return;
 		}
-
+/*
+		if( !this.inVoid && this.area && this.area.id == area.id ) {
+			let dx = x-this.x;
+			let dy = y-this.y;
+			let timeToTraverseTile = 0.30;
+			let duration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) * timeToTraverseTile);
+			let entity = this;
+			new Anim({
+				at: 		this,
+				duration: 	duration,
+				onInit: 		a => { a.puppet(this.spriteList); },
+				onSpriteMake: 	s => { s.sVelTo(dx,dy,duration); },
+				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); },
+				onSpriteDone: 	s => {
+					this.spriteList.forEach( sprite => {
+						sprite.x = entity.x*Tile.DIM+(Tile.DIM/2);
+						sprite.y = entity.y*Tile.DIM+(Tile.DIM/2);
+						spriteDetach(entity.spriteList,sprite);
+					});
+				}
+			});
+		}
+*/
 		if( !this.inVoid && this.map.inBounds(this.x,this.y) ) {
 			console.assert( this.x !== undefined );
 			this.map.scentLeave(this.x,this.y,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
@@ -3182,6 +3205,7 @@ class Entity {
 			};
 			this.inVoid = false;
 		}
+
 		this.x = x;
 		this.y = y;
 		let areaChanged = false;
@@ -3394,8 +3418,6 @@ class Entity {
 		// ACTUAL MOVEMENT OF THE MONSTER
 		//=======================
 		this.setPosition(x,y);
-		this.isStill  = false;
-		this.isBraced = false;
 
 		if( this.findAliveOthersAt(x,y).count ) {
 			debugger;
@@ -3649,7 +3671,8 @@ class Entity {
 		return this.breathIgnore!==true && !this.isImmune(DamageType.SUFFOCATE);
 	}
 
-	act(timePasses=true) {
+	act(timePasses) {
+		console.assert( timePasses !== undefined );
 		let dir = Direction.fromCommand(this.command);
 		if( this.isDead() ) {
 			if( this.isSpectator && dir !== false ) {
@@ -3663,6 +3686,13 @@ class Entity {
 			return true;
 		}
 
+		let fullTick = false;
+		let oldPt = this.personalTime||0;
+		this.personalTime = (this.personalTime||0)+timePasses
+		if( Math.floor(oldPt) != Math.floor(this.personalTime) ) {
+			fullTick = true;
+		}
+
 		//
 		// Perks
 		//
@@ -3673,7 +3703,7 @@ class Entity {
 		//
 		// Regenerate
 		//
-		if( timePasses && this.regenerate ) {
+		if( fullTick && this.regenerate ) {
 			if( this.health < this.healthMax ) {
 				this.health = Math.clamp(this.health+this.regenerate*this.healthMax,0.0,this.healthMax);
 			}
@@ -3682,7 +3712,7 @@ class Entity {
 		//
 		// Breathing
 		//
-		if( timePasses ) {
+		if( fullTick ) {
 			if( (this.breathStopped || this.map.isAirless) && this.mustBreathe() ) {
 				this.breathLast = (this.breathLast||0)+1;
 			}
@@ -3707,7 +3737,7 @@ class Entity {
 		//
 		// Passive map effects 
 		//
-		if( timePasses ) {
+		if( fullTick ) {
 			this.map.passiveEffectList.forEach( effect => {
 				effectApply( effect, this, this.map, null, 'onMapPassive' );
 			});
@@ -3728,9 +3758,7 @@ class Entity {
 		//
 		// Reset stillness, bracing, and bump
 		//
-		if( timePasses ) {
-			this.isStill = true;
-			this.isBraced = false;	// Here is where the Hoplite will get advantages.
+		if( fullTick ) {
 			if( this.bumpCount ) {
 				// If the user ever isn't adjacent to you, then you must be relieved of bump obligations.
 				let f = this.findAliveOthersNearby().isId(this.bumpBy).nearMe(1);
@@ -3741,6 +3769,8 @@ class Entity {
 		//
 		// Move a direction, or take an action
 		//
+		let xOld = this.x;
+		let yOld = this.y;
 		if( Direction.fromCommand(this.command) !== false ) {
 			// This should be the ONE AND ONLY call to moveDir.
 			this.commandResult = this.moveDir(dir,this.commandItem,true);
@@ -3748,24 +3778,29 @@ class Entity {
 		else {
 			this.commandResult = this.actOnCommand();
 		}
+		
+		this.isStill = ( this.x == xOld && this.y == yOld );
+		this.isBraced = this.isStill;
 
 		//
 		// Charging
 		//
-		if( !this.jump && Command.Movement.includes(this.command) && this.commandResult.success ) {
-			if( dir === this.lastDir ) {
-				this.chargeDist = (this.chargeDist||0)+1;
+		if( fullTick ) {
+			if( !this.jump && Command.Movement.includes(this.command) && this.commandResult.success ) {
+				if( dir === this.lastDir ) {
+					this.chargeDist = (this.chargeDist||0)+1;
+				}
+				this.lastDir = dir;
 			}
-			this.lastDir = dir;
-		}
-		else {
-			delete this.chargeDist;
+			else {
+				delete this.chargeDist;
+			}
 		}
 
 		//
 		// Jumping
 		//
-		if( timePasses ) {
+		if( fullTick ) {
 			let tileType = this.map.tileTypeGet(this.x,this.y);
 			console.assert(tileType);
 			let mayJump = tileType.mayJump;
@@ -3791,33 +3826,21 @@ class Entity {
 		//
 		// Pits
 		//
-		if( timePasses ) {
-			let tileType = this.map.tileTypeGet(this.x,this.y);
+		let tileType = this.map.tileTypeGet(this.x,this.y);
+		if( fullTick ) {
 			if( !this.jump && tileType.isPit && this.travelMode == 'walk') {
-				if( this.isUser() ) {
-					let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
-					if( stairs ) {
-						let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
-							toAreaId: stairs.toAreaId,
-							toThemeId: stairs.toThemeId,
-							killMeWhenDone: true
-						});
-						this.command = Command.ENTERGATE;
-						this.commandItem = gate;
-						this.commandResult.pitResult = this.actOnCommand();
-						return;	// Short-circuit here, because the area change will wig future code out.
-	 				}
- 				}
- 				else {
- 					this.deathPhrase = [mSubject,this,' ',mVerb,'vanish',' into the pit.'];
- 					this.vanish = true;
- 					this.commandResult.vanish = true;
- 				}
+				let areaId = this.area.id;
+				this.takeFallInPit();
+				if( this.area.id !== areaId ) {
+					return; // Short-circuit here, because the area change will wig future code out.
+				}
 			}
+		}
 
-			//
-			// OnTouch Events
-			//
+		//
+		// OnTouch Events
+		//
+		if( fullTick ) {
 			// Important for this to happen after we establish whether you are jumping at this moment.
 			if( tileType.onTouch ) {
 				tileType.onTouch(this,this.map.tileGet(this.x,this.y));
@@ -3827,32 +3850,32 @@ class Entity {
 					item.onTouch( this, item );
 				}
 			});
+		}
 
-			//
-			// Ambient Light Damage
-			//
-			if( this.lightHarms ) {
-				let light = this.map.getLightAt(this.x,this.y);
-				if( light >= this.lightHarms ) {
-					let pct = 1.0 - ((20-light) / (20-Math.clamp(this.lightHarms,0,19)));
-					let damage = Math.max(1,Math.floor(Rules.pickDamage(this.area.depth,0,null) * pct * 0.2));
-					let lightEffect = {
-						op: 'damage',
-						damageType: DamageType.LIGHT,
-						value: damage,
-						duration: 0,
-						icon: 'gui/icons/eLight.png'
-					}
-					effectApply(lightEffect,this,null,null,'ambientLight');
+		//
+		// Ambient Light Damage
+		//
+		if( fullTick && this.lightHarms ) {
+			let light = this.map.getLightAt(this.x,this.y);
+			if( light >= this.lightHarms ) {
+				let pct = 1.0 - ((20-light) / (20-Math.clamp(this.lightHarms,0,19)));
+				let damage = Math.max(1,Math.floor(Rules.pickDamage(this.area.depth,0,null) * pct * 0.2));
+				let lightEffect = {
+					op: 'damage',
+					damageType: DamageType.LIGHT,
+					value: damage,
+					duration: 0,
+					icon: 'gui/icons/eLight.png'
 				}
+				effectApply(lightEffect,this,null,null,'ambientLight');
 			}
+		}
 
-			//
-			// OnTick
-			//
-			if( this.onTick ) {
-				this.onTick.call(this);
-			}
+		//
+		// OnTick
+		//
+		if( fullTick && this.onTick ) {
+			this.onTick.call(this);
 		}
 
 		// Just making sure we don't have any item weirdness.

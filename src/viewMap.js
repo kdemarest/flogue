@@ -1,6 +1,6 @@
 Module.add('viewMap',function() {
 
-let MapMemoryLight = 3;
+let MapMemoryLight = 1;
 let MONSTER_SCALE_VARIANCE_MIN = 0.75;
 let MONSTER_SCALE_VARIANCE_MAX = 1.00;
 
@@ -24,7 +24,7 @@ function handleScent(map,px,py,senseSmell,ofs,visibilityDistance) {
 			let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
 			if( !inPane ) continue;
 
-			let smelled = map.scentGetEntity(x,y,senseSmell);
+			let smelled = map.scentGetEntitySmelled(x,y,senseSmell);
 			if( !smelled ) continue;
 
 			let age = map.scentGetAge(x,y);
@@ -151,6 +151,7 @@ function createDrawList(observer,drawListCache) {
 			let itemList;
 			let entity;
 			let smelled;
+			let itemFind;
 
 			if( inBounds ) {
 				tile =		map.tileTypeGet(x,y);
@@ -158,12 +159,9 @@ function createDrawList(observer,drawListCache) {
 					lastFloor = tile;
 				}
 				console.assert(tile);
-				itemFind =  map.findItemAt(x,y);
+				itemFind = map.findItemAt(x,y);
 
-				//if( x==px && y==py ) debugger;
-
-				let pos = y*map.xLen+x;
-				let temp = map.entityLookup[pos];
+				let temp = map.entityLookupGet(x,y);
 				entity = temp && temp.length ? temp[0] : null;
 				if( entity ) { //&& observer.canPerceiveEntity(entity) ) {
 					entity = ( entity.id == observer.id && entity.invisible ) ? StickerList.invisibleObserver : entity;
@@ -172,7 +170,7 @@ function createDrawList(observer,drawListCache) {
 					entity = null;
 
 				if( !entity && observer.senseSmell ) {
-					smelled = map.scentGetEntity(x,y,observer.senseSmell);
+					smelled = map.scentGetEntitySmelled(x,y,observer.senseSmell);
 				}
 				if( !tile.isTileType ) {
 					debugger;
@@ -322,6 +320,11 @@ let spriteAttach = function(spriteList,sprite) {
 	spriteList.push(sprite);
 }
 
+let spriteDetach = function(spriteList,sprite) {
+	sprite.refs = (sprite.refs||0)-1;
+	spriteList.push(sprite);
+}
+
 let spriteOnStage = function(sprite,value) {
 	if( !_viewMap.app ) {
 		return;
@@ -465,7 +468,6 @@ class ViewMap extends ViewObserver {
 		for( let i=0 ; i<256 ; ++i ) {
 			this.randList.push( Math.randInt( 0, 1023 ) );
 		}
-		this.hookEvents();
 		_viewMap = this;
 
 		this.drawListCache = [];
@@ -489,7 +491,9 @@ class ViewMap extends ViewObserver {
 		this.resetFilter.reset();
 		this.resetFilterArray = [this.resetFilter];
 
-		$(this.divId)[0].appendChild(this.app.view);
+		let pixiView = $(this.divId)[0].appendChild(this.app.view);
+		this.hookEvents();
+
 
 		// Don't start rendering until we first try to render.
 		this.app.ticker.stop()
@@ -506,8 +510,10 @@ class ViewMap extends ViewObserver {
 
 	hookEvents() {
 		let self = this;
-		$(this.divId+' canvas').mousemove( function(e) {
+		let myCanvas = $(this.divId+' canvas');
+		console.assert(myCanvas.length);
 
+		$(myCanvas).mousemove( function(e) {
 			let offset = $(this).offset(); 
 			let mx = Math.floor((e.pageX - offset.left)/Tile.DIM);
 			let my = Math.floor((e.pageY - offset.top)/Tile.DIM);
@@ -520,29 +526,14 @@ class ViewMap extends ViewObserver {
 			let x = (observer.x-self.sd) + mx;
 			let y = (observer.y-self.sd) + my;
 			//console.log( "ViewMap mousemove detected ("+x+','+y+')' );
-			guiMessage( 'hide' );
-			if( !observer.canTargetPosition(x,y) ) {
-				return;
-			}
-			let entity =
-				new Finder(area.entityList,observer).at(x,y).canTargetEntity().first ||
-				new Finder(area.map.itemList,observer).at(x,y).canTargetEntity().first ||
-				area.map.tileGet(x,y);
-			if( !entity ) {
-				return;
-			}
-			//console.log( x,y,entity.name);
-			guiMessage( 'show', entity );
-			guiMessage( 'pick', { xOfs: x-observer.x, yOfs: y-observer.y } );
-			if( entity.isMonsterType ) {
-				console.log( entity.history.join('\n') );
-			}
+			
+			guiMessage( 'viewRangeMouse', { xOfs: x-observer.x, yOfs: y-observer.y } );
 		});
-		$(this.divId+' canvas').mouseout( function(e) {
-			guiMessage('hide');
+		$(myCanvas).mouseout( function(e) {
+			guiMessage('hideInfo');
 			//console.log('mouse out of canvas');
 		});
-		$(this.divId+' canvas').click( function(e) {
+		$(myCanvas).click( function(e) {
 			var e = $.Event("keydown");
 			e.key = 'Enter';
 			Gui.keyHandler.trigger(e);
@@ -607,6 +598,7 @@ class ViewMap extends ViewObserver {
 	worldOverlayAdd(groupId,x,y,area,img) {
 		console.assert( x!==undefined && y!==undefined && area !==undefined && img !==undefined );
 		console.assert( area.isArea );
+		console.log('overlay add '+groupId);
 		new Anim( {}, {
 			groupId: 	groupId,
 			x: 			x,
@@ -617,11 +609,11 @@ class ViewMap extends ViewObserver {
 		});
 	}
 
-	worldOverlayRemove(fn) {
+	worldOverlayRemove(fn,note) {
 		// Hmm, this really isn't exactly right. We seem to need something that goes through
 		// ALL the areas and removes these animations, because... What if the removal
 		// intends an area we're not in?
-		return this.observer.area.animationManager.remove(fn);
+		return this.observer.area.animationManager.remove(fn,note);
 	}
 
 	setMapVis(mapVis) {
@@ -692,20 +684,20 @@ class ViewMap extends ViewObserver {
 			spriteDeathCallback(payload.spriteList);
 		}
 		if( msg == 'overlayRemove' ) {
-			this.worldOverlayRemove( a => a.groupId==payload.groupId );
+			this.worldOverlayRemove( a => a.groupId==payload.groupId,'message '+payload.groupId,payload );
 		}
 		if( msg == 'overlayAdd' ) {
 			this.worldOverlayAdd(payload.groupId,payload.x,payload.y,payload.area,payload.img);	
 		}
-		if( msg == 'show' ) {
+		if( msg == 'showInfo' ) {
 			if( !payload.isItemType || (payload.owner && payload.owner.isMap) ) {
-				this.worldOverlayRemove( a => a.groupId=='guiSelect' );
+				this.worldOverlayRemove( a => a.groupId=='guiSelect', 'removing guiSelect' );
 				this.worldOverlayAdd('guiSelect', payload.x, payload.y, payload.area, StickerList.selectBox.img);	
 			}
 			this.render();
 		}
-		if( msg == 'hide' ) {
-			this.worldOverlayRemove( a => a.groupId=='guiSelect' );
+		if( msg == 'hideInfo' ) {
+			this.worldOverlayRemove( a => a.groupId=='guiSelect',' from hideInfo' );
 			//console.log('ViewMap hide');
 			this.render();
 		}
@@ -805,18 +797,29 @@ class ViewMap extends ViewObserver {
 		if( !this.app ) {
 			this.pixiCreate();
 		}
-		let observer = this.observer;
-		let drawList = createDrawList(observer,this.drawListCache);
-		if( observer.zoom && observer.zoom != this.zoom ) {
-			this.setZoom(observer.zoom);
+
+		let actualRender = () => {
+
+			let observer = this.observer;
+			let drawList = createDrawList(observer,this.drawListCache);
+			if( observer.zoom && observer.zoom != this.zoom ) {
+				this.setZoom(observer.zoom);
+			}
+
+			this.draw(drawList);
+			if( this.pixiTimerPaused ) {
+				this.app.ticker.start()
+				this.pixiTimerPaused = false;
+			}
 		}
 
-		this.draw(drawList);
-		if( this.pixiTimerPaused ) {
-			this.app.ticker.start()
-			this.pixiTimerPaused = false;
+		if( this.justWait ) {
+			return;
 		}
-
+		this.justWait = setTimeout(()=> {
+			actualRender();
+			this.justWait = null;
+		},1);
 	}
 }
 
@@ -824,6 +827,7 @@ return {
 	ViewMap: ViewMap,
 	spriteCreate: spriteCreate,
 	spriteAttach: spriteAttach,
+	spriteDetach: spriteDetach,
 	spriteOnStage: spriteOnStage,
 	spriteMakeInWorld: spriteMakeInWorld,
 	spriteDeathCallback: spriteDeathCallback,

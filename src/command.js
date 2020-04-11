@@ -273,6 +273,7 @@ class UserCommandHandler {
 	constructor(user,viewInventory,viewRange) {
 		this.viewInventory = viewInventory;
 		this.viewRange = viewRange;
+		this.rangeStatus = {};
 		this.user = user;
 		this.cmd = new Cmd(
 			() => {
@@ -285,23 +286,31 @@ class UserCommandHandler {
 			}
 		);
 	}
+	updateRangeStatus(rangeStatus) {
+		console.log(rangeStatus);
+		this.rangeStatus = rangeStatus;
+	}
 	pickTarget(member,dirCommand,observer) {
 		if( dirCommand == Command.CANCEL ) {
-			this.viewRange.clear();
+			guiMessage('viewRangeUnprime');
 			return this.cmd.cancel();
 		}
 		let dir = Direction.fromCommand(dirCommand);
 		if( dir !== false ) {
-			this.viewRange.move(Direction.add[dir].x,Direction.add[dir].y);
+			guiMessage('viewRangeKeyboard',dir);
 			return false;
 		}
 		if( dirCommand == Command.EXECUTE ) {
-			if( !this.viewRange.isShotClear ) {
+			if( !this.rangeStatus.inRange ) {
+				tell(mSubject,observer,' ',mVerb,'lack',' sufficient range.');
+				return;
+			}
+			if( !this.rangeStatus.isShotClear ) {
 				tell(mSubject,observer,' ',mVerb,'lack',' a clear shot.');
 				return;
 			}
-			let x = observer.x+this.viewRange.xOfs;
-			let y = observer.y+this.viewRange.yOfs;
+			let x = observer.x+this.rangeStatus.xOfs;
+			let y = observer.y+this.rangeStatus.yOfs;
 
 			let target = observer.findAliveOthersOrSelfAt(x,y);
 			if( !target.count ) {
@@ -322,7 +331,7 @@ class UserCommandHandler {
 				target = new Finder( [observer.map.tileGet(x,y)] );
 			}
 			this.cmd[member] = target.first;
-			this.viewRange.clear();
+			guiMessage('viewRangeUnprime');
 		}
 	}
 
@@ -365,7 +374,7 @@ class UserCommandHandler {
 
 		if( cmd.needsItem && !cmd.commandItem ) {
 			if( !cmd.commandItem ) {
-				let keyEval = this.viewInventory.prime( cmd.itemFilter(observer), cmd.itemAllowFilter, () => cmd.needsItem && !cmd.commandItem );
+				let keyEval = this.viewInventory.prime(cmd.itemFilter(observer), cmd.itemAllowFilter, () => cmd.needsItem && !cmd.commandItem );
 				if( keyEval ) {
 					if( this.user.keyToCommand(event.key).command == Command.CANCEL ) {
 						return cmd.cancel();
@@ -408,10 +417,12 @@ class UserCommandHandler {
 		}
 
 		if( cmd.needsTarget(cmd,observer) && !cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) ) {
-			this.viewRange.primeRange(
-				cmd.targetRange(cmd.commandItem),
-				cmd,
-				() => cmd.needsTarget(cmd,observer) && !cmd.commandTarget );
+			guiMessage( 'viewRangePrime', {
+				rangeLimit: cmd.targetRange(cmd.commandItem),
+				autoTargetMe: cmd.commandItem && cmd.commandItem.effect && cmd.commandItem.effect.isHelp,
+				visibleFn: () => cmd.needsTarget(cmd,observer) && !cmd.commandTarget,
+				rangeStatusFn: this.updateRangeStatus.bind(this)
+			});
 			let result = this.pickTarget( 'commandTarget', this.user.keyToCommand(event.key).command, observer );
 			if( result !== undefined ) {
 				return result;
@@ -424,10 +435,12 @@ class UserCommandHandler {
 		}
 
 		if( cmd.needsTarget2(cmd,observer) && !cmd.commandTarget2 && cmd.commandTarget && (!cmd.needsItem || cmd.commandItem) ) {
-			this.viewRange.primeRange(
-				cmd.target2Range(cmd.commandItem),
-				cmd,
-				() => cmd.needsTarget2(cmd,observer) && !cmd.commandTarget2 );
+			guiMessage( 'viewRangePrime', {
+				rangeLimit: cmd.target2Range(cmd.commandItem),
+				autoTargetMe: cmd.commandItem && cmd.commandItem.effect && cmd.commandItem.effect.isHelp,
+				visibleFn: () => cmd.needsTarget2(cmd,observer) && !cmd.commandTarget2,
+				rangeStatusFn: this.updateRangeStatus.bind(this)
+			});
 			let result = this.pickTarget( 'commandTarget2', this.user.keyToCommand(event.key).command, observer );
 			if( result !== undefined ) {
 				return result;

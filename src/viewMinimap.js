@@ -139,7 +139,7 @@ class ViewMiniMap extends ViewObserver {
 		for( let y=0 ; y<this.yLen ; ++y ) {
 			for( let x=0 ; x<this.xLen ; ++x ) {
 				let mPos = y*this.xLen+x;
-				if( x==observer.x && y==observer.y ) {
+				if( Distance.isAt(observer.x,observer.y,x,y) ) {
 					drawLate.push({
 						entity:StickerList.mmObserver, x:x, y:y, scale:large(4), ctr:true
 					});

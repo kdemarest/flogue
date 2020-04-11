@@ -8,11 +8,13 @@ class ViewInfo extends ViewObserver {
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
-		if( msg=='show' ) {
-			this.override(payload);
-			this.render();
+		if( msg=='showInfo' ) {
+			if( this.observer.id != payload.id ) {
+				this.override(payload);
+				this.render();
+			}
 		}
-		if( msg=='hide' ) {
+		if( msg=='hideInfo' ) {
 			this.override(null);
 			this.render();
 		}
@@ -35,6 +37,7 @@ class ViewInfo extends ViewObserver {
 		};
 
 		if( entity.isTileType ) {
+			guiCachedRender(this.infoDivId,'',classList);
 			return;
 		}
 

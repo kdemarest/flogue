@@ -1900,7 +1900,7 @@ ItemTypeList.chest.onBump = function(toucher,self) {
 	}
 	else {
 		if( self.inventory && self.inventory.length > 0 ) {
-			guiMessage( 'hide' );
+			guiMessage( 'hideInfo' );
 			if( self.onLoot ) {
 				let allow = self.onLoot(self,toucher);
 				if( allow === false ) return;

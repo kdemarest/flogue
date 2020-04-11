@@ -49,6 +49,7 @@ class SimpleMap {
 		return [Math.randInt(0+xa,this.xLen-xb),Math.randInt(0+ya,this.yLen-yb)];
 	}
 	pickPosBy(xa,ya,xb,yb,fn) {
+		// xa and so on are "distance to indent from the edges for this pick"
 		let x;
 		let y;
 		let reps = 1000;
@@ -181,6 +182,8 @@ class SimpleMap {
 	}
 
 	tileSymbolSet(x,y,symbol) {
+		x=Math.floor(x);
+		y=Math.floor(y);
 		if( !this.inBounds(x,y) ) {
 			debugger;
 		}
@@ -210,9 +213,13 @@ class SimpleMap {
 		this.tileSymbolSet(x,y,symbol);
 	}
 	tileSymbolGetFastUnasfe(x,y) {
+		x=Math.floor(x);
+		y=Math.floor(y);
 		return this.tile[y].charAt(x);
 	}
 	tileSymbolGet(x,y) {
+		x=Math.floor(x);
+		y=Math.floor(y);
 		if( !this.inBounds(x,y) ) { debugger; }
 		return this.tile[y].charAt(x);
 	}
@@ -237,6 +244,8 @@ class SimpleMap {
 		return this.tileTypeGet(x,y);
 	}
 	tileProxy(tileType,x,y) {
+		x=Math.floor(x);
+		y=Math.floor(y);
 		if( !tileType.isTileType || tileType.isPosition || tileType === false ) {
 			// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
 			// This also means no permanent data can exist in them.
@@ -284,19 +293,17 @@ class Map extends SimpleMap {
 		this.tileEntity = [];
 		this.itemList = itemList || [];
 		this.itemListHidden = [];
-		this.itemLookup = [];
+		this._itemLookup = [];
 		this.itemLookupStaticNop = [];
 		this.itemList.forEach( item => {
-			let lPos = item.y*this.xLen+item.x;
-			this.itemLookup[lPos] = (this.itemLookup[lPos] || []);
-			this.itemLookup[lPos].push(item);
+			this.itemLookupAdd(item.x,item.y,item);
 		});
-		this.entityLookup = [];		
+		this._entityLookup = [];		
 		this.entityLookupStaticNop = [];
 		this.walkLookup = this.calcLookup([],pWalk(this));
 		// This ignores the first-round stink anything might generate. And really, everything "should" have been
 		// walking around for a while, so we should make fake prior-stink trails for everything. But ya know.
-		this.scentLookup = [];
+		this._scentLookup = [];
 		this.siteLookup = [];
 		this.lightCache = [];
 		this.isAirless = false;
@@ -306,6 +313,80 @@ class Map extends SimpleMap {
 
 		this.initSprites();
 	}
+
+	//
+	// Item Lookup
+	//
+	itemLookupAdd(x,y,item) {
+		let lPos = Math.floor(y)*this.xLen+Math.floor(x);
+		if( !this._itemLookup[lPos] ) {
+			this._itemLookup[lPos] = [item];
+		}
+		else {
+			if( !this._itemLookup[lPos].find( i=>i.id==item.id ) ) {
+				// we have to try to find this because _addToListAndBunch might have aggregated it!
+				this._itemLookup[lPos].push(item);
+			}
+		}
+	}
+	itemLookupRemove(item) {
+		let lPos = Math.floor(item.y)*this.xLen+Math.floor(item.x);
+		Array.filterInPlace( this._itemLookup[lPos], i => i.id!=item.id );
+	}
+	itemLookupGet(x,y) {
+		let lPos = Math.floor(y)*this.xLen+Math.floor(x);
+		return this._itemLookup[lPos];
+	}
+
+	//
+	// Entity Lookup
+	//
+	entityLookupAdd(x,y,entity) {
+		let lPos = Math.floor(y)*this.xLen+Math.floor(x);
+		if( !this._entityLookup[lPos] ) {
+			this._entityLookup[lPos] = [entity];
+		}
+		else {
+			if( !this._entityLookup[lPos].find( i=>i.id==entity.id ) ) {
+				// we have to try to find this because _addToListAndBunch might have aggregated it!
+				this._entityLookup[lPos].push(entity);
+			}
+		}
+	}
+	entityLookupRemove(entity) {
+		let lPos = Math.floor(entity.y)*this.xLen+Math.floor(entity.x);
+		Array.filterInPlace( this._entityLookup[lPos], i => i.id!=entity.id );
+	}
+	entityLookupGet(x,y) {
+		let lPos = Math.floor(y)*this.xLen+Math.floor(x);
+		return this._entityLookup[lPos];
+	}
+
+	//
+	// Scent
+	//
+	scentGet(x,y) {
+		x=Math.floor(x);
+		y=Math.floor(y);
+		let lPos = (y*this.xLen+x)*2;
+		return this._scentLookup[lPos]||0;
+	}
+	scentGetEntity(x,y) {
+		x=Math.floor(x);
+		y=Math.floor(y);
+		let lPos = (y*this.xLen+x)*2;
+		return this._scentLookup[lPos+1]||0;
+	}
+	scentSet(x,y,time,entity) {
+		x=Math.floor(x);
+		y=Math.floor(y);
+		let lPos = (y*this.xLen+x)*2;
+		this._scentLookup[lPos+0] = time;
+		if( entity !== undefined ) {
+			this._scentLookup[lPos+1] = entity;
+		}
+	}
+
 	get entityList() {
 		return this.area.entityList;
 	}
@@ -338,10 +419,8 @@ class Map extends SimpleMap {
 			return false;
 		}
 		let time = Time.simTime - timeReduction;
-		let lPos = (y*this.xLen+x)*2;
-		if( time >= (this.scentLookup[lPos+0] || 0) ) {
-			this.scentLookup[lPos+0] = time;
-			this.scentLookup[lPos+1] = entity;
+		if( time >= this.scentGet(x,y) ) {
+			this.scentSet(time,entity);
 		}
 		if( !entity.stink ) {
 			return 1;
@@ -354,38 +433,32 @@ class Map extends SimpleMap {
 			if( !tile.mayWalk || tile.isProblem ) {
 				return;
 			}
-			let lPos = (y*this.xLen+x)*2;
-			if( stinkTime >= (this.scentLookup[lPos+0] || 0) ) {
-				this.scentLookup[lPos+0] = stinkTime;
-				this.scentLookup[lPos+1] = entity;
+			if( stinkTime >= this.scentGet(x,y) ) {
+				this.scentSet(x,y,stinkTime,entity);
 			}
 		});
 		return 2;
 	}
 	scentClear(x,y) {
-		let lPos = (y*this.xLen+x)*2;
-		if( this.scentLookup[lPos] ) {
-			this.scentLookup[lPos+0] = -Rules.SCENT_AGE_LIMIT;
-			this.scentLookup[lPos+1] = null;
+		if( this.scentGet(x,y) ) {
+			this.scentSet(-Rules.SCENT_AGE_LIMIT,null);
 		}
 	}
 	scentGetAge(x,y) {
-		return Time.simTime-(this.scentLookup[(y*this.xLen+x)*2+0] || Rules.SCENT_AGE_LIMIT);
+		return Time.simTime-(this.scentGet(x,y) || Rules.SCENT_AGE_LIMIT);
 	}
 	scentIncAge(x,y,amount) {
 		console.assert(amount);
-		let lPos = (y*this.xLen+x)*2;
-		this.scentLookup[(y*this.xLen+x)*2+0] -= amount;
+		this.scentSet(x,y,this.scentGet(x,y)-amount);
 	}
-	scentGetEntity(x,y,maxScentAge=Rules.SCENT_AGE_LIMIT,excludeId) {
+	scentGetEntitySmelled(x,y,maxScentAge=Rules.SCENT_AGE_LIMIT,excludeId) {
 		maxScentAge = Math.min(maxScentAge,Rules.SCENT_AGE_LIMIT);
-		let lPos = (y*this.xLen+x)*2;
-		let simTime = this.scentLookup[lPos+0];
+		let simTime = this.scentGet(x,y);
 		if( !simTime || simTime < Time.simTime-maxScentAge ) {
 			return null;
 		}
-		let found = this.scentLookup[lPos+1];
-		if( found.id == excludeId ) {
+		let found = this.scentGetEntity(x,y);
+		if( found && found.id == excludeId ) {
 			return null;
 		}
 		return found;
@@ -555,19 +628,28 @@ class Map extends SimpleMap {
 		return this.itemCreateByType(x,y,ItemTypeList[typeId],presets,inject);
 	}
 
-	isItemAt(x,y) {
-		// This has a TINY little flow, in that the left and right sides wrap around. But it is used
-		// during pathfind, so we're going to let this little problem slide.
-		let i = this.itemLookup[y*this.xLen+x];
+	isItemAtFastUnsafeAssumesInteger(x,y) {
+		// This has a two flaws:
+		// 1. It wraps around
+		// 2. It assumes x and y are both integers for the indexing.
+		// but it is used during pathfind, so we're going to let this little problem slide.
+		let i = this.itemLookupGet(x,y);
 		return i && i.length;
+	}
+
+	isItemAt(x,y) {
+		// This has a TINY little flaw, in that the left and right sides wrap around. But it is used
+		// during pathfind, so we're going to let this little problem slide.
+		return this.isItemAtFastUnsafeAssumesInteger(Math.floor(x),Math.floor(y));
 	}
 	findItem(me) {
 		return new Finder(this.itemList,me);
 	}
 	findItemsNear(x,y,dist) {
+		// WARNING: If we go to floating point coordinate this will be pretty weak sauce.
 		let itemList = [];
 		this.traverseNear(x,y,dist,(x,y)=> {
-			let temp = this.itemLookup[y*this.xLen+x];
+			let temp = this.itemLookupGet(x,y);
 			if( temp && temp.length ) {
 				itemList.push(...temp);
 			}
@@ -576,17 +658,17 @@ class Map extends SimpleMap {
 	}
 	findFirstItemAt(x,y) {
 		if( !this.inBounds(x,y) ) return false;
-		let itemList = this.itemLookup[y*this.xLen+x];
+		let itemList = this.itemLookupGet(x,y);
 		if( !itemList.length ) return false;
 		return itemList[0];
 	}
 	findItemAt(x,y) {
 		if( !this.inBounds(x,y) ) return new Finder([]);
-		return new Finder(this.itemLookup[y*this.xLen+x] || this.itemLookupStaticNop);
+		return new Finder(this.itemLookupGet(x,y) || this.itemLookupStaticNop);
 	}
 	findChosenItemAt(x,y,fn) {
 		if( this.inBounds(x,y) ) {
-			let a = this.itemLookup[y*this.xLen+x];
+			let a = this.itemLookupGet(x,y);
 			if( a ) {
 				return a.find(fn);
 			}
@@ -596,23 +678,20 @@ class Map extends SimpleMap {
 	isEntityAt(x,y) {
 		// This has a TINY little flaw, in that the left and right sides wrap around. But it is used
 		// during pathfind, so we're going to let this little problem slide.
-		let e = this.entityLookup[y*this.xLen+x];
+		let e = this.entityLookupGet(x,y);
 		return e && e.length;
 	}
 	findEntityArrayAt(x,y) {
 		if( !this.inBounds(x,y) ) return this.entityLookupStaticNop;
-		return this.entityLookup[y*this.xLen+x] || this.entityLookupStaticNop;
+		return this.entityLookupGet(x,y) || this.entityLookupStaticNop;
 	}
 	_entityRemove(entity) {
 		//console.log( '- '+entity.name+' ('+entity.x+','+entity.y+')' );
-		let lPos = entity.y*this.xLen+entity.x;
-		Array.filterInPlace( this.entityLookup[lPos], e => e.id!=entity.id );
+		this.entityLookupRemove(entity);
 	}
 	_entityInsert(entity) {
 		//console.log( '+ '+entity.name+' ('+entity.x+','+entity.y+')' );
-		let lPos = entity.y*this.xLen+entity.x;
-		this.entityLookup[lPos] = (this.entityLookup[lPos] || []);
-		this.entityLookup[lPos].push(entity);
+		this.entityLookupAdd(entity.x,entity.y,entity);
 	}
 
 	_itemRemove(item) {
@@ -620,15 +699,13 @@ class Map extends SimpleMap {
 		//	debugger;
 		//}
 		Array.filterInPlace( this.itemList, i => i.id!=item.id );
-		Array.filterInPlace( this.itemLookup[item.y*this.xLen+item.x], i => i.id!=item.id );
+		this.itemLookupRemove(item);
 		spriteDeathCallback( item.spriteList );
 		this.calcWalkable(item.x,item.y);
 		if( Rules.removeScentOfTheDead ) {
 			this.traverse( (x,y) => {
-				let lPos = (y*this.xLen+x)*2;
-				if( this.scentLookup[lPos+1] == item ) {
-					this.scentLookup[lPos+0] = Rules.SCENT_AGE_LIMIT;
-					this.scentLookup[lPos+1] = null;
+				if( this.scentGetEntity(x,y) === item ) {
+					this.scentSet(x,y,Rules.SCENT_AGE_LIMIT,null);
 				}
 			});
 		}
@@ -655,12 +732,7 @@ class Map extends SimpleMap {
 		}
 
 		item = item._addToListAndBunch(this.itemList);
-		let lPos = y*this.xLen+x;
-		this.itemLookup[lPos] = (this.itemLookup[lPos] || []);
-		if( !this.itemLookup[lPos].find( i=>i.id==item.id ) ) {
-			// we have to try to find this because _addToListAndBunch might have aggregated it!
-			this.itemLookup[lPos].push(item);
-		}
+		this.itemLookupAdd(x,y,item);
 		this.calcWalkable(x,y);
 		this.scentLeave(x,y,item);
 		//this.tileSymbolSet(item.x,item.y,item.symbol);

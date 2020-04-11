@@ -6,7 +6,7 @@ function pWalk(map,ignoreEntity) {
 		if( !ignoreEntity && map.isEntityAt(x,y) ) {
 			return Problem.ENTITY;
 		}
-		if( !map.isItemAt(x,y) ) {
+		if( !map.isItemAtFastUnsafeAssumesInteger(x,y) ) {
 			let tile = map.tileTypeGet(x,y);
 			if( !tile.mayWalk ) return Problem.WALL;
 			if( tile.isProblem ) return tile;

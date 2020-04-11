@@ -10,7 +10,8 @@ class ViewMerchant extends ViewInventory {
 		this.mode = null;
 		Gui.keyHandler.add( 'ViewMerchant', this.onKeyDown.bind(this) );
 
-		guiMessage('clearSign');
+		guiMessage( 'clearSign' );
+		guiMessage( 'hideInfo' );
 	}
 	onOpen(entity) {
 		guiMessage('zoomPush',{zoom:5});
