@@ -26,6 +26,10 @@ Module.add('utilities',function(){
 	Math.chance = function(percent) {
 		return Math.rand(0,100) < percent;
 	}
+
+	// Important - this is how the game will take x,y coords and consider which tile they fall into.
+	Math.toTile = Math.floor; //round;
+
 	Math.fixed = function(value,decimals) {
 		let p = Number.parseFloat(value).toString().split('.');
 		if( p[1] == undefined ) p[1] = '0';
@@ -563,6 +567,10 @@ Module.add('utilities2',function() {
 
 
 	function shootRange(x1,y1,x2,y2,testFn,onStep) {
+		x1=Math.floor(x1);
+		y1=Math.floor(y1);
+		x2=Math.floor(x2);
+		y2=Math.floor(y2);
 		// Define differences and error check
 		var dx = Math.abs(x2 - x1);
 		var dy = Math.abs(y2 - y1);

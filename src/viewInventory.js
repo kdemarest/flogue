@@ -1,12 +1,11 @@
 Module.add('viewInventory',function() {
 
 class ViewInventory extends ViewObserver {
-	constructor(inventoryDivId,onItemChoose,colFilter) {
+	constructor(inventoryDivId,colFilter) {
 		super();
 		this.inventoryDivId = inventoryDivId;
 		$(this.inventoryDivId).empty();
 
-		this.onItemChoose = this.onItemChoose || onItemChoose;
 		this.inventory = null;
 		this.inventoryFn = null;
 		this.inventorySelector = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -74,8 +73,14 @@ class ViewInventory extends ViewObserver {
 		}
 	}
 
-	render() {
+	// WARNING: This can and should be overloaded by descendants who want to handle
+	// a clicked item their own way.
+	onItemChoose(event,item) {
+		event.commandItem = item;
+		return guiMessage('command',event);
+	}
 
+	compileAndRender() {
 		function sortOrder(a,b,sortDir,...fields) {
 			function compare() {
 				let fieldId;
@@ -120,7 +125,7 @@ class ViewInventory extends ViewObserver {
 		}
 
 		function doSort(inventory,explainFn,sortFn,asc) {
-			let colData = inventory.arrayMap( item => explainFn(item) );
+			let colData = inventory.map( item => explainFn(item) );
 			let sortDir = asc ? 1 : -1;
 			colData.sort( (a,b) => {
 //				console.log( "Comparing "+a.name+" vs "+b.name );
@@ -237,7 +242,7 @@ class ViewInventory extends ViewObserver {
 			if( sortFn[next] ) {
 				this.sortColId = next;
 				this.sortAscending = this.sortColId !== last ? sortDirectionDefault[next] : !this.sortAscending;
-				this.render();
+				this.dirty = true;
 			}
 		}
 
@@ -246,19 +251,18 @@ class ViewInventory extends ViewObserver {
 		}
 
 		let onClickBody = (event,item) => {
-			event.commandItem = item;
-			this.onItemChoose(event);
+			this.onItemChoose(event,item);
 		}
 
 		let onMouseoverBody = (event,item) => {
 			//console.log( 'ViewInventory mouseover' );
-			guiMessage( 'showInfo', item );
+			guiMessage( 'showInfo', { entity: item, from: 'viewInventory' } );
 			guiMessage( 'favoriteCandidate', item );
 			$("#favMessage").html("Press 0-9 to favorite");
 		}
 
 		let onMouseoutBody = (event,item) =>{
-			guiMessage( 'hideInfo' );
+			guiMessage( 'hideInfo', { from: 'viewInventory' } );
 			guiMessage( 'favoriteCandidate', null );
 		}
 
@@ -296,31 +300,10 @@ class ViewInventory extends ViewObserver {
 			price: false
 		}
 
-		class Ghost {
-			constructor() {
-				this.cache = {};
-			}
-			render(source,target) {
-				let targetContent = $(target).html();
-				let sourceContent = '<div>'+$(source).html()+'</div>';
-				if( targetContent != sourceContent ) {
-					$(target).empty();
-					$(source).appendTo(target);
-				}
-			}
-		}
-
 		//
 		// Function start
 		//
 
-
-		if( !this.visibleFn || !this.visibleFn() ) {
-			this._hide();
-			return;
-		}
-
-		let ghost = new Ghost();
 		let self = this;
 		let observer = this.observer;
 
@@ -340,9 +323,9 @@ class ViewInventory extends ViewObserver {
 		let catDiv = generateCategories(
 			this.allowFilter,
 			(filterId) => this.filterId==filterId,
-			(filterId) => { this.filterId=filterId; this.render(); }
+			(filterId) => { this.filterId=filterId; this.dirty=true; }
 		);
-		ghost.render( catDiv, this.selector(' .invCategories') );
+		Gui.cachedRenderElements( this.selector(' .invCategories'), catDiv );
 
 		//
 		// Middle Header
@@ -352,7 +335,7 @@ class ViewInventory extends ViewObserver {
 		if( this.headerComponent ) {
 			this.headerComponent(headerDiv);
 		}
-		ghost.render( headerDiv, this.selector(' .invHeader') );
+		Gui.cachedRenderElements( this.selector(' .invHeader'), headerDiv );
 
 		//
 		// Inventory
@@ -383,7 +366,7 @@ class ViewInventory extends ViewObserver {
 		// the visible div invBody at the last moment.
 
 		$(this.selector(' .invSecret')).show().empty();
-		ghost.render( divBody, this.selector(' .invSecret') );
+		Gui.cachedRenderElements( this.selector(' .invSecret'), divBody );
 
 		//
 		// Table Scrollable Header
@@ -424,7 +407,8 @@ class ViewInventory extends ViewObserver {
 
 		// We can hid invSecret now because we've gotten the results of its layout exercise.
 		$(this.selector(' .invSecret')).hide();
-		ghost.render( divBody, this.selector(' .invBody') );
+		Gui.cachedRenderElements( this.selector(' .invBody'), divBody );
+
 		this.div.show();
 
 		// So this is weird. Apparently, until you ACTUALLY show the div, you don't have 
@@ -436,6 +420,23 @@ class ViewInventory extends ViewObserver {
 		// And still worse, doing the render on the very next frame didn't work. Only
 		// when I gave it a fill second did the scroll bar properly adjust to screen bottom.
 		setTimeout( () => this.doLayout(), 1000 );
+	}
+
+	tick(dt) {
+		let visibleNow = this.div.is(":visible");
+		let visibleGoal = this.visibleFn && this.visibleFn();
+		if( visibleNow != visibleGoal ) {
+			this.dirty = true;
+		}
+	}
+
+	render() {
+		if( !this.visibleFn || !this.visibleFn() ) {
+			this._hide();
+			return;
+		}
+
+		this.compileAndRender();
 	}
 }
 

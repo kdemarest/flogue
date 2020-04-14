@@ -934,13 +934,13 @@ const StuffVarietyList = ({ //Type.establish('StuffVariety',{},{
 
 });
 
-StuffVarietyList.snailTrail.onTick = function() {
+StuffVarietyList.snailTrail.onTickSecond = function() {
 	if( this.owner.isMap ) {
 		this.map.scentClear(this.x,this.y);
 	}
 }
 
-StuffVarietyList.snailSlime.onTick = function() {
+StuffVarietyList.snailSlime.onTickSecond = function() {
 	if( this.owner.isMap ) {
 		this.map.scentClear(this.x,this.y);
 	}
@@ -1023,7 +1023,8 @@ const NulImg = { img: '' };
 /*
 Item Events
 onPickup() 				- fired just before an item is picked up. Return false to disallow the pickup.
-onTick(dt) 				- fires each time a full turn has passed, for every item, whether in the world or in an inventory. 
+onTickSecond() 			- fires each time a full turn has passed, for every item, whether in the world or in an inventory. 
+onTickRealtime(dt)
 onBump(toucher,self)	- when any entity bumps into this. Remember that self might be a temporary tile proxy
 onPutInWorld(x,y,map)	- when an item is put into the world, either from the void to from an inventory.
 onGiveToEntity(x,y,recipient)	- when an item is given to a creature.
@@ -1751,7 +1752,7 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 			if( entity.spriteList ) {
 				entity.area.animationManager.remove( anim => anim.isPuppeteer && anim.spriteList[0] === entity.spriteList[0] );
 			}
-			entity.gateTo( entity.deathReturn.area, entity.deathReturn.px, entity.deathReturn.py);
+			entity.requestGateTo( entity.deathReturn.area, entity.deathReturn.px, entity.deathReturn.py);
 			entity.vanish = false;
 			entity.health = entity.healthMax;
 			entity.dead = false;
@@ -1795,7 +1796,7 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 	}
 }
 
-ItemTypeList.altar.onTick = function(dt) {
+ItemTypeList.altar.onTickSecond = function(dt) {
 	if( this.depleted && !this.rechargeLeft ) {
 		tell( mSubject,this,' ',mVerb,'begin',' to glow.');
 		this.depleted = false;
@@ -1850,7 +1851,7 @@ ItemTypeList.door.onBump = function(entity,self) {
 	}
 	if( self.state == 'shut' ) {
 		self.setState('open');
-		imageDirty(self);
+		Scene.dirty(self);
 		tell(mSubject,entity,' ',mVerb,'open',' the ',mObject,self);
 		Anim.FloatUp( entity.id, self, StickerList.open.img );
 		return true;
@@ -1860,7 +1861,7 @@ ItemTypeList.door.onBump = function(entity,self) {
 		let hasKey = self.keyId===undefined || key;
 		if( hasKey ) {
 			self.setState('shut');
-			imageDirty(self);
+			Scene.dirty(self);
 			tell(mSubject,entity,' ',mVerb,'unlock',' the ',mObject,self);
 			Anim.FloatUp( entity.id, self, StickerList.unlock.img );
 			if( key && key.name.indexOf('(used)') < 0 ) {
@@ -1900,7 +1901,7 @@ ItemTypeList.chest.onBump = function(toucher,self) {
 	}
 	else {
 		if( self.inventory && self.inventory.length > 0 ) {
-			guiMessage( 'hideInfo' );
+			guiMessage( 'hideInfo', { from: 'onBump' } );
 			if( self.onLoot ) {
 				let allow = self.onLoot(self,toucher);
 				if( allow === false ) return;
@@ -1910,7 +1911,7 @@ ItemTypeList.chest.onBump = function(toucher,self) {
 		}
 		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
 	}
-	spriteDeathCallback(self.spriteList);
+	Scene.detach(self.spriteList);
 }
 
 ItemTypeList.coffin.onBump = ItemTypeList.chest.onBump;
@@ -1961,7 +1962,7 @@ ItemTypeList.fountain.onBump = function(toucher,self) {
 	tell(mSubject,toucher,' ',mVerb,'fill',' a vial with water from the fountain.');
 }
 
-ItemTypeList.fontSolar.onTick = function(dt) {
+ItemTypeList.fontSolar.onTickSecond = function(dt) {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.isMonsterType && e.team==Team.GOOD).shotClear().nearMe(3);
 	let self = this;
 	nearby.forEach( entity => {
@@ -2001,7 +2002,7 @@ ItemTypeList.fontSolar.onTick = function(dt) {
 }
 
 
-ItemTypeList.fontDeep.onTick = function(dt) {
+ItemTypeList.fontDeep.onTickSecond = function(dt) {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).shotClear().nearMe(4);
 	let self = this;
 
@@ -2032,7 +2033,7 @@ ItemTypeList.fontDeep.onTick = function(dt) {
 	}
 }
 
-CharmVarietyList.sunCrystal.onTick = function(dt) {
+CharmVarietyList.sunCrystal.onTickSecond = function(dt) {
 	if( this.owner.isMap ) {
 		let tile = this.map.tileGet(this.x,this.y);
 		effectApply(this.effect,tile,this.ownerOfRecord,this,'tick');

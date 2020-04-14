@@ -13,21 +13,26 @@ class ViewRange extends ViewObserver {
 	moveByKeyboard(xAdd,yAdd) {
 		let xOfs = this.xOfs + xAdd;
 		let yOfs = this.yOfs + yAdd;
-		this.moveTo(xOfs,yOfs);
+		this.moveToOfs(xOfs,yOfs);
 	}
 	moveByMouse(xOfs,yOfs) {
-		this.moveTo(xOfs,yOfs);
+		this.moveToOfs(xOfs,yOfs);
 	}
-	moveTo(xOfs,yOfs) {
-		this.xOfs = xOfs;
-		this.yOfs = yOfs;
-
-		if( !this.observer ) {
+	moveToOfs(xOfs,yOfs) {
+		let observer = this.observer;
+		if( !observer ) {
 			debugger;
 			return;
 		}
 
-		let observer = this.observer;
+		if( !observer.map.inBounds(observer.x+xOfs,observer.y+yOfs) ) {
+			return;
+		}
+
+		this.xOfs = xOfs;
+		this.yOfs = yOfs;
+
+
 		let area = observer.area;
 		let tx = observer.x + this.xOfs;
 		let ty = observer.y + this.yOfs;
@@ -54,17 +59,18 @@ class ViewRange extends ViewObserver {
 				new Finder(area.map.itemList,observer).isAt(tx,ty).canPerceiveEntity().first || 
 				area.map.tileGet(tx,ty);
 		}
-		console.assert(entity);
-		guiMessage( 'showInfo', entity );
+
+		console.assert( entity );
+
+		guiMessage( 'showInfo', { entity: entity, from: 'viewRange' } );
 		if( entity.isMonsterType ) {
 			console.log( entity.history.join('\n') );
 		}
 
-
 		let mapAsk = ''+this.xOfs+','+this.yOfs;
 		if( this.lastMapAsk != mapAsk ) {
-			this.render();
-			guiMessage('render',{},'map');
+			console.log('range moved');
+			this.dirty = true;
 			this.lastMapAsk = mapAsk;
 		}
 	}
@@ -76,14 +82,13 @@ class ViewRange extends ViewObserver {
 			yOfs: 0
 		});
 		this.picking = null;
-		this.render();
-		guiMessage('render',{},'map');
+		this.dirty = true;
 	}
 
 	prime(payload) {
 		let entity     = this.observer;
 		let wasPicking = !!this.picking;
-		let picking     = Object.assign({},payload);
+		let picking    = Object.assign({},payload);
 		if( !wasPicking ) {
 			let autoTarget;
 			if( picking.autoTargetMe ) {
@@ -98,10 +103,9 @@ class ViewRange extends ViewObserver {
 			this.picking = picking;
 			let xOfs = autoTarget ? autoTarget.x-entity.x : 0;
 			let yOfs = autoTarget ? autoTarget.y-entity.y : 0;
-			this.moveTo(xOfs,yOfs);
+			this.moveToOfs(xOfs,yOfs);
 		}
-		this.render();
-		guiMessage('render',{},'map');
+		this.dirty = true;
 	}
 	message( msg, payload ) {
 		super.message(msg,payload);
@@ -144,7 +148,7 @@ class ViewRange extends ViewObserver {
 		let area = this.observer.area;
 		function draw(x,y,ok) {
 			guiMessage('overlayAdd',{
-				groupId: 'guiCrosshair',
+				groupId: 'viewRangePicking',
 				x:x,
 				y:y,
 				area:area,
@@ -158,7 +162,7 @@ class ViewRange extends ViewObserver {
 		let observer = this.observer;
 
 		// This just erases all the matching sprites
-		guiMessage( 'overlayRemove', { groupId: 'guiCrosshair', note: 'from viewRange' } );
+		guiMessage( 'overlayRemove', { groupId: 'viewRangePicking', note: 'from viewRange' } );
 		if( this.picking ) {
 			//console.log("crosshair at "+(observer.x+this.xOfs)+','+(observer.y+this.yOfs));
 			//console.log('drawRange');

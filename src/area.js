@@ -9,7 +9,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 
 		type = type || picker.pick(picker.monsterTable(area.theme.monsters,criteriaFn),null,'!isUnique');
 		let entity = new Entity( area.depth, type, inject, area.jobPicker );
-		entity.gateTo(area,x,y);
+		entity.requestGateTo(area,x,y);
 		let site = area.getSiteAt(x,y);
 		if( site ) {
 			//if( site.place && site.place.forbidEnemies ) debugger;
@@ -114,7 +114,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 					// If this tile has more than just a spec for itself, then we better
 					// make it isPosition so that it can be given all the other member vars.
 					if( Object.countMembers(make) > 1 ) {
-						let entity = map.toEntity(x,y);
+						let entity = map.toTileEntity(x,y);
 						Object.assign( entity, make );
 					}
 					tileSet = true;
@@ -238,7 +238,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	function postProcess(map, entityList) {
 		map.traverse( (x,y,tile) => {
 			if( tile.imgChoose ) {
-				let tile = map.toEntity(x,y);
+				let tile = map.toTileEntity(x,y);
 				tile.imgChoose.call(tile,map,x,y);
 				console.assert( typeof tile.img == 'string' );
 			}
@@ -419,7 +419,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	return area;
 }
 
-function tick(speed,map,entityListRaw,thinkClip) {
+function tickRealtime(dt,map,entityListRaw,thinkClip) {
 
 	function orderByTurn(entityList) {
 		let list = [[],[],[]];	// players, pets, others
@@ -431,11 +431,11 @@ function tick(speed,map,entityListRaw,thinkClip) {
 		return [].concat(list[0],list[1],list[2]);
 	}
 
-	function tickItemList(_itemList,dt,rechargeRate) {
+	function itemListTickSecond(_itemList,dt,rechargeRate) {
 		console.assert(rechargeRate);
 		let itemList = _itemList.slice();	// Any item might get destroyed during this process.
 		for( let item of itemList ) {
-			item.tick(dt,rechargeRate);
+			item.tickSecond(dt,rechargeRate);
 		}
 	}
 
@@ -453,62 +453,25 @@ function tick(speed,map,entityListRaw,thinkClip) {
 		});
 	}
 
-	if( speed === false ) {
-		let player = entityListRaw.find( entity => entity.isUser() );
-		if( !player ) {
-			return;
-		}
-		player.calculateVisbility();
-		player.act(0.0);
-		// Time is not passing, so do not tick items.
-		DeedManager.calc(player);
-		player.clearCommands();
-		return;
-	}
-
-//On really huge maps entityList gets to be aroound 400 entities.
-//So, do we really want to tick all of them? Or do we put them all on some
-//kind of deferred schedule... And then only tick the last level around the gate that
-//was used to get to the current level...
+	//On really huge maps entityList gets to be aroound 400 entities.
+	//So, do we really want to tick all of them? Or do we put them all on some
+	//kind of deferred schedule... And then only tick the last level around the gate that
+	//was used to get to the current level...
 
 	let entityListByTurnOrder = orderByTurn(entityListRaw);
-	let dt = 1 / speed;
+
 	for( let entity of entityListByTurnOrder ) {
-		DeedManager.tick(entity,dt);
-		entity.actionCount += entity.speed / speed;
-		while( entity.actionCount >= 1 ) {
-			if( thinkClip.contains(entity.x,entity.y) ) {
-				entity.calculateVisbility();
-				entity.think();
-				entity.act(1.0);
-			}
-			// DANGER! At this moment the entity might have changed areas!
-			tickItemList(entity.inventory,dt,entity.rechargeRate||1);
-			DeedManager.calc(entity);
-			let actionCost = 1;
-			if( entity.freeCommands && entity.freeCommands.includes(entity.command) ) {
-				tell(mSubject,entity,' ',mVerb,'can',' take another action.');
-				actionCost = 0;
-			}
-			entity.actionCount -= actionCost;
-			entity.clearCommands();
-			if( entity.isUser() && actionCost === 0 ) {
-				speed = 1000;
-				dt = 1/speed;
-				break;
-			}
-		}
+		DeedManager.tickRealtime(entity,dt);
+		entity.tickRealtime(dt,thinkClip,itemListTickSecond);
 	}
-	DeedManager.tick(null,dt);	// this ticks the positions...
-	if( dt ) {
-		map.actionCount += 1 / speed;
-		while( map.actionCount >= 1 ) {
-			// WARNING! There is some risk that an item could tick twice here, or not at all, if an entity caused something to
-			// pop out of another entity's inventory. But the harm seems small. I hope.
-			tickItemList(map.itemList,dt,1);
-			map.actionCount -= 1;
-		}
-	}
+
+	// Tick any fire or freeze tile positions.
+	DeedManager.tickRealtime(null,dt);
+
+	Time.tickOnTheSecond(dt,map,dtSecond => {
+		itemListTickSecond(map.itemList,dtSecond,(map.rechargeRate||1)*dtSecond);
+	});
+
 	DeedManager.cleanup();
 	//entityListByTurnOrder.forEach( entity => entity.clearCommands() );
 	checkDeaths(entityListByTurnOrder);
@@ -532,7 +495,9 @@ class Area {
 		this.picker = new Picker(depth);
 		this.pathClip = new ClipRect();
 		this.thinkClip = new ClipRect();
+		this.lightDirty = true;
 		this.isTicking = false;
+		this.underConstruction = true;
 
 		// NOTE: Move this into the areaBuild() at some point.
 		if( theme.jobPick ) {
@@ -603,19 +568,14 @@ class Area {
 		);
 
 		observer.light = oldLight;
+		this.lightDirty = false;
 	}
-	tick(speed) {
-		let player = this.entityList.find( e=>e.userControllingMe ) || {};
-		if( player ) {
-			// it is a little hinky, but we need to make sure that critters that are too far away don't
-			// consume our CPU calculating paths.
-			this.pathClip.setCtr(player.x,player.y,MapVisDefault*2);
-			this.thinkClip.setCtr(player.x,player.y,MapVisDefault*5);
-		}
-
+	tickRealtime(dt) {
 		this.animationManager.delay.reset();
-		tick( speed, this.map, this.entityList, this.thinkClip );
-		this.castLight();
+		tickRealtime( dt, this.map, this.entityList, this.thinkClip );
+		if( this.lightDirty ) {
+			this.castLight();
+		}
 	}
 	findSite(me) {
 		return new Finder(this.siteList,me);

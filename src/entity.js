@@ -9,7 +9,7 @@ function GlobalFindFirstCollider(me,travelMode,map,x,y,ignoreEntity) {
 		if( entity[mayTravel] ) {
 			return false;
 		}
-		if( travelMode=='walk' && entity.mayJump && me.jump < me.jumpMax && (me.jump || !curTile.mayJump)) {
+		if( travelMode=='walk' && entity.mayJump && me.jumpLeft < me.jumpMax && (me.jumpLeft || !curTile.mayJump)) {
 			return false;
 		}
 		return true;
@@ -70,7 +70,7 @@ class Entity {
 
 		// Use the average!
 		let level = 	isPlayer ? depth : Math.round( (depth+monsterType.level) / 2 );
-		let inits =    { inVoid: true, inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [] };
+		let inits =    { inventory: [], actionCount: 0, command: Command.NONE, commandLast: Command.NONE, history: [], historyPending: [] };
 		let values =   { id: Date.makeEntityId(monsterType.typeId,level) };
 
 
@@ -152,10 +152,17 @@ class Entity {
 		console.assert( typeof this.health === 'number' && !isNaN(this.health) );
 		console.assert( this.x===undefined && this.y===undefined && this.area===undefined);
 
+		console.assert(this.speedAction);
+		this.actionLeft = 1.0/this.speedAction;
+		//console.log(this.typeId,'actionLeft=',this.actionLeft);
+
 		// WARNING! Not a deep copy. But it is only for the result...
 		result.entity = Object.assign( {}, this );
 		result.success = true;
 		this.constructionResult = result;
+	}
+	get inVoid() {
+		return !this.area;
 	}
 	get map() {
 		return this.area.map;
@@ -196,47 +203,9 @@ class Entity {
 			Perk.grant( this, this.legacyId, i );
 		}
 	}
-	gateTo(area,x,y) {
-		let hadNoArea = !this.area;
-		let sameArea = this.area && area.id == this.area.id;
 
-		console.assert( x!==undefined && y!==undefined );
-
-		let c = !area.map.inBounds(x,y) ? true : GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
-		if( c ) {
-			[x,y] = area.map.spiralFind( x, y, (x,y,tile) => {
-				return tile && tile.mayWalk && !tile.isProblem && !GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
-			});
-			console.assert( x!==false );
-		}
-		this.setPosition(x,y,area);
-		if( Gab && hadNoArea ) {
-			Gab.entityPostProcess(this);
-		}
-		if( !sameArea ) {
-			guiMessage('removeFromStage',this);
-			tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+area.id)
-		}
-
-		// Any visibility cache flushing should happen here.
-		if( this.isUser() && !sameArea ) {
-			area.world.setTickingAreas(area.id);
-			area.castLight();
-			guiMessage('setArea',area);
-		}
-
-		// Yes, this is odd, but it must be here because the perklist grants require the player to
-		// be present in the world.
-		if( this.legacyId && !this.perkList ) {
-			this.grantPerks();
-		}
-		return {
-			status: 'gateTo',
-			area: area,
-			x: x,
-			y: y,
-			success: true
-		}
+	requestGateTo(area,x,y) {
+		this.moveToInstantly(area,x,y);
 	}
 
 	findFirstCollider(travelMode,x,y,ignoreEntity) {
@@ -404,7 +373,7 @@ class Entity {
 		}
 
 		if( this.dead ) {
-			spriteDeathCallback(this.spriteList);
+			Scene.detach(this.spriteList);
 		}
 
 		return this.dead;
@@ -732,6 +701,9 @@ class Entity {
 		DeedManager.end( deed => deed.item && deed.item.id==item.id );
 		item.inSlot = false;
 		// Now aggregate if needed.
+		if( this.isUser() ) {
+			Gui.dirty('inventory');
+		}
 	}
 	don(item,slot) {
 		if( item.inSlot || !item.slot ) {
@@ -749,10 +721,13 @@ class Entity {
 				if( item.triggerWhenDon() ) {
 					item.trigger(this,this,Command.USE);
 				}
+				if( this.isUser() ) {
+					Gui.dirty('inventory');
+				}
 			}
 		}
 
-		if( !item.donDuration || this.inVoid || !this.area) {
+		if( !item.donDuration || !this.area) {
 			finishDonning();
 		}
 		else {
@@ -762,6 +737,7 @@ class Entity {
 				this.sign = tellGet(this,sentence);
 			}
 			tell(mSubject,this,' ',mVerb,'begin',' ',item.useVerb+'ing',' ',mObject,item)
+			let donTracker = {};
 			updateProgress(item.donDuration);
 			let donArmorEffect = {
 				op: 'set',
@@ -770,8 +746,10 @@ class Entity {
 				duration: item.donDuration,
 				description: 'putting on '+item.typeId,
 				icon: item.icon,
-				onTick: function() {
-					updateProgress(this.timeLeft);
+				onTick: function(target,dt) {
+					Time.tickOnTheSecond(dt,donTracker,()=>{
+						updateProgress(Math.floor(this.timeLeft+1));
+					});
 				},
 				onEnd: (deed) => {
 					if( deed.completed() ) {
@@ -796,6 +774,9 @@ class Entity {
 		}
 		this.inventoryLastChange = Time.simTime;
 		Array.filterInPlace(this.inventory, i => i.id!=item.id );
+		if( this.isUser() ) {
+			Gui.dirty('inventory');
+		}
 	}
 	_itemTake(item,x,y) {
 		if( this.inventory.includes(item) ) {
@@ -824,6 +805,9 @@ class Entity {
 		}
 		if( item.autoEquip && !this.neverAutoEquip && this.mayDon(item) ) {
 			item = this.don(item,item.slot) || item;
+		}
+		if( this.isUser() ) {
+			Gui.dirty('inventory');
 		}
 		return item;
 	}
@@ -2278,10 +2262,16 @@ class Entity {
 		let fx = this.x;
 		let fy = this.y;
 		let distanceRemaining = distance;
+
+		throw "needs a bit of a rewrite for involuntary movement in the new moveTarget regime."
+
+		// we should force a direction of movement, and tie up their actionLeft for the
+		// duration of that movement.
+
 		while( success && distanceRemaining-- ) {
 			fx += dx/dist*towards;
 			fy += dy/dist*towards;
-			success = this.moveTo(Math.round(fx),Math.round(fy),false,null).success;
+			success = this.moveToInstantly(null,Math.round(fx),Math.round(fy)).success;
 			if( !success ) { bonked = true; break; }
 		}
 		tell(mSubject,this,' ',mVerb,'is',' ',bonked ? 'shoved but blocked.' : (resisting ? 'heavy but moves.' : 'shoved.'));
@@ -2326,7 +2316,7 @@ class Entity {
 			}
 		}
 		if( landing ) {
-			this.moveTo(landing.x,landing.y);
+			this.moveToInstantly(null,landing.x,landing.y);
 		}
 		return {
 			status: landing ? 'teleported' : 'noteleport',
@@ -2338,30 +2328,36 @@ class Entity {
 		}
 	}
 
-	takeGate(effect) {
-		let newArea = this.area.world.createAreaAsNeeded(
-			effect.areaId,
-			() => {
-				console.assert(effect.allowAreaCreate)
-				return {
-					areaId:  effect.areaId,
-					depth:   effect.depth!==undefined ? effect.depth : this.area.depth,
-					themeId: effect.themeId
-				}
+	takeGateEffect(effect) {
+		let planDefinitionFn = () => {
+			console.assert(effect.allowAreaCreate)
+			let plan = {
+				areaId:  effect.toAreaId,
+				themeId: effect.toThemeId,
+				depth:   effect.toDepth
 			}
-		);
+			return plan;
+		}
+
+		let newArea = this.area.world.createAreaAsNeeded( effect.toAreaId, planDefinitionFn );
 		console.assert(newArea);
 		if( effect.gateId ) {
 			let gate = this.map.findItem(this).filter(i=>i.id==effect.gateId).first;
 			let pos = gate.oneway ? [gate.x,gate.y] : [gate.toGate.x,gate.toGate.y];
-			effect.x = pos[0];
-			effect.y = pos[1];
+			effect.xTarget = pos[0];
+			effect.yTarget = pos[1];
 		}
 
-		let result = this.gateTo( newArea, effect.x, effect.y );
+		let result = this.requestGateTo( newArea, effect.xTarget, effect.yTarget );
 		result.endNow = true;
+		this.actionConsume(1.0);
 		return result;
 	}
+
+	actionConsume(dt) {
+		this.actionLeft += dt;
+	}
+
 
 	takeBePossessed(effect,toggle) {
 
@@ -2433,27 +2429,13 @@ class Entity {
 		}
 	}
 
-	takeFallInPit() {
+	vanishIntoPit() {
 		if( this.isUser() ) {
-			let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
-			if( stairs ) {
-				let gate = this.map.itemCreateByTypeId( this.x, this.y, 'pitDrop', {}, {
-					toAreaId: stairs.toAreaId,
-					toThemeId: stairs.toThemeId,
-					killMeWhenDone: true
-				});
-				this.command = Command.ENTERGATE;
-				this.commandItem = gate;
-				this.commandResult.pitResult = this.actOnCommand();
-			}
-			// If there are no stairs, we simply don't know what to do so we
-			// leave you alone.
+			return false;
 		}
-		else {
-			this.deathPhrase = [mSubject,this,' ',mVerb,'vanish',' into the pit.'];
-			this.vanish = true;
-			this.commandResult.vanish = true;
-		}
+		this.deathPhrase = [mSubject,this,' ',mVerb,'vanish',' into the pit.'];
+		this.vanish = true;
+		this.commandResult.vanish = true;
 	}
 
 
@@ -3114,34 +3096,30 @@ class Entity {
 		}
 	}
 
-	actEnterGate(gate) {
-		let result = {
-			status: 'entergate',
-			success: false
+	createGateEffect( gate ) {
+		console.assert( gate.toAreaId || (gate.toThemeId && gate.allowAreaCreate) );
+		let gateEffect = {
+			op:			'gate',
+			duration:	0,
+			isTac:		true,
+			gateId:		gate.id,			// if empty you MUST specify xTarget,yTarget
+			toAreaId:	gate.toAreaId,
+			toDepth:	gate.toDepth,		// will be overridden by the plan 
+			toThemeId:	gate.toThemeId,		// used to be .themeId. That can't have been right!
+			oneway:		gate.oneway,
+			xTarget:	gate.xTarget,		// Two-way gates will ignore
+			yTarget:	gate.yTarget,		// Two-way gates will ignore
+			allowAreaCreate: gate.allowAreaCreate
 		};
-		if( gate ) {
-			tell(mSubject,this,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
-			let gateEffect = {
-				op:			'gate',
-				duration:	0,
-				isTac:		true,
-				areaId:		gate.toAreaId,
-				gateId:		gate.id,
-				depth:   	gate.area.depth,
-				themeId:	gate.toThemeId,		// used to be .themeId. That can't have been right!
-				oneway:		gate.oneway,
-				allowAreaCreate: gate.allowAreaCreate
-			};
-			let gateEffectDebug = Object.assign({},gateEffect);
-			console.assert( gate.toAreaId || (gate.toThemeId && gate.allowAreaCreate) );
-			effectApply( gateEffect, this );
+		return gateEffect;
+	}
 
-			if( gate.killMeWhenDone ) {
-				result.killedGate = true;
-				gate.destroy();
-			}
-			result.success = true;
-		}
+
+	actEnterGate(gate) {
+		tell(mSubject,this,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
+		let gateEffect = createGateEffect( gate );
+		let result     = effectApply( gateEffect, this );
+		result.enterGate = gate;
 		return result;
 	}
 
@@ -3157,99 +3135,51 @@ class Entity {
 		return result;
 	}
 
-	setPosition(x,y,area) {
-		if( !area ) {
-			area = this.area;
-		}
-
-		if( this.isAt(x,y,area) ) {
+	leaveTrail(areaPrior,xPrior,yPrior,result) {
+		if( this.map.findItemAt(x,y).filter( item=>item.isVariety(this.trail) ).count ) {
 			return;
 		}
-/*
-		if( !this.inVoid && this.area && this.area.id == area.id ) {
-			let dx = x-this.x;
-			let dy = y-this.y;
-			let timeToTraverseTile = 0.30;
-			let duration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) * timeToTraverseTile);
-			let entity = this;
-			new Anim({
-				at: 		this,
-				duration: 	duration,
-				onInit: 		a => { a.puppet(this.spriteList); },
-				onSpriteMake: 	s => { s.sVelTo(dx,dy,duration); },
-				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); },
-				onSpriteDone: 	s => {
-					this.spriteList.forEach( sprite => {
-						sprite.x = entity.x*Tile.DIM+(Tile.DIM/2);
-						sprite.y = entity.y*Tile.DIM+(Tile.DIM/2);
-						spriteDetach(entity.spriteList,sprite);
-					});
-				}
-			});
-		}
-*/
-		if( !this.inVoid && this.map.inBounds(this.x,this.y) ) {
-			console.assert( this.x !== undefined );
-			this.map.scentLeave(this.x,this.y,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
-			this.map._entityRemove(this);
-			this.map.calcWalkable(this.x,this.y);	// NUANCE: must be after the entityRemove!
-		}
-		if( this.inVoid ) {
-			console.assert( area );
-			this.origin = {
-				x: x,
-				y: y,
-				area: area,
-				isPosition: true,
-				name: 'origin'
-			};
-			this.inVoid = false;
-		}
+		let trailList = Inventory.lootGenerate( this.trail, this.level );
+		console.assert( trailList.length == 1 );
+		let trail = trailList[0];
+		// Although this is set in item constructor, setting it here allows trails to not specify their
+		// exstence time and still work.
+		trail.existenceLeft = trail.existenceTime || 10;
+		trail.giveTo( areaPrior.map, xPrior, yPrior );
+		result.trail = trail.typeId;
+	}
 
-		this.x = x;
-		this.y = y;
-		let areaChanged = false;
-		if( !this.area || this.area.id !== area.id ) {
-			if( this.area ) {
-				// DANGER! Doing this while within a loop across the entityList will result in pain!
-				Array.filterInPlace( this.area.entityList, entity => entity.id!=this.id );
-			}
-			this.area = area;
-			let fnName = this.isUser() ? 'unshift' : 'push';	// the player happens to always be pushed to first in the list.
-			this.area.entityList[fnName](this);
-			areaChanged = true;
-		}
+	setMoveTarget(area,x,y,instantly,attackAllowed,weapon,voluntary) {
+		this.areaMove = area || this.area;
+		this.xMove = x;
+		this.yMove = y;
 
-		this.map._entityInsert(this);
-		this.map.calcWalkable(this.x,this.y);	// NUANCE: must be after the entityInsert!
-		// This just makes sure that items have coordinates, for when they're the root of things.
-		this.inventory.forEach( item => { item.x=x; item.y=y; } );
+		this.moveInstantly       = instantly;
+		this.moveAttackAllowed   = attackAllowed;
+		this.moveWeapon          = weapon;
+		this.moveVoluntary       = voluntary;
 
-		let dest = this.destination;
-		if( dest ) {
-			if( this.nearTarget(dest,dest.closeEnough) ) {
-				this.record( "ARRIVED", true );
-				if( dest.onArrive ) {
-					dest.onArrive(this.dest);
-				}
-				this.destination = null;
-			}
+		if( this.areaMove && this.areaMove.underConstruction ) {
+			this.onRealtimeMove(0.0);
 		}
 	}
 
-	moveDir(dir,weapon,voluntaryMotion) {
+	setMoveTargetDir(dir,weapon,voluntary) {
 		let x = this.x + Direction.add[dir].x;
 		let y = this.y + Direction.add[dir].y;
-		return this.moveTo(x,y,true,weapon,voluntaryMotion);
+		this.setMoveTarget(null,x,y,false,true,weapon,voluntary);
 	}
+
+	moveToInstantly(area,x,y) {
+		this.setMoveTarget(area,x,y,true,false,null,true);
+	}
+
 	// Returns false if the move fails. Very important for things like takeShove().
-	moveTo(x,y,attackAllowed=true,weapon=null,voluntaryMotion=false) {
-		if( !this.map.inBounds(x,y) ) {
-			return {
-				status: 'outOfBounds',
-				success: false
-			};
-		}
+	enterTilePrelims(areaPrior,xPrior,yPrior,areaChanged,context) {
+		let target          = context.target;
+		let attackAllowed   = this.moveAttackAllowed;
+		let weapon          = this.moveWeapon;
+		let moveVoluntary   = this.moveVoluntary;
 
 		let bump = function(entity,incCount=true) {
 			if( !this.isUser() ) {
@@ -3265,27 +3195,21 @@ class Entity {
 			entity.bumpDir = Direction.predictable(entity.x-this.x,entity.y-this.y);
 		}.bind(this);
 
+		function determineWhetherAttack(target) {
 
-		// Move into monsters
-		//-------------------
-		weapon = weapon || this.calcDefaultWeapon();
-		let f = this.findAliveOthersAt(x,y);
+			// Attack enemies or neutrals
+			let wantToAttack = this.isMyEnemy(target);
+			if( this.isUser() && this.isMyNeutral(target) ) {
+				wantToAttack = true;
+			}
+			if( this.team == Team.NEUTRAL || this.mindset('fleeWhenAttacked') ) {
+				wantToAttack = false;
+			}
 
-		let allyToSwap = false;
-
-		// Attack enemies or neutrals
-
-		let wantToAttack = this.isMyEnemy(f.first);
-		if( this.isUser() && this.isMyNeutral(f.first) ) {
-			wantToAttack = true;
-		}
-		if( this.team == Team.NEUTRAL || this.mindset('fleeWhenAttacked') ) {
-			wantToAttack = false;
+			return target && attackAllowed && wantToAttack;
 		}
 
-		let doAttack = f.count && attackAllowed && wantToAttack;
-
-		if( !doAttack && voluntaryMotion && this.immobile ) {
+		function resultImmobility() {
 			Anim.FloatUp( this.id, this, EffectTypeList.eImmobilize.icon );
 			tell(mSubject,this,' ',mVerb,'is',' immobilized!');
 			return {
@@ -3294,45 +3218,52 @@ class Entity {
 			}
 		}
 
-		if( doAttack ) {
+		function resultAttack(target,weapon) {
 			if( weapon.mayShoot ) {
 				this.command = Command.SHOOT;
-				return this.actShoot(weapon,f.first);
+				this.commandItem = weapon;
+				this.commandTarget = target;
+				return {
+					status: 'command=shoot'
+				}
 			}
 			if( weapon.mayCast ) {
 				this.command = Command.CAST;
-				return this.actCast(weapon,f.first);
+				this.commandItem = weapon;
+				this.commandTarget = target;
+				return {
+					status: 'command=cast'
+				};
 			}
 			if( weapon.mayThrow && (!weapon.inSlot || weapon.inSlot==Slot.AMMO) ) {
 				this.command = Command.THROW;
-				return this.actThrow(weapon,f.first);
+				this.commandItem = weapon;
+				this.commandTarget = target;
+				return {
+					status: 'command=throw'
+				}
 			}
 			this.command = Command.ATTACK;
-			return this.actAttack(f.first,weapon);
+			this.commandItem = weapon;
+			this.commandTarget = target;
+			return {
+				status: 'command=attack'
+			}
 		}
-		else
-		// Switch with friends, else bonk!				// used to be isMyFriend()
-		if( f.count && (!this.isUser() || !f.first.isMerchant) && (this.isMyHusk(f.first) || (!this.isMyEnemy(f.first) && !this.isMySuperior(f.first))) ) {
-			// swap places with allies
-			allyToSwap = f.first;
-		}
-		else
-		if( f.count ) {
-			let entity = f.first;
-			console.assert(entity.isMonsterType);
-			bump(entity,true);
-			let bumpResult = (entity.onBump || bonk)(this,entity);
+
+		function resultBumpMonster(target) {
+			console.assert(target.isMonsterType);
+			bump(target,true);
+			let bumpResult = (target.onBump || bonk)(this,target);
 			return {
 				status: 'bumped',
-				entity: entity,
+				target: target,
 				bumpResult: bumpResult,
 				success: false
 			}
 		}
 
-		// If we can not occupy the target tile, then touch it/bonk into it
-		let collider = this.findFirstCollider(this.travelMode,x,y,allyToSwap);
-		if( collider ) {
+		function resultBumpItem(collider) {
 			this.lastBumpedId = collider.id;
 			if( collider.isTable ) {
 				// Look for a merchant on the far side of the table. Special case.
@@ -3341,7 +3272,10 @@ class Entity {
 				let e = this.findAliveOthersAt(bx,by).first;
 				if( e ) bump(e,false);
 			}
-			let bumpResult = (collider.onBump || bonk)(this,!collider.isTileType ? collider : this.map.tileProxy(collider,x,y));
+			let bumpResult = (collider.onBump || bonk)(
+				this,
+				!collider.isTileType ? collider : this.map.tileGet(collider,this.x,this.y)
+			);
 			return {
 				status: 'bumped',
 				collider: collider,
@@ -3350,108 +3284,149 @@ class Entity {
 			}
 		}
 
-		let xOld = this.x;
-		let yOld = this.y;
-		let tileTypeHere = this.map.tileTypeGet(xOld,yOld);
-		console.assert(tileTypeHere);
-		let tileType = this.map.tileTypeGet(x,y);
-		console.assert(tileType);
+		function resultTileDepart(tileType,tileTypePrior) {
+			if( !areaPrior ) {
+				return;
+			}
+			console.assert(tileType);
+			console.assert(tileTypePrior);
 
-		// For slowing the movement of a character
-		if( this.movementSlow ) {
-			this.movementLost = (this.movementLost||0)-1;
-			if( this.movementLost <= 0 ) {
-				this.movementLost = this.movementSlow;
-				return {
-					status: 'lost movement',
-					success: false
+			// Does this tile type always do something to you when you depart any single instance of it?
+			if( tileTypePrior.onDepart ) {
+				if( tileTypePrior.onDepart(this,this.map.tileGet(xPrior,yPrior)) === false ) {
+					return {
+						status: 'stoppedOnDepart',
+						success: false
+					}
+				}
+			}
+
+			// Are we leaving this TYPE of tile entirely? Like leaving water, fire or mud?
+			if( tileType.name != tileTypePrior.name && tileTypePrior.onDepartType ) {
+				if( tileTypePrior.onDepartType(this,this.map.tileGet(xPrior,yPrior)) === false ) {
+					return {
+						status: 'stoppedOnDepartType',
+						success: false
+					}
 				}
 			}
 		}
 
-		// Does this tile type always do something to you when you depart any single instance of it?
-		if( tileTypeHere.onDepart ) {
-			if( tileTypeHere.onDepart(this,this.map.tileGet(xOld,yOld)) === false ) {
-				return {
-					status: 'stoppedOnDepart',
-					success: false
+		function resultTileTypeEnter(tileType,tileTypePrior) {
+			// Are we entering a new tile TYPE?
+			if( (!tileTypePrior || tileType.name != tileTypePrior.name) && tileType.onEnterType ) {
+				if( tileType.onEnterType(this,this.map.tileGet(this.x,this.y)) ) {
+					return {
+						status: 'stoppedOnEnterType',
+						success: false
+					}
 				}
 			}
 		}
 
-		// Are we leaving this TYPE of tile entirely? Like leaving water, fire or mud?
-		if( tileType.name != tileTypeHere.name && tileTypeHere.onDepartType ) {
-			if( tileTypeHere.onDepartType(this,this.map.tileGet(xOld,yOld),this.map.tileGet(x,y)) === false ) {
-				return {
-					status: 'stoppedOnDepartType',
-					success: false
-				}
-			}
+		function checkSwappable(target) {
+			return 
+				target &&
+				(!this.isUser() || !target.isMerchant) &&
+				(this.isMyHusk(target) || (!this.isMyEnemy(target) && !this.isMySuperior(target)))
+			;
 		}
 
-		// Are we entering a new tile TYPE?
-		if( tileType.name != tileTypeHere.name && tileType.onEnterType ) {
-			if( tileType.onEnterType(this,this.map.tileGet(x,y),this.map.tileGet(xOld,yOld),xOld,yOld) === false ) {
-				return {
-					status: 'stoppedOnEnterType',
-					success: false
-				}
-			}
+		weapon = weapon || this.calcDefaultWeapon();
+		let useWeapon = determineWhetherAttack.call(this,target);
+		if( useWeapon ) {
+			return resultAttack.call(this,target,weapon);
+		}
+
+		if( moveVoluntary && this.immobile ) {
+			return resultImmobility.call(this);
+		}
+
+		context.allyToSwap = checkSwappable.call(this,target) ? target : false;
+
+		//
+		// Bonk Monsters
+		//
+		if( !context.allyToSwap && target ) {
+			return resultBumpMonster.call(this,target);
+		}
+
+		//
+		// Bonk Un-occupiable Items
+		//
+		let collider = this.findFirstCollider(this.travelMode,this.x,this.y,context.allyToSwap);
+		if( collider ) {
+			return resultBumpItem.call(this,collider);
+		}
+
+		//
+		// Tile Depart Events
+		//
+		let tileType = this.map.tileTypeGet(this.x,this.y);
+		let tileTypePrior = areaPrior ? this.map.tileTypeGet(xPrior,yPrior) : null;
+		let result;
+		if( result = resultTileDepart.call(this,tileType,tileTypePrior) ) {
+			return result;
+		}
+
+		//
+		// Tile Enter Events
+		//
+		if( result = resultTileTypeEnter.call(this,tileType,tileTypePrior) ) {
+			return result;
+		}
+
+		return null;
+	}
+
+	enterTile(areaPrior,xPrior,yPrior,areaChanged) {
+	
+		let targetList = this.findAliveOthersAt(this.x,this.y);
+		let context = {
+			target: targetList.first,
+			allyToSwap: null
+		}
+
+		let prelim = this.enterTilePrelims(areaPrior,xPrior,yPrior,areaChanged,context);
+
+		if( prelim && !areaChanged ) {
+			return prelim;
 		}
 
 		let result = {
-			status: 'moved',
-			success: true,
-			xOld: xOld,
-			yOld: yOld,
-			x: x,
-			y: y
+			prelim: prelim,
+			status: 'enteredTile',
+			entrySuccess: true,
 		}
 
-		if( allyToSwap ) {
+		if( context.allyToSwap ) {
 			//console.log( this.name+" ally swap with "+allyToSwap.name );
-			allyToSwap.setPosition(this.x,this.y);
-			result.allyToSwap = allyToSwap;
+			// The real answer here is to make collides with an ally simple not exist
+			// or maybe to make our radii relative to each other smaller.
+			context.allyToSwap.moveToInstantly(null,Math.toTile(xPrior),Math.toTile(yPrior));
+			result.allyToSwap = context.allyToSwap;
 		}
 
-		//=======================
-		// ACTUAL MOVEMENT OF THE MONSTER
-		//=======================
-		this.setPosition(x,y);
-
-		if( this.findAliveOthersAt(x,y).count ) {
-			debugger;
+		if( !this.dead && this.jumpLeft > 0 ) {
+			this.jumpLeft = this.jumpLeft - 1;
 		}
 
-		if( this.trail && !this.map.findItemAt(x,y).filter( item=>item.isVariety(this.trail) ).count ) {
-			let trailList = Inventory.lootGenerate( this.trail, this.level );
-			console.assert( trailList.length == 1 );
-			let trail = trailList[0];
-			// Although this is set in item constructor, setting it here allows trails to not specify their
-			// exstence time and still work.
-			trail.existenceLeft = trail.existenceTime || 10;
-			trail.giveTo( this.map, xOld, yOld );
-			result.trail = trail.typeId;
+		if( !this.dead && areaPrior && this.trail ) {
+			this.leaveTrail(areaPrior,xPrior,yPrior,result);
 		}
 
-		if( this.onMove ) {
-			result.onMove = this.onMove.call(this,x,y,xOld,yOld);
+		if( !this.dead && this.onEnterTile ) {
+			result.onEnterTile = this.onEnterTile.call(this,this.x,this.y);
 		}
 
 		if( !this.dead && this.mindset('pickup') && this.able('pickup') ) {
-			let f = this.map.findItemAt(x,y).filter( item => item.mayPickup!==false );
-			result.pickup = [];
-			for( let item of f.all ) {
-				result.pickup.push( this.actPickup(item) );
-			}
+			let f = this.map.findItemAt(this.x,this.y).filter( item => item.mayPickup!==false );
+			result.pickupResult = f.map( item => this.actPickup(item) );
 		}
 
 		if( !this.dead && this.mindset('harvest') && this.able('harvest') ) {
-			let f = this.map.findItemAt(x,y).filter( item => item.mayHarvest );
-			result.harvestResult = [];
-			for( let item of f.all ) {
-				result.harvestResult.push( this.actHarvest(item) );
-			}
+			let f = this.map.findItemAt(this.x,this.y).filter( item => item.mayHarvest );
+			result.harvestResult = f.map( item => this.actHarvest(item) );
 		}
 
 		return result;
@@ -3671,8 +3646,103 @@ class Entity {
 		return this.breathIgnore!==true && !this.isImmune(DamageType.SUFFOCATE);
 	}
 
-	act(timePasses) {
-		console.assert( timePasses !== undefined );
+	checkRegenerate() {
+		if( this.regenerate && this.health < this.healthMax ) {
+			this.health = Math.clamp(this.health+this.regenerate*this.healthMax,0.0,this.healthMax);
+		}
+	}
+
+	checkBreath() {
+		if( (this.breathStopped || this.map.isAirless) && this.mustBreathe() ) {
+			this.breathLast = (this.breathLast||0)+1;
+		}
+		else {
+			this.breathLast = 0;
+		}
+		let limit = this.breathIgnore===true ? Rules.breathLimitToDamage : (this.breathIgnore||0)
+		if( this.breathLast > limit ) {
+			let effect = {
+				name: 'suffocate',
+				op: 'damage',
+				value: Rules.breathDamage(this.health),
+				damageType: DamageType.SUFFOCATE,
+				duration: 0
+			};
+			let deed = this.deedFind(deed=>deed.damageType==DamageType.SUFFOCATE);
+			let source = deed ? deed.source : this.map;
+			effectApply( effect, this, source, null, 'onBreath' );
+		}
+	}
+
+	checkMapEffects() {
+		this.map.passiveEffectList.forEach( effect => {
+			effectApply( effect, this, this.map, null, 'onMapPassive' );
+		});
+	}
+
+	checkCharge() {
+		// This will need a rewrite
+		return;
+
+		if( this.command == Command.NONE ) {
+			return;
+		}
+		if( !this.jumpLeft && Command.Movement.includes(this.command) && this.commandResult.success ) {
+			let dir = Direction.fromCommand(this.command);
+			if( dir === this.lastDir ) {
+				this.chargeDist = (this.chargeDist||0)+1;
+			}
+			this.lastDir = dir;
+		}
+		else {
+			delete this.chargeDist;
+		}
+	}
+
+	checkBumpBy() {
+		if( this.bumpCount ) {
+			// If the user ever isn't adjacent to you, then you must be relieved of bump obligations.
+			let f = this.findAliveOthersNearby().isId(this.bumpBy).nearMe(1);
+			if( !f.first ) this.bumpCount=0;
+		}
+	}
+
+	checkTouchTile() {
+		// Important for this to happen after we establish whether you are jumping at this moment.
+		let tileType = this.map.tileTypeGet(this.x,this.y);
+		if( tileType.onTouch ) {
+			tileType.onTouch(this,this.map.tileGet(this.x,this.y));
+		}
+	}
+
+	checkTouchItem() {
+		this.map.findItemAt(this.x,this.y).forEach( item => {
+			if( item.onTouch ) {
+				item.onTouch( this, item );
+			}
+		});
+	}
+
+	checkLightDamage() {
+		if( !this.lightHarms ) {
+			return;
+		}
+		let light = this.map.getLightAt(this.x,this.y);
+		if( light >= this.lightHarms ) {
+			let pct = 1.0 - ((20-light) / (20-Math.clamp(this.lightHarms,0,19)));
+			let damage = Math.max(1,Math.floor(Rules.pickDamage(this.area.depth,0,null) * pct * 0.2));
+			let lightEffect = {
+				op: 'damage',
+				damageType: DamageType.LIGHT,
+				value: damage,
+				duration: 0,
+				icon: 'gui/icons/eLight.png'
+			}
+			effectApply(lightEffect,this,null,null,'ambientLight');
+		}
+	}
+
+	act() {
 		let dir = Direction.fromCommand(this.command);
 		if( this.isDead() ) {
 			if( this.isSpectator && dir !== false ) {
@@ -3686,86 +3756,6 @@ class Entity {
 			return true;
 		}
 
-		let fullTick = false;
-		let oldPt = this.personalTime||0;
-		this.personalTime = (this.personalTime||0)+timePasses
-		if( Math.floor(oldPt) != Math.floor(this.personalTime) ) {
-			fullTick = true;
-		}
-
-		//
-		// Perks
-		//
-		if( this.legacyId && !this.perkList ) {
-			this.grantPerks();
-		}
-
-		//
-		// Regenerate
-		//
-		if( fullTick && this.regenerate ) {
-			if( this.health < this.healthMax ) {
-				this.health = Math.clamp(this.health+this.regenerate*this.healthMax,0.0,this.healthMax);
-			}
-		}
-
-		//
-		// Breathing
-		//
-		if( fullTick ) {
-			if( (this.breathStopped || this.map.isAirless) && this.mustBreathe() ) {
-				this.breathLast = (this.breathLast||0)+1;
-			}
-			else {
-				this.breathLast = 0;
-			}
-			let limit = this.breathIgnore===true ? Rules.breathLimitToDamage : (this.breathIgnore||0)
-			if( this.breathLast > limit ) {
-				let effect = {
-					name: 'suffocate',
-					op: 'damage',
-					value: Rules.breathDamage(this.health),
-					damageType: DamageType.SUFFOCATE,
-					duration: 0
-				};
-				let deed = this.deedFind(deed=>deed.damageType==DamageType.SUFFOCATE);
-				let source = deed ? deed.source : this.map;
-				effectApply( effect, this, source, null, 'onBreath' );
-			}
-		}
-
-		//
-		// Passive map effects 
-		//
-		if( fullTick ) {
-			this.map.passiveEffectList.forEach( effect => {
-				effectApply( effect, this, this.map, null, 'onMapPassive' );
-			});
-		}
-
-		//
-		// Vocalizing whatever you have to say
-		//
-		if( this.vocalize ) {
-			tell(...this.vocalize);
-			this.vocalize = false;
-		}
-
-
-		let priorTileType = this.map.tileTypeGet(this.x,this.y);
-		console.assert(priorTileType);
-
-		//
-		// Reset stillness, bracing, and bump
-		//
-		if( fullTick ) {
-			if( this.bumpCount ) {
-				// If the user ever isn't adjacent to you, then you must be relieved of bump obligations.
-				let f = this.findAliveOthersNearby().isId(this.bumpBy).nearMe(1);
-				if( !f.first ) this.bumpCount=0;
-			}
-		}
-
 		//
 		// Move a direction, or take an action
 		//
@@ -3773,7 +3763,7 @@ class Entity {
 		let yOld = this.y;
 		if( Direction.fromCommand(this.command) !== false ) {
 			// This should be the ONE AND ONLY call to moveDir.
-			this.commandResult = this.moveDir(dir,this.commandItem,true);
+			this.commandResult = this.setMoveTargetDir(dir,this.commandItem,true);
 		}
 		else {
 			this.commandResult = this.actOnCommand();
@@ -3781,102 +3771,6 @@ class Entity {
 		
 		this.isStill = ( this.x == xOld && this.y == yOld );
 		this.isBraced = this.isStill;
-
-		//
-		// Charging
-		//
-		if( fullTick ) {
-			if( !this.jump && Command.Movement.includes(this.command) && this.commandResult.success ) {
-				if( dir === this.lastDir ) {
-					this.chargeDist = (this.chargeDist||0)+1;
-				}
-				this.lastDir = dir;
-			}
-			else {
-				delete this.chargeDist;
-			}
-		}
-
-		//
-		// Jumping
-		//
-		if( fullTick ) {
-			let tileType = this.map.tileTypeGet(this.x,this.y);
-			console.assert(tileType);
-			let mayJump = tileType.mayJump;
-
-			if( this.jumpMax ) {
-				if( this.travelMode == 'walk' && mayJump && (this.jump || !priorTileType.mayJump) ) {
-					// This assumes you ALWAYS want to jump over anything that you CAN jump over. It might
-					// not always be the case... SO perhaps we should check if tileType.isProblem, or if !tileType.mayWalk.
-					this.jump = (this.jump||0)+1;
-				}
-				else {
-					this.jump = 0;
-				}
-				if( this.jump > this.jumpMax ) {
-					this.jump = 0;
-				}
-			}
-			else
-			if( this.jump )	// What if they just took off boots or something?
-				delete this.jump;
-		}
-
-		//
-		// Pits
-		//
-		let tileType = this.map.tileTypeGet(this.x,this.y);
-		if( fullTick ) {
-			if( !this.jump && tileType.isPit && this.travelMode == 'walk') {
-				let areaId = this.area.id;
-				this.takeFallInPit();
-				if( this.area.id !== areaId ) {
-					return; // Short-circuit here, because the area change will wig future code out.
-				}
-			}
-		}
-
-		//
-		// OnTouch Events
-		//
-		if( fullTick ) {
-			// Important for this to happen after we establish whether you are jumping at this moment.
-			if( tileType.onTouch ) {
-				tileType.onTouch(this,this.map.tileGet(this.x,this.y));
-			}
-			this.map.findItemAt(this.x,this.y).forEach( item => {
-				if( item.onTouch ) {
-					item.onTouch( this, item );
-				}
-			});
-		}
-
-		//
-		// Ambient Light Damage
-		//
-		if( fullTick && this.lightHarms ) {
-			let light = this.map.getLightAt(this.x,this.y);
-			if( light >= this.lightHarms ) {
-				let pct = 1.0 - ((20-light) / (20-Math.clamp(this.lightHarms,0,19)));
-				let damage = Math.max(1,Math.floor(Rules.pickDamage(this.area.depth,0,null) * pct * 0.2));
-				let lightEffect = {
-					op: 'damage',
-					damageType: DamageType.LIGHT,
-					value: damage,
-					duration: 0,
-					icon: 'gui/icons/eLight.png'
-				}
-				effectApply(lightEffect,this,null,null,'ambientLight');
-			}
-		}
-
-		//
-		// OnTick
-		//
-		if( fullTick && this.onTick ) {
-			this.onTick.call(this);
-		}
 
 		// Just making sure we don't have any item weirdness.
 		this.inventory.forEach( item => {
@@ -3895,6 +3789,283 @@ class Entity {
 		this.commandTarget = null;
 		this.commandTarget2 = null;
 	}
+
+	findSafeGateDestination(area,x,y) {
+		let c = !area.map.inBounds(x,y) ? true : GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
+		if( c ) {
+			[x,y] = area.map.spiralFind( x, y, (x,y,tile) => {
+				return tile && tile.mayWalk && !tile.isProblem && !GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
+			});
+			console.assert( x!==false );
+		}
+		return [x,y];
+	}
+
+	recognizeLeaveVoid() {
+		if( Gab ) {
+			Gab.entityPostProcess(this);
+		}
+	}
+
+	recognizeMove(areaPrior,xTilePrior,yTilePrior,areaChanged) {
+		if( !areaPrior ) {
+			console.assert( this.area );
+			this.origin = {
+				x: this.x,
+				y: this.y,
+				area: this.area,
+				isPosition: true,
+				name: 'origin'
+			};
+		}
+		if( areaPrior && areaPrior.map.inBounds(xTilePrior,yTilePrior) ) {
+			console.assert( areaPrior && xTilePrior !== undefined );
+			this.map.scentLeave(xTilePrior,yTilePrior,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
+			this.map._entityRemove(this,xTilePrior,yTilePrior);
+			this.map.calcWalkable(xTilePrior,yTilePrior);	// NUANCE: must be after the entityRemove!
+		}
+
+		if( areaChanged ) {
+			if( areaPrior ) {
+				// DANGER! Doing this while within a loop across the entityList will result in pain!
+				Array.filterInPlace( areaPrior.entityList, entity => entity.id!=this.id );
+			}
+			let fnName = this.isUser() ? 'unshift' : 'push';	// the player happens to always be pushed to first in the list.
+			this.area.entityList[fnName](this);
+
+			guiMessage('stageEntityMoved',this);
+			tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+this.area.name)
+		}
+
+		this.map._entityInsert(this,this.x,this.y);
+		this.map.calcWalkable(this.x,this.y);	// NUANCE: must be after the entityInsert!
+		// This just makes sure that items have coordinates, for when they're the root of things.
+		this.inventory.forEach( item => { item.x=this.x; item.y=this.y; } );
+
+		// Any visibility cache flushing should happen here.
+		if( areaChanged && this.isUser() ) {
+			this.area.world.setTickingAreas(this.area.id);
+			guiMessage('setArea',this.area);
+		}
+	}
+
+	checkPit() {
+		let tileType = this.map.tileTypeGet(this.x,this.y);
+		if( tileType.isPit && this.travelMode != 'fly' && !this.jumpLeft ) {
+			let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
+			if( !stairs && !this.isUser() ) {
+				return vanishIntoPit();
+			}
+			// HEY! If there are no stairs, have the mason scan the map and just put floor where ever
+			// there is pit. Then put in a vine to climb up.
+			debugger;
+
+			tell(mSubject,this,' ',mVerb,'fall',' down a pit!');
+			let gateEffect = this.createGateEffect({
+				name:      'pit',
+				toAreaId:  stairs.toAreaId,
+				toDepth:   stairs.toDepth,
+				toThemeId: stairs.toThemeId,
+				oneway:    true,
+				xTarget:   stairs.x,
+				yTarget:   stairs.y
+			});
+
+			return this.takeGateEffect( gateEffect );
+		}
+	}
+
+	onRealtimeMove(dt) {
+		// Remember that these could be undefined if I was just in the void.
+		let xPrior = this.x;
+		let yPrior = this.y;
+		let areaPrior = this.area;
+//		if( this.isUser() ) {
+//			console.log(this.name+' is at '+xPrior+','+yPrior+' dt='+dt);
+//		}
+
+		if( this.jumpLeft ) {
+			this.jumpLeft = Math.max( (this.jumpLeft||0)-dt, 0 );
+		}
+
+		//
+		// Detect area change
+		//
+		let areaChanged = !areaPrior || this.areaMove.id !== areaPrior.id;
+
+		if( areaChanged ) {
+			this.moveInstantly = true;
+			[this.xMove,this.yMove] = this.findSafeGateDestination(this.areaMove,this.xMove,this.yMove);
+		}
+
+		this.area = this.areaMove;
+		if( this.moveInstantly ) {
+			this.x    = this.xMove;
+			this.y    = this.yMove;
+			// Don't clear moveInstantly yet. We might care later how we got here.
+		}
+		if( this.x!=this.xMove || this.y!=this.yMove ) {
+			let dx = this.xMove-this.x;
+			let dy = this.yMove-this.y;
+			let dist = Distance.get(dx,dy);
+			let tilesPerSecond = this.speedMove;
+			let travel = dt*tilesPerSecond;
+			if( dist < travel ) {
+				this.x = this.xMove;
+				this.y = this.yMove;
+			}
+			else {
+				this.x += (dx/dist)*travel;
+				this.y += (dy/dist)*travel;
+			}
+		}
+
+		//
+		// Entering a New Tile?
+		//
+		let inNewTile = ( this.xTilePrior===undefined || areaChanged );
+		if( !inNewTile ) {
+			let xTile = Math.toTile(this.x);
+			let yTile = Math.toTile(this.y);
+			if( xTile != this.xTilePrior || yTile != this.yTilePrior ) {
+				let dist = Distance.get( xTile-(this.x+0.5), yTile-(this.y+0.5) );
+				if( dist < 1.0 ) {
+					console.log(this.name,'in new tile');
+					inNewTile = true;
+				}
+			}
+		}
+
+		let revertMovement;
+		if( inNewTile ) {
+			let result = this.enterTile(areaPrior,xPrior,yPrior);
+			Gui.dirty('miniMap');
+			Gui.dirty('map');
+			revertMovement = !result.entrySuccess;
+		}
+
+		if( areaChanged ) {
+			revertMovement = false;
+			if( !areaPrior ) {
+				this.recognizeLeaveVoid();
+			}
+		}
+
+		if( inNewTile ) {
+			if( revertMovement ) {
+				// WARNING! We do not revert to the prior area
+				this.x = xPrior;
+				this.y = yPrior;
+			}
+			else {
+				this.recognizeMove(areaPrior,this.xTilePrior,this.yTilePrior,areaChanged);
+
+				this.xTilePrior = Math.toTile(this.x);
+				this.yTilePrior = Math.toTile(this.y);
+
+				if( this.light ) {
+					this.area.lightDirty = true;
+				}
+				if( this.isUser() ) {
+					this.area.pathClip.setCtr(this.x,this.y,MapVisDefault*2);
+					this.area.thinkClip.setCtr(this.x,this.y,MapVisDefault*5);
+				}
+			}
+		}
+
+		if( this.spriteList ) {
+			this.spriteList.forEach( sprite => {
+				window.spriteUpdate(sprite,this.x+0.5,this.y);
+			});
+		}
+
+		let dest = this.destination;
+		if( dest ) {
+			if( this.nearTarget(dest,dest.closeEnough) ) {
+				this.record( "ARRIVED", true );
+				if( dest.onArrive ) {
+					dest.onArrive(this.dest);
+				}
+				this.destination = null;
+			}
+		}
+
+		this.checkPit();
+		if( this.isDead() ) {
+			return;
+		}
+	}
+
+	tickSecond() {
+		this.tickSecondList = this.tickSecondList || [
+			()=>this.checkRegenerate(),
+			()=>this.checkBreath(),
+			()=>this.checkMapEffects(),
+			()=>this.checkCharge(),
+			()=>this.checkBumpBy(),
+			()=>this.checkTouchTile(),
+			()=>this.checkTouchItem(),
+			()=>this.checkLightDamage(),
+		];
+
+		this.tickSecondList.forEach( fn => fn() );
+
+		if( this.onTickSecond ) {
+			this.onTickSecond.call(this);
+		}
+	}
+
+
+	tickRealtime(dt,thinkClip,itemListTickSecondFn) {
+		if( this.legacyId && !this.perkList ) {
+			this.grantPerks();
+		}
+
+		// Must be first, because sometimes it can generate commands when entering a new tile.
+		this.onRealtimeMove(dt);
+
+		if( this.isDead() ) {
+			return;
+		}
+
+		this.actionLeft -= dt;
+
+		if( this.actionLeft <= 0 ) {
+			let lastCommand = Command.NONE;
+			if( thinkClip.contains(this.x,this.y) ) {
+				// We might be able to move this to happen when they enter a tile
+				// instead of every time they think. Might be faster.
+				this.calculateVisbility();
+				this.think();
+				this.act();
+				lastCommand = this.command;
+				this.clearCommands();
+			}
+			DeedManager.calc(this);
+
+			//
+			// Reset Action Count
+			//
+			let actionCost = 1.0/(this.speedAction||0.01);
+			if( this.fastCommands && this.fastCommands.includes(lastCommand) ) {
+				tell(mSubject,this,' ',mVerb,'can',' take another action.');
+				this.actionCost *= 0.5;
+			}
+			this.actionLeft = Math.max(0,this.actionLeft+actionCost);
+		}
+
+		Time.tickOnTheSecond(dt,this,(dtSecond)=>{
+			this.tickSecond();
+			itemListTickSecondFn(this.inventory,dtSecond,(this.rechargeRate||1)*dtSecond);
+		});
+
+		if( this.isUser() ) {
+			// If the user didn't act this tick, but other things made visibility change a lot
+			// then we need to recalc it so the player can see what is going on.
+			this.calculateVisbility();
+		}
+	}
+
 }
 
 function nop() {
@@ -3908,7 +4079,6 @@ function bonk(entity,target) {
 		guiMessage( 'revealInvisible', target );
 	}
 }
-
 
 return {
 	Entity: Entity

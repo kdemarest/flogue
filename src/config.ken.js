@@ -26,10 +26,17 @@ Module.add('config.ken',function(X,moduleId) {
 		passageWidth3: 		0
 	});
 
+	plugin.ScapeList.kenTinyOpenCave = theme => ({
+		dim: 				20,
+		architecture: 		"cave",
+		floorDensity: 		0.88, //0.45,
+		passageWander: 		0,
+	});
+
 	plugin.ScapeList.kenRooms = theme => ({
 		dim: 				30,
 		architecture: 		"rooms",
-		floorDensity: 		0.45,
+		floorDensity: 		0.88, //0.45,
 		shapeChances: 		{ circle: 0.1, rect: 0.9 },
 		overlapChance: 		10,
 		preferDoors: 		true,
@@ -109,10 +116,24 @@ Module.add('config.ken',function(X,moduleId) {
 		itemDensity:    0.0001,
 	}
 
+	plugin.ThemeList.kenTinyTheme = {
+		scapeId: 		'kenTinyOpenCave',
+		palette: 		{ basis: 'moon' },
+		placeDensity: 	0.00001,
+		monsters: 		['isDog'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		prefer: 		null,
+		itemDensity:    0.00001,
+		enemyDensity:  	0.00001,
+		friendDensity: 	0.05,
+	}
+
 	plugin.ThemeList.kenTheme = {
-		scapeId: 		'kenRooms',		// 'kenCave' or 'kenRooms',
+		scapeId: 		'moonscape',
+		palette: 		{ basis: 'moon' },
+
+//		scapeId: 		'kenRooms',		// 'kenCave' or 'kenRooms',
 //		palette: 		{ basis: 'jaggedCave' },
-		palette: 		{ basis: 'stoneRooms' },
+//		palette: 		{ basis: 'stoneRooms' },
 		rREQUIRED: 		'miniMaze',
 		placeDensity: 	0.00001,
 //		rCOMMON: 		'nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit',
@@ -141,17 +162,17 @@ Module.add('config.ken',function(X,moduleId) {
 	let player = {
 		// soldier, brawler, monk, archer, ninja, not quite blaster
 		mergeWithExistingData: true,
-		legacyId: 'soldier',
+		legacyId: 'ordner',
 		carrying: '20x potion', //'5x wood, 100x part, 4x potion.eWater, 4x part isWing, 4x part isSkin, 4x ore, 3x stuff.leather, 3x oreMalachite, 3x stuff.demonLeather', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
 		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow',
 		//sensePerception = true,
 		//senseAlert: true,
 		//senseSmell: 200,
 		//senseDarkVision: 8,
-		//light: 2,
+		light: 7,
 		//experience: 100,
 		inject: {
-			level: 12,
+			//level: 0,
 			//immortal: true,
 			//invulnerable: true
 		}
@@ -163,8 +184,8 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 12,
-		//themeId: 'kenTheme',
+		//startingDepth: 12,
+		themeId: 'kenTinyTheme',
 		saveBattery: true,
 		playerInject: player.inject
 	}

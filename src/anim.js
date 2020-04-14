@@ -213,6 +213,11 @@ let sSine = function(pct,scale) {
 
 class Anim {
 	constructor(sticker,data) {
+
+// Commented out for debugging the new system, for a while.
+return;
+
+
 		Object.assign(this,{ scale: 1, isAnim: 1 }, sticker, data, { id: Date.makeUid() } );
 		this.isAnimation = true;
 		this.dead = false;
@@ -305,21 +310,19 @@ class Anim {
 	puppetOnExist(entity) {
 		entity.puppetMe = this;
 	}
-	puppet(spriteList) {
+	puppet(sprite) {
 		if( this.dead ) return;
-		if( !spriteList ) {
+		if( !sprite ) {
 			this.die();
 			return this;
 		}
 		this.isPuppeteer = true;
-		spriteList.forEach( sprite => {
-			spriteAttach(this.spriteList,sprite);
-			this.spriteInit(sprite);
-			this.spriteBind(sprite);
-			if( this.onSpriteMake ) {
-				this.onSpriteMake(sprite,this);
-			}
-		});
+		Scene.attach(this.spriteList,sprite);
+		this.spriteInit(sprite);
+		this.spriteBind(sprite);
+		if( this.onSpriteMake ) {
+			this.onSpriteMake(sprite,this);
+		}
 		return this;
 	}
 	die() {
@@ -335,27 +338,23 @@ class Anim {
 			});
 		}
 
-		spriteDeathCallback(this.spriteList);
+		Scene.detach(this.spriteList);
 	}
 	spriteInit(sprite) {
 		if( this.dead ) return;
 		console.assert( this.duration !== undefined );
 		console.assert( typeof this.duration !== 'number' || !isNaN(this.duration) );
-		if( !sprite.width ) {
-			debugger;
-		}
-		sprite.baseScale = sprite.baseScale || (Tile.DIM / sprite.width);	// was sprite.baseScale || sprite.width/Tile.DIM;
 
-		sprite.rx = sprite.rx || 0;
-		sprite.ry = sprite.ry || 0;
+		sprite.rx 		= sprite.rx || 0;
+		sprite.ry 		= sprite.ry || 0;
 		sprite.rxTarget = this.rxTarget || 0;
 		sprite.ryTarget = this.ryTarget || 0;
-		sprite.qx = sprite.qx || 0;
-		sprite.qy = sprite.qy || 0;
-		sprite.xVel = 0;
-		sprite.yVel = 0;
-		sprite.quiver = 0;
-		sprite.elapsed = 0;
+		sprite.qx		= sprite.qx || 0;
+		sprite.qy		= sprite.qy || 0;
+		sprite.xVel		= 0;
+		sprite.yVel		= 0;
+		sprite.quiver	= 0;
+		sprite.elapsed	= 0;
 		sprite.duration = typeof this.duration === 'number' ? this.duration : true;
 	}
 	spriteBind(sprite) {
@@ -380,11 +379,9 @@ class Anim {
 		sprite.sSine 	= sSine.bind(sprite);
 		sprite.sAlpha 	= sAlpha.bind(sprite);
 	}
-	spriteAdd(img) {
-		if( this.dead ) return;
-		let sprite = spriteCreate(this.spriteList,img,true);
-		this.spriteInit(sprite);
-		this.spriteBind(sprite);
+	spriteFundamentals(sprite) {
+		console.assert( sprite.width );
+		sprite.baseScale = sprite.baseScale || (Tile.DIM / sprite.width);	// was sprite.baseScale || sprite.width/Tile.DIM;
 		if( this.alpha !== undefined ) {
 			sprite.alpha = this.alpha;
 			sprite.alphaChanged = true;
@@ -392,6 +389,14 @@ class Anim {
 		sprite.anchor.set(0.5,0.5);
 		sprite.zOrder = 100;
 		sprite.visible = false;
+	}
+
+	spriteAdd(img) {
+		if( this.dead ) return;
+		let sprite = Scene.create(this.spriteList,img,true);
+		this.spriteInit(sprite);
+		this.spriteBind(sprite);
+		this.spriteFundamentals(sprite);
 		if( this.onSpriteMake ) { this.onSpriteMake(sprite,this); }
 		spriteOnStage( sprite, true );
 		this.drawUpdate(this.xBase,this.yBase,10);	// just pick a visible light level until the main drawUpdate can get to it.
@@ -660,15 +665,20 @@ class AnimationManager {
 	}
 	add(anim) {
 		this.list.push(anim);
+
+		// WARNING: This is really the wrong way to do this. Rather the viewMap should
+		// just always draw all animations.
+		Gui.dirty('map');
 		return anim;
 	}
 	remove(fn,note) {
 		this.list.forEach( anim => {
 			if( fn(anim) ) {
-				console.log('AnimationManager.removed ',anim.groupId,'note='+note);
+				// console.log('AnimationManager.removed ',anim.groupId,'note='+note);
 				anim.die(); 
 			}
 		});
+		Gui.dirty('map');
 	}
 	tickRealtime(delta) {
 		this.list.map( anim => anim.tick(delta) );

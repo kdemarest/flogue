@@ -33,6 +33,9 @@ class ViewMiniMap extends ViewObserver {
 		this.caption = String.capitalize(area.name)+' (Depth '+area.depth+')';
 		this.create(area);
 	}
+	lPos(x,y) {
+		return Math.toTile(y)*this.xLen+Math.toTile(x);
+	}
 	message(msg,payload) {
 		super.message(msg,payload);
 		if( msg == 'setArea' ) {
@@ -43,7 +46,7 @@ class ViewMiniMap extends ViewObserver {
 		}
 		if( msg == 'revealInvisible' ) {
 			let target = payload;
-			this.drawn[target.y*this.xLen+target.x] = null;
+			this.drawn[this.lPos(target.x,target.y)] = null;
 			if( target.isWall ) {
 				// Sadly this gets special-cased because of the way I use mmWall...
 				var canvas0 = $(this.divId+'Canvas0')[0];
@@ -83,6 +86,12 @@ class ViewMiniMap extends ViewObserver {
 				return false;
 			}
 		}
+	}
+
+	tick(dt) {
+		Time.tickOnTheSecond(dt,this,()=>{
+			this.dirty=true;
+		});
 	}
 
 	render() {
@@ -158,10 +167,10 @@ class ViewMiniMap extends ViewObserver {
 					}
 				}
 
-				if( this.drawn[y*this.xLen+x] === entity ) {
+				if( this.drawn[this.lPos(x,y)] === entity ) {
 					continue;
 				}
-				this.drawn[y*this.xLen+x] = entity;
+				this.drawn[this.lPos(x,y)] = entity;
 				if( !entity ) {
 					draw(c0,unvisitedMap,x,y,this.scale);
 					continue;

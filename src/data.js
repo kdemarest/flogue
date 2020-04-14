@@ -86,10 +86,10 @@ class ClipRect {
 		this.yMax = 99999999;
 	}
 	set(x0,y0,x1,y1) {
-		this.xMin = x0;
-		this.yMin = y0;
-		this.xMax = x1;
-		this.yMax = y1;
+		this.xMin = Math.toTile(x0);
+		this.yMin = Math.toTile(y0);
+		this.xMax = Math.toTile(x1);
+		this.yMax = Math.toTile(y1);
 	}
 	setCtr(x,y,dist) {
 		this.set(x-dist,y-dist,x+dist,y+dist);

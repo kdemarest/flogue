@@ -24,6 +24,7 @@ class SimpleMap {
 	}
 
 	setDimensions(xLen,yLen) {
+		console.assert(xLen==Math.toTile(xLen));
 		this.xLen = xLen;
 		this.yLen = yLen;
 	}
@@ -43,6 +44,7 @@ class SimpleMap {
 		return this.xLen*this.yLen;
 	}
 	inBounds(x,y) {
+		// OK not to convert this toTile, I think...
 		return x>=0 && x<this.xLen && y>=0 && y<this.yLen;
 	}
 	pickPos(xa,ya,xb,yb) {
@@ -120,6 +122,8 @@ class SimpleMap {
 		return pos;
 	}
 	traverseNear(cx,cy,dist,fn) {
+		cx = Math.toTile(cx);
+		cy = Math.toTile(cy);
 		let sy = Math.max(cy-dist,0);
 		let ey = Math.min(cy+dist,this.yLen-1);
 		let sx = Math.max(cx-dist,0);
@@ -137,6 +141,7 @@ class SimpleMap {
 		return c;
 	}
 	count8(cx,cy,fn) {
+		console.assert(cx==Math.toTile(cx));
 		let c = 0;
 		for( let dir=0 ; dir<8 ; ++dir ) {
 			let x = cx+Direction.add[dir].x;
@@ -154,6 +159,7 @@ class SimpleMap {
 		return tile !== false && (tile.mayWalk || tile.isRemovable);
 	}
 	countGaps(x,y) {
+		console.assert(x==Math.toTile(x));
 		let swaps = 0;
 		let lastPassable = this.testPassable(x+Direction.add[7].x,y+Direction.add[7].y);
 		for( let dir=0 ; dir < 8 ; ++dir ) {
@@ -165,6 +171,9 @@ class SimpleMap {
 	}
 
 	dirChoose(x,y,ratingFn) {
+		x=Math.toTile(x);
+		y=Math.toTile(y);
+
 		let bestDir = false;
 		let bestRating = null;
 		for( let dir=0 ; dir<Direction.count ; ++dir ) {
@@ -182,14 +191,18 @@ class SimpleMap {
 	}
 
 	tileSymbolSet(x,y,symbol) {
-		x=Math.floor(x);
-		y=Math.floor(y);
+		x=Math.toTile(x);
+		y=Math.toTile(y);
+
 		if( !this.inBounds(x,y) ) {
 			debugger;
 		}
 		this.tile[y] = this.tile[y].substr(0,x)+symbol+this.tile[y].substr(x+1);
 	}
 	tileSymbolSetFloor(x,y,defaultFloorSymbol) {
+		x=Math.toTile(x);
+		y=Math.toTile(y);
+
 		console.assert( defaultFloorSymbol );
 		if( !this.inBounds(x,y) ) {
 			debugger;
@@ -213,15 +226,13 @@ class SimpleMap {
 		this.tileSymbolSet(x,y,symbol);
 	}
 	tileSymbolGetFastUnasfe(x,y) {
-		x=Math.floor(x);
-		y=Math.floor(y);
+		x=Math.toTile(x);
+		y=Math.toTile(y);
 		return this.tile[y].charAt(x);
 	}
 	tileSymbolGet(x,y) {
-		x=Math.floor(x);
-		y=Math.floor(y);
 		if( !this.inBounds(x,y) ) { debugger; }
-		return this.tile[y].charAt(x);
+		return this.tileSymbolGetFastUnasfe(x,y);
 	}
 	tileTypeGetFastUnsafe(x,y) {
 		let symbol = this.tileSymbolGet(x,y);
@@ -244,14 +255,21 @@ class SimpleMap {
 		return this.tileTypeGet(x,y);
 	}
 	tileProxy(tileType,x,y) {
-		x=Math.floor(x);
-		y=Math.floor(y);
 		if( !tileType.isTileType || tileType.isPosition || tileType === false ) {
 			// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
 			// This also means no permanent data can exist in them.
 			return tileType;
 		}
-		return Object.assign({},tileType,{x:x,y:y,area:this.area,map:this,isPosition:true});
+		x = Math.toTile(x);
+		y = Math.toTile(y);
+		return Object.assign( {}, tileType, { 
+			id: 'tileProxy-'+Date.makeUid(),
+			x: x,
+			y: y,
+			area: this.area,
+			map: this,
+			isPosition: true
+		});
 	}
 	// It gives you a tile that has an (x,y) and can be written to without harming the tile prototype.
 	tileGet(x,y) {
@@ -283,7 +301,11 @@ SimpleMap.fillTextMap = function(xLen,yLen,symbol) {
 }
 
 
+/**
+name				- What the user will see
+rechargeRate		- 1.0 default. Higher means things in this area recharge faster.
 
+*/
 
 class Map extends SimpleMap {
 	constructor(area,tileRaw,itemList,mapVars) {
@@ -314,11 +336,22 @@ class Map extends SimpleMap {
 		this.initSprites();
 	}
 
+	lPos(x,y) {
+		console.assert(Number.isFinite(x));
+		console.assert(Number.isFinite(y));
+		return Math.toTile(y)*this.xLen+Math.toTile(x);
+	}
+	lPosOf(entity) {
+		console.assert(Number.isFinite(entity.x));
+		console.assert(Number.isFinite(entity.y));
+		return Math.toTile(entity.y)*this.xLen+Math.toTile(entity.x);
+	}
+
 	//
 	// Item Lookup
 	//
 	itemLookupAdd(x,y,item) {
-		let lPos = Math.floor(y)*this.xLen+Math.floor(x);
+		let lPos = this.lPos(x,y);
 		if( !this._itemLookup[lPos] ) {
 			this._itemLookup[lPos] = [item];
 		}
@@ -330,19 +363,19 @@ class Map extends SimpleMap {
 		}
 	}
 	itemLookupRemove(item) {
-		let lPos = Math.floor(item.y)*this.xLen+Math.floor(item.x);
+		let lPos = this.lPosOf(item);
 		Array.filterInPlace( this._itemLookup[lPos], i => i.id!=item.id );
 	}
 	itemLookupGet(x,y) {
-		let lPos = Math.floor(y)*this.xLen+Math.floor(x);
+		let lPos = this.lPos(x,y);
 		return this._itemLookup[lPos];
 	}
 
 	//
 	// Entity Lookup
 	//
-	entityLookupAdd(x,y,entity) {
-		let lPos = Math.floor(y)*this.xLen+Math.floor(x);
+	_entityLookupAdd(entity,x,y) {
+		let lPos = this.lPos(x,y);
 		if( !this._entityLookup[lPos] ) {
 			this._entityLookup[lPos] = [entity];
 		}
@@ -353,12 +386,12 @@ class Map extends SimpleMap {
 			}
 		}
 	}
-	entityLookupRemove(entity) {
-		let lPos = Math.floor(entity.y)*this.xLen+Math.floor(entity.x);
+	_entityLookupRemove(entity,x,y) {
+		let lPos = this.lPos(x,y);
 		Array.filterInPlace( this._entityLookup[lPos], i => i.id!=entity.id );
 	}
-	entityLookupGet(x,y) {
-		let lPos = Math.floor(y)*this.xLen+Math.floor(x);
+	_entityLookupGet(x,y) {
+		let lPos = this.lPos(x,y);
 		return this._entityLookup[lPos];
 	}
 
@@ -366,21 +399,15 @@ class Map extends SimpleMap {
 	// Scent
 	//
 	scentGet(x,y) {
-		x=Math.floor(x);
-		y=Math.floor(y);
-		let lPos = (y*this.xLen+x)*2;
+		let lPos = this.lPos(x,y)*2;
 		return this._scentLookup[lPos]||0;
 	}
 	scentGetEntity(x,y) {
-		x=Math.floor(x);
-		y=Math.floor(y);
-		let lPos = (y*this.xLen+x)*2;
+		let lPos = this.lPos(x,y)*2;
 		return this._scentLookup[lPos+1]||0;
 	}
 	scentSet(x,y,time,entity) {
-		x=Math.floor(x);
-		y=Math.floor(y);
-		let lPos = (y*this.xLen+x)*2;
+		let lPos = this.lPos(x,y)*2;
 		this._scentLookup[lPos+0] = time;
 		if( entity !== undefined ) {
 			this._scentLookup[lPos+1] = entity;
@@ -420,7 +447,7 @@ class Map extends SimpleMap {
 		}
 		let time = Time.simTime - timeReduction;
 		if( time >= this.scentGet(x,y) ) {
-			this.scentSet(time,entity);
+			this.scentSet(x,y,time,entity);
 		}
 		if( !entity.stink ) {
 			return 1;
@@ -441,7 +468,7 @@ class Map extends SimpleMap {
 	}
 	scentClear(x,y) {
 		if( this.scentGet(x,y) ) {
-			this.scentSet(-Rules.SCENT_AGE_LIMIT,null);
+			this.scentSet(x,y,-Rules.SCENT_AGE_LIMIT,null);
 		}
 	}
 	scentGetAge(x,y) {
@@ -463,7 +490,6 @@ class Map extends SimpleMap {
 		}
 		return found;
 	}
-
 	testPassable(x,y) {
 		if( !super.testPassable(x,y) ) return false;
 		let impassableItems = this.findItemAt(x,y).filter( item => !item.mayWalk && item.isRemovable !== false );
@@ -471,22 +497,24 @@ class Map extends SimpleMap {
 	}
 
 	calcWalkable(x,y) {
-		let lPos = y*this.xLen+x;
+		let lPos = this.lPos(x,y);
 		let testFn = pWalk(this);
 		this.walkLookup[lPos] = testFn(x,y);
 	}
 
 	getWalkable(x,y) {
-		let lPos = y*this.xLen+x;
+		let lPos = this.lPos(x,y);
 		return this.walkLookup[lPos];
 	}
 
 	// This is used in testing, but not the main game.
 	setObstacle(x,y,prob) {
-		let lPos = y*this.xLen+x;
+		let lPos = this.lPos(x,y);
 		this.walkLookup[lPos] = prob;
 	}
-	toEntity(x,y,adhocEntity) {
+	toTileEntity(x,y,adhocEntity) {
+		x = Math.toTile(x);
+		y = Math.toTile(y);
 		this.tileEntity[y] = this.tileEntity[y] || [];
 		if( !this.tileEntity[y][x] ) {
 			adhocEntity = adhocEntity || this.tileGet(x,y);
@@ -496,7 +524,10 @@ class Map extends SimpleMap {
 		console.assert(this.tileEntity[y][x]);
 		return this.tileEntity[y][x];
 	}
+
 	tileTypeGetFastUnasfe(x,y) {
+		x = Math.toTile(x);
+		y = Math.toTile(y);
 		if( this.tileEntity[y] && this.tileEntity[y][x] ) {
 			return this.tileEntity[y][x];
 		}
@@ -511,6 +542,8 @@ class Map extends SimpleMap {
 		return this.tileTypeGetFastUnsafe(x,y);
 	}
 	tileSymbolSet(x,y,symbol) {
+		x = Math.toTile(x);
+		y = Math.toTile(y);
 		super.tileSymbolSet(x,y,symbol);
 
 		if( this.tileEntity[y] && this.tileEntity[y][x] ) {
@@ -567,6 +600,9 @@ class Map extends SimpleMap {
 		return list.length ? pick(list) : false;
 	}
 	spiralFind(x,y,fn) {
+		x = Math.toTile(x);
+		y = Math.toTile(y);
+
 		let dir = 0;
 		let span = 0.5;
 		let remain = span;
@@ -597,19 +633,24 @@ class Map extends SimpleMap {
 		if( !this.inBounds(x,y) ) {
 			return false;
 		}
-		return this.siteLookup[y*this.xLen+x];
+		return this.siteLookup[this.lPos(x,y)];
 	}
 
 	getLightAt(x,y,defaultValue=0) {
 		if( !this.inBounds(x,y) ) {
 			return defaultValue;
 		}
-		let lPos = y*this.xLen+x;
+		let lPos = this.lPos(x,y);
 		let light = this.lightCache[lPos];	// note, this should NEVER have MEMORY_MAP_FLAG inside it.
 		return light === undefined ? defaultValue : light;
 	}
 
 	itemCreateByType(x,y,type,presets,inject) {
+		// Not strictly necessary. It all depends on whether we eventually want to
+		// have non-aligned items.
+		x = Math.toTile(x);
+		y = Math.toTile(y);
+
 		if( x===undefined ) debugger;
 		if( type.isRandom ) debugger;
 		let tile = this.tileTypeGet(x,y);
@@ -628,7 +669,7 @@ class Map extends SimpleMap {
 		return this.itemCreateByType(x,y,ItemTypeList[typeId],presets,inject);
 	}
 
-	isItemAtFastUnsafeAssumesInteger(x,y) {
+	isItemAtFastUnsafe(x,y) {
 		// This has a two flaws:
 		// 1. It wraps around
 		// 2. It assumes x and y are both integers for the indexing.
@@ -640,7 +681,7 @@ class Map extends SimpleMap {
 	isItemAt(x,y) {
 		// This has a TINY little flaw, in that the left and right sides wrap around. But it is used
 		// during pathfind, so we're going to let this little problem slide.
-		return this.isItemAtFastUnsafeAssumesInteger(Math.floor(x),Math.floor(y));
+		return this.isItemAtFastUnsafe(x,y);
 	}
 	findItem(me) {
 		return new Finder(this.itemList,me);
@@ -678,29 +719,45 @@ class Map extends SimpleMap {
 	isEntityAt(x,y) {
 		// This has a TINY little flaw, in that the left and right sides wrap around. But it is used
 		// during pathfind, so we're going to let this little problem slide.
-		let e = this.entityLookupGet(x,y);
+		let e = this._entityLookupGet(x,y);
 		return e && e.length;
 	}
 	findEntityArrayAt(x,y) {
 		if( !this.inBounds(x,y) ) return this.entityLookupStaticNop;
-		return this.entityLookupGet(x,y) || this.entityLookupStaticNop;
+		return this._entityLookupGet(x,y) || this.entityLookupStaticNop;
 	}
-	_entityRemove(entity) {
+	_entityRemove(entity,x,y) {
 		//console.log( '- '+entity.name+' ('+entity.x+','+entity.y+')' );
-		this.entityLookupRemove(entity);
+		if( entity.light && entity.area ) {
+			entity.area.lightDirty = true;
+		}
+
+		console.log('entityRemove',entity.name,x,y);
+		this._entityLookupRemove(entity,x,y);
+		guiMessage('stageEntityMoved',entity,'map');
 	}
-	_entityInsert(entity) {
+	_entityInsert(entity,x,y) {
 		//console.log( '+ '+entity.name+' ('+entity.x+','+entity.y+')' );
-		this.entityLookupAdd(entity.x,entity.y,entity);
+		if( entity.light && entity.area ) {
+			entity.area.lightDirty = true;
+		}
+		console.log('entityInsert',entity.name,x,y);
+		this._entityLookupAdd(entity,x,y);
+		guiMessage('stageEntityMoved',entity,'map');
 	}
 
 	_itemRemove(item) {
 		//if( !this.itemList.includes(item) ) {
 		//	debugger;
 		//}
+		if( item.light ) {
+			this.area.lightDirty = true;
+		}
+
 		Array.filterInPlace( this.itemList, i => i.id!=item.id );
 		this.itemLookupRemove(item);
-		spriteDeathCallback( item.spriteList );
+
+		Scene.detach( item.spriteList );
 		this.calcWalkable(item.x,item.y);
 		if( Rules.removeScentOfTheDead ) {
 			this.traverse( (x,y) => {
@@ -709,9 +766,15 @@ class Map extends SimpleMap {
 				}
 			});
 		}
+		guiMessage('stageEntityMoved',item,'map');
 		//this.tileSymbolSet(item.x,item.y,TileTypeList['floor'].symbol);
 	}
 	_itemTake(item,x,y) {
+
+		// WARNING
+		// Do not change x and y toTile here. Items are set to the position of their
+		// owner every round, and the owner could be anywhere.
+
 		if( this.itemList.includes(item) ) {
 			debugger;
 		}
@@ -736,6 +799,11 @@ class Map extends SimpleMap {
 		this.calcWalkable(x,y);
 		this.scentLeave(x,y,item);
 		//this.tileSymbolSet(item.x,item.y,item.symbol);
+		if( item.light ) {
+			this.area.lightDirty = true;
+		}
+		guiMessage('stageEntityMoved',item,'map');
+
 		return item;
 	}
 }

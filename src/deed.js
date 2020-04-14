@@ -123,6 +123,14 @@ class Deed {
 		if( this.op == 'set' ) {
 			target[stat] = this.value;
 		}
+		if( this.op == 'mult' ) {
+			if( target.baseType ) {
+				// note that this over-rides any other setting of this stat. Haste case second overrides slow
+				// for example.
+				target[stat] = target.baseType[stat] * this.value;
+			}
+		}
+
 		if( this.op == 'max' ) {
 			if( target[stat] === undefined ) {
 				target[stat] = this.value;
@@ -267,7 +275,7 @@ let DeedManager = (new class {
 			}
 		}
 		if( stat in this.statsThatCauseImageChanges && oldValue !== target[stat] ) {
-			imageDirty(target);
+			Scene.dirty(target);
 		}
 		if( target.userControllingMe && stat in this.statsThatCauseMapRenders && oldValue !== target[stat] ) {
 			guiMessage('render',null,'map');
@@ -325,7 +333,7 @@ let DeedManager = (new class {
 			}
 		}		
 	}
-	tick(target,dt) {
+	tickRealtime(target,dt) {
 		// This makes sure that any deeds added while ticking do NOT actually tick this round.
 		// A better implementatio would probably be to duplicate the deedList array and
 		// process that. Duh.
@@ -856,7 +864,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	if( target.isPosition && effect.onTargetPosition ) {
 		// If the effect has chosen to do something special when targetting a position,
 		// do that special thing. Otherwise the vast majority will 
-		target.map.toEntity(target.x,target.y,target);
+		target.map.toTileEntity(target.x,target.y,target);
 		result.effectResult = effect.onTargetPosition(target.map,target.x,target.y)
 	}
 	else {
@@ -1008,7 +1016,7 @@ DeedManager.addHandler(DeedOp.GATE,function() {
 		x: this.target.x,
 		y: this.target.y
 	};
-	let result = this.target.takeGate(this);
+	let result = this.target.takeGateEffect(this);
 	if( this.item && this.item.effect && this.item.effect.twoWay ) {
 		Object.assign( this.item.effect, oldPosition );
 	}
@@ -1076,7 +1084,7 @@ DeedManager.addHandler(DeedOp.SUMMON,function() {
 	// The intent is to prevent super-over-powered killings
 	let level = Math.min( type.level, area.depth );
 	let entity = new Entity( level, type, inject, area.jobPicker );
-	entity.gateTo(area,target.x,target.y);
+	entity.requestGateTo(area,target.x,target.y);
 	if( this.item ) {
 		entity.deathPhrase = [mSubject,entity,' ',mVerb,'revert',' to ',mObject|mA,this.item,'.'];
 	}

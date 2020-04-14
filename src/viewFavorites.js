@@ -1,13 +1,12 @@
 Module.add('viewFavorites',function() {
 
 class ViewFavorites extends ViewObserver {
-	constructor(divId,onItemChoose) {
+	constructor(divId) {
 		super();
 		this.favoriteKey = ['1234567890','!@#$%^&*()'];
 		this.favoriteName = [[' 1',' 2',' 3',' 4',' 5',' 6',' 7',' 8',' 9',' 0'],['s1','s2','s3','s4','s5','s6','s7','s8','s9','s0']];
 		this.favoriteSet = 0;
 		this.divId = divId;
-		this.onItemChoose = onItemChoose;
 		this.favoriteCandidate = null;
 
 		let self = this;
@@ -52,7 +51,7 @@ class ViewFavorites extends ViewObserver {
 			let changed = this.favoriteSet != payload;
 			this.favoriteSet = payload;
 			if( changed ) {
-				this.render();
+				this.dirty = true;
 			}
 		}
 	}
@@ -60,7 +59,7 @@ class ViewFavorites extends ViewObserver {
 		if( this.favoriteCandidate ) {
 			console.assert( this.user );
 			this.user.setFavorite( e.key, this.favoriteCandidate );
-			this.render();
+			this.dirty = true;
 		}
 	}
 	render() {
@@ -101,14 +100,14 @@ class ViewFavorites extends ViewObserver {
 			$(s).appendTo(this.divId).on( 'click.view', null, event => {
 				event.key = favorite.key;
 				event.commandItem = item;
-				this.onItemChoose(event);
+				guiMessage('command',event);
 			})
 			.on( 'mouseover.view', null, event => {
 				//console.log( 'ViewInventory mouseover' );
-				guiMessage( 'showInfo', item );
+				guiMessage( 'showInfo', { entity: item, from: 'viewFavorites' } );
 			})
 			.on( 'mouseout', null, event => {
-				guiMessage( 'hideInfo' );
+				guiMessage( 'hideInfo', { from: 'viewFavorites' } );
 			});
 
 		}

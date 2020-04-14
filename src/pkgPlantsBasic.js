@@ -18,12 +18,12 @@ const PlantVarietyList = Type.establish('PlantVarieties',{},{
 });
 
 const MushroomVarietyList = Type.establish('MushroomVariety',{},{
-	"amanitaMushroom": 		{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.amanita', flip: 50, img: "mushroom/amanita.png",
+	"amanitaMushroom": 		{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.amanita', img: "mushroom/amanita.png",
 		effectOnHarvest: Object.assign({},EffectTypeList.ePoison,{xDamage:0.3}) },
-	"blurellaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.blurella', flip: 50, img: "mushroom/blurella.png" },
-	"coxilliaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.coxillia', flip: 50, img: "mushroom/coxillia.png" },
+	"blurellaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.blurella', img: "mushroom/blurella.png" },
+	"coxilliaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.coxillia', img: "mushroom/coxillia.png" },
 	"grollotusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.grollotus', img: "mushroom/grollotus.png" },
-	"klinulusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.klinulus', flip: 50, img: "mushroom/klinulus.png" },
+	"klinulusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.klinulus', img: "mushroom/klinulus.png" },
 	"rhodotusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.rhodotus', img: "mushroom/rhodotus.png" },
 });
 
@@ -132,7 +132,7 @@ ItemTypeList.plant.rechargeCriteria = function() {
 	return this.owner && this.owner.isMap && this.owner.getLightAt(this.x,this.y) >= this.needLight;
 }
 
-ItemTypeList.plant.onTick = function() {
+ItemTypeList.plant.onTickSecond = function() {
 	let pct = this.rechargePercent();
 	this.scale = 0.1+(0.15*pct);
 	if( this.spriteList && this.spriteList[0] ) {
@@ -158,7 +158,7 @@ ItemTypeList.plant.onTick = function() {
 	this.sign = this.growing ? this.signFine : this.signLack;
 }
 
-ItemTypeList.mushroom.onTick = function() {
+ItemTypeList.mushroom.onTickSecond = function() {
 	let pct = this.rechargePercent();
 	this.scale = 0.1+(0.15*pct);
 	if( this.spriteList && this.spriteList[0] ) {

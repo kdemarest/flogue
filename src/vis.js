@@ -14,8 +14,8 @@ class Vis {
 			this._visSet( map, x, y, map.tileTypeGet(x,y).opacity||0 );
 		});
 		map.itemList.forEach( item => {
-			let x = Math.floor(item.x);
-			let y = Math.floor(item.y);
+			let x = Math.toTile(item.x);
+			let y = Math.toTile(item.y);
 			this._visSet( map, x, y, Math.max( this._visGet(map,x,y), item.opacity||0 ) );
 		});
 	}
@@ -49,6 +49,10 @@ class Vis {
 	**/
 
 	calcVis(px,py,senseSight,senseDarkVision,blind,xray,senseInvisible,visGrid,mapMemory) {
+		px = Math.toTile(px);
+		py = Math.toTile(py);
+
+
 		function canSee(x,y) {
 			return map.getLightAt(x,y,0) > 0 || Distance.isNear(x-px,y-py,senseDarkVision+0.5);
 		}
@@ -59,12 +63,13 @@ class Vis {
 			if( item && item.invisible && !senseInvisible ) {
 				item = null;
 			}
+			console.assert(x==Math.floor(x));
 			let pos = Math.floor(y)*xLen+Math.floor(x);
 			mapMemory[pos] = item ? item : tile;
 		}
 
-		px = Math.floor(px);
-		py = Math.floor(py);
+		px = Math.toTile(px);
+		py = Math.toTile(py);
 
 		let map = this.getMapFn();
 		let xLen = map.xLen;

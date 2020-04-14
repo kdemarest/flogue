@@ -6,20 +6,34 @@ class ViewInfo extends ViewObserver {
 		this.infoDivId = infoDivId;
 		$(this.infoDivId).empty();
 	}
+	show(entity,from) {
+		if( this.observer.id != entity.id ) {
+			this.override(entity);
+			this.dirty = true;
+			guiMessage('showCrosshair',entity);
+			guiMessage('showExperience',entity);
+			guiMessage('showStatus',entity);
+		}
+	}
+
+	hide(from) {
+		this.override(null);
+		this.dirty = true;
+		guiMessage('hideCrosshair');
+		guiMessage('hideExperience');
+		guiMessage('hideStatus');
+	}
+
 	message(msg,payload) {
 		super.message(msg,payload);
 		if( msg=='showInfo' ) {
-			if( this.observer.id != payload.id ) {
-				this.override(payload);
-				this.render();
-			}
+			this.show( payload.entity, payload.from );
 		}
 		if( msg=='hideInfo' ) {
-			this.override(null);
-			this.render();
+			this.hide( payload.from );
 		}
 	}	
-	render() {
+	compile(replyFn) {
 		let debug = false;
 		let you = this.trueObserver;
 		let entity = this.observer;
@@ -37,8 +51,7 @@ class ViewInfo extends ViewObserver {
 		};
 
 		if( entity.isTileType ) {
-			guiCachedRender(this.infoDivId,'',classList);
-			return;
+			return ['',classList];
 		}
 
 
@@ -53,7 +66,7 @@ class ViewInfo extends ViewObserver {
 			}
 			if( specialMessage ) {
 				let s = '<div class="monColor">'+specialMessage+'</div>';
-				guiCachedRender(this.infoDivId,s,classList);
+				return [s,classList];
 				return;
 			}
 		}
@@ -166,7 +179,7 @@ class ViewInfo extends ViewObserver {
 		}
 
 		if( entity.isItemType ) {
-			return guiCachedRender( this.infoDivId, renderItemType(), classList );
+			return [renderItemType(), classList];
 		}
 
 		let s = "";
@@ -287,10 +300,21 @@ class ViewInfo extends ViewObserver {
 				classList.healthWarn = 1;
 			}
 		}
-		guiCachedRender(this.infoDivId,s,classList);
+		return [s,classList];
 
 	}
 
+	tick(dt) {
+		Time.tickOnInterval(0.2,dt,this,()=>{
+			this.dirty = true;
+		});
+	}
+
+	render(dt) {
+		let [content,classList] = this.compile();
+		Gui.cachedRenderDiv(this.infoDivId,content,classList);
+
+	}
 }
 
 

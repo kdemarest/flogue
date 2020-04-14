@@ -143,12 +143,12 @@ LegacyList.airMage = compose('air mage',[
 		description: 'Wind has a '+(50+index*25)+'% chance to shove thrown objects to the ground.'
 	}) ),
 	range( [4,19], (index) => ({
-		name: 'Slowing zephyr '+Number.roman(index+1),
+		name: 'Hindering zephyr '+Number.roman(index+1),
 		skill: {
 			needsTarget: true,
 			rechargeTime: 50,
 			range: 8,
-			effect: { op: 'set', stat: 'movementSlow', value: 4-index, duration: 12, isDeb: 1 }
+			effect: { op: 'mult', stat: 'speedMove', value: 0.5, duration: 12, isDeb: 1 }
 		},
 		description: 'A zephyr opposes enemy movements, slowing their travel'+Math.percent(1/(4-index))+'%.'
 	}) ),
@@ -196,7 +196,7 @@ LegacyList.archer = compose( 'archer', [
 		skill: {
 			rechargeTime: 50,
 			passesTime: false,
-			effect: { op: 'set', stat: 'freeCommands', value: [Command.SHOOT], duration: 2+index }
+			effect: { op: 'set', stat: 'fastCommands', value: [Command.SHOOT], duration: 2+index }
 		},
 		description: 'Rain arrows upon foes in a burst of speed'
 	}) ),
@@ -205,7 +205,7 @@ LegacyList.archer = compose( 'archer', [
 		skill: {
 			rechargeTime: 20,
 			passesTime: false,
-			effect: { op: 'set', stat: 'freeCommands', value: Command.Movement, duration: 3+index-1 }
+			effect: { op: 'set', stat: 'fastCommands', value: Command.Movement, duration: 3+index-1 }
 		},
 		description: 'Move multiple times in a row. Any other action cancels the dash.'
 	}) ),
@@ -401,7 +401,7 @@ LegacyList.brawler = compose('brawler',[
 			needsTarget: true,
 			rechargeTime: 20,
 			passesTime: false,
-			effect: { op: 'set', stat: 'freeCommands', value: Command.Movement, duration: 3 }
+			effect: { op: 'set', stat: 'fastCommands', value: Command.Movement, duration: 3 }
 		},
 		description: 'A quick charge that catches enemies off guard.'
 	}) ),
@@ -831,7 +831,7 @@ LegacyList.soldier = compose('soldier',[
 		skill: {
 			rechargeTime: 50,
 			passesTime: false,
-			effect: { op: 'set', stat: 'freeCommands', value: [Command.ATTACK], duration: 2+index }
+			effect: { op: 'set', stat: 'fastCommands', value: [Command.ATTACK], duration: 2+index }
 		},
 		description: 'Shower melee and reach attacks upon enemies'
 	}) ),
@@ -850,7 +850,7 @@ LegacyList.soldier = compose('soldier',[
 		skill: {
 			rechargeTime: 20,
 			passesTime: false,
-			effect: { op: 'set', stat: 'freeCommands', value: Command.Movement, duration: 3+index-1 }
+			effect: { op: 'set', stat: 'fastCommands', value: Command.Movement, duration: 3+index-1 }
 		},
 		description: 'Move multiple times in a row. Any other action cancels the dash.'
 	}) ),

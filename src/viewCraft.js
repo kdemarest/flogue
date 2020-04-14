@@ -283,7 +283,6 @@ class ViewCraft extends ViewInventory {
 		console.assert(p.craftId && Craft[p.craftId]);
 		let self = this;
 		Object.assign( this, Craft[p.craftId] );
-		this.onEvent = p.onItemChoose;
 		this.craftId = p.craftId;
 		this.crafter = p.crafter;
 		this.customer = p.entity;
@@ -296,7 +295,7 @@ class ViewCraft extends ViewInventory {
 		Gui.keyHandler.add( 'ViewCraft', this.onKeyDown.bind(this) );
 
 		guiMessage( 'clearSign' );
-		guiMessage( 'hideInfo' );
+		guiMessage( 'hideInfo', { from: 'viewCraft' } );
 
 		let populateIngredientList = () => {
 			let finder = new Finder(this.crafter.inventory).filter( item => !this.ingredientList.findId(item.id) );
@@ -305,15 +304,27 @@ class ViewCraft extends ViewInventory {
 
 		this.prime( populateIngredientList, this.allowFilter, () => true );
 	}
-	onKeyDown(e) {
-		if( e.key == 'Escape' ) {
+	onItemChoose(event,item) {
+		let index = this.ingredientList.getOpenSlot()
+		if( index === null ) {
+			return;
+		}
+
+		if( (item.bunch||1) > 1 ) {
+			item = item._unbunch();
+		}
+		this.ingredientList.set(index,item);
+		this.dirty = true;
+		// Intentionally do not call the super, because we don't need to send an itemChoose message.
+	}
+	onKeyDown(event) {
+		if( event.key == 'Escape' ) {
 			this.hide();
 			return false;
 		}
-		let item = this.getItemByKey(e.key);
+		let item = this.getItemByKey(event.key);
 		if( item ) {
-			e.commandItem = item;
-			this.onItemChoose(e);
+			this.onItemChoose(event,item);
 		}
 		return false;
 	}
@@ -324,19 +335,6 @@ class ViewCraft extends ViewInventory {
 		Gui.remove(this);
 	}
 
-	onItemChoose(event) {
-		let index = this.ingredientList.getOpenSlot()
-		if( index === null ) {
-			return;
-		}
-
-		let item = event.commandItem;
-		if( (item.bunch||1) > 1 ) {
-			item = item._unbunch();
-		}
-		this.ingredientList.set(index,item);
-		this.render();
-	}
 	findOutcomes(craftId,ingredientList) {
 		let effect = {
 			target: this.crafter,
@@ -364,12 +362,12 @@ class ViewCraft extends ViewInventory {
 				$('<div class="ingredient '+status+'">'+name+'</div>')
 					.on( 'click.ViewCraftHeader', null, e => {
 						this.ingredientList.reset(index);
-						guiMessage( 'hideInfo' );
-						this.render();
+						guiMessage( 'hideInfo', { from: 'viewCraft' } );
+						this.dirty = true;
 					})
 					.on( 'mouseover.ViewCraftHeader', null, event => {
 						if( item ) {
-							guiMessage( 'showInfo', item );
+							guiMessage( 'showInfo', { entity: item, from: 'viewCraft' } );
 						}
 					})
 					.appendTo(list);
@@ -416,7 +414,7 @@ class ViewCraft extends ViewInventory {
 					$( ".craftingProduct" ).addClass('productMade');
 					setTimeout( () => {
 						$( ".craftingProduct" ).removeClass('productMade');
-						this.render();
+						this.dirty = true;
 					}, 400 );
 				})
 				.appendTo(product);
@@ -437,15 +435,10 @@ class ViewCraft extends ViewInventory {
 			.append( $('<hr>') )
 			.appendTo( div );
 	}
-	message( msg, payload ) {
-		super.message(msg,payload);
-	}
 	render() {
 		$('#guiNarrative').removeClass('dim');
 		$('#guiNarrative').addClass('dim');
 		super.render();
-	}
-	tick() {
 	}
 }
 

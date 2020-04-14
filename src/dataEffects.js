@@ -6,6 +6,25 @@ const PickResist  		= [DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,Damage
 const PickDeflect 		= [DamageType.CUT,DamageType.STAB,DamageType.CHOP,DamageType.BASH,DamageType.BURN,DamageType.FREEZE,DamageType.SHOCK,DamageType.SMITE,DamageType.ROT];
 const PickBlock   		= [DamageType.CUT,DamageType.STAB,DamageType.CHOP,DamageType.BASH];
 
+/**
+
+	level
+	isInert
+	rarity
+	op
+	stat
+	duration
+	value
+	xDuration
+	isPlayerOnly
+	icon
+
+EVENTS
+
+onTargetPosition	- if the victim is moving around, things like burn have effects on the people and
+					tiles nearby so we need to know when position has changed.
+
+*/
 
 let EffectTypeList = {
 	eInert: {
@@ -250,9 +269,9 @@ let EffectTypeList = {
 		isBuf: 1,
 		level: 0,
 		rarity: 0.30,
-		op: 'add',
-		stat: 'speed',
-		value: 1,
+		op: 'mult',
+		stat: 'speedAction',
+		value: 2,
 		isHelp: 1,
 		xPrice: 3,
 		requires: e => e.speed < 5,
@@ -525,12 +544,11 @@ let EffectTypeList = {
 		isDeb: 1,
 		level: 0,
 		rarity: 0.20,
-		op: 'sub',
+		op: 'mult',
 		isHarm: 1,
-		stat: 'speed',
+		stat: 'speedMove',
 		value: 0.5,
 		xDuration: 0.3,
-		requires: e => e.speed > 0.5,
 		icon: 'gui/icons/eSlow.png',
 		about: 'Target will act half as frequently.'
 	},

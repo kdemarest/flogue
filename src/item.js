@@ -5,6 +5,7 @@ Items have these features:
 
 autoEquip		- undef; Should this item be equipped the moment you pick it up?
 isAutoFavorite	- undef; Should we make this a favorite in the spells favorites area?
+existenceTime	- give to anything that should self-destroy after a short time. The var existenceLeft will be set to it, and count down.
 
 Events:
 
@@ -410,7 +411,7 @@ class Item {
 		// Maybe the state is in the name?
 		String.calcName(this);
 		// we can just assume that the sprites will need regenerating.
-		imageDirty(this);
+		Scene.dirty(this);
 	}
 	getDodge() {
 		return this.dodge || Quick.CLUMSY;
@@ -651,7 +652,7 @@ class Item {
 					onInit: 		a => { a.puppet(this.spriteList); },
 					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
 					onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); },
-					onSpriteDone: 	s => { if( !entity.isMap ) { spriteDeathCallback(this.spriteList); } }
+					onSpriteDone: 	s => { if( !entity.isMap ) { Scene.detach(this.spriteList); } }
 				});
 			}
 		}
@@ -664,6 +665,7 @@ class Item {
 		this.owner = entity;
 		this.inVoid = false;
 		delete this.isUnbunching;
+
 		if( Gab && hadNoOwner ) {
 			Gab.entityPostProcess(this);
 		}
@@ -692,7 +694,6 @@ class Item {
 		item.owner = null;
 		item.bunch = amount;
 		item.id = Date.makeEntityId(item.typeId,item.depth);
-		item.spriteList = [];
 		item.isUnbunching = true;
 		this.bunch = this.bunch - amount;
 		item.giveToSingly(this.owner,this.x,this.y);
@@ -744,23 +745,23 @@ class Item {
 			this.owner._itemRemove(this);
 		}
 		// Now the item should be simply gone.
-		spriteDeathCallback(this.spriteList);
+		Scene.detach(this.spriteList);
 		this.dead = true;
 		return true;
 	}
 	isEdibleBy(entity) {
 		return this.isEdible && entity.eat &&  entity.eat.includes(this.matter);
 	}
-	tick( dt, rechargeRate = 1) {
+	tickSecond( dt, rechargeRate = 1) {
 		let list = this.owner.itemList || this.owner.inventory;
 		// WARNING! This assert is useful for making sure of inventory integrity, but VERY slow.
 		//console.assert( list.find( i => i.id == this.id ) );
 		this.recharge(rechargeRate);
-		if( this.onTick ) {
-			this.onTick.call(this,dt);
+		if( this.onTickSecond ) {
+			this.onTickSecond.call(this,dt);
 		}
 		if( this.existenceLeft ) {
-			this.existenceLeft -= 1;
+			this.existenceLeft = Math.max(0, (this.existenceLeft||0) - dt);
 			if( this.existenceLeft <= 0 ) {
 				this.destroy();
 			}

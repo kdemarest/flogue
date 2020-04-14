@@ -132,6 +132,10 @@ Light.Caster = class {
 		this.lightMap = [];
 	}
 	cast(map,opacityLookup,x,y,light) {
+
+		x = Math.toTile(x);
+		y = Math.toTile(y);
+
 		console.assert( map && opacityLookup );
 		let maxReach = Math.abs(light);
 		let xLen = map.xLen;

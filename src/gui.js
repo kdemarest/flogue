@@ -1,25 +1,13 @@
 Module.add('gui',function() {
 
-class Gui {
+class GuiManager {
 	constructor(getPlayer) {
 		this.getPlayer = getPlayer;
 		this.view = {};
 		this.cached = {};
 
-		let self = this;
-		window.guiMessage = function(message,payload,target) {
-			self.message(message,payload,target);
-		}
-		window.guiCachedRender = (divId,s,classList) => {
-			Object.each( classList, (state,className) => {
-				if( $(divId).hasClass(className) != state ) {
-					$(divId).toggleClass(className);
-				}
-			});
-			if( s !== self.cached[divId] ) {
-				$(divId).show().html(s);
-				self.cached[divId] = s;
-			}
+		window.guiMessage = (message,payload,target) => {
+			this.message(message,payload,target);
 		}
 	}
 
@@ -34,6 +22,7 @@ class Gui {
 	}
 
 	add(viewId,view) {
+		console.assert( !this.view[viewId] );
 		this.view[viewId] = view;
 		view._onRemove = () => {
 			view.onClose ? view.onClose() : null;
@@ -43,19 +32,33 @@ class Gui {
 		return view;
 	}
 
-	create(onItemChoose) {
-		this.onItemChoose = onItemChoose;
+	subscribe(subscriberId,messageId,fn) {
+		this.add( subscriberId, {
+			message: (msg,payload) => msg==messageId ? fn(payload) : null
+		});
+	}
+
+	openView(payload) {
+		let viewClass = payload.viewClass;
+		let view = new window[viewClass](payload);
+		this.add(viewClass,view);
+		view.onOpen ? view.onOpen(payload.entity) : null;
+	}
+
+	create() {
+		this.subscribe('gui','open',this.openView.bind(this));
+
 		this.add('full',new ViewFull('#guiControls','#guiMain'));
 		this.add('zoom',new ViewZoom('#guiControls'));
 		this.add('narrative',new ViewNarrative('#guiNarrative'));
 		this.add('sign',new ViewSign('#guiSign'));
-		this.add('favorites',new ViewFavorites('#guiFavorites',onItemChoose));
+		this.add('favorites',new ViewFavorites('#guiFavorites'));
 		this.add('spells',new ViewSpells('#guiSpells'));
 		this.add('range',new ViewRange());
 		this.add('experience',new ViewExperience('#guiExperience'));
 		this.add('info',new ViewInfo('#guiInfo'));
 		this.add('status',new ViewStatus('#guiStatus'));
-		this.add('inventory',new ViewInventory('#guiInventory',onItemChoose));
+		this.add('inventory',new ViewInventory('#guiInventory'));
 		this.add('map',new ViewMap('#guiMap'));
 		this.add('miniMap',new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption'));
 		this.add('tester',new ViewTester('#guiTester',this.getPlayer));
@@ -67,21 +70,12 @@ class Gui {
 			console.log( "Error: Message target "+target+" does not exist." );
 			return;
 		}
-		//console.log(message);
-		if( message == 'open' ) {
-			payload.onItemChoose = this.onItemChoose;
-			let viewClass = payload.viewClass;
-			let view = new window[viewClass](payload);
-			this.add(viewClass,view);
-			view.onOpen ? view.onOpen(payload.entity) : null;
-		}
 		Object.each( this.view, (view,viewId) => {
 			if( view.message && (!target || target==viewId) ) {
 				view.message(message,payload);
 			}
 		});
 	}
-
 
 	render() {
 		let area = this.getPlayer().area;
@@ -91,34 +85,23 @@ class Gui {
 		area.vis.populateLookup();	// This could be maintained progressively, but it hasn't mattered yet.
 
 		Object.each( this.view, view => {
-			if( view.render ) {
+			if( view.render && view.dirty ) {
 				view.render();
+				view.dirty = false;
 			}
 		});
 	}
-	tick() {
+
+	tick(dt) {
 		Object.each( this.view, view => {
 			if( view.tick ) {
-				view.tick();
+				view.tick(dt);
 			}
 		});
 	}
 }
 
-Gui.layout = function( layoutList ) {
-	Object.each( layoutList, (layout,divId) => {
-		Object.each( layout, (fn,key) => {
-			let me = $(divId);
-			if( me.length ) {
-				let value = fn($(divId));
-				me[key](value);
-				//console.log( 'Set '+divId+'.'+key+' = '+value );
-			}
-		});
-	});
-}
-
-Gui.keyHandler = new class {
+class GuiKeyHandler {
 	constructor() {
 		this.handlerList = [];
 		$(document).keydown( this.trigger.bind(this) );
@@ -145,8 +128,70 @@ Gui.keyHandler = new class {
 	}
 }
 
-Gui.remove = function(view) {
-	view._onRemove();
+let Gui = new class {
+	constructor() {
+		this.manager = null;
+		this.keyHandler = new GuiKeyHandler();
+		this.cachedContent = {};
+	}
+
+	createManager() {
+		this.manager = new GuiManager(...arguments);
+		return this.manager;
+	}
+
+	dirty(value) {
+		let valueList = Array.isArray(value) ? value : [value];
+		valueList.forEach( value => {
+			console.assert(this.manager.view[value]);
+			this.manager.view[value].dirty = true;
+		});
+	}
+
+	layout( layoutList ) {
+		Object.each( layoutList, (layout,divId) => {
+			Object.each( layout, (fn,key) => {
+				let me = $(divId);
+				if( me.length ) {
+					let value = fn($(divId));
+					me[key](value);
+					//console.log( 'Set '+divId+'.'+key+' = '+value );
+				}
+			});
+		});
+	}
+	remove(view) {
+		view._onRemove();
+	}
+	cachedRenderDiv(divId,content,classList) {
+		let wasUpdated = false;
+		Object.each( classList, (state,className) => {
+			if( $(divId).hasClass(className) != state ) {
+				$(divId).toggleClass(className);
+				wasUpdated = true;
+			}
+		});
+		if( content !== this.cachedContent[divId] ) {
+			$(divId).show().html(content);
+			this.cachedContent[divId] = content;
+			wasUpdated = true;
+		}
+		return wasUpdated;
+	}
+
+	cachedRenderElements(target,source) {
+		let wasUpdated = false;
+		let targetContent = $(target).html();
+		let sourceContent = '<div>'+$(source).html()+'</div>';
+		if( targetContent != sourceContent ) {
+			$(target).empty();
+			$(source).appendTo(target);
+			wasUpdated = true;
+		}
+		return wasUpdated;
+	}
+
+
 }
 
 

@@ -32,6 +32,7 @@ extern.Type.checkLoot = type => {
 	Type.checkSupply(type.loot,type.typeId);
 	Type.checkSupply(type.harvestLoot,type.typeId);
 	Type.checkSupply(type.lootOnDrop,type.typeId);
+	Type.checkSupply(type.trail,type.typeId);
 }
 
 extern.Type.checkResistance = irvString => {

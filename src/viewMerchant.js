@@ -3,7 +3,6 @@ Module.add('viewMerchant',function() {
 class ViewMerchant extends ViewInventory {
 	constructor(p) {
 		super('#guiMerchant',null,p.colFilter || p.entity.colFilter);
-		this.onEvent = p.onItemChoose;
 		this.merchant = p.merchant;
 		//this.buyTest = p.buyTest || p.entity.buyTest;
 		this.allowFilter = p.allowFilter || p.entity.allowFilter;
@@ -11,7 +10,7 @@ class ViewMerchant extends ViewInventory {
 		Gui.keyHandler.add( 'ViewMerchant', this.onKeyDown.bind(this) );
 
 		guiMessage( 'clearSign' );
-		guiMessage( 'hideInfo' );
+		guiMessage( 'hideInfo', { from: 'viewMerchant' } );
 	}
 	onOpen(entity) {
 		guiMessage('zoomPush',{zoom:5});
@@ -19,19 +18,24 @@ class ViewMerchant extends ViewInventory {
 	onClose() {
 		guiMessage('zoomPop');
 	}
-	onKeyDown(e) {
-		if( e.key == 'Escape' ) {
+	onItemChoose(event,item) {
+		event.commandItem = item;
+		event.command = this.mode == 'buy' ? Command.BUY : Command.SELL;
+		event.commandTarget = this.merchant;
+		return guiMessage('command',event);
+	}
+	onKeyDown(event) {
+		if( event.key == 'Escape' ) {
 			this.hide();
 			return false;
 		}
-		if( e.key == 'Tab' ) {
+		if( event.key == 'Tab' ) {
 			this.setMode('toggle');
 			return false;
 		}
 		let item = this.getItemByKey(e.key);
 		if( item ) {
-			e.commandItem = item;
-			this.onItemChoose(e);
+			this.onItemChoose(event,item);
 		}
 		return false;
 	}
@@ -45,6 +49,7 @@ class ViewMerchant extends ViewInventory {
 		);
 		this.prime( filterFn, this.allowFilter, () => true );
 		this.mode = mode;
+		this.dirty = true;
 		return this;
 	}
 	hide() {
@@ -53,15 +58,10 @@ class ViewMerchant extends ViewInventory {
 		$(document).off( '.ViewMerchant' );
 		Gui.remove(this);
 	}
-	onItemChoose(event) {
-		event.command = this.mode == 'buy' ? Command.BUY : Command.SELL;
-		event.commandTarget = this.merchant;
-		this.onEvent(event);
-	}
 	headerComponent(div) {
 		let element = $('<div class="merchant">'+String.capitalize(this.observer.name)+' <span class="merchantOp"></span> '+this.merchant.name+' the '+String.capitalize(this.merchant.jobId)+'</div>');
 		$(element).find('.merchantOp').on( 'click.ViewMerchant', null, () => {
-			this.setMode('toggle').render();
+			this.setMode('toggle');
 		});
 		$(element).find('.merchantOp').html( this.mode=='buy' ? '<- BUYING FROM <-' : '-> SELLING TO ->' );
 		element.appendTo(div);

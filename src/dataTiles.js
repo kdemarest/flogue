@@ -263,7 +263,7 @@ TileTypeList.pit.isProblem = function(entity,self) {
 		// pit squares but might actually have no viable path out...
 		return Problem.DEATH;
 	}
-	if( entity.travelMode == 'walk' && (!entity.jumpMax || entity.jump>0) ) {
+	if( entity.travelMode == 'walk' && (!entity.jumpMax || entity.jumpLeft) ) {
 		return Problem.DEATH;
 	}
 	if( entity.travelMode == 'walk' && entity.attitude !== Attitude.AGGRESSIVE ) {
@@ -274,7 +274,7 @@ TileTypeList.pit.isProblem = function(entity,self) {
 
 
 TileTypeList.pit.onTouch = function(entity,self) {
-	if( entity.travelMode == "walk" && !entity.jump ) {
+	if( entity.travelMode == "walk" && !entity.jumpLeft ) {
 		tell(mSubject|mCares,entity,' ',mVerb,'are',' at the edge of ',mObject,self);
 	}
 }
@@ -324,7 +324,7 @@ let TouchDamage = {
 		effectApply( effect, toucher, null, self, 'touch' );
 	},
 	onTouchWalk: function(toucher,self) {
-		if( toucher.travelMode != "walk" || toucher.jump ) {
+		if( toucher.travelMode != "walk" || toucher.jumpLeft ) {
 			return;
 		}
 		return TouchDamage.onTouch(toucher,self);
@@ -354,19 +354,19 @@ TileTypeList.mud.isProblem = function(entity,self) {
 }
 
 TileTypeList.mud.onEnterType = function(entity,self) {
-	if( entity.travelMode == "walk" && !entity.jump ) {
+	if( entity.travelMode == "walk" && !entity.jumpLeft ) {
 		tell( mSubject|mCares,entity,' ',mVerb,'enter',' ',mObject,self,'.' );
 	}
 }
 
 TileTypeList.mud.onDepartType = function(entity,self) {
-	if( entity.travelMode == "walk" && !entity.jump ) {
+	if( entity.travelMode == "walk" && !entity.jumpLeft ) {
 		tell( mSubject|mCares,entity,' ',mVerb,'escape',' ',mObject,self,'.' );
 	}
 }
 
 TileTypeList.mud.onDepart = function(entity,self) {
-	if( entity.travelMode == "walk" && entity.jump ) {
+	if( entity.travelMode == "walk" && entity.jumpLeft ) {
 		return;
 	}
 

@@ -6,7 +6,7 @@ function pWalk(map,ignoreEntity) {
 		if( !ignoreEntity && map.isEntityAt(x,y) ) {
 			return Problem.ENTITY;
 		}
-		if( !map.isItemAtFastUnsafeAssumesInteger(x,y) ) {
+		if( !map.isItemAtFastUnsafe(x,y) ) {
 			let tile = map.tileTypeGet(x,y);
 			if( !tile.mayWalk ) return Problem.WALL;
 			if( tile.isProblem ) return tile;
@@ -32,7 +32,7 @@ function pWalk(map,ignoreEntity) {
 function pWalkQuick(map) {
 	let xLen = map.xLen;
 	return function(x,y) {
-		return map.walkLookup[y*xLen+x];
+		return map.walkLookup[map.lPos(x,y)];
 	}
 }
 
@@ -67,9 +67,12 @@ class Path {
 		return this.map.xLen;
 	}
 	leadsTo(x,y) {
+		x = Math.toTile(x);
+		y = Math.toTile(y);
 		return this.ex==x && this.ey==y;
 	}
 	gridGet(x,y) {
+		console.assert(x==Math.floor(x));
 		return this.grid[y*this.xLen+x] || Problem.NONE;
 	}
 	render() {
@@ -111,6 +114,8 @@ class Path {
 		return s.split('\n');
 	}
 	stillOnIt(x,y) {
+		x = Math.toTile(x);
+		y = Math.toTile(y);
 		let p = this.path;
 		console.assert(p);
 		if( p.length <= 0 ) {
@@ -124,6 +129,8 @@ class Path {
 		return false;
 	}
 	getDirFrom(x,y) {
+		x = Math.toTile(x);
+		y = Math.toTile(y);
 		let p = this.path;
 		console.assert(p);
 		if( p.length <= 0 ) {
@@ -138,6 +145,10 @@ class Path {
 	}
 	findPath(entity,sx,sy,ex,ey,closeEnough=0,onStep) {
 
+		sx = Math.toTile(sx);
+		sy = Math.toTile(sy);
+		ex = Math.toTile(ex);
+		ey = Math.toTile(ey);
 		this.status = {};
 
 		if( this.testFn(ex,ey) == Problem.WALL || this.testFn(ex,ey) == Problem.DEATH ) {

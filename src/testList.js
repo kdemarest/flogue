@@ -120,7 +120,7 @@ TestList.makeAllMonsters = {
 		let typeId = helper.monList.shift();
 		helper.findTypeId = typeId;
 		let entity = new Entity( helper.area.depth, MonsterTypeList[typeId], null, helper.area.jobPicker );
-		entity.gateTo(helper.area,1,1);
+		entity.requestGateTo(helper.area,1,1);
 		helper.lastEntity = entity;
 	},
 	check(result,helper) {

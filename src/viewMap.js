@@ -1,11 +1,33 @@
 Module.add('viewMap',function() {
 
-let MapMemoryLight = 1;
 let MONSTER_SCALE_VARIANCE_MIN = 0.75;
 let MONSTER_SCALE_VARIANCE_MAX = 1.00;
 
 
+class Pane extends ClipRect {
+	constructor(observerFn) {
+		this.visionTiles = null;	// was .sd
+	}
+	get sizeInTiles() {				// was .d
+		return this.visionTiles*2+1;
+	}
+	get tileDim() {
+		return Tile.DIM;
+	}
+	setVisionTiles(visionTiles) {
+		this.visionTiles = visionTiles;
+	}
+	inSightOf(observer,x,y) {
+		let d = this.sizeInTiles / 2.0;
+		return x>=observer.x-d && x<=observer.x+d && y>=observer.y-d && y<=observer.y+d;
+	}
+}
+
+
 function handleScent(map,px,py,senseSmell,ofs,visibilityDistance) {
+
+	px = Math.toTile(px);
+	py = Math.toTile(py);
 
 	guiMessage( 'overlayRemove', { groupId: 'scent' } );
 
@@ -45,6 +67,10 @@ function handleScent(map,px,py,senseSmell,ofs,visibilityDistance) {
 }
 
 function handlePerception(observer,visCache,map,px,py,sensePerception,senseAlert,ofs) {
+	console.assert(visCache);
+
+	px = Math.toTile(px);
+	py = Math.toTile(py);
 
 	guiMessage( 'overlayRemove', { groupId: 'perc' } );
 
@@ -93,9 +119,87 @@ function handlePerception(observer,visCache,map,px,py,sensePerception,senseAlert
 	}
 }
 
+let Scene = new class {
+	constructor() {
+		this.spriteList = {};
+		this.viewMap = null;
+	}
+	get stage() {
+		return this.viewMap ? this.viewMap.app.stage : null;
+	}
+	attach(spriteList,sprite,mayReuse) {
+		sprite.refs = (sprite.refs||0)+1;
 
+		let allocated = false;
+		if( mayReuse ) {
+			for( let i=0 ; i<spriteList.length ; ++i ) {
+				if( spriteList[i].dead ) {
+					spriteList[i] = sprite;
+					allocated = true;
+					break;
+				}
+			}
+		}
+		if( !allocated ) {
+			spriteList.push(sprite);
+		}
+	}
+	detach(spriteList) {
+		if( !spriteList ) return;
+		Array.filterInPlace( spriteList, sprite => {
+			sprite.refs--;
+			if( sprite.refs <= 0 ) {
+				Scene.viewMap.app.stage.removeChild(sprite);
+				sprite.onStage = false;		// maybe needed?
+			}
+			return false;
+		});
+	}
+	dirty(entity) {
+		if( !entity.spriteList ) {
+			return;
+		}
+		return Scene.detach(entity.spriteList);
+	}
 
+	create(spriteList,imgPath,mayReuse) {
+		if( !imgPath ) {
+			debugger;
+		}
+		let resource = ImageRepo.get(imgPath);
+		if( !resource ) {
+			debugger;
+			return;
+		}
+		let sprite = new PIXI.Sprite( resource.texture );
+		sprite.resource = resource;
+		sprite.onStage = false;
+		sprite.refs = 0;
+		this.attach( spriteList, sprite, ayReuse);
+		return sprite;
+	}
+	spriteOnStage(sprite,value) {
+		console.assert(Scene.stage);
+
+		if( value == sprite.onStage ) {
+			return;
+		}
+		Scene.stage[value?'addChild':'removeChild'](sprite);
+		sprite.onStage = value;
+		return sprite;
+	}
+	spriteUpdate(sprite,xWorld,yWorld) {
+		debugger;
+		// needs re-write.
+		// Aims to set sprite.x and .y to an appropriate screen coord.
+		// steal code from entitySprite.update for this
+	}
+}
+
+/*
 function createDrawList(observer,drawListCache) {
+
+	console.log('createDrawList');
 
 	// Recalc this here, just in case.
 	let map = observer.map;
@@ -105,8 +209,8 @@ function createDrawList(observer,drawListCache) {
 	let lightMap = map.area.lightCaster.lightMap;
 
 	//let convert = { '#': '█' };
-	let py = observer.y;
-	let px = observer.x;
+	let px = Math.toTile(observer.x);
+	let py = Math.toTile(observer.y);
 	let d =  observer.visibilityDistance;
 	let d2 = (d*2)+1
 	let a = drawListCache || [];
@@ -161,7 +265,7 @@ function createDrawList(observer,drawListCache) {
 				console.assert(tile);
 				itemFind = map.findItemAt(x,y);
 
-				let temp = map.entityLookupGet(x,y);
+				let temp = map._entityLookupGet(x,y);
 				entity = temp && temp.length ? temp[0] : null;
 				if( entity ) { //&& observer.canPerceiveEntity(entity) ) {
 					entity = ( entity.id == observer.id && entity.invisible ) ? StickerList.invisibleObserver : entity;
@@ -190,7 +294,7 @@ function createDrawList(observer,drawListCache) {
 				console.assert( aa.length >= 2 );
 				if( !visible || aa[0] <= 0 || aa[0] === undefined ) {
 					//dChar = 'i';
-					let mPos = y*map.xLen+x;
+					let mPos = map.lPos(x,y);
 					if( mapMemory && mapMemory[mPos] ) {
 						aa[1] = true;
 						aa[2] = mapMemory[mPos];
@@ -250,210 +354,261 @@ function createDrawList(observer,drawListCache) {
 		}
 	});
 
+	let anyLight = false;
 	map.traverseNear( px, py, d, (x,y) => {
+		console.assert( px==Math.floor(px) && x==Math.floor(x) );
 		let ty = y-(py-d);
 		let tx = x-(px-d);
 		if( a[ty][tx].length < 1 ) return;
 		let light = a[ty][tx][0];
-		let lPos = y*map.xLen+x;
+		let lPos = ty*map.xLen+tx;
 		map.lightCache[lPos] = light;
+		anyLight = anyLight || light;
 	});
+	if( !anyLight ) {
+		debugger;
+	}
 
 	drawListCache = a;
 	return a;
 }
+*/
 
 
-let _viewMap = null;
+class EntitySprite {
+	constructor() {
+		this.entity    = null;
+		this.sprite    = null;
+		this.xAnchor   = 0.5;
+		this.yAnchor   = 0.5;
+		this.baseScale = null;
+		this.alpha     = 1.0;
+		this.zOrder    = Tile.zOrder.WALL;
+		this.observer  = null;
+		this.inPane    = false;
+		this.age       = 0;
+	}
 
-let spriteDeathCallback = function(spriteList) {
-	if( !spriteList ) return;
-	Array.filterInPlace( spriteList, sprite => {
-		sprite.refs--;
-		if( sprite.refs <= 0 ) {
-			_viewMap.app.stage.removeChild(sprite);
-			sprite.onStage = false;		// maybe needed?
+	get xWorld() {
+		return this.entity.x;
+	}
+
+	get yWorld() {
+		return this.entity.y;
+	}
+
+	get xWorldTile() {
+		return Math.toTile(this.xWorld);
+	}
+
+	get yWorldTile() {
+		return Math.toTile(this.yWorld);
+	}
+
+	get isMemory() {
+		console.assert(this.entity.area.id==this.observer.area.id);
+		let mPos = this.entity.map.lPos(this.xWorld,this.yWorld);
+		return this.observer.mapMemory && this.observer.mapMemory[mPos];
+	}
+
+	get isDarkVision() {
+		return this.observer.senseDarkVision && !this.isMemory;
+	}
+
+	get light() {
+		let revealLight = 7;		// Assumes max light is about 10.
+		let glowLight   = MaxVis;
+		let memoryLight = 1;
+
+		if( this.entity.isTreasure && this.observer.senseTreasure ) {
+			return revealLight;
 		}
-		return false;
-	});
-};
 
-let imageDirty = function(entity) {
-	if( !entity.spriteList ) {
-		return;
-	}
-	return spriteDeathCallback(entity.spriteList);
-}
-
-
-let spriteCreate = function(spriteList,imgPath,mayReuse) {
-	if( !imgPath ) {
-		debugger;
-	}
-	let resource = ImageRepo.get(imgPath);
-	if( !resource ) {
-		debugger;
-		return;
-	}
-	let sprite = new PIXI.Sprite( resource.texture );
-	sprite.resource = resource;
-	sprite.onStage = false;
-	sprite.refs = 1;
-	let allocated = false;
-	if( mayReuse ) {
-		for( let i=0 ; i<spriteList.length ; ++i ) {
-			if( spriteList[i].dead ) {
-				spriteList[i] = sprite;
-				allocated = true;
-				break;
-			}
+		if( this.entity.isLiving && this.observer.senseLiving ) {
+			return revealLight;
 		}
-	}
-	if( !allocated ) {
-		spriteList.push(sprite);
-	}
-	return sprite;
-}
 
-let spriteAttach = function(spriteList,sprite) {
-	sprite.refs = (sprite.refs||0)+1;
-	spriteList.push(sprite);
-}
-
-let spriteDetach = function(spriteList,sprite) {
-	sprite.refs = (sprite.refs||0)-1;
-	spriteList.push(sprite);
-}
-
-let spriteOnStage = function(sprite,value) {
-	if( !_viewMap.app ) {
-		return;
-	}
-	if( value == sprite.onStage ) {
-		return;
-	}
-//	if( value && _viewMap.app.stage.children.find( s => s==sprite ) ) {
-//		debugger;
-//	}
-	_viewMap.app.stage[value?'addChild':'removeChild'](sprite);
-	sprite.onStage = value;
-	return sprite;
-}
-
-let spriteMakeInWorld = function(entity,xWorld,yWorld,indexOrder=0,senseDarkVision,senseInvisible) {
-
-	function make(x,y,entity,imgGet,light,doTint,doGrey,numSeed,indexOrder) {
-
-		entity.spriteList = entity.spriteList || [];
-
-		for( let i=0 ; i<(entity.spriteCount || 1) ; ++i ) {
-			if( !entity.spriteList[i] ) {
-				let img = imgGet(entity,null,numSeed);
-				if( !img ) {
-					debugger;
-					imgGet(entity);	//helps with debugging.
-				}
-				//console.log( "Create sprite "+entity.typeId,x/Tile.DIM,y/Tile.DIM);
-				let sprite = spriteCreate( entity.spriteList, img );
-				sprite.entity = entity;
-				sprite.anchor.set(entity.xAnchor||0.5,entity.yAnchor||0.5);
-				sprite.baseScale = (entity.scale || 1) * Tile.DIM/sprite.width;
-				if( entity.isMonsterType && !entity.scale) {
-					sprite.baseScale *= Math.rand(MONSTER_SCALE_VARIANCE_MIN,MONSTER_SCALE_VARIANCE_MAX);
-				}
-//				if( entity.isMushroom ) {
-//					sprite.baseScale *= Math.rand(0.6,1.0);
-//				}
-			}
-			let sprite = entity.spriteList[i];
-			let onStage = !entity.invisible || senseInvisible;
-			spriteOnStage(sprite,onStage);
-			if( sprite.refs == 1 ) {	// I must be the only controller, so...
-				let zOrder = entity.zOrder || (entity.isWall ? Tile.zOrder.WALL : (entity.isFloor ? Tile.zOrder.FLOOR : (entity.isTileType ? Tile.zOrder.TILE : (entity.isItemType ? (entity.isGate ? Tile.zOrder.GATE : (entity.isDecor ? Tile.zOrder.DECOR : Tile.zOrder.ITEM)) : (entity.isMonsterType ? Tile.zOrder.MONSTER : Tile.zOrder.OTHER)))));
-				sprite.zOrder 	= zOrder;
-				sprite.visible 	= true;
-				sprite.x 		= x*Tile.DIM+(Tile.DIM/2);
-				sprite.y 		= y*Tile.DIM+(Tile.DIM/2);
-				sprite.transform.scale.set( sprite.baseScale );
-				if( sprite.flip ) sprite.scale.x = -sprite.scale.x;
-				sprite.alpha 	= (entity.alpha||1) * Light.Alpha[Math.floor(light)];
-				//debug += '123456789ABCDEFGHIJKLMNOPQRS'.charAt(light);
-			}
-			if( doTint ) {
-				if( !ViewMap.saveBattery ) {
-					sprite.filters = this.desaturateFilterArray;
-				}
-				sprite.tint = 0xAAAAFF;
-			}
-			else
-			if( doGrey ) {
-				if( !ViewMap.saveBattery ) {
-					sprite.filters = this.desaturateFilterArray;
-				}
-				sprite.tint = 0xFFFFFF;
-			}
-			else {
-				if( !ViewMap.saveBattery ) {
-					sprite.filters = this.resetFilterArray;
-				}
-				sprite.tint = 0xFFFFFF;
-			}
-			//sprite.sortKey = sprite.y*10000+sprite.indexOrder*100+sprite.zOrder;
-		}
-		if( entity.puppetMe ) {
-			entity.puppetMe.puppet(entity.spriteList);
-			delete entity.puppetMe;
-		}
+		let lPos = this.entity.map.lPos(this.xWorldTile,this.yWorldTile);
+		let light = this.entity.map.area.lightCaster.lightMap[lPos];
+		let lightAfterGlow = this.entity.glow ? Math.max(light,glowLight) : light;
+		return lightAfterGlow;
 	}
 
-	let self = _viewMap;
-	// This can happen at game start, before anything has been told to observe.
-	if( !self.observer ) {
-		return;
+	get visible() {
+		if( this.entity.id == this.observer.id ) return true;
+		if( this.entity.isTreasure && this.observer.senseTreasure ) return true;
+		if( this.entity.isLiving && this.observer.senseLiving ) return true;
+		if( this.entity.invisible && !this.observer.senseInvisible ) return false;
+		if( this.observer.senseBlind ) return false;
+		return this.observer.visCache[this.yWorldTile][this.xWorldTile];
 	}
 	
-	let glowLight = MaxVis;
-//			self.staticTileEntity = self.staticTileEntity || { isStaticTile: true };
-
-	// These are the world coordinate offsets
-	let wx = (self.observer.x-self.sd);
-	let wy = (self.observer.y-self.sd);
-	let x = xWorld - wx;
-	let y = yWorld - wy;
-	let doTint = false;
-	let doGrey = false;
-	let light = x>=0 && y>=0 && x<self.d && y<self.d ? self.drawListCache[y][x][0] : 0;
-	let isMemory = x>=0 && y>=0 && x<self.d && y<self.d ? self.drawListCache[y][x][1] : false;
-	if( isMemory ) {
-		doTint = true;
-		light = MapMemoryLight;
-	}
-	else
-	if( senseDarkVision ) {
-		doGrey = true;
+	get numSeed() {
+		return ViewMap.randList[this.xWorldTile&0xFF]+7+ViewMap.randList[this.yWorldTile&0xFF];
 	}
 
-	if( entity.isTileType && !entity.isPosition ) {
-		entity.spriteList = self.observer.map.tileSprite[yWorld][xWorld][entity.typeId];
+	update(observer) {
+		this.observer = observer;
+		if( this.inPane || this.entity.puppetMe ) {
+
+			this.sprite.age = 0;
+
+			this.sprite.x = (this.xWorld-observer.x)*Tile.DIM+(Tile.DIM/2);
+			this.sprite.y = (this.yWorld-observer.y)*Tile.DIM+(Tile.DIM/2);
+
+			this.sprite.anchor.set(this.xAnchor,this.yAnchor);
+			this.sprite.transform.scale.set( this.baseScale );
+
+			this.sprite.alpha  = this.alpha * Light.Alpha[Math.floor(light)];
+			this.sprite.zOrder = this.zOrder;
+
+			let showSprite = true;
+			if( this.visible ) {
+				this.sprite.filters = ViewMap.saveBattery ? null : this.isDarkVision ? this.desaturateFilterArray : this.resetFilterArray;
+				this.sprite.tint = 0xFFFFFF;
+				this.sprite.visible = true
+			}
+			else if( this.isMemory ) {
+				this.sprite.filters = ViewMap.saveBattery ? null : this.desaturateFilterArray;
+				this.sprite.tint = 0x8888FF;
+			}
+			else showSprite = false;
+			this.sprite.visible = showSprite;
+		}
+
+		if( this.entity.puppetMe ) {
+			this.entity.puppetMe.puppet(this.sprite);
+			delete this.entity.puppetMe;
+		}
+
 	}
 
-	let imgGet = ImageRepo.imgGet[entity.typeId];
-	let lightAfterGlow = entity.glow ? Math.max(light,glowLight) : light;
-	make.call(
-		self,
-		x,
-		y,
-		entity,
-		imgGet,
-		lightAfterGlow,
-		doTint,
-		doGrey,
-		self.randList[xWorld&0xFF]+7+self.randList[yWorld&0xFF],
-		indexOrder
-	);
+	init(entity) {
+		console.assert(entity);
+		this.entity = entity;
+		//this._xWorld = _xWorld===null ? entity.x : _xWorld;
+		//this._yWorld = _yWorld===null ? entity.y : _yWorld;
 
-	if( entity.isTileType && !entity.isPosition ) {
-		self.observer.map.tileSprite[yWorld][xWorld][entity.typeId] = entity.spriteList;
+		let imgGetFn = ImageRepo.imgGet[entity.typeId] || ImageRepo.get;
+		this.sprite  = new PIXI.Sprite( imgGetFn(entity,null,this.numSeed).texture );
+		this.sprite.refs = 0;
+		this.sprite.age  = 0;
+		this.entity.spriteList = [];
+		Scene.attach( entity.spriteList, this.sprite );
+
+		this.xAnchor    = entity.xAnchor || 0.5;
+		this.yAnchor    = entity.yAnchor || 0.5;
+		this.baseScale	= (entity.scale || 1) * Tile.DIM/this.sprite.width;
+		this.zOrder     = entity.zOrder || (entity.isWall ? Tile.zOrder.WALL : (entity.isFloor ? Tile.zOrder.FLOOR : (entity.isTileType ? Tile.zOrder.TILE : (entity.isItemType ? (entity.isGate ? Tile.zOrder.GATE : (entity.isDecor ? Tile.zOrder.DECOR : Tile.zOrder.ITEM)) : (entity.isMonsterType ? Tile.zOrder.MONSTER : Tile.zOrder.OTHER)))));
+		this.alpha      = entity.alpha===undefined ? 1.0 : entity.alpha;
+		return this;
+	}
+}
+
+make guiMessages that tell of added monsters and and items added to or removed from the map
+- then the draw csn just call .update()
+
+entering a new tile makes you re-traverse the map, only
+
+class AreaScene {
+	constructor() {
+		this.entitySpriteList  = [];
+		this.observer = null;
+		this.stage = null;
+		this.pane  = null;
+		this.sortDirty = false;
+	}
+
+	freshen(observer,stage,pane) {
+		this.observer = observer;
+		this.stage    = stage;
+		this.pane     = pane;
+	}
+
+	get area() {
+		return this.observer.area;
+	}
+
+	get map() {
+		return this.area.map;
+	}
+
+	ageAndPrune() {
+		let ageOfDeath = 5;
+		let killList = this.stage.children.filter( sprite => (sprite.age++) > ageOfDeath );
+		killList.forEach( sprite => this.stage.removeChild(sprite) );
+	}
+
+	check(entity) {
+		let inPane = this.pane.inSightOf(this.observer,entity.x,entity.y) && entity.area.id==this.observer.area.id;
+		if( inPane && !entity.entitySprite ) {
+			entity.entitySprite = new EntitySprite().init(entity);
+			this.sortDirty = true;
+		}
+		if( entity.entitySprite ) {
+			entity.entitySprite.inPane = inPane;
+		}
+		if( inPane ) {
+			this.entitySpriteList.push(entity.entitySprite);
+		}
+	}
+
+	checkMap() {
+		this.map.traverse( (x,y) => {
+			let inPane = this.pane.inSightOf(this.observer,x,y);
+			if( inPane ) {
+				let entity = this.map.toTileEntity(x,y);
+				this.check(entity);
+			}
+		});
+	}
+
+	checkAll(pane,observer) {
+
+		this.entitySpriteList.length = 0;
+
+		pane.setObserver(observer);
+
+		this.area.entityList.forEach( entity => {
+			addAndUpdate(entity);
+		});
+
+		this.area.map.itemList.forEach( item => {
+			addAndUpdate(item);
+		});
+
+		checkMap();
+
+	}
+
+	tick(dt) {
+		Time.tickOnTheSecond( dt, this, () => this.prune() );
+	}
+
+	draw(drawList) {
+
+		if( this.sortDirty ) {
+			this.stage.children.sort( (a,b) => a.zOrder-b.zOrder );
+			this.sortDirty = false;
+		}
+
+/*
+		observer.area.animationManager.clip.set(
+			this.observer.x - this.sd*1.5,
+			this.observer.y - this.sd*1.5,
+			this.observer.x + this.sd*1.5,
+			this.observer.y + this.sd*1.5
+		);
+
+		for anim in animList {
+			let light = observer.isSpectator ? maxLight : tile[0];
+			anim.drawUpdate(observer.x-this.sd, observer.y-this.sd, light, this.app.stage.addChild);
+		}
+*/
+
+		this.entitySpriteList.forEach( entitySprite => {
+			entitySprite.update(this.observer);
+		});
 	}
 }
 
@@ -464,13 +619,16 @@ class ViewMap extends ViewObserver {
 		super();
 		this.divId = divId;
 		this.pixiDestroy();
-		this.randList = [];
+		ViewMap.randList = [];
 		for( let i=0 ; i<256 ; ++i ) {
-			this.randList.push( Math.randInt( 0, 1023 ) );
+			ViewMap.randList.push( Math.randInt( 0, 1023 ) );
 		}
-		_viewMap = this;
+		Scene.viewMap = this;
 
-		this.drawListCache = [];
+		this.app			= null;
+		this.drawListCache	= [];
+		this.pane			= new Pane();
+		this.areaScene		= new AreaScene();
 	}
 
 	pixiDestroy() {
@@ -481,31 +639,34 @@ class ViewMap extends ViewObserver {
 		this.app = null;
 	}
 	pixiCreate() {
+		// 10,10 is just a fake dimensions. The resize will figure that out.
 		this.app = new PIXI.Application(10, 10, {backgroundColor : 0x000000});
 		ViewMap.globalPixiApp = this.app;
 
-		this.desaturateFilter = new PIXI.filters.ColorMatrixFilter();
-		this.desaturateFilter.desaturate();
-		this.desaturateFilterArray = [this.desaturateFilter];
-		this.resetFilter = new PIXI.filters.ColorMatrixFilter();
-		this.resetFilter.reset();
-		this.resetFilterArray = [this.resetFilter];
+		ViewMap.desaturateFilter = new PIXI.filters.ColorMatrixFilter();
+		ViewMap.desaturateFilter.desaturate();
+		ViewMap.desaturateFilterArray = [this.desaturateFilter];
+		ViewMap.resetFilter = new PIXI.filters.ColorMatrixFilter();
+		ViewMap.resetFilter.reset();
+		ViewMap.resetFilterArray = [this.resetFilter];
 
 		let pixiView = $(this.divId)[0].appendChild(this.app.view);
 		this.hookEvents();
 
+		console.assert( this.app.stage );
 
 		// Don't start rendering until we first try to render.
 		this.app.ticker.stop()
 		this.pixiTimerPaused = true;
 
+		// Note that pixi defaults to 16.66ms, or just slightly better than 60fps
 		this.app.ticker.add( delta =>  {
-			// but only if real time is not stopped.
+			let dt = delta / 60;	// that is just how pixi rolls.
 			if( this.observer && this.observer.area ) {
-				this.observer.area.animationManager.tickRealtime(delta/60);
+				this.observer.area.world.tickRealtime(dt);
+				this.observer.area.animationManager.tickRealtime(dt);
 			}
 		});
-
 	}
 
 	hookEvents() {
@@ -523,14 +684,14 @@ class ViewMap extends ViewObserver {
 			}
 			let observer = self.observer;
 			let area = observer.area;
-			let x = (observer.x-self.sd) + mx;
-			let y = (observer.y-self.sd) + my;
+			let xLeft = (observer.x-self.pane.visionTiles) + mx;
+			let yTop  = (observer.y-self.pane.visionTiles) + my;
 			//console.log( "ViewMap mousemove detected ("+x+','+y+')' );
 			
-			guiMessage( 'viewRangeMouse', { xOfs: x-observer.x, yOfs: y-observer.y } );
+			guiMessage( 'viewRangeMouse', { xOfs: xLeft-observer.x, yOfs: yTop-observer.y } );
 		});
 		$(myCanvas).mouseout( function(e) {
-			guiMessage('hideInfo');
+			guiMessage('hideInfo',{from:'viewMap'});
 			//console.log('mouse out of canvas');
 		});
 		$(myCanvas).click( function(e) {
@@ -541,51 +702,6 @@ class ViewMap extends ViewObserver {
 		});
 	}
 
-	resizeAllSprites() {
-
-		let area = this.observer.area;
-		area.entityList.forEach( entity => {
-			spriteDeathCallback(entity.spriteList);
-			entity.inventory.forEach( item => {
-				spriteDeathCallback(item.spriteList);
-			});
-		});
-		area.map.itemList.forEach( item => {
-			spriteDeathCallback(item.spriteList);
-			(item.inventory||[]).forEach( item => {
-				spriteDeathCallback(item.spriteList);
-			});
-		});
-		area.map.traverse( (x,y) => {
-//			let tile = area.map.tileTypeGetFastUnasfe(x,y);
-//			spriteDeathCallback(tile.spriteList);
-			if( area.map.tileEntity[y] && area.map.tileEntity[y][x] ) {
-				spriteDeathCallback(area.map.tileEntity[y][x].spriteList);
-			}
-			if( area.map.tileSprite[y] && area.map.tileSprite[y][x] ) {
-				for( let typeId in area.map.tileSprite[y][x] ) {
-					spriteDeathCallback(area.map.tileSprite[y][x][typeId]);
-				}
-			}
-		});
-		Object.each( SymbolToType, type => spriteDeathCallback(type.spriteList) );
-
-		let temp = this.app.stage.children.slice();
-		temp.forEach( child => {
-			this.app.stage.removeChild(child);
-			child.onStage = false;
-		});
-
-		// Clears the stage, for certain.
-	}
-
-//		for( let child of this.app.stage.children ) {
-//			child.x = ((child.x-(oldDim/2)) / oldDim) * Tile.DIM + Tile.DIM/2;
-//			child.y = ((child.y-(oldDim/2)) / oldDim) * Tile.DIM + Tile.DIM/2;
-//			child.baseScale = (child.entity||{}).scale || Tile.DIM/child.width;
-//			child.transform.scale.set( child.baseScale );
-//		}
-//	}
 	setZoom(_zoom) {
 		this.zoom = _zoom % 5;
 		if( this.zoom == 0 ) { this.setMapVis(11); }
@@ -598,7 +714,7 @@ class ViewMap extends ViewObserver {
 	worldOverlayAdd(groupId,x,y,area,img) {
 		console.assert( x!==undefined && y!==undefined && area !==undefined && img !==undefined );
 		console.assert( area.isArea );
-		console.log('overlay add '+groupId);
+		//console.log('overlay add '+groupId);
 		new Anim( {}, {
 			groupId: 	groupId,
 			x: 			x,
@@ -617,6 +733,10 @@ class ViewMap extends ViewObserver {
 	}
 
 	setMapVis(mapVis) {
+		if( !this.observer || !this.app ) {
+			debugger;
+			return;
+		}
 		console.assert( mapVis );
 		this.observer.visibilityDistance = mapVis;
 		MaxVis = mapVis;	// This is questionable - it limits how far monsters can perceive you, which maybe shouldn't change with screen sizing
@@ -634,42 +754,50 @@ class ViewMap extends ViewObserver {
 
 		Tile.DIM = Math.floor(smallestDim / mapTileDim);
 
-		this.sd = MaxVis;
-		this.d = ((this.sd*2)+1);
+		this.pane.setVisionTiles(MaxVis);
 
-		console.assert( !isNaN(this.d) );
-		let tileWidth  = Tile.DIM * this.d;
-		let tileHeight = Tile.DIM * this.d;
+		console.assert( !isNaN(this.pane.visionTiles) );
+		let tileWidth  = Tile.DIM * this.pane.sizeInTiles;
+		let tileHeight = Tile.DIM * this.pane.sizeInTiles;
 
-		this.app.renderer.view.style.width = tileWidth + "px";
+		this.app.renderer.view.style.width  = tileWidth  + "px";
 		this.app.renderer.view.style.height = tileHeight + "px";
 		this.app.renderer.resize(tileWidth,tileHeight);
 
-		this.resizeAllSprites();
 		if( this.observer ) {
 			this.observer.area.castLight();
 		}
-		this.render();
+		this.dirty = true;
 	}
 
 	message(msg,payload) {
 		super.message(msg,payload);
+		if( msg=='create2DEngine') {
+			if( !this.app ) {
+				this.pixiCreate();
+			}
+		}
+		if( msg=='start2DEngine' ) {
+			// This is the one place where a direct call to render is allowed.
+			this.render();
+			if( this.pixiTimerPaused ) {
+				this.app.ticker.start()
+				this.pixiTimerPaused = false;
+			}
+		}
 		if( msg=='saveBattery' ) {
 			ViewMap.saveBattery = payload;
 		}
 		if( msg=='zoomInc' ) {
 			this.setZoom(this.zoom+1);
-			this.render();
 		}
 		if( msg=='zoomPush' ) {
 			this.zoomStack = (this.zoomStack || []);
 			this.zoomStack.push(this.zoom);
 			this.setZoom(payload.zoom);
-			this.render();
 		}
 		if( msg=='zoomPop' ) {
 			this.setZoom(this.zoomStack.pop());
-			this.render();
 		}
 		if( msg == 'resize' ) {
 			this.setMapVis(this.observer.visibilityDistance);
@@ -677,11 +805,11 @@ class ViewMap extends ViewObserver {
 		if( msg == 'setArea' ) {
 			if( this.observer ) {
 				this.setMapVis(this.observer.visibilityDistance);
-				this.render();
 			}
 		}
-		if( msg == 'removeFromStage' ) {
-			spriteDeathCallback(payload.spriteList);
+		if( msg == 'stageEntityMoved' ) {
+			console.assert(payload.typeId);
+			this.areaScene.check(entity);
 		}
 		if( msg == 'overlayRemove' ) {
 			this.worldOverlayRemove( a => a.groupId==payload.groupId,'message '+payload.groupId,payload );
@@ -689,149 +817,54 @@ class ViewMap extends ViewObserver {
 		if( msg == 'overlayAdd' ) {
 			this.worldOverlayAdd(payload.groupId,payload.x,payload.y,payload.area,payload.img);	
 		}
-		if( msg == 'showInfo' ) {
+		if( msg == 'showCrosshair' ) {
 			if( !payload.isItemType || (payload.owner && payload.owner.isMap) ) {
-				this.worldOverlayRemove( a => a.groupId=='guiSelect', 'removing guiSelect' );
-				this.worldOverlayAdd('guiSelect', payload.x, payload.y, payload.area, StickerList.selectBox.img);	
+				this.worldOverlayRemove( a => a.groupId=='viewRangeSelect', 'removing guiSelect' );
+				this.worldOverlayAdd('viewRangeSelect', payload.x, payload.y, payload.area, StickerList.selectBox.img);	
 			}
-			this.render();
+			this.dirty = true;
 		}
-		if( msg == 'hideInfo' ) {
-			this.worldOverlayRemove( a => a.groupId=='guiSelect',' from hideInfo' );
+		if( msg == 'hideCrosshair' ) {
+			this.worldOverlayRemove( a => a.groupId=='viewRangeSelect',' from hideInfo' );
 			//console.log('ViewMap hide');
-			this.render();
+			this.dirty = true;
 		}
 		// It just so happens that SOME perks grants benefits that require re-render.
 		// But the map view might not even be set up yet! So check for an observer.
 		if( msg == 'render' && this.observer ) {
-			this.render();
+			debugger;
+			this.dirty = true;
 		}
 	}
 
-	draw(drawList) {
+	tick(dt) {
+		this.areaScene.freshen( this.observer, this.stage, this.pane );
+		//console.log('viewMap dt=',dt);
+		this.recalcDrawList = this.dirty || !this.drawListCache;
+		this.dirty = true;
 
-		let maxLight = MaxVis;
-		this.drawListCache = drawList;
+		this.areaScene.tick(dt);
+	}
+
+	render() {
 		let observer = this.observer;
+		let drawList = this.recalcDrawList ? assembleAllSpritesIntoList(this.pane,observer,this.drawListCache) : this.drawListCache;
+		if( observer.zoom && observer.zoom != this.zoom ) {
+			this.setZoom(observer.zoom);
+		}
 
+		// Yes, this really gets called on the very first render.
 		if( this.zoom === undefined ) {
 			this.setZoom(1);
 		}
 
-		//let debug = '';
-
-		for( let child of this.app.stage.children ) {
-			child.visible = false;
-		}
-
-		if( observer.godSight ) {
-			for( let child of this.app.stage.children ) {
-				child.visible = true;
-			}
-		}
-
-		let wx = (this.observer.x-this.sd);
-		let wy = (this.observer.y-this.sd);
-		observer.area.animationManager.clip.set(
-			this.observer.x - this.sd*1.5,
-			this.observer.y - this.sd*1.5,
-			this.observer.x + this.sd*1.5,
-			this.observer.y + this.sd*1.5
-		);
-
-
-		for( let y=0 ; y<this.d ; ++y ) {
-			for( let x=0 ; x<this.d ; ++x ) {
-				if( !this.drawListCache[y] || !this.drawListCache[y][x] ) {
-					//debug += '-';
-					continue;
-				}
-				let tile = this.drawListCache[y][x];
-				// Start at 2 because 0 is reserved for light values, 
-				// and 1 is reserved for the mapMemory flag.
-				for( let i=2 ; i<tile.length ; ++i ) {
-					let entity = tile[i];
-					if( !entity ) continue;
-					if( typeof entity !== 'object' ) debugger;
-					if( entity.isAnimation ) {
-						let light = observer.isSpectator ? maxLight : tile[0];
-						entity.drawUpdate(observer.x-this.sd, observer.y-this.sd, light, this.app.stage.addChild);
-					}
-					else
-					{
-						//if( wx+x==this.observer.x && wy+y == this.observer.y ) debugger;
-						let imgGet = ImageRepo.imgGet[entity.typeId];
-						if( imgGet ) {
-							spriteMakeInWorld(
-								entity,
-								wx+x,
-								wy+y,
-								i,
-								this.observer.senseDarkVision,
-								this.observer.senseInvisible
-							);
-						}
-						else {
-							debugger;
-						}
-					}
-				}
-			}
-			//debug += '\n';
-		}
-
-		//console.log(debug);
-		//$('#guiDebug2').html(this.app.stage.children.length);
-
-//		this.app.stage.children.forEach( sprite => sprite.sortKey = (sprite.y-sprite.anchor.y*sprite.height)*100+sprite.zOrder );
-		this.app.stage.children.forEach( sprite => sprite.sortKey = sprite.zOrder );
-		this.app.stage.children.sort( (a,b) => a.sortKey-b.sortKey );
-	}
-
-	render() {
-		//var focused =  $( document.activeElement ) ;
-		//if( !focused || focused.length == 0 ) {
-		//	console.log('re-focused from ',focused);
-		//	$(this.divId+' canvas').focus();
-		//}
-		if( !this.app ) {
-			this.pixiCreate();
-		}
-
-		let actualRender = () => {
-
-			let observer = this.observer;
-			let drawList = createDrawList(observer,this.drawListCache);
-			if( observer.zoom && observer.zoom != this.zoom ) {
-				this.setZoom(observer.zoom);
-			}
-
-			this.draw(drawList);
-			if( this.pixiTimerPaused ) {
-				this.app.ticker.start()
-				this.pixiTimerPaused = false;
-			}
-		}
-
-		if( this.justWait ) {
-			return;
-		}
-		this.justWait = setTimeout(()=> {
-			actualRender();
-			this.justWait = null;
-		},1);
+		this.draw(drawList);
 	}
 }
 
 return {
 	ViewMap: ViewMap,
-	spriteCreate: spriteCreate,
-	spriteAttach: spriteAttach,
-	spriteDetach: spriteDetach,
-	spriteOnStage: spriteOnStage,
-	spriteMakeInWorld: spriteMakeInWorld,
-	spriteDeathCallback: spriteDeathCallback,
-	imageDirty: imageDirty
+	Scene: Scene
 }
 
 });

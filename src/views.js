@@ -4,7 +4,12 @@ class ViewObserver {
 	constructor() {
 		this.observerDefault = null;
 		this.observerOverride = null;
+		this._dirty = true;
 	}
+
+	//
+	// Observer Management
+	//
 	get observer() {
 		return this.observerOverride || this.observerDefault;
 	}
@@ -14,11 +19,30 @@ class ViewObserver {
 	override(observer) {
 		this.observerOverride = observer;
 	}
+
+	//
+	// Dirty management
+	//
+	set dirty(value) {
+		this._dirty = value;
+	}
+
+	get dirty() {
+		return this._dirty;
+	}
+
+	//
+	// Message passing
+	//
 	message(msg,payload) {
 		if( msg == 'observer' && payload !== this.observer ) {
 			this.observerDefault = payload;
+			if( this.onSetObserver ) {
+				this.onSetObserver();
+			}
 		}
 	}
+
 }
 
 class ViewNarrative extends ViewObserver {
@@ -26,6 +50,7 @@ class ViewNarrative extends ViewObserver {
 		super();
 		this.divId = divId;
 		this.isBig = false;
+		this.history = null;
 		$(this.divId)
 //			.mouseover( e => {
 //				$(this.divId)
@@ -51,22 +76,19 @@ class ViewNarrative extends ViewObserver {
 					this.isBig = true;
 				}
 			});
-;
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
 		if( msg=='receive' ) {
-			let history = payload;
+			this.history = payload;
 			while( history.length > 50 ) {
 				history.shift();
 			}
-			$(this.divId).html( history.join('\n') ).scrollTop( $(this.divId).prop('scrollHeight') );
-//			targetElement.display = 'block';
-//			targetElement.innerHTML = history.join('\n');
-//			targetElement.scrollTop = targetElement.scrollHeight;
+			this.dirty = true;
 		}
 	}
 	render() {
+		$(this.divId).html( this.history.join('\n') ).scrollTop( $(this.divId).prop('scrollHeight') );
 	}
 }
 
@@ -75,20 +97,31 @@ class ViewSign extends ViewObserver {
 		super();
 		this.divId = divId;
 		$(this.divId).empty();
-		this.lastSignId = '';
+		this.lastInfo = '';
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
 		if( msg=='clearSign' ) {
-			$(this.divId).hide();
+			this.signRemove();
 			this.observer.lastBumpedId = null;
 		}
 	}
-	render() {
-		let observer = this.observer;
-		if( !observer ) {
-			return;
+	signRemove() {
+		Gui.cachedRenderDiv(this.divId,'');		// even though we're hidinh this, the signShow() needs this blank.
+		guiMessage( 'hideInfo', { from: 'viewSign' } );
+		this.observer.seeingSignOf = null;
+		$(this.divId).hide();
+	}
+	signShow(signEntity,sign) {
+		let changed = Gui.cachedRenderDiv(this.divId,sign);
+		if( changed ) {
+			guiMessage( 'showInfo', { entity: signEntity, from: 'viewSign' } );
 		}
+		this.observer.seeingSignOf = signEntity;
+		$(this.divId).show();
+	}
+	compile() {
+		let observer = this.observer;
 		let lastBumpedId = observer.lastBumpedId; 
 		let signList = { count:0 };
 		if( observer.sign ) {
@@ -107,26 +140,26 @@ class ViewSign extends ViewObserver {
 			signList = new Finder(observer.map.itemList,observer).excludeMe().filter(e=>e.sign).nearMe(1).byDistanceFromMe();
 		}
 
-		let signRemove = () => {
-			$(this.divId).hide();
-			guiMessage( 'hideInfo' );
-			observer.seeingSignOf = null;
+		let sign = !signList.first ? null : typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
+		return [signList.first,sign];
+	}
+	tick(dt) {
+		this.dirty = true;
+	}
+	render() {
+		if( !this.observer ) {
+			return;
 		}
 
-		let signId = signList.first ? signList.first.id : '';
-		let sign   = !signList.first ? '' : typeof signList.first.sign == 'function' ? signList.first.sign() : signList.first.sign;
-		if( !signList.first || !sign ) {
-			signRemove();
+		let visible = $(this.divId).is(":visible")
+		let [signEntity,sign] = this.compile();
+
+		if( !signEntity && visible ) {
+			this.signRemove();
 		}
-		else {
-			if( sign !== this.lastSign || signId !== this.lastSignId ) {
-				$(this.divId).show().html(sign);
-				guiMessage( 'showInfo', signList.first );
-				this.lastSign = sign;
-			}
-			observer.seeingSignOf = signList.first;
+		if( signEntity ) {
+			this.signShow(signEntity,sign);
 		}
-		this.lastSignId = signId;
 	}
 }
 
@@ -244,13 +277,13 @@ class ViewExperience extends ViewObserver {
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
-		if( msg=='showInfo' ) {
+		if( msg=='showExperience' ) {
 			this.override(payload);
-			this.render();
+			this.dirty = true;
 		}
-		if( msg=='hideInfo' ) {
+		if( msg=='hideExperience' ) {
 			this.override(null);
-			this.render();
+			this.dirty = true;
 		}
 	}
 	render() {

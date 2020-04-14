@@ -4,6 +4,8 @@ class World {
 	constructor(plan) {
 		this.plan = plan;
 		this.areaList = {};
+		this.userList = [];
+
 		// Hack of convenience...
 		Gab.world = this;
 	}
@@ -16,6 +18,24 @@ class World {
 		this.traverse( area => {
 			area.isTicking = area.connectsTo(areaId) || area.id==areaId;
 		});
+	}
+
+	tickRealtime(dt) {
+		Tester.tick(dt);
+
+		this.traverse( area => {
+			area.tickRealtime(dt);
+		});
+
+		// This goes last because it includes gui render.
+		this.userList.forEach( user => {
+			user.tickRealtime(dt);
+		});
+
+		Tester.check();
+		if( dt ) {
+			Time.simTimeAdd(dt);
+		}
 	}
 
 	quotaAddGates(quota,toAreaId) {
@@ -92,13 +112,14 @@ class World {
 		toArea.build( quota );
 
 		this.linkGates(toArea);
+		toArea.underConstruction = false;
 
 		return toArea;
 	}
-	createAreaAsNeeded(areaId,planFn) {
+	createAreaAsNeeded(areaId,planDefinitionFn) {
 		if( !this.planExists(areaId) ) {
 			// we could spontaneously add this area to the plan.
-			this.plan.add( planFn() );
+			this.plan.add( planDefinitionFn() );
 		}
 		return this.area(areaId) || this.createArea( areaId );
 	}

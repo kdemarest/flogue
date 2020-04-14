@@ -43,7 +43,7 @@ class Finder {
 		}
 		return this;
 	}
-	arrayMap(fn) {
+	map(fn) {
 		return this.result.map(fn);
 	}
 	filter(fn) {

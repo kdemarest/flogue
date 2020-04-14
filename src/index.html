@@ -26,7 +26,7 @@
 <script src="utilModule.js" charset="utf-8"></script>
 
 <script src="jquery.3.3.1.js" charset="utf-8"></script>
-<script src="pixi.min.js" charset="utf-8"></script>
+<script src="pixi.js" charset="utf-8"></script>
 <script src="utilities.js" charset="utf-8"></script>
 <script src="utilPick.js" charset="utf-8"></script>
 <script src="utilChance.js" charset="utf-8"></script>
@@ -101,21 +101,10 @@ async function main() {
 	Module.realize();
 	let User = new HumanUser();
 
-	User.tickWorld = function(timePasses) {
-		Tester.tick(timePasses);
-		this.entity.area.world.traverse( area => {
-			if( area.isTicking ) {
-				area.tick( timePasses ? this.entity.speed : false );
-			}
-		});
-
+	User.tickRealtime = function(dt) {
 		this.autoFavorite();
-		this.gui.tick();
-		this.gui.render();
-		Tester.check();
-		if( timePasses ) {
-			Time.simTimeInc();
-		}
+		this.gui.tick(dt);
+		this.gui.render(dt);
 	}.bind(User);
 
 	User.onEvent = function(event) {
@@ -126,8 +115,8 @@ async function main() {
 		}
 		this.entity.nowPrior = now;
 		this.entity.timeDelay = 0;
-		let timePasses = this.commandHandler.evalCommand(this.entity,event);
-		this.tickWorld(timePasses);
+		this.entity.timePasses = this.commandHandler.evalCommand(this.entity,event);
+		event.handledByCommand = true;
 	}.bind(User);
 
 	User.startGame = function(config,onAssetsReady) {
@@ -135,10 +124,9 @@ async function main() {
 		let playerTypeId   = config.playerTypeId || 'player';
 		let playerMarkerId = config.playerMarkerId || 'playerStartHere';
 
-		let gui = new Gui( ()=>this.entity );
-		gui.create(
-			(event) => { this.onEvent(event); }
-		);
+		let gui = Gui.createManager( ()=>this.entity );
+		gui.create();
+		gui.subscribe( 'user', 'command', this.onEvent.bind(this) );
 		this.gui = gui;
 		guiMessage('saveBattery',config.saveBattery);
 
@@ -150,16 +138,20 @@ async function main() {
 		let planFind  = plan => plan.depth == startingDepth && plan.themeId == themeId;
 		let plan      = world.plan.findFirst(planFind) || world.plan.add({areaId: 'user', depth:startingDepth, themeId: themeId});
 		let area      = world.createArea(plan.areaId);
+		area.underConstruction = true;
 		let player    = new Entity( area.depth, MonsterTypeList[playerTypeId], config.playerInject, area.jobPicker );
 		player.visibilityDistance = MapVisDefault;
 		this.takeControlOf( player );
 		Gab.observer = this.entity;
-		this.entity.gateTo(area,...area.map.pickPosToStartGame(playerMarkerId));
+		let startPos = area.map.pickPosToStartGame(playerMarkerId);
+		this.entity.requestGateTo(area,...startPos);
+		area.underConstruction = false;
 		Narrative.addRecipient(
 			() => this.entity,
 			(observer,entity) => !observer ? true : observer.canPerceiveEntity(entity),
 			(message,history) => guiMessage('receive',history,'narrative')
 		);
+		world.userList.push(this);
 
 		let self = this;
 		let handle = setInterval(function() {
@@ -195,14 +187,15 @@ async function main() {
 	User.startGame(
 		config,
 		(user) => {
+			guiMessage( 'create2DEngine' );
 			guiMessage( 'observer', user.entity );
 			$('#guiLoading').hide();
 			$( window ).resize( () => { guiMessage('resize'); });
 			$('#guiMain').show();
-			user.tickWorld(false);
 			tell([user.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
 			guiMessage('resize');
 			Gui.keyHandler.add( 'main', user.onEvent.bind(user) );
+			guiMessage( 'start2DEngine' );
 		}
 	);
 }
