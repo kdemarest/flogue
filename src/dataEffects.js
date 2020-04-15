@@ -200,7 +200,7 @@ let EffectTypeList = {
 		rarity: 1.00,
 		op: 'max',
 		stat: 'scentReduce',
-		value: Rules.SCENT_AGE_LIMIT,
+		value: 100,
 		isHelp: true,
 		name: 'no scent',
 		icon: 'gui/icons/eFragrance.png',

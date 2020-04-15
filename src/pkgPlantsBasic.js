@@ -91,7 +91,7 @@ let ItemTypeList = {
 		signFine: 		"This plant is growing well.",
 		signMature: 	"This plant is ready to harvest.",
 		icon: 			'/gui/icons/plant.png',
-		imgGet: 		(self,img) => (img || (self.growing ? self.variety.img : self.imgChoices.wilted.img)),
+		imgChooseFn: 	self => self.growing ? self.variety.img : self.imgChoices.wilted.img,
 		imgChoices: 	{ wilted: { img: 'plant/wilted.png' } },
 	},
 // Mushrooms

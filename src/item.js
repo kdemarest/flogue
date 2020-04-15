@@ -235,6 +235,9 @@ class Item {
 	get baseType() {
 		return ItemTypeList[this.typeId];
 	}
+	get isUser() {
+		return false;
+	}
 	explain(buySell,observer) {
 		let potencyList = ['feeble', 'frail', 'faint', 'tepid', 'mild', 'common', 'passable', 'sturdy', 'hardy', 'robust', 'vigorous', 'mighty', 'fierce', 'righteous', 'potent', 'glorious', 'epic', 'supernal', 'legendary', 'celestial'];
 
@@ -606,15 +609,14 @@ class Item {
 		}
 
 		let hadNoOwner = !this.owner;
-//		if( this.owner && /*(this.owner.isMap || (this.owner.isItemType && this.owner.owner.isMap)) &&*/ entity.isUser && entity.isUser() ) {
-		if( !this.isUnbunching && !entity.inVoid && entity.isUser && entity.isUser() ) {
+		if( !this.isUnbunching && !entity.inVoid && entity.isUser ) {
 			// Item flies to your gui sidebar...
 			if( !this.spriteList || this.spriteList.length == 0 ) {
 				spriteMakeInWorld(this,entity.x,entity.y);
 			}
 			new Anim({},{
 				at: 		entity,
-				img: 		this.imgGet ? this.imgGet(this) : this.img,
+				img: 		ImageRepo.getImg(this),
 				delayId: 	entity.id,
 				delayAdd: 	0.2,
 				duration: 	0.6,

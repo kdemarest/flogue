@@ -44,7 +44,7 @@ class ViewRange extends ViewObserver {
 			entity = 
 				new Finder(area.entityList,observer).isAt(tx,ty).canTargetEntity().first || 
 				new Finder(area.map.itemList,observer).isAt(tx,ty).canTargetEntity().first || 
-				area.map.tileGet(tx,ty);
+				area.map.getTileEntity(tx,ty);
 
 			this.picking.rangeStatusFn({
 				isShotClear: isShotClear,
@@ -57,7 +57,7 @@ class ViewRange extends ViewObserver {
 			entity = 
 				new Finder(area.entityList,observer).isAt(tx,ty).canPerceiveEntity().first || 
 				new Finder(area.map.itemList,observer).isAt(tx,ty).canPerceiveEntity().first || 
-				area.map.tileGet(tx,ty);
+				area.map.getTileEntity(tx,ty);
 		}
 
 		console.assert( entity );

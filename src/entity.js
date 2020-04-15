@@ -239,7 +239,7 @@ class Entity {
 	findAliveOthers(entityList = this.entityList) {
 		return new Finder(entityList,this).excludeMe().isAlive();
 	}
-	isUser() {
+	get isUser() {
 		return this.control == Control.USER;
 	}
 	isItemSelected(item) {
@@ -291,7 +291,7 @@ class Entity {
 
 
 	die() {
-		if( this.dead && this.isUser() ) {
+		if( this.dead && this.isUser ) {
 			return;
 		}
 
@@ -452,7 +452,7 @@ class Entity {
 		return this.inCombatTimer && Time.elapsed(this.inCombatTimer) < Rules.COMBAT_EXPIRATION;
 	}
 	isMySuperior(entity) {
-		if( entity.isUser() ) {
+		if( entity.isUser ) {
 			// User is superior to all.
 			return true;
 		}
@@ -543,12 +543,12 @@ class Entity {
 
 	calculateVisbility() {
 		let doVis = false;
-		if( this.isUser() ) {
+		if( this.isUser ) {
 			doVis = true;
 		}
 		else {
 			// Calc vis if I am near the user, that it, I might be interacting with him!
-			let user = this.entityList.find( e => e.isUser() );
+			let user = this.entityList.find( e => e.isUser );
 			let distanceForVisCacheCalculation = MaxVis * 2;	// this should match handlePerception()
 			doVis = user && this.nearTarget(user,distanceForVisCacheCalculation);
 		}
@@ -701,7 +701,7 @@ class Entity {
 		DeedManager.end( deed => deed.item && deed.item.id==item.id );
 		item.inSlot = false;
 		// Now aggregate if needed.
-		if( this.isUser() ) {
+		if( this.isUser ) {
 			Gui.dirty('inventory');
 		}
 	}
@@ -721,7 +721,7 @@ class Entity {
 				if( item.triggerWhenDon() ) {
 					item.trigger(this,this,Command.USE);
 				}
-				if( this.isUser() ) {
+				if( this.isUser ) {
 					Gui.dirty('inventory');
 				}
 			}
@@ -774,7 +774,7 @@ class Entity {
 		}
 		this.inventoryLastChange = Time.simTime;
 		Array.filterInPlace(this.inventory, i => i.id!=item.id );
-		if( this.isUser() ) {
+		if( this.isUser ) {
 			Gui.dirty('inventory');
 		}
 	}
@@ -806,7 +806,7 @@ class Entity {
 		if( item.autoEquip && !this.neverAutoEquip && this.mayDon(item) ) {
 			item = this.don(item,item.slot) || item;
 		}
-		if( this.isUser() ) {
+		if( this.isUser ) {
 			Gui.dirty('inventory');
 		}
 		return item;
@@ -1643,7 +1643,7 @@ class Entity {
 
 				let packWhenNotThreatened = this.mindset('pack') && !enemyList.count;
 
-				let pauseBesideUser = !enemyList.count && this.team==Team.GOOD && this.findAliveOthersNearby().nearMe(1).filter( e=>e.isUser() ).count;
+				let pauseBesideUser = !enemyList.count && this.team==Team.GOOD && this.findAliveOthersNearby().nearMe(1).filter( e=>e.isUser ).count;
 
 				let hungry = this.mindset('ravenous') || (this.isAnimal && (!theEnemy || distanceToNearestEnemy>4));
 
@@ -2031,7 +2031,7 @@ class Entity {
 			// WARNING! For some whacky reason this call to deltaToDeg requires -dy. Who knows why?!
 			let deg = (dx===0 && dy===0 ? 0 : deltaToDeg(dx,dy));
 			let mag = Math.clamp( amount/this.healthMax, 0.05, 1.0 );
-			let delay = !attacker || !attacker.isUser || attacker.isUser() ? 0 : 0.2;
+			let delay = !attacker || !attacker.isMonsterType || attacker.isUser ? 0 : 0.2;
 			if( attacker && (attacker.command == Command.THROW || attacker.command == Command.SHOOT || attacker.command == Command.CAST) ) {
 				// This seems a little loose to me, but... maybe it will work.
 				delay += attacker.rangeDuration;
@@ -2378,7 +2378,7 @@ class Entity {
 			delete this.oldMe;
 			source.isPossessing = false;
 			tell(mSubject,source,' ',mVerb,'leave',' the mind of ',mObject,this,'.');
-			if( source.isUser() ) {
+			if( source.isUser ) {
 				guiMessage('resetMiniMap',source.area);
 			}
 			return {
@@ -2420,7 +2420,7 @@ class Entity {
 		source.control = Control.EMPTY;
 		source.visCache = null;
 		source.name = 'Mindless husk';
-		if( this.isUser() ) {
+		if( this.isUser ) {
 			guiMessage('resetMiniMap',this.area);
 		}
 		return {
@@ -2430,7 +2430,7 @@ class Entity {
 	}
 
 	vanishIntoPit() {
-		if( this.isUser() ) {
+		if( this.isUser ) {
 			return false;
 		}
 		this.deathPhrase = [mSubject,this,' ',mVerb,'vanish',' into the pit.'];
@@ -3182,7 +3182,7 @@ class Entity {
 		let moveVoluntary   = this.moveVoluntary;
 
 		let bump = function(entity,incCount=true) {
-			if( !this.isUser() ) {
+			if( !this.isUser ) {
 				// The bump system interferese with pathfind's inferior.superior system, so only let
 				// the user do it.
 				return;
@@ -3199,7 +3199,7 @@ class Entity {
 
 			// Attack enemies or neutrals
 			let wantToAttack = this.isMyEnemy(target);
-			if( this.isUser() && this.isMyNeutral(target) ) {
+			if( this.isUser && this.isMyNeutral(target) ) {
 				wantToAttack = true;
 			}
 			if( this.team == Team.NEUTRAL || this.mindset('fleeWhenAttacked') ) {
@@ -3274,7 +3274,7 @@ class Entity {
 			}
 			let bumpResult = (collider.onBump || bonk)(
 				this,
-				!collider.isTileType ? collider : this.map.tileGet(collider,this.x,this.y)
+				!collider.isTileType ? collider : this.map.getTileEntity(collider,this.x,this.y)
 			);
 			return {
 				status: 'bumped',
@@ -3293,7 +3293,7 @@ class Entity {
 
 			// Does this tile type always do something to you when you depart any single instance of it?
 			if( tileTypePrior.onDepart ) {
-				if( tileTypePrior.onDepart(this,this.map.tileGet(xPrior,yPrior)) === false ) {
+				if( tileTypePrior.onDepart(this,this.map.getTileEntity(xPrior,yPrior)) === false ) {
 					return {
 						status: 'stoppedOnDepart',
 						success: false
@@ -3303,7 +3303,7 @@ class Entity {
 
 			// Are we leaving this TYPE of tile entirely? Like leaving water, fire or mud?
 			if( tileType.name != tileTypePrior.name && tileTypePrior.onDepartType ) {
-				if( tileTypePrior.onDepartType(this,this.map.tileGet(xPrior,yPrior)) === false ) {
+				if( tileTypePrior.onDepartType(this,this.map.getTileEntity(xPrior,yPrior)) === false ) {
 					return {
 						status: 'stoppedOnDepartType',
 						success: false
@@ -3315,7 +3315,7 @@ class Entity {
 		function resultTileTypeEnter(tileType,tileTypePrior) {
 			// Are we entering a new tile TYPE?
 			if( (!tileTypePrior || tileType.name != tileTypePrior.name) && tileType.onEnterType ) {
-				if( tileType.onEnterType(this,this.map.tileGet(this.x,this.y)) ) {
+				if( tileType.onEnterType(this,this.map.getTileEntity(this.x,this.y)) ) {
 					return {
 						status: 'stoppedOnEnterType',
 						success: false
@@ -3327,7 +3327,7 @@ class Entity {
 		function checkSwappable(target) {
 			return 
 				target &&
-				(!this.isUser() || !target.isMerchant) &&
+				(!this.isUser || !target.isMerchant) &&
 				(this.isMyHusk(target) || (!this.isMyEnemy(target) && !this.isMySuperior(target)))
 			;
 		}
@@ -3466,7 +3466,7 @@ class Entity {
 		// Merchant Dialog
 		//
 		let f = this.findAliveOthersNearby().filter( e=>e.id==this.lastBumpedId || (this.seeingSignOf && this.seeingSignOf.id == e.id) );
-		if( f.first && this.isUser() && f.first.isMerchant ) {
+		if( f.first && this.isUser && f.first.isMerchant ) {
 			guiMessage( 'open', {
 				viewClass: 'ViewMerchant',
 				entity: this,
@@ -3711,7 +3711,7 @@ class Entity {
 		// Important for this to happen after we establish whether you are jumping at this moment.
 		let tileType = this.map.tileTypeGet(this.x,this.y);
 		if( tileType.onTouch ) {
-			tileType.onTouch(this,this.map.tileGet(this.x,this.y));
+			tileType.onTouch(this,this.map.getTileEntity(this.x,this.y));
 		}
 	}
 
@@ -3810,14 +3810,10 @@ class Entity {
 	recognizeMove(areaPrior,xTilePrior,yTilePrior,areaChanged) {
 		if( !areaPrior ) {
 			console.assert( this.area );
-			this.origin = {
-				x: this.x,
-				y: this.y,
-				area: this.area,
-				isPosition: true,
-				name: 'origin'
-			};
+			this.origin = this.area.map.getTileEntity(this.x,this.y);
+			this.origin.name = 'origin';
 		}
+
 		if( areaPrior && areaPrior.map.inBounds(xTilePrior,yTilePrior) ) {
 			console.assert( areaPrior && xTilePrior !== undefined );
 			this.map.scentLeave(xTilePrior,yTilePrior,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
@@ -3830,10 +3826,10 @@ class Entity {
 				// DANGER! Doing this while within a loop across the entityList will result in pain!
 				Array.filterInPlace( areaPrior.entityList, entity => entity.id!=this.id );
 			}
-			let fnName = this.isUser() ? 'unshift' : 'push';	// the player happens to always be pushed to first in the list.
+			let fnName = this.isUser ? 'unshift' : 'push';	// the player happens to always be pushed to first in the list.
 			this.area.entityList[fnName](this);
 
-			guiMessage('stageEntityMoved',this);
+			guiMessage('stageEntityMoved',this,'map');
 			tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+this.area.name)
 		}
 
@@ -3843,7 +3839,7 @@ class Entity {
 		this.inventory.forEach( item => { item.x=this.x; item.y=this.y; } );
 
 		// Any visibility cache flushing should happen here.
-		if( areaChanged && this.isUser() ) {
+		if( areaChanged && this.isUser ) {
 			this.area.world.setTickingAreas(this.area.id);
 			guiMessage('setArea',this.area);
 		}
@@ -3853,7 +3849,7 @@ class Entity {
 		let tileType = this.map.tileTypeGet(this.x,this.y);
 		if( tileType.isPit && this.travelMode != 'fly' && !this.jumpLeft ) {
 			let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
-			if( !stairs && !this.isUser() ) {
+			if( !stairs && !this.isUser ) {
 				return vanishIntoPit();
 			}
 			// HEY! If there are no stairs, have the mason scan the map and just put floor where ever
@@ -3880,7 +3876,7 @@ class Entity {
 		let xPrior = this.x;
 		let yPrior = this.y;
 		let areaPrior = this.area;
-//		if( this.isUser() ) {
+//		if( this.isUser ) {
 //			console.log(this.name+' is at '+xPrior+','+yPrior+' dt='+dt);
 //		}
 
@@ -3966,17 +3962,11 @@ class Entity {
 				if( this.light ) {
 					this.area.lightDirty = true;
 				}
-				if( this.isUser() ) {
+				if( this.isUser ) {
 					this.area.pathClip.setCtr(this.x,this.y,MapVisDefault*2);
 					this.area.thinkClip.setCtr(this.x,this.y,MapVisDefault*5);
 				}
 			}
-		}
-
-		if( this.spriteList ) {
-			this.spriteList.forEach( sprite => {
-				window.spriteUpdate(sprite,this.x+0.5,this.y);
-			});
 		}
 
 		let dest = this.destination;
@@ -4059,7 +4049,9 @@ class Entity {
 			itemListTickSecondFn(this.inventory,dtSecond,(this.rechargeRate||1)*dtSecond);
 		});
 
-		if( this.isUser() ) {
+		if( this.isUser ) {
+			// This is a bit of hack at the moment, just to make sure the user always has
+			// a cached visibility.
 			// If the user didn't act this tick, but other things made visibility change a lot
 			// then we need to recalc it so the player can see what is going on.
 			this.calculateVisbility();
@@ -4073,7 +4065,7 @@ function nop() {
 
 function bonk(entity,target) {
 	tell( mSubject|mCares, entity, ' ', mVerb, 'run', ' into ', mObject, target, '.' );
-	if( target.isWall && target.invisible && target.isPosition ) {
+	if( target.isWall && target.invisible && target.isTileEntity ) {
 //		target.wasBonked = true;
 		target.invisible = false;
 		guiMessage( 'revealInvisible', target );

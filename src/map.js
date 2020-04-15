@@ -254,28 +254,6 @@ class SimpleMap {
 		y += Direction.add[dir].y;
 		return this.tileTypeGet(x,y);
 	}
-	tileProxy(tileType,x,y) {
-		if( !tileType.isTileType || tileType.isPosition || tileType === false ) {
-			// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
-			// This also means no permanent data can exist in them.
-			return tileType;
-		}
-		x = Math.toTile(x);
-		y = Math.toTile(y);
-		return Object.assign( {}, tileType, { 
-			id: 'tileProxy-'+Date.makeUid(),
-			x: x,
-			y: y,
-			area: this.area,
-			map: this,
-			isPosition: true
-		});
-	}
-	// It gives you a tile that has an (x,y) and can be written to without harming the tile prototype.
-	tileGet(x,y) {
-		return this.tileProxy( this.tileTypeGet(x,y), x, y );
-	}
-
 	renderToString() {
 		let s = '';
 		this.traverse( (x,y) => {
@@ -327,13 +305,10 @@ class Map extends SimpleMap {
 		// walking around for a while, so we should make fake prior-stink trails for everything. But ya know.
 		this._scentLookup = [];
 		this.siteLookup = [];
-		this.lightCache = [];
 		this.isAirless = false;
 		this.passiveEffectList = [];
 		this.name = "Earth";
 		Object.assign( this, mapVars );
-
-		this.initSprites();
 	}
 
 	lPos(x,y) {
@@ -413,19 +388,23 @@ class Map extends SimpleMap {
 			this._scentLookup[lPos+1] = entity;
 		}
 	}
-
 	get entityList() {
 		return this.area.entityList;
 	}
+	allEntitiesNear(x,y,dist) {
+		let clip = new ClipRect().setCtr(x,y,dist);
+		let list = [];
+		this.entityList.forEach( entity => clip.contains(entity.x,entity.y) ? list.push(entity) : null );
+		this.itemList.forEach( item => clip.contains(item.x,item.y) ? list.push(item) : null );
+		this.map.traverseNear( x, y, dist, (x,y) => {
+			let tile = this.map.getTileEntity(x,y);
+			list.push(tile);
+		});
+		return list;
+	}
+
 	get defaultFloorSymbol() {
 		return TypeIdToSymbol[this.area.theme.palette.floor];
-	}
-	initSprites() {
-		this.tileSprite = [];
-		this.traverse( (x,y) => {
-			this.tileSprite[y] = this.tileSprite[y] || [];
-			this.tileSprite[y][x] = {};
-		});
 	}
 	calcLookup(lookup,testFn) {
 		let xLen = this.xLen;
@@ -435,7 +414,7 @@ class Map extends SimpleMap {
 		});
 		return lookup;
 	}
-	scentLeave(x,y,entity,timeReduction=0) {
+	scentLeave(x,y,entity,timeReductionPercent=0) {
 		// WARNING: Don't make any monster that uses smell have ANY stink. It will
 		// mask the scent of its prey with its own smell!
 		if( !entity.isMonsterType && !entity.stink ) {
@@ -445,7 +424,7 @@ class Map extends SimpleMap {
 		if( tile.noScent ) {
 			return false;
 		}
-		let time = Time.simTime - timeReduction;
+		let time = Time.simTime - Math.floor((timeReductionPercent/100)*Rules.SCENT_AGE_LIMIT);
 		if( time >= this.scentGet(x,y) ) {
 			this.scentSet(x,y,time,entity);
 		}
@@ -512,13 +491,33 @@ class Map extends SimpleMap {
 		let lPos = this.lPos(x,y);
 		this.walkLookup[lPos] = prob;
 	}
-	toTileEntity(x,y,adhocEntity) {
+
+	_tileProxy(tileType,x,y) {
+		if( !tileType.isTileType || tileType.isTileEntity || tileType === false ) {
+			// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
+			// This also means no permanent data can exist in them.
+			return tileType;
+		}
+		x = Math.toTile(x);
+		y = Math.toTile(y);
+		return Object.assign( {}, tileType, { 
+			id: this.area.id+'.'+x+','+y,
+			x: x,
+			y: y,
+			area: this.area,
+			map: this,
+			isTileEntity: true
+		});
+	}
+
+
+	getTileEntity(x,y) {
 		x = Math.toTile(x);
 		y = Math.toTile(y);
 		this.tileEntity[y] = this.tileEntity[y] || [];
 		if( !this.tileEntity[y][x] ) {
-			adhocEntity = adhocEntity || this.tileGet(x,y);
-			this.tileEntity[y][x] = adhocEntity;
+			let tileEntity = this._tileProxy( this.tileTypeGet(x,y), x, y );
+			this.tileEntity[y][x] = tileEntity;
 			//console.log('Tile entity ('+x+','+y+') '+adhocEntity.typeId);
 		}
 		console.assert(this.tileEntity[y][x]);
@@ -641,7 +640,8 @@ class Map extends SimpleMap {
 			return defaultValue;
 		}
 		let lPos = this.lPos(x,y);
-		let light = this.lightCache[lPos];	// note, this should NEVER have MEMORY_MAP_FLAG inside it.
+		let light = this.area.lightCaster.lightMap[lPos];
+		//let light = this.lightCache[lPos];	// note, this should NEVER have MEMORY_MAP_FLAG inside it.
 		return light === undefined ? defaultValue : light;
 	}
 

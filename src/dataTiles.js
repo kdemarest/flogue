@@ -23,6 +23,26 @@ const ImgBridges = {
 // onEnterType - if you are entering a tile type from another tile NOT of the same type.
 //				return false to stop the movement.
 
+let WallRand = new class {
+	constructor() {
+		this.randList = [];
+		for( let i=0 ; i<256 ; ++i ) {
+			this.randList.push( Math.randInt( 0, 1023 ) );
+		}
+	}
+	numSeed(x,y) {
+		if( x===undefined ) return 0;
+		x = Math.toTile(x);
+		y = Math.toTile(y);
+		return this.randList[x&0xFF]+7+this.randList[y&0xFF];
+	}
+};
+
+let CaveWallImgChooseFn = self => {
+	// Would be a lot better to pre-calculate this.
+	let num = WallRand.numSeed(self.x,self.y)%4;
+	return self.imgChoices[num].img
+}
 
 Type.register('TileType',{
 	"floorCave":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "cave floor",
@@ -45,7 +65,9 @@ Type.register('TileType',{
 						2: { img: "decor/boulder3.png" },
 						3: { img: "decor/boulder4.png" },
 					},
-					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true },
+					imgChooseFn: CaveWallImgChooseFn,
+					isWall: true
+				},
 	"wallJagged":   { mayWalk: false, mayFly: false, opacity: 1, name: "jagged wall", 
 					addFloor: true,
 					imgChoices: {
@@ -54,7 +76,9 @@ Type.register('TileType',{
 						2: { img: "decor/jagged3.png" },
 						3: { img: "decor/jagged4.png" },
 					},
-					imgGet: (self,img,num) => img || self.imgChoices[num%4].img, isWall: true, scale: 0.7 },
+					imgChooseFn: CaveWallImgChooseFn,
+					isWall: true,
+					scale: 0.7 },
 	"wallStone":   { mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall",
 					img: "dc-dngn/floor/pedestal_full.png", isWall: true, wantsDoor: true
 					},
@@ -82,7 +106,7 @@ Type.register('TileType',{
 		// flag only means "can be removed in such a way as to be walked upon later.
 		img: "dc-dngn/bridgeNS.png",
 		imgChoices: ImgBridges,
-		imgGet: (self, img) => img || self.img
+		imgChooseFn: self => self.img	// the image will be custom altered among the choices
 	},
 	"water": {
 		symbol: '~',

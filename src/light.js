@@ -189,6 +189,7 @@ Light.Caster = class {
 
 		map.traverse( (x,y,tile) => tile.dark > 0 ? this.cast( map, opacityLookup, x, y, -tile.dark ) : null );
 		darkList.forEach( e => this.cast( map, opacityLookup, e.x, e.y, -e.dark ) );
+		return this.lightMap;
 	}
 }
 

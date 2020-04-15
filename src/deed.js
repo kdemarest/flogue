@@ -339,7 +339,7 @@ let DeedManager = (new class {
 		// process that. Duh.
 		this.deedList.map( deed => deed.doTick=true );
 		for( let deed of this.deedList ) {
-			if( (target === null && deed.target.isPosition) || (target && deed.target.id == target.id) ) {
+			if( (target === null && deed.target.isTileEntity) || (target && deed.target.id == target.id) ) {
 				deed.tick(dt);
 			}
 		}
@@ -506,7 +506,7 @@ let effectApply = function(effect,target,source,item,context) {
 					if( itemList.count ) {
 						targetList.push(...itemList.all);
 					}
-					targetList.push( area.map.tileGet(x,y) );
+					targetList.push( area.map.getTileEntity(x,y) );
 					targetList.forEach( t => {
 						let r = _effectApplyTo(effect,t,source,item,context);
 						result.list.push( r );
@@ -757,7 +757,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		}
 	}
 
-	if( target.isTileType && !target.isPosition ) {
+	if( target.isTileType && !target.isTileEntity ) {
 		debugger;
 	}
 
@@ -772,7 +772,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 	//   - freeze when target is in fire
 	if( effect.op == 'damage' && !target.isMap ) {
 		// This must be made a position because tell() can't assess its position otherwise!
-		let tile = target.map.tileGet( target.x, target.y );
+		let tile = target.map.getTileEntity( target.x, target.y );
 		if( tile.isWater && effect.damageType == DamageType.BURN ) {
 			tell(mSubject,target,' can not be affected by '+effect.damageType+'s while in ',mObject,tile);
 			Anim.FloatUp(delayId,target,StickerList.ePoof.img);
@@ -861,10 +861,11 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		}
 	}
 	else
-	if( target.isPosition && effect.onTargetPosition ) {
+	if( target.isTileEntity && effect.onTargetPosition ) {
 		// If the effect has chosen to do something special when targetting a position,
 		// do that special thing. Otherwise the vast majority will 
-		target.map.toTileEntity(target.x,target.y,target);
+		let temp = target.map.getTileEntity(target.x,target.y);
+		console.assert( target.id = temp.id );
 		result.effectResult = effect.onTargetPosition(target.map,target.x,target.y)
 	}
 	else {

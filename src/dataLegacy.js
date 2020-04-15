@@ -725,7 +725,7 @@ LegacyList.ninja = compose( 'ninja', [
 		skill: {
 			rechargeTime: 40,
 			passesTime: false,
-			effect: { op: 'max', stat: 'scentReduce', value: Rules.SCENT_AGE_LIMIT, duration: 2+index*2 }
+			effect: { op: 'max', stat: 'scentReduce', value: 100, duration: 2+index*2 }
 		},
 		description: 'Take '+(2+index*2)+' steps without leaving a scent trail.'
 	}) ),
@@ -753,7 +753,7 @@ LegacyList.ninja = compose( 'ninja', [
 		skill: {
 			slot: Slot.SKILL,
 			passesTime: false,
-			effect: { op: 'set', stat: 'scentReduce', value: Rules.SCENT_AGE_LIMIT, duration: true }
+			effect: { op: 'set', stat: 'scentReduce', value: 100, duration: true }
 		},
 		description: 'Become odorless at will.'
 	}) ),

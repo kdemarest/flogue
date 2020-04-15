@@ -29,29 +29,29 @@ const Matter = {
 	special: 	{ damage: { } },
 };
 
-const ImgPotion = {
-	eWater: 		{ img: "cyan" },
-	eInvisibility: 	{ img: "clear" },
-	eHaste: 		{ img: "cyan" },
-	eSlow: 			{ img: "silver" },
-	eRegeneration: 	{ img: "orange" },
-	eFlight: 		{ img: "brilliant_blue" },
-	eHealing: 		{ img: "pink" },
-	ePoison: 		{ img: "emerald" },
-	eBurn: 			{ img: "ruby" }, 
-	eFreeze: 		{ img: "brilliant_blue" }, 
-	ePanic: 		{ img: "magenta" },
-	eRage: 			{ img: "dark" },
-	eConfusion: 	{ img: "brown" },
-	eIgnore: 		{ img: "white" },
-	eBlindness: 	{ img: "black" },
-	eSenseXray: 	{ img: "white" },
-	eSenseTreasure: { img: "white" },
-	eSenseLiving: 	{ img: "white" },
-	eLight: 		{ img: "white" },
-	eVuln: 			{ img: "black" },
-	eResistance: 	{ img: "yellow" },
-	eShove: 		{ img: "black" }
+const PotionImgChoices = {
+	eWater: 		{ img: "item/potion/cyan.png" },
+	eInvisibility: 	{ img: "item/potion/clear.png" },
+	eHaste: 		{ img: "item/potion/cyan.png" },
+	eSlow: 			{ img: "item/potion/silver.png" },
+	eRegeneration: 	{ img: "item/potion/orange.png" },
+	eFlight: 		{ img: "item/potion/brilliant_blue.png" },
+	eHealing: 		{ img: "item/potion/pink.png" },
+	ePoison: 		{ img: "item/potion/emerald.png" },
+	eBurn: 			{ img: "item/potion/ruby.png" }, 
+	eFreeze: 		{ img: "item/potion/brilliant_blue.png" }, 
+	ePanic: 		{ img: "item/potion/magenta.png" },
+	eRage: 			{ img: "item/potion/dark.png" },
+	eConfusion: 	{ img: "item/potion/brown.png" },
+	eIgnore: 		{ img: "item/potion/white.png" },
+	eBlindness: 	{ img: "item/potion/black.png" },
+	eSenseXray: 	{ img: "item/potion/white.png" },
+	eSenseTreasure: { img: "item/potion/white.png" },
+	eSenseLiving: 	{ img: "item/potion/white.png" },
+	eLight: 		{ img: "item/potion/white.png" },
+	eVuln: 			{ img: "item/potion/black.png" },
+	eResistance: 	{ img: "item/potion/yellow.png" },
+	eShove: 		{ img: "item/potion/black.png" }
 };
 
 const ImgTables = {
@@ -970,16 +970,16 @@ const RingVarietyList = ({ //Type.establish('RingVariety',{},{
 	"diamondSetting": 	{ level: 80, rarity:  0.1, name: 'diamond' }
 });
 
-const CoinStacks = ({ //Type.establish('CoinStack',{},{
-	coinOne: 	{ img: "coin01" },
-	coinThree: 	{ img: "coin01" },
-	coinTen: 	{ img: "coinTen" },
-	coinMany: 	{ img: "coinPile" },
+const CoinImgChoices = ({ //Type.establish('CoinStack',{},{
+	coinOne: 	{ img: "item/misc/coin01.png" },
+	coinThree: 	{ img: "item/misc/coin01.png" },
+	coinTen: 	{ img: "item/misc/coinTen.png" },
+	coinMany: 	{ img: "item/misc/coinPile.png" },
 });
-let CoinImgFn = (self,img) => {
+let CoinImgChooseFn = self => {
 	let c = self ? self.coinCount : null;
-	let cs = CoinStacks;
-	return "item/misc/"+(img || (c<=1 ? cs.coinOne : (c<=4 ? cs.coinThree : (c<=10 ? cs.coinTen : cs.coinMany))).img)+".png";
+	let cs = self.imgChoices;
+	return c<=1 ? cs.coinOne : c<=4 ? cs.coinThree : c<=10 ? cs.coinTen : cs.coinMany;
 };
 
 const DoorStates = {
@@ -1092,7 +1092,7 @@ let ItemTypeList = {
 					state: 'open',
 					states: DoorStates,
 					imgChoices: DoorStates,
-					imgGet: (self,img) => img || self.imgChoices[self.state].img
+					imgChooseFn: self => self.imgChoices[self.state].img
 				},
 // MARKERS
 	"marker": 	  { name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
@@ -1127,7 +1127,7 @@ let ItemTypeList = {
 		state: 'lit',
 		states: BrazierStates,
 		imgChoices: BrazierStates,
-		imgGet: (self,img) => img || self.imgChoices[self.state].img
+		imgChooseFn: self => self.imgChoices[self.state].img
 	},
 	"table": {
 		mayWalk: false,
@@ -1140,7 +1140,7 @@ let ItemTypeList = {
 		zOrder: Tile.zOrder.TABLE,
 		img: "decor/tableSmall.png",
 		imgChoices: ImgTables,
-		imgGet: (self, img) => img || self.img
+		imgChooseFn: self => self.img
 	},
 	"sign": {
 		mayWalk: true,
@@ -1154,7 +1154,7 @@ let ItemTypeList = {
 		allowPlacementOnBlocking: true,
 		img: "decor/sign.png",
 		imgChoices: ImgSigns,
-		imgGet: (self, img) => img || self.img
+		imgChooseFn: self => self.img
 	},
 	"bed": {
 		mayWalk: false,
@@ -1165,14 +1165,10 @@ let ItemTypeList = {
 		isDecor: true,
 		isBed: true,
 		imgChoices: {
-			head: {
-				img: 'decor/bedHead.png'
-			},
-			foot: {
-				img: 'decor/bedFoot.png'
-			}
+			head: { img: 'decor/bedHead.png' },
+			foot: { img: 'decor/bedFoot.png' }
 		},
-		imgGet: (self, img) => img || self.img
+		imgChooseFn: self => self.img
 	},
 	"barrel": {
 		mayWalk: false,
@@ -1205,7 +1201,7 @@ let ItemTypeList = {
 			open: { img: 'decor/chestOpen.png' },
 			empty: { img: 'decor/chestEmpty.png' }
 		},
-		imgGet: (self,img) => img || self.imgChoices[self.state].img,
+		imgChooseFn: self => self.imgChoices[self.state].img,
 		carrying: '7x 20% any',
 		hasInventory: true
 	},
@@ -1224,7 +1220,7 @@ let ItemTypeList = {
 			open: { img: 'decor/coffinOpen.png' },
 			empty: { img: 'decor/coffinEmpty.png' }
 		},
-		imgGet: (self,img) => img || self.imgChoices[self.state].img,
+		imgChooseFn: self => self.imgChoices[self.state].img,
 		carrying: '30% weapon, 30% armor, 30% coin, 5% helm, 5% bracers, 5% boots, 5% ring',
 		hasInventory: true
 	},
@@ -1306,7 +1302,7 @@ let ItemTypeList = {
 		opacity: 	1,
 		isWall: 	true,
 		noneChance: 0.90,
-		imgGet: 	(self,img) => (img || self.variety.img || "oreVein"),
+		imgChooseFn: self => self.variety.img,
 		matter: 	'stone',
 		imgChoices: VeinVarietyList,
 		varieties: 	VeinVarietyList,
@@ -1361,8 +1357,8 @@ let ItemTypeList = {
 		coinVariance: 	0.30,
 		isCoin: 		true,
 		isTreasure: 	1,
-		imgGet: 		CoinImgFn,
-		imgChoices: 	CoinStacks,
+		imgChoices: 	CoinImgChoices,
+		imgChooseFn: 	CoinImgChooseFn,
 		icon: 			'/gui/icons/coin.png'
 	},
 	"potion":   {
@@ -1380,8 +1376,8 @@ let ItemTypeList = {
 		effects: 		PotionEffects,
 		effectWhen: 	{ isHarm: 'throw', DEFAULT: 'quaff'},
 		mayThrow: 		true,
-		imgGet: 		(self,img)=>"item/potion/"+(img || (ImgPotion[self.effect?self.effect.typeId:'']||NulImg).img || "emerald")+".png",
-		imgChoices: 	ImgPotion,
+		imgChoices: 	PotionImgChoices,
+		imgChooseFn: 	self => self.effect ? self.imgChoices[self.effect.typeId].img : self.imgChoices.eHealing.img,
 		icon: 			'/gui/icons/potion.png'
 	},
 	"spell":    {
@@ -1406,8 +1402,8 @@ let ItemTypeList = {
 		matter: 		'stone',
 		varieties: 		OreVarietyList,
 		isOre: 			true,
-		imgGet: 		(self,img) => (img || self.variety.img || "ore"),
 		imgChoices: 	OreVarietyList,
+		imgChooseFn: 	self => self.variety.img,
 		icon: 			'/gui/icons/ore.png'
 	},
 	"gem": 		{
@@ -1427,7 +1423,7 @@ let ItemTypeList = {
 		range: 			Rules.RANGED_WEAPON_DEFAULT_RANGE,
 		mayTargetPosition: 1,
 		autoCommand: 	Command.USE,
-		imgGet: 		(self,img) => (img || self.variety.img || "Gem Type2 Black"),
+		imgChooseFn: 	self => self.variety.img,
 		imgChoices: 	GemVarietyList,
 		scale: 			0.3,
 		icon: 			'/gui/icons/gem.png'
@@ -1518,7 +1514,7 @@ let ItemTypeList = {
 		useVerb: 		'wear',
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
-		imgGet: 		(self, img) => (img || self.variety.img || "item/armour/chain_mail1.png"),
+		imgChooseFn: 	self => self.variety.img,
 		imgChoices: 	ArmorVarietyList,
 		icon: 			'/gui/icons/armor.png'
 	},
@@ -1538,7 +1534,7 @@ let ItemTypeList = {
 		useVerb: 		'wear',
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
-		imgGet: 		(self,img) => (img || self.variety.img || "item/armour/chain_mail1.png"),
+		imgChooseFn: 	self => self.variety.img,
 		imgChoices: 	CloakVarietyList,
 		icon: 			'/gui/icons/armor.png'
 	},
@@ -1611,7 +1607,7 @@ let ItemTypeList = {
 		useVerb: 		'wear',
 		triggerOnUse: 	true,
 		effectDecorate: { duration: true },
-		imgGet: (self, img) => (img || self.material.img || 'gold'),
+		imgChooseFn:	self => self.material.img,
 		imgChoices: 	RingMaterialList,
 		icon: 			'/gui/icons/ring.png'
 	},
@@ -1620,7 +1616,7 @@ let ItemTypeList = {
 		isCharm: 		1,
 		name:		 	"{variety}${?effect}",
 		varieties: 		CharmVarietyList,
-		imgGet: (self, img) => (img || (self ? self.variety.img : '') || 'item/misc/misc_rune.png'),
+		imgChooseFn:	self => self.variety.img,
 		imgChoices: 	CharmVarietyList,
 		icon: 			'/gui/icons/charm.png'
 	},
@@ -1630,7 +1626,8 @@ let ItemTypeList = {
 		isStuff: 		1,
 		name:		 	"{variety}${?effect}",
 		varieties: 		StuffVarietyList,
-		imgGet: (self, img) => (img || (self ? self.variety.img : '') || 'item/misc/misc_rune.png'),
+		imgDefault:		'item/misc/misc_rune.png',
+		imgChooseFn: 	self => self.variety.img || self.imgDefault,
 		imgChoices: 	StuffVarietyList,
 		icon: 			'/gui/icons/stuff.png'
 	},
@@ -1686,7 +1683,7 @@ ItemTypeList.vein.onBump = function(entity,self) {
 	});
 	let chunkAnim = new Anim({},{
 		at: 		self,
-		img: 		StickerList.oreChaff.img, //self.imgGet(self),
+		img: 		StickerList.oreChaff.img,
 		duration: 	0.2,
 		onInit: 		a => { a.create(6); },
 		onSpriteMake: 	s => { s.sScaleSet(0.3).sVel(Math.rand(-90,90),Math.rand(2,5)); s.zOrder=100; },
@@ -1694,7 +1691,7 @@ ItemTypeList.vein.onBump = function(entity,self) {
 	});
 	new Anim( {}, {
 		at: 		self,
-		img: 		self.imgGet(self),
+		img: 		self.imgChooseFn(self),
 		duration: 	chunkAnim,
 		onSpriteMake: 	s => { },
 		onSpriteTick: 	s => { s.sQuiver(0.1,0.1); }
@@ -1926,7 +1923,7 @@ ItemTypeList.barrel.onBump = function(toucher,self) {
 		Inventory.giveTo( toucher, self.inventory, self, false ); //, item => {
 //			new Anim({},{
 //				at: 		self,
-//				img: 		item.imgGet ? item.imgGet(item) : item.img,
+//				img: 		item.imgChooseFn ? item.imgChooseFn(item) : item.img,
 //				delay: 		delay,
 //				duration: 	0.6,
 //				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
@@ -2035,7 +2032,7 @@ ItemTypeList.fontDeep.onTickSecond = function(dt) {
 
 CharmVarietyList.sunCrystal.onTickSecond = function(dt) {
 	if( this.owner.isMap ) {
-		let tile = this.map.tileGet(this.x,this.y);
+		let tile = this.map.getTileEntity(this.x,this.y);
 		effectApply(this.effect,tile,this.ownerOfRecord,this,'tick');
 	}
 }

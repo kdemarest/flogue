@@ -1,12 +1,12 @@
 Module.add('imageRepo',function() {
 
-function DefaultImgGet(self) {
+function DefaultImgChooseFn(self) {
 	return self.img;
 }
 
 class PixiImageRepo {
 	constructor(loader) {
-		this.imgGet = [];
+		this.imgChooseFnList = [];
 		this.ready = false;
 		this.loader = loader;
 	}
@@ -35,7 +35,7 @@ class PixiImageRepo {
 		function scan(typeId,type,member) {
 			if( type[member] ) {
 				if( typeId ) {
-					self.imgGet[typeId] = type.imgGet || DefaultImgGet;
+					self.imgChooseFnList[typeId] = type.imgChooseFn || DefaultImgChooseFn;
 				}
 				add(type[member]);
 			}
@@ -63,13 +63,17 @@ class PixiImageRepo {
 		// variation of imgChoices. It is the responsibilty of the type to implement this properly.
 		for( let symbol in SymbolToType ) {
 			let type = SymbolToType[symbol];
-			console.assert( this.imgGet[type.typeId] === undefined );
-			this.imgGet[type.typeId] = type.imgGet || DefaultImgGet;
-			if( type.imgGet && !type.imgChoices ) debugger;
+			console.assert( this.imgChooseFnList[type.typeId] === undefined );
+			this.imgChooseFnList[type.typeId] = type.imgChooseFn || DefaultImgChooseFn;
+			if( type.imgChooseFn && !type.imgChoices ) {
+				// if you make a chooseFn then you MUST enumerate all possible imgChoices so that
+				// we can scan through and pre-load them.
+				debugger;
+			}
 			if( type.imgChoices ) {
-				let imgGet = this.imgGet[type.typeId];
+				let imgChooseFn = this.imgChooseFnList[type.typeId];
 				for( let key in type.imgChoices ) {
-					add( imgGet(null,type.imgChoices[key].img) );
+					add( type.imgChoices[key].img || type.imgDefault );
 				}
 			}
 			else {
@@ -101,15 +105,24 @@ class PixiImageRepo {
 			.load(setup);
 
 	}
-	get(imgPath) {
-		let resource = this.loader.resources[IMG_BASE+imgPath];
+
+	getImg(entity) {
+		let imgChooseFn = this.imgChooseFnList[entity.typeId] || DefaultImgChooseFn;
+		return imgChooseFn(entity);
+	}
+
+	getResourceByImg(imgWithoutBase) {
+		let resource = this.loader.resources[IMG_BASE+imgWithoutBase];
 		if( !resource ) debugger;
 		return resource;
 	}
-	imgPath(entity) {
-		let imgGet = this.imgGet[entity.typeId];
-		let imgPath = IMG_BASE+imgGet(entity);
-		return imgPath;
+
+	getResource(entity) {
+		return this.getResourceByImg( this.getImg(entity) );
+	}
+
+	getImgFullPath(entity) {
+		return IMG_BASE+this.getImg(entity);
 	}
 }
 

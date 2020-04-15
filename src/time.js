@@ -21,15 +21,16 @@ let Time = (new class {
 	}
 	tickOnInterval(interval,dt,trackingObject,fn) {
 		let repsLimit = 3.0;
-		let c = '_interval'+interval;
-		trackingObject[c] = Math.min( interval*repsLimit, (trackingObject[c]||0)+dt);
-		while( trackingObject[c] >= interval ) {
+		let tickerId = '_interval'+interval;
+		trackingObject[tickerId] = Math.min( interval*repsLimit, (trackingObject[tickerId]||0)+dt);
+		while( trackingObject[tickerId] >= interval ) {
 			fn.call(trackingObject,interval);
-			trackingObject[c] -= interval;
+			trackingObject[tickerId] -= interval;
 		}
+		return trackingObject;
 	}
 	tickOnTheSecond(dt,trackingObject,fn) {
-		this.tickOnInterval(1,dt,trackingObject,fn);
+		return this.tickOnInterval(1,dt,trackingObject,fn);
 	}
 }());
 

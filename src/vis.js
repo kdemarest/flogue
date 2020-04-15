@@ -48,10 +48,7 @@ class Vis {
 		nearDist is the distance from center to the very nearest part of the block
 	**/
 
-	calcVis(px,py,senseSight,senseDarkVision,blind,xray,senseInvisible,visGrid,mapMemory) {
-		px = Math.toTile(px);
-		py = Math.toTile(py);
-
+	calcVis(px,py,senseSight,senseDarkVision,blind,xray,senseInvisible,visGrid,mapMemory) {		
 
 		function canSee(x,y) {
 			return map.getLightAt(x,y,0) > 0 || Distance.isNear(x-px,y-py,senseDarkVision+0.5);
@@ -84,6 +81,7 @@ class Vis {
 		map.traverse( (x,y) => {
 			visGrid[y] = visGrid[y] || [];
 			visGrid[y][x] = defaultValue;
+			// With xRay vision I get to remember everything I can see through walls.
 			if( defaultValue && mapMemory && canSee(x,y) && x>=px-senseSight && y>=py-senseSight && x<=px+senseSight && y<=py+senseSight ) {
 				remember(x,y);
 			}

@@ -108,14 +108,15 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 			inject.forEach( make => {
 				console.assert(make.typeFilter);
 				let typeId = make.typeFilter.split('.')[0];
-				if( TileTypeList[typeId] ) {
+				let t = TileTypeList[typeId];
+				if( t ) {
 					//console.assert( !tileSet );
-					map.tileSymbolSet(x,y,TileTypeList[typeId].symbol);
+					map.tileSymbolSet(x,y,t.symbol);
 					// If this tile has more than just a spec for itself, then we better
-					// make it isPosition so that it can be given all the other member vars.
+					// make it isTileEntity so that it can be given all the other member vars.
 					if( Object.countMembers(make) > 1 ) {
-						let entity = map.toTileEntity(x,y);
-						Object.assign( entity, make );
+						let entity = map.getTileEntity(x,y);
+						Object.assign( entity, make, { neverCleanup: true } );
 					}
 					tileSet = true;
 					return;
@@ -238,7 +239,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	function postProcess(map, entityList) {
 		map.traverse( (x,y,tile) => {
 			if( tile.imgChoose ) {
-				let tile = map.toTileEntity(x,y);
+				let tile = map.getTileEntity(x,y);
 				tile.imgChoose.call(tile,map,x,y);
 				console.assert( typeof tile.img == 'string' );
 			}
@@ -424,7 +425,7 @@ function tickRealtime(dt,map,entityListRaw,thinkClip) {
 	function orderByTurn(entityList) {
 		let list = [[],[],[]];	// players, pets, others
 		for( let entity of entityList ) {
-			let group = ( entity.isUser() ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
+			let group = ( entity.isUser ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
 			list[group].push(entity);
 		}
 		//list[2].sort( (a,b) => a.speed-b.speed );
@@ -485,18 +486,19 @@ class Area {
 		console.assert( depth>=0 );
 		console.assert( typeof theme == 'object' );
 		this.id = areaId;
-		this.isArea = true;
-		this.depth = depth;
-		this.theme = theme;
-		this.world = null;
-		this.map = null;
+		this.isArea		= true;
+		this.depth		= depth;
+		this.theme		= theme;
+		this.world		= null;
+		this.map		= null;
 		this.entityList = null;
-		this.siteList = null;
-		this.picker = new Picker(depth);
-		this.pathClip = new ClipRect();
-		this.thinkClip = new ClipRect();
-		this.lightDirty = true;
-		this.isTicking = false;
+		this.siteList	= null;
+		this.picker		= new Picker(depth);
+		this.pathClip	= new ClipRect();
+		this.thinkClip	= new ClipRect();
+		this.lightDirty	= true;
+		this.isTicking	= false;
+		this.entitySpriteList = {};
 		this.underConstruction = true;
 
 		// NOTE: Move this into the areaBuild() at some point.
@@ -559,7 +561,7 @@ class Area {
 		let oldLight = observer.light;
 		observer.light = Math.max(observer.senseDarkVision||0,observer.light||0);
 
-		this.lightCaster.castAll(
+		this.map.lightCache = this.lightCaster.castAll(
 			this.map,
 			this.vis.opacityLookup,
 			this.entityList,

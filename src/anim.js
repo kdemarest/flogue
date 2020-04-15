@@ -237,7 +237,7 @@ return;
 			this.area = this.at.area;
 		}
 		if( this.x === undefined && this.follow ) {
-			if( this.follow.isTileType && !this.follow.isPosition ) {
+			if( this.follow.isTileType && !this.follow.isTileEntity ) {
 				debugger;
 			}
 			console.assert( this.follow.x!==undefined && this.follow.y!==undefined && this.follow.area!==undefined );

@@ -67,24 +67,19 @@ class ViewMiniMap extends ViewObserver {
 		}
 	}
 	draw( c, entity, x, y, scale, ctr ) {
-		let imgGet = ImageRepo.imgGet[entity.typeId];
-		if( !imgGet ) debugger;
-		if( imgGet ) {
-			let imgPath = imgGet(entity);
-			if( !entity ) debugger;
-			let resource = ImageRepo.get(imgPath);
-			if( resource ) {
-				let image = resource.texture.baseTexture.source;
-				if( ctr ) {
-					x -= (scale/this.scale)/2;
-					y -= (scale/this.scale)/2;
-				}
-				c.drawImage( image, x*this.scale, y*this.scale, scale,scale );
+		console.assert(entity);
+		let resource = ImageRepo.getResource(entity);
+		if( resource ) {
+			let image = resource.texture.baseTexture.source;
+			if( ctr ) {
+				x -= (scale/this.scale)/2;
+				y -= (scale/this.scale)/2;
 			}
-			else {
-				console.log( "Unable to find image for "+entity.typeId+" img "+imgPath );
-				return false;
-			}
+			c.drawImage( image, x*this.scale, y*this.scale, scale,scale );
+		}
+		else {
+			console.log( "Unable to find image for "+entity.typeId+" img "+imgPath );
+			return false;
 		}
 	}
 

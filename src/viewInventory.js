@@ -183,7 +183,7 @@ class ViewInventory extends ViewObserver {
 				ex.permuteDesc?'<span class="statNotice">'+ex.permuteDesc+'</span>':'',
 				ex.rechargeLeft
 			);
-			let exSlot =(!observer.isUser() ? '' :
+			let exSlot =(!observer.isUser ? '' :
 				(item.inSlot ? icon('gui/icons/marked.png') : 
 				(item.slot ? icon('gui/icons/unmarked.png') : 
 				(!isNew?'<span class="newItem">NEW</span>' : ''

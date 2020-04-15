@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+
+<style>
+pre {
+	font-family: "courier";
+	line-height: 0.8;
+	font-size:12px;
+}
+</style>
+
+<link rel="stylesheet" type="text/css" href="minireset.css">
+<link rel="stylesheet" type="text/css" href="index.css">
+
+<script src="utilModule.js" charset="utf-8"></script>
+
+
+<script src="sizeof.min.js" charset="utf-8"></script>
+<script src="jquery.3.3.1.js" charset="utf-8"></script>
+<script src="utilities.js" charset="utf-8"></script>
+
+<script>
+
+function main() {
+	Module.realize();
+
+	let a = {
+		mayWalk: true,
+		mayFly: true,
+		maySwim: true,
+		noScent: true,
+		opacity: 0,
+		damageType: 'burn',
+		isFire: true,
+		mayJump: true,
+		name: "lava",
+		light: 5,
+		glow: 1,
+	}
+
+	let b = {
+		mayWalk: true,
+		mayFly: true,
+		maySwim: true,
+		noScent: true,
+		opacity: 0,
+		damageType: 'burn',
+		isFire: true,
+		mayJump: true,
+		name: "lava",
+		light: 5,
+		glow: 1,
+	}
+
+
+	console.log('a=',sizeof(a));
+	console.log('b=',sizeof(b));
+}
+
+</script>
+
+</script>
+</head>
+<body>
+	<pre id="caseId"></pre>
+	<pre id="mapOriginal"></pre>
+	<pre id="map"></pre>
+	<pre id="result"></pre>
+
+	<script>
+		$(document).ready( () => {
+			//keep('main');
+			setTimeout( main, 0 );
+		});
+	</script>
+</body>
+</html>

@@ -328,7 +328,7 @@ class UserCommandHandler {
 				if( !mayTargetPos ) {
 					return this.cmd.cancel();
 				}
-				target = new Finder( [observer.map.tileGet(x,y)] );
+				target = new Finder( [observer.map.getTileEntity(x,y)] );
 			}
 			this.cmd[member] = target.first;
 			guiMessage('viewRangeUnprime');

@@ -76,7 +76,7 @@ class ViewInfo extends ViewObserver {
 			let s = '';
 			if( header ) {
 				let lvl = !item.isTreasure ? '' : ' Level '+item.level+'<br>Value '+ex.priceWithCommas;
-				s += true||item.isUnique ? '<img class="itemImage" src="'+ImageRepo.imgPath(item)+'"><br>' :
+				s += true||item.isUnique ? '<img class="itemImage" src="'+ImageRepo.getImgFullPath(item)+'"><br>' :
 					'<table class="itemIconTable"><tr><td>'+ex.icon+'</td><td>'+lvl+'</td></tr></table><br>';
 				s += ex.description+(ex.permutation?' '+ex.permutation:'')+'<br>';
 				if( ex.effectAbout ) {
@@ -183,7 +183,7 @@ class ViewInfo extends ViewObserver {
 		}
 
 		let s = "";
-		if( debug && !entity.isUser() ) {
+		if( debug && !entity.isUser ) {
 			s += '['+(this.lastDirAttempt||'-')+'] ';
 			s += entity.attitude+' '+(entity.bumpCount||'')+'<br>';
 		}
@@ -191,15 +191,15 @@ class ViewInfo extends ViewObserver {
 			return '<tr><td>'+a+'</td><td>'+b+'</td></tr>';
 		}
 
-		s += '<div class="monsterImageBackground"><img class="monsterImage" src="'+ImageRepo.imgPath(entity)+/*IMG_BASE+entity.img+*/'"></div><br>';
+		s += '<div class="monsterImageBackground"><img class="monsterImage" src="'+ImageRepo.getImgFullPath(entity)+/*IMG_BASE+entity.img+*/'"></div><br>';
 
 		s += '<table>';
 		s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
-		if( !entity.isUser() ) {
+		if( !entity.isUser ) {
 			s += tRow('Activity:',(entity.activity ? entity.activity : (entity.attitude|'uncertain'))+(this.enemyIsPresent?'*':''));
 		}
 		let shield = entity.getFirstItemInSlot(Slot.SHIELD);
-		if( entity.isUser() ) {
+		if( entity.isUser ) {
 			let bc = shield ? shield.calcBlockChance('any',true,entity.isBraced,entity.braceBonus) : 0;
 			let weapon = entity.calcDefaultWeapon();
 			let weaponEx = weapon.explain(null,entity);
@@ -284,7 +284,7 @@ class ViewInfo extends ViewObserver {
 			});
 		}
 		s += p;
-		if( !entity.isUser() ) {
+		if( !entity.isUser ) {
 			s += debug ? (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'') : '';
 //			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');
 //			$('#guiPathDebug').html(entity.path ? entity.path.render().join('\n') : '');

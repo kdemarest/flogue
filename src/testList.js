@@ -81,7 +81,7 @@ TestList.simpleCombat = {
 		{ typeFilter: 'goblin', atMarker: 'dist1', testNeverFlee: true }
 	],
 	think(entity,helper) {
-		if( entity.isUser() ) {
+		if( entity.isUser ) {
 			entity.command = entity.commandList.shift();
 			return true;
 		}
@@ -245,7 +245,7 @@ TestList.playFullGame = {
 		};
 	},
 	think(entity,helper) {
-		if( !entity.isUser() ) {
+		if( !entity.isUser ) {
 			return;
 		}
 		let map = entity.map;

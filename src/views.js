@@ -38,7 +38,7 @@ class ViewObserver {
 		if( msg == 'observer' && payload !== this.observer ) {
 			this.observerDefault = payload;
 			if( this.onSetObserver ) {
-				this.onSetObserver();
+				this.onSetObserver(payload);
 			}
 		}
 	}
@@ -290,7 +290,7 @@ class ViewExperience extends ViewObserver {
 		let entity = this.observer;
 		if( !entity ) return;
 
-		if( entity.isTileType || entity.isItemType || (entity.isMonsterType && !entity.isUser()) ) {
+		if( entity.isTileType || entity.isItemType || (entity.isMonsterType && !entity.isUser) ) {
 			let s = String.capitalize(entity.name.replace(/\$/,''));
 			if( entity.level !== undefined && (entity.isMonsterType || (entity.isItemType && entity.isTreasure)) ) {
 				s += ' Level '+Math.floor(entity.level);

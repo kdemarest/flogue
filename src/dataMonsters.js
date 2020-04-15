@@ -289,7 +289,7 @@ let BodySlots = {
 	humanoidBot: 	{ hip: 1, shield: 1, skill: 100 },
 }
 
-let PlayerImages = {
+let PlayerImgChoices = {
 	standard: { img: 'mon/human/solarPriest.png' }, 
 	soldier: { img: 'mon/human/soldier.png' }, 
 	ninja: { img: 'mon/human/ninja.png' }, 
@@ -372,7 +372,7 @@ sensePerception	- shows you where others could target you, eg roughly their reac
 senseAlert		- shows, based on your sneaking ability, how close you'd have to be to them to alert
 
 imgChoices	- If you want to get fancier than just using core.img you can put some image choices here.
-imgGet		- pairs with imgChoices to determine what to show.
+imgChooseFn	- pairs with imgChoices to determine what to show. Returns the image path.
 
 Statuses
 breathStopped	- if you require breath you'll start taking damage after Rules.breathLimitToDamage
@@ -494,8 +494,6 @@ function monsterTypePreProcess(typeId,m) {
 
 	m.speedMove   = m.speedMove!==undefined ? m.speedMove : Rules.MONSTER_SPEED_MOVE;
 	m.speedAction = m.speedAction!==undefined ? m.speedAction : Rules.MONSTER_SPEED_ACTION;
-	//m.speedMove *= 0.5;
-	//m.speedAction *= 0.2;
 
 	// There is code that assumes that all monsters have, at least, an emptyinventory.
 	m.carrying = m.carrying || [];
@@ -612,10 +610,9 @@ Type.register( 'MonsterType', {
 		rechargeRate: 1,
 		senseSight: MaxVis,
 		strictAmmo: true,
-		imgChoices: PlayerImages,
 		scale: 1.1,
-		imgGet: (self,img) => {
-			if( img ) return img;
+		imgChoices: PlayerImgChoices,
+		imgChooseFn: self => {
 			let i2 = self.imgChoices.standard;
 			let i1 = self.imgChoices[self.legacyId];
 			let i0 = self.imgChoices[self.legacyId+(self.sneak?'Sneak':'')];
@@ -1548,7 +1545,7 @@ Type.register( 'MonsterType', {
 	"giantSnail": {
 		core: [ 59, '10:100', 'neutral', 'rot', 'animal', 'noped', 'mon/snail.png', 'it' ],
 		imgChoices: { moving: { img: 'mon/snail.png' }, hiding: { img: 'mon/snailInShell.png' } },
-		imgGet: (self,img) => img || self.imgChoices[self.inShell?'hiding':'moving'].img,
+		imgChooseFn: self => self.imgChoices[self.inShell?'hiding':'moving'].img,
 		attitude: Attitude.HUNT,
 		brainMindset: 'fleeWhenAttacked',
 		immuneInShell: [DamageType.CUT,DamageType.STAB,DamageType.BITE,DamageType.CLAW,DamageType.BASH,DamageType.POISON,DamageType.BURN,DamageType.FREEZE].join(','),
@@ -1694,7 +1691,7 @@ MonsterTypeList.redOoze.onEnterTile = function(x,y) {
 }
 
 MonsterTypeList.daitox.onTickSecond = function() {
-	let tile = this.map.tileGet(this.x,this.y);
+	let tile = this.map.getTileEntity(this.x,this.y);
 	effectApply(this.effectOngoing,tile,this,null,'tick');
 }
 
