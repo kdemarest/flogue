@@ -7,6 +7,7 @@ class ViewMiniMap extends ViewObserver {
 		this.captionDivId = captionDivId;
 		this.caption = '';
 		this.drawn = [];
+		this.created = false;
 	}
 	create(area) {
 		$( this.divId+'Canvas0' ).remove();
@@ -28,6 +29,7 @@ class ViewMiniMap extends ViewObserver {
 			.append('<canvas id="'+this.divId.replace('#','')+'Canvas0'+'" height="'+this.yLenCanvas+'" width="'+this.xLenCanvas+'"></canvas>')
 			.append('<canvas id="'+this.divId.replace('#','')+'Canvas1'+'" height="'+this.yLenCanvas+'" width="'+this.xLenCanvas+'"></canvas>')
 			.show();
+		this.created = true;
 	}
 	setArea(area) {
 		this.caption = String.capitalize(area.name)+' (Depth '+area.depth+')';
@@ -90,6 +92,10 @@ class ViewMiniMap extends ViewObserver {
 	}
 
 	render() {
+
+		if( !this.created ) {
+			return;
+		}
 
 		let large = function(mult) {
 			return Math.clamp(this.scale,2,5)*mult;

@@ -496,6 +496,7 @@ class Map extends SimpleMap {
 		if( !tileType.isTileType || tileType.isTileEntity || tileType === false ) {
 			// You only need to make adhoc versions of TILES, because they lack (x,y) coords.
 			// This also means no permanent data can exist in them.
+			debugger;
 			return tileType;
 		}
 		x = Math.toTile(x);
@@ -522,6 +523,14 @@ class Map extends SimpleMap {
 		}
 		console.assert(this.tileEntity[y][x]);
 		return this.tileEntity[y][x];
+	}
+
+	findTileArrayNear(x,y,dist) {
+		let result = [];
+		this.traverseNear( x, y, dist, (x,y) => {
+			result.push(this.getTileEntity(x,y));
+		});
+		return result;
 	}
 
 	tileTypeGetFastUnasfe(x,y) {
@@ -707,6 +716,13 @@ class Map extends SimpleMap {
 		if( !this.inBounds(x,y) ) return new Finder([]);
 		return new Finder(this.itemLookupGet(x,y) || this.itemLookupStaticNop);
 	}
+	findItemNear(x,y,dist) {
+		let result = [];
+		this.traverseNear( x, y, dist, (x,y) => {
+			result.push( ...(this.itemLookupGet(x,y) || this.itemLookupStaticNop) );
+		});
+		return new Finder(result);
+	}
 	findChosenItemAt(x,y,fn) {
 		if( this.inBounds(x,y) ) {
 			let a = this.itemLookupGet(x,y);
@@ -726,24 +742,30 @@ class Map extends SimpleMap {
 		if( !this.inBounds(x,y) ) return this.entityLookupStaticNop;
 		return this._entityLookupGet(x,y) || this.entityLookupStaticNop;
 	}
+	findEntityArrayNear(x,y,dist) {
+		let result = [];
+		this.traverseNear( x, y, dist, (x,y) => {
+			result.push( ...(this._entityLookupGet(x,y) || this.entityLookupStaticNop) );
+		});
+		return result;
+	}
 	_entityRemove(entity,x,y) {
 		//console.log( '- '+entity.name+' ('+entity.x+','+entity.y+')' );
 		if( entity.light && entity.area ) {
 			entity.area.lightDirty = true;
 		}
 
-		console.log('entityRemove',entity.name,x,y);
+		//console.log('entityRemove',entity.name,x,y);
 		this._entityLookupRemove(entity,x,y);
-		guiMessage('stageEntityMoved',entity,'map');
 	}
 	_entityInsert(entity,x,y) {
 		//console.log( '+ '+entity.name+' ('+entity.x+','+entity.y+')' );
 		if( entity.light && entity.area ) {
 			entity.area.lightDirty = true;
 		}
-		console.log('entityInsert',entity.name,x,y);
+		//console.log('entityInsert',entity.name,x,y);
 		this._entityLookupAdd(entity,x,y);
-		guiMessage('stageEntityMoved',entity,'map');
+		guiMessage('stageEntityNotice',entity,'map');
 	}
 
 	_itemRemove(item) {
@@ -766,8 +788,6 @@ class Map extends SimpleMap {
 				}
 			});
 		}
-		guiMessage('stageEntityMoved',item,'map');
-		//this.tileSymbolSet(item.x,item.y,TileTypeList['floor'].symbol);
 	}
 	_itemTake(item,x,y) {
 
@@ -802,7 +822,7 @@ class Map extends SimpleMap {
 		if( item.light ) {
 			this.area.lightDirty = true;
 		}
-		guiMessage('stageEntityMoved',item,'map');
+		guiMessage('stageEntityNotice',item,'map');
 
 		return item;
 	}

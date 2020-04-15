@@ -124,7 +124,7 @@ Module.add('config.ken',function(X,moduleId) {
 		prefer: 		null,
 		itemDensity:    0.00001,
 		enemyDensity:  	0.00001,
-		friendDensity: 	0.05,
+		friendDensity: 	0.000005,
 	}
 
 	plugin.ThemeList.kenTheme = {
@@ -142,7 +142,7 @@ Module.add('config.ken',function(X,moduleId) {
 //		rEPIC: 			'graveYard',
 		monsters: 		['isDemon'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
-		itemDensity:    0.00001,
+		itemDensity:    0.05,
 		enemyDensity:  	0.001,
 		friendDensity: 	0.000001,
 	}
@@ -170,7 +170,7 @@ Module.add('config.ken',function(X,moduleId) {
 		//senseSmell: 200,
 		//senseDarkVision: 8,
 		light: 7,
-		//experience: 100,
+		experience: 1000,
 		inject: {
 			//level: 0,
 			//immortal: true,
@@ -185,7 +185,7 @@ Module.add('config.ken',function(X,moduleId) {
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
 		//startingDepth: 12,
-		themeId: 'kenTinyTheme',
+		//themeId: 'kenTinyTheme',
 		saveBattery: true,
 		playerInject: player.inject
 	}

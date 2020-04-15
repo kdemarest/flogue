@@ -1674,22 +1674,22 @@ ItemTypeList.vein.onBump = function(entity,self) {
 	let dx = self.x - entity.x ;
 	let dy = self.y - entity.y;
 	let deg = deltaToDeg(dx,dy);
-	new Anim( {}, {
+	new Anim({
 		follow: 	entity,
 		duration: 	0.1,
-		onInit: 		a => { a.puppet(entity.spriteList); },
-		onSpriteMake: 	s => { s.sPosDeg(deg,0.2); },
+		onInit: 		a => { a.takePuppet(entity); },
+		onSpriteMake: 	s => { s.sPosRelDeg(deg,0.2); },
 		onSpriteDone: 	s => { s.sReset(); }
 	});
-	let chunkAnim = new Anim({},{
+	let chunkAnim = new Anim({
 		at: 		self,
 		img: 		StickerList.oreChaff.img,
 		duration: 	0.2,
 		onInit: 		a => { a.create(6); },
 		onSpriteMake: 	s => { s.sScaleSet(0.3).sVel(Math.rand(-90,90),Math.rand(2,5)); s.zOrder=100; },
-		onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sGrav(40).sRot(360); }
+		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(40).sRot(360); }
 	});
-	new Anim( {}, {
+	new Anim({
 		at: 		self,
 		img: 		self.imgChooseFn(self),
 		duration: 	chunkAnim,
@@ -1921,25 +1921,25 @@ ItemTypeList.barrel.onBump = function(toucher,self) {
 		}
 //		let delay = 0;
 		Inventory.giveTo( toucher, self.inventory, self, false ); //, item => {
-//			new Anim({},{
+//			new Anim({
 //				at: 		self,
 //				img: 		item.imgChooseFn ? item.imgChooseFn(item) : item.img,
 //				delay: 		delay,
 //				duration: 	0.6,
 //				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
-//				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
+//				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
 //			});
 //			delay += 0.3;
 //		});
 	}
 
-	new Anim({},{
+	new Anim({
 		follow: 	self,
 		img: 		self.img,
 		duration: 	0.6,
 		onInit: 		a => { a.create(5); },
 		onSpriteMake: 	s => { let deg=Math.rand(0-60,0+60); s.sScaleSet(0.7).sVel(deg,Math.rand(5,7)); s.rot = deg/60*Math.PI; },
-		onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel).sGrav(20); s.rotation += s.rot*s.delta; }
+		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(20); s.rotation += s.rot*s.delta; }
 	});
 
 	self.destroy();
@@ -1968,12 +1968,12 @@ ItemTypeList.fontSolar.onTickSecond = function(dt) {
 			deed.timeLeft = 2;
 		}
 		else {
-			let glowAnim = new Anim( {}, {
+			let glowAnim = new Anim({
 				follow: 	entity,
 				img: 		StickerList.glowGold.img,
 				duration: 	true,
 				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sScaleSet(0.30).sPos(0,-0.7); },
+				onSpriteMake: 	s => { s.sScaleSet(0.30).sPosRel(0,-0.7); },
 			});
 			let effect = new Effect(this.area.depth,{
 				isSolarRegen: true,

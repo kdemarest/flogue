@@ -148,11 +148,9 @@ class ViewRange extends ViewObserver {
 		let area = this.observer.area;
 		function draw(x,y,ok) {
 			guiMessage('overlayAdd',{
-				groupId: 'viewRangePicking',
-				x:x,
-				y:y,
-				area:area,
-				img:StickerList[ok?'crosshairYes':'crosshairNo'].img
+				groupId: 	'viewRangePicking',
+				at:			{ x: x, y: y, area: area },
+				img:		StickerList[ok?'crosshairYes':'crosshairNo'].img
 			});
 		}
 		this.determineShot(map,sx,sy,tx,ty,draw);

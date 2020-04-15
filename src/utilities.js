@@ -28,7 +28,7 @@ Module.add('utilities',function(){
 	}
 
 	// Important - this is how the game will take x,y coords and consider which tile they fall into.
-	Math.toTile = Math.floor; //round;
+	Math.toTile = Math.round; //floor; //round;
 
 	Math.fixed = function(value,decimals) {
 		let p = Number.parseFloat(value).toString().split('.');

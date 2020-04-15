@@ -438,7 +438,7 @@ let effectApply = function(effect,target,source,item,context) {
 	
 
 	if( effect.iconOver ) {
-		Anim.Over( target.id, target, effect.iconOver, 0, effect.iconOverDuration || 0.4, effect.iconOverScale || 0.75 );
+		Anim.Upon( target.id, target, effect.iconOver, 0, effect.iconOverDuration || 0.4, effect.iconOverScale || 0.75 );
 	}
 
 	let effectShape = Perk.apply( 'effectShape', effect).effectShape || EffectShape.SINGLE;
@@ -633,7 +633,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 			duration: 	rangeDuration,
 			onInit: 		a => { a.create(1); },
 			onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sScaleSet(0.6); },
-			onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+			onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); }
 		});
 	}
 
@@ -702,7 +702,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 				let dy = target.y - source.y;
 				let deg = deltaToDeg(dx,dy)+Math.rand(-45,45);
 				// Show a dodging icon on the entity
-				new Anim( {}, {
+				new Anim({
 					follow: 	target,
 					img: 		StickerList.showDodge.img,
 					delayId: 		delayId,
@@ -712,12 +712,12 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 					onSpriteTick: 	s => { }
 				});
 				// Make the entity wiggle away a bit.
-				new Anim( {}, {
+				new Anim({
 					follow: 	target,
 					delayId: 	delayId,
 					duration: 	0.15,
-					onInit: 		a => { a.puppet(target.spriteList); },
-					onSpriteMake: 	s => { s.sPosDeg(deg,0.3); },
+					onInit: 		a => { a.takePuppet(target); },
+					onSpriteMake: 	s => { s.sPosRelDeg(deg,0.3); },
 					onSpriteDone: 	s => { s.sReset(); }
 				});
 			}
@@ -744,7 +744,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		if( Math.chance(block*100) ) {
 			tell(mSubject,target,' ',mVerb,'block',' ',mObject,item || {name:'blow'},' with ',mSubject|mPossessive,target,' ',mObject|mPossessed,shield);
 			// Overlay a shield icon to show it happened.
-			new Anim( {}, {
+			new Anim({
 				follow: 	target,
 				img: 		StickerList.showResistance.img,
 				delayId: 	delayId,
@@ -798,7 +798,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 			tell(mSubject,target,' ',mVerb,'is',' immune to ',mObject,effect,'.');
 		}
 		if( !source || source.id!==target.id ) {
-			Anim.Over( delayId, target, StickerList.showImmunity.img );
+			Anim.Upon( delayId, target, StickerList.showImmunity.img );
 		}
 		return makeResult('immune',false);
 	}
@@ -816,7 +816,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 
 	if( isResist && effect.duration===0 && Math.chance(50) ) {
 		tell(mSubject,target,' ',mVerb,'resist',' the effects of ',mObject,effect,'.');
-		Anim.Over(delayId,target,StickerList.showResistance.img);
+		Anim.Upon(delayId,target,StickerList.showResistance.img);
 		return makeResult('resist',false);
 	}
 
@@ -825,7 +825,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		tell(mSubject,target,' ',mVerb,'seem',' partially affected by ',mObject,effect,'.');
 		effect.resistDuration = true;
 		effect.duration = effect.duration * 0.50;
-		Anim.Over(delayId,target,StickerList.showResistance.img);
+		Anim.Upon(delayId,target,StickerList.showResistance.img);
 	}
 
 	let isVuln = false;
@@ -840,7 +840,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		tell(mSubject,target,' ',mVerb,'succumb',' to ',mObject,effect,'.');
 		effect.vulnDuration = true;
 		effect.duration = effect.duration * 2.0;
-		Anim.Over(delayId,target,StickerList.showVulnerability.img);
+		Anim.Upon(delayId,target,StickerList.showVulnerability.img);
 	}
 
 

@@ -404,21 +404,21 @@ class Entity {
 		tell(mSubject,this,' ',mVerb,'gain',' a level!');
 
 		// happiness flies away from the attacker
-		let piecesAnim = new Anim({},{
-			follow: 	this,
-			img: 		StickerList.bloodYellow.img,
+		let piecesAnim = new Anim({
+			follow: 		this,
+			img: 			StickerList.bloodYellow.img,
 			duration: 		a => a.spritesMade && a.spritesAlive==0,
 			onInit: 		a => { },
 			onTick: 		a => a.createPerSec(40,2),
 			onSpriteMake: 	s => s.sScaleSet(0.30).sVel(Math.rand(-30,30),Math.rand(5,10)).duration=1,
-			onSpriteTick: 	s => s.sMove(s.xVel,s.yVel).sGrav(10)
+			onSpriteTick: 	s => s.sMoveRel(s.xVel,s.yVel).sGrav(10)
 		});
 		// You also jump back and quiver
 		if( this.spriteList ) {
-			new Anim( {}, {
-				follow: 	this,
-				duration: 2,
-				onInit: 		a => { a.puppet(this.spriteList); },
+			new Anim({
+				follow: 		this,
+				duration: 		2,
+				onInit: 		a => { a.takePuppet(this); },
 				onSpriteMake: 	s => { },
 				onSpriteTick: 	s => { s.sQuiver(0.05,0.10); },
 				onSpriteDone: 	s => { s.sReset(); }
@@ -2039,46 +2039,46 @@ class Entity {
 			// Attacker lunges at you
 			let lunge = 0.2 + 0.5 * mag;
 			if( attacker && attacker.isMonsterType ) {
-				new Anim( {}, {
+				new Anim({
 					follow: 	attacker,
 					delay: 		delay,
 					duration: 	0.15,
-					onInit: 		a => { a.puppet(attacker.spriteList); },
-					onSpriteMake: 	s => { s.sPosDeg(deg,lunge); },
+					onInit: 		a => { a.takePuppet(attacker); },
+					onSpriteMake: 	s => { s.sPosRelDeg(deg,lunge); },
 					onSpriteDone: 	s => { s.sReset(); }
 				});
 			}
 			// blood flies away from the attacker
 			let arc = attacker ? 45 : 179;
-			let piecesAnim = new Anim({},{
+			let piecesAnim = new Anim({
 				follow: 	this,
 				img: 		StickerList[this.bloodId || 'bloodRed'].img,
 				delay: 		delay,
 				duration: 	0.2,
 				onInit: 		a => { a.create(4+Math.floor(7*mag)); },
 				onSpriteMake: 	s => { s.sScaleSet(0.20+0.10*mag).sVel(Math.rand(deg-arc,deg+arc),4+Math.rand(0,3+7*mag)); },
-				onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); }
 			});
 			// You also jump back and quiver
 			if( this.spriteList ) {
-				new Anim( {}, {
+				new Anim({
 					follow: 	this,
 					delay: 		delay,
 					duration: 	0.1,
-					onInit: 		a => { a.puppet(this.spriteList); },
+					onInit: 		a => { a.takePuppet(this); },
 					onSpriteMake: 	s => { },
-					onSpriteTick: 	s => { s.sPosDeg(deg,lunge/2).sQuiver(0.05,0.1+mag*0.1); },
+					onSpriteTick: 	s => { s.sPosRelDeg(deg,lunge/2).sQuiver(0.05,0.1+mag*0.1); },
 					onSpriteDone: 	s => { s.sReset(); }
 				});
 			}
 			// And if you are killed then you shrink/fade
 			if( amount >= this.health ) {
 				if( this.spriteList ) {
-					new Anim( {}, {
+					new Anim({
 						follow: 	this,
 						delay: 		delay+0.1,
 						duration: 	0.1,
-						onInit: 		a => { a.puppet(this.spriteList); },
+						onInit: 		a => { a.takePuppet(this); },
 						onSpriteMake: 	s => { },
 						onSpriteTick: 	s => {
 							if( s.elapsed === undefined || s.duration ===undefined ) { debugger; }
@@ -2096,7 +2096,7 @@ class Entity {
 			quiet = true;
 			tell(mSubject,this,' ',mVerb,'is',' vulnerable to '+isVuln+', and ',mVerb,'take',' '+amount+' damage!');
 			if( !attacker || attacker.id!==this.id ) {
-				new Anim( {}, {
+				new Anim({
 					follow: 	this,
 					img: 		StickerList.showVulnerability.img,
 					duration: 	0.2,
@@ -2112,7 +2112,7 @@ class Entity {
 			quiet = true;
 			tell(mCares,attacker,mSubject,this,' ',mVerb,'is',' immune to '+isImmune);
 			if( !attacker || attacker.id!==this.id ) {
-				new Anim( {}, {
+				new Anim({
 					follow: 	this,
 					img: 		StickerList.showImmunity.img,
 					duration: 	0.2,
@@ -2128,7 +2128,7 @@ class Entity {
 			quiet = true;
 			tell(mSubject,this,' ',mVerb,'resist',' '+isResist+', but ',mVerb,'take',' '+amount+' damage.');
 			if( !attacker || attacker.id!==this.id ) {
-				new Anim( {}, {
+				new Anim({
 					follow: 	this,
 					img: 		StickerList.showResistance.img,
 					duration: 	0.2,
@@ -2293,9 +2293,9 @@ class Entity {
 			area: 		this.area,
 			delay: 		source.rangeDuration || 0,
 			duration: 	duration,
-			onInit: 		a => { a.puppet(this.spriteList); },
+			onInit: 		a => { a.takePuppet(this); },
 			onSpriteMake: 	s => { s.sReset().sVelTo(ddx,ddy,duration); },
-			onSpriteTick: 	s => { s.sMove(s.xVel,s.yVel); }
+			onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); }
 		});
 		return {
 			status: 'shoved',
@@ -3159,9 +3159,11 @@ class Entity {
 		this.moveWeapon          = weapon;
 		this.moveVoluntary       = voluntary;
 
-		if( this.areaMove && this.areaMove.underConstruction ) {
-			this.onRealtimeMove(0.0);
-		}
+		this.onMove();
+
+//		if( this.areaMove && this.areaMove.underConstruction ) {
+//			this.onRealtimeMove(0.0);
+//		}
 	}
 
 	setMoveTargetDir(dir,weapon,voluntary) {
@@ -3274,7 +3276,7 @@ class Entity {
 			}
 			let bumpResult = (collider.onBump || bonk)(
 				this,
-				!collider.isTileType ? collider : this.map.getTileEntity(collider,this.x,this.y)
+				!collider.isTileType ? collider : this.map.getTileEntity(this.x,this.y)
 			);
 			return {
 				status: 'bumped',
@@ -3616,7 +3618,7 @@ class Entity {
 			}
 			case Command.DEBUGANIM: {
 				let entity = this;
-				let anim = new Anim({},{
+				let anim = new Anim({
 					at: 		entity,
 					img: 		entity.img,
 					onInit: 		a => { a.create(1); },
@@ -3807,18 +3809,18 @@ class Entity {
 		}
 	}
 
-	recognizeMove(areaPrior,xTilePrior,yTilePrior,areaChanged) {
+	recognizeMove(areaPrior,xPrior,yPrior,areaChanged) {
 		if( !areaPrior ) {
 			console.assert( this.area );
 			this.origin = this.area.map.getTileEntity(this.x,this.y);
 			this.origin.name = 'origin';
 		}
 
-		if( areaPrior && areaPrior.map.inBounds(xTilePrior,yTilePrior) ) {
-			console.assert( areaPrior && xTilePrior !== undefined );
-			this.map.scentLeave(xTilePrior,yTilePrior,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
-			this.map._entityRemove(this,xTilePrior,yTilePrior);
-			this.map.calcWalkable(xTilePrior,yTilePrior);	// NUANCE: must be after the entityRemove!
+		if( areaPrior && areaPrior.map.inBounds(xPrior,yPrior) ) {
+			console.assert( areaPrior && xPrior !== undefined );
+			this.map.scentLeave(xPrior,yPrior,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
+			this.map._entityRemove(this,xPrior,yPrior);
+			this.map.calcWalkable(xPrior,yPrior);	// NUANCE: must be after the entityRemove!
 		}
 
 		if( areaChanged ) {
@@ -3829,7 +3831,6 @@ class Entity {
 			let fnName = this.isUser ? 'unshift' : 'push';	// the player happens to always be pushed to first in the list.
 			this.area.entityList[fnName](this);
 
-			guiMessage('stageEntityMoved',this,'map');
 			tell(mSubject|mCares,this,' ',mVerb,'are',' now on level '+this.area.name)
 		}
 
@@ -3871,14 +3872,79 @@ class Entity {
 		}
 	}
 
+	onMove() {
+		let xPrior    = this.x;
+		let yPrior    = this.y;
+		let areaPrior = this.area;
+
+		let areaChanged = !areaPrior || this.areaMove.id !== areaPrior.id;
+
+		if( areaChanged ) {
+			this.moveInstantly = true;
+			[this.xMove,this.yMove] = this.findSafeGateDestination(this.areaMove,this.xMove,this.yMove);
+		}
+
+		//
+		// Move me
+		//
+		this.area = this.areaMove;
+		this.x    = this.xMove;
+		this.y    = this.yMove;
+
+		//
+		// Enter Tile
+		//
+		let result = this.enterTile(areaPrior,xPrior,yPrior);
+		let revertMovement = !areaChanged && !result.entrySuccess;
+
+		if( revertMovement ) {
+			this.area = areaPrior;
+			this.x = xPrior;
+			this.y = yPrior;
+
+			this.areaMove = this.area;
+			this.xMove = this.x;
+			this.yMove = this.y;
+			return false;
+		}
+
+		this.recognizeMove(areaPrior,xPrior,yPrior,areaChanged);
+
+		Gui.dirty('miniMap');
+		Gui.dirty('map');
+
+		if( areaChanged && !areaPrior ) {
+			this.recognizeLeaveVoid();
+			this.calculateVisbility()
+		}
+
+		if( this.light ) {
+			this.area.lightDirty = true;
+		}
+		if( this.isUser ) {
+			this.area.pathClip.setCtr(this.x,this.y,MapVisDefault*2);
+			this.area.thinkClip.setCtr(this.x,this.y,MapVisDefault*5);
+		}
+
+		let dest = this.destination;
+		if( dest && this.nearTarget(dest,dest.closeEnough) ) {
+			this.record( "ARRIVED", true );
+			if( dest.onArrive ) {
+				dest.onArrive(this.dest);
+			}
+			this.destination = null;
+		}
+
+		this.checkPit();
+	}
+
 	onRealtimeMove(dt) {
+
+/*
 		// Remember that these could be undefined if I was just in the void.
 		let xPrior = this.x;
 		let yPrior = this.y;
 		let areaPrior = this.area;
-//		if( this.isUser ) {
-//			console.log(this.name+' is at '+xPrior+','+yPrior+' dt='+dt);
-//		}
 
 		if( this.jumpLeft ) {
 			this.jumpLeft = Math.max( (this.jumpLeft||0)-dt, 0 );
@@ -3924,11 +3990,7 @@ class Entity {
 			let xTile = Math.toTile(this.x);
 			let yTile = Math.toTile(this.y);
 			if( xTile != this.xTilePrior || yTile != this.yTilePrior ) {
-				let dist = Distance.get( xTile-(this.x+0.5), yTile-(this.y+0.5) );
-				if( dist < 1.0 ) {
-					console.log(this.name,'in new tile');
-					inNewTile = true;
-				}
+				inNewTile = true;
 			}
 		}
 
@@ -3984,6 +4046,7 @@ class Entity {
 		if( this.isDead() ) {
 			return;
 		}
+*/
 	}
 
 	tickSecond() {

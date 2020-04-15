@@ -1673,11 +1673,11 @@ MonsterTypeList.redOoze.onEnterTile = function(x,y) {
 		this.rescale.call(this)
 
 		let self = this;
-		let anim = new Anim({},{
+		let anim = new Anim({
 			follow: 	this,
 			img: 		this.img,
 			duration: 	0.3,
-			onInit: 		a => { a.puppet(self.spriteList); },
+			onInit: 		a => { a.takePuppet(self); },
 			onSpriteTick: 	s => {
 				let scale = 1.0+s.sSine(s.sPct(),1.5);
 				console.log( "Scale="+scale );

@@ -506,6 +506,10 @@ class Area {
 			this.jobPicker = this.makeJobPicker(theme);
 		}
 	}
+	addSprite(sprite) {
+		console.assert( !this.entitySpriteList[sprite.id] );
+		this.entitySpriteList[sprite.id] = sprite;
+	}
 	makeJobPicker(theme) {
 		let jobPickTable = new Pick.Table().scanKeys(theme.jobPick);
 		return (filter) => {

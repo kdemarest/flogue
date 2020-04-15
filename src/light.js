@@ -148,6 +148,8 @@ Light.Caster = class {
 			if( !lightReaches ) return;
 
 			let pos = y*xLen+x;
+			console.assert(Math.floor(pos)==pos);
+			
 			let value = this.lightMap[pos] || 0;
 			if( light < 0 ) {
 				// Darkness

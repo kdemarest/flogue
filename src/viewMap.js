@@ -50,11 +50,9 @@ function handleScent(map,px,py,senseSmell,ofs,visibilityDistance) {
 			let alpha = 0.0 + Math.clamp(1-(age/senseSmell),0,1) * 0.6;
 			if( !alpha ) continue;
 
-			new Anim( {}, {
+			new Anim({
 				groupId: 		'scent',
-				x: 				x-ofs,
-				y: 				y,
-				area: 			map.area,
+				at:				{ x: x-ofs, y: y, area: map.area },
 				img: 			smelled.img,
 				duration: 		true,
 				onSpriteMake: 	s => { s.sScaleSet(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
@@ -103,11 +101,9 @@ function handlePerception(observer,visCache,map,px,py,sensePerception,senseAlert
 				continue;
 			}
 
-			new Anim( {}, {
+			new Anim({
 				groupId: 		'perc',
-				x: 				x+ofs,
-				y: 				y,
-				area: 			map.area,
+				at:				{ x: x+ofs, y: y, area: map.area },
 				img: 			alarm ? StickerList.alert.img : StickerList.perception.img,
 				duration: 		true,
 				onSpriteMake: 	s => { s.sScaleSet(0.3).sAlpha(0.1); }
@@ -192,201 +188,14 @@ let Scene = new class {
 	}
 }
 
-/*
-function createDrawList(observer,drawListCache) {
-
-	console.log('createDrawList');
-
-	// Recalc this here, just in case.
-	let map = observer.map;
-	let visCache = observer.calculateVisbility();
-	let areaVis = observer.area.vis;
-	let entityList = map.area.entityList;
-	let lightMap = map.area.lightCaster.lightMap;
-
-	//let convert = { '#': '█' };
-	let px = Math.toTile(observer.x);
-	let py = Math.toTile(observer.y);
-	let d =  observer.visibilityDistance;
-	let d2 = (d*2)+1
-	let a = drawListCache || [];
-
-	// Initialize the array, and clear all light levels.
-	for( let y=py-d ; y<=py+d ; ++y ) {
-		a[y-(py-d)] = a[y-(py-d)] || [];
-		for( let x=px-d ; x<=px+d ; ++x ) {
-			let tx = x-(px-d);
-			let ty = y-(py-d);
-			a[ty][tx] = a[ty][tx] || [];
-			a[ty][tx][0] = lightMap[y*map.xLen+x];
-			a[ty][tx][1] = false;
-			a[ty][tx].length = 2;
-		}
-	}
-
-	let ofs = (observer.senseSmell && (observer.sensePerception || observer.senseAlert)) ? 0.2 : 0;
-	handleScent(map,px,py,observer.senseSmell,ofs,observer.visibilityDistance);
-	handlePerception(observer,visCache,map,px,py,observer.sensePerception,observer.senseAlert,ofs);
-
-	let visId = {};
-	let revealLight = 7;		// Assumes max light is about 10.
-	let mapMemory = observer.mapMemory;
-
-	// Now assign tile layers, and remember that [0] is the light level. Tiles
-	// that shine light will do so in this loop.
-	//let dChar = '';
-	//let debug = '';
-	console.assert( map.defaultFloorSymbol );
-	let lastFloor = SymbolToType[map.defaultFloorSymbol];
-	console.assert( lastFloor );
-	//if( observer.senseXray ) debugger;
-	for( let y=py-d*2 ; y<=py+d*2 ; ++y ) {
-		let ty = y-(py-d);
-		for( let x=px-d*2 ; x<=px+d*2 ; ++x ) {
-			let tx = x-(px-d);
-			let inBounds = x>=0 && x<map.xLen && y>=0 && y<map.yLen;
-			let visible = inBounds && visCache[y] && visCache[y][x];
-			let inPane = tx>=0 && tx<d2 && ty>=0 && ty<d2;
-			let tile;
-			let itemList;
-			let entity;
-			let smelled;
-			let itemFind;
-
-			if( inBounds ) {
-				tile =		map.tileTypeGet(x,y);
-				if( tile.isFloor ) {
-					lastFloor = tile;
-				}
-				console.assert(tile);
-				itemFind = map.findItemAt(x,y);
-
-				let temp = map._entityLookupGet(x,y);
-				entity = temp && temp.length ? temp[0] : null;
-				if( entity ) { //&& observer.canPerceiveEntity(entity) ) {
-					entity = ( entity.id == observer.id && entity.invisible ) ? StickerList.invisibleObserver : entity;
-				}
-qqq				else
-					entity = null;
-
-				if( !entity && observer.senseSmell ) {
-					smelled = map.scentGetEntitySmelled(x,y,observer.senseSmell);
-				}
-				if( !tile.isTileType ) {
-					debugger;
-				}
-			}
-
-			if( !inBounds ) {
-				//dChar = '-';
-				if( inPane ) {
-					//dChar = 'a';
-					a[ty][tx].length = 0;
-				}
-			}
-
-			if( inPane && inBounds ) {
-				let aa = a[ty][tx];
-				console.assert( aa.length >= 2 );
-				if( !visible || aa[0] <= 0 || aa[0] === undefined ) {
-					//dChar = 'i';
-					let mPos = map.lPos(x,y);
-					if( mapMemory && mapMemory[mPos] ) {
-						aa[1] = true;
-						aa[2] = mapMemory[mPos];
-						aa.length = 3;
-					}
-					//else {
-					//	aa.length = 2;
-					//}
-					if( itemFind.count && observer.senseTreasure ) {
-						itemFind.forEach( item => {
-							if( item.isTreasure ) {
-								aa.push(item);
-								aa[0] = revealLight;
-							}
-						});
-					}
-					if( entity && observer.senseLiving && entity.isLiving ) {
-						aa.push(entity);
-						aa[0] = revealLight;
-					}
-				}
-				else {
-					//dChar = 'T';
-					console.assert( aa.length >= 2 );
-					if( tile.addFloor ) {
-						aa.push(lastFloor);
-					}
-					aa.push(tile);
-					if( itemFind.count ) {
-						itemFind.forEach( item => {
-							aa.push(item);
-							visId[item.id] = item;
-						});
-					}
-					if( entity ) {
-						aa.push(entity);
-						visId[entity.id] = entity;
-					}
-				}
-			}
-			//else
-			//	dChar = 'p';
-			//debug += dChar;
-		}
-		//debug += '<<\n';
-	}
-	//console.log(debug);
-
-	map.area.animationManager.forEach( anim => {
-		if( anim.entity && !visId[anim.entity.id] ) {
-			return;
-		}
-		let tx = Math.floor(anim.x-(px-d));
-		let ty = Math.floor(anim.y-(py-d));
-		if( tx>=0 && tx<d2 && ty>=0 && ty<d2 ) {
-			a[ty][tx].push(anim);
-		}
-	});
-
-	let anyLight = false;
-	map.traverseNear( px, py, d, (x,y) => {
-		console.assert( px==Math.floor(px) && x==Math.floor(x) );
-		let ty = y-(py-d);
-		let tx = x-(px-d);
-		if( a[ty][tx].length < 1 ) return;
-		let light = a[ty][tx][0];
-		let lPos = ty*map.xLen+tx;
-		map.lightCache[lPos] = light;
-		anyLight = anyLight || light;
-	});
-	if( !anyLight ) {
-		debugger;
-	}
-
-	drawListCache = a;
-	return a;
-}
-*/
-
-
-class EntitySprite {
+class EntitySprite extends Sprite {
 	constructor() {
+		super();
 		this.entity    = null;
-		this.sprite    = null;
-		this.xAnchor   = 0.5;
-		this.yAnchor   = 0.5;
-		this.baseScale = null;
-		this.alpha     = 1.0;
-		this.zOrder    = Tile.zOrder.WALL;
-		this.observer  = null;
-		this.inPane    = false;
-		this.age       = 0;
 	}
 
-	get id() {
-		return this.entity.id;
+	get area() {
+		return this.entity.area;
 	}
 
 	get xWorld() {
@@ -405,17 +214,11 @@ class EntitySprite {
 		return Math.toTile(this.yWorld);
 	}
 
-	get isMemory() {
-		console.assert(this.entity.area.id==this.observer.area.id);
-		let mPos = this.entity.map.lPos(this.xWorld,this.yWorld);
-		return this.observer.mapMemory && this.observer.mapMemory[mPos];
-	}
-
 	get isDarkVision() {
 		return this.observer.senseDarkVision && !this.isMemory;
 	}
 
-	get light() {
+	testLight() {
 		let revealLight = 7;		// Assumes max light is about 10.
 		let glowLight   = MaxVis;
 		let memoryLight = 1;
@@ -434,7 +237,13 @@ class EntitySprite {
 		return lightAfterGlow;
 	}
 
-	get visible() {
+	testMemory() {
+		console.assert(this.entity.area.id==this.observer.area.id);
+		let mPos = this.entity.map.lPos(this.xWorld,this.yWorld);
+		return this.observer.mapMemory && this.observer.mapMemory[mPos];
+	}
+
+	testSensed() {
 		// Order matters here.
 		if( this.entity.id == this.observer.id ) return true;
 		if( this.observer.senseTreasure && this.entity.isTreasure ) return true;
@@ -444,74 +253,113 @@ class EntitySprite {
 		if( !this.observer.senseInvisible && this.entity.invisible ) return false;
 		if( this.observer.senseBlind ) return false;
 
-		return this.observer.visCache[this.yWorldTile][this.xWorldTile];
+		return !this.observer.visCache ? false : this.observer.visCache[this.yWorldTile][this.xWorldTile];
 	}
 	
-	update(observer,pane) {
+	updateMovement(dt) {
+		if( this.entity.xMove === undefined ) {
+			return;
+		}
+		if( this.entity.moveInstantly ) {
+			this.xVisual    = this.entity.xMove;
+			this.yVisual    = this.entity.yMove;
+			// Don't clear moveInstantly yet. We might care later how we got here.
+		}
+		if( this.xVisual!=this.entity.xMove || this.yVisual!=this.entity.yMove ) {
+			let dx = this.entity.xMove-this.xVisual;
+			let dy = this.entity.yMove-this.yVisual;
+			let dist = Distance.get(dx,dy);
+			let tilesPerSecond = this.entity.speedMove;
+			let travel = dt*tilesPerSecond;
+			if( dist < travel ) {
+				this.xVisual = this.entity.xMove;
+				this.yVisual = this.entity.yMove;
+			}
+			else {
+				this.xVisual += (dx/dist)*travel;
+				this.yVisual += (dy/dist)*travel;
+			}
+		}
+		if( this.entity.isUser ) {
+			this.entity.xVisualOrigin = this.xVisual;
+			this.entity.yVisualOrigin = this.yVisual;
+		}
+	}
+
+	updateSprite(pane) {
+		super.updateSprite(pane);
+
+		if( this.entity.invisible != this.sprite._invisible ) {
+			this.sprite.setTexture( 
+				ImageRepo.getResourceByImg(
+					this.entity.invisible ? 
+					StickerList.invisibleObserver.img :
+					ImageRepo.getImg(this.entity)
+				).texture
+			);
+			this.sprite._invisible = this.entity.invisible;
+		}
+
+		if( this.sensed ) {
+			this.sprite.filters = ViewMap.saveBattery ? null : this.isDarkVision ? this.desaturateFilterArray : this.resetFilterArray;
+			this.sprite.tint = 0xFFFFFF;
+		}
+		else if( this.memoried ) {
+			this.sprite.filters = ViewMap.saveBattery ? null : this.desaturateFilterArray;
+			this.sprite.tint = 0x8888FF;
+		}
+
+	}
+
+	update(dt,observer,pane) {
+		if( this.dead ) {
+			return;
+		}
 		this.observer = observer;
+
+		if( this.area.id !== this.observer.area.id ) {
+			return this.dead = true;
+		}
+
+		if( this.entity.isItemType && !this.entity.owner.isMap ) {
+			return this.dead = true;
+		}
+
 		this.inPane = pane.inSightOf(this.observer,this.entity.x,this.entity.y) && this.entity.area.id==this.observer.area.id;
 
-		if( this.inPane || this.entity.puppetMe ) {
+		this.updateMovement(dt);
 
+		if( this.inPane ) {
 			this.age = 0;
 
-			this.sprite.x = (this.xWorld-observer.x)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
-			this.sprite.y = (this.yWorld-observer.y)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
-
-			if( this.entity.invisible != this.sprite._invisible ) {
-				this.sprite.setTexture( 
-					ImageRepo.getResourceByImg(
-						this.entity.invisible ? 
-						StickerList.invisibleObserver.img :
-						ImageRepo.getImg(this.entity)
-					).texture
-				);
-				this.sprite._invisible = this.entity.invisible;
-			}
-
-			this.sprite.anchor.set(this.xAnchor,this.yAnchor);
-			this.sprite.transform.scale.set( this.baseScale * Tile.DIM/this.sprite._texture.width );
-
-			let light = Math.floor(this.light);
+			let light = Math.floor(this.testLight());
 			console.assert(Light.Alpha[light]!==undefined);
-			this.sprite.alpha  = this.alpha * Light.Alpha[Math.floor(light)];
-			this.sprite.zOrder = this.zOrder;
+			this.alpha = Light.Alpha[Math.floor(light)];
 
-			let showSprite = true;
-			if( this.visible ) {
-				this.sprite.filters = ViewMap.saveBattery ? null : this.isDarkVision ? this.desaturateFilterArray : this.resetFilterArray;
-				this.sprite.tint = 0xFFFFFF;
-			}
-			else if( this.isMemory ) {
-				this.sprite.filters = ViewMap.saveBattery ? null : this.desaturateFilterArray;
-				this.sprite.tint = 0x8888FF;
-			}
-			else showSprite = false;
-			this.sprite.visible = showSprite;
+			this.sensed   = this.testSensed();
+			this.memoried = this.sensed ? false : this.testMemory();
+			this.visible  = this.sensed || this.memoried;
+		}
+		else {
+			this.visible = false;
 		}
 
-		if( this.entity.puppetMe ) {
-			this.entity.puppetMe.puppet(this.sprite);
-			delete this.entity.puppetMe;
-		}
-
+		super.updateSprite(pane);
 	}
 
 	init(entity) {
 		console.assert(entity);
-		this.entity = entity;
-		this.age = 0;
+		this.entity  = entity;
+		this.xVisual = entity.x;
+		this.yVisual = entity.y;
 
-		this.sprite  = new PIXI.Sprite( ImageRepo.getResource(entity).texture );
-		this.sprite.refs = 0;
-		this.entity.spriteList = [];
-		Scene.attach( entity.spriteList, this.sprite );
+		this.initSpriteByImg( ImageRepo.getImg(entity) );
 
 		this.xAnchor    = entity.xAnchor || 0.5;
 		this.yAnchor    = entity.yAnchor || 0.5;
-		this.baseScale	= (entity.scale || 1);
+		this.scale		= entity.scale || 1;
+		this.alpha  	= entity.alpha===undefined ? 1.0 : entity.alpha;
 		this.zOrder     = entity.zOrder || (entity.isWall ? Tile.zOrder.WALL : (entity.isFloor ? Tile.zOrder.FLOOR : (entity.isTileType ? Tile.zOrder.TILE : (entity.isItemType ? (entity.isGate ? Tile.zOrder.GATE : (entity.isDecor ? Tile.zOrder.DECOR : Tile.zOrder.ITEM)) : (entity.isMonsterType ? Tile.zOrder.MONSTER : Tile.zOrder.OTHER)))));
-		this.alpha      = entity.alpha===undefined ? 1.0 : entity.alpha;
 		return this;
 	}
 }
@@ -545,9 +393,7 @@ class AreaScene {
 		let ageOfDeath = 5;
 		for( let id in this.entitySpriteList ) {
 			let e = this.entitySpriteList[id];
-			if( !e ) { debugger; }
-			// I haven't been updated in a while, so remove me.
-			if( e.age > ageOfDeath ) {
+			if( e.dead || e.age > ageOfDeath ) {
 				this.stage.removeChild(e.sprite);
 				delete this.entitySpriteList[id];
 				continue;
@@ -615,7 +461,7 @@ return;
 
 	}
 
-	checkEntityMoved(entity) {
+	checkEntityNotice(entity) {
 		// The word 'moved' means that it changed states onto or off of the map.
 		if( entity.isUser ) {
 			this.checkAll();
@@ -643,8 +489,17 @@ return;
 		this.manageEntitySpriteList(dt);
 
 		// Update values into the sprites themselves
-		Object.each( this.entitySpriteList, entitySprite => {
-			entitySprite.update(this.observer,this.pane);
+		let list = [];
+		let done = {};
+		let addWithDependency = es => {
+			if( done[es.id] ) return;
+			if( es.dependsOn ) addWithDependency( es.dependsOn );
+			list.push(es);
+		}
+		Object.each( this.entitySpriteList, addWithDependency );
+
+		list.forEach( entitySprite => {
+			entitySprite.update(dt,this.observer,this.pane);
 		});
 
 		// Sort according to zOrder.
@@ -719,8 +574,8 @@ class ViewMap extends ViewObserver {
 		this.app.ticker.add( delta =>  {
 			let dt = delta / 60;	// that is just how pixi rolls.
 			if( this.observer && this.observer.area ) {
-				this.observer.area.world.tickRealtime(dt);
 				this.observer.area.animationManager.tickRealtime(dt);
+				this.observer.area.world.tickRealtime(dt);
 			}
 		});
 	}
@@ -771,13 +626,12 @@ class ViewMap extends ViewObserver {
 		console.assert( x!==undefined && y!==undefined && area !==undefined && img !==undefined );
 		console.assert( area.isArea );
 		//console.log('overlay add '+groupId);
-		new Anim( {}, {
+		new Anim({
 			groupId: 	groupId,
-			x: 			x,
-			y: 			y,
-			area: 		area,
+			at:			{ x: x, y: y, area: area },
 			img: 		img,
-			duration: 	true
+			duration: 	true,
+			onInit:		a=>a.create(1)
 		});
 	}
 
@@ -863,12 +717,6 @@ class ViewMap extends ViewObserver {
 				this.setMapVis(this.observer.visibilityDistance);
 			}
 		}
-		if( msg == 'stageEntityMoved' ) {
-			if( this.observer ) {
-				console.assert(payload.typeId);
-				this.areaScene.checkEntityMoved(payload);
-			}
-		}
 		if( msg == 'overlayRemove' ) {
 			this.worldOverlayRemove( a => a.groupId==payload.groupId,'message '+payload.groupId,payload );
 		}
@@ -892,6 +740,11 @@ class ViewMap extends ViewObserver {
 		if( msg == 'render' && this.observer ) {
 			debugger;
 			this.dirty = true;
+		}
+		if( msg == 'stageEntityMoved' ) {
+			if( this.observer ) {
+				this.areaScene.checkEntityNotice(payload);
+			}
 		}
 	}
 
