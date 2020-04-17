@@ -135,20 +135,18 @@ ItemTypeList.plant.rechargeCriteria = function() {
 ItemTypeList.plant.onTickSecond = function() {
 	let pct = this.rechargePercent();
 	this.scale = 0.1+(0.15*pct);
-	if( this.spriteList && this.spriteList[0] ) {
-		this.spriteList[0].baseScale = this.scale;
-	}
+	this.spriteSetMember('scale',this.scale);
 
 	if( this.isRecharged() ) {
 		this.sign = this.signMature;
 		return;
 	}
 	let hasLight = this.rechargeCriteria.call(this);
-	let state = hasLight ? 'thriving' : 'wilted';
-	if( this.state !== state ) {
+	let newState = hasLight ? 'thriving' : 'wilted';
+	if( this.state !== newState ) {
 		this.stateCounter = (this.stateCounter||0)+1;
 		if( this.stateCounter >= 20 ) {
-			this.setState( state );
+			this.setState( newState );
 		}
 	}
 	else {
@@ -161,9 +159,7 @@ ItemTypeList.plant.onTickSecond = function() {
 ItemTypeList.mushroom.onTickSecond = function() {
 	let pct = this.rechargePercent();
 	this.scale = 0.1+(0.15*pct);
-	if( this.spriteList && this.spriteList[0] ) {
-		this.spriteList[0].baseScale = this.scale;
-	}
+	this.spriteSetMember('scale',this.scale);
 }
 
 MushroomVarietyList.blurellaMushroom.onHarvest = function(harvester,item) {

@@ -31,7 +31,7 @@ class ViewMiniMap extends ViewObserver {
 			.show();
 		this.created = true;
 	}
-	setArea(area) {
+	changeArea(area) {
 		this.caption = String.capitalize(area.name)+' (Depth '+area.depth+')';
 		this.create(area);
 	}
@@ -40,11 +40,8 @@ class ViewMiniMap extends ViewObserver {
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
-		if( msg == 'setArea' ) {
-			this.setArea(payload);
-		}
-		if( msg == 'resetMiniMap' ) {
-			this.setArea(payload);
+		if( msg == 'changeArea' ) {
+			this.changeArea(payload.area);
 		}
 		if( msg == 'revealInvisible' ) {
 			let target = payload;

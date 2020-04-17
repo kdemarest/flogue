@@ -6,9 +6,10 @@ class GuiManager {
 		this.view = {};
 		this.cached = {};
 
-		window.guiMessage = (message,payload,target) => {
-			this.message(message,payload,target);
-		}
+		window.guiMessage = this.message.bind(this);
+//		(message,payload,target) => {
+//			this.message(message,payload,target);
+//		}
 	}
 
 	get spectator() {
@@ -66,12 +67,16 @@ class GuiManager {
 
 	message(message,payload,target) {
 		//console.log( "guiMessage: "+message );
-		if( target && !this.view[target] ) {
-			console.log( "Error: Message target "+target+" does not exist." );
+		if( target && ( !this.view[target] || !this.view[target].message) ) {
+			console.log( "Error: Message target "+target+" does not exist or can not handle messages." );
+			return;
+		}
+		if( target ) {
+			this.view[target].message(message,payload);
 			return;
 		}
 		Object.each( this.view, (view,viewId) => {
-			if( view.message && (!target || target==viewId) ) {
+			if( view.message ) {
 				view.message(message,payload);
 			}
 		});
@@ -82,7 +87,7 @@ class GuiManager {
 		Gab.setObserver( this.spectator );
 		guiMessage( 'observer', this.spectator );
 
-		area.vis.populateLookup();	// This could be maintained progressively, but it hasn't mattered yet.
+		area.vis.populateOpacityLookup();	// This could be maintained progressively, but it hasn't mattered yet.
 
 		Object.each( this.view, view => {
 			if( view.render && view.dirty ) {

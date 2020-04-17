@@ -275,7 +275,7 @@ let DeedManager = (new class {
 			}
 		}
 		if( stat in this.statsThatCauseImageChanges && oldValue !== target[stat] ) {
-			Scene.dirty(target);
+			guiMessage('dirty',target,'map');
 		}
 		if( target.userControllingMe && stat in this.statsThatCauseMapRenders && oldValue !== target[stat] ) {
 			guiMessage('render',null,'map');
@@ -434,7 +434,7 @@ let effectApply = function(effect,target,source,item,context) {
 	}
 
 	let delayId = item ? item.id : (source ? source.id : target.id);
-	effect.groupDelayId = target.inVoid || !delayId ? delayId : target.area.animationManager.delay.makeGroup(delayId);
+	effect.groupDelayId = target.inVoid || !delayId ? delayId : target.area.animationManager.delayManager.makeGroup(delayId);
 	
 
 	if( effect.iconOver ) {

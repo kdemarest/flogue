@@ -164,6 +164,9 @@ class Entity {
 	get inVoid() {
 		return !this.area;
 	}
+	spriteSetMember(member,value) {
+		guiMessage( 'spriteSetMember', { entity: this, member: member, value: value } );
+	}
 	get map() {
 		return this.area.map;
 	}
@@ -205,7 +208,7 @@ class Entity {
 	}
 
 	requestGateTo(area,x,y) {
-		this.moveToInstantly(area,x,y);
+		return this.moveToInstantly(area,x,y);
 	}
 
 	findFirstCollider(travelMode,x,y,ignoreEntity) {
@@ -333,7 +336,7 @@ class Entity {
 			deed.end();
 		}
 
-		this.map._entityRemove(this);
+		this.map._entityRemove(this,this.x,this.y);
 		this.map.calcWalkable(this.x,this.y);	// NUANCE: must be after the entityRemove!
 
 		this.dead = true;
@@ -371,11 +374,6 @@ class Entity {
 				);
 			}
 		}
-
-		if( this.dead ) {
-			Scene.detach(this.spriteList);
-		}
-
 		return this.dead;
 	}
 
@@ -407,25 +405,32 @@ class Entity {
 		let piecesAnim = new Anim({
 			follow: 		this,
 			img: 			StickerList.bloodYellow.img,
-			duration: 		a => a.spritesMade && a.spritesAlive==0,
+			duration: 		Anim.Duration.untilAllDead,
 			onInit: 		a => { },
 			onTick: 		a => a.createPerSec(40,2),
 			onSpriteMake: 	s => s.sScaleSet(0.30).sVel(Math.rand(-30,30),Math.rand(5,10)).duration=1,
 			onSpriteTick: 	s => s.sMoveRel(s.xVel,s.yVel).sGrav(10)
 		});
 		// You also jump back and quiver
-		if( this.spriteList ) {
-			new Anim({
-				follow: 		this,
-				duration: 		2,
-				onInit: 		a => { a.takePuppet(this); },
-				onSpriteMake: 	s => { },
-				onSpriteTick: 	s => { s.sQuiver(0.05,0.10); },
-				onSpriteDone: 	s => { s.sReset(); }
-			});
-		}
+		new Anim({
+			follow: 		this,
+			duration: 		2,
+			onInit: 		a => { a.takePuppet(this); },
+			onSpriteMake: 	s => { },
+			onSpriteTick: 	s => { s.sQuiver(0.05,0.10); },
+			onSpriteDone: 	s => { s.sReset(); }
+		});
 		return true;
 	}
+
+	get command() {
+		return this._command;
+	}
+	set command(value) {
+		console.assert(value);
+		this._command = value;
+	}
+
 	mindset(wayOfThinking) {
 		return String.arIncludes( this.brainMindset, wayOfThinking );
 	}
@@ -1467,7 +1472,7 @@ class Entity {
 		}
 
 		if( this.control == Control.AI || useAiTemporarily ) {
-			this.command = (function() {
+			function decideCommand() {
 
 				if( this.typeId == window.debugEntity ) debugger;
 
@@ -1798,7 +1803,9 @@ class Entity {
 				}
 				return this.thinkWanderF();
 
-			}).apply(this);			
+			}
+
+			this.command = decideCommand.apply(this);
 
 			if( this.command == undefined ) debugger;
 			this.record( this.attitude+" cmd: "+this.command );
@@ -2040,14 +2047,15 @@ class Entity {
 			let lunge = 0.2 + 0.5 * mag;
 			if( attacker && attacker.isMonsterType ) {
 				new Anim({
+					name: 'lunge',
 					follow: 	attacker,
 					delay: 		delay,
 					duration: 	0.15,
 					onInit: 		a => { a.takePuppet(attacker); },
 					onSpriteMake: 	s => { s.sPosRelDeg(deg,lunge); },
-					onSpriteDone: 	s => { s.sReset(); }
 				});
 			}
+
 			// blood flies away from the attacker
 			let arc = attacker ? 45 : 179;
 			let piecesAnim = new Anim({
@@ -2059,33 +2067,29 @@ class Entity {
 				onSpriteMake: 	s => { s.sScaleSet(0.20+0.10*mag).sVel(Math.rand(deg-arc,deg+arc),4+Math.rand(0,3+7*mag)); },
 				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); }
 			});
+
+
 			// You also jump back and quiver
-			if( this.spriteList ) {
-				new Anim({
-					follow: 	this,
-					delay: 		delay,
-					duration: 	0.1,
-					onInit: 		a => { a.takePuppet(this); },
-					onSpriteMake: 	s => { },
-					onSpriteTick: 	s => { s.sPosRelDeg(deg,lunge/2).sQuiver(0.05,0.1+mag*0.1); },
-					onSpriteDone: 	s => { s.sReset(); }
-				});
-			}
+			new Anim({
+				follow: 	this,
+				delay: 		delay,
+				duration: 	0.1,
+				onInit: 		a => { a.takePuppet(this); },
+				onSpriteMake: 	s => { },
+				onSpriteTick: 	s => { s.sPosRelDeg(deg,lunge/2).sQuiver(0.05,0.1+mag*0.1); },
+			});
+
 			// And if you are killed then you shrink/fade
 			if( amount >= this.health ) {
-				if( this.spriteList ) {
-					new Anim({
-						follow: 	this,
-						delay: 		delay+0.1,
-						duration: 	0.1,
-						onInit: 		a => { a.takePuppet(this); },
-						onSpriteMake: 	s => { },
-						onSpriteTick: 	s => {
-							if( s.elapsed === undefined || s.duration ===undefined ) { debugger; }
-							//s.sScaleSet( 0.3+2.7/(1-s.elapsed/s.duration) ); }
-						}
-					});
-				}
+				new Anim({
+					follow: 	this,
+					img:		ImageRepo.getImg(this),
+					delay: 		delay+0.2,
+					duration: 	0.3,
+					onInit: 		a => a.create(1),
+					onSpriteMake: 	s => { },
+					onSpriteTick: 	s => s.sScaleSet( (this.scale||1) * (1-s.sPct*0.6) )
+				});
 			}
 		}
 
@@ -2315,12 +2319,14 @@ class Entity {
 				landing = { x: pos[0], y: pos[1] };
 			}
 		}
+		let moveResult = null;
 		if( landing ) {
-			this.moveToInstantly(null,landing.x,landing.y);
+			moveResult = this.moveToInstantly(null,landing.x,landing.y);
 		}
 		return {
 			status: landing ? 'teleported' : 'noteleport',
 			success: !!landing,
+			moveResult: moveResult,
 			xOld: xOld,
 			yOld: yOld,
 			x: this.x,
@@ -2378,9 +2384,6 @@ class Entity {
 			delete this.oldMe;
 			source.isPossessing = false;
 			tell(mSubject,source,' ',mVerb,'leave',' the mind of ',mObject,this,'.');
-			if( source.isUser ) {
-				guiMessage('resetMiniMap',source.area);
-			}
 			return {
 				status: 'unpossessed',
 				success: true
@@ -2420,9 +2423,6 @@ class Entity {
 		source.control = Control.EMPTY;
 		source.visCache = null;
 		source.name = 'Mindless husk';
-		if( this.isUser ) {
-			guiMessage('resetMiniMap',this.area);
-		}
 		return {
 			status: 'possessed',
 			success: true
@@ -3117,7 +3117,7 @@ class Entity {
 
 	actEnterGate(gate) {
 		tell(mSubject,this,' ',mVerb,gate.useVerb || 'teleport',' ',mObject,gate);
-		let gateEffect = createGateEffect( gate );
+		let gateEffect = this.createGateEffect( gate );
 		let result     = effectApply( gateEffect, this );
 		result.enterGate = gate;
 		return result;
@@ -3159,21 +3159,17 @@ class Entity {
 		this.moveWeapon          = weapon;
 		this.moveVoluntary       = voluntary;
 
-		this.onMove();
-
-//		if( this.areaMove && this.areaMove.underConstruction ) {
-//			this.onRealtimeMove(0.0);
-//		}
+		return this.onMove();
 	}
 
 	setMoveTargetDir(dir,weapon,voluntary) {
 		let x = this.x + Direction.add[dir].x;
 		let y = this.y + Direction.add[dir].y;
-		this.setMoveTarget(null,x,y,false,true,weapon,voluntary);
+		return this.setMoveTarget(null,x,y,false,true,weapon,voluntary);
 	}
 
 	moveToInstantly(area,x,y) {
-		this.setMoveTarget(area,x,y,true,false,null,true);
+		return this.setMoveTarget(area,x,y,true,false,null,true);
 	}
 
 	// Returns false if the move fails. Very important for things like takeShove().
@@ -3194,10 +3190,13 @@ class Entity {
 			if( incCount ) {
 				entity.bumpCount = (entity.bumpCount||0)+1;
 			}
-			entity.bumpDir = Direction.predictable(entity.x-this.x,entity.y-this.y);
+			entity.bumpDir = Direction.predictable(entity.x-xPrior,entity.y-yPrior);
+			if( entity.bumpDir === false ) {
+				debugger;
+			}
 		}.bind(this);
 
-		function determineWhetherAttack(target) {
+		function wantToAttack(target) {
 
 			// Attack enemies or neutrals
 			let wantToAttack = this.isMyEnemy(target);
@@ -3208,7 +3207,7 @@ class Entity {
 				wantToAttack = false;
 			}
 
-			return target && attackAllowed && wantToAttack;
+			return wantToAttack;
 		}
 
 		function resultImmobility() {
@@ -3269,8 +3268,8 @@ class Entity {
 			this.lastBumpedId = collider.id;
 			if( collider.isTable ) {
 				// Look for a merchant on the far side of the table. Special case.
-				let bx = x + (collider.x-this.x);
-				let by = y + (collider.y-this.y);
+				let bx = collider.x + (collider.x-xPrior);
+				let by = collider.y + (collider.y-yPrior);
 				let e = this.findAliveOthersAt(bx,by).first;
 				if( e ) bump(e,false);
 			}
@@ -3334,9 +3333,9 @@ class Entity {
 			;
 		}
 
-		weapon = weapon || this.calcDefaultWeapon();
-		let useWeapon = determineWhetherAttack.call(this,target);
-		if( useWeapon ) {
+		let attack = target && attackAllowed && wantToAttack.call(this,target);
+		if( attack ) {
+			weapon = weapon || this.calcDefaultWeapon();
 			return resultAttack.call(this,target,weapon);
 		}
 
@@ -3590,6 +3589,23 @@ class Entity {
 				}
 			}
 			case Command.DEBUGTEST: {
+				let attacker = this;
+				let delay = 0;
+				let deg = 180.0;
+				let lunge = 0.2 + 0.5;
+				new Anim({
+					watch: 1,
+					follow: 	this,
+					delay: 		delay+0.1,
+					duration: 	0.2,
+					onInit: 		a => { a.takePuppet(this); },
+					onSpriteMake: 	s => { },
+					onSpriteTick: 	s => {
+						if( s.elapsed === undefined || s.duration ===undefined ) { debugger; }
+						s.sScaleSet( (s.anim.puppet.scale||1) * (1-s.sPct) ); //0.3+2.7/(1-s.elapsed/s.duration) );
+					}
+				});
+
 				break;
 			}
 			case Command.DEBUGKILL: {
@@ -3767,9 +3783,27 @@ class Entity {
 			// This should be the ONE AND ONLY call to moveDir.
 			this.commandResult = this.setMoveTargetDir(dir,this.commandItem,true);
 		}
-		else {
+
+		if( !this.commandResult || !this.commandResult.success ) {
+			if( this.command == Command.DROP ) {
+				debugger;
+			}
 			this.commandResult = this.actOnCommand();
 		}
+
+		if( this.command !== Command.NONE ) {
+			let speed = this.speedAction;
+			if( Direction.fromCommand(this.command) !== false ) {
+				speed = this.speedMove;
+			}
+			let actionCost = 1/(speed||0.001);
+			if( this.fastCommands && this.fastCommands.includes(lastCommand) ) {
+				tell(mSubject,this,' ',mVerb,'can',' take another action.');
+				this.actionCost *= 0.5;
+			}
+			this.actionLeft = Math.max(0,this.actionLeft+actionCost);
+		}
+
 		
 		this.isStill = ( this.x == xOld && this.y == yOld );
 		this.isBraced = this.isStill;
@@ -3818,9 +3852,9 @@ class Entity {
 
 		if( areaPrior && areaPrior.map.inBounds(xPrior,yPrior) ) {
 			console.assert( areaPrior && xPrior !== undefined );
-			this.map.scentLeave(xPrior,yPrior,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
-			this.map._entityRemove(this,xPrior,yPrior);
-			this.map.calcWalkable(xPrior,yPrior);	// NUANCE: must be after the entityRemove!
+			areaPrior.map.scentLeave(xPrior,yPrior,this,this.scentReduce||0); // Only leave scent where you WERE, so you can sell it where you ARE.
+			areaPrior.map._entityRemove(this,xPrior,yPrior);
+			areaPrior.map.calcWalkable(xPrior,yPrior);	// NUANCE: must be after the entityRemove!
 		}
 
 		if( areaChanged ) {
@@ -3842,7 +3876,7 @@ class Entity {
 		// Any visibility cache flushing should happen here.
 		if( areaChanged && this.isUser ) {
 			this.area.world.setTickingAreas(this.area.id);
-			guiMessage('setArea',this.area);
+			guiMessage('changeArea', { area: this.area, areaPrior: areaPrior } );
 		}
 	}
 
@@ -3905,7 +3939,8 @@ class Entity {
 			this.areaMove = this.area;
 			this.xMove = this.x;
 			this.yMove = this.y;
-			return false;
+			result.success = false;
+			return result;
 		}
 
 		this.recognizeMove(areaPrior,xPrior,yPrior,areaChanged);
@@ -3936,117 +3971,10 @@ class Entity {
 		}
 
 		this.checkPit();
-	}
-
-	onRealtimeMove(dt) {
-
-/*
-		// Remember that these could be undefined if I was just in the void.
-		let xPrior = this.x;
-		let yPrior = this.y;
-		let areaPrior = this.area;
-
-		if( this.jumpLeft ) {
-			this.jumpLeft = Math.max( (this.jumpLeft||0)-dt, 0 );
-		}
-
-		//
-		// Detect area change
-		//
-		let areaChanged = !areaPrior || this.areaMove.id !== areaPrior.id;
-
-		if( areaChanged ) {
-			this.moveInstantly = true;
-			[this.xMove,this.yMove] = this.findSafeGateDestination(this.areaMove,this.xMove,this.yMove);
-		}
-
-		this.area = this.areaMove;
-		if( this.moveInstantly ) {
-			this.x    = this.xMove;
-			this.y    = this.yMove;
-			// Don't clear moveInstantly yet. We might care later how we got here.
-		}
-		if( this.x!=this.xMove || this.y!=this.yMove ) {
-			let dx = this.xMove-this.x;
-			let dy = this.yMove-this.y;
-			let dist = Distance.get(dx,dy);
-			let tilesPerSecond = this.speedMove;
-			let travel = dt*tilesPerSecond;
-			if( dist < travel ) {
-				this.x = this.xMove;
-				this.y = this.yMove;
-			}
-			else {
-				this.x += (dx/dist)*travel;
-				this.y += (dy/dist)*travel;
-			}
-		}
-
-		//
-		// Entering a New Tile?
-		//
-		let inNewTile = ( this.xTilePrior===undefined || areaChanged );
-		if( !inNewTile ) {
-			let xTile = Math.toTile(this.x);
-			let yTile = Math.toTile(this.y);
-			if( xTile != this.xTilePrior || yTile != this.yTilePrior ) {
-				inNewTile = true;
-			}
-		}
-
-		let revertMovement;
-		if( inNewTile ) {
-			let result = this.enterTile(areaPrior,xPrior,yPrior);
-			Gui.dirty('miniMap');
-			Gui.dirty('map');
-			revertMovement = !result.entrySuccess;
-		}
-
-		if( areaChanged ) {
-			revertMovement = false;
-			if( !areaPrior ) {
-				this.recognizeLeaveVoid();
-			}
-		}
-
-		if( inNewTile ) {
-			if( revertMovement ) {
-				// WARNING! We do not revert to the prior area
-				this.x = xPrior;
-				this.y = yPrior;
-			}
-			else {
-				this.recognizeMove(areaPrior,this.xTilePrior,this.yTilePrior,areaChanged);
-
-				this.xTilePrior = Math.toTile(this.x);
-				this.yTilePrior = Math.toTile(this.y);
-
-				if( this.light ) {
-					this.area.lightDirty = true;
-				}
-				if( this.isUser ) {
-					this.area.pathClip.setCtr(this.x,this.y,MapVisDefault*2);
-					this.area.thinkClip.setCtr(this.x,this.y,MapVisDefault*5);
-				}
-			}
-		}
-
-		let dest = this.destination;
-		if( dest ) {
-			if( this.nearTarget(dest,dest.closeEnough) ) {
-				this.record( "ARRIVED", true );
-				if( dest.onArrive ) {
-					dest.onArrive(this.dest);
-				}
-				this.destination = null;
-			}
-		}
-
-		this.checkPit();
-		if( this.isDead() ) {
-			return;
-		}
-*/
+		return {
+			status: 'onMove',
+			success: true
+		};
 	}
 
 	tickSecond() {
@@ -4074,9 +4002,6 @@ class Entity {
 			this.grantPerks();
 		}
 
-		// Must be first, because sometimes it can generate commands when entering a new tile.
-		this.onRealtimeMove(dt);
-
 		if( this.isDead() ) {
 			return;
 		}
@@ -4084,14 +4009,12 @@ class Entity {
 		this.actionLeft -= dt;
 
 		if( this.actionLeft <= 0 ) {
-			let lastCommand = Command.NONE;
 			if( thinkClip.contains(this.x,this.y) ) {
 				// We might be able to move this to happen when they enter a tile
 				// instead of every time they think. Might be faster.
 				this.calculateVisbility();
 				this.think();
 				this.act();
-				lastCommand = this.command;
 				this.clearCommands();
 			}
 			DeedManager.calc(this);
@@ -4099,12 +4022,6 @@ class Entity {
 			//
 			// Reset Action Count
 			//
-			let actionCost = 1.0/(this.speedAction||0.01);
-			if( this.fastCommands && this.fastCommands.includes(lastCommand) ) {
-				tell(mSubject,this,' ',mVerb,'can',' take another action.');
-				this.actionCost *= 0.5;
-			}
-			this.actionLeft = Math.max(0,this.actionLeft+actionCost);
 		}
 
 		Time.tickOnTheSecond(dt,this,(dtSecond)=>{

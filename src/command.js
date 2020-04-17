@@ -279,6 +279,7 @@ class UserCommandHandler {
 			() => {
 			},
 			(c) => {
+				console.assert( c.command );
 				this.observer.command = c.command;
 				this.observer.commandItem = c.commandItem;;
 				this.observer.commandTarget = c.commandTarget;

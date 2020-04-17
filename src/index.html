@@ -59,12 +59,16 @@
 <script src="item.js" charset="utf-8"></script>
 <script src="inventory.js" charset="utf-8"></script>
 <script src="entity.js" charset="utf-8"></script>
+<script src="anim.js" charset="utf-8"></script>
+<script src="animChef.js" charset="utf-8"></script>
 <script src="perk.js" charset="utf-8"></script>
 <script src="tell.js" charset="utf-8"></script>
 <script src="imageRepo.js" charset="utf-8"></script>
 <script src="sprite.js" charset="utf-8"></script>
-<script src="anim.js" charset="utf-8"></script>
+<script src="eSprite.js" charset="utf-8"></script>
+<script src="aSprite.js" charset="utf-8"></script>
 <script src="views.js" charset="utf-8"></script>
+<script src="scene.js" charset="utf-8"></script>
 <script src="viewFavorites.js" charset="utf-8"></script>
 <script src="viewInventory.js" charset="utf-8"></script>
 <script src="viewInfo.js" charset="utf-8"></script>
@@ -106,6 +110,8 @@ async function main() {
 		this.autoFavorite();
 		this.gui.tick(dt);
 		this.gui.render(dt);
+
+		this.world.paused = this.entity.command==Command.NONE && this.entity.actionLeft<=0;
 	}.bind(User);
 
 	User.onEvent = function(event) {
@@ -142,7 +148,9 @@ async function main() {
 		area.underConstruction = true;
 		let player    = new Entity( area.depth, MonsterTypeList[playerTypeId], config.playerInject, area.jobPicker );
 		player.visibilityDistance = MapVisDefault;
-		this.takeControlOf( player );
+		//player.watch = true;
+
+		this.takeControlOf(player);
 		Gab.observer = this.entity;
 		let startPos = area.map.pickPosToStartGame(playerMarkerId);
 		this.entity.requestGateTo(area,...startPos);
@@ -153,6 +161,7 @@ async function main() {
 			(message,history) => guiMessage('receive',history,'narrative')
 		);
 		world.userList.push(this);
+		this.world = world;
 
 		let self = this;
 		let handle = setInterval(function() {
@@ -190,6 +199,8 @@ async function main() {
 		(user) => {
 			guiMessage( 'create2DEngine' );
 			guiMessage( 'observer', user.entity );
+			let scene = new Scene();
+			guiMessage( 'scene', scene );
 			$('#guiLoading').hide();
 			$( window ).resize( () => { guiMessage('resize'); });
 			$('#guiMain').show();

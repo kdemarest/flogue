@@ -4,18 +4,25 @@ class Sprite {
 	constructor() {
 		this.xVisual   = 0;
 		this.yVisual   = 0;
-		this.sprite    = null;
+		this.pixiSprite = null;
 		this.xAnchor   = 0.5;
 		this.yAnchor   = 0.5;
 		this.scale     = 1.0;
 		this.alpha     = 1.0;
 		this.zOrder    = Tile.zOrder.WALL;
-		this.visible   = true;
 		this.observer  = null;
 		this.inPane    = false;
 		this.dead      = false;
-		this.age       = 0;
 	}
+
+	get id() {
+		console.assert(false);
+	}
+
+	get scene() {
+		console.assert(false);
+	}
+
 	get xVisualOrigin() {
 		return this.observer.xVisualOrigin===undefined ? this.observer.x : this.observer.xVisualOrigin;
 	}
@@ -24,25 +31,35 @@ class Sprite {
 		return this.observer.yVisualOrigin===undefined ? this.observer.y : this.observer.yVisualOrigin;
 	}
 
+	get visible() {
+		return this.pixiSprite.visible;
+	}
+
+	set visible(value) {
+		this.pixiSprite.visible = value;
+	}
+
 	initSpriteByImg(img) {
-		this.sprite  = new PIXI.Sprite( ImageRepo.getResourceByImg(img).texture );
+		this.pixiSprite  = new PIXI.Sprite( ImageRepo.getResourceByImg(img).texture );
 	}
 
-	updateSprite(pane) {
+	updatePixiSprite(pane) {
 		console.assert( !this.dead );
-		this.sprite.x = (this.xVisual-this.xVisualOrigin)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
-		this.sprite.y = (this.yVisual-this.yVisualOrigin)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
+		if( this.watch ) {
+			console.log('updatePixiSprite('+this.id+')');
+		}
+		this.pixiSprite.x = (this.xVisual-this.xVisualOrigin)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
+		this.pixiSprite.y = (this.yVisual-this.yVisualOrigin)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
 
-		this.sprite.zOrder  = this.zOrder;
-		this.sprite.alpha   = this.alpha;
-		this.sprite.visible = this.visible;
+		this.pixiSprite.zOrder  = this.zOrder;
+		this.pixiSprite.alpha   = this.alpha;
 
-		this.sprite.anchor.set(this.xAnchor,this.yAnchor);
-		this.sprite.transform.scale.set( this.scale * Tile.DIM/this.sprite._texture.width );
+		this.pixiSprite.anchor.set(this.xAnchor,this.yAnchor);
+		this.pixiSprite.transform.scale.set( this.scale * pane.tileDim/this.pixiSprite._texture.width );
 
 	}
 
-	update(dt,observer,pane) {
+	tick(dt,observer,pane) {
 		console.assert(false);
 	}
 

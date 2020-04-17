@@ -51,7 +51,8 @@ const PotionImgChoices = {
 	eLight: 		{ img: "item/potion/white.png" },
 	eVuln: 			{ img: "item/potion/black.png" },
 	eResistance: 	{ img: "item/potion/yellow.png" },
-	eShove: 		{ img: "item/potion/black.png" }
+	eShove: 		{ img: "item/potion/black.png" },
+	eOdorless: 		{ img: "item/potion/silver.png" }
 };
 
 const ImgTables = {
@@ -979,7 +980,7 @@ const CoinImgChoices = ({ //Type.establish('CoinStack',{},{
 let CoinImgChooseFn = self => {
 	let c = self ? self.coinCount : null;
 	let cs = self.imgChoices;
-	return c<=1 ? cs.coinOne : c<=4 ? cs.coinThree : c<=10 ? cs.coinTen : cs.coinMany;
+	return (c<=1 ? cs.coinOne : c<=4 ? cs.coinThree : c<=10 ? cs.coinTen : cs.coinMany).img;
 };
 
 const DoorStates = {
@@ -1377,7 +1378,7 @@ let ItemTypeList = {
 		effectWhen: 	{ isHarm: 'throw', DEFAULT: 'quaff'},
 		mayThrow: 		true,
 		imgChoices: 	PotionImgChoices,
-		imgChooseFn: 	self => self.effect ? self.imgChoices[self.effect.typeId].img : self.imgChoices.eHealing.img,
+		imgChooseFn: 	self => self.effect && self.imgChoices[self.effect.typeId] ? self.imgChoices[self.effect.typeId].img : self.imgChoices.eHealing.img,
 		icon: 			'/gui/icons/potion.png'
 	},
 	"spell":    {
@@ -1728,7 +1729,9 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 		let hidList = [].concat( self.map.itemListHidden );
 		hidList.forEach( item => {
 			item.unhide();
-			Anim.FloatUp( self.id, item, StickerList.ePoof.img );
+			let a = Anim.FloatUp( self.id, item, StickerList.ePoof.img );
+			a.delay = Math.rand(0,0.5);
+
 		});
 		delete self.unhide;
 	}
@@ -1746,9 +1749,6 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 			name: 'death return'
 		};
 		toucher.onDeath = entity => {
-			if( entity.spriteList ) {
-				entity.area.animationManager.remove( anim => anim.isPuppeteer && anim.spriteList[0] === entity.spriteList[0] );
-			}
 			entity.requestGateTo( entity.deathReturn.area, entity.deathReturn.px, entity.deathReturn.py);
 			entity.vanish = false;
 			entity.health = entity.healthMax;
@@ -1848,7 +1848,6 @@ ItemTypeList.door.onBump = function(entity,self) {
 	}
 	if( self.state == 'shut' ) {
 		self.setState('open');
-		Scene.dirty(self);
 		tell(mSubject,entity,' ',mVerb,'open',' the ',mObject,self);
 		Anim.FloatUp( entity.id, self, StickerList.open.img );
 		return true;
@@ -1858,7 +1857,6 @@ ItemTypeList.door.onBump = function(entity,self) {
 		let hasKey = self.keyId===undefined || key;
 		if( hasKey ) {
 			self.setState('shut');
-			Scene.dirty(self);
 			tell(mSubject,entity,' ',mVerb,'unlock',' the ',mObject,self);
 			Anim.FloatUp( entity.id, self, StickerList.unlock.img );
 			if( key && key.name.indexOf('(used)') < 0 ) {
@@ -1894,7 +1892,7 @@ ItemTypeList.chest.onBump = function(toucher,self) {
 			let allow = self.onOpen(self,toucher);
 			if( allow === false ) return;
 		}
-		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
+		self.setState( self.inventory && self.inventory.length > 0 ? 'open' : 'empty' );
 	}
 	else {
 		if( self.inventory && self.inventory.length > 0 ) {
@@ -1906,9 +1904,8 @@ ItemTypeList.chest.onBump = function(toucher,self) {
 			Inventory.giveTo( toucher, self.inventory, self, false); //, item => {
 			Anim.Fountain(toucher.id,self,20,1.0,4,StickerList.coinSingle.img);
 		}
-		self.state = self.inventory && self.inventory.length > 0 ? 'open' : 'empty';
+		self.setState( self.inventory && self.inventory.length > 0 ? 'open' : 'empty' );
 	}
-	Scene.detach(self.spriteList);
 }
 
 ItemTypeList.coffin.onBump = ItemTypeList.chest.onBump;
@@ -1983,7 +1980,7 @@ ItemTypeList.fontSolar.onTickSecond = function(dt) {
 				duration: 4,
 				icon: EffectTypeList.eRegeneration.icon,
 				onEnd: () => {
-					glowAnim.die()
+					glowAnim.die('deed completed')
 				}
 			});
 			effectApply(effect,entity,null,self,'tick');

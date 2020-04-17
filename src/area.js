@@ -328,13 +328,13 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		injectList.push(...theme.injectList);
 	}
 
+	area.itemList = [];
+	area.entityList = [];
 	area.map = new Map(
 		area,
 		masonMap.renderToString(),
-		[],
 		theme.mapVars
 	);
-	area.entityList = [];
 	let isFriendFn = (e) => !isEnemyFn(e);
 
 	conditionSites(area.siteList);
@@ -491,6 +491,7 @@ class Area {
 		this.theme		= theme;
 		this.world		= null;
 		this.map		= null;
+		this.itemList   = null;
 		this.entityList = null;
 		this.siteList	= null;
 		this.picker		= new Picker(depth);
@@ -498,17 +499,12 @@ class Area {
 		this.thinkClip	= new ClipRect();
 		this.lightDirty	= true;
 		this.isTicking	= false;
-		this.entitySpriteList = {};
 		this.underConstruction = true;
 
 		// NOTE: Move this into the areaBuild() at some point.
 		if( theme.jobPick ) {
 			this.jobPicker = this.makeJobPicker(theme);
 		}
-	}
-	addSprite(sprite) {
-		console.assert( !this.entitySpriteList[sprite.id] );
-		this.entitySpriteList[sprite.id] = sprite;
 	}
 	makeJobPicker(theme) {
 		let jobPickTable = new Pick.Table().scanKeys(theme.jobPick);
@@ -576,8 +572,9 @@ class Area {
 		observer.light = oldLight;
 		this.lightDirty = false;
 	}
+
 	tickRealtime(dt) {
-		this.animationManager.delay.reset();
+		this.animationManager.delayManager.reset();
 		tickRealtime( dt, this.map, this.entityList, this.thinkClip );
 		if( this.lightDirty ) {
 			this.castLight();

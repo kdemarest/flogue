@@ -6,6 +6,8 @@ class World {
 		this.areaList = {};
 		this.userList = [];
 
+		this.paused = true;
+
 		// Hack of convenience...
 		Gab.world = this;
 	}
@@ -23,9 +25,11 @@ class World {
 	tickRealtime(dt) {
 		Tester.tick(dt);
 
-		this.traverse( area => {
-			area.tickRealtime(dt);
-		});
+		if( !this.paused ) {
+			this.traverse( area => {
+				area.tickRealtime(dt);
+			});
+		}
 
 		// This goes last because it includes gui render.
 		this.userList.forEach( user => {
@@ -33,7 +37,7 @@ class World {
 		});
 
 		Tester.check();
-		if( dt ) {
+		if( dt && !this.paused ) {
 			Time.simTimeAdd(dt);
 		}
 	}

@@ -94,6 +94,7 @@ class HumanUser {
 		if( this.entity ) {
 			this.entity.userControllingMe = null;
 		}
+
 		this.entity = newEntity;
 		this.entity.userControllingMe = this;
 		if( newEntity.area ) {

@@ -4,10 +4,10 @@ class Vis {
 	constructor(getMapFn) {
 		this.getMapFn = getMapFn;
 		this.opacityLookup = [];	// Warning! The Light.Caster needs this to not change.
-		this.populateLookup();
+		this.populateOpacityLookup();
 		//this.shootCache = {};
 	}
-	populateLookup() {
+	populateOpacityLookup() {
 		let map = this.getMapFn();
 		console.assert(map);
 		map.traverse( (x,y) => {

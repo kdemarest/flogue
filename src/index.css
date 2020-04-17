@@ -304,6 +304,7 @@ body {
 	overflow-y: auto;
 	overflow-x: hidden;
 	white-space: pre-wrap;
+	cursor: pointer;
 }
 #guiTalk {
 	display: none;
@@ -462,6 +463,15 @@ body {
 .poison {
 	color: black;
 	background-color: #66cc1a;
+}
+.runPause {
+	font-family: 'Raleway', sans-serif;
+	font-size: 20px;
+	font-weight: 400;
+	margin-right: 16px;
+	width: 24px;
+	display: inline-block;
+	text-align: left;
 }
 .level {
 	font-family: 'Raleway', sans-serif;

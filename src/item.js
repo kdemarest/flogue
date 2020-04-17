@@ -413,8 +413,7 @@ class Item {
 		}
 		// Maybe the state is in the name?
 		String.calcName(this);
-		// we can just assume that the sprites will need regenerating.
-		Scene.dirty(this);
+		this.spriteDirty = true;
 	}
 	getDodge() {
 		return this.dodge || Quick.CLUMSY;
@@ -610,18 +609,17 @@ class Item {
 
 		let hadNoOwner = !this.owner;
 		if( !this.isUnbunching && !entity.inVoid && entity.isUser ) {
-			// Item flies to your gui sidebar...
-//			if( !this.spriteList || this.spriteList.length == 0 ) {
-//				spriteMakeInWorld(this,entity.x,entity.y);
-//			}
+			let flightDistance;
+			guiMessage( 'sceneFn', scene => flightDistance = scene.mapViewWidthInTiles/2.0);
 			new Anim({
+				watch: 1,
 				at: 		entity,
 				img: 		ImageRepo.getImg(this),
 				delayId: 	entity.id,
 				delayAdd: 	0.2,
 				duration: 	0.6,
 				onInit:			a => { a.create(1); },
-				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
+				onSpriteMake: 	s => { s.sVelTo(flightDistance,0,0.6); },
 				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
 			});
 		}
@@ -644,18 +642,16 @@ class Item {
 				});
 			}
 			else {
-//				if( !this.spriteList || this.spriteList.length == 0 ) {
-//					spriteMakeInWorld(this,this.owner.x,this.owner.y);
-//				}
+				guiMessage( 'sceneEntityNotice', this, 'map' );
 				// Show the item flying to its new location
 				new Anim({
+					watch: 1,
 					at: 		this.owner,
-					duration: 	rangeDuration,
 					delayId: 	this.id,
+					duration: 	rangeDuration,
 					onInit: 		a => { a.takePuppet(this); },
 					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
 					onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); },
-					onSpriteDone: 	s => { if( !entity.isMap ) { Scene.detach(this.spriteList); } }
 				});
 			}
 		}
@@ -748,7 +744,6 @@ class Item {
 			this.owner._itemRemove(this);
 		}
 		// Now the item should be simply gone.
-		Scene.detach(this.spriteList);
 		this.dead = true;
 		return true;
 	}

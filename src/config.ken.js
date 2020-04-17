@@ -120,10 +120,10 @@ Module.add('config.ken',function(X,moduleId) {
 		scapeId: 		'kenTinyOpenCave',
 		palette: 		{ basis: 'moon' },
 		placeDensity: 	0.00001,
-		monsters: 		['isDog'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
+		monsters: 		['isDog','isEarthChild'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
 		itemDensity:    0.00001,
-		enemyDensity:  	0.00001,
+		enemyDensity:  	0.02,
 		friendDensity: 	0.000005,
 	}
 
@@ -184,8 +184,8 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		//startingDepth: 12,
-		//themeId: 'kenTinyTheme',
+		startingDepth: 1,
+		themeId: 'kenTinyTheme',
 		saveBattery: true,
 		playerInject: player.inject
 	}

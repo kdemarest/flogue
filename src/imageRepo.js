@@ -71,7 +71,6 @@ class PixiImageRepo {
 				debugger;
 			}
 			if( type.imgChoices ) {
-				let imgChooseFn = this.imgChooseFnList[type.typeId];
 				for( let key in type.imgChoices ) {
 					add( type.imgChoices[key].img || type.imgDefault );
 				}

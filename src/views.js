@@ -286,9 +286,14 @@ class ViewExperience extends ViewObserver {
 			this.dirty = true;
 		}
 	}
+	tick(dt) {
+		this.dirty = true;
+	}
 	render() {
 		let entity = this.observer;
 		if( !entity ) return;
+
+		let prefix = '<span class="runPause">'+(this.trueObserver.area.world.paused ? '||' : '>')+'</span>';
 
 		if( entity.isTileType || entity.isItemType || (entity.isMonsterType && !entity.isUser) ) {
 			let s = String.capitalize(entity.name.replace(/\$/,''));
@@ -298,7 +303,7 @@ class ViewExperience extends ViewObserver {
 			if( entity.jobId ) {
 				s += ' the '+String.capitalize(entity.jobId);
 			}
-			$(this.divId).show().html('<span class="monName monColor">'+s+'</span>');
+			$(this.divId).show().html(prefix+'<span class="monName monColor">'+s+'</span>');
 			return;
 		}
 
@@ -317,7 +322,7 @@ class ViewExperience extends ViewObserver {
 				this.experience = entity.experience;
 			}
 		}
-		$(this.divId).show().html(level+exp);
+		$(this.divId).show().html(prefix+level+exp);
 	}
 }
 

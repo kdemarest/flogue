@@ -1642,11 +1642,7 @@ MonsterTypeList.redScarab.onAttack = function(target) {
 MonsterTypeList.redOoze.rescale = function() {
 	let healthScale = ((Math.max(this.health,this.healthMax) / this.healthMax) - 1) / (this.growLimit-1);
 	this.scale = 0.50 + 1.00*healthScale;	// should make the ooze grow when health is beyond max.
-	if( this.spriteList ) {
-		for( let i=0 ; i<this.spriteList.length ; ++i ) {
-			this.spriteList[i].baseScale = this.scale;
-		}
-	}
+	this.spriteSetMember('scale',this.scale);
 	console.log( "Scale is now "+this.scale );
 }
 
@@ -1707,13 +1703,13 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 				this.inShell = true;
 				this.immune = this.immuneInShell;
 				this.resist = this.resistInShell;
-				Scene.dirty(this);
+				guiMessage('dirty',this,'map');
 			},
 			onEnd: (deed) => {
 				this.inShell = false;
 				this.immune = '';
 				this.resist = '';
-				Scene.dirty(this);
+				guiMessage('dirty',this,'map');
 			}
 		};
 		effectApply(shellEffect,this,this,null,'attacked');

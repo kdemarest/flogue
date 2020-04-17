@@ -286,18 +286,14 @@ rechargeRate		- 1.0 default. Higher means things in this area recharge faster.
 */
 
 class Map extends SimpleMap {
-	constructor(area,tileRaw,itemList,mapVars) {
+	constructor(area,tileRaw,mapVars) {
 		super(tileRaw,true,TileTypeList.wallCave.symbol);
 		this.area = area;
 		this.actionCount = 0;
 		this.tileEntity = [];
-		this.itemList = itemList || [];
 		this.itemListHidden = [];
 		this._itemLookup = [];
 		this.itemLookupStaticNop = [];
-		this.itemList.forEach( item => {
-			this.itemLookupAdd(item.x,item.y,item);
-		});
 		this._entityLookup = [];		
 		this.entityLookupStaticNop = [];
 		this.walkLookup = this.calcLookup([],pWalk(this));
@@ -308,7 +304,22 @@ class Map extends SimpleMap {
 		this.isAirless = false;
 		this.passiveEffectList = [];
 		this.name = "Earth";
+
+		this.itemList.forEach( item => {
+			this.itemLookupAdd(item.x,item.y,item);
+		});
+
 		Object.assign( this, mapVars );
+	}
+
+	get itemList() {
+		return this.area.itemList;
+	}
+	get entityList() {
+		return this.area.entityList;
+	}
+	get defaultFloorSymbol() {
+		return TypeIdToSymbol[this.area.theme.palette.floor];
 	}
 
 	lPos(x,y) {
@@ -388,9 +399,6 @@ class Map extends SimpleMap {
 			this._scentLookup[lPos+1] = entity;
 		}
 	}
-	get entityList() {
-		return this.area.entityList;
-	}
 	allEntitiesNear(x,y,dist) {
 		let clip = new ClipRect().setCtr(x,y,dist);
 		let list = [];
@@ -403,9 +411,6 @@ class Map extends SimpleMap {
 		return list;
 	}
 
-	get defaultFloorSymbol() {
-		return TypeIdToSymbol[this.area.theme.palette.floor];
-	}
 	calcLookup(lookup,testFn) {
 		let xLen = this.xLen;
 		this.traverse( (x,y) => {
@@ -563,7 +568,6 @@ class Map extends SimpleMap {
 					e[key] = null;
 				}
 				Object.assign(e,SymbolToType[symbol]);
-				e.spriteList = null;
 			}
 		}
 		this.calcWalkable(x,y);
@@ -751,8 +755,8 @@ class Map extends SimpleMap {
 	}
 	_entityRemove(entity,x,y) {
 		//console.log( '- '+entity.name+' ('+entity.x+','+entity.y+')' );
-		if( entity.light && entity.area ) {
-			entity.area.lightDirty = true;
+		if( entity.light ) {
+			this.area.lightDirty = true;
 		}
 
 		//console.log('entityRemove',entity.name,x,y);
@@ -765,7 +769,7 @@ class Map extends SimpleMap {
 		}
 		//console.log('entityInsert',entity.name,x,y);
 		this._entityLookupAdd(entity,x,y);
-		guiMessage('stageEntityNotice',entity,'map');
+		guiMessage('sceneEntityNotice',entity,'map');
 	}
 
 	_itemRemove(item) {
@@ -779,7 +783,6 @@ class Map extends SimpleMap {
 		Array.filterInPlace( this.itemList, i => i.id!=item.id );
 		this.itemLookupRemove(item);
 
-		Scene.detach( item.spriteList );
 		this.calcWalkable(item.x,item.y);
 		if( Rules.removeScentOfTheDead ) {
 			this.traverse( (x,y) => {
@@ -822,7 +825,7 @@ class Map extends SimpleMap {
 		if( item.light ) {
 			this.area.lightDirty = true;
 		}
-		guiMessage('stageEntityNotice',item,'map');
+		guiMessage('sceneEntityNotice',item,'map');
 
 		return item;
 	}
