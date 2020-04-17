@@ -8,6 +8,7 @@ class Sprite {
 		this.xAnchor   = 0.5;
 		this.yAnchor   = 0.5;
 		this.scale     = 1.0;
+		this.rotation  = 0.0;
 		this.alpha     = 1.0;
 		this.zOrder    = Tile.zOrder.WALL;
 		this.observer  = null;
@@ -66,6 +67,7 @@ class Sprite {
 		this.pixiSprite.y = (this.yVisual-this.yVisualOrigin)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
 
 		this.pixiSprite.zOrder  = this.zOrder;
+		this.pixiSprite.rotation= this.rotation;
 		this.pixiSprite.alpha   = this.alpha;
 
 		this.pixiSprite.anchor.set(this.xAnchor,this.yAnchor);

@@ -89,6 +89,8 @@ In Sublime
 * Install Package BetterFindBuffer then use n/p to jump to next/previous file, and j/k for next/previous result
 * Install Package iOpener for WAY better file opening with keyboard only. Includes tab completion.
 * Ctrl+F finds and Ctrl+H replaces
+* Cmd+G finds next, whether the find dialog is open or not
+* Cmd+Alt+E replaces.
 * F3 and Shift+F3 go to the next and previous result once you're finding
 
 In Chrome
