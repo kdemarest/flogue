@@ -433,7 +433,6 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		effects: { eInert: EffectTypeList.eInert},
 		matter: 'flesh',
 		name: 'hands{?effect}',
-		slot: false,
 	},
 	"claws": {
 		level: 0,
@@ -1324,7 +1323,20 @@ let ItemTypeList = {
 
 // FAKES and SKILLS
 	"skill": 	{ isSkill: true, rarity: 0, img: 'gui/icons/skill.png', icon: "/gui/icons/skill.png" },
-	"fake":   	{ isFake: true, name: "fake", rarity: 1, img: 'UNUSED/spells/components/skull.png', icon: "/gui/icons/corpse.png" },
+	"fake":   	{
+		isFake: true,
+		name: "fake",
+		rarity: 1,
+		img: 'UNUSED/spells/components/skull.png',
+		icon: "/gui/icons/corpse.png"
+	},
+	"naturalWeapon":   	{
+		name: "naturalWeapon",
+		rarity: 1,
+		doDrop: true,
+		img: 'UNUSED/spells/components/skull.png',
+		icon: "/gui/icons/corpse.png"
+	},
 // CORPSE
 	"corpse":   {
 		name: "{matter} remains of a {mannerOfDeath} {usedToBe}",

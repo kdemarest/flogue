@@ -84,6 +84,13 @@ Module.add('utilities',function(){
 	String.getOf = function(s) {
 		return 'of'+String.capitalize(s);
 	}
+	String.coords = function(x,y) {
+		if( x==Math.floor(x) && y==Math.floor(y) ) {
+			return '('+x+','+y+')';
+		}
+		return '('+Math.fixed(x,3)+','+Math.fixed(y,3)+')';
+	}
+
 	Array.filterInPlace = function(a, condition, thisArg) {
 		let j = 0;
 		// I made this a for loop to optimize speed.

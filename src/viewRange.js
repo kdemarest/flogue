@@ -19,33 +19,52 @@ class ViewRange extends ViewObserver {
 		this.moveToOfs(xOfs,yOfs);
 	}
 	moveToOfs(xOfs,yOfs) {
+
+		let determineTarget = (tx,ty) => {
+			return this.picking
+				? (
+					new Finder(area.entityList,observer).isAt(tx,ty).canTargetEntity().first || 
+					new Finder(area.map.itemList,observer).isAt(tx,ty).canTargetEntity().first
+				)
+				: (
+					new Finder(area.entityList,observer).isAt(tx,ty).canPerceiveEntity().first || 
+					new Finder(area.map.itemList,observer).isAt(tx,ty).canPerceiveEntity().first
+				)
+			;
+		}
+
+
 		let observer = this.observer;
 		if( !observer ) {
 			debugger;
-			return;
+			return false;
 		}
 
-		if( !observer.map.inBounds(observer.x+xOfs,observer.y+yOfs) ) {
-			return;
+		let area = observer.area;
+		let nx = Math.toTile( observer.x + xOfs );
+		let ny = Math.toTile( observer.y + yOfs );
+
+		if( !observer.map.inBounds(nx,ny) ) {
+			guiMessage( 'hideInfo', 'viewRangeOOB' );
+			return false;
+		}
+
+		let entity = determineTarget( nx, ny );
+		if( !entity && observer.canTargetPosition(nx,ny,area) ) {
+			entity = area.map.getTileEntity(nx,ny);
+		}
+
+		if( !entity ) {
+			guiMessage( 'hideInfo', 'viewRange no target' );
+			return false;
 		}
 
 		this.xOfs = xOfs;
 		this.yOfs = yOfs;
 
-
-		let area = observer.area;
-		let tx = observer.x + this.xOfs;
-		let ty = observer.y + this.yOfs;
-
-		let entity = null;
 		if( this.picking ) {
 			let isShotClear,inRange;
-			[isShotClear,inRange] = this.determineShot(observer.map,observer.x,observer.y,tx,ty);
-			entity = 
-				new Finder(area.entityList,observer).isAt(tx,ty).canTargetEntity().first || 
-				new Finder(area.map.itemList,observer).isAt(tx,ty).canTargetEntity().first || 
-				area.map.getTileEntity(tx,ty);
-
+			[isShotClear,inRange] = this.determineShot(observer.map,observer.x,observer.y,nx,ny);
 			this.picking.rangeStatusFn({
 				isShotClear: isShotClear,
 				inRange: inRange,
@@ -53,14 +72,6 @@ class ViewRange extends ViewObserver {
 				yOfs: this.yOfs
 			});
 		}
-		else {
-			entity = 
-				new Finder(area.entityList,observer).isAt(tx,ty).canPerceiveEntity().first || 
-				new Finder(area.map.itemList,observer).isAt(tx,ty).canPerceiveEntity().first || 
-				area.map.getTileEntity(tx,ty);
-		}
-
-		console.assert( entity );
 
 		guiMessage( 'showInfo', { entity: entity, from: 'viewRange' } );
 		if( entity.isMonsterType ) {
@@ -149,7 +160,9 @@ class ViewRange extends ViewObserver {
 		function draw(x,y,ok) {
 			guiMessage('overlayAdd',{
 				groupId: 	'viewRangePicking',
-				at:			{ x: x, y: y, area: area },
+				x:			x,
+				y:			y,
+				area:		area,
 				img:		StickerList[ok?'crosshairYes':'crosshairNo'].img
 			});
 		}

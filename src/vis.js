@@ -48,7 +48,7 @@ class Vis {
 		nearDist is the distance from center to the very nearest part of the block
 	**/
 
-	calcVis(px,py,senseSight,senseDarkVision,blind,xray,senseInvisible,visGrid,mapMemory) {		
+	calcVis(px,py,senseSight,senseDarkVision,blind,xrayDist,senseInvisible,visGrid,mapMemory) {		
 
 		function canSee(x,y) {
 			return map.getLightAt(x,y,0) > 0 || Distance.isNear(x-px,y-py,senseDarkVision+0.5);
@@ -74,21 +74,26 @@ class Vis {
 
 		visGrid = visGrid || [];
 
-		// Start everything hidden by default, unless we have xray vision or are blind.
+		// Start everything hidden by default, unless we have xray vision and are not blind.
 		// With xray and not blind, this will all be set to true.
 		// If either one is set we can leaver early.
-		let defaultValue = xray && !blind;
 		map.traverse( (x,y) => {
 			visGrid[y] = visGrid[y] || [];
-			visGrid[y][x] = defaultValue;
-			// With xRay vision I get to remember everything I can see through walls.
-			if( defaultValue && mapMemory && canSee(x,y) && x>=px-senseSight && y>=py-senseSight && x<=px+senseSight && y<=py+senseSight ) {
-				remember(x,y);
-			}
+			visGrid[y][x] = false;
 		});
+
+//		map.traverseNear( x, y, senseSight, (x,y) => {
+//			let visible = !blind && Distance.isNear(x-px,y-py,xrayDist);
+//			visGrid[y][x] = visible;
+//			// With xRay vision I get to remember everything I can see through walls.
+//			if( visible && mapMemory && canSee(x,y) && x>=px-senseSight && y>=py-senseSight && x<=px+senseSight && y<=py+senseSight ) {
+//				remember(x,y);
+//			}
+//		});
+
 		visGrid[py][px] = true;
 		if( mapMemory ) { remember(px,py); }
-		if( xray || blind ) return visGrid;
+		if( blind ) return visGrid;
 
 		let rayCircle = new Light.RayCircle( senseSight * senseSight );
 		let atCenter = true;
@@ -96,7 +101,11 @@ class Vis {
 		let numVisible = 0;
 		let onVisit = (arc,x,y) => {
 			let isVisible = atCenter || rayCircle.arcTest( arc.left, arc.right, arc.nearDist, arc.span*0.05 );
-			if( !isVisible ) return;
+			let isXray    = false;
+			if( !isVisible && xrayDist ) {
+				isXray = Distance.isNear(x-px,y-py,xrayDist);
+			}
+			if( !isVisible && !isXray ) return;
 
 			if( mapMemory && canSee(x,y) ) {
 				remember(x,y);

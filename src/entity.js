@@ -566,7 +566,7 @@ class Entity {
 				this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE,
 				this.senseDarkVision,
 				this.senseBlind,
-				this.senseXray,
+				this.senseXray || 0,
 				this.senseInvisible,
 				this.visCache,
 				this.mapMemory
@@ -707,7 +707,7 @@ class Entity {
 		item.inSlot = false;
 		// Now aggregate if needed.
 		if( this.isUser ) {
-			Gui.dirty('inventory');
+			Gui.dirty('inventory','favorites');
 		}
 	}
 	don(item,slot) {
@@ -727,7 +727,7 @@ class Entity {
 					item.trigger(this,this,Command.USE);
 				}
 				if( this.isUser ) {
-					Gui.dirty('inventory');
+					Gui.dirty('inventory','favorites');
 				}
 			}
 		}
@@ -2898,6 +2898,11 @@ class Entity {
 		};
 		// Remove anything already worn or used.
 		if( item.inSlot ) {
+			if( item.isNatural ) {
+				// You can not doff natural weapons like your hands. Instead, the donning of
+				// another weapon will auto-doff the natural weapon
+				return result;
+			}
 			this.doff(item);
 			result.doff   = item;
 			result.success = true;
@@ -3779,19 +3784,24 @@ class Entity {
 		//
 		let xOld = this.x;
 		let yOld = this.y;
+		this.commandResult = null;
+
 		if( Direction.fromCommand(this.command) !== false ) {
 			// This should be the ONE AND ONLY call to moveDir.
 			this.commandResult = this.setMoveTargetDir(dir,this.commandItem,true);
+			if( this.isUser && this.commandResult.success ) {
+				guiMessage('hideInfo','user moved');
+			}
 		}
 
 		if( !this.commandResult || !this.commandResult.success ) {
-			if( this.command == Command.DROP ) {
-				debugger;
-			}
 			this.commandResult = this.actOnCommand();
 		}
+		if( this.commandResult ) {
+			console.watchCommand( this, this.command, this.commandResult );
+		}
 
-		if( this.command !== Command.NONE ) {
+		if( this.command !== Command.NONE && (!this.isUser || this.timePasses) ) {
 			let speed = this.speedAction;
 			if( Direction.fromCommand(this.command) !== false ) {
 				speed = this.speedMove;
@@ -3816,6 +3826,9 @@ class Entity {
 
 	}
 	clearCommands() {
+		if( this.command !== Command.NONE ) {
+			console.watchCommand( this, 'clearCommands (was '+this.command+')' );
+		}
 		this.commandLast = this.command;
 		this.commandItemLast = this.commandItem;
 		this.commandTargetLast = this.commandTarget;
@@ -4008,8 +4021,10 @@ class Entity {
 
 		this.actionLeft -= dt;
 
-		if( this.actionLeft <= 0 ) {
-			if( thinkClip.contains(this.x,this.y) ) {
+		let isUserCommand = this.isUser && this.command !== Command.NONE;
+
+		if( this.actionLeft <= 0 || isUserCommand ) {
+			if( thinkClip.contains(this.x,this.y) || isUserCommand ) {
 				// We might be able to move this to happen when they enter a tile
 				// instead of every time they think. Might be faster.
 				this.calculateVisbility();

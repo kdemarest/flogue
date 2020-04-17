@@ -22,6 +22,7 @@ const Distance = new class{
 		return Math.sqrt(dx*dx+dy*dy);
 	}
 	isNear(dx,dy,dist) {
+		if( dx > dist || dy > dist ) return false;	// hopefully this speeds up the calc.
 		return dx*dx+dy*dy <= dist*dist;
 	}
 	getSq(dx,dy) {

@@ -53,7 +53,7 @@ class HumanUser {
 			}
 		});
 		let f = () => new Finder(this.entity.inventory);
-		fav( '1', () => f().filter(item=>item.isWeapon && !item.mayShoot && item.slot == Slot.WEAPON && !item.isFake).byDamage('desc') );
+		fav( '1', () => f().filter(item=>item.isWeapon && !item.mayShoot && item.slot == Slot.WEAPON && !item.isFake && !item.isNatural).byDamage('desc') );
 		fav( '3', () => f().filter(item=>item.mayShoot && item.ammoSpec && !item.isFake).byDamage('desc') );
 		fav( '4', () => f().filter(item=>item.isShield && !item.isFake).byLevel('desc') );
 		fav( '5', () => f().filter(item=>item.isPotion && item.effect && item.effect.op == 'heal' && !item.isFake ) );

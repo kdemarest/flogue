@@ -95,8 +95,13 @@
 
 <script>
 
-var Debug = new DebugProxy({
-	ai: true,
+window.Debug = DebugSetup({
+	ai: false,
+	anim: false,
+	sprite: false,
+	command: true,
+	cmd: false,
+	range: true,
 });
 
 
@@ -110,20 +115,10 @@ async function main() {
 		this.autoFavorite();
 		this.gui.tick(dt);
 		this.gui.render(dt);
-
-		this.world.paused = this.entity.command==Command.NONE && this.entity.actionLeft<=0;
 	}.bind(User);
 
 	User.onEvent = function(event) {
-		let now = Time.wallTime;
-		if( now < (this.entity.nowPrior||0)+(this.entity.timeDelay||0) ) {
-			// This makes sure that time-consuming activities, like mining, don't go too quickly.
-			return;
-		}
-		this.entity.nowPrior = now;
-		this.entity.timeDelay = 0;
 		this.entity.timePasses = this.commandHandler.evalCommand(this.entity,event);
-		event.handledByCommand = true;
 	}.bind(User);
 
 	User.startGame = function(config,onAssetsReady) {
@@ -148,7 +143,8 @@ async function main() {
 		area.underConstruction = true;
 		let player    = new Entity( area.depth, MonsterTypeList[playerTypeId], config.playerInject, area.jobPicker );
 		player.visibilityDistance = MapVisDefault;
-		//player.watch = true;
+		player.logId  = 'player';
+		player.watch  = true;
 
 		this.takeControlOf(player);
 		Gab.observer = this.entity;

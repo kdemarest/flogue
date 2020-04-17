@@ -132,7 +132,7 @@ let EffectTypeList = {
 		rarity: 0.20,
 		op: 'set',
 		stat: 'senseXray',
-		value: true,
+		value: 4,
 		xDuration: 5.0,
 		isPlayerOnly: 1,
 		name: 'xray vision',

@@ -75,7 +75,7 @@ class Scene extends ViewObserver {
 		console.assert( !this.spriteExists(sprite.id) );
 		this.spriteList[sprite.id] = sprite;
 		if( this.spriteList[sprite.id].watch ) {
-			console.log('spriteAdd('+sprite.id+')');
+			console.watchSprite( this, 'spriteAdd('+sprite.id+')');
 		}
 	}
 
@@ -172,7 +172,7 @@ return;
 
 	sceneEntityNotice(entity) {
 		if( entity.watch ) {
-			console.log('sceneEntityNotice('+entity.id+')');
+			console.watchSprite( entity, 'sceneEntityNotice('+entity.id+')');
 		}
 		// The word 'moved' means that it changed states onto or off of the map.
 		if( entity.isUser ) {

@@ -366,7 +366,7 @@ senseDarkVision	- distance you can see in the dark, by default Rules.MONSTER_DAR
 senseInvisible	- can see invisible creatures, true or false
 senseTreasure	- can detect treasure nearby, eg shows it on th drawn map whether in visual range or not
 senseLiving		- can detect any living creature, eg that has isLiving set. default is false.
-senseXray		- creature can see through walls
+senseXray		- distance the creature can see through walls, and the contents of chests or barrels.
 senseBlind		- when set the creature is blind
 sensePerception	- shows you where others could target you, eg roughly their reach and range
 senseAlert		- shows, based on your sneaking ability, how close you'd have to be to them to alert
@@ -503,7 +503,7 @@ function monsterTypePreProcess(typeId,m) {
 	let damType = naturalDamageType || m.naturalWeapon.damageType || DamageType.CUT;
 	m._naturalWeapon = m.naturalWeapon;
 	let natWeapon = Object.assign({
-		typeFilter: 'fake',
+		typeFilter: 'naturalWeapon',
 		isNatural: true,
 		isMelee: true,
 		isWeapon: true,

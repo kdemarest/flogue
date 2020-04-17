@@ -129,6 +129,11 @@ class AnimSprite extends Sprite {
 		return this.follow ? this.follow.y : this._yWorld;
 	}
 
+	die(note) {
+		super.die(note);
+		this.setVisibleFalse();
+	}
+
 	init(pixiSprite,duration) {
 		this.duration = Number.isFinite(duration) ? duration : true;
 		if( this.anim.at ) {
@@ -143,7 +148,7 @@ class AnimSprite extends Sprite {
 		this.alpha  	= this.anim.alpha  !==undefined ? this.anim.alpha : 1.0;
 		this.zOrder     = Tile.zOrder.ANIM;
 
-		this.anim.historyAdd( this.id+' at '+this.xWorld+','+this.yWorld+' duration='+this.duration );
+		console.watchSprite( this, ' at '+this.xWorld+','+this.yWorld+' duration='+this.duration );
 
 		return this;
 
@@ -156,44 +161,36 @@ class AnimSprite extends Sprite {
 		this.visible = false;
 	}
 
-	die() {
-		this.dead = true;
-		this.setVisibleFalse();
-	}
-
 	tick( dt, observer, pane ) {
 		if( this.dead ) {
 			return this.setVisibleFalse();
 		}
 		if( this.anim.dead ) {
-			this.anim.historyAdd( this.id+' DEAD SPRITE owning anim died.' );
-			return this.die();
+			return this.die('owning anim died');
 		}
 
 		this.observer = observer;
 		console.assert( !this.follow || this._xWorld===null );
 		if( this.delay ) {
 			this.setVisibleFalse();
-			this.anim.historyAddOne('spDelay','sprite delaying');
+			console.watchSprite( this, '?spDelay','sprite delaying' );
 			return;
 		}
-		this.anim.historyAddOne('spRunning','sprite running '+this.elapsed+' ; dt='+dt);
+		console.watchSprite( this, '?spRunning','sprite running '+this.elapsed+' ; dt='+dt);
 //		if( this.anim.watch ) {
 //			debugger;
 //		}
 
 		this.dt = dt;
-		this.anim.historyAdd('elapsed='+this.elapsed+' dt='+dt);
+		console.watchSprite( this, 'elapsed='+this.elapsed+' dt='+dt);
 		if( Number.isFinite(this.duration) && this.elapsed > this.duration ) {
-			this.anim.historyAdd( this.id+' DEAD SPRITE  duration elapsed.' );
-			return this.die();
+			return this.die('duration elapsed');
 		}
 		// Do this after testing elapsed, so you get at least one tick of action.
 		this.elapsed += dt;
 
 		if( this.area.id !== this.observer.area.id || !this.manager.clip.contains(this.x,this.y) ) {
-			this.anim.historyAdd( this.id+' DEAD SPRITE out of area or clipped.' );
-			return this.die();
+			return this.die( 'clipped' );
 		}
 
 		this.inPane = pane.inSightOf(this.observer,this.xWorld,this.yWorld);
@@ -201,8 +198,7 @@ class AnimSprite extends Sprite {
 		// Allow some control of the sprite. Be sure this is BEFORE the assignment of xVisual.
 		if( this.anim.onSpriteTick ) {
 			if( this.anim.onSpriteTick( this ) === false ) {
-				this.anim.historyAdd( this.id+' DEAD SPRITE onSpriteTick said false.' );
-				return this.die();
+				return this.die( 'onSpriteTick said false' );
 			}
 		}
 
@@ -210,8 +206,7 @@ class AnimSprite extends Sprite {
 		this.xVisual = this.xWorld + this.rx + this.qx;
 		this.yVisual = this.yWorld + this.ry + this.qy;
 		if( this.anim.watch ) {
-			this.anim.historyAdd( this.id+' at '+this.xVisual+','+this.yVisual );
-			console.log(this);
+			console.watchSprite( this, 'at', String.coords(this.xVisual,this.yVisual) );
 		}
 
 		this.updatePixiSprite(pane);

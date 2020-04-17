@@ -16,7 +16,7 @@ class GuiManager {
 		let p = this.getPlayer();
 		if( p.isDead() ) {
 			p.isSpectator = true;
-			p.senseXray = true;
+			p.senseXray = 12;
 			p.light = 12;
 		}
 		return p;
@@ -145,9 +145,8 @@ let Gui = new class {
 		return this.manager;
 	}
 
-	dirty(value) {
-		let valueList = Array.isArray(value) ? value : [value];
-		valueList.forEach( value => {
+	dirty(...args) {
+		args.forEach( value => {
 			console.assert(this.manager.view[value]);
 			this.manager.view[value].dirty = true;
 		});

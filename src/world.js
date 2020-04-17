@@ -23,13 +23,20 @@ class World {
 	}
 
 	tickRealtime(dt) {
+
+		let userEntity = this.userList[0].entity;
+		console.assert( userEntity.isUser );
+		this.paused = userEntity.actionLeft <= 0;
+
+		if( this.paused ) {
+			dt = 0;
+		}
+
 		Tester.tick(dt);
 
-		if( !this.paused ) {
-			this.traverse( area => {
-				area.tickRealtime(dt);
-			});
-		}
+		this.traverse( area => {
+			area.tickRealtime(dt);
+		});
 
 		// This goes last because it includes gui render.
 		this.userList.forEach( user => {
@@ -37,9 +44,8 @@ class World {
 		});
 
 		Tester.check();
-		if( dt && !this.paused ) {
-			Time.simTimeAdd(dt);
-		}
+		
+		Time.simTimeAdd(dt);
 	}
 
 	quotaAddGates(quota,toAreaId) {

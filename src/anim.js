@@ -71,7 +71,6 @@ class Anim {
 		this.id =  (this.name||'anim')+'.'+((this.follow ? this.follow.id : '') || (this.at ? this.at.id : ''))+Date.makeUid();
 
 		this.isAnimation	= true;
-		this.dead			= false;
 		this.dt				= 0;
 		this.createAccumulator = 0;
 		this.elapsed		= 0;
@@ -105,7 +104,7 @@ class Anim {
 			this.watch = true;
 		}
 
-		this.historyAdd( 'Anim Create: '+this.id+'delay='+this.delay+' duration='+this.duration );
+		console.watchAnim( this, 'Anim Create:',this.id,'delay=',this.delay,' duration=',this.duration );
 
 		// Delay
 		if( this.delay === undefined && this.delayId ) {
@@ -125,6 +124,23 @@ class Anim {
 		// These get destroyed by flagging themselves dead and then the animation
 		// manager's regular tick will prune them.
 		this.manager.add(this);
+	}
+
+	get dead() {
+		return this._dead;
+	}
+
+	set dead(value) {
+		// You must call die() for this to die cleanly.
+		console.assert(false);
+	}
+
+	die(note) {
+		this._dead = true;
+		console.watchAnim( this, this.elapsed+' '+this.id+' DEAD ANIM '+note );
+		if( this.puppet ) {
+			console.watchAnim( this, 'releasePuppet('+this.puppet.id+')' );
+		}
 	}
 
 	get xWorld() {
@@ -151,31 +167,14 @@ class Anim {
 		return this.spriteCache.reduce( (total,sprite) => total + (sprite.dead ? 0 : 1) );
 	}
 
-	historyAdd(s) {
-		if( this.watch ) {
-			console.log(s);
-		}
-	}
-
-	historyAddOne(flag,s) {
-		if( !this.watch ) {
-			return;
-		}
-		if( !this[flag] ) {
-			this.historyAdd(s);
-			this[flag] = true;
-		}
-	}
-
 	makeSpriteId() {
 		return ''+this.spriteCache.length+'.'+this.id;
 	}
 
 	spriteAdd( animSprite ) {
 		if( this.dead ) return;
-		if( this.watch ) {
-			animSprite.watch = true;
-		}
+		animSprite.watch = animSprite.watch || this.watch;
+
 		guiMessage( 'spriteAdd', animSprite );
 		this.spriteCache.push( animSprite );
 		if( this.onSpriteMake ) {
@@ -189,10 +188,9 @@ class Anim {
 		console.assert( this.img );
 		while( numSprites-- ) {
 			let animSprite = new AnimSprite(this,this.makeSpriteId());
-			animSprite.init(
-					new PIXI.Sprite(ImageRepo.getResourceByImg(this.img).texture),
-					this.duration
-			);
+			let pixiSprite = new PIXI.Sprite(ImageRepo.getResourceByImg(this.img).texture);
+			pixiSprite.visible = false;	// Important so the sprite won't show momentarily in to left corner.
+			animSprite.init( pixiSprite, this.duration );
 			this.spriteAdd( animSprite );
 		}
 		return this;
@@ -218,17 +216,15 @@ class Anim {
 		if( this.dead ) {
 			return false;
 		}
-		if( entity.watch ) {
-			this.watch = true;
-		}
-		this.historyAdd( 'takePuppet('+entity.id+')' );
+		this.watch = this.watch || entity.watch
+
+		console.watchAnim( this, 'takePuppet('+entity.id+')' );
 		this.puppet = entity;
 
 		let entitySprite = null;
 		guiMessage( 'sceneFn', scene => entitySprite = scene.spriteFromEntity(entity), 'map' );
-		if( this.watch ) {
-			entitySprite.watch = true;
-		}
+		
+		entitySprite.watch = entitySprite.watch || this.watch;
 
 		let animSprite = new AnimSprite(this,this.makeSpriteId());
 		animSprite.init( entitySprite.pixiSprite, this.duration );
@@ -237,14 +233,6 @@ class Anim {
 		this.spriteAdd(animSprite);
 
 		return this;
-	}
-
-	die(note) {
-		this.dead = true;
-		this.historyAdd( this.elapsed+' '+this.id+' DEAD ANIM '+note );
-		if( this.puppet ) {
-			this.historyAdd( 'releasePuppet('+this.puppet.id+')' );
-		}
 	}
 
 	tick(dt) {
@@ -257,17 +245,16 @@ class Anim {
 		this.dt = dt;
 		this.delay = Math.max(0,this.delay-dt);
 		if( this.delay ) {
-			this.historyAddOne( 'toldDelay', this.id+' delaying '+this.delay );
+			console.watchAnim( this, '?toldDelay', ' delaying '+this.delay );
 			return;
 		}
 		// This must happen AFTER the delay!
 		this.elapsed += dt;
-		this.historyAddOne( 'toldDoneDelay', this.id+' running' );
+		console.watchAnim( this, '?toldDoneDelay', ' running' );
 
 		if( this.onTick ) {
 			this.onTick(this,dt);
 			if( this.dead ) {
-				this.historyAdd( this.id+' DEAD onTick did it.' );
 				return;
 			}
 		}

@@ -147,7 +147,7 @@ class ViewMap extends Scene {
 		console.assert(sprite && sprite.pixiSprite);
 		if( !sprite.isPuppeteer ) {
 			if( sprite.watch ) {
-				console.log('pixiSpriteRemove('+sprite.id+')');
+				console.watchSprite(sprite,'pixiSpriteRemove('+sprite.id+')');
 			}
 			this.stage.removeChild(sprite.pixiSprite);
 		}
@@ -168,16 +168,16 @@ class ViewMap extends Scene {
 
 		$(myCanvas).mousemove( function(e) {
 			let offset = $(this).offset(); 
-			let mx = Math.floor((e.pageX - offset.left)/Tile.DIM);
-			let my = Math.floor((e.pageY - offset.top)/Tile.DIM);
+			let mx = Math.floor((e.pageX - offset.left)/self.pane.tileDim);
+			let my = Math.floor((e.pageY - offset.top)/self.pane.tileDim);
 
 			if( !self.observer ) {
 				return;
 			}
 			let observer = self.observer;
 			let area = observer.area;
-			let xLeft = (observer.x-self.visionTiles) + mx;
-			let yTop  = (observer.y-self.visionTiles) + my;
+			let xLeft = (observer.x-self.pane.visionTiles) + mx;
+			let yTop  = (observer.y-self.pane.visionTiles) + my;
 			//console.log( "ViewMap mousemove detected ("+x+','+y+')' );
 			
 			guiMessage( 'viewRangeMouse', { xOfs: xLeft-observer.x, yOfs: yTop-observer.y } );
@@ -304,13 +304,15 @@ class ViewMap extends Scene {
 		}
 		if( msg == 'showCrosshair' ) {
 			if( !payload.isItemType || (payload.owner && payload.owner.isMap) ) {
-				this.worldOverlayRemove( a => a.groupId=='viewRangeSelect', 'removing guiSelect' );
+				console.logRange('showCrosshair');
+				this.worldOverlayRemove( a => a.groupId=='viewRangeSelect', 'from showCrosshair' );
 				this.worldOverlayAdd('viewRangeSelect', payload.x, payload.y, payload.area, StickerList.selectBox.img);	
 			}
 			this.dirty = true;
 		}
 		if( msg == 'hideCrosshair' ) {
-			this.worldOverlayRemove( a => a.groupId=='viewRangeSelect',' from hideInfo' );
+			console.logRange('hideCrosshair');
+			this.worldOverlayRemove( a => a.groupId=='viewRangeSelect',' from hideCrosshair' );
 			//console.log('ViewMap hide');
 			this.dirty = true;
 		}

@@ -135,9 +135,8 @@ class EntitySprite extends Sprite {
 
 	init(entity) {
 		console.assert(entity);
-		if( entity.watch ) {
-			this.watch = true;
-		}
+		this.watch = this.watch || entity.watch;
+
 		this.entity  = entity;
 		this.xVisual = entity.x;
 		this.yVisual = entity.y;
@@ -163,17 +162,17 @@ class EntitySprite extends Sprite {
 		}
 
 		if( this.entity.dead ) {
-			return this.dead = true;
+			return this.die('my entity was dead');
 		}
 
 		this.observer = observer;
 
 		if( this.area.id !== this.observer.area.id ) {
-			return this.dead = true;
+			return this.die('out of area');
 		}
 
 		if( this.entity.isItemType && !this.entity.owner.isMap ) {
-			return this.dead = true;
+			return this.die('item no longer on map');
 		}
 
 		this.inPane = pane.inSightOf(this.observer,this.entity.x,this.entity.y) && this.entity.area.id==this.observer.area.id;
@@ -190,22 +189,15 @@ class EntitySprite extends Sprite {
 			this.sensed   = this.testSensed();
 			this.memoried = this.sensed ? false : this.testMemory();
 			this.visible  = this.sensed || this.memoried;
-			if( this.watch ) {
-				console.log( 'EntitySprite: '+this.id+' in Pane. visible='+this.visible );
-			}
+			console.watchSprite( this, 'in Pane. visible='+this.visible );
 		}
 		else {
 			this.visible = false;
-			if( this.watch ) {
-				console.log( 'EntitySprite: '+this.id+' not visible.' );
-			}
+			console.watchSprite( this, 'out of Pane.' );
 			this.age += dt;
 			let ageOfDeath = 5;
 			if( this.age > ageOfDeath ) {
-				if( this.watch ) {
-					console.log( 'EntitySprite: '+this.id+' dead from age.' );
-				}
-				return this.dead = true;
+				return this.die('old age');
 			}
 		}
 

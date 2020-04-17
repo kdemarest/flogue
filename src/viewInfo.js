@@ -150,7 +150,7 @@ class ViewInfo extends ViewObserver {
 			// If the item has inventory, tell what it is.
 			if( item.inventory && !item.hideInventory ) {
 				s += '<div class="invList">';
-				if( item.state == 'shut' ) {
+				if( item.state == 'shut' && !Distance.isNear(item.x-you.x,item.y-you.y,you.senseXray||0) ) {
 					s += 'Contents unknown';
 				}
 				else {

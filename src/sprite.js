@@ -12,7 +12,16 @@ class Sprite {
 		this.zOrder    = Tile.zOrder.WALL;
 		this.observer  = null;
 		this.inPane    = false;
-		this.dead      = false;
+		this._dead     = false;
+	}
+
+	get dead() {
+		return this._dead;
+	}
+
+	set dead(value) {
+		// Never set dead directly. always call .die(note)
+		console.assert( false );
 	}
 
 	get id() {
@@ -39,15 +48,20 @@ class Sprite {
 		this.pixiSprite.visible = value;
 	}
 
+	die(note) {
+		this._dead = true;
+		console.assert(note);
+		console.watchSprite( this, this.constructor.name+'.die', note );
+	}
+
 	initSpriteByImg(img) {
 		this.pixiSprite  = new PIXI.Sprite( ImageRepo.getResourceByImg(img).texture );
 	}
 
 	updatePixiSprite(pane) {
 		console.assert( !this.dead );
-		if( this.watch ) {
-			console.log('updatePixiSprite('+this.id+')');
-		}
+		console.watchSprite( this, 'updatePixiSprite()');
+
 		this.pixiSprite.x = (this.xVisual-this.xVisualOrigin)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
 		this.pixiSprite.y = (this.yVisual-this.yVisualOrigin)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
 

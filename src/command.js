@@ -23,7 +23,7 @@ function commandForItemAttack(weapon) {
 		return Command.TRIGGER;
 	}
 	debugger;
-	return Command.SHOOT;
+	return false;
 }
 
 
@@ -226,6 +226,7 @@ class Cmd {
 		this.clear();
 	}
 	clear() {
+		console.logCmd('Cmd.clear()');
 		this.command = Command.NONE;
 		this.commandItem = null;
 		this.commandTarget = null;
@@ -233,17 +234,20 @@ class Cmd {
 		this.retain = null;
 	}
 	cancelItem() {
+		console.logCmd('Cmd.cancelItem()');
 		this.commandItem = null;
 		this.commandTarget = null;
 		this.commandTarget2 = null;
 		return false;
 	}
 	cancel() {
+		console.logCmd('Cmd.cancel()');
 		this.onCancel();
 		this.clear();
 		return false;
 	}
 	enact() {
+		console.logCmd( 'Cmd.enact()', this.retain ? 'retain '+this.retain : '' );
 		let passesTime = typeof this.passesTimeOnExecution === 'function' ? this.passesTimeOnExecution(this) : this.passesTimeOnExecution;
 		let retain = this.retain;
 		this.onEnact(this);
@@ -276,12 +280,12 @@ class UserCommandHandler {
 		this.rangeStatus = {};
 		this.user = user;
 		this.cmd = new Cmd(
-			() => {
-			},
+			() => { },
 			(c) => {
 				console.assert( c.command );
+				console.watchCommand( this.observer, 'command: ', c.command, c.commandItem ? c.commandItem.id : '', c.commandTarget ? c.commandTarget.id : '' );
 				this.observer.command = c.command;
-				this.observer.commandItem = c.commandItem;;
+				this.observer.commandItem = c.commandItem;
 				this.observer.commandTarget = c.commandTarget;
 				this.observer.commandTarget2 = c.commandTarget2;
 			}
@@ -337,6 +341,11 @@ class UserCommandHandler {
 	}
 
 	evalCommand(observer,event) {
+
+		let tellCommand = (text) => {
+			console.watchCommand( observer, 'event command: ', observer.command, observer.commandItem ? observer.commandItem.id : '', observer.commandTarget ? observer.commandTarget.id : '' );
+		}
+
 		let zeroTime = [Command.BUY,Command.SELL,Command.CRAFT,Command.NONE];
 
 		this.observer = observer;		// hack!!
@@ -346,6 +355,7 @@ class UserCommandHandler {
 			observer.commandItem = event.commandItem || null;
 			observer.commandTarget = event.commandTarget || null;
 			observer.commandTarget2 = event.commandTarget2 || null;
+			tellCommand('event command');
 			return !zeroTime.includes(event.command);
 		}
 
@@ -361,6 +371,7 @@ class UserCommandHandler {
 				observer.commandItem 	= cmd.commandItem || event.commandItem || null;
 				observer.commandTarget 	= cmd.commandTarget || event.commandTarget || null;
 				observer.commandTarget2 = cmd.commandTarget2 || event.commandTarget2 || null;
+				tellCommand('unregulated command');
 				this.cmd.clear();
 				return observer.command !== Command.NONE;
 			}
