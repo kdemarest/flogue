@@ -1,12 +1,19 @@
 Module.add('aSprite',function() {
 
+let radNorm = function(rad) {
+	while( rad >= Math.PI ) rad -= Math.PI*2;
+	while( rad <= -Math.PI ) rad += Math.PI*2;
+	return rad;
+}
+
+let degNorm = function(deg) {
+	deg += 360*10;
+	return deg % 360;
+}
+
 class AnimSprite extends Sprite {
-	sScale(a) {
-		this.scale += this.dt*a;
-		return this;
-	}
-	sScaleSet(absScale) {
-		this.scale = absScale;
+	sScale(scale) {
+		this.scale = scale;
 		return this;
 	}
 	sReset() {
@@ -16,7 +23,7 @@ class AnimSprite extends Sprite {
 		this.qy = 0;
 		this.xVel = 0;
 		this.yVel = 0;
-		this.sScaleSet(1.0);
+		this.sScale(1.0);
 		return this;
 	}
 	sPosRel(x,y) {
@@ -35,6 +42,11 @@ class AnimSprite extends Sprite {
 		this.ry += this.dt*dy;
 		return this;
 	}
+	sQuiverSet(x,y) {
+		this.qx = x;
+		this.qy = y;
+		return this;
+	}
 	sQuiver(rate,range=0.5) {
 		this.quiver = (this.quiver||0) - this.dt;
 		if( this.quiver <= 0 ) {
@@ -43,6 +55,10 @@ class AnimSprite extends Sprite {
 			this.qy = Math.sin(rad)*range;
 			this.quiver += rate;
 		}
+		return this;
+	}
+	sDuration(duration) {
+		this.duration = duration;
 		return this;
 	}
 	sVel(deg,vel) {
@@ -65,10 +81,38 @@ class AnimSprite extends Sprite {
 		this.alpha = amt; // * this.light;
 		return this;
 	}
-	get sPct() {
+	// Some really nice demonstrations of interpolation curves:
+	// http://sol.gfxile.net/interpolation/
+	get sPctDone() {
 		console.assert( Number.isFinite(this.duration) );
+		console.assert( this.elapsed <= this.duration );
+		console.watchSprite(this,'sPctDone=',this.elapsed/this.duration);
 		return this.elapsed/this.duration;
-	}	
+	}
+	get tLinear() {
+		return this.sPctDone;
+	}
+	get tSquared() {
+		return this.sPctDone*this.sPctDone;
+	}
+	get tInvSquared() {
+		let p = this.sPctDone;
+		return 1-(1-p)*(1-p);
+	}
+	get tCubed() {
+		let p = this.sPctDone;
+		return p*p*p;
+	}
+	get tInvCubed() {
+		let p = this.sPctDone;
+		return 1-(1-p)*(1-p)*(1-p);
+	}
+	get tSine() {
+		return Math.sin( this.sPctDone * Math.PI / 2);
+	}
+	sOverTime(atZero,atOne) {
+		return atZero + this.sPctDone*(atOne-atZero);
+	}
 	sRot(deg) {
 		this.rotation += (deg/360*2*Math.PI)*this.dt;
 		return this;
@@ -77,8 +121,50 @@ class AnimSprite extends Sprite {
 		this.rotation = (deg/360*2*Math.PI);
 		return this;
 	}
-	sSine(pct,scale) {
-		return (1+Math.sin( (270/360*2*Math.PI) + pct*2*Math.PI ))/2*scale;
+	// Starts at zero, then goes down, and then back up again.
+	sSine(centroid,magnitude,pct) {
+		return centroid + (magnitude * Math.sin( (180/360*2*Math.PI) + pct*2*Math.PI ));
+	}
+
+	// dSine stands for 'distribution sine', like a normal distribution but a sine wave
+	// Returns a sine wave that starts at zero, peaks at 1 at 0.5, and ends back at zero.
+	dSine(pct) {
+		return ( Math.sin( (pct-0.25) * Math.PI * 2 ) + 1 ) / 2.0;
+	}
+
+	sDiverge(pct) {
+
+		let dx = this.origin.x - this.follow.x;
+		let dy = this.origin.y - this.follow.y;
+
+		let dist = Distance.get(dx,dy);
+		let divergenceMagnitude = this.divergence || 0.0;
+
+		let xPerp = (-dy/dist) * divergenceMagnitude;
+		let yPerp = (dx/dist)  * divergenceMagnitude;
+
+		let xDiverge = xPerp * this.dSine(pct)*0.5;
+		let yDiverge = yPerp * this.dSine(pct)*0.5;
+
+		this.rx += xDiverge;
+		this.ry += yDiverge;
+
+		return this;
+	}
+
+	sMissile(pct) {
+
+		let dx = this.origin.x - this.follow.x;
+		let dy = this.origin.y - this.follow.y;
+
+		this.rx = dx * (1-pct);
+		this.ry = dy * (1-pct);
+
+		return this;
+	}
+
+	sArrived(tolerance) {
+		return this.rx < tolerance && this.ry < tolerance;
 	}
 
 	constructor(anim,id) {
@@ -117,16 +203,28 @@ class AnimSprite extends Sprite {
 		return this.anim.area;
 	}
 
+	get origin() {
+		return this.anim.origin;
+	}
+
 	get follow() {
 		return this.anim.follow;
 	}
 
 	get xWorld() {
-		return this.follow ? this.follow.x : this._xWorld;
+		if( !this.follow ) {
+			return this._xWorld;
+		}
+		let s = this.area.spriteGetById(this.follow.id);
+		return (s ? s.xVisual : this.follow.x) + (this.anim.followOfs?this.anim.followOfs.x||0:0);
 	}
 
 	get yWorld() {
-		return this.follow ? this.follow.y : this._yWorld;
+		if( !this.follow ) {
+			return this._yWorld;
+		}
+		let s = this.area.spriteGetById(this.follow.id);
+		return (s ? s.yVisual : this.follow.y) +(this.anim.followOfs?this.anim.followOfs.y||0:0);
 	}
 
 	die(note) {
@@ -162,6 +260,9 @@ class AnimSprite extends Sprite {
 	}
 
 	tick( dt, observer, pane ) {
+
+		dt /= Rules.displayVelocity;
+
 		if( this.dead ) {
 			return this.setVisibleFalse();
 		}
@@ -183,11 +284,10 @@ class AnimSprite extends Sprite {
 
 		this.dt = dt;
 		console.watchSprite( this, 'elapsed='+this.elapsed+' dt='+dt);
-		if( Number.isFinite(this.duration) && this.elapsed > this.duration ) {
+		// Very important that this be >= duration, not just >
+		if( Number.isFinite(this.duration) && this.elapsed >= this.duration ) {
 			return this.die('duration elapsed');
 		}
-		// Do this after testing elapsed, so you get at least one tick of action.
-		this.elapsed += dt;
 
 		if( this.area.id !== this.observer.area.id || !this.manager.clip.contains(this.x,this.y) ) {
 			return this.die( 'clipped' );
@@ -210,6 +310,15 @@ class AnimSprite extends Sprite {
 		}
 
 		this.updatePixiSprite(pane);
+
+		// Do this after testing elapsed, so you get at least one tick of action.
+		// Also, everything in the sprite should get one tick at ZERO elapsed, which
+		// again means that this must happen very last.
+		this.elapsed += dt;
+
+		if( Number.isFinite(this.duration) ) {
+			this.elapsed = Math.min(this.elapsed,this.duration);
+		}
 
 	}
 }

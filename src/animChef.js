@@ -13,11 +13,11 @@ Anim.FloatUp = function(delayId,follow,icon,duration=0.4) {
 			follow: 	follow,
 			watch:		Anim.wCount==21,
 			img: 		icon || StickerList.bloodBlue.img,
-			duration: 	0.4,
+			duration: 	duration,
 			delayId: 	delayId,
 			onInit: 		a => { a.create(1); },
-			onSpriteMake: 	s => { s.sVelTo(0,-1,0.4).sScaleSet(0.75); },
-			onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sAlpha(1-Math.max(0,(2*s.elapsed/s.duration-1))); }
+			onSpriteMake: 	s => { s.sVelTo(0,-1,s.duration).sScale(0.75); },
+			onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sAlpha(s.sOverTime(1.0,0.0)); }
 		});
 		Anim.myWatch = false;
 	}
@@ -30,7 +30,7 @@ Anim.Upon = function(delayId,target,icon,duration=0.2,scale=0.75) {
 		delayId: 	delayId,
 		duration: 	duration,
 		onInit: 		a => { a.create(1); },
-		onSpriteMake: 	s => { s.sScaleSet(scale); },
+		onSpriteMake: 	s => { s.sScale(scale); },
 		onSpriteTick: 	s => { }
 	});
 }
@@ -45,7 +45,7 @@ Anim.Cloud = function(delayId,x,y,area,groupId,icon) {
 		delayId: 	delayId,
 		duration: 	(self) => Time.simTime >= self.deathTime ? 'die' : '',
 		onInit: 		a => { a.create(1); },
-		onSpriteMake: 	s => { s.sScaleSet(0.75); },
+		onSpriteMake: 	s => { s.sScale(0.75); },
 		onSpriteTick: 	s => { }
 	});
 }
@@ -57,7 +57,7 @@ Anim.At = function(delayId,x,y,area,icon) {
 		delayId: 	delayId,
 		duration: 	0.2,
 		onInit: 		a => { a.create(1); },
-		onSpriteMake: 	s => { s.sScaleSet(0.75); },
+		onSpriteMake: 	s => { s.sScale(0.75); },
 		onSpriteTick: 	s => { }
 	});
 }
@@ -69,7 +69,7 @@ Anim.Above = function(delayId,target,icon) {
 		delayId: 	delayId,
 		duration: 	0.2,
 		onInit: 		a => { a.create(1); },
-		onSpriteMake: 	s => { s.sScaleSet(0.75).sPosRel(0,-1); },
+		onSpriteMake: 	s => { s.sScale(0.75).sPosRel(0,-1); },
 		onSpriteTick: 	s => { }
 	});
 }
@@ -98,26 +98,41 @@ Anim.Fountain = function(delayId,entity,num=40,duration=2,velocity=0.6,img) {
 		duration: 		Anim.Duration.untilAllDead,
 		onInit: 		a => { },
 		onTick: 		a => a.createPerSec(num,duration),
-		onSpriteMake: 	s => s.sScaleSet(0.30).sVel(Math.rand(-30,30),Math.rand(velocity,2*velocity)).duration=1,
+		onSpriteMake: 	s => s.sScale(0.30).sVel(Math.rand(-30,30),Math.rand(velocity,2*velocity)).duration=1,
 		onSpriteTick: 	s => s.sMoveRel(s.xVel,s.yVel).sGrav(10)
 	});
 }
-
+/*
 Anim.Homing = function(delayId,entity,target,img,offAngle=45,num=40,duration=2,velocity=3) {
-	let dx = target.x - entity.x ;
+	let dx = target.x - entity.x;
 	let dy = target.y - entity.y;
 	let deg = deltaToDeg(dx,dy);
 
 	return new Anim({
-		follow: 	entity,
-		target: 	target,
+		at:		 	entity
+		follow: 	target,
 		img: 		img,
 		delayId: 	delayId,
 		duration: 		Anim.Duration.untilAllDead,
 		onInit: 		a => { },
 		onTick: 		a => a.createPerSec(num,duration),
-		onSpriteMake: 	s => s.sScaleSet(0.30).sVel(deg+Math.rand(-offAngle,offAngle),Math.rand(velocity,2*velocity)).duration=duration,
-		onSpriteTick: 	s => !s.sPursuit(90*duration).sMoveRel(s.xVel,s.yVel).sArrived(0.3),
+		onSpriteMake: 	s => s.sScale(0.30).sVel(deg+Math.rand(-offAngle,offAngle),Math.rand(velocity,2*velocity)).duration=duration,
+		onSpriteTick: 	s => !s.sPursuit().sArrived(0.3),
+	});
+}
+*/
+Anim.Missile = function(delayId,source,follow,img,numPerSec=10,fireDuration=2,flightDuration=2) {
+	let divergeSign = 1;
+	return new Anim({
+		origin:		source,
+		follow: 	follow,
+		img: 		img,
+		delayId: 	delayId,
+		duration: 		Anim.Duration.untilAllDead,
+		onInit: 		a => { },
+		onTick: 		a => a.createPerSec(numPerSec,fireDuration),
+		onSpriteMake: 	s => { s.sScale(0.30).sDuration(flightDuration).divergence=Math.rand(1,3)*divergeSign; divergeSign = -divergeSign; },
+		onSpriteTick: 	s => !s.sMissile( s.tCubed ).sDiverge( s.tSquared ).sArrived(0.001),
 	});
 }
 
@@ -128,7 +143,7 @@ Anim.Blam = function(delayId, target, scale=0.20, num=10, duration=0.2, fromDeg=
 		delayId: 	delayId,
 		duration: 	duration,
 		onInit: 		a => { a.create(num); },
-		onSpriteMake: 	s => { s.sScaleSet(scale).sVel(Math.rand(fromDeg-arc,fromDeg+arc),Math.rand(mag0,mag1)); },
+		onSpriteMake: 	s => { s.sScale(scale).sVel(Math.rand(fromDeg-arc,fromDeg+arc),Math.rand(mag0,mag1)); },
 		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(grav); s.rotation += rot*s.dt; }
 	});
 }

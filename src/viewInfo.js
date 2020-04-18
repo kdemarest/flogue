@@ -305,12 +305,14 @@ class ViewInfo extends ViewObserver {
 	}
 
 	tick(dt) {
-		Time.tickOnInterval(0.2,dt,this,()=>{
+		this.periodicDirty = this.periodicDirty || new Time.Periodic();
+		this.periodicDirty.tick( 0.2, dt, () => {
 			this.dirty = true;
 		});
 	}
 
 	render(dt) {
+		console.logInfo('viewInfo.render');
 		let [content,classList] = this.compile();
 		Gui.cachedRenderDiv(this.infoDivId,content,classList);
 

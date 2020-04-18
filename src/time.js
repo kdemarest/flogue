@@ -19,20 +19,24 @@ let Time = (new class {
 		console.assert(simTime);
 		return Math.max(0,this.simTime - simTime);
 	}
-	tickOnInterval(interval,dt,trackingObject,fn) {
-		let repsLimit = 3.0;
-		let tickerId = '_interval'+interval;
-		trackingObject[tickerId] = Math.min( interval*repsLimit, (trackingObject[tickerId]||0)+dt);
-		while( trackingObject[tickerId] >= interval ) {
-			fn.call(trackingObject,interval);
-			trackingObject[tickerId] -= interval;
-		}
-		return trackingObject;
-	}
-	tickOnTheSecond(dt,trackingObject,fn) {
-		return this.tickOnInterval(1,dt,trackingObject,fn);
-	}
 }());
+
+Time.Periodic = class {
+	constructor() {
+		this.dtTotal = 0.0;
+	}
+
+	tick(interval,dt,fn) {
+		let repsLimit = 3.0;
+		this.dtTotal = Math.min( interval*repsLimit, this.dtTotal+dt);
+		while( this.dtTotal >= interval ) {
+			fn(interval);
+			this.dtTotal -= interval;
+		}
+	}
+}
+
+
 
 class SimTimer {
 	constructor(duration) {

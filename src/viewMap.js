@@ -34,7 +34,8 @@ function handleScent(map,px,py,senseSmell,ofs,visibilityDistance) {
 				at:				{ x: x-ofs, y: y, area: map.area },
 				img: 			smelled.img,
 				duration: 		true,
-				onSpriteMake: 	s => { s.sScaleSet(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
+				onInit:			a => a.create(1),
+				onSpriteMake: 	s => { s.sScale(0.4*(smelled.scale||1)).sAlpha(alpha); s.glow=1; }
 			});
 		}
 	}
@@ -85,7 +86,8 @@ function handlePerception(observer,visCache,map,px,py,sensePerception,senseAlert
 				at:				{ x: x+ofs, y: y, area: map.area },
 				img: 			alarm ? StickerList.alert.img : StickerList.perception.img,
 				duration: 		true,
-				onSpriteMake: 	s => { s.sScaleSet(0.3).sAlpha(0.1); }
+				onInit:			a => a.create(1),
+				onSpriteMake: 	s => { s.sScale(0.3).sAlpha(0.2); }
 			});
 		}
 	}
@@ -131,10 +133,9 @@ class ViewMap extends Scene {
 
 		// Note that pixi defaults to 16.66ms, or just slightly better than 60fps
 		this.app.ticker.add( delta =>  {
-			let dt = delta / 60;	// that is just how pixi rolls.
+			let dtWall = delta / 60;	// that is just how pixi rolls.
 			if( this.observer && this.observer.area ) {
-				this.observer.area.animationManager.tickRealtime(dt);
-				this.observer.area.world.tickRealtime(dt);
+				this.observer.area.world.tickRealtime(dtWall);
 			}
 		});
 	}
@@ -262,6 +263,28 @@ class ViewMap extends Scene {
 		return this.observer.area.animationManager.remove(fn,note);
 	}
 
+	checkEnterTile() {
+		super.checkEnterTile();
+		let ofs = (this.observer.senseSmell && (this.observer.sensePerception || this.observer.senseAlert)) ? 0.2 : 0;
+		handleScent(
+			this.observer.map,
+			this.observer.x,
+			this.observer.y,
+			this.observer.senseSmell,
+			ofs,
+			this.observer.visibilityDistance
+		);
+		handlePerception(
+			this.observer,
+			this.observer.visCache,
+			this.observer.map,
+			this.observer.x,
+			this.observer.y,
+			this.observer.sensePerception,
+			this.observer.senseAlert,
+			ofs
+		);
+	}
 
 	message(msg,payload) {
 		super.message(msg,payload);

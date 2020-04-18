@@ -6,7 +6,7 @@ class World {
 		this.areaList = {};
 		this.userList = [];
 
-		this.paused = true;
+		this.timeFund = 0;
 
 		// Hack of convenience...
 		Gab.world = this;
@@ -22,25 +22,48 @@ class World {
 		});
 	}
 
-	tickRealtime(dt) {
-
-		let userEntity = this.userList[0].entity;
-		console.assert( userEntity.isUser );
-		this.paused = userEntity.actionLeft <= 0;
-
-		if( this.paused ) {
-			dt = 0;
+	itemListTickRound(_itemList,rechargeRate) {
+		console.assert(rechargeRate);
+		let itemList = _itemList.slice();	// Any item might get destroyed during this process.
+		for( let item of itemList ) {
+			item.tickRound(rechargeRate);
 		}
+	}
+
+
+	tickRealtime(dtWall) {
+
+		dtWall *= Rules.displayVelocity;
+
+		let dt = dtWall;
 
 		Tester.tick(dt);
 
+		let userEntity = this.userList[0].entity;
+		console.assert( userEntity.isUser );
+
+		if( userEntity.command !== Command.NONE ) {
+			userEntity.act();
+			let timeCost = userEntity.commandSpeed<=0 ? 0 : 1/userEntity.commandSpeed;
+			console.assert( Number.isFinite(timeCost) );
+			console.logCommand( 'player '+userEntity.command+' took '+timeCost );
+			this.timeFund += timeCost;
+			userEntity.actionLeft += timeCost;
+			console.assert( Number.isFinite(userEntity.actionLeft) );
+			userEntity.clearCommands();
+		}
+
+		dt = Math.min(dt,this.timeFund);
+		this.timeFund -= dt;
+
 		this.traverse( area => {
-			area.tickRealtime(dt);
+			area.tickRealtime(dt,dtWall);
 		});
 
 		// This goes last because it includes gui render.
+		// Especially, the sprite movement has to look right.
 		this.userList.forEach( user => {
-			user.tickRealtime(dt);
+			user.tickGui(dtWall);
 		});
 
 		Tester.check();

@@ -153,8 +153,7 @@ class Entity {
 		console.assert( this.x===undefined && this.y===undefined && this.area===undefined);
 
 		console.assert(this.speedAction);
-		this.actionLeft = 1.0/this.speedAction;
-		//console.log(this.typeId,'actionLeft=',this.actionLeft);
+		this.actionLeft = 0;
 
 		// WARNING! Not a deep copy. But it is only for the result...
 		result.entity = Object.assign( {}, this );
@@ -403,16 +402,19 @@ class Entity {
 
 		// happiness flies away from the attacker
 		let piecesAnim = new Anim({
+watch: 1,
+			name:			'levelFountain',
 			follow: 		this,
 			img: 			StickerList.bloodYellow.img,
 			duration: 		Anim.Duration.untilAllDead,
 			onInit: 		a => { },
 			onTick: 		a => a.createPerSec(40,2),
-			onSpriteMake: 	s => s.sScaleSet(0.30).sVel(Math.rand(-30,30),Math.rand(5,10)).duration=1,
+			onSpriteMake: 	s => s.sScale(0.30).sVel(Math.rand(-30,30),Math.rand(5,10)).duration=1,
 			onSpriteTick: 	s => s.sMoveRel(s.xVel,s.yVel).sGrav(10)
 		});
 		// You also jump back and quiver
 		new Anim({
+			name:			'levelQuiver',
 			follow: 		this,
 			duration: 		2,
 			onInit: 		a => { a.takePuppet(this); },
@@ -742,6 +744,7 @@ class Entity {
 				this.sign = tellGet(this,sentence);
 			}
 			tell(mSubject,this,' ',mVerb,'begin',' ',item.useVerb+'ing',' ',mObject,item)
+
 			let donTracker = {};
 			updateProgress(item.donDuration);
 			let donArmorEffect = {
@@ -752,7 +755,9 @@ class Entity {
 				description: 'putting on '+item.typeId,
 				icon: item.icon,
 				onTick: function(target,dt) {
-					Time.tickOnTheSecond(dt,donTracker,()=>{
+					console.assert( dt===1.0 );
+					this.donPeriodic = this.donPeriodic || new Time.Periodic();
+					this.donPeriodic.tick( 1.0, dt, () => {
 						updateProgress(Math.floor(this.timeLeft+1));
 					});
 				},
@@ -2064,7 +2069,7 @@ class Entity {
 				delay: 		delay,
 				duration: 	0.2,
 				onInit: 		a => { a.create(4+Math.floor(7*mag)); },
-				onSpriteMake: 	s => { s.sScaleSet(0.20+0.10*mag).sVel(Math.rand(deg-arc,deg+arc),4+Math.rand(0,3+7*mag)); },
+				onSpriteMake: 	s => { s.sScale(0.20+0.10*mag).sVel(Math.rand(deg-arc,deg+arc),4+Math.rand(0,3+7*mag)); },
 				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); }
 			});
 
@@ -2088,7 +2093,7 @@ class Entity {
 					duration: 	0.3,
 					onInit: 		a => a.create(1),
 					onSpriteMake: 	s => { },
-					onSpriteTick: 	s => s.sScaleSet( (this.scale||1) * (1-s.sPct*0.6) )
+					onSpriteTick: 	s => s.sScale( (this.scale||1) * s.sOverTime(1.0,0.4) )
 				});
 			}
 		}
@@ -2106,7 +2111,7 @@ class Entity {
 					duration: 	0.2,
 					delay: 		item ? item.rangeDuration || 0 : 0,
 					onInit: 		a => { a.create(1); },
-					onSpriteMake: 	s => { s.sScaleSet(0.75); },
+					onSpriteMake: 	s => { s.sScale(0.75); },
 					onSpriteTick: 	s => { }
 				});
 			}
@@ -2122,7 +2127,7 @@ class Entity {
 					duration: 	0.2,
 					delay: 		item ? item.rangeDuration || 0 : 0,
 					onInit: 		a => { a.create(1); },
-					onSpriteMake: 	s => { s.sScaleSet(0.75); },
+					onSpriteMake: 	s => { s.sScale(0.75); },
 					onSpriteTick: 	s => { }
 				});
 			}
@@ -2138,7 +2143,7 @@ class Entity {
 					duration: 	0.2,
 					delay: 		item ? item.rangeDuration || 0 : 0,
 					onInit: 		a => { a.create(1); },
-					onSpriteMake: 	s => { s.sScaleSet(0.75); },
+					onSpriteMake: 	s => { s.sScale(0.75); },
 					onSpriteTick: 	s => { }
 				});
 			}
@@ -2269,9 +2274,6 @@ class Entity {
 
 		throw "needs a bit of a rewrite for involuntary movement in the new moveTarget regime."
 
-		// we should force a direction of movement, and tie up their actionLeft for the
-		// duration of that movement.
-
 		while( success && distanceRemaining-- ) {
 			fx += dx/dist*towards;
 			fy += dy/dist*towards;
@@ -2356,14 +2358,8 @@ class Entity {
 
 		let result = this.requestGateTo( newArea, effect.xTarget, effect.yTarget );
 		result.endNow = true;
-		this.actionConsume(1.0);
 		return result;
 	}
-
-	actionConsume(dt) {
-		this.actionLeft += dt;
-	}
-
 
 	takeBePossessed(effect,toggle) {
 
@@ -3594,21 +3590,12 @@ class Entity {
 				}
 			}
 			case Command.DEBUGTEST: {
-				let attacker = this;
-				let delay = 0;
-				let deg = 180.0;
-				let lunge = 0.2 + 0.5;
-				new Anim({
-					watch: 1,
+				let anim = new Anim({
 					follow: 	this,
-					delay: 		delay+0.1,
-					duration: 	0.2,
+					img: 		this.img,
+					duration: 	0.5,
 					onInit: 		a => { a.takePuppet(this); },
-					onSpriteMake: 	s => { },
-					onSpriteTick: 	s => {
-						if( s.elapsed === undefined || s.duration ===undefined ) { debugger; }
-						s.sScaleSet( (s.anim.puppet.scale||1) * (1-s.sPct) ); //0.3+2.7/(1-s.elapsed/s.duration) );
-					}
+					onSpriteTick: 	s => { s.sScale( s.sSine(this.scale, this.scale*0.4, 2*(1-s.sPctDone) ) ); }
 				});
 
 				break;
@@ -3638,15 +3625,6 @@ class Entity {
 				break;
 			}
 			case Command.DEBUGANIM: {
-				let entity = this;
-				let anim = new Anim({
-					at: 		entity,
-					img: 		entity.img,
-					onInit: 		a => { a.create(1); },
-					onSpriteMake: 	s => { s.duration = 0.5; },
-					onSpriteTick: 	s => { s.sScale(1.0+s.sSine(1.0)); }
-				});
-
 				break;
 			}
 		};
@@ -3776,44 +3754,42 @@ class Entity {
 					this.y = y;
 				}
 			}
+			this.commandSpeed = 0;
 			return true;
 		}
 
 		//
 		// Move a direction, or take an action
 		//
+		if( this.command === Command.NONE ) {
+			this.commandSpeed = 0;
+			return false;
+		}
+
 		let xOld = this.x;
 		let yOld = this.y;
-		this.commandResult = null;
+		let result = null;
 
 		if( Direction.fromCommand(this.command) !== false ) {
 			// This should be the ONE AND ONLY call to moveDir.
-			this.commandResult = this.setMoveTargetDir(dir,this.commandItem,true);
-			if( this.isUser && this.commandResult.success ) {
+			result = this.setMoveTargetDir(dir,this.commandItem,true);
+			if( result.success ) {
+				this.commandSpeed = this.speedMove;
+			}
+			if( this.isUser && result.success ) {
 				guiMessage('hideInfo','user moved');
 			}
 		}
 
-		if( !this.commandResult || !this.commandResult.success ) {
-			this.commandResult = this.actOnCommand();
-		}
-		if( this.commandResult ) {
-			console.watchCommand( this, this.command, this.commandResult );
+		if( !result || !result.success ) {
+			result = this.actOnCommand();
+			this.commandSpeed = this.speedAction;
 		}
 
-		if( this.command !== Command.NONE && (!this.isUser || this.timePasses) ) {
-			let speed = this.speedAction;
-			if( Direction.fromCommand(this.command) !== false ) {
-				speed = this.speedMove;
-			}
-			let actionCost = 1/(speed||0.001);
-			if( this.fastCommands && this.fastCommands.includes(lastCommand) ) {
-				tell(mSubject,this,' ',mVerb,'can',' take another action.');
-				this.actionCost *= 0.5;
-			}
-			this.actionLeft = Math.max(0,this.actionLeft+actionCost);
-		}
+		console.watchCommand( this, this.command, result );
+		this.commandResult = result;
 
+		console.assert( this.command !== Command.NONE );
 		
 		this.isStill = ( this.x == xOld && this.y == yOld );
 		this.isBraced = this.isStill;
@@ -3833,10 +3809,12 @@ class Entity {
 		this.commandItemLast = this.commandItem;
 		this.commandTargetLast = this.commandTarget;
 		this.commandTarget2Last = this.commandTarget2;
+		this.commandSpeedLast = this.commandSpeed;
 		this.command = Command.NONE;
 		this.commandItem = null;
 		this.commandTarget = null;
 		this.commandTarget2 = null;
+		this.commandSpeed = 0.0;
 	}
 
 	findSafeGateDestination(area,x,y) {
@@ -3990,8 +3968,8 @@ class Entity {
 		};
 	}
 
-	tickSecond() {
-		this.tickSecondList = this.tickSecondList || [
+	tickRound() {
+		this.tickRoundList = this.tickRoundList || [
 			()=>this.checkRegenerate(),
 			()=>this.checkBreath(),
 			()=>this.checkMapEffects(),
@@ -4002,15 +3980,17 @@ class Entity {
 			()=>this.checkLightDamage(),
 		];
 
-		this.tickSecondList.forEach( fn => fn() );
+		this.tickRoundList.forEach( fn => fn() );
 
-		if( this.onTickSecond ) {
-			this.onTickSecond.call(this);
+		if( this.onTickRound ) {
+			this.onTickRound.call(this);
 		}
 	}
 
 
-	tickRealtime(dt,thinkClip,itemListTickSecondFn) {
+	tickRealtime(dt) {
+		console.assert( Number.isFinite(dt) );
+
 		if( this.legacyId && !this.perkList ) {
 			this.grantPerks();
 		}
@@ -4019,29 +3999,34 @@ class Entity {
 			return;
 		}
 
-		this.actionLeft -= dt;
+		DeedManager.tickRealtime(this,dt);
 
-		let isUserCommand = this.isUser && this.command !== Command.NONE;
-
-		if( this.actionLeft <= 0 || isUserCommand ) {
-			if( thinkClip.contains(this.x,this.y) || isUserCommand ) {
+		if( this.actionLeft <= 0 ) {
+			if( this.area.thinkClip.contains(this.x,this.y) ) {
+				if( this.isUser ) {
+					console.assert( this.command == Command.NONE );
+				}
 				// We might be able to move this to happen when they enter a tile
 				// instead of every time they think. Might be faster.
 				this.calculateVisbility();
 				this.think();
 				this.act();
+				let timeCost = this.commandSpeed<=0 ? 0 : 1/this.commandSpeed;
+				this.actionLeft += timeCost;
 				this.clearCommands();
 			}
 			DeedManager.calc(this);
-
-			//
-			// Reset Action Count
-			//
 		}
 
-		Time.tickOnTheSecond(dt,this,(dtSecond)=>{
-			this.tickSecond();
-			itemListTickSecondFn(this.inventory,dtSecond,(this.rechargeRate||1)*dtSecond);
+		if( this.actionLeft > 0 ) {
+			this.actionLeft -= dt;
+		}
+		console.assert( Number.isFinite(this.actionLeft) );
+
+		this.itemTicker = this.itemTicker || new Time.Periodic();
+		this.itemTicker.tick( 1.0, dt, () => {
+			this.tickRound();
+			this.area.world.itemListTickRound(this.inventory,this.rechargeRate||1);
 		});
 
 		if( this.isUser ) {

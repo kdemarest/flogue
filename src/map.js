@@ -303,6 +303,7 @@ class Map extends SimpleMap {
 		this.siteLookup = [];
 		this.isAirless = false;
 		this.passiveEffectList = [];
+		this.id = 'map.'+Date.makeUid();
 		this.name = "Earth";
 
 		this.itemList.forEach( item => {

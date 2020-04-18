@@ -420,63 +420,6 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	return area;
 }
 
-function tickRealtime(dt,map,entityListRaw,thinkClip) {
-
-	function orderByTurn(entityList) {
-		let list = [[],[],[]];	// players, pets, others
-		for( let entity of entityList ) {
-			let group = ( entity.isUser ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
-			list[group].push(entity);
-		}
-		//list[2].sort( (a,b) => a.speed-b.speed );
-		return [].concat(list[0],list[1],list[2]);
-	}
-
-	function itemListTickSecond(_itemList,dt,rechargeRate) {
-		console.assert(rechargeRate);
-		let itemList = _itemList.slice();	// Any item might get destroyed during this process.
-		for( let item of itemList ) {
-			item.tickSecond(dt,rechargeRate);
-		}
-	}
-
-	function checkDeaths(entityListNotAuthoritative) {
-		// This is complicated, as death always is. Anyone could have moved to a different area,
-		// so we have to prune the CORRECT entity list
-		entityListNotAuthoritative.forEach( entity => {
-			if( entity.isDead() ) {
-				let died = entity.die();
-				if( died ) {
-					let killId = entity.id;
-					Array.filterInPlace( entity.entityList, entity => entity.id!=killId );
-				}
-			}
-		});
-	}
-
-	//On really huge maps entityList gets to be aroound 400 entities.
-	//So, do we really want to tick all of them? Or do we put them all on some
-	//kind of deferred schedule... And then only tick the last level around the gate that
-	//was used to get to the current level...
-
-	let entityListByTurnOrder = orderByTurn(entityListRaw);
-
-	for( let entity of entityListByTurnOrder ) {
-		DeedManager.tickRealtime(entity,dt);
-		entity.tickRealtime(dt,thinkClip,itemListTickSecond);
-	}
-
-	// Tick any fire or freeze tile positions.
-	DeedManager.tickRealtime(null,dt);
-
-	Time.tickOnTheSecond(dt,map,dtSecond => {
-		itemListTickSecond(map.itemList,dtSecond,(map.rechargeRate||1)*dtSecond);
-	});
-
-	DeedManager.cleanup();
-	//entityListByTurnOrder.forEach( entity => entity.clearCommands() );
-	checkDeaths(entityListByTurnOrder);
-}
 
 
 
@@ -500,6 +443,8 @@ class Area {
 		this.lightDirty	= true;
 		this.isTicking	= false;
 		this.underConstruction = true;
+		this.tileTicker = { isTileTicker: true };
+		this._scene 	= null;
 
 		// NOTE: Move this into the areaBuild() at some point.
 		if( theme.jobPick ) {
@@ -529,8 +474,19 @@ class Area {
 			return jobId;
 		}
 	}
+
+	spriteGetById(id) {
+		if( this.id !== this._scene.area.id ) {
+			return null;
+		}
+		return this._scene.spriteGetById(id);
+	}
+
 	build(tileQuota) {
 		this.animationManager = new AnimationManager();
+		this._scene = null;
+		guiMessage( 'sceneFn', scene=>this._scene=scene );
+
 		return areaBuild(this,this.theme,tileQuota, (e) => e.team==Team.EVIL );
 	}
 	connectsTo(areaId) {
@@ -573,9 +529,63 @@ class Area {
 		this.lightDirty = false;
 	}
 
-	tickRealtime(dt) {
+	tickRealtime(dt,dtWall) {
+
+		function orderByTurn(entityList) {
+			let list = [[],[],[]];	// players, pets, others
+			for( let entity of entityList ) {
+				let group = ( entity.isUser ? 0 : (entity.brainPet && entity.team==Team.GOOD ? 1 : 2 ));
+				list[group].push(entity);
+			}
+			//list[2].sort( (a,b) => a.speed-b.speed );
+			return [].concat(list[0],list[1],list[2]);
+		}
+
+		function checkDeaths(entityListNotAuthoritative) {
+			// This is complicated, as death always is. Anyone could have moved to a different area,
+			// so we have to prune the CORRECT entity list
+			entityListNotAuthoritative.forEach( entity => {
+				if( entity.isDead() ) {
+					let died = entity.die();
+					if( died ) {
+						let killId = entity.id;
+						Array.filterInPlace( entity.entityList, entity => entity.id!=killId );
+					}
+				}
+			});
+		}
+
+		//On really huge maps entityList gets to be aroound 400 entities.
+		//So, do we really want to tick all of them? Or do we put them all on some
+		//kind of deferred schedule... And then only tick the last level around the gate that
+		//was used to get to the current level...
+
+		// WARNING! Don't do anything here that would need to happen before
+		// the player went, so that the world doing th player isn't off.
+
+		let entityListByTurnOrder = orderByTurn(this.entityList);
+
+		for( let entity of entityListByTurnOrder ) {
+//			if( entity.isUser ) continue;	// because world has already ticked this entity.
+			entity.tickRealtime(dt);
+		}
+
+		// Tick any fire or freeze tile positions.
+		DeedManager.tickRealtime(this.tileTicker,dt);
+
+		this.itemTicker = this.itemTicker || new Time.Periodic();
+		this.itemTicker.tick( 1.0, dt, () => {
+			this.world.itemListTickRound( this.itemList,this.map.rechargeRate||1);
+		});
+
+		DeedManager.cleanup();
+
+		checkDeaths(entityListByTurnOrder);
+
+		this.animationManager.tickRealtime(dtWall/Rules.displayVelocity);
+
 		this.animationManager.delayManager.reset();
-		tickRealtime( dt, this.map, this.entityList, this.thinkClip );
+
 		if( this.lightDirty ) {
 			this.castLight();
 		}

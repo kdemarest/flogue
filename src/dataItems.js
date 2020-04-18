@@ -934,13 +934,13 @@ const StuffVarietyList = ({ //Type.establish('StuffVariety',{},{
 
 });
 
-StuffVarietyList.snailTrail.onTickSecond = function() {
+StuffVarietyList.snailTrail.onTickRound = function() {
 	if( this.owner.isMap ) {
 		this.map.scentClear(this.x,this.y);
 	}
 }
 
-StuffVarietyList.snailSlime.onTickSecond = function() {
+StuffVarietyList.snailSlime.onTickRound = function() {
 	if( this.owner.isMap ) {
 		this.map.scentClear(this.x,this.y);
 	}
@@ -1023,7 +1023,7 @@ const NulImg = { img: '' };
 /*
 Item Events
 onPickup() 				- fired just before an item is picked up. Return false to disallow the pickup.
-onTickSecond() 			- fires each time a full turn has passed, for every item, whether in the world or in an inventory. 
+onTickRound() 			- fires each time a full turn has passed, for every item, whether in the world or in an inventory. 
 onTickRealtime(dt)
 onBump(toucher,self)	- when any entity bumps into this. Remember that self might be a temporary tile proxy
 onPutInWorld(x,y,map)	- when an item is put into the world, either from the void to from an inventory.
@@ -1333,7 +1333,8 @@ let ItemTypeList = {
 	"naturalWeapon":   	{
 		name: "naturalWeapon",
 		rarity: 1,
-		doDrop: true,
+		noDrop: true,
+		isFake: true,
 		img: 'UNUSED/spells/components/skull.png',
 		icon: "/gui/icons/corpse.png"
 	},
@@ -1699,7 +1700,7 @@ ItemTypeList.vein.onBump = function(entity,self) {
 		img: 		StickerList.oreChaff.img,
 		duration: 	0.2,
 		onInit: 		a => { a.create(6); },
-		onSpriteMake: 	s => { s.sScaleSet(0.3).sVel(Math.rand(-90,90),Math.rand(2,5)); s.zOrder=100; },
+		onSpriteMake: 	s => { s.sScale(0.3).sVel(Math.rand(-90,90),Math.rand(2,5)); s.zOrder=100; },
 		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(40).sRot(360); }
 	});
 	new Anim({
@@ -1805,7 +1806,7 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 	}
 }
 
-ItemTypeList.altar.onTickSecond = function(dt) {
+ItemTypeList.altar.onTickRound = function() {
 	if( this.depleted && !this.rechargeLeft ) {
 		tell( mSubject,this,' ',mVerb,'begin',' to glow.');
 		this.depleted = false;
@@ -1936,7 +1937,7 @@ ItemTypeList.barrel.onBump = function(toucher,self) {
 //				delay: 		delay,
 //				duration: 	0.6,
 //				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
-//				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
+//				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sScale(1+(s.elapsed/s.duration)); }
 //			});
 //			delay += 0.3;
 //		});
@@ -1947,7 +1948,7 @@ ItemTypeList.barrel.onBump = function(toucher,self) {
 		img: 		self.img,
 		duration: 	0.6,
 		onInit: 		a => { a.create(5); },
-		onSpriteMake: 	s => { let deg=Math.rand(0-60,0+60); s.sScaleSet(0.7).sVel(deg,Math.rand(5,7)); s.rot = deg/60*Math.PI; },
+		onSpriteMake: 	s => { let deg=Math.rand(0-60,0+60); s.sScale(0.7).sVel(deg,Math.rand(5,7)); s.rot = deg/60*Math.PI; },
 		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(20); s.rotation += s.rot*s.delta; }
 	});
 
@@ -1968,7 +1969,7 @@ ItemTypeList.fountain.onBump = function(toucher,self) {
 	tell(mSubject,toucher,' ',mVerb,'fill',' a vial with water from the fountain.');
 }
 
-ItemTypeList.fontSolar.onTickSecond = function(dt) {
+ItemTypeList.fontSolar.onTickRound = function() {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.isMonsterType && e.team==Team.GOOD).shotClear().nearMe(3);
 	let self = this;
 	nearby.forEach( entity => {
@@ -1977,12 +1978,13 @@ ItemTypeList.fontSolar.onTickSecond = function(dt) {
 			deed.timeLeft = 2;
 		}
 		else {
+			let aboveHead = -0.7;
 			let glowAnim = new Anim({
 				follow: 	entity,
 				img: 		StickerList.glowGold.img,
 				duration: 	true,
 				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sScaleSet(0.30).sPosRel(0,-0.7); },
+				onSpriteMake: 	s => { s.sScale(0.30).sQuiverSet(0,aboveHead); },
 			});
 			let effect = new Effect(this.area.depth,{
 				isSolarRegen: true,
@@ -1996,8 +1998,24 @@ ItemTypeList.fontSolar.onTickSecond = function(dt) {
 				}
 			});
 			effectApply(effect,entity,null,self,'tick');
-			Anim.Homing(self.id,self,entity,StickerList.glowGold.img,45,6,0.5,5);
+			//Anim.Homing(self.id,self,entity,StickerList.glowGold.img,45,6,0.5,5);
+			let divergeSign = 1;
+			return new Anim({
+				watch: true,
+				origin:		self,
+				follow: 	entity,
+				img: 		StickerList.glowGold.img,
+				delayId: 	self.id,
+				duration: 		Anim.Duration.untilAllDead,
+				onInit: 		a => { },
+				onTick: 		a => a.createPerSec(3,1),
+				onSpriteMake: 	s => { s.sScale(0.30).sDuration(2).divergence=Math.rand(1,3)*divergeSign; divergeSign = -divergeSign; },
+				onSpriteTick: 	s => !s.sMissile( s.tCubed ).sDiverge( s.tSquared ).sQuiverSet(0,aboveHead).sArrived(0.001),
+			});
 		}
+
+
+
 		let f = new Finder(entity.inventory).filter( item => item.rechargeTime && item.rechargeLeft > 0 );
 		if( f.count ) {
 			let item = pick(f.all);
@@ -2008,7 +2026,7 @@ ItemTypeList.fontSolar.onTickSecond = function(dt) {
 }
 
 
-ItemTypeList.fontDeep.onTickSecond = function(dt) {
+ItemTypeList.fontDeep.onTickRound = function() {
 	let nearby = new Finder(this.area.entityList,this).filter(e=>e.team==Team.GOOD).shotClear().nearMe(4);
 	let self = this;
 
@@ -2039,7 +2057,7 @@ ItemTypeList.fontDeep.onTickSecond = function(dt) {
 	}
 }
 
-CharmVarietyList.sunCrystal.onTickSecond = function(dt) {
+CharmVarietyList.sunCrystal.onTickRound = function() {
 	if( this.owner.isMap ) {
 		let tile = this.map.getTileEntity(this.x,this.y);
 		effectApply(this.effect,tile,this.ownerOfRecord,this,'tick');

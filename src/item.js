@@ -238,6 +238,9 @@ class Item {
 	get isUser() {
 		return false;
 	}
+	spriteSetMember(member,value) {
+		guiMessage( 'spriteSetMember', { entity: this, member: member, value: value } );
+	}
 	explain(buySell,observer) {
 		let potencyList = ['feeble', 'frail', 'faint', 'tepid', 'mild', 'common', 'passable', 'sturdy', 'hardy', 'robust', 'vigorous', 'mighty', 'fierce', 'righteous', 'potent', 'glorious', 'epic', 'supernal', 'legendary', 'celestial'];
 
@@ -344,7 +347,7 @@ class Item {
 			armor: 			exArmor,
 			aoe: 			item && item.effect && item.effect.effectShape && item.effect.effectShape!==EffectShape.SINGLE ? item.effect.effectShape : '',
 			bonus: 			getBonus(),
-			condition:		Number.isFinite(item.durability) && item.durability < 50 ? '<span class="statAlert">&nbsp;frail&nbsp;</span>' : '',
+			condition:		Number.isFinite(item.durability) && item.durability < 50 && item.baseType.durability >= 50 ? '<span class="statAlert">&nbsp;frail&nbsp;</span>' : '',
 			duration:		item.duration,
 			effect: 		item.effect ? (item.effect.name || item.effect.typeId) : '',
 			effectAbout:	item.effect && item.effect.about ? item.effect.about : '',
@@ -609,27 +612,34 @@ class Item {
 
 		let hadNoOwner = !this.owner;
 		if( !this.isUnbunching && !entity.inVoid && entity.isUser ) {
+			//
+			// Fly picked up item to the viewInfo side bar
+			//
 			let flightDistance;
 			guiMessage( 'sceneFn', scene => flightDistance = scene.mapViewWidthInTiles/2.0);
 			new Anim({
 				watch: 1,
 				at: 		entity,
-				img: 		ImageRepo.getImg(this),
+				img: 		this.img || ImageRepo.getImg(this),
 				delayId: 	entity.id,
 				delayAdd: 	0.2,
 				duration: 	0.6,
 				onInit:			a => { a.create(1); },
 				onSpriteMake: 	s => { s.sVelTo(flightDistance,0,0.6); },
-				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sScaleSet(1+(s.elapsed/s.duration)); }
+				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sScale(1+(s.elapsed/s.duration)); }
 			});
 		}
 		this.rangeDuration = 0;
 		if( this.owner && !this.owner.isMap && (x!=this.owner.x || y!=this.owner.y)  ) {
-			// Show item flying to the target location
 			let dx = x-this.owner.x;
 			let dy = y-this.owner.y;
 			let rangeDuration = Math.max(0.1,Math.sqrt(dx*dx+dy*dy) / (this.flyingSpeed || 10));
 			if( this.flyingImg ) {
+				//
+				// Fly from my owner to the target, with rotation
+				//
+				console.logAnim('Fly rotate flyingImg to target');
+
 				let deg = this.flyingRot ? deltaToDeg(dx,dy) : 0;
 				new Anim({
 					at: 		this.owner,
@@ -637,19 +647,21 @@ class Item {
 					delayId: 	this.id,
 					duration: 	rangeDuration,
 					onInit: 		a => { a.create(1); },
-					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sRotSet(deg).sScaleSet(this.flyingScale||1); },
+					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sRotSet(deg).sScale(this.flyingScale||1); },
 					onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); },
 				});
 			}
 			else {
-				guiMessage( 'sceneEntityNotice', this, 'map' );
-				// Show the item flying to its new location
+				//
+				// Fly just my plain old image to the target
+				//
 				new Anim({
 					watch: 1,
 					at: 		this.owner,
 					delayId: 	this.id,
+					img:		this.img || ImageRepo.getImg(this),
 					duration: 	rangeDuration,
-					onInit: 		a => { a.takePuppet(this); },
+					onInit: 		a => { a.create(1); },
 					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration); },
 					onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); },
 				});
@@ -750,13 +762,13 @@ class Item {
 	isEdibleBy(entity) {
 		return this.isEdible && entity.eat &&  entity.eat.includes(this.matter);
 	}
-	tickSecond( dt, rechargeRate = 1) {
+	tickRound(rechargeRate = 1) {
 		let list = this.owner.itemList || this.owner.inventory;
 		// WARNING! This assert is useful for making sure of inventory integrity, but VERY slow.
 		//console.assert( list.find( i => i.id == this.id ) );
 		this.recharge(rechargeRate);
-		if( this.onTickSecond ) {
-			this.onTickSecond.call(this,dt);
+		if( this.onTickRound ) {
+			this.onTickRound.call(this);
 		}
 		if( this.existenceLeft ) {
 			this.existenceLeft = Math.max(0, (this.existenceLeft||0) - dt);

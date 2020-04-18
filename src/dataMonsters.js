@@ -321,8 +321,8 @@ vuln			- as immune, except what you are vulnerable to for double damage
 sneakAttackMult - The multiplier when this creature successfully sneak attacks. Requires Quick.LITHE weapons.
 isLarge			- resists shove due to being large.
 
-speedMove 		- how many tiles per second you can cross. Defaults to Rules.MONSTER_SPEED_MOVE (1.0)
-speedAction 	- how many times you think/act per second. Defaults to Rules.MONSTER_SPEED_ACTION (1.0)
+speedMove 		- speed in tiles-per-second, but in reality adjusted by Rules.SPEED_STANDARD
+speedAction 	- actions per second, also adjusted by Rules.SPEED_STANDARD
 
 immortal		- will never die, and can't drop below 1 health
 invilnerable	- suffers no damage or negative status effects
@@ -492,8 +492,8 @@ function monsterTypePreProcess(typeId,m) {
 		m.breathIgnore = Object.findByFlag( m, breathIgnore );
 	}
 
-	m.speedMove   = m.speedMove!==undefined ? m.speedMove : Rules.MONSTER_SPEED_MOVE;
-	m.speedAction = m.speedAction!==undefined ? m.speedAction : Rules.MONSTER_SPEED_ACTION;
+	m.speedMove   = m.speedMove!==undefined ? m.speedMove : 1.0;
+	m.speedAction = m.speedAction!==undefined ? m.speedAction : 1.0;
 
 	// There is code that assumes that all monsters have, at least, an emptyinventory.
 	m.carrying = m.carrying || [];
@@ -1670,23 +1670,19 @@ MonsterTypeList.redOoze.onEnterTile = function(x,y) {
 
 		let self = this;
 		let anim = new Anim({
+			name:		'oozeEat',
 			follow: 	this,
 			img: 		this.img,
-			duration: 	0.3,
-			onInit: 		a => { a.takePuppet(self); },
-			onSpriteTick: 	s => {
-				let scale = 1.0+s.sSine(s.sPct(),1.5);
-				console.log( "Scale="+scale );
-				s.sScaleSet(scale);
-			},
-			onSpriteDone: 	s => { s.sReset(); }
+			duration: 	0.5,
+			onInit: 		a => { a.takePuppet(this); },
+			onSpriteTick: 	s => { s.sScale( s.sSine(this.scale, this.scale*0.4, 2*(1-s.sPctDone) ) ); }
 		});
 
 		f.first.destroy();
 	}
 }
 
-MonsterTypeList.daitox.onTickSecond = function() {
+MonsterTypeList.daitox.onTickRound = function() {
 	let tile = this.map.getTileEntity(this.x,this.y);
 	effectApply(this.effectOngoing,tile,this,null,'tick');
 }

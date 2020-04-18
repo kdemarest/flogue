@@ -83,7 +83,8 @@ class ViewMiniMap extends ViewObserver {
 	}
 
 	tick(dt) {
-		Time.tickOnTheSecond(dt,this,()=>{
+		this.periodicDirty = this.periodicDirty || new Time.Periodic();
+		this.periodicDirty.tick( 1.0, dt, () => {
 			this.dirty=true;
 		});
 	}

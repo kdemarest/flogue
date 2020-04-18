@@ -53,6 +53,10 @@ class Effect {
 }
 
 
+let testValidTimeLeft = (timeLeft) => {
+	console.assert( timeLeft===true || timeLeft===false || Number.isFinite(timeLeft) );
+}
+
 // DEED
 
 class Deed {
@@ -60,22 +64,30 @@ class Deed {
 	//effect,target,source,item
 	constructor(_effect) {
 		Object.assign( this, _effect );
+		console.assert( this.target );
+		if( this.target && this.target.watch ) {
+			this.watch = true;
+			this.logId = 'Deed '+this.op+' on '+this.target.id;
+		}
+
 		console.assert( this.duration !== undefined );
 		this.timeLeft = this.duration===0 ? false : this.duration;
-		console.assert( typeof this.timeLeft !== 'number' || !isNaN(this.timeLeft) );
+		testValidTimeLeft(this.timeLeft);
 		this.killMe = false;
 	}
 	alterTimeLeft(duration,timeOp) {
 		if( this.killMe ) return;
 		console.assert( this.timeLeft !== false );
-		console.assert( typeof this.timeLeft !== 'number' || !isNaN(this.timeLeft) );
-		if( this.timeLeft === true ) return true;
+		testValidTimeLeft( this.timeLeft );
+		if( this.timeLeft === true ) {
+			return true;
+		}
 		if( duration === true ) {
 			this.timeLeft = true;
 		}
 		else {
 			this.timeLeft = timeOp==='sum' ? this.timeLeft+duration : Math.max(this.timeLeft,duration);
-			console.assert( typeof this.timeLeft !== 'number' || !isNaN(this.timeLeft) );
+			testValidTimeLeft(this.timeLeft);
 		}
 		return this.timeLeft;
 	}
@@ -84,7 +96,7 @@ class Deed {
 	}
 	expired() {
 		if( this.killMe ) return true;
-		console.assert( typeof this.timeLeft !== 'number' || !isNaN(this.timeLeft) );
+		testValidTimeLeft(this.timeLeft);
 		let done = ( this.timeLeft!==true && this.timeLeft <= 0 );
 		if( done && this.additionalDoneTest ) {
 			done = this.additionalDoneTest(this);
@@ -180,6 +192,8 @@ class Deed {
 		if( this.killMe ) {
 			return false;
 		}
+		console.watchDeed(this,'end()');
+
 		if( this.onEnd ) {
 			this.onEnd.call(this,this);
 		}
@@ -192,16 +206,19 @@ class Deed {
 		return true;
 	}
 	tick(dt) {
-		if( this.killMe || !this.doTick ) {
+		console.assert( dt === 1.0 );
+
+		if( this.killMe ) {
 			// Note that zero duration deeds might be in the list, with killMe true at this moment.
 			return;
 		}
 		console.assert( !(this.duration===0) );
 		if( this.timeLeft !== true ) {
-			let temp = this.timeLeft;
-			console.assert( typeof this.timeLeft !== 'number' || !isNaN(this.timeLeft) );
+			testValidTimeLeft(this.timeLeft);
+			console.assert( Number.isFinite(dt) );
 			this.timeLeft -= dt;
-			console.assert( typeof this.timeLeft !== 'number' || !isNaN(this.timeLeft) );
+			testValidTimeLeft(this.timeLeft);
+			console.watchDeed(this,'timeLeft = '+Math.fixed(this.timeLeft,3));
 		}
 		if( this.expired() ) {
 			this.end();
@@ -275,10 +292,10 @@ let DeedManager = (new class {
 			}
 		}
 		if( stat in this.statsThatCauseImageChanges && oldValue !== target[stat] ) {
-			guiMessage('dirty',target,'map');
+			Gui.dirty('map');
 		}
 		if( target.userControllingMe && stat in this.statsThatCauseMapRenders && oldValue !== target[stat] ) {
-			guiMessage('render',null,'map');
+			Gui.dirty('map');
 		}
 		deedTell(target,stat,oldValue,target[stat]);
 	}
@@ -334,15 +351,19 @@ let DeedManager = (new class {
 		}		
 	}
 	tickRealtime(target,dt) {
-		// This makes sure that any deeds added while ticking do NOT actually tick this round.
-		// A better implementatio would probably be to duplicate the deedList array and
-		// process that. Duh.
-		this.deedList.map( deed => deed.doTick=true );
-		for( let deed of this.deedList ) {
-			if( (target === null && deed.target.isTileEntity) || (target && deed.target.id == target.id) ) {
-				deed.tick(dt);
+		target._deedTicker = target._deedTicker || new Time.Periodic();
+
+		target._deedTicker.tick( 1.0, dt, ()=> {
+
+			console.watchDeed( target, 'tick on second. dt='+Math.fixed(dt,5) );
+
+			let safeDeedList = this.deedList.slice();
+			for( let deed of safeDeedList ) {
+				if( (target.isTileTicker && deed.target.isTileEntity) || (deed.target.id == target.id) ) {
+					deed.tick(1.0);
+				}
 			}
-		}
+		});
 	}
 }());
 
@@ -632,7 +653,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 			delayId: 	delayId,
 			duration: 	rangeDuration,
 			onInit: 		a => { a.create(1); },
-			onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sScaleSet(0.6); },
+			onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sScale(0.6); },
 			onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); }
 		});
 	}
@@ -708,7 +729,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 					delayId: 		delayId,
 					duration: 	0.2,
 					onInit: 		a => { a.create(1); },
-					onSpriteMake: 	s => { s.sScaleSet(0.75); },
+					onSpriteMake: 	s => { s.sScale(0.75); },
 					onSpriteTick: 	s => { }
 				});
 				// Make the entity wiggle away a bit.
@@ -750,7 +771,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 				delayId: 	delayId,
 				duration: 	0.2,
 				onInit: 		a => { a.create(1); },
-				onSpriteMake: 	s => { s.sScaleSet(0.75); },
+				onSpriteMake: 	s => { s.sScale(0.75); },
 				onSpriteTick: 	s => { }
 			});
 			return makeResult('shielded',false);

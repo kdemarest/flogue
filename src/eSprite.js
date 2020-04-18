@@ -107,7 +107,7 @@ class EntitySprite extends Sprite {
 		super.updatePixiSprite(pane);
 
 		if( this.entity.spriteDirty ) {
-			this.sprite.texture = ImageRepo.getResourceByImg( ImageRepo.getImg(this.entity) ).texture;
+			this.pixiSprite.texture = ImageRepo.getResourceByImg( ImageRepo.getImg(this.entity) ).texture;
 			this.entity.spriteDirty = false;
 		}
 

@@ -62,15 +62,21 @@ class ViewFavorites extends ViewObserver {
 			this.dirty = true;
 		}
 	}
+	tick(dt) {
+		this.periodicDirty = this.periodicDirty || new Time.Periodic();
+		this.periodicDirty.tick( 0.2, dt, () => {
+			this.dirty = true;
+		});
+	}
 	render() {
 		let observer = this.observer;
-		$(this.divId).empty();
 
+		let content = '';
 		let favoriteKeyList = this.favoriteKey[this.favoriteSet];
 		for( let i=0 ; i<favoriteKeyList.length ; ++i ) {
 			let favoriteName = this.favoriteName[this.favoriteSet][i];
-			let key  = favoriteKeyList.charAt(i);
-			let name = favoriteKeyList.charAt(i);
+			let key      = favoriteKeyList.charAt(i);
+			let name     = favoriteKeyList.charAt(i);
 			let favorite = this.user.favoriteMap[key];
 
 			let item = favorite && favorite.itemId ? new Finder(observer.inventory).isId( favorite.itemId ).first : null;
@@ -79,7 +85,8 @@ class ViewFavorites extends ViewObserver {
 
 			if( !item ) {
 				let s = '<div class="item unlit">'+img+hotkey+'</div>';
-				$(s).appendTo(this.divId);
+				content += s;
+//				$(s).appendTo(this.divId);
 				continue;
 			}
 
@@ -94,22 +101,36 @@ class ViewFavorites extends ViewObserver {
 			let text = ex.description;
 			let lit = observer.isItemSelected(item) && item.isRecharged();
 			let unlit = !item.isRecharged();
-			let s = '<div class="item'+(unlit?' unlit':(lit?' lit':''))+'">'+img+hotkey+' '+[ex.condition,text].join(' ')+'</div>';
+			let s = '<div class="itemIndex'+i+' item'+(unlit?' unlit':(lit?' lit':''))+'">'+img+hotkey+' '+[ex.condition,text].join(' ')+'</div>';
 
+			content += s;
+		}
 
-			$(s).appendTo(this.divId).on( 'click.view', null, event => {
-				event.key = favorite.key;
-				event.commandItem = item;
-				guiMessage('command',event);
-			})
-			.on( 'mouseover.view', null, event => {
-				//console.log( 'ViewInventory mouseover' );
-				guiMessage( 'showInfo', { entity: item, from: 'viewFavorites' } );
-			})
-			.on( 'mouseout', null, event => {
-				guiMessage( 'hideInfo', { from: 'viewFavorites' } );
-			});
+		let wasUpdated = Gui.cachedRenderDiv( this.divId, content );
 
+		if( wasUpdated ) {
+			for( let i=0 ; i<favoriteKeyList.length ; ++i ) {
+				let itemId = '.itemIndex'+i;
+				let key      = favoriteKeyList.charAt(i);
+				let favorite = this.user.favoriteMap[key];
+				let item = favorite && favorite.itemId ? new Finder(observer.inventory).isId( favorite.itemId ).first : null;
+
+				$(itemId).off( '.viewFavorites' );
+				$(itemId)
+					.on( 'click.viewFavorites', null, event => {
+						event.key = favorite.key;
+						event.commandItem = item;
+						guiMessage('command',event);
+					})
+					.on( 'mouseover.viewFavorites', null, event => {
+						//console.log( 'ViewInventory mouseover' );
+						guiMessage( 'showInfo', { entity: item, from: 'viewFavorites' } );
+					})
+					.on( 'mouseout.viewFavorites', null, event => {
+						guiMessage( 'hideInfo', { from: 'viewFavorites' } );
+					})
+				;
+			}
 		}
 	}
 }

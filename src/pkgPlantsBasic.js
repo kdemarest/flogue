@@ -132,9 +132,9 @@ ItemTypeList.plant.rechargeCriteria = function() {
 	return this.owner && this.owner.isMap && this.owner.getLightAt(this.x,this.y) >= this.needLight;
 }
 
-ItemTypeList.plant.onTickSecond = function() {
+ItemTypeList.plant.onTickRound = function() {
 	let pct = this.rechargePercent();
-	this.scale = 0.1+(0.15*pct);
+	this.scale = 0.1+(0.9*pct);
 	this.spriteSetMember('scale',this.scale);
 
 	if( this.isRecharged() ) {
@@ -156,9 +156,9 @@ ItemTypeList.plant.onTickSecond = function() {
 	this.sign = this.growing ? this.signFine : this.signLack;
 }
 
-ItemTypeList.mushroom.onTickSecond = function() {
+ItemTypeList.mushroom.onTickRound = function() {
 	let pct = this.rechargePercent();
-	this.scale = 0.1+(0.15*pct);
+	this.scale = 0.1+(0.9*pct);
 	this.spriteSetMember('scale',this.scale);
 }
 

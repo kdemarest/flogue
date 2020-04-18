@@ -107,7 +107,8 @@ class PixiImageRepo {
 
 	getImg(entity) {
 		let imgChooseFn = this.imgChooseFnList[entity.typeId] || DefaultImgChooseFn;
-		return imgChooseFn(entity);
+		entity.img = imgChooseFn(entity);
+		return entity.img;
 	}
 
 	getResourceByImg(imgWithoutBase) {

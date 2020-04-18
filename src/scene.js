@@ -109,7 +109,7 @@ class Scene extends ViewObserver {
 
 	changeArea(area,areaPrior) {
 		// Technically this shouldn't be needed, because the sprite can check it just as well.
-		this.traverse( sprite => sprite.dead = (sprite.dead || sprite.area.id!=area.id) ); 
+		//this.traverse( sprite => if( !sprite.dead && sprite.area.id!=area.id ) sprite.die('change area') ); 
 	}
 
 	prune() {
@@ -131,26 +131,6 @@ class Scene extends ViewObserver {
 	}
 
 	checkEnterTile() {
-return;
-		let ofs = (observer.senseSmell && (observer.sensePerception || observer.senseAlert)) ? 0.2 : 0;
-		handleScent(
-			map,
-			this.observer.x,
-			this.observer.y,
-			observer.senseSmell,
-			ofs,
-			observer.visibilityDistance
-		);
-		handlePerception(
-			observer,
-			visCache,
-			map,
-			this.observer.x,
-			this.observer.y,
-			observer.sensePerception,
-			observer.senseAlert,
-			ofs
-		);
 	}
 
 	checkAll() {

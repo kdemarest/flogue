@@ -5,17 +5,6 @@ let _test = function(a,b) {
 	console.assert( Math.abs(a-b) < 0.0001 );
 }
 
-let radNorm = function(rad) {
-	while( rad >= Math.PI ) rad -= Math.PI*2;
-	while( rad <= -Math.PI ) rad += Math.PI*2;
-	return rad;
-}
-
-let degNorm = function(deg) {
-	deg += 360*10;
-	return deg % 360;
-}
-
 let toDeg = function(rad) {
 	let d = (rad/(2*Math.PI)) * 360 + 90;
 	if( d >= 360 ) d -= 360;
@@ -61,12 +50,34 @@ _test( deltaToDeg(1,-1), 45 );
 _test( deltaToDeg(0,-1), 0 );
 _test( deltaToDeg(0,1), 180 );
 
+/**
+	class Anim
+	You MUST pass in 'at' or 'follow'
+	at			- must have an x,y,area that specifies, for most anim, where to start.
+	follow		- either an object with x,y,area, or a function returning the same
+
+	delayId		- the id of the delay group that will determine this thing's delay
+	delay		- an absolute amount of time to delay before starting to animate. An alternative to delayId.
+
+	duration	- how long to last. Can be a number, a function that returns "die", or and object that can set self.dead=true
+
+	scale		- directly changes the sprite's scale
+	alpha		- directly changes the sprite's alpha
+	rotation	- directly changes the sprite's rotation
+
+*/
 class Anim {
 	constructor(data0, data1) {
 		Object.assign(this, { isAnim: 1, puppet: null }, data0, data1 );
 
 		console.assert( this.at || this.follow );
-		console.assert( !(this.at && this.follow) );	// Choose one, not both.
+		
+		if( this.follow ) {
+			let follow = this.follow;
+			Object.defineProperty( this, 'follow', {
+				get: typeof follow == 'function' ? follow.bind(this) : ()=>follow
+			});
+		}
 
 		this.id =  (this.name||'anim')+'.'+((this.follow ? this.follow.id : '') || (this.at ? this.at.id : ''))+Date.makeUid();
 
@@ -88,9 +99,6 @@ class Anim {
 
 		// Validate the (optional) follow.
 		console.assert( !this.follow || (this.follow.x!==undefined && this.follow.y!==undefined && this.follow.area!==undefined) );
-
-		// Validate the (optional) target
-		console.assert( !this.target || (this.target.x!==undefined && this.target.y!==undefined) );
 
 		// Start at 'follow', but only if (x,y) not otherwise specified
 		if( this.follow && this.follow.isTileType && !this.follow.isTileEntity ) {
@@ -189,6 +197,7 @@ class Anim {
 		while( numSprites-- ) {
 			let animSprite = new AnimSprite(this,this.makeSpriteId());
 			let pixiSprite = new PIXI.Sprite(ImageRepo.getResourceByImg(this.img).texture);
+			console.watchAnim(this,'create 1',this.img,'duration',Math.fixed(this.duration,3));
 			pixiSprite.visible = false;	// Important so the sprite won't show momentarily in to left corner.
 			animSprite.init( pixiSprite, this.duration );
 			this.spriteAdd( animSprite );
@@ -198,6 +207,7 @@ class Anim {
 
 	createPerSec(numSprites,untilSecond) {
 		if( untilSecond !== undefined && this.elapsed > untilSecond ) {
+			console.watchAnim(this,'createPerSec EARLY EXIT');
 			return;
 		}
 		this.createAccumulator += this.dt * numSprites;
@@ -216,6 +226,7 @@ class Anim {
 		if( this.dead ) {
 			return false;
 		}
+		console.assert( entity.typeId && entity.id && entity.img );
 		this.watch = this.watch || entity.watch
 
 		console.watchAnim( this, 'takePuppet('+entity.id+')' );
@@ -238,6 +249,7 @@ class Anim {
 	tick(dt) {
 		if( dt == 0 ) {
 			debugger;
+			return;
 		}
 		if( this.dead ) {
 			return;
@@ -248,8 +260,6 @@ class Anim {
 			console.watchAnim( this, '?toldDelay', ' delaying '+this.delay );
 			return;
 		}
-		// This must happen AFTER the delay!
-		this.elapsed += dt;
 		console.watchAnim( this, '?toldDoneDelay', ' running' );
 
 		if( this.onTick ) {
@@ -272,11 +282,21 @@ class Anim {
 		}
 
 		if( typeof this.duration === 'number' ) {
-			this.duration -= dt;
-			if( this.duration <= 0 ) {
+			// Very important that this be >= duration, not just >
+			if( this.elapsed >= this.duration ) {
 				return this.die( 'anim duration complete' );
 			}
 		}
+
+		// This must happen AFTER the delay, and after all duration checks. If you do it
+		// too soon then the animation might never get an "initial" tick of ZERO, which it
+		// really should, when you think about it.
+		this.elapsed += dt;
+		if( Number.isFinite(this.duration) ) {
+			this.elapsed = Math.min(this.elapsed,this.duration);
+		}
+		console.watchAnim( this, 'ANIM elapsed=', this.elapsed );
+
 	}
 }
 
@@ -327,10 +347,16 @@ class AnimationManager {
 		this.delayManager = new AnimationDelay();
 		this.clip = new AnimationClip();
 	}
-	forEach(fn) {
+	traverse(fn) {
 		return this.list.forEach(fn);
 	}
 	add(anim) {
+		this.traverse( a => {
+			if( a.id == anim.id ) {
+				// Whoops! This anim is already in the list!
+				console.assert(false);
+			}
+		});
 		this.list.push(anim);
 
 		// WARNING: This is really the wrong way to do this. Rather the viewMap should
@@ -339,7 +365,7 @@ class AnimationManager {
 		return anim;
 	}
 	remove(fn,note) {
-		this.list.forEach( anim => {
+		this.traverse( anim => {
 			if( fn(anim) ) {
 				// console.log('AnimationManager.removed ',anim.groupId,'note='+note);
 				anim.die(note); 
@@ -348,28 +374,15 @@ class AnimationManager {
 		Gui.dirty('map');
 	}
 	tickRealtime(dt) {
-		this.list.map( anim => anim.tick(dt) );
+		//console.logAnim('AnimMgr tick=',dt);
+		this.traverse( anim => {
+			anim.tick(dt);
+		});
 		Array.filterInPlace( this.list, anim => !anim.dead );
 	}
 }
 
 
-/*
-Notes on fully data-driven Animations:
-
-{
-	follow: 1,			// to follow whatever relevant
-	at: 1,				// to set position
-	puppet: true,		// grabs the entity's spriteCache
-	img: url			// or stickerlist entry,
-	delay: 				// handled automatically in most cases
-	duration: 			// usually standard
-	scale:
-	alpha:
-	template:  // like Anim.Blam, etc that take { params... } and use them in an onSprite, onSpriteTick, etc.
-}
-
-*/
 
 return {
 	Anim: Anim,

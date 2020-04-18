@@ -47,8 +47,7 @@ let Rules = new class {
 		// How far monsters with dark vision see, by default
 		this.MONSTER_DARK_VISION 			= 6;
 		this.MONSTER_SIGHT_DISTANCE 		= 6;
-		this.MONSTER_SPEED_MOVE		 		= 4.0;
-		this.MONSTER_SPEED_ACTION		 	= 4.0;
+		this.displayVelocity 				= 10.0;
 
 		// How many turns should an average spell require in order to recharge. Relates to DAMAGE_BONUS_FOR_RECHARGE
 		this.SPELL_RECHARGE_TIME 			= 10;

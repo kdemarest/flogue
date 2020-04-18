@@ -50,6 +50,7 @@ class Sprite {
 	}
 
 	die(note) {
+		console.assert( !this._dead );
 		this._dead = true;
 		console.assert(note);
 		console.watchSprite( this, this.constructor.name+'.die', note );
@@ -61,7 +62,6 @@ class Sprite {
 
 	updatePixiSprite(pane) {
 		console.assert( !this.dead );
-		console.watchSprite( this, 'updatePixiSprite()');
 
 		this.pixiSprite.x = (this.xVisual-this.xVisualOrigin)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
 		this.pixiSprite.y = (this.yVisual-this.yVisualOrigin)*pane.tileDim+pane.sizeInTiles/2*pane.tileDim;
@@ -73,6 +73,7 @@ class Sprite {
 		this.pixiSprite.anchor.set(this.xAnchor,this.yAnchor);
 		this.pixiSprite.transform.scale.set( this.scale * pane.tileDim/this.pixiSprite._texture.width );
 
+		console.watchSprite( this, 'updatePixiSprite()',this.pixiSprite);
 	}
 
 	tick(dt,observer,pane) {
