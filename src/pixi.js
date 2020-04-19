@@ -41592,4 +41592,4 @@ global.PIXI = exports; // eslint-disable-line
 });
 
 
-//# sourceMappingURL=pixi.js.map
+// [ was # ] sourceMappingURL=pixi.js.map

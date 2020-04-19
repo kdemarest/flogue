@@ -358,10 +358,10 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	let owedFriends   = Math.round( (totalFloor*theme.friendDensity) );
 	let owedItems     = Math.round( (totalFloor*theme.itemDensity) );
 
-	console.log( "Map has "+totalFloor+" floor:" );
-	console.log( "Enemies: ("+totalFloor+"x"+theme.enemyDensity+")="+owedEnemies+"-"+totalEnemies+"="+(owedEnemies-totalEnemies)+" enemies owed" );
-	console.log( "Friends: ("+totalFloor+"x"+theme.friendDensity+")="+owedFriends+"-"+totalFriends+"="+(owedFriends-totalFriends)+" friends owed" );
-	console.log( "Items  : ("+totalFloor+"x"+theme.itemDensity+")="+owedItems+"-"+totalItems+"="+(owedItems-totalItems)+" items owed" );
+	console.logAreaBuild( "Map has "+totalFloor+" floor:" );
+	console.logAreaBuild( "Enemies: ("+totalFloor+"x"+theme.enemyDensity+")="+owedEnemies+"-"+totalEnemies+"="+(owedEnemies-totalEnemies)+" enemies owed" );
+	console.logAreaBuild( "Friends: ("+totalFloor+"x"+theme.friendDensity+")="+owedFriends+"-"+totalFriends+"="+(owedFriends-totalFriends)+" friends owed" );
+	console.logAreaBuild( "Items  : ("+totalFloor+"x"+theme.itemDensity+")="+owedItems+"-"+totalItems+"="+(owedItems-totalItems)+" items owed" );
 
 	totalEnemies += populateInRooms( area.siteList, area.map, preferNone, owedEnemies-totalEnemies, safeToMake, makeMonster, isEnemyFn, site => {
 //		console.log( 'pop room consider site '+(!site?'none':site.id) );
@@ -376,9 +376,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		return !(site.isPlace && (site.place.comesWithItems || site.place.forbidTreasure));
 	});
 
-	console.log( "Enemies: ("+totalFloor+"x"+theme.enemyDensity+")="+owedEnemies+"-"+totalEnemies+"="+(owedEnemies-totalEnemies)+" enemies owed" );
-	console.log( "Friends: ("+totalFloor+"x"+theme.friendDensity+")="+owedFriends+"-"+totalFriends+"="+(owedFriends-totalFriends)+" friends owed" );
-	console.log( "Items  : ("+totalFloor+"x"+theme.itemDensity+")="+owedItems+"-"+totalItems+"="+(owedItems-totalItems)+" items owed" );
+	console.logAreaBuild( "Enemies: ("+totalFloor+"x"+theme.enemyDensity+")="+owedEnemies+"-"+totalEnemies+"="+(owedEnemies-totalEnemies)+" enemies owed" );
+	console.logAreaBuild( "Friends: ("+totalFloor+"x"+theme.friendDensity+")="+owedFriends+"-"+totalFriends+"="+(owedFriends-totalFriends)+" friends owed" );
+	console.logAreaBuild( "Items  : ("+totalFloor+"x"+theme.itemDensity+")="+owedItems+"-"+totalItems+"="+(owedItems-totalItems)+" items owed" );
 
 	populate( area.map, preferNone, Math.max(0,owedEnemies-totalEnemies), (map,x,y) => {
 		let site = area.getSiteAt(x,y);
@@ -487,7 +487,9 @@ class Area {
 		this._scene = null;
 		guiMessage( 'sceneFn', scene=>this._scene=scene );
 
-		return areaBuild(this,this.theme,tileQuota, (e) => e.team==Team.EVIL );
+		areaBuild(this,this.theme,tileQuota, (e) => e.team==Team.EVIL );
+		Profile.tell('itemTraverse');
+		return this;
 	}
 	connectsTo(areaId) {
 		let g = this.gateList.filter( g => g.toAreaId==areaId );

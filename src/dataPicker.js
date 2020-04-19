@@ -59,6 +59,8 @@ class Picker {
 	- filter should be an instance of filterStringParam() above.
 */
 	itemTraverse( itemTypeId, filter, fn ) {
+		Profile.start('itemTraverse');
+
 		let depth = this.depth;
 		let count = 0;
 		let one = { nothing: { skip:1, level: 0, rarity: 1 } };	// be sure effectChance is undefined in here!!
@@ -255,6 +257,7 @@ class Picker {
 				}
 			}
 		}
+		Profile.end('itemTraverse');
 	}
 
 	
