@@ -114,7 +114,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 					map.tileSymbolSet(x,y,t.symbol);
 					// If this tile has more than just a spec for itself, then we better
 					// make it isTileEntity so that it can be given all the other member vars.
-					if( Object.countMembers(make) > 1 ) {
+					if( Object.count(make) > 1 ) {
 						let entity = map.getTileEntity(x,y);
 						Object.assign( entity, make, { neverCleanup: true } );
 					}

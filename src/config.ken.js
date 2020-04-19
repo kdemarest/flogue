@@ -180,7 +180,7 @@ Module.add('config.ken',function(X,moduleId) {
 		light: 2,
 		experience: 1000,
 		inject: {
-			level: 20,
+			level: 1,
 			//immortal: true,
 			//invulnerable: true
 		}
@@ -192,7 +192,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 0,
+		startingDepth: 1,
 		//themeId: 'kenTinyTheme',
 		saveBattery: true,
 		playerInject: player.inject

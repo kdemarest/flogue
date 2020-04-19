@@ -165,14 +165,14 @@ Module.add('utilities',function(){
 	    array.splice(to, 0, array.splice(from, 1)[0]);
 	}
 
-	Object.isEmpty= function(obj) {
+	Object.isEmpty = function(obj) {
 		for(var key in obj) {
 			if(obj.hasOwnProperty(key))
 				return false;
 		}
 		return true;
 	}
-	Object.countMembers= function(obj) {
+	Object.count = function(obj) {
 		let count = 0;
 		for(var key in obj) {
 			if(obj.hasOwnProperty(key))

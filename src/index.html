@@ -33,7 +33,6 @@
 <script src="utilPlugin.js" charset="utf-8"></script>
 <script src="time.js" charset="utf-8"></script>
 <script src="rules.js" charset="utf-8"></script>
-<script src="dataFab.js" charset="utf-8"></script>
 <script src="types.js" charset="utf-8"></script>
 <script src="data.js" charset="utf-8"></script>
 <script src="dataEffects.js" charset="utf-8"></script>
@@ -125,7 +124,7 @@ async function main() {
 		this.commandHandler.evalCommand(this.entity,event);
 	}.bind(User);
 
-	User.startGame = function(config,onAssetsReady) {
+	User.startGame = function(config) {
 		let startingDepth  = config.startingDepth || 0;
 		let playerTypeId   = config.playerTypeId || 'player';
 		let playerMarkerId = config.playerMarkerId || 'playerStartHere';
@@ -163,14 +162,20 @@ async function main() {
 		world.userList.push(this);
 		this.world = world;
 
-		let self = this;
-		let handle = setInterval(function() {
-			if( !ImageRepo.ready ) {
-				return;
-			}
-			clearInterval(handle);
-			onAssetsReady(self);
-		}, 20);
+		// AWAIT IMAGE LOAD
+
+		guiMessage( 'create2DEngine' );
+		guiMessage( 'observer', this.entity );
+		let scene = new Scene();
+		guiMessage( 'scene', scene );
+		$('#guiLoading').hide();
+		$( window ).resize( () => { guiMessage('resize'); });
+		$('#guiMain').show();
+		tell([this.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
+		guiMessage('resize');
+		Gui.keyHandler.add( 'main', this.onEvent.bind(this) );
+		guiMessage( 'start2DEngine' );
+
 	}.bind(User);
 
 	let configId = Config.getConfigId();
@@ -191,25 +196,11 @@ async function main() {
 	Type.finalize();
 
 	window.ImageRepo =  new PixiImageRepo(PIXI.loader);
-	ImageRepo.load();
+	ImageRepo.scanTypes();
+	setInterval( () => ImageRepo.tick(), 250 );
 
 	// We should convert all this to promises.
-	User.startGame(
-		config,
-		(user) => {
-			guiMessage( 'create2DEngine' );
-			guiMessage( 'observer', user.entity );
-			let scene = new Scene();
-			guiMessage( 'scene', scene );
-			$('#guiLoading').hide();
-			$( window ).resize( () => { guiMessage('resize'); });
-			$('#guiMain').show();
-			tell([user.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
-			guiMessage('resize');
-			Gui.keyHandler.add( 'main', user.onEvent.bind(user) );
-			guiMessage( 'start2DEngine' );
-		}
-	);
+	User.startGame( config );
 }
 
 

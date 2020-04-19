@@ -10,6 +10,10 @@ Movement & Travel
 - Walk, Dash, Jump, Fly
 - Sneak
 - Death Return and Marks of Return
+Progression
+- Leveling
+- Helping dwarf cities
+- Fonts dark and light
 Attacking
 - Melee attacks
 - Quickness - Dodge vs weapon quickness
@@ -45,12 +49,26 @@ Terrain
 - Light - and see Damage Types
 - Opacity
 - Mining
-Progression
-- Leveling
-- Helping dwarf cities
-- Fonts dark and light
+
+Building your own Packages
+- Rules, Attitudes and Stickers
+- DamageTypes, immune, resist and vulnerable
+- EffectType
+  - How deeds works, and the ops
+  - effect shapes
+- TileType
+- ItemType
+  - weapon,ammo,helm,armor,cloak,bracers,gloves,boots,shield,ring,potion,gem,spell,charm,ore,plant,mushroom,stuff,part,key
+- MonsterType
+- Plan
+- Places
+- Themes and the Mason
+- Legacies
+- Jobs & Merchants
+- AnimChef
 
 
+- How to make places with gates 
 
 
 

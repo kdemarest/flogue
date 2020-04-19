@@ -215,7 +215,7 @@ class Anim {
 		console.assert( this.img );
 		while( numSprites-- ) {
 			let animSprite = new AnimSprite(this,this.makeSpriteId());
-			let pixiSprite = new PIXI.Sprite(ImageRepo.getResourceByImg(this.img).texture);
+			let pixiSprite = ImageRepo.createSprite( this.img );
 			console.watchAnim(this,'create 1',this.img,'duration',Math.fixed(this.duration,3));
 			pixiSprite.visible = false;	// Important so the sprite won't show momentarily in to left corner.
 			animSprite.init( pixiSprite, this.duration );

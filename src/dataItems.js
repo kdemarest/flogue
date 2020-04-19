@@ -1704,7 +1704,7 @@ ItemTypeList.vein.onBump = function(entity,self) {
 	});
 	new Anim({
 		at: 		self,
-		img: 		self.imgChooseFn(self),
+		img: 		ImageRepo.getImg(self),
 		duration: 	chunkAnim,
 		onSpriteMake: 	s => { },
 		onSpriteTick: 	s => { s.sQuiver(0.1,0.1); }

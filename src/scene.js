@@ -168,6 +168,14 @@ class Scene extends ViewObserver {
 		if( msg == 'dirty' ) {
 			debugger;	// The payload is an entity whose sprite we want to poke.
 		}
+		if( msg == 'imgLoaded' ) {
+			let img = payload;
+			this.traverse( sprite => {
+				if( sprite.pixiSprite.awaitingImg === img ) {
+					sprite.pixiSprite.texture = ImageRepo.getResourceByImg( img ).texture;
+				}
+			});
+		}
 		if( msg == 'sceneEntityNotice' ) {
 			if( this.observer ) {
 				this.sceneEntityNotice(payload);

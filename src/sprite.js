@@ -57,7 +57,7 @@ class Sprite {
 	}
 
 	initSpriteByImg(img) {
-		this.pixiSprite  = new PIXI.Sprite( ImageRepo.getResourceByImg(img).texture );
+		this.pixiSprite  = ImageRepo.createSprite(img);
 	}
 
 	updatePixiSprite(pane) {

@@ -1,35 +1,40 @@
 Module.add('imageRepo',function() {
 
+let HourglassURI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAM0lEQVQ4T2NkoBAwUqifYdQABhqHQVHGz/+gWOqbwY4zsPHGAsUGEJNGRtMBrdMBMbEAAGSoCBGxzugoAAAAAElFTkSuQmCC";
+
+let imgSTANDBY		= 1;
+let imgREQUESTED	= 2;
+let imgPENDING		= 3;
+let imgLOADED		= 4;
+let imgSPREAD		= 5;
+
 function DefaultImgChooseFn(self) {
 	return self.img;
 }
 
 class PixiImageRepo {
 	constructor(loader) {
-		this.imgChooseFnList = [];
-		this.ready = false;
-		this.loader = loader;
+		this.imgPathList		= {};
+		this.imgChooseFnList	= {};
+		this.loader  			= loader;
+		this.loading 			= false;
+		this.placeholderResource = {
+			isPlaceholder: true,
+			texture: PIXI.Texture.fromImage(HourglassURI)
+		};
 	}
-	load() {
-		if( this.ready ) {
-			return true;
-		}
-		let imageList = [];
-		let exists = {};
+	scanTypes() {
 
-		function add(imgPath) {
-			if( imgPath === undefined ) {
+		let addImg = (img) => {
+			if( img === undefined ) {
 				debugger;
 			}
-			if( !imgPath ) {
+			if( !img ) {
 				return;
 			}
 			//console.log(imgPath);
-			imgPath = IMG_BASE+imgPath;
-			if( !exists[imgPath] ) {
-				imageList.push(imgPath);
-				exists[imgPath] = true;
-			}
+			let imgPath = IMG_BASE+img;
+			this.imgPathList[imgPath] = this.imgPathList[imgPath] || imgSTANDBY;
 		}
 
 		function scan(typeId,type,member) {
@@ -37,7 +42,7 @@ class PixiImageRepo {
 				if( typeId ) {
 					self.imgChooseFnList[typeId] = type.imgChooseFn || DefaultImgChooseFn;
 				}
-				add(type[member]);
+				addImg(type[member]);
 			}
 		}
 
@@ -72,14 +77,14 @@ class PixiImageRepo {
 			}
 			if( type.imgChoices ) {
 				for( let key in type.imgChoices ) {
-					add( type.imgChoices[key].img || type.imgDefault );
+					addImg( type.imgChoices[key].img || type.imgDefault );
 				}
 			}
 			else {
-				add(type.img);
+				addImg(type.img);
 			}
 			if( type.icon ) {
-				add( type.icon );
+				addImg( type.icon );
 			}
 		}
 
@@ -95,14 +100,43 @@ class PixiImageRepo {
 		});
 		scanIcon(EffectTypeList,'icon');
 
-		function setup() {
-			self.ready = true;
+		console.log('Found',Object.count(this.imgPathList));
+	}
+
+	request(imgPath) {
+		console.assert( this.imgPathList[imgPath] === imgSTANDBY );
+		this.imgPathList[imgPath] = imgREQUESTED;
+	}
+
+	tick() {
+		if( this.loading ) {
+			return;
 		}
 
-		this.loader
-			.add(imageList)
-			.load(setup);
+		let addList = [];
+		Object.each( this.imgPathList, (state,imgPath) => {
+			if( state == imgREQUESTED ) {
+				addList.push(imgPath);
+				this.imgPathList[imgPath] = imgPENDING;
+			}
+		});
 
+		if( addList.length ) {
+			this.loading = true;
+			this.loader.add(addList).load( ()=>this.onLoadComplete() );
+		}
+	}
+
+	onLoadComplete() {
+		Object.each( this.imgPathList, (state,imgPath) => {
+			if( state == imgPENDING ) {
+				this.imgPathList[imgPath] = imgLOADED;
+				let img = imgPath.substring( IMG_BASE.length )
+				guiMessage( 'imgLoaded', img );
+				this.imgPathList[imgPath] = imgSPREAD;
+			}
+		});
+		this.loading = false;
 	}
 
 	getImg(entity) {
@@ -112,9 +146,19 @@ class PixiImageRepo {
 	}
 
 	getResourceByImg(imgWithoutBase) {
-		let resource = this.loader.resources[IMG_BASE+imgWithoutBase];
-		if( !resource ) debugger;
-		return resource;
+		let imgPath = IMG_BASE+imgWithoutBase;
+		let state = this.imgPathList[imgPath];
+		if( state === undefined ) {
+			// Not a detected img!
+			debugger;
+		}
+		if( state == imgLOADED || state == imgSPREAD ) {
+			return this.loader.resources[imgPath];
+		}
+		if( state == imgSTANDBY ) {
+			this.request(imgPath);
+		}
+		return this.placeholderResource;
 	}
 
 	getResource(entity) {
@@ -123,6 +167,15 @@ class PixiImageRepo {
 
 	getImgFullPath(entity) {
 		return IMG_BASE+this.getImg(entity);
+	}
+
+	createSprite(img) {
+		let resource = this.getResourceByImg(img);
+		let pixiSprite = new PIXI.Sprite(resource.texture);
+		if( resource.isPlaceholder ) {
+			pixiSprite.awaitingImg = img;
+		}
+		return pixiSprite;
 	}
 }
 
