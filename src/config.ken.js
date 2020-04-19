@@ -130,7 +130,7 @@ Module.add('config.ken',function(X,moduleId) {
 		monsters: 		['isDog','isEarthChild'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
 		itemDensity:    0.00001,
-		enemyDensity:  	0.00002,
+		enemyDensity:  	0.02,
 		friendDensity: 	0.000005,
 	}
 
@@ -161,7 +161,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	// This is not a normal plugin action. Only for config.
 	//PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'portal', toThemeId: 'coreCavernRooms' }; //'daikay'; //'weapon.hammer';
-	//PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'redOoze' }; //'daikay'; //'weapon.hammer';
+	PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'gem' }; //'daikay'; //'weapon.hammer';
 
 	//'100x potion, 100x helm, 100x armor, 100x spell, 100x gem, 100x weapon, 100x cloak, 100x gloves, 100x ammo, 100x shield, 100x ring';
 	//'4x potion.eHealing, 4x potion.eSenseXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing';
@@ -192,8 +192,8 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 1,
-		themeId: 'kenTinyTheme',
+		startingDepth: 0,
+		//themeId: 'kenTinyTheme',
 		saveBattery: true,
 		playerInject: player.inject
 	}

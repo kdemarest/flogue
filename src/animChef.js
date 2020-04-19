@@ -4,14 +4,12 @@ Anim.Duration = {
 	untilAllDead: a => a.spritesMade && a.spritesAlive==0,
 };
 
-Anim.wCount = 0;
 Anim.FloatUp = function(delayId,follow,icon,duration=0.4) {
 	++Anim.wCount;
 	if( icon !== false ) {
 		return new Anim({
 			name:		'floatUp',
 			follow: 	follow,
-			watch:		Anim.wCount==21,
 			img: 		icon || StickerList.bloodBlue.img,
 			duration: 	duration,
 			delayId: 	delayId,
@@ -19,7 +17,6 @@ Anim.FloatUp = function(delayId,follow,icon,duration=0.4) {
 			onSpriteMake: 	s => { s.sVelTo(0,-1,s.duration).sScale(0.75); },
 			onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sAlpha(s.sOverTime(1.0,0.0)); }
 		});
-		Anim.myWatch = false;
 	}
 }
 

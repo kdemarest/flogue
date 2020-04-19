@@ -34,12 +34,12 @@ Plants
 - seeds, growth, harvesting & risks
 - Plants vs Mushrooms
 Perception
-- Vision - normal, dark; terrain opacity
+- Vision - normal, darkVision, xRay vision, map memory (items & tiles, not monsters); terrain opacity
 - vision distance and sneaking, blindness, dark vision
 - Hearing & Silence
 - alert distance
 - Smell & Scent Hunters
-- xray, treasure
+- treasure and life sensing
 Terrain
 - Water - jumping, wading, collecting, watering plants, and see Damage Types
 - Light - and see Damage Types

@@ -113,12 +113,14 @@ class AnimSprite extends Sprite {
 	sOverTime(atZero,atOne) {
 		return atZero + this.sPctDone*(atOne-atZero);
 	}
-	sRot(deg) {
-		this.rotation += (deg/360*2*Math.PI)*this.dt;
+	sRotate(deg) {
+		this.rotation += (deg/360*2*Math.PI);
+		console.assert( !isNaN(this.rotation) );
 		return this;
 	}
-	sRotSet(deg) {
+	sRotation(deg) {
 		this.rotation = (deg/360*2*Math.PI);
+		console.assert( !isNaN(this.rotation) );
 		return this;
 	}
 	// Starts at zero, then goes down, and then back up again.

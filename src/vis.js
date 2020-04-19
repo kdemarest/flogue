@@ -85,14 +85,11 @@ class Vis {
 			visGrid[y][x] = false;
 		});
 
-//		map.traverseNear( x, y, senseSight, (x,y) => {
-//			let visible = !blind && Distance.isNear(x-px,y-py,xrayDist);
-//			visGrid[y][x] = visible;
-//			// With xRay vision I get to remember everything I can see through walls.
-//			if( visible && mapMemory && canSee(x,y) && x>=px-senseSight && y>=py-senseSight && x<=px+senseSight && y<=py+senseSight ) {
-//				remember(x,y);
-//			}
-//		});
+		if( xrayDist ) {
+			map.traverseNear( px, py, xrayDist, (x,y) => {
+				visGrid[y][x] = true;
+			});
+		}
 
 		visGrid[py][px] = true;
 		if( mapMemory ) { remember(px,py); }
@@ -104,11 +101,7 @@ class Vis {
 		let numVisible = 0;
 		let onVisit = (arc,x,y) => {
 			let isVisible = atCenter || rayCircle.arcTest( arc.left, arc.right, arc.nearDist, arc.span*0.05 );
-			let isXray    = false;
-			if( !isVisible && xrayDist ) {
-				isXray = Distance.isNear(x-px,y-py,xrayDist);
-			}
-			if( !isVisible && !isXray ) return;
+			if( !isVisible ) return;
 
 			if( mapMemory && canSee(x,y) ) {
 				remember(x,y);

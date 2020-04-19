@@ -618,7 +618,6 @@ class Item {
 			let flightDistance;
 			guiMessage( 'sceneFn', scene => flightDistance = scene.mapViewWidthInTiles/2.0);
 			new Anim({
-				watch: 1,
 				at: 		entity,
 				img: 		this.img || ImageRepo.getImg(this),
 				delayId: 	entity.id,
@@ -647,7 +646,7 @@ class Item {
 					delayId: 	this.id,
 					duration: 	rangeDuration,
 					onInit: 		a => { a.create(1); },
-					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sRotSet(deg).sScale(this.flyingScale||1); },
+					onSpriteMake: 	s => { s.sVelTo(dx,dy,rangeDuration).sRotation(deg).sScale(this.flyingScale||1); },
 					onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); },
 				});
 			}
@@ -656,7 +655,6 @@ class Item {
 				// Fly just my plain old image to the target
 				//
 				new Anim({
-					watch: 1,
 					at: 		this.owner,
 					delayId: 	this.id,
 					img:		this.img || ImageRepo.getImg(this),

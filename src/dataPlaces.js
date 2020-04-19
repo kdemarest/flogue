@@ -482,7 +482,7 @@ PlaceTypeList.goblinGathering = {
 		darkPower: { img: "effect/bolt08.png", scale: 0.6, xAnchor: 0.5, yAnchor: 0.5 }
 	},
 	ItemTypeList: {
-		goblinAltar: { watch:1, mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png", neverPick: true }
+		goblinAltar: { mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png", neverPick: true }
 	},
 	MonsterTypeList: {
 		goblinPriest: {
@@ -580,7 +580,7 @@ PlaceTypeList.surfaceSunTemple = {
  ##....................##
  #........12345.........#
  #....b........67890AB.b########
-##.......Z..............#..d..##
+##......YZ..............#..d..##
 #f...b....X.a...........o...l.S#
 ##......................#.....##
  #....b........HIJKLMN.b########
@@ -782,7 +782,8 @@ PlaceTypeList.surfaceSunTemple = {
 				'2x potion.eHealing',
 			]
 		}),
-		Z: 'brazier',
+		Y: 'gem',
+		Z: 'gem',
 		l: 'stuff.candleLamp',
 		X: { typeFilter: 'marker', markerId: 'playerStartHere' },
 		o: { typeFilter: 'door', state: 'locked', keyId: 'Solar Temple door' },

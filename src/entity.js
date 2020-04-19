@@ -402,7 +402,6 @@ class Entity {
 
 		// happiness flies away from the attacker
 		let piecesAnim = new Anim({
-watch: 1,
 			name:			'levelFountain',
 			follow: 		this,
 			img: 			StickerList.bloodYellow.img,

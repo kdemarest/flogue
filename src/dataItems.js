@@ -1700,7 +1700,7 @@ ItemTypeList.vein.onBump = function(entity,self) {
 		duration: 	0.2,
 		onInit: 		a => { a.create(6); },
 		onSpriteMake: 	s => { s.sScale(0.3).sVel(Math.rand(-90,90),Math.rand(2,5)); s.zOrder=100; },
-		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(40).sRot(360); }
+		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(40).sRotate(360*s.dt); }
 	});
 	new Anim({
 		at: 		self,
@@ -1928,27 +1928,17 @@ ItemTypeList.barrel.onBump = function(toucher,self) {
 			let allow = self.onLoot(self,toucher);
 			if( allow === false ) return;
 		}
-//		let delay = 0;
-		Inventory.giveTo( toucher, self.inventory, self, false ); //, item => {
-//			new Anim({
-//				at: 		self,
-//				img: 		item.imgChooseFn ? item.imgChooseFn(item) : item.img,
-//				delay: 		delay,
-//				duration: 	0.6,
-//				onSpriteMake: 	s => { s.sVelTo(MaxVis,0,0.6); },
-//				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sScale(1+(s.elapsed/s.duration)); }
-//			});
-//			delay += 0.3;
-//		});
+		Inventory.giveTo( toucher, self.inventory, self, false );
 	}
 
 	new Anim({
-		follow: 	self,
+		watch: true,
+		at:			self,
 		img: 		self.img,
 		duration: 	0.6,
 		onInit: 		a => { a.create(5); },
-		onSpriteMake: 	s => { let deg=Math.rand(0-60,0+60); s.sScale(0.7).sVel(deg,Math.rand(5,7)); s.rot = deg/60*Math.PI; },
-		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(20); s.rotation += s.rot*s.delta; }
+		onSpriteMake: 	s => { let deg=Math.rand(0-40,0+40); s.sScale(0.8).sVel(deg,Math.rand(5,7)); s.rot = deg/60*Math.PI; },
+		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(20).sScale(s.sOverTime(0.8,0.5)); s.rotation += s.rot*s.dt; }
 	});
 
 	self.destroy();
@@ -2000,7 +1990,6 @@ ItemTypeList.fontSolar.onTickRound = function() {
 			//Anim.Homing(self.id,self,entity,StickerList.glowGold.img,45,6,0.5,5);
 			let divergeSign = 1;
 			return new Anim({
-				watch: true,
 				origin:		self,
 				follow: 	entity,
 				img: 		StickerList.glowGold.img,

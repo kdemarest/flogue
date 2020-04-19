@@ -36,11 +36,8 @@ class EntitySprite extends Sprite {
 	}
 
 	die(note) {
-		console.assert( !this.testMemory() );
+		//console.assert( !this.testMemory() );
 		super.die(note);
-		if( this.entity.isTileType ) {
-			console.log('Tile die: '+String.coords(this.entity.x,this.entity.y)+this.entity.typeId+' '+note);
-		}
 	}
 
 	testLight() {
@@ -68,6 +65,10 @@ class EntitySprite extends Sprite {
 		console.assert(this.entity.area.id==this.observer.area.id);
 		let mPos = this.observer.map.lPos(this.xWorld,this.yWorld);
 		return this.observer.mapMemory && this.observer.mapMemory[mPos];
+	}
+
+	withinXray() {
+		return this.observer.senseXray && Distance.isNear(this.observer.x-this.entity.x,this.observer.y-this.entity.y,this.observer.senseXray);
 	}
 
 	testSensed() {
@@ -136,6 +137,9 @@ class EntitySprite extends Sprite {
 			this.pixiSprite.filters = ViewMap.saveBattery ? null : this.isDarkVision ? this.desaturateFilterArray : this.resetFilterArray;
 			this.pixiSprite.tint = 0xFFFFFF;
 		}
+		else if( this.xray ) {
+			this.pixiSprite.tint = 0xFF7777;
+		}
 		else if( this.memoried ) {
 			this.pixiSprite.filters = ViewMap.saveBattery ? null : this.desaturateFilterArray;
 			this.pixiSprite.tint = 0x4444FF;
@@ -190,7 +194,8 @@ class EntitySprite extends Sprite {
 		this.updateMovement(dt);
 
 		if( this.inPane ) {
-			let memoryLight = 8; //2;
+			let memoryLight = 3;
+			let xrayLight = 3;
 
 			this.age = 0;
 
@@ -202,8 +207,13 @@ class EntitySprite extends Sprite {
 				 	this.sensed = false;
 				 }
 			}
+
+			this.xray = this.withinXray();
+			if( this.xray ) {
+				light = Math.max(light,xrayLight);
+			}
 			this.memoried = this.sensed ? false : this.testMemory();
-			this.visible  = this.sensed || this.memoried;
+			this.visible  = this.sensed || this.xray || this.memoried;
 
 			if( this.memoried ) {
 				light = memoryLight;
@@ -211,10 +221,6 @@ class EntitySprite extends Sprite {
 			console.assert(Light.Alpha[light]!==undefined);
 			this.alpha = Light.Alpha[Math.floor(light)];
 
-if( Tile.revealAll ) {
-	this.alpha = 1;
-	this.visible = 1;
-}
 			console.watchSprite( this, 'in Pane. visible='+this.visible );
 		}
 		else {
@@ -223,7 +229,7 @@ if( Tile.revealAll ) {
 			this.age += dt;
 			let ageOfDeath = 5;
 			if( this.age > ageOfDeath ) {
-				//return this.die('old age');
+				return this.die('old age');
 			}
 		}
 
