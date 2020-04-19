@@ -121,19 +121,44 @@ Anim.Homing = function(delayId,entity,target,img,offAngle=45,num=40,duration=2,v
 	});
 }
 */
-Anim.Missile = function(delayId,source,follow,img,numPerSec=10,fireDuration=2,flightDuration=2) {
-	let divergeSign = 1;
-	return new Anim({
-		origin:		source,
-		follow: 	follow,
-		img: 		img,
-		delayId: 	delayId,
+Anim.REQUIRED = NaN;
+
+Anim.Run = (params) => {
+	console.assert( params.style );
+	let target = {};
+	let proto  = Anim[params.style](target);
+	Object.assign( target, proto, params );
+	for( key in target ) {
+		console.assert( target[key] !== Anim.REQUIRED );
+	}
+	return new Anim( target );
+}
+
+Anim.Missile = function(p) {
+	return {
+		origin:		Anim.REQUIRED,
+		follow: 	Anim.REQUIRED,
+		img: 		Anim.REQUIRED,
+		delayId: 	null,
 		duration: 		Anim.Duration.untilAllDead,
+		numPerSec:		3,
+		fireDuration:	1,
+		flightDuration:	1.5,
+		scale:			0.3,
+		divergeMin:		1,
+		divergeMax:		3,
+		divergeSign:	1,
+		divergeSwap:	-1,
+		flightWay:		'tCubed',
+		divergeWay:		'tSquared',
 		onInit: 		a => { },
-		onTick: 		a => a.createPerSec(numPerSec,fireDuration),
-		onSpriteMake: 	s => { s.sScale(0.30).sDuration(flightDuration).divergence=Math.rand(1,3)*divergeSign; divergeSign = -divergeSign; },
-		onSpriteTick: 	s => !s.sMissile( s.tCubed ).sDiverge( s.tSquared ).sArrived(0.001),
-	});
+		onTick: 		a => a.createPerSec(p.numPerSec,p.fireDuration),
+		onSpriteMake: 	s => {
+			s.sDuration(p.flightDuration).divergence=Math.rand(p.divergeMin,p.divergeMax)*p.divergeSign;
+			p.divergeSign = p.divergeSign*p.divergeSwap;
+		},
+		onSpriteTick: 	s => !s.sMissile( s[p.flightWay] ).sDiverge( s[p.divergeWay] ).sArrived(0.001),
+	};
 }
 
 Anim.Blam = function(delayId, target, scale=0.20, num=10, duration=0.2, fromDeg=0, arc=45, mag0=4, mag1=10, grav=10, rot=0, img ) {

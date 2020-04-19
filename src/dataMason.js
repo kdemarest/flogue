@@ -1703,13 +1703,17 @@ Module.add('dataMason',function() {
 			}
 		});
 
-		while( seedToMake>0 ) {
+		let failReps = 100+seedToMake;
+		while( seedToMake>0 && failReps>0) {
 			let x,y;
 			[x,y] = map.randPos(-3);
 			if( isUnknown(map.getTile(x,y)) ) {
 				map.setTile(x,y,T.FillFloor);
 				--seedToMake;
 				++floorMade;
+			}
+			else {
+				--failReps;
 			}
 		}
 

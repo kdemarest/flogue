@@ -420,7 +420,6 @@ watch: 1,
 			onInit: 		a => { a.takePuppet(this); },
 			onSpriteMake: 	s => { },
 			onSpriteTick: 	s => { s.sQuiver(0.05,0.10); },
-			onSpriteDone: 	s => { s.sReset(); }
 		});
 		return true;
 	}
@@ -1840,6 +1839,7 @@ watch: 1,
 			amount = Math.max(0,Math.min( amount, this.healthMax-this.health ));
 		}
 		this.health += amount;
+		Gui.dirty('status');
 		if( this.onHeal ) {
 			quiet = this.onHeal(healer,this,amount,healingType);
 		}
@@ -3590,13 +3590,7 @@ watch: 1,
 				}
 			}
 			case Command.DEBUGTEST: {
-				let anim = new Anim({
-					follow: 	this,
-					img: 		this.img,
-					duration: 	0.5,
-					onInit: 		a => { a.takePuppet(this); },
-					onSpriteTick: 	s => { s.sScale( s.sSine(this.scale, this.scale*0.4, 2*(1-s.sPctDone) ) ); }
-				});
+				Tile.revealAll = !Tile.revealAll;
 
 				break;
 			}

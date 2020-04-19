@@ -62,7 +62,10 @@ class Vis {
 			}
 			console.assert(x==Math.floor(x));
 			let pos = Math.floor(y)*xLen+Math.floor(x);
-			mapMemory[pos] = item ? item : tile;
+			if( !mapMemory[pos] ) {
+				console.logVis( 'vis += '+String.coords(x,y)+'  observer='+String.coords(px,py), item || tile );
+			}
+			mapMemory[pos] = item || tile;
 		}
 
 		px = Math.toTile(px);

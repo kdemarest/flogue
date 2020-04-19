@@ -243,7 +243,7 @@ let DeedManager = (new class {
 		this.handler = {};
 		this.deedList = [];
 		this.statsThatCauseImageChanges = { sneak:1 };
-		this.statsThatCauseMapRenders = { senseBlind:1, senseLiving:1, senseInvisible: 1, sensePerception:1, senseAlert:1, senseDarkVision:1, senseXray:1, senseSmell:1 }
+		this.statsThatCauseMapRenders = { light: 1, senseBlind:1, senseLiving:1, senseInvisible: 1, sensePerception:1, senseAlert:1, senseDarkVision:1, senseXray:1, senseSmell:1 }
 	}
 	add(effect) {
 		let result = {};
@@ -296,6 +296,7 @@ let DeedManager = (new class {
 		}
 		if( target.userControllingMe && stat in this.statsThatCauseMapRenders && oldValue !== target[stat] ) {
 			Gui.dirty('map');
+			target.area.lightDirty = true;
 		}
 		deedTell(target,stat,oldValue,target[stat]);
 	}
@@ -739,7 +740,6 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 					duration: 	0.15,
 					onInit: 		a => { a.takePuppet(target); },
 					onSpriteMake: 	s => { s.sPosRelDeg(deg,0.3); },
-					onSpriteDone: 	s => { s.sReset(); }
 				});
 			}
 			return makeResult('dodged',false);

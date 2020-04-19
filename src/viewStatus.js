@@ -22,6 +22,10 @@ class ViewStatus extends ViewObserver {
 		}
 	}
 
+	tick(dt) {
+		this.dirty = true;
+	}
+
 	render() {
 
 

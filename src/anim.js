@@ -61,17 +61,44 @@ _test( deltaToDeg(0,1), 180 );
 
 	duration	- how long to last. Can be a number, a function that returns "die", or and object that can set self.dead=true
 
+	xAnchor
+	yAnchor
 	scale		- directly changes the sprite's scale
 	alpha		- directly changes the sprite's alpha
 	rotation	- directly changes the sprite's rotation
+	zOrder		- how this sorts relative to other sprites
+
+	onInit(a)		- use this to create(1) a sprite, or take a puppet
+	onTick(a)		- will be called for every dt
+	onSpriteMake(s)	- initialize your sprite(s) here
+	onSpriteTick(s)	- update your animSprite's variables and behaviors here
+	
 
 */
 class Anim {
-	constructor(data0, data1) {
-		Object.assign(this, { isAnim: 1, puppet: null }, data0, data1 );
+	constructor(...args) {
+		this.id				= null;
+		this.isAnimation	= true;
+		this.dt				= 0;
+		this.createAccumulator = 0;
+		this.elapsed		= 0;
+		this.puppet			= null;
+		this.spriteCache	= [];
+		this._dead			= false;
+
+		// Validate 
+		let temp = Object.assign( {}, ...args );
+		for( let key in temp ) {
+			// You may not over-write certain values that we expect to control. Everything else is fair game.
+			console.assert( !this[key] );
+		}
+
+		// Merge into me
+		Object.assign(this, temp );
 
 		console.assert( this.at || this.follow );
-		
+
+		// Create a getter called 'follow' that always returns either the object called follow, or calls the passed-in function called follow.
 		if( this.follow ) {
 			let follow = this.follow;
 			Object.defineProperty( this, 'follow', {
@@ -79,15 +106,10 @@ class Anim {
 			});
 		}
 
+		// Must be unique so that the scene.spriteList can manage it.
 		this.id =  (this.name||'anim')+'.'+((this.follow ? this.follow.id : '') || (this.at ? this.at.id : ''))+Date.makeUid();
 
-		this.isAnimation	= true;
-		this.dt				= 0;
-		this.createAccumulator = 0;
-		this.elapsed		= 0;
-
 		console.assert( this.x === undefined && this.y === undefined );
-		console.assert( !this.puppet );	// you aren't allowed to specify your puppet directly. Use takePuppet in onInit
 
 		// In Void? Don't try to Animate on this thing. Some aspect of it is in the void.
 		if( (this.at && this.at.inVoid) || (this.follow && this.follow.inVoid) || (this.target && this.target.inVoid) ) {
@@ -122,9 +144,6 @@ class Anim {
 		if( this.delay === undefined ) {
 			this.delay = 0;
 		}
-
-		// My Sprites!
-		this.spriteCache = [];
 
 		// OnInit - if you want any sprites made, do it yourself!
 		this.onInit(this);

@@ -1693,7 +1693,6 @@ ItemTypeList.vein.onBump = function(entity,self) {
 		duration: 	0.1,
 		onInit: 		a => { a.takePuppet(entity); },
 		onSpriteMake: 	s => { s.sPosRelDeg(deg,0.2); },
-		onSpriteDone: 	s => { s.sReset(); }
 	});
 	let chunkAnim = new Anim({
 		at: 		self,

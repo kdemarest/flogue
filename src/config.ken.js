@@ -27,9 +27,16 @@ Module.add('config.ken',function(X,moduleId) {
 	});
 
 	plugin.ScapeList.kenTinyOpenCave = theme => ({
-		dim: 				20,
+		dim: 				14,
 		architecture: 		"cave",
 		floorDensity: 		0.88, //0.45,
+		passageWander: 		0,
+	});
+
+	plugin.ScapeList.kenTinyComplexCave = theme => ({
+		dim: 				30,
+		architecture: 		"cave",
+		floorDensity: 		0.22, //0.45,
 		passageWander: 		0,
 	});
 
@@ -117,13 +124,13 @@ Module.add('config.ken',function(X,moduleId) {
 	}
 
 	plugin.ThemeList.kenTinyTheme = {
-		scapeId: 		'kenTinyOpenCave',
+		scapeId: 		'kenTinyComplexCave',
 		palette: 		{ basis: 'moon' },
 		placeDensity: 	0.00001,
 		monsters: 		['isDog','isEarthChild'], //,'isOoze','isSnail'], //,'isOgre','isKobold','isTroll','isOoze','isDog'],
 		prefer: 		null,
 		itemDensity:    0.00001,
-		enemyDensity:  	0.02,
+		enemyDensity:  	0.00002,
 		friendDensity: 	0.000005,
 	}
 
@@ -170,7 +177,7 @@ Module.add('config.ken',function(X,moduleId) {
 		//senseAlert: true,
 		//senseSmell: 200,
 		//senseDarkVision: 8,
-		light: 7,
+		light: 2,
 		experience: 1000,
 		inject: {
 			level: 20,
@@ -185,8 +192,8 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 0,
-		//themeId: 'kenTinyTheme',
+		startingDepth: 1,
+		themeId: 'kenTinyTheme',
 		saveBattery: true,
 		playerInject: player.inject
 	}

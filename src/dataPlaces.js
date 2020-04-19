@@ -482,7 +482,7 @@ PlaceTypeList.goblinGathering = {
 		darkPower: { img: "effect/bolt08.png", scale: 0.6, xAnchor: 0.5, yAnchor: 0.5 }
 	},
 	ItemTypeList: {
-		goblinAltar: { mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png", neverPick: true }
+		goblinAltar: { watch:1, mayWalk: false, mayFly: false, name: "goblin altar", rechargeTime: 4, img: "dc-dngn/altars/dngn_altar_jiyva01.png", neverPick: true }
 	},
 	MonsterTypeList: {
 		goblinPriest: {
@@ -505,15 +505,25 @@ PlaceTypeList.goblinGathering = {
 	}
 };
 
-PlaceTypeList.goblinGathering.ItemTypeList.goblinAltar.onTick = function(dt) {
+PlaceTypeList.goblinGathering.ItemTypeList.goblinAltar.onTickRound = function() {
 	if( !this.rechargeLeft ) {
-		let f = new Finder(this.area.entityList,this).filter(e=>e.isGoblin && e.health<e.healthMax/2).shotClear().near(this.x,this.y,6);
+		let healAtHealthLevel = 0.70;
+		let f = new Finder(this.area.entityList,this).filter(e=>e.isGoblin && e.health<e.healthMax*healAtHealthLevel).shotClear().near(this.x,this.y,6);
 		if( f.count ) {
 			let entity = pick(f.all);
-			let amount = Math.floor(entity.healthMax/2 - entity.health);
+			let amount = Math.floor(entity.healthMax*healAtHealthLevel - entity.health);
 			entity.takeHealing(this,amount,DamageType.ROT,true);
-			tell( mSubject,this,' ',mVerb,'imbue',' ',mObject,entity,' with dark power.');
-			Anim.Homing(this.id,this,entity,StickerList.bloodGreen.img,45,6,0.5,5);
+			tell( mSubject,this,' ',mVerb,'imbue',' ',mObject,entity,' with '+amount+'dark power.');
+			Anim.Run({
+				style:		'Missile',
+				delayId:	this.id,
+				origin:		this,
+				follow:		entity,
+				img:		StickerList.bloodGreen.img,
+				numPerSec:		10,
+				fireDuration:	0.3,
+				flightDuration: 0.8
+			});
 			this.rechargeLeft = this.rechargeTime;
 		}
 	}
@@ -573,7 +583,7 @@ PlaceTypeList.surfaceSunTemple = {
 ##.......Z..............#..d..##
 #f...b....X.a...........o...l.S#
 ##......................#.....##
- #....b........HIHKLMN.b########
+ #....b........HIJKLMN.b########
  #........CDEFG.........#
  ##....................##
   #....................#
@@ -604,26 +614,14 @@ PlaceTypeList.surfaceSunTemple = {
 			legacyId: 'airMage',
 			properName: 'Aeronia',
 			title: 'the typhoon',
-			carrying: ['weapon.dagger, 10x weapon.dart, cloak.eRechargeFast',
+			carrying: ['weapon.dagger, 10x ammo.dart, cloak.eRechargeFast',
 			]
 		}),
-		'1': starterChest({
-			legacyId: 'airMage',
-			properName: 'Aeronia',
-			title: 'the typhoon',
-			carrying: ['',
-			],
+		'2': starterChest({
 			legacyId: 'soldier',
 			properName: 'Hathgar',
 			title: 'the mighty',
 			carrying: ['weapon.sword.eSmite, armor.eInert, 2x potion.eHealing',
-			],
-		}),
-		'2': starterChest({
-			properName: 'Ozymandius',
-			title: 'the destroyer',
-			carrying: [
-				'spell.eBurn, spell.eFreeze, cloak.eRechargeFast, 2x potion.eHealing',
 			],
 		}),
 		'3': starterChest({
@@ -680,11 +678,11 @@ PlaceTypeList.surfaceSunTemple = {
 			],
 		}),
 		'0': starterChest({
-			properName: 'Nobody',
-			title: 'the nothing',
+			properName: 'Ozymandius',
+			title: 'the destroyer',
 			carrying: [
-				'2x potion.eHealing',
-			]
+				'spell.eBurn, spell.eFreeze, cloak.eRechargeFast, 2x potion.eHealing',
+			],
 		}),
 		'A': starterChest({
 			properName: 'Nobody',
@@ -777,7 +775,7 @@ PlaceTypeList.surfaceSunTemple = {
 				'2x potion.eHealing',
 			]
 		}),
-		'M': starterChest({
+		'N': starterChest({
 			properName: 'Nobody',
 			title: 'the nothing',
 			carrying: [

@@ -766,6 +766,7 @@ class Item {
 		let list = this.owner.itemList || this.owner.inventory;
 		// WARNING! This assert is useful for making sure of inventory integrity, but VERY slow.
 		//console.assert( list.find( i => i.id == this.id ) );
+		console.watchItem( this, 'tickRound' );
 		this.recharge(rechargeRate);
 		if( this.onTickRound ) {
 			this.onTickRound.call(this);

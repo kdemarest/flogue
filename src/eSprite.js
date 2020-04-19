@@ -35,10 +35,17 @@ class EntitySprite extends Sprite {
 		return this.observer.senseDarkVision && !this.isMemory;
 	}
 
+	die(note) {
+		console.assert( !this.testMemory() );
+		super.die(note);
+		if( this.entity.isTileType ) {
+			console.log('Tile die: '+String.coords(this.entity.x,this.entity.y)+this.entity.typeId+' '+note);
+		}
+	}
+
 	testLight() {
 		let revealLight = 7;		// Assumes max light is about 10.
 		let glowLight   = MaxVis;
-		let memoryLight = 1;
 
 		if( this.entity.isTreasure && this.observer.senseTreasure ) {
 			return revealLight;
@@ -55,8 +62,11 @@ class EntitySprite extends Sprite {
 	}
 
 	testMemory() {
+		if( this.entity.isMonsterType ) {
+			return false;
+		}
 		console.assert(this.entity.area.id==this.observer.area.id);
-		let mPos = this.entity.map.lPos(this.xWorld,this.yWorld);
+		let mPos = this.observer.map.lPos(this.xWorld,this.yWorld);
 		return this.observer.mapMemory && this.observer.mapMemory[mPos];
 	}
 
@@ -128,7 +138,7 @@ class EntitySprite extends Sprite {
 		}
 		else if( this.memoried ) {
 			this.pixiSprite.filters = ViewMap.saveBattery ? null : this.desaturateFilterArray;
-			this.pixiSprite.tint = 0x8888FF;
+			this.pixiSprite.tint = 0x4444FF;
 		}
 
 	}
@@ -180,15 +190,31 @@ class EntitySprite extends Sprite {
 		this.updateMovement(dt);
 
 		if( this.inPane ) {
+			let memoryLight = 8; //2;
+
 			this.age = 0;
 
-			let light = Math.floor(this.testLight());
+			let light = 0;
+			this.sensed   = this.testSensed();
+			if( this.sensed ) {
+				 light = Math.floor(this.testLight());
+				 if( light < 1 ) {
+				 	this.sensed = false;
+				 }
+			}
+			this.memoried = this.sensed ? false : this.testMemory();
+			this.visible  = this.sensed || this.memoried;
+
+			if( this.memoried ) {
+				light = memoryLight;
+			}
 			console.assert(Light.Alpha[light]!==undefined);
 			this.alpha = Light.Alpha[Math.floor(light)];
 
-			this.sensed   = this.testSensed();
-			this.memoried = this.sensed ? false : this.testMemory();
-			this.visible  = this.sensed || this.memoried;
+if( Tile.revealAll ) {
+	this.alpha = 1;
+	this.visible = 1;
+}
 			console.watchSprite( this, 'in Pane. visible='+this.visible );
 		}
 		else {
@@ -197,7 +223,7 @@ class EntitySprite extends Sprite {
 			this.age += dt;
 			let ageOfDeath = 5;
 			if( this.age > ageOfDeath ) {
-				return this.die('old age');
+				//return this.die('old age');
 			}
 		}
 
