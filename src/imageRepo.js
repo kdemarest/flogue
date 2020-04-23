@@ -22,6 +22,7 @@ class PixiImageRepo {
 			isPlaceholder: true,
 			texture: PIXI.Texture.fromImage(HourglassURI)
 		};
+		this.placeholderResource.isPlaceholder = true;
 	}
 	scanTypes() {
 
@@ -122,6 +123,7 @@ class PixiImageRepo {
 		});
 
 		if( addList.length ) {
+			console.logImgLoader('Loading '+addList.length);
 			this.loading = true;
 			this.loader.add(addList).load( ()=>this.onLoadComplete() );
 		}
@@ -132,11 +134,13 @@ class PixiImageRepo {
 			if( state == imgPENDING ) {
 				this.imgPathList[imgPath] = imgLOADED;
 				let img = imgPath.substring( IMG_BASE.length )
+				console.logImgLoader('Loader propagating',img);
 				guiMessage( 'imgLoaded', img );
 				this.imgPathList[imgPath] = imgSPREAD;
 			}
 		});
 		this.loading = false;
+		console.logImgLoader('Loading complete');
 	}
 
 	getImg(entity) {

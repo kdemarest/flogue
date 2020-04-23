@@ -455,6 +455,7 @@ class Area {
 		let jobPickTable = new Pick.Table().scanKeys(theme.jobPick);
 		return (filter) => {
 			let pickTable = jobPickTable;
+
 			if( pickTable.noChances() ) {
 				pickTable.reset();
 			}

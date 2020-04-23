@@ -33,7 +33,7 @@ class ViewMerchant extends ViewInventory {
 			this.setMode('toggle');
 			return false;
 		}
-		let item = this.getItemByKey(e.key);
+		let item = this.getItemByKey(event.key);
 		if( item ) {
 			this.onItemChoose(event,item);
 		}

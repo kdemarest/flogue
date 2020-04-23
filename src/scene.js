@@ -171,8 +171,9 @@ class Scene extends ViewObserver {
 		if( msg == 'imgLoaded' ) {
 			let img = payload;
 			this.traverse( sprite => {
-				if( sprite.pixiSprite.awaitingImg === img ) {
+				if( sprite.pixiSprite.awaitingImg === img || (sprite.entity && sprite.entity.img == img) ) {
 					sprite.pixiSprite.texture = ImageRepo.getResourceByImg( img ).texture;
+					delete sprite.pixiSprite.awaitingImg;
 				}
 			});
 		}

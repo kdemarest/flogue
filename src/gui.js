@@ -46,23 +46,9 @@ class GuiManager {
 		view.onOpen ? view.onOpen(payload.entity) : null;
 	}
 
-	create() {
+	create(fn) {
 		this.subscribe('gui','open',this.openView.bind(this));
-
-		this.add('full',new ViewFull('#guiControls','#guiMain'));
-		this.add('zoom',new ViewZoom('#guiControls'));
-		this.add('narrative',new ViewNarrative('#guiNarrative'));
-		this.add('sign',new ViewSign('#guiSign'));
-		this.add('favorites',new ViewFavorites('#guiFavorites'));
-		this.add('spells',new ViewSpells('#guiSpells'));
-		this.add('range',new ViewRange());
-		this.add('experience',new ViewExperience('#guiExperience'));
-		this.add('info',new ViewInfo('#guiInfo'));
-		this.add('status',new ViewStatus('#guiStatus'));
-		this.add('inventory',new ViewInventory('#guiInventory'));
-		this.add('map',new ViewMap('#guiMap'));
-		this.add('miniMap',new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption'));
-		this.add('tester',new ViewTester('#guiTester',this.getPlayer));
+		fn.call(this);
 	}
 
 	message(message,payload,target) {

@@ -6,8 +6,8 @@ async function main() {
 
 	window.Debug = DebugSetup({
 		ai: false,
-		anim: true,
-		sprite: true,
+		anim: false,
+		sprite: false,
 		command: false,
 		cmd: false,
 		range: false,
@@ -16,6 +16,7 @@ async function main() {
 		item: false,
 		vis: false,
 		areaBuild: false,
+		imgLoader: true
 	});
 
 	// This executes the initializers for all the static .js files
@@ -38,7 +39,22 @@ async function main() {
 		let playerMarkerId = config.playerMarkerId || 'playerStartHere';
 
 		let gui = Gui.createManager( ()=>this.entity );
-		gui.create();
+		gui.create( function() {
+			this.add('full',new ViewFull('#guiControls','#guiMain'));
+			this.add('zoom',new ViewZoom('#guiControls'));
+			this.add('narrative',new ViewNarrative('#guiNarrative'));
+			this.add('sign',new ViewSign('#guiSign'));
+			this.add('favorites',new ViewFavorites('#guiFavorites'));
+			this.add('spells',new ViewSpells('#guiSpells'));
+			this.add('range',new ViewRange());
+			this.add('experience',new ViewExperience('#guiExperience'));
+			this.add('info',new ViewInfo('#guiInfo'));
+			this.add('status',new ViewStatus('#guiStatus'));
+			this.add('inventory',new ViewInventory('#guiInventory'));
+			this.add('map',new ViewMap('#guiMap'));
+			this.add('miniMap',new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption'));
+			this.add('tester',new ViewTester('#guiTester',this.getPlayer));
+		});
 		gui.subscribe( 'user', 'command', this.onEvent.bind(this) );
 		this.gui = gui;
 		guiMessage('saveBattery',config.saveBattery);
