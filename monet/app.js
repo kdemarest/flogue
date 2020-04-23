@@ -18,7 +18,6 @@ const util 		= require('util');
 const path 		= require('path');
 const fs 		= require('fs');
 const vm		= require('vm');
-const request	= require('request');
 const express 	= require('express');
 const jimp 		= require('jimp');
 const watch     = require('node-watch');
@@ -636,17 +635,6 @@ async function filterImageInPlace(image,filter) {
 	return image;
 }
 
-function asyncRequest(url) {
-	return new Promise(function (resolve, reject) {
-		request(url, function (error, res, body) {
-			if (!error && res.statusCode == 200) {
-				resolve(body);
-			} else {
-				reject(error);
-			}
-		});
-	});
-}
 
 function stringify(s) {
 	return JSON.stringify(s,null,"\t");
