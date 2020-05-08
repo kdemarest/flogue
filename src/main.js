@@ -65,7 +65,7 @@ async function main() {
 		let world     = new World(planList);
 		let themeId   = config.themeId || world.plan.findFirst(plan=>plan.depth==startingDepth).themeId;
 		let planFind  = plan => plan.depth == startingDepth && plan.themeId == themeId;
-		let plan      = world.plan.findFirst(planFind) || world.plan.add({areaId: 'user', depth:startingDepth, themeId: themeId});
+		let plan      = world.plan.findFirst(planFind) || world.plan.add({areaId: 'user-'+Date.makeUid(), depth:startingDepth, themeId: themeId, isSpontaneous: true});
 		let area      = world.createArea(plan.areaId);
 		area.underConstruction = true;
 		let player    = new Entity( area.depth, MonsterTypeList[playerTypeId], config.playerInject, area.jobPicker );
@@ -117,7 +117,7 @@ async function main() {
 	Type.establish('PLUGINS',{});
 	Type.register('PLUGINS', PluginManager.list );
 	Type.merge();
-	Type.finalize();
+	Type.finalize(Checker);
 
 	window.ImageRepo =  new PixiImageRepo(PIXI.loader);
 	ImageRepo.scanTypes();

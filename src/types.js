@@ -111,6 +111,10 @@ let Type = new class {
 			return;
 		}
 		let policy   = this.policy[typeSymbol];
+		if( !policy && Type.loosePolicy ) {
+			// This is valid ONLY for little plugins, like the mason.html
+			return;
+		}
 		let accessor = policy.accessor;
 		console.assert( policy );
 		Object.each( typeDataList, (typeData,typeId) => {
@@ -154,6 +158,15 @@ let Type = new class {
 		});
 		return this;
 	}
+	derive(typeSymbol,typeId,inject) {
+		let policy = this.policy[typeSymbol];
+		if( !policy && Type.loosePolicy ) {
+			return Object.assign( {}, inject );
+		}
+		console.assert( policy.accessor[typeId] );
+		return Object.assign( {}, policy.accessor[typeId], inject );
+	}
+
 	mergeToGlobals(type) {
 
 		console.assert( !type.effectList );
@@ -193,20 +206,21 @@ let Type = new class {
 	merge() {
 		this.traverse( type=>this.mergeToGlobals(type) );
 	}
-	finalize() {
+	finalize(checker) {
 		this.traverse( (typeData,typeId,policy) => {
 			if( policy.useSymbols ) {
 				Symbol.allocate( typeData );
 			}
 			levelAdjust(typeData);
 			if( policy.onFinalize ) {
-				policy.onFinalize( typeData, typeId );
+				policy.onFinalize( typeData, typeId, checker );
 			}
 		});
 	}
 }
 
 Type.giveTypeIds = obj => obj ? Object.each(obj, (member,key)=>member.typeId = key ) : null;
+Type.loosePolicy = MetaConfig.loosePolicy;
 
 
 return {

@@ -68,6 +68,7 @@ Pick.Table = class {
 		for( let key in hash ) {
 			let value = fn( hash[key], key );
 			if( value !== undefined && value !== null && value !== false) {
+				console.assert( Number.isFinite(value) );
 				console.assert( hash[key] );
 				this.table.push( hash[key] )
 				this.chance.push( value );

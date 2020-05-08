@@ -1058,7 +1058,7 @@ onAttacked(attacker,amount,damageType) - when attacked.
 
 let ItemTypeList = {
 	"random":	  { symbol: '*', isRandom: 1, mayPickup: false, neverPick: true, img: '' },
-// GATEWAYS
+	// GATEWAYS
 	"stairsDown": {
 		symbol: '>',
 		name: "stairs down",
@@ -1070,8 +1070,27 @@ let ItemTypeList = {
 		useVerb: 'descend',
 		img: "dc-dngn/gateways/stone_stairs_down.png"
 	},
-	"stairsUp":   { symbol: '<', name: "stairs up", 	isGate: 1, gateDir: -1, gateInverse: 'stairsDown', isStairsUp: true, mayPickup: false, useVerb: 'ascend', img: "dc-dngn/gateways/stone_stairs_up.png" },
-	"gateway":    { symbol: 'O', name: "gateway", 		isGate: 1, gateDir: 0, gateInverse: 'gateway', mayPickup: false, useVerb: 'enter', img: "decor/gateStone.png" },
+	"stairsUp": {
+		symbol: '<',
+		name: "stairs up",
+		isGate: 1,
+		gateDir: -1,
+		gateInverse: 'stairsDown',
+		isStairsUp: true,
+		mayPickup: false,
+		useVerb: 'ascend',
+		img: "dc-dngn/gateways/stone_stairs_up.png"
+	},
+	"gateway": {
+		symbol: 'O',
+		name: "gateway",
+		isGate: 1,
+		gateDir: 0,
+		gateInverse: 'gateway',
+		mayPickup: false,
+		useVerb: 'enter',
+		img: "decor/gateStone.png"
+	},
 	"portal":     {
 		symbol: '0',
 		name: "portal",
@@ -1082,21 +1101,39 @@ let ItemTypeList = {
 		useVerb: 'touch',
 		img: "effect/portal.png" //"dc-dngn/gateways/dngn_portal.png"
 	},
-	"pitDrop": 	  { symbol: '`', name: "pit drop", 		isGate: 1, gateDir: 1, oneway: true, mayPickup: false, useVerb: 'fall', img: "effect/pitDrop.png" },
-// DOOR
-	"door":       { symbol: '+', mayWalk: true,  mayFly: true, opacity: 0,
-					name: "{state} door",
-					isDoor: 1,
-					mayPickup: false,
-					keyId: false,
-					state: 'open',
-					states: DoorStates,
-					imgChoices: DoorStates,
-					imgChooseFn: self => self.imgChoices[self.state].img
-				},
-// MARKERS
-	"marker": 	  { name: "marker", rarity: 1, mayPickup: false, img: "gui/icons/marker.png" },
-// DECOR
+	"pitDrop": {
+		symbol: '`',
+		name: "pit drop",
+		isGate: 1,
+		gateDir: 1,
+		oneway: true,
+		mayPickup: false,
+		useVerb: 'fall',
+		img: "effect/pitDrop.png"
+	},
+	// DOOR
+	"door": {
+		symbol: '+',
+		mayWalk: true,
+		mayFly: true,
+		opacity: 0,
+		name: "{state} door",
+		isDoor: 1,
+		mayPickup: false,
+		keyId: false,
+		state: 'open',
+		states: DoorStates,
+		imgChoices: DoorStates,
+		imgChooseFn: self => self.imgChoices[self.state].img
+	},
+	// MARKERS
+	"marker": {
+		name: "marker",
+		rarity: 1,
+		mayPickup: false,
+		img: "gui/icons/marker.png"
+	},
+	// DECOR
 	"columnBroken": {
 		mayWalk: false,
 		mayFly: false,
@@ -2092,9 +2129,9 @@ ItemTypeList = Type.establish( 'ItemType', {
 		});
 		return result;
 	},
-	onFinalize: itemType => {
+	onFinalize: (itemType,x,checker) => {
 		let picker = new Picker(0);
-		Type.checkLoot(itemType);
+		checker.checkLoot(itemType);
 		if( itemType.ammoType ) {
 			if( !itemType.ammoSpec ) {
 				console.log( 'Item '+itemType.typeId+' needs an ammoSpec!' );

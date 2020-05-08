@@ -3,15 +3,35 @@
 <head>
 <meta charset="utf-8"/>
 
+<script>
+	window.Profile = {
+		start:()=>{},
+		end:()=>{},
+		tell:()=>{}
+	}
+</script>
+
 <script src="jquery.3.3.1.js" charset="utf-8"></script>
+<script src="utilModule.js" charset="utf-8"></script>
+<script src="utilPlugin.js" charset="utf-8"></script>
 <script src="utilities.js" charset="utf-8"></script>
-<script src="dataFab.js" charset="utf-8"></script>
+<script src="utilPick.js" charset="utf-8"></script>
+<script src="utilChance.js" charset="utf-8"></script>
+<script src="types.js" charset="utf-8"></script>
 <script src="data.js" charset="utf-8"></script>
-<script src="dataHumanNames.js" charset="utf-8"></script>
+<script src="dataStickers.js" charset="utf-8"></script>
+<script src="rules.js" charset="utf-8"></script>
+<script src="dataPicker.js" charset="utf-8"></script>
+<script src="dataTiles.js" charset="utf-8"></script>
+<script src="dataEffects.js" charset="utf-8"></script>
+<script src="dataItems.js" charset="utf-8"></script>
+<script src="dataMonsters.js" charset="utf-8"></script>
+<script src="dataThemes.js" charset="utf-8"></script>
 <script src="dataPlaces.js" charset="utf-8"></script>
 <script src="dataConditioner.js" charset="utf-8"></script>
 <script src="dataPicker.js" charset="utf-8"></script>
 <script src="dataMason.js" charset="utf-8"></script>
+<script src="path.js" charset="utf-8"></script>
 <script src="place.js" charset="utf-8"></script>
 <script src="map.js" charset="utf-8"></script>
 
@@ -26,21 +46,38 @@ pre {
 </style>
 <script>
 
+	async function main() {
+		Module.realize();
+		window.config = {};
+//		window.MonsterType = {};
 
-	function main() {
 
-		new DataConditioner();
+		PluginManager.addForLoad('pkgPlantsBasic', 'pkgPlantsBasic.js');
+		await PluginManager.loadAll();
+		
+		// This executes the initializers for all the plugins, putting the data in the PluginManager
+		Module.realize();
+
+		// We condition the heck out of our data, and we have to do it in the right order.
+		Type.establish('PLUGINS',{});
+		Type.register('PLUGINS', PluginManager.list );
+		Type.merge();
+		let noCheck = {
+			checkSupply: ()=>{},
+			checkLoot: ()=>{},
+			checkResistance: ()=>{}
+		};
+		Type.finalize(noCheck);
 
 		let palette = {
-			floor: TileTypeList.floorCave.symbol,
-			wall:  TileTypeList.wallCave.symbol,
-			door:  ItemTypeList.door.symbol,
-			fillFloor:  TileTypeList.floorCave.symbol,
-			fillWall:  TileTypeList.wallCave.symbol,
-			outlineWall:  TileTypeList.wallCave.symbol,
-			passageFloor:  TileTypeList.floorCave.symbol,
-			bridge: TileTypeList.bridgeNS.symbol,
-			unknown: Tile.UNKNOWN,
+			bridge: "bridge",
+			door: "door",
+			fillFloor: "floorDirt",
+			fillWall: "wallCave",
+			floor: "floorDirt",
+			outlineWall: "wallCave",
+			passageFloor: "floorStone",
+			wall: "wallCave"
 		};
 
 		let sideDimension = 40; //Math.randInt(40,150);
@@ -64,16 +101,29 @@ pre {
 			placeDensity: 	0.50			// always relative to floor
 		};
 
-		let level = 10;
-		let theme = ThemeList.cavern;
+		let level = 1;
+		let theme = ThemeList.coreCavernRooms;
+		theme.dim = sideDimension;
+		theme.depth = level;
+		theme.palette = palette;
 		// NOTICE that I am NOT passing the theme's scape, but instead overriding it
 		// so that you can tweak it.
+
 		let injectList = [];
-		let picker = new Picker(level);
-		let map = Mason.buildMap( picker, scape, palette, injectList, map => document.getElementById('map').innerHTML = map );
-		if( map ) {
-			document.getElementById('map').innerHTML = map.renderToString();
+		let tileQuota  = [];
+		let siteList   = [];
+
+		let masonMap = Mason.masonConstruct(
+			theme,
+			tileQuota,
+			injectList,
+			siteList
+		);
+
+		if( masonMap ) {
+			document.getElementById('map').innerHTML = masonMap.renderToString();
 		}
+
 	}
 </script>
 </head>

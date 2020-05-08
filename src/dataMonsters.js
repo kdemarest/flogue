@@ -575,11 +575,11 @@ let MonsterTypeList = Type.establish( 'MonsterType', {
 	onRegister: (monsterType) => {
 		monsterTypePreProcess(monsterType.typeId,monsterType);
 	},
-	onFinalize: monsterType => {
-		Type.checkLoot(monsterType);
-		Type.checkResistance( monsterType.immune );
-		Type.checkResistance( monsterType.resist );
-		Type.checkResistance( monsterType.vuln );
+	onFinalize: (monsterType,X,checker) => {
+		checker.checkLoot(monsterType);
+		checker.checkResistance( monsterType.immune );
+		checker.checkResistance( monsterType.resist );
+		checker.checkResistance( monsterType.vuln );
 	}
 });
 

@@ -101,8 +101,10 @@ class World {
 	}
 
 
+	// Link all the gates we can.
 	linkGates(area) {
-		// Link all the gates we can.
+
+		// Back-link any gate that leads to a prior area.
 		area.gateList.forEach( gate => {
 			if( gate.toGate ) {
 				gate.toGate.toGateId = gate.id;
@@ -113,8 +115,22 @@ class World {
 				console.log( gate.area.id,'/',gate.id,' still not linked' );
 			}
 		});
+
+		// Any gates that only lead to areas, but don't know their theme, inform them.
 		area.gateList.forEach( gate => {
-			gate.toThemeId = gate.toThemeId || this.plan.get(gate.toAreaId).themeId;
+			if( !gate.toThemeId ) {
+				if( !gate.toAreaId ) {
+					console.log('winging it');
+					let plan = this.plan.add({
+						areaId:		'user-'+Date.makeUid(),
+						depth:		area.depth,
+						themeId:	area.theme.id,
+						isSpontaneous: true
+					});
+					gate.toAreaId = plan.areaId;
+				}
+				gate.toThemeId = this.plan.get(gate.toAreaId).themeId
+			}
 		});
 
 	}

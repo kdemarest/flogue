@@ -1,6 +1,8 @@
 Module.add('dataConditioner',function(extern) {
 
-extern.Type.checkSupply = function(supplyMixed,sourceId,allowTilesAndMonsters) {
+let Checker = {};
+
+Checker.checkSupply = function(supplyMixed,sourceId,allowTilesAndMonsters) {
 	if( !supplyMixed ) {
 		return;
 	}
@@ -26,16 +28,16 @@ extern.Type.checkSupply = function(supplyMixed,sourceId,allowTilesAndMonsters) {
 	});
 }
 
-extern.Type.checkLoot = type => {
-	Type.checkSupply(type.carrying,type.typeId);
-	Type.checkSupply(type.wearing,type.typeId);
-	Type.checkSupply(type.loot,type.typeId);
-	Type.checkSupply(type.harvestLoot,type.typeId);
-	Type.checkSupply(type.lootOnDrop,type.typeId);
-	Type.checkSupply(type.trail,type.typeId);
+Checker.checkLoot = type => {
+	Checker.checkSupply(type.carrying,type.typeId);
+	Checker.checkSupply(type.wearing,type.typeId);
+	Checker.checkSupply(type.loot,type.typeId);
+	Checker.checkSupply(type.harvestLoot,type.typeId);
+	Checker.checkSupply(type.lootOnDrop,type.typeId);
+	Checker.checkSupply(type.trail,type.typeId);
 }
 
-extern.Type.checkResistance = irvString => {
+Checker.checkResistance = irvString => {
 	if( !irvString ) return;
 
 	let resistanceList = {}
@@ -48,6 +50,7 @@ extern.Type.checkResistance = irvString => {
 }
 
 return {
+	Checker: Checker
 }
 
 });

@@ -215,8 +215,8 @@ let JobTypeList = {
 JobTypeList = Type.establish(
 	'JobType',
 	{
-		onFinalize: jobType => {
-			Type.checkLoot(jobType);
+		onFinalize: (jobType,X,checker) => {
+			checker.checkLoot(jobType);
 		}
 	},
 	JobTypeList

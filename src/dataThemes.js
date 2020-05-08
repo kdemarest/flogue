@@ -234,11 +234,11 @@ function themeValidateAndCondition(theme) {
 	let supplyArray = Array.supplyParse( theme.rREQUIRED || '' );
 	Array.supplyValidate( supplyArray, PlaceTypeList );
 
-	if( theme.jobSupply ) {
+	if( window.JobTypeList && theme.jobSupply ) {
 		let jobSupply = Array.supplyParse( theme.jobSupply || '' );
 		Array.supplyValidate( jobSupply, JobTypeList );
 	}
-	if( theme.jobPick ) {
+	if( window.JobTypeList && theme.jobPick ) {
 		let pt = new Pick.Table().scanKeys(theme.jobPick);
 		pt.validate(JobTypeList);
 	}

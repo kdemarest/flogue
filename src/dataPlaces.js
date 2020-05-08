@@ -1,7 +1,7 @@
 Module.add('dataPlaces',function() {
 
 
-function determinePlaceLevel(placeType) {
+function determinePlaceLevel(placeType,monsterTypeList) {
 	// Be sure to do this afterwards, just in case a place uses a monster from a place further down the list.
 	let NO_MONSTERS = -1;
 	let level = NO_MONSTERS;
@@ -21,7 +21,8 @@ function determinePlaceLevel(placeType) {
 			supplyArray.forEach( supply => {
 				console.assert(supply.typeFilter || supply.pick);
 				// We don't check on the pick list. Maybe we should.
-				let monster = supply.typeFilter ? MonsterTypeList[supply.typeFilter.split('.')[0]] : null;
+
+				let monster = supply.typeFilter && monsterTypeList ? monsterTypeList[supply.typeFilter.split('.')[0]] : null;
 				if( monster ) {
 					level = Math.max(level,monster.level||Rules.DEPTH_MIN);
 					placeType.comesWithMonsters = true;
@@ -39,7 +40,7 @@ function determinePlaceLevel(placeType) {
 	}
 }
 
-function determineAndValidatePlaceSymbolHash(placeType) {
+function determineAndValidatePlaceSymbolHash(placeType,checker) {
 	let symbolHash = {};
 	function add(typeId) {
 		console.assert( typeId );
@@ -49,7 +50,7 @@ function determineAndValidatePlaceSymbolHash(placeType) {
 	}
 
 	Object.each( placeType.symbols, option => {
-		Type.checkSupply( option, placeType.typeId, true );
+		checker.checkSupply( option, placeType.typeId, true );
 		let supplyArray = Array.supplyParse(option);
 		supplyArray.forEach( supply => {
 			if( supply.pick ) {
@@ -57,7 +58,7 @@ function determineAndValidatePlaceSymbolHash(placeType) {
 			}
 			else {
 				if( supply.carrying ) {
-					Type.checkSupply( supply.carrying, placeType.typeId+':'+supply.typeFilter );
+					checker.checkSupply( supply.carrying, placeType.typeId+':'+supply.typeFilter );
 				}
 				add( supply.typeFilter.split('.')[0] );
 			}
@@ -1727,10 +1728,10 @@ yuy
 PlaceTypeList = Type.establish(
 	'PlaceType',
 	{
-		onFinalize: placeType => {
-			determinePlaceLevel(placeType);
-			determineAndValidatePlaceSymbolHash(placeType);
-			Object.each( placeType.symbols || {}, Type.checkLoot );
+		onFinalize: (placeType, placeId, checker) => {
+			determinePlaceLevel(placeType,window.MonsterTypeList);
+			determineAndValidatePlaceSymbolHash(placeType,checker);
+			Object.each( placeType.symbols || {}, checker.checkLoot );
 		}
 	},
 	PlaceTypeList

@@ -193,7 +193,7 @@ Module.add('config.ken',function(X,moduleId) {
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
 		startingDepth: 1,
-		//themeId: 'kenTinyTheme',
+		themeId: 'dwarfTown',
 		saveBattery: true,
 		playerInject: player.inject
 	}
