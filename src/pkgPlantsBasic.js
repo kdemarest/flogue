@@ -19,7 +19,7 @@ const PlantVarietyList = Type.establish('PlantVarieties',{},{
 
 const MushroomVarietyList = Type.establish('MushroomVariety',{},{
 	"amanitaMushroom": 		{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.amanita', img: "mushroom/amanita.png",
-		effectOnHarvest: Type.derive( 'EffectTypeList', 'ePoison', {xDamage:0.3}) },
+		effectOnHarvest: Object.assign( {}, EffectTypeList.ePoison, {xDamage:0.3} ) },
 	"blurellaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.blurella', img: "mushroom/blurella.png" },
 	"coxilliaMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.coxillia', img: "mushroom/coxillia.png" },
 	"grollotusMushroom": 	{ level:  0, rarity:  1.0, harvestLoot: '1x stuff.grollotus', img: "mushroom/grollotus.png" },

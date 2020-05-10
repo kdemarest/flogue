@@ -3364,7 +3364,7 @@ class Entity {
 		// Tile Depart Events
 		//
 		let tileType = this.map.tileTypeGet(this.x,this.y);
-		let tileTypePrior = areaPrior ? this.map.tileTypeGet(xPrior,yPrior) : null;
+		let tileTypePrior = areaPrior ? areaPrior.map.tileTypeGet(xPrior,yPrior) : null;
 		let result;
 		if( result = resultTileDepart.call(this,tileType,tileTypePrior) ) {
 			return result;

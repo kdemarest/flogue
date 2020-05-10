@@ -271,7 +271,7 @@ let DeedManager = (new class {
 			return result;
 		}
 		result = Object.assign( result, {
-			isOngoing: deed.duration !== 0,
+			isOngoing: deed.duration !== 0,	// Always true, right!?
 			duration: deed.duration,
 			status: 'ongoing',
 			success: true,

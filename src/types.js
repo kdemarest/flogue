@@ -220,7 +220,7 @@ let Type = new class {
 }
 
 Type.giveTypeIds = obj => obj ? Object.each(obj, (member,key)=>member.typeId = key ) : null;
-Type.loosePolicy = MetaConfig.loosePolicy;
+Type.loosePolicy = extern.MetaConfig ? extern.MetaConfig.loosePolicy : false;
 
 
 return {
