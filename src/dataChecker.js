@@ -1,4 +1,4 @@
-Module.add('dataConditioner',function(extern) {
+Module.add('dataChecker',function(extern) {
 
 let Checker = {};
 
