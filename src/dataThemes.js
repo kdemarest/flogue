@@ -517,7 +517,7 @@ ThemeList.coreMorphousRooms = {
 	rRARE: 				'miniMaze, goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 				'graveYard',
 	monsters: 			['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
-	enemyDensity: 		0.05,
+	enemyDensity: 		0.02,
 	friendDensity: 		0.01,
 }
 

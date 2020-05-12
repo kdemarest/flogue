@@ -21,7 +21,10 @@ let Rules = new class {
 
 		// Dial this to make all lootPicks more or less frequent. However, loot with 100% chance to appear is
 		// assumed to be mandatory, so it will always appear.
-		this.xLootFrequency 				= 1;
+		this.xLootFrequency 				= 1.0;
+		this.xGlobalEnemyDensity			= 1.0;
+		this.xGlobalFriendDensity			= 1.0;	// For items laying around, not loot.
+		this.xGlobalItemDensity				= 1.0;	// For items laying around, not loot.
 
 		// Adjusts how often items that might have effects actually do. See .effectChance in the item data.
 		this.xLootEffectChance 				= 1;

@@ -170,9 +170,10 @@ Module.add('config.ken',function(X,moduleId) {
 	let player = {
 		// soldier, brawler, monk, archer, ninja, not quite blaster
 		mergeWithExistingData: true,
-		legacyId: 'ninja',
-		carrying: '40x ammo.arrow, spell.eFreeze, lumpOfMeat, 20x potion', //'5x wood, 100x part, 4x potion.eWater, 4x part isWing, 4x part isSkin, 4x ore, 3x stuff.leather, 3x oreMalachite, 3x stuff.demonLeather', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
-		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow',
+		legacyId: 'brawler', //'ninja',
+		carrying: '4x weapon.club, 40x ammo.arrow, spell.eFreeze, lumpOfMeat, 20x potion, 5x weapon, weapon.bow', //'5x wood, 100x part, 4x potion.eWater, 4x part isWing, 4x part isSkin, 4x ore, 3x stuff.leather, 3x oreMalachite, 3x stuff.demonLeather', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
+//		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow',
+		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp',
 		//sensePerception = true,
 		//senseAlert: true,
 		//senseSmell: 200,
@@ -180,7 +181,7 @@ Module.add('config.ken',function(X,moduleId) {
 		light: 2,
 		experience: 1000,
 		inject: {
-			level: 13,
+			level: 10,
 			//immortal: true,
 			//invulnerable: true
 		}
@@ -192,7 +193,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 13,
+		startingDepth: 10,
 //		themeId: 'dwarfTown',
 		saveBattery: true,
 		playerInject: player.inject

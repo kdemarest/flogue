@@ -354,9 +354,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		return n;
 	});
 
-	let owedEnemies   = Math.round( (totalFloor*theme.enemyDensity) );
-	let owedFriends   = Math.round( (totalFloor*theme.friendDensity) );
-	let owedItems     = Math.round( (totalFloor*theme.itemDensity) );
+	let owedEnemies   = Math.round( (totalFloor*theme.enemyDensity*Rules.xGlobalEnemyDensity) );
+	let owedFriends   = Math.round( (totalFloor*theme.friendDensity*Rules.xGlobalFriendDensity) );
+	let owedItems     = Math.round( (totalFloor*theme.itemDensity*Rules.xGlobalItemDensity) );
 
 	console.logAreaBuild( "Map has "+totalFloor+" floor:" );
 	console.logAreaBuild( "Enemies: ("+totalFloor+"x"+theme.enemyDensity+")="+owedEnemies+"-"+totalEnemies+"="+(owedEnemies-totalEnemies)+" enemies owed" );
