@@ -161,7 +161,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	// This is not a normal plugin action. Only for config.
 	//PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'portal', toThemeId: 'coreCavernRooms' }; //'daikay'; //'weapon.hammer';
-	PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'dog' }; //'daikay'; //'weapon.hammer';
+	PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'bear' }; //'daikay'; //'weapon.hammer';
 
 	//'100x potion, 100x helm, 100x armor, 100x spell, 100x gem, 100x weapon, 100x cloak, 100x gloves, 100x ammo, 100x shield, 100x ring';
 	//'4x potion.eHealing, 4x potion.eSenseXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing';
@@ -173,7 +173,7 @@ Module.add('config.ken',function(X,moduleId) {
 		legacyId: 'brawler', //'ninja',
 		carrying: '4x weapon.club, 40x ammo.arrow, spell.eFreeze, lumpOfMeat, 20x potion, 5x weapon, weapon.bow', //'5x wood, 100x part, 4x potion.eWater, 4x part isWing, 4x part isSkin, 4x ore, 3x stuff.leather, 3x oreMalachite, 3x stuff.demonLeather', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
 //		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow',
-		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp',
+		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, spell.eShove',
 		//sensePerception = true,
 		//senseAlert: true,
 		//senseSmell: 200,
@@ -181,7 +181,7 @@ Module.add('config.ken',function(X,moduleId) {
 		light: 2,
 		experience: 1000,
 		inject: {
-			level: 1,
+			level: 10,
 			//immortal: true,
 			//invulnerable: true
 		}

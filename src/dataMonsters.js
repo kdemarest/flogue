@@ -319,7 +319,8 @@ immune			- What damageTypes you're immune to. Often references the Immunity, Res
 resist			- as immune, except what you resist for half damage
 vuln			- as immune, except what you are vulnerable to for double damage
 sneakAttackMult - The multiplier when this creature successfully sneak attacks. Requires Quick.LITHE weapons.
-isLarge			- resists shove due to being large.
+xShove			- The percent to multiply shove distances. However, remember that size, matter, body type etc already change shove.
+xShoveReason	- Why they resist or are vulnerable to shove.
 
 speedMove 		- speed in tiles-per-second, but in reality adjusted by Rules.SPEED_STANDARD
 speedAction 	- actions per second, also adjusted by Rules.SPEED_STANDARD
@@ -388,7 +389,6 @@ function monsterTypePreProcess(typeId,m) {
 	console.assert(m.isMonsterType);
 
 	let brain = null;
-	let body = null;
 	let naturalDamageType;
 	if( m.core ) {
 		m.level = m.core[0];
@@ -397,21 +397,22 @@ function monsterTypePreProcess(typeId,m) {
 		m.team  = m.core[2];
 		naturalDamageType = m.core[3];
 		brain = m.core[4];
-		body  = m.core[5];
+		m.body = m.core[5];
 		m.img = m.core[6];
 		m.pronoun = m.core[7];
 		delete m.core;
 	}
 
 	console.assert( !brain || (BrainMindset[brain]!==undefined && BrainAbility[brain]!==undefined) );
-	console.assert( !body  || (BodyAbility[body]!==undefined && BodySlots[body]!==undefined) );
+	console.assert( !m.body  || (BodyAbility[m.body]!==undefined && BodySlots[m.body]!==undefined) );
 
 	// OK, this sucks, but I set isMonsterType here AS WELL AS in fab, because the merge
 	// of monsters from places requires it.
 	m.brainMindset = String.combine(',',m.brainMindset,BrainMindset[brain]);
 	m.brainAbility = String.combine(',',m.brainAbility,BrainAbility[brain]);
-	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[body]);
-	m.bodySlots    = Object.assign( m.bodySlots || {}, BodySlots[body] );
+	m.bodyAbility  = String.combine(',',m.bodyAbility, BodyAbility[m.body]);
+	m.bodySlots    = Object.assign( m.bodySlots || {}, BodySlots[m.body] );
+	m.size         = m.size===undefined ? 1.0 : m.size;
 
 	let blood = {
 		isAnimal: 		'bloodRed',
@@ -622,6 +623,7 @@ Type.register( 'MonsterType', {
 	"dog": {
 		symbol: 'd',
 		core: [ 0, '10:10', 'good', 'bite', 'canine', 'quadruped', 'UNUSED/spells/components/dog2.png', '*'  ],
+		size: 0.5,
 		attitude: Attitude.HUNT,
 		dodge: Quick.NIMBLE,
 		isAnimal: true,
@@ -714,12 +716,12 @@ Type.register( 'MonsterType', {
 // EVIL TEAM
 	"avatarOfBalgur": {
 		core: [ 99, '25:2', 'evil', 'burn', 'sentient', 'humanoid', 'dc-mon/hell_knight.png', 'he' ],
+		size: 3.0,
 		isUnique: true,
 		neverPick: true,
 		immune: ['eShove',DamageType.BURN,Attitude.PANICKED].join(','),
 		carrying: 'spell.eBurn, spell.eRot, spell.ePoison',
 		isDemon: true,
-		isLarge: true,
 		sayPrayer: 'I shall rule this planet!',
 		resist: DemonResistance,
 		vuln: DemonVulnerability,
@@ -751,6 +753,7 @@ Type.register( 'MonsterType', {
 	},
 	"brassamaton": {
 		core: [ 59, '6:3', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/brassamaton.png', 'it' ],
+		size: 2.0,
 		scale: 0.8,
 		attitude: Attitude.AWAIT,
 		tooClose: 2,
@@ -1243,6 +1246,7 @@ Type.register( 'MonsterType', {
 	},
 	"ogre": {
 		core: [ 69, '5:5', 'evil', 'bash', 'simpleton', 'humanoid', 'dc-mon/ogre.png', '*' ],
+		size: 2,
 		carrying: launcher({
 			ammoType: 'isRock',
 			ammoSpec: 'ammo.rock',
@@ -1254,7 +1258,6 @@ Type.register( 'MonsterType', {
 		dodge: Quick.CLUMSY,
 		isEarthChild: true,
 		isOgre: true,
-		isLarge: true,
 		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speedMove: 0.5,
@@ -1428,13 +1431,13 @@ Type.register( 'MonsterType', {
 	},
 	"skeletonLg": {
 		core: [ 59, '2:8', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_large.png', 'it' ],
+		size: 2.0,
 		name: 'ogre skeleton',
 		attitude: Attitude.HUNT,
 		immune: SkeletonImmunity,
 		carrying: '50% spell.eRot',
 		isUndead: true,
 		isSkeleton: true,
-		isLarge: true,
 		loot: '50% bone, 50% skull',
 		vuln: 'silver'+','+DamageType.SMITE
 	},
@@ -1463,21 +1466,21 @@ Type.register( 'MonsterType', {
 	},
 	"bear": {
 		core: [ 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/bear.png', 'it' ],
+		size: 2.0,
 		name: "bear",
 		attitude: Attitude.WANDER,
 		tooClose: 3,
 		isAnimal: true,
-		isLarge: true,
 		isBear: true,
 		loot: '50% lumpOfMeat',
 		senseSmell: 200
 	},
 	"troll": {
 		core: [ 49, '5:4', 'evil', 'claw', 'animalHunter', 'humanoid', 'mon/troll.png', '*' ],
+		size: 2.0,
 		brainMindset: 'ravenous',
 		loot: '50% trollHide, 10% coin, 20% trollBlood',
 		isEarthChild: true,
-		isLarge: true,
 		isTroll: true,
 		regenerate: 0.10,
 		scale: 0.6,

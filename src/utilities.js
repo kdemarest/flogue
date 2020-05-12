@@ -26,6 +26,9 @@ Module.add('utilities',function(){
 	Math.chance = function(percent) {
 		return Math.rand(0,100) < percent;
 	}
+	Math.fChance = function(fPercent) {
+		return Math.random() < fPercent;
+	}
 
 	// Important - this is how the game will take x,y coords and consider which tile they fall into.
 	Math.toTile = Math.round; //floor; //round;

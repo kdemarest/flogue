@@ -398,6 +398,7 @@ LegacyList.brawler = compose('brawler',[
 	range( [16], (index) => ({
 		name: 'Bull Rush 3',
 		skill: {
+			slot: Slot.SKILL,
 			needsTarget: true,
 			rechargeTime: 20,
 			passesTime: false,
@@ -838,6 +839,7 @@ LegacyList.soldier = compose('soldier',[
 	range( [10], (index) => ({
 		name: 'Power Shove x'+(3+index),
 		skill: {
+//			slot: Slot.SKILL,
 			needsTarget: true,
 			rechargeTime: 30,
 			passesTime: true,

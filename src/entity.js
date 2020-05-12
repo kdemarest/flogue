@@ -2248,13 +2248,60 @@ class Entity {
 		}
 	}
 
-	takeShove(attacker,item,distance,towards=1) {
-		let source = attacker || item.ownerOfRecord;
-		let sx = this.x;
-		let sy = this.y;
+	getShoveModifiers() {
+		// Bigger things resist being pushed, and smaller are easier to push.
+		let xShove = 1.0;
+		let reason = 'shoved.';
 
-		let dx = this.x-source.x;
-		let dy = this.y-source.y;
+		xShove *= 1 / (this.size||1);
+		if( this.size > 1 ) {
+			reason = 'shoved but is large.';
+		}
+		if( this.size < 1 ) {
+			reason = 'shoved extra because small.';
+		}
+
+
+		if( this.travelMode=='fly' ) {
+			xShove *= 1.5;
+			reason = 'shoved farther because of flight.';
+		}
+		if( this.body == 'quadruped' ) {
+			xShove *= 0.6;
+			reason = 'shoved but resists with four legs.';
+		}
+		if( this.body == 'multiped' ) {
+			xShove *= 0.30;
+			reason = 'shoved but resists with many legs.';
+		}
+
+		if( this.matter == 'metal' ) {
+			xShove *= 0.5;
+			reason = 'shoved but is heavy metal.';
+		}
+
+		if( this.xShove !== undefined ) {
+			console.assert( Number.isFinite(this.xShove) );
+			xShove *= this.xShove;
+			reason = this.xShoveReason || reason;
+		}
+
+		return [xShove,reason];
+	}
+
+	takeShove(attacker,item,distance,towards=1) {
+
+		if( this.isIncorporeal && !attacker.isIncorporeal ) {
+			tell(mSubject,this,' ',mVerb,'is',' ','incorporeal and ignore shove.');
+			return {
+				status: 'incorporeal',
+				success: false
+			}
+		}
+
+		let source = attacker || item.ownerOfRecord;
+
+		let [dx,dy] = Distance.getNormalized(this.x-source.x,this.y-source.y);
 		if( dx==0 && dy==0 ) {
 			debugger;
 			return {
@@ -2262,14 +2309,9 @@ class Entity {
 				success: false
 			}
 		}
-		let dist = Distance.get(dx,dy);
 
-		// Special case - all large things resist shove.
-		let resisting = false;
-		if( this.isLarge ) {
-			distance = Math.max(0,distance-1);
-			resisting = true;
-		}
+		let [xShove,reason] = this.getShoveModifiers();
+		distance = Math.round(distance*xShove);
 
 		let success = true;
 		let bonked = false;
@@ -2277,37 +2319,36 @@ class Entity {
 		let fy = this.y;
 		let distanceRemaining = distance;
 
-		throw "needs a bit of a rewrite for involuntary movement in the new moveTarget regime."
+		let dist = Distance.get(dx,dy);
+		while( success && distanceRemaining > 0 ) {
+			fx += dx*towards;
+			fy += dy*towards;
 
-		while( success && distanceRemaining-- ) {
-			fx += dx/dist*towards;
-			fy += dy/dist*towards;
-			success = this.moveToInstantly(null,Math.round(fx),Math.round(fy)).success;
+			//setMoveTarget(area,x,y,instantly,attackAllowed,weapon,voluntary,swappingWith) {
+			let result = this.setMoveTarget(
+				this.area, Math.toTile(fx), Math.toTile(fy),
+				false, false, null, false, null
+			);
+			success = result.success;
 			if( !success ) { bonked = true; break; }
+			distanceRemaining -= 1;
 		}
-		tell(mSubject,this,' ',mVerb,'is',' ',bonked ? 'shoved but blocked.' : (resisting ? 'heavy but moves.' : 'shoved.'));
-		let effect = new Effect(this.area.depth, {
-			op: 'set',
-			stat: 'stun',
-			value: true,
-			duration: 0,
-			isSecondary: true,
-		});
-		effectApply( effect, this, attacker, item, 'shove' );
+		tell(mSubject,this,' ',mVerb,'is',' ',bonked ? 'shoved '+(distance-distanceRemaining)+' but blocked.' : reason);
 
-		let ddx = this.x - sx;
-		let ddy = this.y - sy;
-		let duration = Math.max(0.1,Distance.get(ddx,ddy) / 10);
-		new Anim({
-			x: 			sx,
-			y: 			sy,
-			area: 		this.area,
-			delay: 		source.rangeDuration || 0,
-			duration: 	duration,
-			onInit: 		a => { a.takePuppet(this); },
-			onSpriteMake: 	s => { s.sReset().sVelTo(ddx,ddy,duration); },
-			onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); }
-		});
+		let impactForce = distanceRemaining / xShove;	// xShove must un-do it alteration of the force.
+
+		if( impactForce > 0 ) {
+			// Shove stuns for one round for each square you didn't travel.
+			let effect = new Effect(this.area.depth, {
+				op: 'set',
+				stat: 'stun',
+				value: true,
+				duration: Math.max(1,impactForce),
+				isSecondary: true,
+			});
+			effectApply( effect, this, attacker, item, 'shoveStun' );
+		}
+
 		return {
 			status: 'shoved',
 			success: true,
@@ -3155,7 +3196,7 @@ class Entity {
 		result.trail = trail.typeId;
 	}
 
-	setMoveTarget(area,x,y,instantly,attackAllowed,weapon,voluntary,swappingWith) {
+	setMoveTarget(area,x,y,instantly,attackAllowed,weapon,voluntary,swappingWith=null) {
 		this.areaMove = area || this.area;
 		this.xMove = x;
 		this.yMove = y;

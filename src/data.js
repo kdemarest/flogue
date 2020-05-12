@@ -21,6 +21,15 @@ const Distance = new class{
 	get(dx,dy) {
 		return Math.sqrt(dx*dx+dy*dy);
 	}
+	getNormalized(dx,dy) {
+		let dist = Distance.get(dx,dy);
+		if( dist == 0 ) {
+			return [0,0];
+		}
+		dx = dx / dist;
+		dy = dy / dist;
+		return [dx,dy];
+	}
 	isNear(dx,dy,dist) {
 		if( dx > dist || dy > dist ) return false;	// hopefully this speeds up the calc.
 		return dx*dx+dy*dy <= dist*dist;
