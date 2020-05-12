@@ -161,7 +161,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	// This is not a normal plugin action. Only for config.
 	//PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'portal', toThemeId: 'coreCavernRooms' }; //'daikay'; //'weapon.hammer';
-	PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'gem' }; //'daikay'; //'weapon.hammer';
+	PlaceTypeList.surfaceSunTemple.symbols.Z = { typeFilter: 'dog' }; //'daikay'; //'weapon.hammer';
 
 	//'100x potion, 100x helm, 100x armor, 100x spell, 100x gem, 100x weapon, 100x cloak, 100x gloves, 100x ammo, 100x shield, 100x ring';
 	//'4x potion.eHealing, 4x potion.eSenseXray, 4x potion.eDarkVision, weapon.spear, weapon.sword.eSmite, weapon.stealthBow, weapon.bow.eStun, weapon.bow.eFreeze, 40x ammo.arrow, 10x ammo.dart, 4x shield, spell.eShock/3, gem.eSmite/6, spell.eHealing';
@@ -181,7 +181,7 @@ Module.add('config.ken',function(X,moduleId) {
 		light: 2,
 		experience: 1000,
 		inject: {
-			level: 10,
+			level: 1,
 			//immortal: true,
 			//invulnerable: true
 		}
@@ -193,7 +193,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 10,
+//		startingDepth: 1,
 //		themeId: 'dwarfTown',
 		saveBattery: true,
 		playerInject: player.inject

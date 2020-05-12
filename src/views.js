@@ -230,11 +230,11 @@ class ViewFull {
 	}
 
 	enabled() {
-		return 
-			document.fullscreenEnabled || 
+		return document.fullscreenEnabled || 
 			document.webkitFullscreenEnabled || 
 			document.mozFullScreenEnabled ||
 			document.msFullscreenEnabled
+		;
 	}
 
 	enter() {

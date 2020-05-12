@@ -1001,11 +1001,10 @@ Type.register( 'MonsterType', {
 			effect: EffectTypeList.eShove
 		},
 		resist: DemonResistance,
-		vuln: DemonVulnerability,
+		vuln: ['silver',DamageType.SMITE].join(','),
 	},
 	"daibozle": {	// (confuse)
 		core: [ 69, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daibozle.png', 'it' ],
-		immune: DemonImmunity,
 		isDemon: true,
 		breathIgnore: true,
 		carrying: '',
@@ -1014,9 +1013,10 @@ Type.register( 'MonsterType', {
 			chanceEffectFires: 50,
 			effect: { basis: 'eConfusion', singularId: 'daibozle' }
 		},
-		resist: DemonResistance,
 		travelMode: 'fly',
-		vuln: DemonVulnerability,
+		immune: ConstructImmunity,
+		resist: DemonResistance,
+		vuln: [DamageType.CHOP,DamageType.CORRODE,DamageType.SMITE].join(','),
 	},
 	"daisteria": {	// (panic)
 		core: [ 74, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daisteria.png', 'it' ],
@@ -1035,8 +1035,8 @@ Type.register( 'MonsterType', {
 	},
 	"daiffury": {	// (enrage)
 		core: [ 79, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daifury.png', 'it' ],
-		immune: DemonImmunity,
 		breathIgnore: true,
+		travelMode: "fly",
 		isDemon: true,
 		isDaifury: true,
 		carrying: '',
@@ -1045,8 +1045,9 @@ Type.register( 'MonsterType', {
 			chanceEffectFires: 50,
 			effect: { basis: 'eRage', singularId: 'daifury' }
 		},
+		immune: ConstructImmunity,
 		resist: DemonResistance,
-		vuln: DemonVulnerability,
+		vuln: 'burn,bash,cut',
 	},
 	"daiphant": {	// (slow)
 		core: [ 84, '5:12', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daiphant.png', 'it' ],

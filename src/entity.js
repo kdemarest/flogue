@@ -456,16 +456,22 @@ class Entity {
 	inCombat() {
 		return this.inCombatTimer && Time.elapsed(this.inCombatTimer) < Rules.COMBAT_EXPIRATION;
 	}
+	isMyMaster(entity) {
+		return this.brainMaster && entity.id == this.brainMaster.id;
+	}
+	isMySlave(entity) {
+		return entity.isMyMaster(this);
+	}
 	isMySuperior(entity) {
 		if( entity.isUser ) {
 			// User is superior to all.
 			return true;
 		}
-		if( this.brainMaster && entity.id == this.brainMaster.id ) {
+		if( this.isMyMaster(entity) ) {
 			// you are never superior to your master.
 			return true;
 		}
-		if( entity.brainMaster && this.id == entity.brainMaster.id ) {
+		if( this.isMySlave(entity) ) {
 			// you are always superior to your slave.
 			return false;
 		}
@@ -498,7 +504,7 @@ class Entity {
 		if( entity.id == this.personalEnemy ) {
 			return true;
 		}
-		if( (this.brainMaster && entity.id == this.brainMaster.id) || (entity.brainMaster && this.id == entity.brainMaster.id) ) {
+		if( this.isMyMaster(entity) || this.isMySlave(entity) ) {
 			return false;
 		}
 		if( (entity.teamApparent || entity.team) == Team.NEUTRAL ) {
@@ -519,7 +525,7 @@ class Entity {
 		if( entity.id == this.personalEnemy ) {
 			return false;
 		}
-		if( (this.brainMaster && entity.id == this.brainMaster.id) || (entity.brainMaster && this.id == entity.brainMaster.id) ) {
+		if( this.isMyMaster(entity) || this.isMySlave(entity) ) {
 			return true;
 		}
 		return (entity.teamApparent || entity.team) == this.team;
@@ -537,7 +543,7 @@ class Entity {
 		if( entity.id == this.personalEnemy ) {
 			return false;
 		}
-		if( (this.brainMaster && entity.id == this.brainMaster.id) || (entity.brainMaster && this.id == entity.brainMaster.id) ) {
+		if( this.isMyMaster(entity) || this.isMySlave(entity) ) {
 			return false;
 		}
 		return this.team != Team.NEUTRAL && (entity.teamApparent || entity.team) == Team.NEUTRAL;
@@ -3149,7 +3155,7 @@ class Entity {
 		result.trail = trail.typeId;
 	}
 
-	setMoveTarget(area,x,y,instantly,attackAllowed,weapon,voluntary) {
+	setMoveTarget(area,x,y,instantly,attackAllowed,weapon,voluntary,swappingWith) {
 		this.areaMove = area || this.area;
 		this.xMove = x;
 		this.yMove = y;
@@ -3158,6 +3164,7 @@ class Entity {
 		this.moveAttackAllowed   = attackAllowed;
 		this.moveWeapon          = weapon;
 		this.moveVoluntary       = voluntary;
+		this.moveSwappingWith    = swappingWith;
 
 		return this.onMove();
 	}
@@ -3178,6 +3185,7 @@ class Entity {
 		let attackAllowed   = this.moveAttackAllowed;
 		let weapon          = this.moveWeapon;
 		let moveVoluntary   = this.moveVoluntary;
+		let swappingWith	= this.moveSwappingWith;
 
 		let bump = function(entity,incCount=true) {
 			if( !this.isUser ) {
@@ -3326,11 +3334,11 @@ class Entity {
 		}
 
 		function checkSwappable(target) {
-			return 
-				target &&
+			let maySwap = target &&
 				(!this.isUser || !target.isMerchant) &&
 				(this.isMyHusk(target) || (!this.isMyEnemy(target) && !this.isMySuperior(target)))
 			;
+			return maySwap;
 		}
 
 		let attack = target && attackAllowed && wantToAttack.call(this,target);
@@ -3355,7 +3363,8 @@ class Entity {
 		//
 		// Bonk Un-occupiable Items
 		//
-		let collider = this.findFirstCollider(this.travelMode,this.x,this.y,context.allyToSwap);
+		let ignoreMonster = this.moveSwappingWith || context.allyToSwap || target;
+		let collider = this.findFirstCollider(this.travelMode,this.x,this.y,ignoreMonster);
 		if( collider ) {
 			return resultBumpItem.call(this,collider);
 		}
@@ -3383,6 +3392,9 @@ class Entity {
 	enterTile(areaPrior,xPrior,yPrior,areaChanged) {
 	
 		let targetList = this.findAliveOthersAt(this.x,this.y);
+		if( this.moveSwappingWith ) {
+			targetList.exclude( this.moveSwappingWith );
+		}
 		let context = {
 			target: targetList.first,
 			allyToSwap: null
@@ -3401,10 +3413,19 @@ class Entity {
 		}
 
 		if( context.allyToSwap ) {
-			//console.log( this.name+" ally swap with "+allyToSwap.name );
-			// The real answer here is to make collides with an ally simple not exist
-			// or maybe to make our radii relative to each other smaller.
-			context.allyToSwap.moveToInstantly(null,Math.toTile(xPrior),Math.toTile(yPrior));
+			// Very complicated. Involuntary move, and set swapping to true.
+			let moveSwappingWith = this;
+			let allyResult = context.allyToSwap.setMoveTarget(
+				areaPrior, Math.toTile(xPrior), Math.toTile(yPrior),
+				false, false, null, false, moveSwappingWith
+			);
+			if( !allyResult.success ) {
+				return {
+					status: 'stoppedUnableToSwapWithAlly',
+					allyResult: allyResult,
+					success: false
+				}
+			}
 			result.allyToSwap = context.allyToSwap;
 		}
 
@@ -4043,6 +4064,13 @@ function bonk(entity,target) {
 		target.invisible = false;
 		guiMessage( 'revealInvisible', target );
 	}
+	if( target.isWall ) {
+		return 'wall';
+	}
+	if( target.invisible ) {
+		return 'invisible';
+	}
+	return 'other';
 }
 
 return {
