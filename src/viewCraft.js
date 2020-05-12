@@ -435,6 +435,12 @@ class ViewCraft extends ViewInventory {
 			.append( $('<hr>') )
 			.appendTo( div );
 	}
+	message( msg, payload ) {
+		super.message(msg,payload);
+		if( msg == 'inventoryChange' && payload === this.observer ) {
+			this.dirty = true;
+		}
+	}
 	render() {
 		$('#guiNarrative').removeClass('dim');
 		$('#guiNarrative').addClass('dim');

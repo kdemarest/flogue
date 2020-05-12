@@ -713,7 +713,7 @@ class Entity {
 		item.inSlot = false;
 		// Now aggregate if needed.
 		if( this.isUser ) {
-			Gui.dirty('inventory','favorites');
+			guiMessage('inventoryChange',this);
 		}
 	}
 	don(item,slot) {
@@ -733,7 +733,7 @@ class Entity {
 					item.trigger(this,this,Command.USE);
 				}
 				if( this.isUser ) {
-					Gui.dirty('inventory','favorites');
+					guiMessage('inventoryChange',this);
 				}
 			}
 		}
@@ -789,7 +789,7 @@ class Entity {
 		this.inventoryLastChange = Time.simTime;
 		Array.filterInPlace(this.inventory, i => i.id!=item.id );
 		if( this.isUser ) {
-			Gui.dirty('inventory');
+			guiMessage('inventoryChange',this);
 		}
 	}
 	_itemTake(item,x,y) {
@@ -821,7 +821,7 @@ class Entity {
 			item = this.don(item,item.slot) || item;
 		}
 		if( this.isUser ) {
-			Gui.dirty('inventory');
+			guiMessage('inventoryChange',this);
 		}
 		return item;
 	}

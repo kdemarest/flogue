@@ -71,6 +71,9 @@ class ViewInventory extends ViewObserver {
 		if( msg == 'resize' ) {
 			this.doLayout();
 		}
+		if( msg == 'inventoryChange' && payload == this.observer ) {
+			this.dirty = true;
+		}
 	}
 
 	// WARNING: This can and should be overloaded by descendants who want to handle

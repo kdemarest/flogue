@@ -54,6 +54,9 @@ class ViewFavorites extends ViewObserver {
 				this.dirty = true;
 			}
 		}
+		if( msg == 'inventoryChange' && payload == this.observer ) {
+			this.dirty = true;
+		}
 	}
 	setFavorite(e) {
 		if( this.favoriteCandidate ) {

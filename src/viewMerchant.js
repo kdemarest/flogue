@@ -2,7 +2,9 @@ Module.add('viewMerchant',function() {
 
 class ViewMerchant extends ViewInventory {
 	constructor(p) {
-		super('#guiMerchant',null,p.colFilter || p.entity.colFilter);
+		let colFilter = p.colFilter || p.entity.colFilter;
+		super('#guiMerchant',null,colFilter);
+		this.colFilter.price = 1;
 		this.merchant = p.merchant;
 		//this.buyTest = p.buyTest || p.entity.buyTest;
 		this.allowFilter = p.allowFilter || p.entity.allowFilter;
@@ -68,6 +70,9 @@ class ViewMerchant extends ViewInventory {
 	}
 	message( msg, payload ) {
 		super.message(msg,payload);
+		if( msg == 'inventoryChange' && payload == this.observer ) {
+			this.dirty = true;
+		}
 	}
 	render() {
 		if( !this.mode ) {
@@ -77,7 +82,8 @@ class ViewMerchant extends ViewInventory {
 		$('#guiNarrative').addClass('dim');
 		super.render();
 	}
-	tick() {
+	tick(dt) {
+		super.tick(dt);
 	}
 }
 
