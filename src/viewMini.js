@@ -102,7 +102,7 @@ class ViewMiniMap extends ViewObserver {
 		let observer = this.observer;
 		let site = observer.area.getSiteAt(observer.x,observer.y);
 		$(this.captionDivId).show().html(
-			this.caption // + (site ? '<br>'+site.id+'<br>'+site.denizenList.map( entity=>entity.name ).join(',') : '')
+			this.caption  + (site ? '<br>'+site.id+'<br>'+site.denizenList.map( entity=>entity.name ).join(',') : '')
 		);
 
 		var canvas0 = $(this.divId+'Canvas0')[0];

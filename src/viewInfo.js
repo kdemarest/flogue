@@ -270,20 +270,23 @@ class ViewInfo extends ViewObserver {
 		s += entity.vuln ? '<div class="monDetail">Weak:</div>'+entity.vuln.split(',').join(', ')+'<br>' : '';
 
 		// Perks owned
-		let p = '';
-		if( entity.perkList ) {
-			Object.each(entity.perkList, perk => {
-				if( perk.dead ) {
-					return;
-				}
-				if( !p ) {
-					p += '<span>PERKS</span><br>';
-				}
-				let allow = Perk.allow(perk,{source:entity}) ? '' : ' notAllowed';
-				p += '<span class="infoPerk'+allow+'">'+perk.name+'<br>'+perk.description+'</span><br>';
-			});
+		let showPerks = false;
+		if( showPerks ) {
+			let p = '';
+			if( entity.perkList ) {
+				Object.each(entity.perkList, perk => {
+					if( perk.dead ) {
+						return;
+					}
+					if( !p ) {
+						p += '<span>PERKS</span><br>';
+					}
+					let allow = Perk.allow(perk,{source:entity}) ? '' : ' notAllowed';
+					p += '<span class="infoPerk'+allow+'">'+perk.name+'<br>'+perk.description+'</span><br>';
+				});
+			}
+			s += p;
 		}
-		s += p;
 		if( !entity.isUser ) {
 			s += debug ? (entity.history[0]||'')+(entity.history[1]||'')+(entity.history[2]||'') : '';
 //			$('#guiPathDebugSummary').html(entity.path ? JSON.stringify(entity.path.status) : 'No Path');

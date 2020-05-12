@@ -770,7 +770,8 @@ class Item {
 			this.onTickRound.call(this);
 		}
 		if( this.existenceLeft ) {
-			this.existenceLeft = Math.max(0, (this.existenceLeft||0) - dt);
+			let roundTime = 1.0;
+			this.existenceLeft = Math.max(0, (this.existenceLeft||0) - roundTime);
 			if( this.existenceLeft <= 0 ) {
 				this.destroy();
 			}

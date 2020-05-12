@@ -180,7 +180,7 @@ Module.add('config.ken',function(X,moduleId) {
 		light: 2,
 		experience: 1000,
 		inject: {
-			level: 1,
+			level: 13,
 			//immortal: true,
 			//invulnerable: true
 		}
@@ -192,7 +192,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-//		startingDepth: 1,
+		startingDepth: 13,
 //		themeId: 'dwarfTown',
 		saveBattery: true,
 		playerInject: player.inject

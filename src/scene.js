@@ -166,7 +166,7 @@ class Scene extends ViewObserver {
 		super.message(msg,payload);
 
 		if( msg == 'dirty' ) {
-			debugger;	// The payload is an entity whose sprite we want to poke.
+			//debugger;	// The payload is an entity whose sprite we want to poke.
 		}
 		if( msg == 'imgLoaded' ) {
 			let img = payload;

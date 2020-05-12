@@ -3136,7 +3136,7 @@ class Entity {
 	}
 
 	leaveTrail(areaPrior,xPrior,yPrior,result) {
-		if( this.map.findItemAt(x,y).filter( item=>item.isVariety(this.trail) ).count ) {
+		if( this.map.findItemAt(xPrior,yPrior).filter( item=>item.isVariety(this.trail) ).count ) {
 			return;
 		}
 		let trailList = Inventory.lootGenerate( this.trail, this.level );

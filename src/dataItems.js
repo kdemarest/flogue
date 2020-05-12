@@ -2070,7 +2070,21 @@ ItemTypeList.fontDeep.onTickRound = function() {
 			effect.icon = StickerList.glowRed.img;
 			//this.command = Command.CAST;
 			effectApply(effect,entity,this,null,'tick');
-			Anim.Homing(this.id,entity,self,effect.icon,45,6,0.5,5);
+			//Anim.Homing(this.id,entity,self,effect.icon,45,6,0.5,5);
+
+			Anim.Run({
+				style:		'Missile',
+				delayId:	this.id,
+				origin:		this,
+				follow:		entity,
+				img:		StickerList.bloodGreen.img,
+				numPerSec:		10,
+				fireDuration:	0.3,
+				flightDuration: 0.8
+			});
+
+
+
 		});
 		this.resetRecharge();
 	}

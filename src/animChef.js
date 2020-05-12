@@ -99,6 +99,7 @@ Anim.Fountain = function(delayId,entity,num=40,duration=2,velocity=0.6,img) {
 		onSpriteTick: 	s => s.sMoveRel(s.xVel,s.yVel).sGrav(10)
 	});
 }
+
 /*
 Anim.Homing = function(delayId,entity,target,img,offAngle=45,num=40,duration=2,velocity=3) {
 	let dx = target.x - entity.x;
@@ -131,6 +132,7 @@ Anim.Run = (params) => {
 	return new Anim( target );
 }
 
+// This uses the new-style Anim.run(). Specity style: 'Missile'
 Anim.Missile = function(p) {
 	return {
 		origin:		Anim.REQUIRED,
