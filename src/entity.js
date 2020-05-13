@@ -3960,9 +3960,12 @@ class Entity {
 			if( !stairs && !this.isUser ) {
 				return vanishIntoPit();
 			}
-			// HEY! If there are no stairs, have the mason scan the map and just put floor where ever
-			// there is pit. Then put in a vine to climb up.
-			debugger;
+			if( !stairs ) {
+				// HEY! If there are no stairs, have the mason scan the map and just put floor where ever
+				// there is pit. Then put in a vine to climb up.
+				debugger;
+				return;
+			}
 
 			tell(mSubject,this,' ',mVerb,'fall',' down a pit!');
 			let gateEffect = this.createGateEffect({
