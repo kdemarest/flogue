@@ -42,6 +42,10 @@ const PotionImgChoices = {
 	eFreeze: 		{ img: "item/potion/brilliant_blue.png" }, 
 	ePanic: 		{ img: "item/potion/magenta.png" },
 	eRage: 			{ img: "item/potion/dark.png" },
+	ePacify: 		{ img: "item/potion/blue.png" },
+	eAlliance: 		{ img: "item/potion/cyan.png" },
+	eTame: 			{ img: "item/potion/cyan.png" },
+	eThrall: 		{ img: "item/potion/cyan.png" },
 	eConfusion: 	{ img: "item/potion/brown.png" },
 	eIgnore: 		{ img: "item/potion/white.png" },
 	eBlindness: 	{ img: "item/potion/black.png" },
@@ -98,7 +102,8 @@ const PotionEffects = Object.filter(EffectTypeList, (e,k)=>[
 const SpellEffects = Object.filter(EffectTypeList, (e,k)=>[
 	'ePossess','eStun','eBlink','eTeleport','eStartle','eHesitate','eBlindness','eLight','eSenseXray','eSenseLiving',
 	'eMentalFence','eSenseTreasure','eSlow','eHealing','ePoison','eWater','eBurn','eFreeze','eShock','eSmite',
-	'eSmite3','eRot','eLeech','eRage','ePanic','eConfusion','eShove','eInvisibility'
+	'eSmite3','eRot','eLeech','eRage','ePacify','eAlliance','ePanic','eConfusion','eShove','eInvisibility',
+	'eTame','eThrall'
 	].includes(k) );
 
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>[

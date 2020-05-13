@@ -193,14 +193,10 @@ class ViewInfo extends ViewObserver {
 
 		s += '<div class="monsterImageBackground"><img class="monsterImage" src="'+ImageRepo.getImgFullPath(entity)+/*IMG_BASE+entity.img+*/'"></div><br>';
 
-		if( entity.isMyMaster(this.trueObserver) ) {
-			s += '<div>Your Pet</div>';
-		}
-		if( entity.isMySlave(this.trueObserver) ) {
-			s += '<div>Your Master</div>';
-		}
+		let stance = entity.getStanceToward(this.trueObserver);
 
 		s += '<table>';
+		s += tRow( 'Stance:', String.capitalize(stance) );
 		s += tRow( 'Health:', Math.ceil(entity.health)+' of '+Math.ceil(entity.healthMax)+(debug ? ' ('+entity.x+','+entity.y+')' : '') );
 		if( !entity.isUser ) {
 			s += tRow('Activity:',(entity.activity ? entity.activity : (entity.attitude|'uncertain'))+(this.enemyIsPresent?'*':''));

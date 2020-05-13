@@ -456,6 +456,32 @@ class Entity {
 	inCombat() {
 		return this.inCombatTimer && Time.elapsed(this.inCombatTimer) < Rules.COMBAT_EXPIRATION;
 	}
+	setMaster(newMaster) {
+		this.brainMaster = newMaster;
+		this.brainPath = true;
+		this.destination = null;
+		if( !this.brainMaster ) {
+			tell(mSubject,this,' ',mVerb,'is',' now free.');
+		}
+		else {
+			tell(mSubject,this,' ',mVerb,'recognize',' ',mObject|mBold,this.brainMaster,' as ',mObject|mPossessive|mPronoun,this,' new master! ');
+		}
+	}
+	getStanceToward(entity) {
+		if( this.isMyMaster(entity) ) {
+			return this.isAnimal ? 'pet' : 'slave';
+		}
+		if( this.isMySlave(entity) ) {
+			return 'master';
+		}
+		if( this.isMyFriend(entity) ) {
+			return 'friend';
+		}
+		if( this.isMyNeutral(entity) ) {
+			return 'neutral';
+		}
+		return 'enemy';
+	}
 	isMyMaster(entity) {
 		return this.brainMaster && entity.id == this.brainMaster.id;
 	}
@@ -480,7 +506,6 @@ class Entity {
 	isMyInferior(entity) {
 		return !entity.isMySuperior(this);
 	}
-
 	isMyPack(entity) {
 		if( this.brainMaster ) {
 			return entity.id == this.brainMaster.id;
@@ -493,6 +518,9 @@ class Entity {
 
 	isMyEnemy(entity) {
 		if( entity.id == this.id ) {
+			return false;
+		}
+		if( this.attitude == Attitude.PACIFIED ) {
 			return false;
 		}
 		if( this.attitude == Attitude.ENRAGED ) {
@@ -539,6 +567,9 @@ class Entity {
 		}
 		if( this.attitude == Attitude.FEARFUL && (entity.teamApparent || entity.team) !== this.team ) {
 			return false;
+		}
+		if( this.attitude == Attitude.PACIFIED ) {
+			return true;
 		}
 		if( entity.id == this.personalEnemy ) {
 			return false;
@@ -3060,11 +3091,7 @@ class Entity {
 				// Even though corpses are food, nobody is their "ownerOfRecord" and so a pet
 				// eating a corpse will not see the killer as their master
 				if( food.isEdibleBy(this) && this.isPet && provider && (provider.teamApparent || provider.team)==this.team ) {
-					this.brainMaster = provider;
-					this.destination = null;
-					//this.watch = true;
-					this.brainPath = true;
-					tell(mSubject,this,' ',mVerb,'recognize',' ',mObject|mBold,this.brainMaster,' as ',mObject|mPossessive|mPronoun,this,' new master! ',this.attitude);
+					this.setMaster(provider);
 				}
 				if( this.eatenFoodToInventory ) {
 				}

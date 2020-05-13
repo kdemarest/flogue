@@ -75,7 +75,7 @@ class Deed {
 		testValidTimeLeft(this.timeLeft);
 		this.killMe = false;
 	}
-	alterTimeLeft(duration,timeOp) {
+	inheritDuration(duration,timeOp) {
 		if( this.killMe ) return;
 		console.assert( this.timeLeft !== false );
 		testValidTimeLeft( this.timeLeft );
@@ -103,7 +103,7 @@ class Deed {
 		}
 		return done;
 	}
-	applyEffect() {
+	calc() {
 		if( this.contingent ) {
 			if( !this.contingent(this) ) {
 				if( this.item && this.item.hasRecharge ) {
@@ -288,7 +288,7 @@ let DeedManager = (new class {
 		target[stat] = target.isMonsterType ? target.getBaseStat(stat) : target.baseType[stat];
 		for( let deed of this.deedList ) {
 			if( !deed.killMe && deed.target.id == target.id && deed.stat == stat ) {
-				deed.applyEffect();
+				deed.calc();
 			}
 		}
 		if( stat in this.statsThatCauseImageChanges && oldValue !== target[stat] ) {
@@ -549,6 +549,7 @@ let effectApply = function(effect,target,source,item,context) {
 // effect.value
 // effect.duration
 // effect.isResist
+// 	requires = a function that must return true at onset for the effect to happen.
 
 let _effectApplyTo = function(effect,target,source,item,context) {
 
@@ -874,7 +875,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 		//Some effects are "singular" meaning you can't have more than one of it upon you.
 		result.singularOp = effect.singularOp;
 		result.oldDuration = singular.duration;
-		singular.alterTimeLeft(effect.duration,effect.singularOp)
+		singular.inheritDuration(effect.duration,effect.singularOp)
 		result.newDuration = singular.duration;
 		result.effectResult = {
 			status: 'singular'+effect.singularOp,
@@ -968,6 +969,7 @@ let DeedOp = {
 	POSSESS: 	'possess',
 	SUMMON: 	'summon',
 	DRAIN: 		'drain',
+	TAME: 		'tame',
 	KILLLABEL: 	'killLabel',
 	CUSTOM:		'custom'
 }
@@ -1159,6 +1161,26 @@ DeedManager.addHandler(DeedOp.KILLLABEL,function() {
 		status: 'killedlabel',
 		success: count > 0,
 		count: count
+	}
+});
+
+DeedManager.addHandler(DeedOp.TAME,function() {
+	if( !this.target.isMonsterType ) return resultDeniedDueToType;
+	let source = this.source;
+	if( source && source.isItemType ) {
+		source = source.ownerOfRecord;
+	}
+	if( !source ) {
+		return {
+			status: 'nobodyToBeMyMaster',
+			success: false
+		}
+	}
+	this.target.setMaster(source);
+	this.onEnd = deed => this.target.setMaster(null);
+	return {
+		status: 'tamed',
+		success: true
 	}
 });
 

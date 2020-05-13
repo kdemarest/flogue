@@ -549,6 +549,7 @@ let EffectTypeList = {
 		stat: 'speedMove',
 		value: 0.5,
 		xDuration: 0.3,
+		name: 'slow',
 		icon: 'gui/icons/eSlow.png',
 		about: 'Target will act half as frequently.'
 	},
@@ -562,6 +563,7 @@ let EffectTypeList = {
 		value: true,
 		xDuration: 0.25,
 		requires: e => !e.senseBlind,
+		name: 'blinding',
 		icon: 'gui/icons/eBlind.png',
 		about: 'Target becomes blind.'
 	},
@@ -574,6 +576,7 @@ let EffectTypeList = {
 		isHarm: 1,
 		value: Attitude.CONFUSED,
 		xDuration: 0.3,
+		name: 'confuse',
 		icon: 'gui/icons/eAttitude.png',
 		about: 'Target becomes confused, stumbling about randomly.'
 	},
@@ -586,6 +589,7 @@ let EffectTypeList = {
 		isHarm: 1,
 		value: Attitude.PANICKED,
 		xDuration: 1.0,
+		name: 'panic',
 		icon: 'gui/icons/eFear.png',
 		about: 'Target panics and runs in fear.'
 	},
@@ -598,8 +602,59 @@ let EffectTypeList = {
 		isHarm: 1,
 		value: Attitude.ENRAGED,
 		xDuration: 0.5,
+		name: 'enrage',
 		icon: 'gui/icons/eAttitude.png',
 		about: 'Target becomes enraged, attacking friend and foe alike.'
+	},
+	ePacify: {
+		isDeb: 1,
+		level: 0,
+		rarity: 0.40,
+		op: 'set',
+		stat: 'attitude',
+		isHarm: 1,
+		value: Attitude.PACIFIED,
+		xDuration: 0.5,
+		name: 'pacify',
+		icon: 'gui/icons/eAttitude.png',
+		about: 'Target becomes very mellow. Nobody is an enemy.'
+	},
+	eAlliance: {
+		isDeb: 1,
+		level: 0,
+		rarity: 0.40,
+		op: 'set',
+		stat: 'team',
+		isHarm: 1,
+		value: Team.GOOD,
+		xDuration: 0.5,
+		name: 'alliance',
+		icon: 'gui/icons/eAttitude.png',
+		about: 'Target becomes your ally, for a while.'
+	},
+	eTame: {
+		isDeb: 1,
+		isHarm: 1,
+		level: 0,
+		rarity: 1,
+		op: 'tame',
+		xDuration: 0.5,
+		requires: target => target.isAnimal || target.isInsect,
+		name: 'tame',
+		icon: 'gui/icons/eAttitude.png',
+		about: 'Target becomes your pet.'
+	},
+	eThrall: {
+		isDeb: 1,
+		isHarm: 1,
+		level: 0,
+		rarity: 1,
+		op: 'tame',
+		xDuration: 0.5,
+		requires: target => target.isSunChild || target.isEarthChild || target.isLunarChild,
+		name: 'thrall',
+		icon: 'gui/icons/eAttitude.png',
+		about: 'Target becomes your enthralled minion.'
 	},
 	ePossess: {
 		isDeb: 1,

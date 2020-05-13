@@ -34,7 +34,7 @@ Type.register('Part', {
 	},
 	brain: 		{
 		matter: 'flesh',
-		makes: ['eSenseTreasure', 'eBravery', 'eClearMind', 'eStalwart', 'eMentalFence'],
+		makes: ['eSenseTreasure', 'eBravery', 'eClearMind', 'eStalwart', 'eMentalFence','ePacify','eAlliance','eTame','eThrall'],
 	},
 	bone: 		{
 		matter: 'bone',

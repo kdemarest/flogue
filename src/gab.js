@@ -154,6 +154,11 @@ Gab = (new function(priorGab) {
 			if( oldValue == 'busy' ) return;
 			return [mSubject,subj,' ',mSubject|mVerb,'become',' ',newValue,'.'];
 		},
+		team: function(subj,obj,oldValue,newValue) {
+			if( newValue == 'busy' ) return;
+			if( oldValue == 'busy' ) return;
+			return [mSubject,subj,' ',mSubject|mVerb,'become',' part of team ',newValue,'.'];
+		},
 		senseBlind: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' ',mSubject|mVerb,newValue?'lose':'regain',' ',mSubject|mPronoun|mPossessive,subj,' sight!'];
 		},
