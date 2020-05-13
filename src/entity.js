@@ -773,37 +773,25 @@ class Entity {
 			finishDonning();
 		}
 		else {
-			let updateProgress = (timeLeft)=>{
-				let sentence = [mSubject,this,' ',mVerb,'need',' '+timeLeft+' more rounds to '+item.useVerb+' the ',mObject,item];
-				tell(...sentence);
-				this.sign = tellGet(this,sentence);
-			}
 			tell(mSubject,this,' ',mVerb,'begin',' ',item.useVerb+'ing',' ',mObject,item)
-
-			let donTracker = {};
-			updateProgress(item.donDuration);
 			let donArmorEffect = {
 				op: 'set',
 				stat: 'attitude',
 				value: Attitude.BUSY,
 				duration: item.donDuration,
+				name: 'donning',
 				description: 'putting on '+item.typeId,
 				icon: item.icon,
-				onTick: function(target,dt) {
-					console.assert( dt===1.0 );
-					this.donPeriodic = this.donPeriodic || new Time.Periodic();
-					this.donPeriodic.tick( 1.0, dt, () => {
-						updateProgress(Math.floor(this.timeLeft+1));
-					});
-				},
+				iconOver: item.icon,
 				onEnd: (deed) => {
 					if( deed.completed() ) {
 						finishDonning();
 					}
-					delete this.sign;
 				}
 			}
 			effectApply( donArmorEffect, this, this, null );
+			window.donTest = true;
+			guiMessage('inventoryClose');
 		}
 
 
@@ -1481,8 +1469,21 @@ class Entity {
 		return packId;
 	}
 
-	hasForcedAttitude() {
+	get hasForcedAttitude() {
 		return [Attitude.CONFUSED,Attitude.ENRAGED,Attitude.PANICKED,Attitude.PACIFIED,Attitude.BUSY].includes(this.attitude);
+	}
+
+	get controlSuborned() {
+		let useAiTemporarily = false;
+		if( this.control == Control.USER ) {
+			if( this.playerUseAi ) {
+				useAiTemporarily = true;
+			}
+			if( this.stun || this.hasForcedAttitude ) {
+				useAiTemporarily = true;
+			}
+		}
+		return useAiTemporarily;
 	}
 
 	think() {
@@ -1497,21 +1498,12 @@ class Entity {
 		}
 
 		let willHesitate = (this.attitude == Attitude.HESITANT && Math.chance(40));
-		let useAiTemporarily = false;
-		if( this.control == Control.USER ) {
-			if( this.playerUseAi ) {
-				useAiTemporarily = true;
-			}
-			if( this.stun || willHesitate || this.hasForcedAttitude() ) {
-				useAiTemporarily = true;
-			}
-		}
 
 		if( this.control == Control.EMPTY ) {
 			this.command = Command.LOSETURN;
 		}
 
-		if( this.control == Control.AI || useAiTemporarily ) {
+		if( this.control == Control.AI || this.controlSuborned ) {
 			function decideCommand() {
 
 				if( this.typeId == window.debugEntity ) debugger;
@@ -1915,7 +1907,7 @@ class Entity {
 	}
 
 	changeAttitude(newAttitude) {
-		if( this.hasForcedAttitude() ) {
+		if( this.hasForcedAttitude ) {
 			return;
 		}
 		this.attitude = newAttitude;

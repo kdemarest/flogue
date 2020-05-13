@@ -74,6 +74,9 @@ class ViewInventory extends ViewObserver {
 		if( msg == 'inventoryChange' && payload == this.observer ) {
 			this.dirty = true;
 		}
+		if( msg == 'inventoryClose' ) {
+			this._hide();
+		}
 	}
 
 	// WARNING: This can and should be overloaded by descendants who want to handle

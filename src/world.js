@@ -42,6 +42,13 @@ class World {
 		let userEntity = this.userList[0].entity;
 		console.assert( userEntity.isUser );
 
+		if( userEntity.controlSuborned ) {
+			if( userEntity.command == Command.WAIT ) {
+				this.timeFund += 1.0;
+			}
+			userEntity.clearCommands();
+		}
+
 		if( userEntity.command !== Command.NONE ) {
 			userEntity.act();
 			let timeCost = userEntity.commandSpeed<=0 ? 0 : 1/userEntity.commandSpeed;

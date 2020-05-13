@@ -290,6 +290,12 @@ class UserCommandHandler {
 				this.observer.commandTarget2 = c.commandTarget2;
 			}
 		);
+		user.gui.subscribe('specialInventoryClose','inventoryClose',()=>{
+			if( this.cmd.command == Command.INVENTORY ) {
+				this.cmd.command = Command.NONE;
+			}
+		});
+
 	}
 	updateRangeStatus(rangeStatus) {
 		console.log(rangeStatus);

@@ -124,7 +124,12 @@ class ViewSign extends ViewObserver {
 		let observer = this.observer;
 		let lastBumpedId = observer.lastBumpedId; 
 		let signList = { count:0 };
-		if( observer.sign ) {
+		if( observer.hasForcedAttitude ) {
+			let deed = observer.deedFind( deed => deed.value==observer.attitude );
+			let desc = 'You are '+deed.description+' ('+deed.timeLeft+')'+'<br>Hit wait to continue.';
+			return [observer,desc];
+		}
+		if( !signList.count && observer.sign ) {
 			signList = new Finder([observer]).filter(e=>e.sign);
 		}
 		if( !signList.count && lastBumpedId ) {
@@ -293,10 +298,15 @@ class ViewExperience extends ViewObserver {
 		let entity = this.observer;
 		if( !entity ) return;
 
-		let prefix = '<span class="runPause">'+(this.trueObserver.area.world.paused ? '||' : '>')+'</span>';
+		let prefix = ''; //'<span class="runPause">'+(this.trueObserver.area.world.paused ? '||' : '>')+'</span>';
+
+		if( entity.attitude == Attitude.BUSY ) {
+			prefix = prefix + "BUSY ";
+		}
 
 		if( entity.isTileType || entity.isItemType || (entity.isMonsterType && !entity.isUser) ) {
-			let s = String.capitalize(entity.name.replace(/\$/,''));
+			let s = '';
+			s += String.capitalize(entity.name.replace(/\$/,''));
 			if( entity.level !== undefined && (entity.isMonsterType || (entity.isItemType && entity.isTreasure)) ) {
 				s += ' Level '+Math.floor(entity.level);
 			}
