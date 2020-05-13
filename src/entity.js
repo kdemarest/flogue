@@ -1647,7 +1647,8 @@ class Entity {
 					if( theEnemy ) {
 						this.activity = 'Enraged at '+theEnemy.name+'.';
 						let c = !wasSmell && !wasLEP ? this.thinkAttack(enemyList,personalEnemy) : null;
-						return c || this.thinkApproachTarget(enemyList.first);
+						c = c || this.thinkApproachTarget(enemyList.first);
+						if( c ) return c;
 					}
 					return this.thinkWanderF();
 				}
@@ -2367,6 +2368,8 @@ class Entity {
 				stat: 'stun',
 				value: true,
 				duration: Math.max(1,impactForce),
+				name: 'stun',
+				description: 'stunned',
 				isSecondary: true,
 			});
 			effectApply( effect, this, attacker, item, 'shoveStun' );

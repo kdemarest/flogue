@@ -873,7 +873,7 @@ Type.register( 'MonsterType', {
 		carrying: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		resist: DemonResistance,
-		vuln: DemonVulnerability+','+DamageType.WATER,
+		vuln: 'ice,water',
 	},
 	"daileesh": {	// (leech)
 		core: [ 34, '4:10', 'evil', null, 'demon', 'wingedBiped', 'mon/demon/daileesh.png', 'it' ],
@@ -935,7 +935,6 @@ Type.register( 'MonsterType', {
 	},
 	"daitox": {	// (poison)
 		core: [ 49, '3:20', 'evil', 'stab', 'demon', 'wingedBiped', 'mon/demon/daitox.png', 'it' ],
-		immune: DemonImmunity+',poison',
 		isDemon: true,
 		isDaitox: true,
 		effectOngoing: {
@@ -952,8 +951,9 @@ Type.register( 'MonsterType', {
 		},
 		carrying: '',
 		loot: '3x 30% demonEye',
-		resist: DemonResistance,
-		vuln: DemonVulnerability,
+		immune: Damage.Physical2+','+ConstructImmunity+',poison,suffocate',
+		resist: 'water',
+		vuln: 'shock',
 	},
 	"daikay": {	// (rot)
 		core: [ 54, '3:30', 'evil', null, 'demon', 'noped', 'mon/demon/daikay.png', 'it' ],
@@ -971,18 +971,18 @@ Type.register( 'MonsterType', {
 			}
 		},
 		breathIgnore: true,
-		immune: DemonImmunity,
 		isDemon: true,
 		isDaikay: true,
 		carrying: '',
 		loot: '3x 30% stuff.bone',
-		resist: DemonResistance,
 		travelMode: 'fly',
-		vuln: DemonVulnerability,
+		immune: UndeadImmunity+',rot',
+		resist: DemonResistance,
+		vuln: 'light,smite',
 	},
 	"daitraum": {	// (stun)
 		core: [ 59, '3:4', 'evil', 'bash', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
-		immune: DemonImmunity,
+		size: 3.0,
 		isDemon: true,
 		carrying: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
@@ -990,8 +990,10 @@ Type.register( 'MonsterType', {
 			chanceEffectFires: 15,
 			effect: { basis: 'eStun', xDuration: 0.2, singularId: 'daitraum', },
 		},
-		resist: DemonResistance,
-		vuln: DemonVulnerability,
+		scale: 1.4,
+		immune: 'shock',
+		resist: Damage.Physical,
+		vuln: MentalAttack,
 	},
 	"daishulk": {	// (shove)
 		core: [ 64, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/daishulk.png', 'it' ],
@@ -1057,6 +1059,7 @@ Type.register( 'MonsterType', {
 		immune: DemonImmunity,
 		isDemon: true,
 		isDaiphant: true,
+		dodge: Quick.CLUMSY,
 		carrying: '',
 		loot: '30% gem, 50% potion, 30% demonEye',
 		naturalWeapon: {
@@ -1064,7 +1067,7 @@ Type.register( 'MonsterType', {
 			effect: { basis: 'eSlow', singularId: 'daiphant' }
 		},
 		resist: DemonResistance,
-		vuln: DemonVulnerability,
+		vuln: 'light,enraged,solarium',
 	},
 	"dailess": {	// (blind)
 		core: [ 89, '3:5', 'evil', 'bite', 'demon', 'multiped', 'mon/demon/dailess.png', 'it' ],
@@ -1078,7 +1081,7 @@ Type.register( 'MonsterType', {
 			effect: { basis: 'eBlindness', singularId: 'dailess' }
 		},
 		resist: DemonResistance,
-		vuln: DemonVulnerability,
+		vuln: 'light,chop',
 	},
 	"dairain": {	// (drain)
 		core: [ 94, '3:5', 'evil', 'bite', 'demon', 'wingedBiped', 'mon/demon/dairain.png', 'it' ],
@@ -1483,7 +1486,8 @@ Type.register( 'MonsterType', {
 		isEarthChild: true,
 		isTroll: true,
 		regenerate: 0.10,
-		scale: 0.6,
+		scale: 1.4,
+		yAnchor: 0.6,
 		senseSight: 3,
 		stink: 0.4,
 		vuln: DamageType.BURN

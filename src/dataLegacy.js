@@ -375,7 +375,7 @@ LegacyList.brawler = compose('brawler',[
 		name: 'Stunning blow '+((index+1)*10)+'%',
 		apply: (when,e,details) => when=='secondary' && e.isEffect && e.item && (e.item.isClub || e.item.isRock) && e.op=='damage' ? 
 			details.secondary.push( {
-				effect: { op: 'set', stat: 'stun', value: true, duration: 1, icon: 'gui/icons/eShove.png' },
+				effect: { op: 'set', stat: 'stun', value: true, duration: 1, name: 'stun', description: 'stunned', icon: 'gui/icons/eShove.png' },
 				chance: 100
 			})
 			: false,
@@ -409,7 +409,7 @@ LegacyList.brawler = compose('brawler',[
 	range( [18], (index) => ({
 		name: 'Viscious Whack 2x',
 		skill: {
-			needsTarget: true,
+			//needsTarget: true,
 			rechargeTime: 60,
 			passesTime: false,
 			effect: { op: 'set', stat: 'visciousWhack', value: 2, duration: 2 }

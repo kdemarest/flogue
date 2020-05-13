@@ -124,9 +124,9 @@ class ViewSign extends ViewObserver {
 		let observer = this.observer;
 		let lastBumpedId = observer.lastBumpedId; 
 		let signList = { count:0 };
-		if( observer.hasForcedAttitude ) {
-			let deed = observer.deedFind( deed => deed.value==observer.attitude );
-			let desc = 'You are '+deed.description+' ('+deed.timeLeft+')'+'<br>Hit wait to continue.';
+		if( observer.hasForcedAttitude || (observer.stun||0) > 0 ) {
+			let deed = observer.deedFind( deed => deed.value==observer.attitude || (deed.stat && deed.stat=='stun') );
+			let desc = 'You are '+(deed.description||observer.attitude)+' ('+deed.timeLeft+')'+'<br>Hit wait to continue.';
 			return [observer,desc];
 		}
 		if( !signList.count && observer.sign ) {
