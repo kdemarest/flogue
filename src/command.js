@@ -444,7 +444,8 @@ class UserCommandHandler {
 				visibleFn: () => cmd.needsTarget(cmd,observer) && !cmd.commandTarget,
 				rangeStatusFn: this.updateRangeStatus.bind(this)
 			});
-			let result = this.pickTarget( 'commandTarget', this.user.keyToCommand(event.key).command, observer );
+			let command = event.command ? event.command : this.user.keyToCommand(event.key).command;
+			let result = this.pickTarget( 'commandTarget', command, observer );
 			if( result !== undefined ) {
 				return result;
 			}
@@ -462,7 +463,8 @@ class UserCommandHandler {
 				visibleFn: () => cmd.needsTarget2(cmd,observer) && !cmd.commandTarget2,
 				rangeStatusFn: this.updateRangeStatus.bind(this)
 			});
-			let result = this.pickTarget( 'commandTarget2', this.user.keyToCommand(event.key).command, observer );
+			let command = event.command ? event.command : this.user.keyToCommand(event.key).command;
+			let result = this.pickTarget( 'commandTarget2', command, observer );
 			if( result !== undefined ) {
 				return result;
 			}

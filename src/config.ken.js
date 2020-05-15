@@ -172,7 +172,7 @@ Module.add('config.ken',function(X,moduleId) {
 		// soldier, brawler, monk, archer, ninja, not quite blaster
 		mergeWithExistingData: true,
 		legacyId: 'brawler', //'ninja',
-		carrying: '4x weapon.club, 40x ammo.arrow, 20x ammo.rock, 20x ammo.dart, spell.eFreeze, 2x spell.eAlliance, 2x spell.eTame, 2x spell.eThrall, lumpOfMeat, 20x potion, 5x weapon, weapon.bow', //'5x wood, 100x part, 4x potion.eWater, 4x part isWing, 4x part isSkin, 4x ore, 3x stuff.leather, 3x oreMalachite, 3x stuff.demonLeather', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
+		carrying: '4x weapon.club, 40x ammo.arrow, 20x ammo.rock, 20x ammo.dart, spell.eBlink, spell.eTeleport, 2x spell.eAlliance, 2x spell.eTame, 2x spell.eThrall, lumpOfMeat, 20x potion, 5x weapon, weapon.bow', //'5x wood, 100x part, 4x potion.eWater, 4x part isWing, 4x part isSkin, 4x ore, 3x stuff.leather, 3x oreMalachite, 3x stuff.demonLeather', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
 //		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow',
 		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, spell.eShove',
 		//sensePerception = true,

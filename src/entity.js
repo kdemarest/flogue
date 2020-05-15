@@ -2526,8 +2526,8 @@ class Entity {
 	}
 
 	getRange2(item) {
-		let rangeId = item.typeId+'Range2';
-		return this[rangeId] || item.range2 || (item.effect ? item.effect.range2 : false) || Rules.RANGED_WEAPON_DEFAULT_RANGE;
+		let range2 = (item.effect ? item.effect.range2 : false) || item.range2;
+		return Number.isFinite(range2) ? range2 : false;
 	}
 
 	calcDefaultWeapon() {

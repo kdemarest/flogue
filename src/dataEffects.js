@@ -156,7 +156,6 @@ let EffectTypeList = {
 		level: 0,
 		rarity: 1.00,
 		op: 'teleport',
-		range2: 0,
 		random: true,
 		duration: 0,
 		xRecharge: 2.0,
