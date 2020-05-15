@@ -3,13 +3,22 @@ Module.add('utilChance',function() {
 let ChanceToAppear = {};
 
 ChanceToAppear.Simple = function(entityLevel,mapLevel) {
-	if( mapLevel < entityLevel ) {
+	if( entityLevel > mapLevel ) {
 		return 0;
 	}
-	let span = Math.max(3,Rules.DEPTH_SPAN/10);
-	let x = (entityLevel+span)-mapLevel;
-	let n = 1-Math.abs(x/span);
-	return Math.clamp( n, 0.02, 1.0 );
+	// This used to be complicated, making it so that things of lower level tended to appear.
+	// But that seems silly.
+	let spanOfLevelsThingsAppear = Rules.DEPTH_SPAN/5;	// about 4 levels.
+	if( entityLevel <= mapLevel - spanOfLevelsThingsAppear ) {
+		return 0.02;
+	}
+	return 1.0;
+
+
+//	let span = Math.max(3,Rules.DEPTH_SPAN/10);
+//	let x = (entityLevel+span)-mapLevel;
+//	let n = 1-Math.abs(x/span);
+//	return Math.clamp( n, 0.02, 1.0 );
 }
 
 ChanceToAppear.Ramp = function(entityLevel,mapLevel) {

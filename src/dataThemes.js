@@ -117,7 +117,7 @@ ScapeList.caveRoomsWellConnected = () => ({
 });
 
 ScapeList.caveRoomsNarrowlyConnected = () => ({
-	dim: 				Math.randInt(30,40),
+	dim: 				Math.randInt(40,50),
 	architecture: 		"cave",
 	floorDensity: 		0.25,
 	seedPercent: 		0.15,
@@ -285,13 +285,13 @@ ThemeList.coreCavernRooms = {
 	palette: 		{ basis: 'jaggedCave' },
 	placeDensity: 	0.50,
 	rREQUIRED: 		'goblinGathering',
-	rCOMMON: 		'mushrooms, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
-	rUNCOMMON: 		'secretChest, hoard_shade, antHive, trollBridge, trollPit, tinyRoom, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
+	rCOMMON: 		'tinyRoom', //'mushrooms, nest_bat, nest_blueScarab, nest_redScarab, nest_viper, camp_ogre, camp_goblin, den_kobold, floodPit, floodWater',
+	rUNCOMMON: 		'secretChest, hoard_shade, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 			'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 			'graveYard',
 	monsters: 		['isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isDemon'],
 	enemyDensity: 	0.05,
-	friendDensity: 	0.01,
+	friendDensity: 	0.02,
 }
 
 ThemeList.wildlands = {

@@ -8,7 +8,7 @@ async function main() {
 		ai: false,
 		anim: false,
 		sprite: false,
-		command: false,
+		command: true,
 		cmd: false,
 		range: false,
 		info: false,

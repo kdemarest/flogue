@@ -64,6 +64,7 @@ let Rules = new class {
 		this.expectedHitsPerMonster			= 4;
 		this.numTypesOfArmor				= 5;
 		this.breathLimitToDamage			= 6;
+		this.foodAidByLevel					= 2;
 
 		this.effectShapePriceMult = {
 			single: 1.0,

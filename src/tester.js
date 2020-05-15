@@ -96,6 +96,7 @@ class Test {
 		this.valueRestore.forEach( restoreFn => restoreFn() );
 	}
 	think(entity) {
+		debugger;
 		if( this.result.resolved || !this.onThink ) {
 			return;
 		}
@@ -106,6 +107,9 @@ class Test {
 		return this.onThink( entity, this.result.helper );
 	}
 	tick() {
+		if( !this.result ) {
+			return;
+		}
 		if( this.result.resolved || !this.onTick ) {
 			return;
 		}
@@ -140,12 +144,19 @@ class Test {
 		this.simTimeLimit = test.timeLimit === false ? false : (Time.simTime + (test.timeLimit || 100));
 
 		try {
-			user.startGame( test.depth, test.themeId, 'player', test.player.atMarker, () => {
-				this.area = user.entity.area;
-				this.result = new TestResult(testId,new TestHelper(user));
-				user.tickWorld(false);
-				this.started = true;
-			});
+			let config = {
+				depth:			test.depth,
+				themeId:		test.themeId,
+				playerTypeId:	'player',
+				playerMarkerId:	test.player.atMarker
+			};
+			debugger;
+			user.startGame( config );
+			this.area = user.entity.area;
+			this.result = new TestResult(testId,new TestHelper(user));
+//			user.tickWorld(false);
+			this.started = true;
+
 		} catch(e) {
 			debugger;
 			this.result = {
@@ -255,7 +266,7 @@ class TestManager {
 				return;
 			}
 			if( !this.interactive && this.test && this.test.started ) {
-				user.tickWorld(true);
+				//user.tickWorld(true);
 			}
 			if( !this.test ) {
 				let testId = this.roster.shift();
@@ -290,7 +301,7 @@ class ViewTester {
 				Config.setConfigId( $(this).val() );
 			});
 
-		let inputTest = $('<input id="testId" type="text" value="playFullGame">')
+		let inputTest = $('<input id="testId" type="text" value="makeAllItems">') //playFullGame">')
 			.appendTo(divId)
 			.keydown( function(e) {
 				e.stopPropagation();

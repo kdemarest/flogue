@@ -90,6 +90,7 @@ function PlaceMany(prefix,list,templateFn) {
 		let VARIETY = list.pop();
 		let placeId = prefix+'_'+VARIETY;
 		PlaceTypeList[placeId] = templateFn(VARIETY);
+		console.assert( count && Number.isFinite(count) );
 		PlaceTypeList[placeId].rarity /= count;
 	}
 }
@@ -581,7 +582,7 @@ PlaceTypeList.surfaceSunTemple = {
  ##....................##
  #........12345.........#
  #....b........67890AB.b########
-##......YZ..............#..d..##
+##........Y.............#..d..##
 #f...b....X.a...........o...l.S#
 ##......................#.....##
  #....b........HIJKLMN.b########
@@ -592,7 +593,7 @@ PlaceTypeList.surfaceSunTemple = {
    #........b.........#
    ##................##
     ###............###
-      ###........###
+      ###...ZZZ..###
         ##########
 `,
 	flags: { rotate: true, hasWall: true, isUnique: true },

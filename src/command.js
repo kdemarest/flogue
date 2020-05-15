@@ -10,7 +10,7 @@ function commandForItemAttack(weapon) {
 	if( weapon.mayThrow && (!weapon.inSlot || weapon.inSlot==Slot.AMMO) ) {
 		return Command.THROW;
 	}
-	if( weapon.mayCast ) {
+	if( weapon.isSpell || weapon.mayCast ) {
 		return Command.CAST;
 	}
 	if( weapon.mayShoot ) {

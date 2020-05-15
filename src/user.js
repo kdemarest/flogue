@@ -27,6 +27,11 @@ class HumanUser {
 			}
 		}
 		else {
+			let unbunchList = [Command.SHOOT,Command.ATTACK,Command.CAST];
+			if( (item.isWeapon || item.isSpell) && unbunchList.includes(commandForItemAttack(item)) ) {
+				item = item.single();
+			}
+
 			this.favoriteMap[key] = {
 				key: key,
 				command: commandForItem(item) || Command.INVENTORY,

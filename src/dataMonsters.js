@@ -634,7 +634,7 @@ Type.register( 'MonsterType', {
 		loot: '30% dogCollar',
 		properNoun: true,
 		rarity: 0.10,
-		regenerate: 0.03,
+		regenerate: 0.01,
 		senseSmell: 200,
 		senseSight: 3,
 	},
@@ -754,7 +754,7 @@ Type.register( 'MonsterType', {
 	"brassamaton": {
 		core: [ 59, '6:3', 'evil', 'bash', 'robot', 'humanoidBot', 'mon/robot/brassamaton.png', 'it' ],
 		size: 2.0,
-		scale: 0.8,
+		scale: 1.4,
 		attitude: Attitude.AWAIT,
 		tooClose: 2,
 		immune: ConstructImmunity,
@@ -1707,12 +1707,14 @@ MonsterTypeList.giantSnail.onAttacked = function(attacker,amount,damageType) {
 				this.inShell = true;
 				this.immune = this.immuneInShell;
 				this.resist = this.resistInShell;
+				this.spriteDirty = true;
 				guiMessage('dirty',this,'map');
 			},
 			onEnd: (deed) => {
 				this.inShell = false;
 				this.immune = '';
 				this.resist = '';
+				this.spriteDirty = true;
 				guiMessage('dirty',this,'map');
 			}
 		};

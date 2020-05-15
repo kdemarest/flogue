@@ -136,6 +136,9 @@ class Item {
 		if( this.isCoin ) {
 			this.coinCount  	= Rules.pickCoinCount(depth);
 		}
+		if( this.bunchSize ) {
+			this.bunch = this.bunchSize;
+		}
 
 		if( this.effect && this.effect.isInert ) {
 			delete this.effect;

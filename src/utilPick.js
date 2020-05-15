@@ -106,9 +106,15 @@ Pick.Table = class {
 		}
 		debugger;
 	}
-	noChances() {
+	anyWithoutChance() {
 		for( let i=0 ; i<this.chance.length ; ++i ) {
 			if( this.chance[i] <= 0 ) return false;		// negative chances supported.
+		}
+		return true;
+	}
+	noChances() {
+		for( let i=0 ; i<this.chance.length ; ++i ) {
+			if( this.chance[i] > 0 ) return false;		// negative chances supported.
 		}
 		return true;
 	}

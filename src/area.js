@@ -42,9 +42,6 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		// Create the actual item at this location. It will be merged into any
 		// existing container at that location.
 		let item = area.map.itemCreateByType(x,y,type,presets,inject);
-		if( item.bunchSize ) {
-			item.bunch = item.bunchSize;
-		}
 
 		// If I'm making a container, but there is already one here, kill this
 		// item and just return.

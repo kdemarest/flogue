@@ -1186,15 +1186,13 @@ Module.add('dataMason',function() {
 				this.placeUsed = {};
 			}
 			pickResistingDuplicates() {
-				// We try to resist picking the same place multiple times on a level.
-				let reps = 5;
-				let place;
-				do {
-					place = this.pick();
-					console.assert( place.typeId );
-				} while( reps-- && Math.chance( (this.placeUsed[place.typeId]||0)*30 ) );
-
-				this.placeUsed[place.typeId] = (this.placeUsed[place.typeId]||0)+1;
+				if( this.noChances() ) {
+					debugger;
+					this.reset();
+				}
+				let place = this.pick();
+				console.log( place.id, this.chance[this.indexPicked] );
+				this.forbidLast();
 				return place;
 			}
 		}
@@ -1411,6 +1409,7 @@ Module.add('dataMason',function() {
 			let pos = new Fitter(map).findRandomFit( place );
 			if( !pos.fits ) {
 				numPlaceTiles += tileCount(place);
+				console.log('denied ',place.id);
 				return;
 			}
 			let siteMarks = placeMake(pos.x,pos.y,place);
@@ -1609,7 +1608,7 @@ Module.add('dataMason',function() {
 
 		function makeRandomPlaces(placePicker) {
 			let roster = [];
-			reps = 20;
+			reps = 50;
 			do {
 				addRandomPlacesUntilFull(roster,placePicker);
 				roster.sort( (a,b) => tileCount(b)-tileCount(a) );	// make biggest first - that is your best chance.
@@ -1649,18 +1648,26 @@ Module.add('dataMason',function() {
 		let reqRoster = assembleRequiredPlaces(placeSource,requiredPlaces);
 
 		// Try to fill your quota of tiles, drawing from the requiredPlaces first, and then allowing randoms.
+		console.log('Filling Quota');
 		makeQuotaPlaces(placeSource,quota,reqRoster,rarityHash,forbiddenSymbols,mapOffset);
 
 		// Trim out any required place that is now forbidden due to quotas.
 		reqRoster = reqRoster.filter( place => !place.containsAny(forbiddenSymbols) );
 
 		// Make whatever remains
+		console.log('Making required places');
 		makeRequiredPlaces(reqRoster);
 
 		// Now fill the rest of the level according to the raritys set by user.
+		console.log('Making random places');
 		let placePicker = new PlacePicker().scanHash( placeSource, (place,placeId) => {
-			return !place.containsAny(forbiddenSymbols) && place.mayPick(depth) && rarityHash[placeId] ? place.calcChance(depth,rarityHash[placeId]) : false;
+			if( place.containsAny(forbiddenSymbols) || !place.mayPick(depth) || !rarityHash[placeId] ) {
+				return false;
+			}
+			console.log(placeId,rarityHash[placeId],place.calcChance(depth,rarityHash[placeId]));
+			return place.calcChance(depth,rarityHash[placeId]);
 		});
+		console.log(placePicker);
 		makeRandomPlaces(placePicker);
 	}
 

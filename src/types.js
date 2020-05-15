@@ -204,6 +204,7 @@ let Type = new class {
 		});
 	}
 	merge() {
+		// Possibly we should do this in type order, that is, first Rules, then DamageType, then... to Theme
 		this.traverse( type=>this.mergeToGlobals(type) );
 	}
 	finalize(checker) {

@@ -365,6 +365,7 @@ class Entity {
 					this.corpse || 'corpse',
 					{},
 					{
+						nutrition: this.level,
 						isCorpse: true,
 						usedToBe: this,
 						matter: this.matter || 'flesh',
@@ -460,6 +461,7 @@ class Entity {
 		this.brainMaster = newMaster;
 		this.brainPath = true;
 		this.destination = null;
+		this.personalEnemy = null;
 		if( !this.brainMaster ) {
 			tell(mSubject,this,' ',mVerb,'is',' now free.');
 		}
@@ -2605,6 +2607,11 @@ class Entity {
 	}
 
 	partsGenerate() {
+		if( this.isIncorporeal || this.isEnergy ) {
+			// Eventually you only get parts from incorporeal and energy beings when you kill them with the right
+			// kind of silk touch weaponry.
+			return [];
+		}
 		let partCount = Math.randInt(0,1);
 		let partFrom = 'is'+String.capitalize(this.typeId); 
 		return Inventory.lootGenerate( partCount+'x part '+partFrom, this.level )
@@ -3088,6 +3095,9 @@ class Entity {
 				if( food.isEdibleBy(this) && this.isPet && provider && (provider.teamApparent || provider.team)==this.team ) {
 					this.setMaster(provider);
 				}
+				let nutrition = Math.max(1,Math.floor(Rules.foodAidByLevel*(food.nutrition||food.level||1)));
+				let healEffect = { basis: 'eHealing', damage: nutrition };
+				effectApply( healEffect, this, this, null, 'healFromEat' );
 				if( this.eatenFoodToInventory ) {
 				}
 				else {
@@ -3860,7 +3870,7 @@ class Entity {
 
 		if( !result || !result.success ) {
 			result = this.actOnCommand();
-			this.commandSpeed = this.speedAction;
+			this.commandSpeed = Command.Free.includes(this.command) ? 0 : this.speedAction;
 		}
 
 		console.watchCommand( this, this.command, result );

@@ -48,6 +48,7 @@ class ViewFavorites extends ViewObserver {
 			}
 		}
 		if( msg == 'favoriteSet' ) {
+debugger;
 			let changed = this.favoriteSet != payload;
 			this.favoriteSet = payload;
 			if( changed ) {

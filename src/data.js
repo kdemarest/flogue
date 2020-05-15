@@ -4,7 +4,7 @@ Module.add('data',function(extern){
 
 // WARNING: The strings for directions MUST remain the same for Direction.fromCommand() to work.
 const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", W:"W", NW:"NW", WAIT: "wait", 
-				INVENTORY: "inventory", PICKUP: "pickup", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", SHOOT: "shoot", TRIGGER: "trigger",
+				INVENTORY: "inventory", QUAFF: "quaff", GAZE: "gaze", THROW: "throw", SHOOT: "shoot", TRIGGER: "trigger",
 				FAVORITE: "favorite",
 				LOSETURN: "lose turn", PRAY: "pray", EAT: "eat", ENTERGATE: "enterGate",
 				ATTACK: "attack", USE: "use", LOOT: "loot", DROP: "drop", PICKUP: "pickup",
@@ -13,6 +13,11 @@ const Command = { NONE: "none", N:"N", NE:"NE", E:"E", SE:"SE", S:"S", SW:"SW", 
 				CAST: "cast", CAST1: "cast1", CAST2: "cast2", CAST3: "cast3", CAST4: "cast4", CAST5: "cast5", QUIT: "quit",
 				EXECUTE: "execute", CANCEL: "cancel"
 			};
+
+// By default all commands cost 1.0, unless overridden here
+Command.Free = [Command.INVENTORY,Command.PICKUP,Command.DROP,Command.FAVORITE,Command.USE,Command.BUY,Command.SELL, Command.CANCEL,
+				Command.DEBUGKILL,Command.DEBUGTHRIVE,Command.DEBUGVIEW,Command.DEBUGANIM,Command.DEBUGTEST
+			];
 
 Command.Movement = [Command.N,Command.NE,Command.E,Command.SE,Command.S,Command.SW,Command.W,Command.NW];
 Command.Attack =   [Command.ATTACK,Command.THROW,Command.SHOOT,Command.CAST];

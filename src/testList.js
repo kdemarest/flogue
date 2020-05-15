@@ -31,7 +31,7 @@ Type.register('PlaceType',{ testRoom : {
 
 ScapeList.testSingleRoom = () => ({
 	dim: 				12,
-	architecture: 		"none",
+	architecture: 		"cave",
 });
 
 Type.register( 'Theme', { testSimpleRoom: {

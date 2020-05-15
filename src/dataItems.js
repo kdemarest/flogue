@@ -7,13 +7,16 @@ Module.add('dataItems',function(){
 //Do a full scan through https://www.pngfind.com/freepng/axe/ to find
 //plents of PNG-ified image of decor
 
+// It is considered resistance if damage is <=0.5 below, and vulnerable if damage >= 2.0
+// If something does not name a damage, then items of that matter suffer NO damage from that attack form.
+// The base unit for these effects is typically flesh, which should suffer 1.0 for nearly everything.
 const Matter = {
 	ether: 		{ damage: { } },
 	metal: 		{ damage: { corrode: 1, smite: 1} },
 	stone: 		{ damage: { bash: 1, smite: 1} },
 	chitin: 	{ damage: { bash: 1, smite: 1} },
-	glass: 		{ damage: { bash: 1, corrode: 1 } },
-	crystal: 	{ damage: { bash: 0.5 } },
+	glass: 		{ damage: { bash: 2, corrode: 1 } },
+	crystal: 	{ damage: { bash: 2 } },
 	leather: 	{ damage: { cut: 1, claw: 1, chop: 1, corrode: 1, rot: 2 } },
 	cloth: 		{ damage: { cut: 1, claw: 1, chop: 1, corrode: 1, rot: 2 } },
 	wax: 		{ damage: { cut: 1, claw: 1, chop: 1, bash: 0.5, burn: 2, corrode: 1, rot: 2 } },
@@ -22,9 +25,9 @@ const Matter = {
 	paper: 		{ damage: { cut: 1, bite: 1, chop: 1, burn: 1, water: 1, corrode: 1 } },
 	ivory: 		{ damage: { bash: 1, chop: 1, smite: 1 } },
 	bone: 		{ damage: { bash: 1, chop: 1, smite: 1 } },
-	plant: 		{ damage: { cut: 1, bite: 0.5, chop: 1, burn: 1, corrode: 0.5, smite: 1, rot: 1 } },
-	fungus: 	{ damage: { chop: 1, burn: 1, corrode: 0.5, smite: 1, rot: 1 } },
-	flesh: 		{ damage: { cut: 1, stab: 1, bite: 1, claw: 1, bash: 1, chop: 1, burn: 1, freeze: 0.5, shock: 0.5, corrode: 1, smite: 1, rot: 2 } },
+	plant: 		{ damage: { cut: 1, bite: 0.5, chop: 1, burn: 1, freeze: 2, corrode: 0.5, smite: 1, rot: 1 } },
+	fungus: 	{ damage: { chop: 1, burn: 1, freeze: 2, corrode: 0.5, smite: 1, rot: 1 } },
+	flesh: 		{ damage: { cut: 1, stab: 1, bite: 1, claw: 1, bash: 1, chop: 1, burn: 1, freeze: 1, shock: 1, corrode: 1, smite: 1, rot: 2 } },
 	energy: 	{ damage: { } },
 	special: 	{ damage: { } },
 };
@@ -274,17 +277,17 @@ const AmmoVarietyList = ({ //Type.establish('AmmoVariety',{},{
 		effectChance: 0.000001,
 		img: 'item/weapon/ranged/rock2.png'
 	},
-	// Sling stones give better damage than irregularly shaped rocks
+	// Sling stones give better damage and are quicker than irregularly shaped rocks.
 	"slingStone": {
 		level:  10,
 		rarity: 1.0,
 		bunchSize: 6,
-		xDamage: 0.60,
+		xDamage: 0.60,					// More damage than regular rocks.
 		matter: 'stone',
 		damageType: DamageType.BASH,
 		isSlingStone: true,
 		isSlingable: true,
-		quick: Quick.NIMBLE,
+		quick: Quick.NIMBLE,			// Nimble due to aerodynamic shape.
 		name: 'rock${+plus}',
 		mayThrow: true,
 		range: Rules.RANGED_WEAPON_DEFAULT_RANGE,
@@ -296,12 +299,13 @@ const AmmoVarietyList = ({ //Type.establish('AmmoVariety',{},{
 	"dart":     	{
 		level:  0,
 		rarity: 0.5,
+		bunchSize: 4,
 		xDamage: 0.30,
 		damageType: DamageType.STAB,
 		matter: 'metal',
-		quick: Quick.LITHE,
+		quick: Quick.LITHE,				// Important element of darts.
 		name: 'dart${+plus}{?effect}',
-		chanceEffectFires: 100,	// Here is the key element of darts,
+		chanceEffectFires: 100,			// Here is the key element of darts,
 		slot: false,
 		effectChance: 0.80,
 		effects: DartEffects,
@@ -1223,7 +1227,7 @@ let ItemTypeList = {
 		isContainer: true,
 		isRemovable: true,
 		state: 'shut',	// This is required to stop the user from "seeing inside" with mouse hover.
-		carrying: '3x 20% any',
+		carrying: '3x 20% any, 30% ammo.rock',
 		hasInventory: true,
 		scale: 0.80,
 		img: 'decor/barrel.png'
@@ -1244,7 +1248,7 @@ let ItemTypeList = {
 			empty: { img: 'decor/chestEmpty.png' }
 		},
 		imgChooseFn: self => self.imgChoices[self.state].img,
-		carrying: '7x 20% any',
+		carrying: '5x 20% any, 30% ammo.arrow, 30% ammo.rock',
 		hasInventory: true
 	},
 	"coffin": {
@@ -1263,7 +1267,7 @@ let ItemTypeList = {
 			empty: { img: 'decor/coffinEmpty.png' }
 		},
 		imgChooseFn: self => self.imgChoices[self.state].img,
-		carrying: '30% weapon, 30% armor, 30% coin, 5% helm, 5% bracers, 5% boots, 5% ring',
+		carrying: '30% weapon, 30% armor, 30% coin, 5% helm, 5% bracers, 5% boots, 5% ring, 30% ammo.arrow',
 		hasInventory: true
 	},
 	"altar": {
