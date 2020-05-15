@@ -1781,6 +1781,20 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 		});
 	}
 
+	// Grant a Mark of Return.
+	if( toucher.isChosenOne ) {
+		let item = toucher.findItem(item=>item.teleportId=='altar');
+		if( !item ) {
+			item = toucher.itemCreate('stuff.markOfReturn');
+			item.giveTo(toucher,toucher.x,toucher.y);
+			tell( mCares,toucher,mSubject,self,' ',mVerb,'grant',' ',mObject,toucher,' a Mark of Return.');
+			item.teleportId = 'altar';
+		}
+		item.effect.areaId =toucher.area.id;
+		item.effect.x = toucher.x;
+		item.effect.y = toucher.y;
+	}
+
 	// Reveal starter chests
 	if( self.unhide ) {
 		let label = self.unhide;
@@ -1812,14 +1826,11 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 			entity.health = entity.healthMax;
 			entity.dead = false;
 		};
-		return;
 	}
 
 	// Level Up
 	if( toucher.isMonsterType && toucher.experience!==undefined ) {
-		if( toucher.levelUp() ) {
-			return;
-		}
+		toucher.levelUp();
 	}
 
 	// Heal the player
@@ -1834,20 +1845,6 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 	}
 	else {
 		tell( mCares,toucher,mSubject,self,' ',mVerb,'is',' not glowing at the moment.');
-	}
-
-	// Grant a Mark of Return.
-	if( toucher.isChosenOne ) {
-		let item = toucher.findItem(item=>item.teleportId=='altar');
-		if( !item ) {
-			item = toucher.itemCreate('stuff.markOfReturn');
-			item.giveTo(toucher,toucher.x,toucher.y);
-			tell( mCares,toucher,mSubject,self,' ',mVerb,'grant',' ',mObject,toucher,' a Mark of Return.');
-			item.teleportId = 'altar';
-		}
-		item.effect.areaId =toucher.area.id;
-		item.effect.x = toucher.x;
-		item.effect.y = toucher.y;
 	}
 }
 

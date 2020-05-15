@@ -167,29 +167,34 @@ class ViewMap extends Scene {
 		let myCanvas = $(this.divId+' canvas');
 		console.assert(myCanvas.length);
 
-		$(myCanvas).mousemove( function(e) {
-			let offset = $(this).offset(); 
-			let mx = Math.floor((e.pageX - offset.left)/self.pane.tileDim);
-			let my = Math.floor((e.pageY - offset.top)/self.pane.tileDim);
+		let mouseToWorld = (e) => {
+			let offset = $(myCanvas).offset();
+			let mx = Math.floor((e.pageX - offset.left)/this.pane.tileDim);
+			let my = Math.floor((e.pageY - offset.top)/this.pane.tileDim);
+			let observer = this.observer;
+			let area = observer.area;
+			let x = (observer.x-this.pane.visionTiles) + mx;
+			let y = (observer.y-this.pane.visionTiles) + my;
+			return [x,y];
+		}
 
-			if( !self.observer ) {
+		$(myCanvas).mousemove( e => {
+			if( !this.observer ) {
 				return;
 			}
-			let observer = self.observer;
-			let area = observer.area;
-			let xLeft = (observer.x-self.pane.visionTiles) + mx;
-			let yTop  = (observer.y-self.pane.visionTiles) + my;
-			//console.log( "ViewMap mousemove detected ("+x+','+y+')' );
-			
-			guiMessage( 'viewRangeMouse', { xOfs: xLeft-observer.x, yOfs: yTop-observer.y } );
+			let [xLeft,yTop] = mouseToWorld(e);
+			guiMessage( 'viewRangeMouse', { xOfs: xLeft-this.observer.x, yOfs: yTop-this.observer.y } );
 		});
 		$(myCanvas).mouseout( function(e) {
 			guiMessage('hideInfo',{from:'viewMap'});
 			//console.log('mouse out of canvas');
 		});
 		$(myCanvas).click( function(e) {
-			var e = $.Event("keydown");
-			e.key = 'Enter';
+			let [x,y] = mouseToWorld(e);
+			e.command = Command.EXECUTE;
+			e.commandX = x;
+			e.commandY = y;
+
 			Gui.keyHandler.trigger(e);
 //			$(document).trigger(e);
 		});

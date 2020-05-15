@@ -231,6 +231,8 @@ class Cmd {
 		this.commandItem = null;
 		this.commandTarget = null;
 		this.commandTarget2 = null;
+		this.commandX = null;
+		this.commandY = null;
 		this.retain = null;
 	}
 	cancelItem() {
@@ -288,6 +290,8 @@ class UserCommandHandler {
 				this.observer.commandItem = c.commandItem;
 				this.observer.commandTarget = c.commandTarget;
 				this.observer.commandTarget2 = c.commandTarget2;
+				this.observer.commandX = c.commandX === undefined ? null : c.commandX;
+				this.observer.commandY = c.commandY === undefined ? null : c.commandY;
 			}
 		);
 		user.gui.subscribe('specialInventoryClose','inventoryClose',()=>{
@@ -352,8 +356,6 @@ class UserCommandHandler {
 			console.watchCommand( observer, 'event command: ', observer.command, observer.commandItem ? observer.commandItem.id : '', observer.commandTarget ? observer.commandTarget.id : '' );
 		}
 
-		let zeroTime = [Command.BUY,Command.SELL,Command.CRAFT,Command.NONE];
-
 		this.observer = observer;		// hack!!
 
 		if( event.command ) {
@@ -361,8 +363,9 @@ class UserCommandHandler {
 			observer.commandItem = event.commandItem || null;
 			observer.commandTarget = event.commandTarget || null;
 			observer.commandTarget2 = event.commandTarget2 || null;
+			observer.commandX = event.commandX === undefined ? null : event.commandX;
+			observer.commandY = event.commandY === undefined ? null : event.commandY;
 			tellCommand('event command');
-			return !zeroTime.includes(event.command);
 		}
 
 		let cmd = this.cmd;

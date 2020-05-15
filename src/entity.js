@@ -3532,6 +3532,9 @@ class Entity {
 			status: 'execute',
 			success: false
 		};
+
+		let xTarget = Number.isFinite(this.commandX) ? this.commandX : this.x;
+		let yTarget = Number.isFinite(this.commandY) ? this.commandY : this.y;
 		
 		//
 		// Crafting Dialog
@@ -3552,8 +3555,8 @@ class Entity {
 		//
 		// Enter a gate
 		//
-		let gate = this.map.findItemAt(this.x,this.y).filter( item => item.gateDir!==undefined ).first;
-		if( gate ) {
+		let gate = this.map.findItemAt(xTarget,yTarget).filter( item => item.gateDir!==undefined ).first;
+		if( gate && this.x==xTarget && this.y==yTarget) {
 			return this.actEnterGate(gate);
 		}
 
@@ -3896,11 +3899,15 @@ class Entity {
 		this.commandItemLast = this.commandItem;
 		this.commandTargetLast = this.commandTarget;
 		this.commandTarget2Last = this.commandTarget2;
+		this.commandXLast = this.commandX;
+		this.commandYLast = this.commandY;
 		this.commandSpeedLast = this.commandSpeed;
 		this.command = Command.NONE;
 		this.commandItem = null;
 		this.commandTarget = null;
 		this.commandTarget2 = null;
+		this.commandX = null;
+		this.commandY = null;
 		this.commandSpeed = 0.0;
 	}
 
