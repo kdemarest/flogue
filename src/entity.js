@@ -153,7 +153,8 @@ class Entity {
 		console.assert( this.x===undefined && this.y===undefined && this.area===undefined);
 
 		console.assert(this.speedAction);
-		this.actionLeft = 0;
+		this.actionLeft720 = 0;
+		this.inventoryTicker720 = 0;
 
 		// WARNING! Not a deep copy. But it is only for the result...
 		result.entity = Object.assign( {}, this );
@@ -455,7 +456,7 @@ class Entity {
 	}
 
 	inCombat() {
-		return this.inCombatTimer && Time.elapsed(this.inCombatTimer) < Rules.COMBAT_EXPIRATION;
+		return this.inCombatTimer && Time.sim.since(this.inCombatTimer) < Rules.COMBAT_EXPIRATION;
 	}
 	setMaster(newMaster) {
 		this.brainMaster = newMaster;
@@ -807,7 +808,7 @@ class Entity {
 		if( item.inSlot ) {
 			this.doff(item);
 		}
-		this.inventoryLastChange = Time.simTime;
+		this.inventoryLastChange = Time.sim.time;
 		Array.filterInPlace(this.inventory, i => i.id!=item.id );
 		if( this.isUser ) {
 			guiMessage('inventoryChange',this);
@@ -824,7 +825,7 @@ class Entity {
 			return null;
 		}
 		item = item._addToListAndBunch(this.inventory);
-		this.inventoryLastChange = Time.simTime;
+		this.inventoryLastChange = Time.sim.time;
 		item.x = this.x;
 		item.y = this.y;
 		if( x!==item.x || y!==item.y ) debugger;
@@ -1384,7 +1385,7 @@ class Entity {
 	}
 
 	thinkDon(target) {
-		if( !this.inventoryLastChange || Time.elapsed(this.inventoryLastChange) <= 1 ) {
+		if( !this.inventoryLastChange || Time.sim.since(this.inventoryLastChange) <= 1 ) {
 			let best = {};
 			let picker = new Picker(this.area.depth);
 			this.inventory.forEach( item => {
@@ -1538,9 +1539,9 @@ class Entity {
 				// Note that attitude ENRAGED makes isMyEnemy() return true for all creatures.
 				let enemyList = this.findAliveOthersNearby().canPerceiveEntity().isMyEnemy().byDistanceFromMe();
 				if( enemyList.count ) {
-					this.enemyNearTimer = Time.simTime;
+					this.enemyNearTimer = Time.sim.time;
 					if( this.inCombat() ) {
-						this.inCombatTimer = Time.simTime
+						this.inCombatTimer = Time.sim.time
 					}
 				}
 				this.enemyIsPresent = enemyList.count > 0;
@@ -2059,7 +2060,7 @@ class Entity {
 			// the player could distract an enemy from their dog by attacking.
 			this.justAttackedByEntity = attacker;
 			delete this.lastEnemyPosition;
-			this.inCombatTimer = Time.simTime;
+			this.inCombatTimer = Time.sim.time;
 		}
 
 		console.assert( typeof amount === 'number' && !isNaN(amount) ); 
@@ -4085,8 +4086,8 @@ class Entity {
 	}
 
 
-	tickRealtime(dt) {
-		console.assert( Number.isFinite(dt) );
+	tick720(dt720) {
+		console.assert( Time.is720(dt720) );
 
 		if( this.legacyId && !this.perkList ) {
 			this.grantPerks();
@@ -4096,9 +4097,9 @@ class Entity {
 			return;
 		}
 
-		DeedManager.tickRealtime(this,dt);
+		DeedManager.tick720( this, Time.from720(dt720) );
 
-		if( this.actionLeft <= 0 ) {
+		if( this.actionLeft720 <= 0 ) {
 			if( this.area.thinkClip.contains(this.x,this.y) ) {
 				if( this.isUser ) {
 					console.assert( this.command == Command.NONE );
@@ -4108,23 +4109,25 @@ class Entity {
 				this.calculateVisbility();
 				this.think();
 				this.act();
-				let timeCost = this.commandSpeed<=0 ? 0 : 1/this.commandSpeed;
-				this.actionLeft += timeCost;
+				let timeCost720 = this.commandSpeed<=0 ? 0 : Time.to720(1/this.commandSpeed);
+				this.actionLeft720 += timeCost720;
 				this.clearCommands();
 			}
 			DeedManager.calc(this);
 		}
 
-		if( this.actionLeft > 0 ) {
-			this.actionLeft -= dt;
+		if( this.actionLeft720 > 0 ) {
+			this.actionLeft720 -= dt720;
 		}
-		console.assert( Number.isFinite(this.actionLeft) );
+		console.assert( Time.is720(this.actionLeft720) );
 
-		this.itemTicker = this.itemTicker || new Time.Periodic();
-		this.itemTicker.tick( 1.0, dt, () => {
-			this.tickRound();
-			this.area.world.itemListTickRound(this.inventory,this.rechargeRate||1);
-		});
+		if( this.inventory && this.inventory.length ) {
+			this.inventoryTicker720 += dt720;
+			if( this.inventoryTicker720 >= 720 ) {
+				this.tickRound();
+				this.area.world.itemListTickRound(this.inventory,this.rechargeRate||1);
+			}
+		}
 
 		if( this.isUser ) {
 			// This is a bit of hack at the moment, just to make sure the user always has

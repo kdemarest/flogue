@@ -529,7 +529,7 @@ class Area {
 		this.lightDirty = false;
 	}
 
-	tickRealtime(dt,dtWall) {
+	tick720( dt720, dtWall720 ) {
 
 		function orderByTurn(entityList) {
 			let list = [[],[],[]];	// players, pets, others
@@ -567,22 +567,22 @@ class Area {
 
 		for( let entity of entityListByTurnOrder ) {
 //			if( entity.isUser ) continue;	// because world has already ticked this entity.
-			entity.tickRealtime(dt);
+			entity.tick720(dt720);
 		}
 
-		// Tick any fire or freeze tile positions.
-		DeedManager.tickRealtime(this.tileTicker,dt);
+		// Handle any fire or freeze tile positions.
+		DeedManager.tick720(this.tileTicker,dt720);
 
-		this.itemTicker = this.itemTicker || new Time.Periodic();
-		this.itemTicker.tick( 1.0, dt, () => {
-			this.world.itemListTickRound( this.itemList,this.map.rechargeRate||1);
+		this.itemTicker = this.itemTicker || new Time.Interval720();
+		this.itemTicker.tick( Time.one720, dt720, () => {
+			this.world.itemListTickRound( this.itemList, this.map.rechargeRate||1 );
 		});
 
 		DeedManager.cleanup();
 
 		checkDeaths(entityListByTurnOrder);
 
-		this.animationManager.tickRealtime(dtWall/Rules.displayVelocity);
+		this.animationManager.tick720( dtWall720 / Rules.displayVelocity );
 
 		this.animationManager.delayManager.reset();
 

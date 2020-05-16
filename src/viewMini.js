@@ -8,6 +8,7 @@ class ViewMiniMap extends ViewObserver {
 		this.caption = '';
 		this.drawn = [];
 		this.created = false;
+		this.refreshTimer = new Time.TimerSimple( 0.2, ()=>this.dirty=true );
 	}
 	create(area) {
 		$( this.divId+'Canvas0' ).remove();
@@ -83,10 +84,7 @@ class ViewMiniMap extends ViewObserver {
 	}
 
 	tick(dt) {
-		this.periodicDirty = this.periodicDirty || new Time.Periodic();
-		this.periodicDirty.tick( 1.0, dt, () => {
-			this.dirty=true;
-		});
+		this.refreshTimer.tick(dt);
 	}
 
 	render() {

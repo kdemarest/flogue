@@ -266,6 +266,7 @@ class Anim {
 	}
 
 	tick(dt) {
+		console.assert( Number.isFinite(dt) );
 		if( dt == 0 ) {
 			debugger;
 			return;
@@ -392,7 +393,10 @@ class AnimationManager {
 		});
 		Gui.dirty('map');
 	}
-	tickRealtime(dt) {
+	tick720(dt720) {
+		console.assert( Time.is720(dt720) );
+		let dt = Time.from720(dt720);
+
 		//console.logAnim('AnimMgr tick=',dt);
 		this.traverse( anim => {
 			anim.tick(dt);

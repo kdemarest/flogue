@@ -1,12 +1,16 @@
 Module.add('world',function() {
 
+Math.toDt = dt60 => {
+	return dt60 / 60;
+}
+
 class World {
 	constructor(plan) {
 		this.plan = plan;
 		this.areaList = {};
 		this.userList = [];
 
-		this.timeFund = 0;
+		this._timeFund720 = 0;
 
 		// Hack of convenience...
 		Gab.world = this;
@@ -31,51 +35,49 @@ class World {
 	}
 
 
-	tickRealtime(dtWall) {
+	tick720( dtWall720 ) {
 
-		dtWall *= Rules.displayVelocity;
+		dtWall720 = Time.mult720(dtWall720,Rules.displayVelocity);
 
-		let dt = dtWall;
-
-		Tester.tick(dt);
+		Tester.tick();
 
 		let userEntity = this.userList[0].entity;
 		console.assert( userEntity.isUser );
 
 		if( userEntity.controlSuborned ) {
 			if( userEntity.command == Command.WAIT ) {
-				this.timeFund += 1.0;
+				this._timeFund720 += Time.one720;
 			}
 			userEntity.clearCommands();
 		}
 
 		if( userEntity.command !== Command.NONE ) {
 			userEntity.act();
-			let timeCost = userEntity.commandSpeed<=0 ? 0 : 1/userEntity.commandSpeed;
-			console.assert( Number.isFinite(timeCost) );
-			console.logCommand( 'player '+userEntity.command+' took '+timeCost );
-			this.timeFund += timeCost;
-			userEntity.actionLeft += timeCost;
-			console.assert( Number.isFinite(userEntity.actionLeft) );
+			let timeCost720 = userEntity.commandSpeed<=0 ? 0 : Time.to720(1/userEntity.commandSpeed);
+			console.logCommand( 'player '+userEntity.command+' took '+timeCost720 );
+			this._timeFund720 += timeCost720;
+			userEntity.actionLeft720 += timeCost720;
+			console.assert( Time.is720(userEntity.actionLeft720) );
 			userEntity.clearCommands();
 		}
 
-		dt = Math.min(dt,this.timeFund);
-		this.timeFund -= dt;
+		// Only let time advance if the user has acted, othewise, sim time is halted.
+		let dt720 = Math.min( dtWall720, this._timeFund720 );
+		this._timeFund720 -= dt720;
 
 		this.traverse( area => {
-			area.tickRealtime(dt,dtWall);
+			area.tick720( dt720, dtWall720 );
 		});
 
 		// This goes last because it includes gui render.
 		// Especially, the sprite movement has to look right.
 		this.userList.forEach( user => {
-			user.tickGui(dtWall);
+			user.tickGui( Time.from720(dtWall720) );
 		});
 
 		Tester.check();
 		
-		Time.simTimeAdd(dt);
+		Time.sim.timeAdvance720( dt720 );
 	}
 
 	quotaAddGates(quota,toAreaId) {

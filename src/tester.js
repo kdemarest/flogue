@@ -34,10 +34,10 @@ class TestResult {
 		this.list = [];
 		this.helper = helper;
 		this.resolved = false;
-		this.simTimeStart = Time.simTime;
+		this.simTimeStart = Time.sim.time;
 	}
 	get time() {
-		return Time.simTime - this.simTimeStart;
+		return Time.sim.time - this.simTimeStart;
 	}
 	expect( expression, message ) {
 		let helper = this.helper;
@@ -116,7 +116,7 @@ class Test {
 		this.onTick( this.result.helper );
 	}
 	check() {
-		if( this.simTimeLimit !== false && Time.simTime >= this.simTimeLimit ) {
+		if( this.simTimeLimit !== false && Time.sim.time >= this.simTimeLimit ) {
 			debugger;
 			this.result.expect( false, "Test exceeded time limit." );
 			this.result.resolved = true;
@@ -141,7 +141,7 @@ class Test {
 		this.onCheck = test.check.bind(test);
 		this.onTick   = test.tick ? test.tick.bind(test) : null;
 		this.onThink = test.think ? test.think.bind(test) : null;
-		this.simTimeLimit = test.timeLimit === false ? false : (Time.simTime + (test.timeLimit || 100));
+		this.simTimeLimit = test.timeLimit === false ? false : (Time.sim.time + (test.timeLimit || 100));
 
 		try {
 			let config = {
@@ -189,22 +189,25 @@ class TestManager {
 		this.interactive = true;
 	}
 	think(entity) {
+		console.assert( arguments.length == 1 );
 		if( !this.test ) {
 			return;
 		}
-		return this.test.think(...arguments);
+		return this.test.think(entity);
 	}
-	tick(timePasses) {
+	tick() {
+		console.assert( arguments.length == 0 );
 		if( !this.test ) {
 			return;
 		}
-		return this.test.tick(...arguments);
+		return this.test.tick();
 	}
 	check() {
+		console.assert( arguments.length == 0 );
 		if( !this.test ) {
 			return;
 		}
-		return this.test.check(...arguments);
+		return this.test.check();
 	}
 	updateStatus() {
 		$('#testFail').html(this.failCount);

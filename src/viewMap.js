@@ -133,9 +133,12 @@ class ViewMap extends Scene {
 
 		// Note that pixi defaults to 16.66ms, or just slightly better than 60fps
 		this.app.ticker.add( delta =>  {
-			let dtWall = delta / 60;	// that is just how pixi rolls.
+			//console.log('delta=',delta);
+			delta = Math.floor(delta);
+			let dtWall720 = (delta*Time.one720) / 60;
+			console.assert( Number.isInteger(dtWall720) );
 			if( this.observer && this.observer.area ) {
-				this.observer.area.world.tickRealtime(dtWall);
+				this.observer.area.world.tick720(dtWall720);
 			}
 		});
 	}

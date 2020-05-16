@@ -8,6 +8,7 @@ class ViewFavorites extends ViewObserver {
 		this.favoriteSet = 0;
 		this.divId = divId;
 		this.favoriteCandidate = null;
+		this.refreshTimer = new Time.TimerSimple( 0.2, ()=>this.dirty=true );
 
 		let self = this;
 		$(document).keydown( event => {
@@ -67,10 +68,7 @@ debugger;
 		}
 	}
 	tick(dt) {
-		this.periodicDirty = this.periodicDirty || new Time.Periodic();
-		this.periodicDirty.tick( 0.2, dt, () => {
-			this.dirty = true;
-		});
+		this.refreshTimer.tick(dt);
 	}
 	render() {
 		let observer = this.observer;

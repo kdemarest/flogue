@@ -351,12 +351,12 @@ let DeedManager = (new class {
 			}
 		}		
 	}
-	tickRealtime(target,dt) {
-		target._deedTicker = target._deedTicker || new Time.Periodic();
+	tick720(target,dt720) {
+		target._deedTicker = target._deedTicker || new Time.Interval720();
 
-		target._deedTicker.tick( 1.0, dt, ()=> {
+		target._deedTicker.tick( Time.one720, dt720, ()=> {
 
-			console.watchDeed( target, 'tick on second. dt='+Math.fixed(dt,5) );
+			console.watchDeed( target, 'tick on second. dt='+Math.fixed(Time.from720(dt720),5) );
 
 			let safeDeedList = this.deedList.slice();
 			for( let deed of safeDeedList ) {
@@ -756,7 +756,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 
 	if( !effect.isSecondary && source && !isSelf && ( isHarm || (item && item.isWeapon) ) ) {
 		source.lastAttackTargetId = target.id;	// Set this early, despite blindness!
-		source.inCombatTimer = Time.simTime;
+		source.inCombatTimer = Time.sim.time;
 	}
 
 	if( !effect.isSecondary && target.isMonsterType && !isSelf && isHarm ) {

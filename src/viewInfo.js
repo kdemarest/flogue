@@ -3,6 +3,7 @@ Module.add('viewInfo',function() {
 class ViewInfo extends ViewObserver {
 	constructor(infoDivId) {
 		super();
+		this.refreshTimer = new Time.TimerSimple( 0.2, ()=>this.dirty=true );
 		this.infoDivId = infoDivId;
 		$(this.infoDivId).empty();
 	}
@@ -311,13 +312,10 @@ class ViewInfo extends ViewObserver {
 	}
 
 	tick(dt) {
-		this.periodicDirty = this.periodicDirty || new Time.Periodic();
-		this.periodicDirty.tick( 0.2, dt, () => {
-			this.dirty = true;
-		});
+		this.refreshTimer.tick(dt);
 	}
 
-	render(dt) {
+	render() {
 		console.logInfo('viewInfo.render');
 		let [content,classList] = this.compile();
 		Gui.cachedRenderDiv(this.infoDivId,content,classList);

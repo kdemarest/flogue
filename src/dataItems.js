@@ -1033,7 +1033,6 @@ const NulImg = { img: '' };
 Item Events
 onPickup() 				- fired just before an item is picked up. Return false to disallow the pickup.
 onTickRound() 			- fires each time a full turn has passed, for every item, whether in the world or in an inventory. 
-onTickRealtime(dt)
 onBump(toucher,self)	- when any entity bumps into this. Remember that self might be a temporary tile proxy
 onPutInWorld(x,y,map)	- when an item is put into the world, either from the void to from an inventory.
 onGiveToEntity(x,y,recipient)	- when an item is given to a creature.

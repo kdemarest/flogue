@@ -38,9 +38,8 @@ Anim.Cloud = function(delayId,x,y,area,groupId,icon) {
 		groupId: 	groupId,
 		alpha: 		0.2,
 		img: 		icon,
-		deathTime: 	Time.simTime+2,
 		delayId: 	delayId,
-		duration: 	(self) => Time.simTime >= self.deathTime ? 'die' : '',
+		duration: 	2,
 		onInit: 		a => { a.create(1); },
 		onSpriteMake: 	s => { s.sScale(0.75); },
 		onSpriteTick: 	s => { }

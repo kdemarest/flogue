@@ -430,7 +430,7 @@ class Map extends SimpleMap {
 		if( tile.noScent ) {
 			return false;
 		}
-		let time = Time.simTime - Math.floor((timeReductionPercent/100)*Rules.SCENT_AGE_LIMIT);
+		let time = Time.sim.time - Math.floor((timeReductionPercent/100)*Rules.SCENT_AGE_LIMIT);
 		if( time >= this.scentGet(x,y) ) {
 			this.scentSet(x,y,time,entity);
 		}
@@ -457,7 +457,7 @@ class Map extends SimpleMap {
 		}
 	}
 	scentGetAge(x,y) {
-		return Time.simTime-(this.scentGet(x,y) || Rules.SCENT_AGE_LIMIT);
+		return Time.sim.time-(this.scentGet(x,y) || Rules.SCENT_AGE_LIMIT);
 	}
 	scentIncAge(x,y,amount) {
 		console.assert(amount);
@@ -466,7 +466,7 @@ class Map extends SimpleMap {
 	scentGetEntitySmelled(x,y,maxScentAge=Rules.SCENT_AGE_LIMIT,excludeId) {
 		maxScentAge = Math.min(maxScentAge,Rules.SCENT_AGE_LIMIT);
 		let simTime = this.scentGet(x,y);
-		if( !simTime || simTime < Time.simTime-maxScentAge ) {
+		if( !simTime || simTime < Time.sim.time-maxScentAge ) {
 			return null;
 		}
 		let found = this.scentGetEntity(x,y);

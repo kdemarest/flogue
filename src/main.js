@@ -1,6 +1,7 @@
 
 async function main() {
 
+
 	Profile.end('scripts').tell();
 
 
@@ -21,12 +22,13 @@ async function main() {
 
 	// This executes the initializers for all the static .js files
 	Module.realize();
+	Time.sim = new Time.TimeKeeper();
 	let User = new HumanUser();
 
 	User.tickGui = function(dt) {
 		this.autoFavorite();
 		this.gui.tick(dt);
-		this.gui.render(dt);
+		this.gui.render();
 	}.bind(User);
 
 	User.onEvent = function(event) {
