@@ -711,7 +711,7 @@ let _effectApplyTo = function(effect,target,source,item,context) {
 			tell(
 				mSubject,
 				target,
-				' '+['','','','nimbly','lithely'][dodge],
+				' '+['','','','nimbly ','lithely '][dodge],
 				mVerb,
 				'dodge',
 				' ',
