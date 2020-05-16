@@ -31,6 +31,7 @@ class ViewInventory extends ViewObserver {
 	}
 
 	getItemByKey(keyPressed) {
+		console.assert( window.useKeysForItems );
 		let n = this.inventorySelector.indexOf(keyPressed);
 		if( n>=0 && n<this.inventory.count ) {
 			return this.inventory.all[n];
@@ -41,8 +42,11 @@ class ViewInventory extends ViewObserver {
 		this.allowFilter = allowFilter;
 		this.inventoryFn = inventoryFn;
 		this.visibleFn = visibleFn;
+	}
+	isVisible() {
 		return this.div.is(":visible");
 	}
+
 	divId(innerDivId) {
 		return this.inventoryDivId+innerDivId;
 	}
@@ -200,7 +204,7 @@ class ViewInventory extends ViewObserver {
 
 			let cell = {};
 			cell.slot			= td( spc, 'slotSpacer', exSlot );
-			cell.key  			= td( spc, 'right', letter+'.' );
+			cell.key  			= td( spc, 'right', letter );
 			cell.icon 			= td( spc, '', ex.icon );
 			cell.description 	= td( spc, '', exDescription );
 			cell.armor 			= td( spc, 'ctr', ex.armor );
@@ -397,7 +401,8 @@ class ViewInventory extends ViewObserver {
 		for( let i=0 ; i<this.inventory.count ; ++i ) {
 			let item = this.inventory.all[i];
 			let ex   = item.explain(this.mode,observer);
-			let cell = generateCellValues( observer, item, ex, this.sortColId, this.inventorySelector.charAt(i), this.everSeen[item.id], this.mode );
+			let letter = window.useKeysForItems ? this.inventorySelector.charAt(i)+'.' : '';
+			let cell = generateCellValues( observer, item, ex, this.sortColId, letter, this.everSeen[item.id], this.mode );
 			let s    = '<tr>'+colJoin(this.colFilter,cell)+'</tr>';
 
 			$(s).appendTo(tBody)

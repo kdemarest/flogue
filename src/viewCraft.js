@@ -322,9 +322,11 @@ class ViewCraft extends ViewInventory {
 			this.hide();
 			return false;
 		}
-		let item = this.getItemByKey(event.key);
-		if( item ) {
-			this.onItemChoose(event,item);
+		if( window.useKeysForItems ) {
+			let item = this.getItemByKey(event.key);
+			if( item ) {
+				this.onItemChoose(event,item);
+			}
 		}
 		return false;
 	}

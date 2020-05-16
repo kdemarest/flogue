@@ -345,7 +345,9 @@ let TouchDamage = {
 		};
 		let effect = Object.assign( {}, self.effect || effectDefault, { xDamage: xDamage } );
 		effect = new Effect( toucher.area.depth, effect, self );
-		effectApply( effect, toucher, null, self, 'touch' );
+		// This used to pass source=null, but then the cause of damage couldn't be attributed...
+		debugger;
+		effectApply( effect, toucher, self, self, 'touch' );
 	},
 	onTouchWalk: function(toucher,self) {
 		if( toucher.travelMode != "walk" || toucher.jumpLeft ) {

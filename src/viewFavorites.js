@@ -32,6 +32,8 @@ class ViewFavorites extends ViewObserver {
 	}
 	message(msg,payload) {
 		super.message(msg,payload);
+
+		// Inventory is asking that you set this item as a favorite.
 		if( msg == 'favoriteCandidate' ) {
 			this.favoriteCandidate = payload;
 			if( payload ) {
@@ -48,8 +50,9 @@ class ViewFavorites extends ViewObserver {
 				this.user.suppressFavorites = false;
 			}
 		}
+
+		// This lets you see the unshifted and shifted favorite sets. It is NOT setting a favorite.
 		if( msg == 'favoriteSet' ) {
-debugger;
 			let changed = this.favoriteSet != payload;
 			this.favoriteSet = payload;
 			if( changed ) {

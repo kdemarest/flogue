@@ -78,9 +78,22 @@ class HumanUser {
 		if( !this.suppressFavorites ) {
 			let favorite = this.favoriteMap[key];
 			if( favorite && favorite.command ) {
+				let command = favorite.command;
+				let item = !favorite.itemId ? null : this.entity.inventory.find( item=>item.id==favorite.itemId );
+				if( item && command == 'use' ) {
+					// Super mega hack until I am sure this works.
+					if( command == 'use' ) {
+						if( item.isWeapon || item.isSpell ) {
+							command = commandForItemAttack(item);
+						}
+						else {
+							command = commandForItem(item);
+						}
+					}
+				}
 				let cmd = {
-					command: favorite.command,
-					commandItem: !favorite.itemId ? null : this.entity.inventory.find( item=>item.id==favorite.itemId ),
+					command: command,
+					commandItem: item,
 					commandTarget: null,
 					commandTarget2: null
 				};

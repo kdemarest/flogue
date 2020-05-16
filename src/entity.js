@@ -154,7 +154,7 @@ class Entity {
 
 		console.assert(this.speedAction);
 		this.actionLeft720 = 0;
-		this.inventoryTicker720 = 0;
+		this.roundTicker720 = 0;
 
 		// WARNING! Not a deep copy. But it is only for the result...
 		result.entity = Object.assign( {}, this );
@@ -4122,10 +4122,11 @@ class Entity {
 		console.assert( Time.is720(this.actionLeft720) );
 
 		if( this.inventory && this.inventory.length ) {
-			this.inventoryTicker720 += dt720;
-			if( this.inventoryTicker720 >= 720 ) {
+			this.roundTicker720 += dt720;
+			if( this.roundTicker720 >= Time.one720 ) {
 				this.tickRound();
 				this.area.world.itemListTickRound(this.inventory,this.rechargeRate||1);
+				this.roundTicker720 -= Time.one720;
 			}
 		}
 

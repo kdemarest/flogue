@@ -272,9 +272,6 @@ class Cmd {
 	get passesTimeOnExecution() { return this.ct ? this.ct.passesTimeOnExecution : true; }
 }
 
-let keyENTER = "Enter";
-let keyESCAPE = "Escape";
-
 class UserCommandHandler {
 	constructor(user,viewInventory,viewRange) {
 		this.viewInventory = viewInventory;
@@ -394,15 +391,18 @@ class UserCommandHandler {
 		}
 
 		if( cmd.needsItem && !cmd.commandItem ) {
-			if( !cmd.commandItem ) {
-				let keyEval = this.viewInventory.prime(cmd.itemFilter(observer), cmd.itemAllowFilter, () => cmd.needsItem && !cmd.commandItem );
-				if( keyEval ) {
-					if( this.user.keyToCommand(event.key).command == Command.CANCEL ) {
-						return cmd.cancel();
-					}
-					cmd.commandItem = this.viewInventory.getItemByKey(event.key);
-					event.key = null;	// Stops this event being interpreted by other command thingies. Nasty hack.
+			// The Command.INVENTORY uses this to open your inventory. Remember that prime doesn't
+			// actually do anything except organize what the filter, inventory and visibility functions are.
+			this.viewInventory.prime(cmd.itemFilter(observer), cmd.itemAllowFilter, () => cmd.needsItem && !cmd.commandItem );
+			let isVisible = this.viewInventory.isVisible();
+			if( isVisible ) {
+				if( this.user.keyToCommand(event.key).command == Command.CANCEL ) {
+					return cmd.cancel();
 				}
+				if( window.useKeysForItems ) {
+					cmd.commandItem = this.viewInventory.getItemByKey(event.key);
+				}
+				event.key = null;	// Stops this event being interpreted by other command thingies. Nasty hack.
 			}
 		}
 
