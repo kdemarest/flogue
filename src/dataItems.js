@@ -1750,7 +1750,8 @@ ItemTypeList.vein.onBump = function(entity,self) {
 	new Anim({
 		at: 		self,
 		img: 		ImageRepo.getImg(self),
-		duration: 	chunkAnim,
+		duration: 	0.2,
+		onInit: 		a => { a.create(1); },
 		onSpriteMake: 	s => { },
 		onSpriteTick: 	s => { s.sQuiver(0.1,0.1); }
 	});

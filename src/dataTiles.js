@@ -346,7 +346,6 @@ let TouchDamage = {
 		let effect = Object.assign( {}, self.effect || effectDefault, { xDamage: xDamage } );
 		effect = new Effect( toucher.area.depth, effect, self );
 		// This used to pass source=null, but then the cause of damage couldn't be attributed...
-		debugger;
 		effectApply( effect, toucher, self, self, 'touch' );
 	},
 	onTouchWalk: function(toucher,self) {

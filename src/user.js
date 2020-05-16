@@ -84,6 +84,9 @@ class HumanUser {
 					// Super mega hack until I am sure this works.
 					if( command == 'use' ) {
 						if( item.isWeapon || item.isSpell ) {
+							if( item.slot && !item.inSlot ) {
+								this.entity.actUse(item);
+							}
 							command = commandForItemAttack(item);
 						}
 						else {

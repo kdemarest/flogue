@@ -464,9 +464,11 @@ class Entity {
 		this.destination = null;
 		this.personalEnemy = null;
 		if( !this.brainMaster ) {
+			this.team = this.baseType.team;
 			tell(mSubject,this,' ',mVerb,'is',' now free.');
 		}
 		else {
+			this.team = newMaster.team;
 			tell(mSubject,this,' ',mVerb,'recognize',' ',mObject|mBold,this.brainMaster,' as ',mObject|mPossessive|mPronoun,this,' new master! ');
 		}
 	}
@@ -4097,7 +4099,7 @@ class Entity {
 			return;
 		}
 
-		DeedManager.tick720( this, Time.from720(dt720) );
+		DeedManager.tick720( this, dt720 );
 
 		if( this.actionLeft720 <= 0 ) {
 			if( this.area.thinkClip.contains(this.x,this.y) ) {
