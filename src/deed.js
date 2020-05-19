@@ -52,6 +52,78 @@ class Effect {
 	}
 }
 
+Effect.Op = {
+	set: {
+		calcFn: (target,stat,value) => {
+			target[stat] = value;
+		}
+	},
+	mult: {
+		calcFn: (target,stat,value) => {
+			if( target.baseType ) {
+				// note that this over-rides any other setting of this stat. Haste case second overrides slow
+				// for example.
+				target[stat] = target.baseType[stat] * value;
+			}
+		}
+	},
+	max: {
+		calcFn: (target,stat,value) => {
+			if( target[stat] === undefined ) {
+				target[stat] = value;
+			}
+			else {
+				target[stat] = Math.max(target[stat],value);
+			}
+		}
+	},
+	min:  {
+		calcFn: (target,stat,value) => {
+			if( target[stat] === undefined ) {
+				target[stat] = value;
+			}
+			else {
+				target[stat] = Math.min(target[stat],value);
+			}
+		}
+	},
+	add: {
+		calcFn: (target,stat,value) => {
+			if( typeof target[stat] === 'string' ) {
+				if( !String.arIncludes(target[stat],value) ) {
+					target[stat] = String.arAdd(target[stat],value);
+				}
+			}
+			else {
+				if( target[stat] === undefined ) {
+					target[stat] = 0;
+				}
+				target[stat] += value;
+			}
+		}
+	},
+	sub: {
+		calcFn: (target,stat,value) => {
+			if( typeof target[stat] === 'string' ) {
+				target[stat] = String.arSub(target[stat],value);
+			}
+			else {
+				if( target[stat] === undefined ) {
+					target[stat] = 0;
+				}
+				target[stat] -= value;
+			}
+		}
+	}
+}
+
+Effect.OpAdd = ( opId, actionFn ) => {
+	console.assert( !Effect.Op[opId] );
+	Effect.Op[opId] = {
+		actionFn: actionFn
+	};
+}
+
 
 let testValidTimeLeft = (timeLeft) => {
 	console.assert( timeLeft===true || timeLeft===false || Number.isFinite(timeLeft) );
@@ -73,10 +145,33 @@ class Deed {
 		console.assert( this.duration !== undefined );
 		this.timeLeft = this.duration===0 ? false : this.duration;
 		testValidTimeLeft(this.timeLeft);
-		this.killMe = false;
+
+		this.dead = false;
 	}
+
+	get isEndless() {
+		return this.duration === true;
+	}
+	get isInstant() {
+		return this.duration === 0;
+	}
+
+	get hasCalc() {
+		return Effect.Op[this.op].calcFn;
+	}
+	doCalc( target, stat, value ) {
+		return Effect.Op[this.op].calcFn.call( this, target, stat, value );
+	}
+
+	get hasAction() {
+		return Effect.Op[this.op].actionFn;
+	}
+	doAction() {
+		return Effect.Op[this.op].actionFn.call(this);
+	}
+
 	inheritDuration(duration,timeOp) {
-		if( this.killMe ) return;
+		if( this.dead ) return;
 		console.assert( this.timeLeft !== false );
 		testValidTimeLeft( this.timeLeft );
 		if( this.timeLeft === true ) {
@@ -95,7 +190,7 @@ class Deed {
 		return ( this.timeLeft!==true && this.timeLeft <= 0 );
 	}
 	expired() {
-		if( this.killMe ) return true;
+		if( this.dead ) return true;
 		testValidTimeLeft(this.timeLeft);
 		let done = ( this.timeLeft!==true && this.timeLeft <= 0 );
 		if( done && this.additionalDoneTest ) {
@@ -104,8 +199,8 @@ class Deed {
 		return done;
 	}
 	calc() {
-		if( this.contingent ) {
-			if( !this.contingent(this) ) {
+		if( this.onlyWhen ) {
+			if( !this.onlyWhen(this) ) {
 				if( this.item && this.item.hasRecharge ) {
 					this.item.rechargeLeft = 0;
 				}
@@ -116,80 +211,21 @@ class Deed {
 			}
 		}
 
-		if( this.handler ) {
-			debugger;
-			// I don't think we ever have a handler on an effect that effects stats. But
-			// I suppose we could...
-			console.assert( false );
-			let result = this.handler();
-			if( result.endNow ) {
-				this.end();
-			}
-			return result;
-		}
-		let target = this.target;
-		let stat = this.stat;
-		let result = {
-			statOld: target[stat]
-		};
-		if( this.op == 'set' ) {
-			target[stat] = this.value;
-		}
-		if( this.op == 'mult' ) {
-			if( target.baseType ) {
-				// note that this over-rides any other setting of this stat. Haste case second overrides slow
-				// for example.
-				target[stat] = target.baseType[stat] * this.value;
-			}
-		}
+		console.assert( !this.hasAction );
 
-		if( this.op == 'max' ) {
-			if( target[stat] === undefined ) {
-				target[stat] = this.value;
-			}
-			else {
-				target[stat] = Math.max(target[stat],this.value);
-			}
+		let statOld = this.target[this.stat];
+
+		this.doCalc( this.target, this.stat, this.value );
+
+		return {
+			statOld:	statOld,
+			statNew:	this.target[this.stat],
+			status:		this.op,
+			success:	true
 		}
-		if( this.op == 'min' ) {
-			if( target[stat] === undefined ) {
-				target[stat] = this.value;
-			}
-			else {
-				target[stat] = Math.min(target[stat],this.value);
-			}
-		}
-		if( this.op == 'add' ) {
-			if( typeof target[stat] === 'string' ) {
-				if( !String.arIncludes(target[stat],this.value) ) {
-					target[stat] = String.arAdd(target[stat],this.value);
-				}
-			}
-			else {
-				if( target[stat] === undefined ) {
-					target[stat] = 0;
-				}
-				target[stat] += this.value;
-			}
-		}
-		if( this.op == 'sub' ) {
-			if( typeof target[stat] === 'string' ) {
-				target[stat] = String.arSub(target[stat],this.value);
-			}
-			else {
-				if( target[stat] === undefined ) {
-					target[stat] = 0;
-				}
-				target[stat] -= this.value;
-			}
-		}
-		result.statNew = target[stat];
-		result.status = this.op;
-		result.success = true;
-		return result;
 	}
 	end() {
-		if( this.killMe ) {
+		if( this.dead ) {
 			return false;
 		}
 		console.watchDeed(this,'end()');
@@ -198,7 +234,7 @@ class Deed {
 			this.onEnd.call(this,this);
 		}
 		// WARNING! This must happen before the recalc, or this stat chance will remain in force!
-		this.killMe = true;
+		this.dead = true;
 		if( this.stat && this.target ) {
 			// WARNING: A forward declared call. Should be illegal, but JS singletons...
 			DeedManager.calcStat( this.target, this.stat );
@@ -208,8 +244,8 @@ class Deed {
 	tick(dt) {
 		console.assert( dt === 1.0 );
 
-		if( this.killMe ) {
-			// Note that zero duration deeds might be in the list, with killMe true at this moment.
+		if( this.dead ) {
+			// Note that zero duration deeds might be in the list, with dead true at this moment.
 			return;
 		}
 		console.assert( !(this.duration===0) );
@@ -225,13 +261,13 @@ class Deed {
 		}
 		else
 		{
-			if( this.handler ) {
-				let result = this.handler(dt);
+			if( this.hasAction ) {
+				let result = this.doAction();
 				if( result.endNow ) {
 					this.end();
 				}
 			}
-			if( this.onTick && !this.killMe ) {
+			if( this.onTick && !this.dead ) {
 				this.onTick(this.target,dt,this.data);
 			}
 		}
@@ -240,21 +276,16 @@ class Deed {
 
 let DeedManager = (new class {
 	constructor() {
-		this.handler = {};
 		this.deedList = [];
 		this.statsThatCauseImageChanges = { sneak:1 };
 		this.statsThatCauseMapRenders = { light: 1, senseBlind:1, senseLiving:1, senseInvisible: 1, sensePerception:1, senseAlert:1, senseDarkVision:1, senseXray:1, senseSmell:1 }
 	}
 	add(effect) {
 		let result = {};
-		if( this.handler[effect.op] ) {
-			// I like it this way because it leaves handler completely undefined otherwise.
-			effect.handler = this.handler[effect.op];
-		}
 		let deed = new Deed(effect);
 		this.deedList.push( deed );
-		if( deed.handler ) {
-			result = deed.handler();
+		if( deed.hasAction ) {
+			result = deed.doAction();
 		}
 		if( deed.stat ) {
 			result.statOld = deed.target[deed.stat];
@@ -278,16 +309,13 @@ let DeedManager = (new class {
 		});
 		return result;
 	}
-	addHandler(op,handlerFn) {
-		this.handler[op] = handlerFn;
-	}
 	// This recalculates all the stats of a target. Typically performed when a new
 	// effect starts, or one expires.
 	calcStat(target,stat,isOnset) {
 		let oldValue = target[stat];
 		target[stat] = target.isMonsterType ? target.getBaseStat(stat) : target.baseType[stat];
 		for( let deed of this.deedList ) {
-			if( !deed.killMe && deed.target.id == target.id && deed.stat == stat ) {
+			if( !deed.dead && deed.target.id == target.id && deed.stat == stat ) {
 				deed.calc();
 			}
 		}
@@ -326,7 +354,7 @@ let DeedManager = (new class {
 	end(fn) {
 		let count = 0;
 		for( let deed of this.deedList ) {
-			if( !deed.killMe && fn(deed) ) {
+			if( !deed.dead && fn(deed) ) {
 				if( deed.end() ) {
 					count++;
 				}
@@ -335,11 +363,11 @@ let DeedManager = (new class {
 		return count;
 	}
 	cleanup() {
-		Array.filterInPlace(this.deedList, deed => !deed.killMe );
+		Array.filterInPlace(this.deedList, deed => !deed.dead );
 	}
 	findFirst(fn) {
 		for( let deed of this.deedList ) {
-			if( !deed.killMe && fn(deed) ) {
+			if( !deed.dead && fn(deed) ) {
 				return deed;
 			}
 		}
@@ -465,7 +493,7 @@ let effectApply = function(effect,target,source,item,context) {
 
 	let effectShape = Perk.apply( 'effectShape', effect).effectShape || EffectShape.SINGLE;
 	if( effectShape == EffectShape.SINGLE ) {
-		let result = _effectApplyTo(effect,target,source,item,context);
+		let result = Effect.applyTo(effect,target,source,item,context);
 		globalEffectDepth--;
 		return result;
 	}
@@ -530,7 +558,7 @@ let effectApply = function(effect,target,source,item,context) {
 					}
 					targetList.push( area.map.getTileEntity(x,y) );
 					targetList.forEach( t => {
-						let r = _effectApplyTo(effect,t,source,item,context);
+						let r = Effect.applyTo(effect,t,source,item,context);
 						result.list.push( r );
 						result.success = result.success || r.success;
 					});
@@ -551,7 +579,7 @@ let effectApply = function(effect,target,source,item,context) {
 // effect.isResist
 // 	requires = a function that must return true at onset for the effect to happen.
 
-let _effectApplyTo = function(effect,target,source,item,context) {
+Effect.applyTo = function(effect,target,source,item,context) {
 
 
 	function testContextHarm(context) {
@@ -986,7 +1014,7 @@ let resultDeniedDueToType = {
 	success: false
 }
 
-DeedManager.addHandler(DeedOp.COMMAND,function() {
+Effect.OpAdd(DeedOp.COMMAND,function() {
 	if( !monsterTarget(this) ) return resultDeniedDueToType;
 	this.target.command = this.value;
 	debugger;
@@ -996,12 +1024,12 @@ DeedManager.addHandler(DeedOp.COMMAND,function() {
 	};
 });
 
-DeedManager.addHandler(DeedOp.HEAL,function() {
+Effect.OpAdd(DeedOp.HEAL,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return this.target.takeHealing(this.source||this.item,this.value,this.healingType);
 });
 
-DeedManager.addHandler(DeedOp.DAMAGE,function() {
+Effect.OpAdd(DeedOp.DAMAGE,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	let isOngoing = this.onsetDone && (this.duration === true || this.duration > 1);
 
@@ -1021,19 +1049,19 @@ DeedManager.addHandler(DeedOp.DAMAGE,function() {
 	return result;
 });
 
-DeedManager.addHandler(DeedOp.SHOVE,function() {
+Effect.OpAdd(DeedOp.SHOVE,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return this.target.takeShove(this.source,this.item,this.value,this.pull?-1:1);
 });
 
-DeedManager.addHandler(DeedOp.TELEPORT,function() {
+Effect.OpAdd(DeedOp.TELEPORT,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	console.assert(this.source);
 	this.landing = this.landing || this.source.commandTarget2;
 	return this.target.takeTeleport(this.landing);
 });
 
-DeedManager.addHandler(DeedOp.GATE,function() {
+Effect.OpAdd(DeedOp.GATE,function() {
 	if( !monsterTarget(this) ) return resultDeniedDueToType;
 	let oldPosition = {
 		areaId: this.target.area.id,
@@ -1047,12 +1075,12 @@ DeedManager.addHandler(DeedOp.GATE,function() {
 	return result;
 });
 
-DeedManager.addHandler(DeedOp.STRIP,function() {
+Effect.OpAdd(DeedOp.STRIP,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	return !!this.target.takeStripDeeds(this.stripFn);
 });
 
-DeedManager.addHandler(DeedOp.POSSESS,function() {
+Effect.OpAdd(DeedOp.POSSESS,function() {
 	if( !this.target.isMonsterType ) return resultDeniedDueToType;
 	if( this.source.isPossessing ) {
 		return {
@@ -1070,7 +1098,7 @@ DeedManager.addHandler(DeedOp.POSSESS,function() {
 	return result;
 });
 
-DeedManager.addHandler(DeedOp.SUMMON,function() {
+Effect.OpAdd(DeedOp.SUMMON,function() {
 	if( this.target.isMap ) return resultDeniedDueToType;
 	if( this.hasSummoned ) {
 		if( this.summonedEntity && this.summonedEntity.isDead() ) {
@@ -1129,7 +1157,8 @@ DeedManager.addHandler(DeedOp.SUMMON,function() {
 		success: true,
 	}
 });
-DeedManager.addHandler(DeedOp.DRAIN,function() {
+
+Effect.OpAdd(DeedOp.DRAIN,function() {
 	if( !itemOrMonsterTarget(this) ) return resultDeniedDueToType;
 	let entity = this.target;
 	let anyDrained = false;
@@ -1149,7 +1178,7 @@ DeedManager.addHandler(DeedOp.DRAIN,function() {
 	}
 });
 
-DeedManager.addHandler(DeedOp.KILLLABEL,function() {
+Effect.OpAdd(DeedOp.KILLLABEL,function() {
 	if( !this.target.isMap ) return resultDeniedDueToType;
 	let f = new Finder( this.target.itemList, this.source ).excludeMe().filter( item => item.label == this.value );
 	let count = f.count;
@@ -1164,7 +1193,7 @@ DeedManager.addHandler(DeedOp.KILLLABEL,function() {
 	}
 });
 
-DeedManager.addHandler(DeedOp.TAME,function() {
+Effect.OpAdd(DeedOp.TAME,function() {
 	if( !this.target.isMonsterType ) return resultDeniedDueToType;
 	let source = this.source;
 	if( source && source.isItemType ) {
@@ -1184,7 +1213,7 @@ DeedManager.addHandler(DeedOp.TAME,function() {
 	}
 });
 
-DeedManager.addHandler(DeedOp.CUSTOM,function() {
+Effect.OpAdd(DeedOp.CUSTOM,function() {
 	if( this.target.isMonster ) return resultDeniedDueToType;
 	let result = this.customFn.call(this);
 	return Object.assign({ status: 'custom' }, result);

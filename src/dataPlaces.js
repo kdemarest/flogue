@@ -163,6 +163,7 @@ Flooded Form
 	You can make places that flood and area with something, then pick random "spark" locations and
 	further flood a different tile around those.
 
+	technique: 'flood',
 	floodId			- the tile type to flood with
 	tilePercent		- what percentage of the entire level should get this treatment
 	sparkId			- what tile type will the interior island "sparks" be
@@ -171,6 +172,7 @@ Flooded Form
 
 Maze Form
 
+	technique: 'maze',
 	isMaze: true,		// Generate a little maze in this area.
 	xLen: 16,			
 	yLen: 16,
@@ -317,6 +319,7 @@ PlaceTypeList.fontDeep = {
 }
 
 PlaceTypeList.miniMaze = {
+	technique: 'maze',
 	isMaze: true,
 	xLen: 16,
 	yLen: 16,
@@ -329,8 +332,23 @@ PlaceTypeList.miniMaze = {
 	},
 };
 
+PlaceTypeList.microMaze = {
+	technique: 'maze',
+	isMaze: true,
+	xLen: 8,
+	yLen: 8,
+	makeWalled: false,
+	wallSymbol:  '#',
+	floorSymbol: '.',
+	supply: '2x gem',
+	flags: { rotate: true },
+	symbols: {
+	},
+};
+
 
 PlaceTypeList.floodOpen = {
+	technique: 'flood',
 	floodId: 'floor',
 	tilePercent: 0.01,
 	sparkId: 'water',
@@ -339,6 +357,7 @@ PlaceTypeList.floodOpen = {
 }
 
 PlaceTypeList.floodMud = {
+	technique: 'flood',
 	floodId: 'mud',
 	tilePercent: 0.01,
 	sparkId: 'water',
@@ -347,6 +366,7 @@ PlaceTypeList.floodMud = {
 }
 
 PlaceTypeList.floodWater = {
+	technique: 'flood',
 	floodId: 'water',
 	tilePercent: 0.20,
 	sparkId: 'floor',
@@ -355,6 +375,7 @@ PlaceTypeList.floodWater = {
 }
 
 PlaceTypeList.floodWaterSmall = {
+	technique: 'flood',
 	floodId: 'water',
 	tilePercent: 0.10,
 	sparkId: 'floor',
@@ -363,6 +384,7 @@ PlaceTypeList.floodWaterSmall = {
 }
 
 PlaceTypeList.floodWaterHuge = {
+	technique: 'flood',
 	floodId: 'water',
 	tilePercent: 0.60,
 	sparkId: 'floor',
@@ -371,6 +393,7 @@ PlaceTypeList.floodWaterHuge = {
 }
 
 PlaceTypeList.floodIsland = {
+	technique: 'flood',
 	floodId: 'floor',
 	tilePercent: 0.20,
 	sparkId: 'water',
@@ -380,6 +403,7 @@ PlaceTypeList.floodIsland = {
 }
 
 PlaceTypeList.floodWall = {
+	technique: 'flood',
 	floodId: 'wallCave',
 	tilePercent: 0.10,
 	sparkId: 'floor',
@@ -390,11 +414,13 @@ PlaceTypeList.floodWall = {
 
 
 PlaceTypeList.floodMist = {
+	technique: 'flood',
 	floodId: 'mist',
 	tilePercent: 0.20,
 }
 
 PlaceTypeList.floodOre = {
+	technique: 'flood',
 	floodId: 'vein',
 	tilePercent: 0.20,
 	sparkId: 'floor',
@@ -403,6 +429,7 @@ PlaceTypeList.floodOre = {
 }
 
 PlaceTypeList.floodOreSmall = {
+	technique: 'flood',
 	floodId: 'vein',
 	tilePercent: 0.10,
 	sparkId: 'floor',
@@ -411,6 +438,7 @@ PlaceTypeList.floodOreSmall = {
 }
 
 PlaceTypeList.floodPit = {
+	technique: 'flood',
 	floodId: 'pit',
 	tilePercent: 0.20,
 	sparkId: 'floor',
@@ -418,6 +446,7 @@ PlaceTypeList.floodPit = {
 	sparkDensity: 0.02
 }
 PlaceTypeList.floodPitSmall = {
+	technique: 'flood',
 	floodId: 'pit',
 	tilePercent: 0.10,
 	sparkId: 'floor',
@@ -425,6 +454,7 @@ PlaceTypeList.floodPitSmall = {
 	sparkDensity: 0.02
 }
 PlaceTypeList.floodPitLarge = {
+	technique: 'flood',
 	floodId: 'pit',
 	tilePercent: 0.40,
 	sparkId: 'floor',
@@ -433,6 +463,7 @@ PlaceTypeList.floodPitLarge = {
 }
 
 PlaceTypeList.firePit = {
+	technique: 'flood',
 	floodId: 'pit',
 	tilePercent: 0.20,
 	sparkId: 'flames',
@@ -442,6 +473,7 @@ PlaceTypeList.firePit = {
 }
 
 PlaceTypeList.pitEncircle = {
+	technique: 'flood',
 	floodId: 'floor',
 	tilePercent: 0.20,
 	sparkId: 'pit',
@@ -1730,6 +1762,7 @@ PlaceTypeList = Type.establish(
 	'PlaceType',
 	{
 		onFinalize: (placeType, placeId, checker) => {
+			placeType.technique = placeType.technique || 'map';
 			determinePlaceLevel(placeType,window.MonsterTypeList);
 			determineAndValidatePlaceSymbolHash(placeType,checker);
 			Object.each( placeType.symbols || {}, checker.checkLoot );

@@ -504,7 +504,7 @@ Module.add('dataMason',function() {
 			return swaps / 2;
 		}
 
-		floodSpread(x,y,count,sparkTile,sparkLimit,sparkRatio,keepTiles,assignFn) {
+		techniqueFlood(x,y,count,sparkTile,sparkLimit,sparkRatio,keepTiles,assignFn) {
 			let remain = count;
 			let ch = 100;
 			let tileList = this.flood( x, y, true, true,
@@ -1187,7 +1187,6 @@ Module.add('dataMason',function() {
 			}
 			pickResistingDuplicates() {
 				if( this.noChances() ) {
-					debugger;
 					this.reset();
 				}
 				let place = this.pick();
@@ -1281,7 +1280,7 @@ Module.add('dataMason',function() {
 				place = jQuery.extend(true, new Place(), place, {isPrepared: true});
 
 //				console.log("Trying to place "+place.typeId);
-				if( place.isMaze ) {
+				if( place.technique == 'maze' ) {
 					place.map = generateMaze(
 						place.inject,
 						place.xLen,
@@ -1292,6 +1291,7 @@ Module.add('dataMason',function() {
 						place.supply
 					);
 				}
+/*
 				if( place.isChamber ) {
 					place.map = generateChamber(
 						place.inject,
@@ -1303,6 +1303,7 @@ Module.add('dataMason',function() {
 						place.supply
 					);
 				}
+*/
 				place.generateMap(T.Floor,T.Wall);
 				place.rotateIfNeeded(rotation);
 			}
@@ -1315,7 +1316,7 @@ Module.add('dataMason',function() {
 			}
 
 			testFit(x,y,place) {
-				if( place.floodId ) {
+				if( place.technique == 'flood' ) {
 					return isUnknown(this.map.getTile(x,y)) && this.map.count8(x,y,isUnknown)==8;
 				}
 				let expand = place.hasWall ? 0 : 1;
@@ -1346,18 +1347,19 @@ Module.add('dataMason',function() {
 			console.assert( place );
 			let siteMarks = [];
 //				console.log('Placed at ('+x+','+y+')');
-			if( place.floodId ) {
+			if( place.technique == 'flood' ) {
 				console.assert( place.floodId );
 				let floodTile = TypeIdToSymbol[typeIdRemap(place.floodId)];
 				let sparkTile = place.sparkId ? TypeIdToSymbol[typeIdRemap(place.sparkId)] : null;
 				let sparkDensity = sparkTile !== null ? place.sparkDensity || 0 : 0;
 				let sparkLimit = place.sparkLimit;
-				let tilesMade = map.floodSpread( x, y, tileCount(place), sparkTile, sparkLimit, sparkDensity, false, 
+				let tilesMade = map.techniqueFlood( x, y, tileCount(place), sparkTile, sparkLimit, sparkDensity, false, 
 					(x,y,t) => { siteMarks.push(x,y); t.tile=floodTile; } );
 				numPlaceTiles += (tileCount(place)-tilesMade);
 				console.log( "Made flood place "+place.typeId+" at ("+x+","+y+")" );
+				return siteMarks;
 			}
-			else {
+			if( place.technique == 'map' || place.technique == 'maze' ) {
 				map.inject( x, y, place.map, function(px,py,x,y,symbol) {
 					siteMarks.push(x,y);
 					let type = SymbolToType[symbol];
@@ -1379,8 +1381,9 @@ Module.add('dataMason',function() {
 					}
 				});
 				console.log( "Made mapped place "+place.typeId+" at ("+x+","+y+")" );
-			}
 			return siteMarks;
+			}
+			console.assert(false);
 		}
 
 		function addSite( place, siteMarks ) {

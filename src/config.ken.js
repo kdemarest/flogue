@@ -65,6 +65,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.PlaceTypeList.kenPlace = {
 		isKenSpecial: true,
+		technique: 'maze',
 		isMaze: true,
 		xLen: 16,
 		yLen: 16,
@@ -115,7 +116,7 @@ Module.add('config.ken',function(X,moduleId) {
 		isTown: 	true,
 		scapeId: 	'kenTinyCave',
 		palette: 	{ basis: 'jaggedCave', passageFloor: 'floorStone' },
-		rREQUIRED: 	'mushrooms, shopOpenAir',
+		rREQUIRED: 	'mushrooms, shopOpenAir, microMaze',
 		jobPick: 	{ miner: 3, grocer: 1, botanist: 1, glassBlower: 1 },
 		monsters: 	['isDwarf'],
 		enemyDensity: 	0.00,
@@ -194,8 +195,8 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 1,
-//		themeId: 'dwarfTown',
+		startingDepth: 5,
+//		themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: player.inject
 	}

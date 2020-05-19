@@ -181,7 +181,7 @@ Gab = (new function(priorGab) {
 			return [mSubject,subj,' ',mVerb,'become',' ',mVerb,(newValue>oldValue?'harder to smell':'easier to smell'),'.'];
 		},
 		light: function(subj,obj,oldValue,newValue) {
-			return ['The area around ',mSubject,subj,' '+(newValue>oldValue?' brightens':'grows darker')+'.'];
+			return ['The area around ',mSubject,subj,' '+(newValue>oldValue?'brightens':'grows darker')+'.'];
 		},
 		stun: function(subj,obj,oldValue,newValue) {
 			return [mSubject,subj,' ',mVerb,'is',(!newValue?' no longer':''),' stunned.'];

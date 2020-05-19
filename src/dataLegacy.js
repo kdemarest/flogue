@@ -600,7 +600,7 @@ LegacyList.monk = compose( 'monk', [
 		skill: {
 			rechargeTime: 30,
 			passesTime: false,
-			effect: { op: 'max', stat: 'speed', value: 2, duration: 5+index*2, contingent: noChestArmor },
+			effect: { op: 'max', stat: 'speed', value: 2, duration: 5+index*2, onlyWhen: noChestArmor },
 		},
 		description: 'Move like the jaguar for '+((index+1)*4)+' turns to outpace opponents. No chest armor allowed.'
 	})),
@@ -614,7 +614,7 @@ LegacyList.monk = compose( 'monk', [
 		name: 'Jaguar Essence',
 		singularId: 'monkJaguar',
 		allow: noChestArmor,
-		onGain: { op: 'max', stat: 'speed', value: 2, duration: true, contingent: noChestArmor },
+		onGain: { op: 'max', stat: 'speed', value: 2, duration: true, onlyWhen: noChestArmor },
 		description: 'Become one with the jaguar to move faster permanently. No chest armor allowed.'
 	})),
 	range( [17], (index) => ({
@@ -914,6 +914,18 @@ LegacyList.thermaturge = compose('thermaturge',[
 LegacyList.tinker = compose('tinker',[
 ]);
 
+
+//===================================================
+// Trapper
+//
+// High Concept: Sets traps to kill
+// Triggers gradually improve, from pressure plates, to optical sensors, to life detectors, gradually including
+// more monster types.
+// Many monsters have a chance to detect and thus circumvent the traps, so you get better over time at concealing
+// the traps. Also, the trap's concealment is generally inversely proportional to its deadliness.
+// You are great at detecting, disarming, and salvaging traps of course.
+LegacyList.trapper = compose('trapper',[
+]);
 
 
 return {

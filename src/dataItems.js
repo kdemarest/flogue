@@ -7,19 +7,19 @@ Module.add('dataItems',function(){
 //Do a full scan through https://www.pngfind.com/freepng/axe/ to find
 //plents of PNG-ified image of decor
 
-// It is considered resistance if damage is <=0.5 below, and vulnerable if damage >= 2.0
 // If something does not name a damage, then items of that matter suffer NO damage from that attack form.
+// It is considered resistance if damage is <=0.5 below, and vulnerable if damage >= 2.0
 // The base unit for these effects is typically flesh, which should suffer 1.0 for nearly everything.
 const Matter = {
 	ether: 		{ damage: { } },
-	metal: 		{ damage: { corrode: 1, smite: 1} },
-	stone: 		{ damage: { bash: 1, smite: 1} },
-	chitin: 	{ damage: { bash: 1, smite: 1} },
+	metal: 		{ damage: { corrode: 1 } },
+	stone: 		{ damage: { bash: 1 } },
+	chitin: 	{ damage: { bash: 1 } },
 	glass: 		{ damage: { bash: 2, corrode: 1 } },
 	crystal: 	{ damage: { bash: 2 } },
 	leather: 	{ damage: { cut: 1, claw: 1, chop: 1, corrode: 1, rot: 2 } },
-	cloth: 		{ damage: { cut: 1, claw: 1, chop: 1, corrode: 1, rot: 2 } },
-	wax: 		{ damage: { cut: 1, claw: 1, chop: 1, bash: 0.5, burn: 2, corrode: 1, rot: 2 } },
+	cloth: 		{ damage: { cut: 2, claw: 1, chop: 1, corrode: 1, rot: 2 } },
+	wax: 		{ damage: { cut: 1, claw: 1, chop: 1, bash: 0.5, burn: 2, corrode: 1 } },
 	wood: 		{ damage: { bite: 0.5, bash: 0.5, chop: 1, rot: 1 } },
 	liquid: 	{ damage: { burn: 0.5, freeze: 1, shock: 0.5, corrode: 0.5 } },
 	paper: 		{ damage: { cut: 1, bite: 1, chop: 1, burn: 1, water: 1, corrode: 1 } },

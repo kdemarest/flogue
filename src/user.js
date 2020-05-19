@@ -80,18 +80,23 @@ class HumanUser {
 			if( favorite && favorite.command ) {
 				let command = favorite.command;
 				let item = !favorite.itemId ? null : this.entity.inventory.find( item=>item.id==favorite.itemId );
-				if( item && command == 'use' ) {
+				if( item && command == Command.USE ) {
 					// Super mega hack until I am sure this works.
-					if( command == 'use' ) {
-						if( item.isWeapon || item.isSpell ) {
-							if( item.slot && !item.inSlot ) {
-								this.entity.actUse(item);
-							}
-							command = commandForItemAttack(item);
+					if( item.isWeapon || item.isSpell ) {
+						if( item.slot && !item.inSlot ) {
+							this.entity.actUse(item);
+							command = Command.NONE;
+							item = null;
+							console.log('used item');
 						}
 						else {
-							command = commandForItem(item);
+							command = commandForItemAttack(item);
+							console.log('attack command ',command);
 						}
+					}
+					else {
+						command = commandForItem(item);
+						console.log('other command ',command);
 					}
 				}
 				let cmd = {

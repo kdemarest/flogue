@@ -499,7 +499,9 @@ class Item {
 
 		let adjustment = 1;
 		if( this.matter ) {
-			adjustment = Matter[this.matter].damage[damageType]  || 0;
+			// NOTE that this will make most items invulnerable to most damage types, because a lot of matter
+			// if not effected by regular damage. We might make an Introduction about this concept here.
+			adjustment = Matter[this.matter].damage[damageType] || 0;
 		}
 		result.adjustment = adjustment;
 
