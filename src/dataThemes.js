@@ -69,15 +69,15 @@ ScapeList.plainScape = () => ({
 });
 
 ScapeList.caveRandom = () => ({
-	dim: 				Math.randInt(40,80),
+	dim: 				Random.intRange(40,80),
 	architecture: 		"cave",
-	floorDensity: 		Math.rand(0.10,0.70),
-	seedPercent: 		Math.rand(0.0001,0.90),
+	floorDensity: 		Random.floatRange(0.10,0.70),
+	seedPercent: 		Random.floatRange(0.0001,0.90),
 	passageWander: 		50,
 });
 
 ScapeList.caveWeblike = () => ({
-	dim: 				Math.randInt(30,60),
+	dim: 				Random.intRange(30,60),
 	architecture: 		"cave",
 	floorDensity: 		0.12,
 	seedPercent: 		0.63,
@@ -85,7 +85,7 @@ ScapeList.caveWeblike = () => ({
 });
 
 ScapeList.caveMazeLike = () => ({
-	dim: 				Math.randInt(30,50),
+	dim: 				Random.intRange(30,50),
 	architecture: 		"cave",
 	floorDensity: 		0.12,
 	seedPercent: 		0.63,
@@ -93,7 +93,7 @@ ScapeList.caveMazeLike = () => ({
 });
 
 ScapeList.caveSpacious = () => ({
-	dim: 				Math.randInt(40,80),
+	dim: 				Random.intRange(40,80),
 	architecture: 		"cave",
 	floorDensity: 		0.68,
 	seedPercent: 		0.20,
@@ -101,7 +101,7 @@ ScapeList.caveSpacious = () => ({
 });
 
 ScapeList.caveBroadWinding = () => ({
-	dim: 				Math.randInt(40,50),
+	dim: 				Random.intRange(40,50),
 	architecture: 		"cave",
 	floorDensity: 		0.35,
 	seedPercent: 		0.50,
@@ -109,7 +109,7 @@ ScapeList.caveBroadWinding = () => ({
 });
 
 ScapeList.caveRoomsWellConnected = () => ({
-	dim: 				Math.randInt(40,50),
+	dim: 				Random.intRange(40,50),
 	architecture: 		"cave",
 	floorDensity: 		0.30,
 	seedPercent: 		0.20,
@@ -117,7 +117,7 @@ ScapeList.caveRoomsWellConnected = () => ({
 });
 
 ScapeList.caveRoomsNarrowlyConnected = () => ({
-	dim: 				Math.randInt(40,50),
+	dim: 				Random.intRange(40,50),
 	architecture: 		"cave",
 	floorDensity: 		0.25,
 	seedPercent: 		0.15,
@@ -125,7 +125,7 @@ ScapeList.caveRoomsNarrowlyConnected = () => ({
 });
 
 ScapeList.caveTendrils = () => ({
-	dim: 				Math.randInt(40,50),
+	dim: 				Random.intRange(40,50),
 	architecture: 		"cave",
 	floorDensity: 		0.20,
 	seedPercent: 		0.20,
@@ -133,7 +133,7 @@ ScapeList.caveTendrils = () => ({
 });
 
 ScapeList.caveTownRural = () => ({
-	dim: 				Math.randInt(60,80),
+	dim: 				Random.intRange(60,80),
 	architecture: 		"cave",
 	floorDensity: 		0.04,
 	seedPercent: 		0.20,
@@ -141,7 +141,7 @@ ScapeList.caveTownRural = () => ({
 });
 
 ScapeList.caveWildlands = () => ({
-	dim: 				Math.randInt(70,90),
+	dim: 				Random.intRange(70,90),
 	architecture: 		"cave",
 	floorDensity: 		0.38,
 	seedPercent: 		0.30,
@@ -150,26 +150,26 @@ ScapeList.caveWildlands = () => ({
 
 
 ScapeList.caveTown = () => ({
-	dim: 				Math.randInt(50,60),
+	dim: 				Random.intRange(50,60),
 	architecture: 		"cave",
-	floorDensity: 		Math.rand(0.40,0.50),
-	seedPercent: 		Math.rand(0.10,0.20),
+	floorDensity: 		Random.floatRange(0.40,0.50),
+	seedPercent: 		Random.floatRange(0.10,0.20),
 	passageWander: 		0,
 });
 
 ScapeList.caveTownSmall = () => ({
-	dim: 				Math.randInt(35,40),
+	dim: 				Random.intRange(35,40),
 	architecture: 		"cave",
-	floorDensity: 		Math.rand(0.20,0.30),
-	seedPercent: 		Math.rand(0.10,0.20),
+	floorDensity: 		Random.floatRange(0.20,0.30),
+	seedPercent: 		Random.floatRange(0.10,0.20),
 	passageWander: 		0,
 });
 
 ScapeList.caveVillage = () => ({
-	dim: 				Math.randInt(30,40),
+	dim: 				Random.intRange(30,40),
 	architecture: 		"cave",
-	floorDensity: 		Math.rand(0.10,0.50),
-	seedPercent: 		Math.rand(0.10,0.20),
+	floorDensity: 		Random.floatRange(0.10,0.50),
+	seedPercent: 		Random.floatRange(0.10,0.20),
 	passageWander: 		0
 });
 

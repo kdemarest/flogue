@@ -46,7 +46,7 @@ class Item {
 		let levelRaw = xCalc(this,presets,'level','+');
 		let noLevelVariance = xCalc(this,presets,'noLevelVariance','+');
 		let n = depth - levelRaw;
-		let level = (noLevelVariance || (levelRaw >= depth)) ? levelRaw : levelRaw + (n-Math.floor(Math.sqrt(Math.randInt(0,(n+1)*(n+1)))));
+		let level = (noLevelVariance || (levelRaw >= depth)) ? levelRaw : levelRaw + (n-Math.floor(Math.sqrt(Random.intRange(0,(n+1)*(n+1)))));
 
 		// Notice that the init overrides the typeId. This is to make sure that the inject doesn't do so with a dot 
 		// phrase, like weapon.dagger (which it definitely might!)
@@ -810,7 +810,7 @@ class Item {
 
 	// breakChance has a uniform chance to break, unchanged by level
 	checkBreakChance(result) {
-		if( !this.dead && this.breakChance && Math.chance(this.breakChance) ) {
+		if( !this.dead && this.breakChance && Random.chance100(this.breakChance) ) {
 			tell(mSubject,this,' ',mVerb,this.breakVerb||'break','!');
 			this.destroy();
 			result.itemBroke = true;

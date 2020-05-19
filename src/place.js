@@ -100,7 +100,7 @@ class Place {
 	rotateIfNeeded(rotation) {
 		if( this.flags && this.flags.rotate && this.map ) {
 			if( rotation === undefined || rotation === null ) {
-				rotation = Math.randInt(0,4);
+				rotation = Random.intRange(0,4);
 			}
 			this.map.rotate(rotation,this.inject);
 		}

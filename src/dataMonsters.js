@@ -1623,7 +1623,7 @@ MonsterTypeList.bat.onAttacked = function(attacker,amount,damageType) {
 
 MonsterTypeList.ambligryp.onAttack = function(target) {
 	let isGripping = DeedManager.findFirst( deed => deed.source && deed.source.id == this.id && deed.stat == 'immobile' );
-	if( !isGripping && Math.chance(this.gripChance) ) {
+	if( !isGripping && Random.chance100(this.gripChance) ) {
 		let effect = Object.assign( {}, EffectTypeList.eImmobilize, { name: 'the ambligryp\'s pincer grip' } );
 		effectApply( effect, target, this, null, 'onAttack' );
 	}

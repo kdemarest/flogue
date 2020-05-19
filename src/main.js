@@ -22,6 +22,7 @@ async function main() {
 
 	// This executes the initializers for all the static .js files
 	Module.realize();
+	Random.seed(123456);
 	Time.sim = new Time.TimeKeeper();
 	let User = new HumanUser();
 

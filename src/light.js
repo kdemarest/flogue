@@ -58,7 +58,7 @@ Light.arcListGenerate = function() {
 			arcList.push({x:x,y:y,dist:dist,mid:mid,span:span,left:left,right:right,nearDist:nearDist});
 		}
 	}
-	Array.shuffle(arcList);	// This is so that the sort is less predictable for equal distances.
+	Array.shuffle(arcList,TrueRandom);	// This is so that the sort is less predictable for equal distances.
 	arcList.sort( (a,b) => a.dist-b.dist );
 	return arcList;
 }

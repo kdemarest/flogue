@@ -1,34 +1,71 @@
 // STATIC UTILITY FUNCTIONS
 Module.add('utilities',function(){
 
-	Math.clamp = function(value,min,max) {
-		return Math.max(min,Math.min(max,value));
+	let RandomBase = class {
+		intRange(min, max) {
+			return Math.floor( this.randomFloat * (max - min) ) + min;
+		}
+		intBell(min, max) {
+			let span = (max-min)/3;
+			return min + Math.floor( this.randomFloat*span + this.randomFloat*span + this.randomFloat*span );
+		}
+		chance100(percent) {
+			return this.floatRange(0,100) < percent;
+		}
+		floatRange(min, max) {
+			return this.randomFloat*(max-min)+min;
+		}
+		floatBell(min, max) {
+			let span = (max-min)/3;
+			return min + this.randomFloat*span + this.randomFloat*span + this.randomFloat*span;
+		}
+		chance(fPercent) {
+			return this.randomFloat < fPercent;
+		}
 	}
 
-	Math.randInt = function(min, max) {
-		return Math.floor(Math.random() * (max - min)) + min;
+	let TrueRandom = new class extends RandomBase {
+		constructor() {
+			super();
+			this.trueRandom = Math.random;
+			Math.random = ()=>console.assert(false);
+		}
+		get randomFloat() {
+			return this.trueRandom();
+		}
 	}
-	Math.randIntBell = function(min, max) {
-		let span = (max-min)/3;
-		return min + Math.floor( Math.random()*span + Math.random()*span + Math.random()*span );
-	}
-	Math.rand = function(min, max) {
-		return Math.random()*(max-min)+min;
-	}
-	Math.randBell = function(min, max) {
-		let span = (max-min)/3;
-		return min + Math.random()*span + Math.random()*span + Math.random()*span;
+
+
+	let Random = new class extends RandomBase {
+		constructor() {
+			super();
+			this.seedOriginal = null;
+			this._seed = null;
+		}
+		seed(seed) {
+			this.seedOriginal = seed;
+			this._seed = seed % 2147483647;
+			if (this._seed <= 0) { this._seed += 2147483646; }
+		}
+		get randomMaxInt() {
+			console.assert( this.seedOriginal !== null );
+			this._seed = this._seed * 16807 % 2147483647;
+			return this._seed;
+		}
+		get randomFloat() {
+			return this.randomMaxInt / 2147483647;
+		}
+	};
+
+
+	Math.clamp = function(value,min,max) {
+		return Math.max(min,Math.min(max,value));
 	}
 	Math.triangular = function(n) {
 		// 1, 3, 6, 10, 15, 21, 28 etc.
 		return (n*(n+1))/2;
 	}
-	Math.chance = function(percent) {
-		return Math.rand(0,100) < percent;
-	}
-	Math.fChance = function(fPercent) {
-		return Math.random() < fPercent;
-	}
+
 
 	// Important - this is how the game will take x,y coords and consider which tile they fall into.
 	Math.toTile = Math.round; //floor; //round;
@@ -132,16 +169,16 @@ Module.add('utilities',function(){
 		});
 		return total;
 	}
-	Array.shuffle = function(array) {
+	Array.shuffle = function(array,randomGenerator=Random) {
 		for (let i = array.length - 1; i > 0; i--) {
-			let j = Math.floor(Math.random() * (i + 1));
+			let j = randomGenerator.intRange( 0, (i + 1) );
 			[array[i], array[j]] = [array[j], array[i]];
 		}
 		return array;
 	}
-	Array.shufflePairs = function(array) {
+	Array.shufflePairs = function(array,randomGenerator=Random) {
 		for (let i = array.length/2 - 1; i > 0; i-=1) {
-			let j = Math.floor(Math.random() * (i + 1));
+			let j = randomGenerator.intRange( 0, (i + 1) );
 			[array[2*i+0],array[2*i+1], array[2*j+0],array[2*j+1]] = [array[2*j+0],array[2*j+1], array[2*i+0],array[2*i+1]];
 		}
 		return array;
@@ -161,7 +198,7 @@ Module.add('utilities',function(){
 		}
 	}
 	Array.pickFromPairs = function(array) {
-		let n = Math.randInt(0,array.length/2) * 2;
+		let n = Random.intRange(0,array.length/2) * 2;
 		return [array[n+0],array[n+1]];
 	}
 	Array.move = function(array, from, to) {
@@ -376,7 +413,7 @@ ARRAY FORM
 			}
 			for( let i=0 ; i<(supply.count||1) ; ++i ) {
 				let chance = supply.chance || 100;
-				if( Math.chance(chance>= 100 ? 100 : chance*sandBag) ) {
+				if( Random.chance100(chance>= 100 ? 100 : chance*sandBag) ) {
 					let temp = Object.assign({},supply);
 					delete temp.count;
 					delete temp.chance;
@@ -526,6 +563,11 @@ ARRAY FORM
 
 	})();
 
+	return {
+		Random: Random,
+		TrueRandom: TrueRandom
+	}
+
 });
 
 Module.add('utilities2',function() {
@@ -567,12 +609,12 @@ Module.add('utilities2',function() {
 			}
 			let n;
 			do {
-				n = Math.randInt(0,keys.length);
+				n = Random.intRange(0,keys.length);
 			} while( list[keys[n]].neverPick );
 
 		    return list[keys[n]];
 		}
-		return list.length==0 ? null : list[Math.randInt(0,list.length)];
+		return list.length==0 ? null : list[Random.intRange(0,list.length)];
 	}
 
 

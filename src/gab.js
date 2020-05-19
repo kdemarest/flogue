@@ -5,7 +5,7 @@ Gab = (new function(priorGab) {
 	Object.assign(this,priorGab);
 	let self = this;
 	let observer = null;
-	let cityNameList = Array.shuffle(['Gunderhite','Thurmulna','Kurstifal','Unkruzia']);
+	let cityNameList = null;
 	let areaId2CityName = {};
 
 	this.setObserver = function(entity) {
@@ -13,6 +13,7 @@ Gab = (new function(priorGab) {
 	}
 
 	function getCityName(areaId) {
+		cityNameList = cityNameList || Array.shuffle(['Gunderhite','Thurmulna','Kurstifal','Unkruzia'])
 		if( !areaId2CityName[areaId] ) {
 			areaId2CityName[areaId] = cityNameList.pop();
 		}

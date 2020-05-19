@@ -1744,7 +1744,7 @@ ItemTypeList.vein.onBump = function(entity,self) {
 		img: 		StickerList.oreChaff.img,
 		duration: 	0.2,
 		onInit: 		a => { a.create(6); },
-		onSpriteMake: 	s => { s.sScale(0.3).sVel(Math.rand(-90,90),Math.rand(2,5)); s.zOrder=100; },
+		onSpriteMake: 	s => { s.sScale(0.3).sVel(Random.floatRange(-90,90),Random.floatRange(2,5)); s.zOrder=100; },
 		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(40).sRotate(360*s.dt); }
 	});
 	new Anim({
@@ -1802,7 +1802,7 @@ ItemTypeList.altar.onBump = function(toucher,self) {
 		hidList.forEach( item => {
 			item.unhide();
 			let a = Anim.FloatUp( self.id, item, StickerList.ePoof.img );
-			a.delay = Math.rand(0,0.5);
+			a.delay = Random.floatRange(0,0.5);
 
 		});
 		delete self.unhide;
@@ -1980,7 +1980,7 @@ ItemTypeList.barrel.onBump = function(toucher,self) {
 		img: 		self.img,
 		duration: 	0.6,
 		onInit: 		a => { a.create(5); },
-		onSpriteMake: 	s => { let deg=Math.rand(0-40,0+40); s.sScale(0.8).sVel(deg,Math.rand(5,7)); s.rot = deg/60*Math.PI; },
+		onSpriteMake: 	s => { let deg=Random.floatRange(0-40,0+40); s.sScale(0.8).sVel(deg,Random.floatRange(5,7)); s.rot = deg/60*Math.PI; },
 		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(20).sScale(s.sOverTime(0.8,0.5)); s.rotation += s.rot*s.dt; }
 	});
 
@@ -2040,7 +2040,7 @@ ItemTypeList.fontSolar.onTickRound = function() {
 				duration: 		Anim.Duration.untilAllDead,
 				onInit: 		a => { },
 				onTick: 		a => a.createPerSec(3,1),
-				onSpriteMake: 	s => { s.sScale(0.30).sDuration(2).divergence=Math.rand(1,3)*divergeSign; divergeSign = -divergeSign; },
+				onSpriteMake: 	s => { s.sScale(0.30).sDuration(2).divergence=Random.floatRange(1,3)*divergeSign; divergeSign = -divergeSign; },
 				onSpriteTick: 	s => !s.sMissile( s.tCubed ).sDiverge( s.tSquared ).sQuiverSet(0,aboveHead).sArrived(0.001),
 			});
 		}

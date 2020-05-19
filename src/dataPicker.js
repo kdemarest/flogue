@@ -382,7 +382,7 @@ pickItem()
 		debug += 'a';
 		debug = '';
 
-		let n = Math.rand(0,total);
+		let n = Random.floatRange(0,total);
 		let i = -2;
 		do {
 			i += 2;

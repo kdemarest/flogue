@@ -48,7 +48,7 @@ class SimpleMap {
 		return x>=0 && x<this.xLen && y>=0 && y<this.yLen;
 	}
 	pickPos(xa,ya,xb,yb) {
-		return [Math.randInt(0+xa,this.xLen-xb),Math.randInt(0+ya,this.yLen-yb)];
+		return [Random.intRange(0+xa,this.xLen-xb),Random.intRange(0+ya,this.yLen-yb)];
 	}
 	pickPosBy(xa,ya,xb,yb,fn) {
 		// xa and so on are "distance to indent from the edges for this pick"
@@ -56,8 +56,8 @@ class SimpleMap {
 		let y;
 		let reps = 1000;
 		do {
-			x = Math.randInt(0+xa,this.xLen-xb)
-			y = Math.randInt(0+ya,this.yLen-yb);
+			x = Random.intRange(0+xa,this.xLen-xb)
+			y = Random.intRange(0+ya,this.yLen-yb);
 		} while( reps-- && !fn(x,y,this.tileTypeGet(x,y)) );
 		if( !reps ) return false;
 		return [x,y];

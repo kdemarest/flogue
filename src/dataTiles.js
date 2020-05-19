@@ -27,7 +27,7 @@ let WallRand = new class {
 	constructor() {
 		this.randList = [];
 		for( let i=0 ; i<256 ; ++i ) {
-			this.randList.push( Math.randInt( 0, 1023 ) );
+			this.randList.push( TrueRandom.intRange( 0, 1023 ) );
 		}
 	}
 	numSeed(x,y) {
@@ -395,7 +395,7 @@ TileTypeList.mud.onDepart = function(entity,self) {
 		return;
 	}
 
-	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Math.chance(50) ) ) {
+	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Random.chance100(50) ) ) {
 		return;
 	}
 
@@ -410,11 +410,11 @@ TileTypeList.mud.onDepart = function(entity,self) {
 
 
 TileTypeList.forcefield.onEnterType = function(entity,self) {
-	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Math.chance(50) ) ) {
+	if( entity.isImmune(self.typeId) || ( entity.isResist(self.typeId) && Random.chance100(50) ) ) {
 		return;
 	}
 
-	if( Math.chance(70) ) {
+	if( Random.chance100(70) ) {
 		tell( mSubject|mCares,entity,' ',mVerb,'is',' stopped by the ',mObject,self,'.' );
 		return false;
 	}
