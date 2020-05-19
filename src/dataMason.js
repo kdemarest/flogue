@@ -1822,7 +1822,7 @@ Module.add('dataMason',function() {
 		return true;
 	}
 
-	function makeRooms(map,percentToEat,guide,overlapChance,siteList) {
+	function makeRooms(map,percentToEat,guide,overlapChance) {
 
 		percentToEat = Math.clamp(percentToEat||0,0.01,1.0);
 		let floorToMake = Math.max(1,Math.ceil(map.area() * percentToEat));

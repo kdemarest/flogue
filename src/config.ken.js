@@ -195,7 +195,7 @@ Module.add('config.ken',function(X,moduleId) {
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 5,
+		startingDepth: 2,
 //		themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: player.inject

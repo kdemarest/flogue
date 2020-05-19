@@ -65,6 +65,9 @@ class ViewMiniMap extends ViewObserver {
 				}
 			});
 		}
+		if( msg == 'resetMinimap' ) {
+			this.drawn = [];
+		}
 	}
 	draw( c, entity, x, y, scale, ctr ) {
 		console.assert(entity);

@@ -139,6 +139,7 @@ class PixiImageRepo {
 				this.imgPathList[imgPath] = imgSPREAD;
 			}
 		});
+		guiMessage('resetMinimap');
 		this.loading = false;
 		console.logImgLoader('Loading complete');
 	}
