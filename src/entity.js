@@ -54,6 +54,7 @@ function validCoords(target) {
 	return ok;
 }
 
+let trashObjectToEaseCoding = {};
 
 //
 // ENTITY (monsters, players etc)
@@ -292,14 +293,13 @@ class Entity {
 		}
 	}
 
-
 	die() {
 		if( this.dead && this.isUser ) {
 			return;
 		}
 
 		// Immortals can never die.
-		if( this.immortal ) {
+		if( this.immortal && !this.testerDestroying ) {
 			this.health = Math.max(1,this.health);
 			delete this.vanish;
 			return;
@@ -345,7 +345,7 @@ class Entity {
 		}
 
 		// make sure that if this critter is carrying an .isPlot item that it gets dropped SOMEWHERE useful!
-		if( this.dead ) {
+		if( this.dead && !this.testerDestroying ) {
 			// When you vanish, or leave no corpse, your loot just drops, or, if set to fling
 			// it sprays around within lootFling distance. Like if you want to explode a bit.
 			if( this.vanish || this.corpse === false ) {
@@ -379,7 +379,7 @@ class Entity {
 	}
 
 	isDead() {
-		return this.dead || this.health <= 0 || this.vanish;
+		return this.dead || this.health <= 0 || this.vanish || this.testerDestroying;
 	}
 	isAlive() {
 		return !this.isDead();
@@ -602,6 +602,7 @@ class Entity {
 
 		if( doVis ) {
 			//console.log('calcVis for',this.area.id,'at',this.x,'x',this.y);
+			this.debugEverCalculatedVisibility = true;
 			this.visCache = this.area.vis.calcVis(
 				this.x,
 				this.y,
@@ -621,18 +622,20 @@ class Entity {
 		return this.visCache;
 	}
 
-	canTargetPosition(x,y,area,sightReduction=0,lightDistance=0) {
+	canTargetPosition(x,y,area,sightReduction=0,lightDistance=0,why=trashObjectToEaseCoding) {
 		if( x===undefined || y===undefined ) {
 			debugger;
 		}
 		// Never in a different area.
 		if( area && this.area.id !== area.id ) {
+			why.inDifferentArea = true;
 			return false;
 		}
 		let visCache = this.visCache;
 		let d = this.getDistance(x,y);
 		// You can always target adjacent to yourself.
 		if( d <= 1 ) {
+			why.isAdjacent = true;
 			return true;
 		}
 		let sightDistance = (this.senseSight!==undefined ? this.senseSight : Rules.MONSTER_SIGHT_DISTANCE);
@@ -641,15 +644,18 @@ class Entity {
 		// If you are not close enough to a user to have a vis cache, then just guess at your
 		// ability to target the position.
 		if( !canSee || !visCache ) {
+			why.bestGuess = true;
 			return canSee;
 		}
 		// If the location has never been processed by the vis cache (rare) then assume
 		// it is hidden behind a wall or something.
 		if( typeof visCache[y]==='undefined' || typeof visCache[y][x]==='undefined' ) {
+			why.notInVisCache = true;
 			return false;
 		}
 		// The spot must be both visible and have enough light to see, except see above
 		// for the exception of targetting adjacent things.
+		why.testedVisCacheAndLight = true;
 		return visCache[y][x] && this.map.getLightAt(x,y,0) > 0;
 	}
 
@@ -673,16 +679,22 @@ class Entity {
 		return false;
 	}
 
-	canTargetEntity(entity,isPerceiving) {
+	canTargetEntity(entity,isPerceiving,why=trashObjectToEaseCoding) {
 		// Some special rules if you are perceiving vs targetting. There are many things
 		// you can not see, but if you are right next to things you are blind to then
 		// you're allowed to take a shot at them.
 
 		// You can always target yourself, even in the void.
 		if( this.id == entity.id ) {
+			why.isSelf = true;
 			return true;
 		}
-		if( entity.inVoid || entity.isMap ) {
+		if( entity.inVoid ) {
+			why.inVoid = true;
+			return false;
+		}
+		if( entity.isMap ) {
+			why.isMap = true;
 			return false;
 		}
 		if( entity.isItemType && entity.owner && !entity.owner.isMap ) {
@@ -691,14 +703,21 @@ class Entity {
 			// WARNING! This is needed so that messages generated during entity init will work
 			// properly. That is, x and y are undefined, so we need to rely on who is holding the
 			// object.
+			why.isItemOwner = entity.owner.id == this.id;
 			return entity.owner.id == this.id;
 		}
 		// Not in the same area, so nope.
 		if( entity.area && entity.area.id !== this.area.id ) {
+			why.notInSameArea = true;
 			return false;
 		}
 		// Magic might be helping you see things
-		if( (entity.isMonsterType && this.senseLiving && entity.isLiving) || (entity.isItemType && entity.isTreasure && this.senseTreasure) ) {
+		if( entity.isMonsterType && this.senseLiving && entity.isLiving ) {
+			why.sensingLiving = true;
+			return true;
+		}
+		if( entity.isItemType && entity.isTreasure && this.senseTreasure ) {
+			why.sensingTreasure = true;
 			return true;
 		}
 //		if( entity.ownerOfRecord ) {
@@ -707,23 +726,33 @@ class Entity {
 		let d = this.getDistance(entity.x,entity.y);
 		// Adjacent things can be smelled if they stink, or detected with a good sense of smell.
 		if( d <= 1 && (entity.stink || (this.senseSmell && !entity.scentReduce)) ) {
+			why.canSmell = true;
 			return true;
 		}
 		// blind can not target. WARNING! Check this AFTER any smell tests and senseLiving or senseTreasure
 		if( this.senseBlind && (isPerceiving || d>1) ) {
+			why.isBlind = true;
 			return false;
 		}
 		// You can't target invisible unless you can see invisible (but see scent above)
 		if( entity.invisible && !this.senseInvisible && (isPerceiving || d>1) ) {
+			why.isInvisible = true;
 			return false;
 		}
 		// Otherwise, you can target an entity in any position you can see.
 		// WARNING: The sneak and light must be the same as those used in viewMap handlePerception
-		return this.canTargetPosition(entity.x,entity.y,entity.area,entity.sneak||0,(entity.light||0) * Rules.noticeableLightRatio);
+		return this.canTargetPosition(
+			entity.x,
+			entity.y,
+			entity.area,
+			entity.sneak||0,
+			(entity.light||0) * Rules.noticeableLightRatio,
+			why
+		);
 	}
 
-	canPerceiveEntity(entity) {
-		return this.canTargetEntity(entity,true);
+	canPerceiveEntity(entity,why=trashObjectToEaseCoding) {
+		return this.canTargetEntity(entity,true,why);
 	}
 
 	testTooClose(x,y,sneak=0) {
@@ -913,9 +942,12 @@ class Entity {
 		return found;
 	}
 	takeStripDeeds(testFn) {
-		let count = DeedManager.end( testFn );
+		let goneList = [];
+		let count = DeedManager.end( testFn, goneList );
 		return {
 			status: 'stripDeeds',
+			numStripped: count,
+			goneList: goneList,
 			success: count > 0
 		}
 	}
@@ -1481,7 +1513,7 @@ class Entity {
 	get controlSuborned() {
 		let useAiTemporarily = false;
 		if( this.control == Control.USER ) {
-			if( this.playerUseAi ) {
+			if( this.playerUnderTestControl ) {
 				useAiTemporarily = true;
 			}
 			if( this.stun || this.hasForcedAttitude ) {
@@ -2255,6 +2287,7 @@ class Entity {
 				value: false,
 				duration: 10,
 			};
+			debugger;
 			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
 		}
 
@@ -2439,7 +2472,6 @@ class Entity {
 	}
 
 	takeBePossessed(effect,toggle) {
-
 		let fieldsToTransfer = { control:1, name:1, team: 1, brainMindset: 1, brainAbility: 1, visCache: 1, experience: 1, isChosenOne: 1, strictAmmo: true };
 
 		let source = effect.source;
@@ -2491,6 +2523,7 @@ class Entity {
 		Object.copySelected( this, source, fieldsToTransfer );
 		if( source.userControllingMe ) {
 			source.userControllingMe.takeControlOf(this);
+			guiMessage( 'setObserver', this );
 		}
 		source.isPossessing = true;
 		source.control = Control.EMPTY;
@@ -3689,8 +3722,7 @@ class Entity {
 				}
 			}
 			case Command.DEBUGTEST: {
-				Tile.revealAll = !Tile.revealAll;
-
+				guiMessage('runTest','makeAllLegacies');
 				break;
 			}
 			case Command.DEBUGKILL: {

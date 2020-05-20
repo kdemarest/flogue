@@ -2,14 +2,21 @@ Module.add('tester',function() {
 
 
 class TestHelper {
-	constructor(user) {
+	constructor(user,test) {
 		this.user = user;
+		this.test = test;
 	}
 	get area() {
 		return this.user.entity.area;
 	}
+	set area(value) {
+		console.assert(false);
+	}
 	get player() {
 		return this.user.entity;
+	}
+	set player(value) {
+		console.assert(false);
 	}
 	item(fn) {
 		return new Finder(this.area.map.itemList).filter(fn);
@@ -26,6 +33,23 @@ class TestHelper {
 		e = e || this.inventory( e=>e.typeId==typeId ).first;
 		return e;
 	}
+	makeFreshPlayer(atMarker,inject=null) {
+		let area = this.area;
+		let player = new Entity( area.depth, MonsterTypeList.player, inject, area.jobPicker );
+		player.light = 8;
+		let pos = area.map.pickPosToStartGame(atMarker || this.test.player.atMarker);
+		player.requestGateTo(area,...pos);
+		player.playerUnderTestControl = true;
+		this.user.takeControlOf( player );
+		guiMessage( 'setObserver', player );
+		return player;
+	}
+	makeEnemy(typeId,atMarker) {
+		let enemy = new Entity( this.area.depth, MonsterTypeList[typeId], null, this.area.jobPicker );
+		let pos = this.area.map.pickPosToStartGame(atMarker);
+		enemy.requestGateTo(this.area,...pos);
+		return enemy;
+	}
 }
 
 class TestResult {
@@ -39,15 +63,16 @@ class TestResult {
 	get time() {
 		return Time.sim.time - this.simTimeStart;
 	}
-	expect( expression, message ) {
+	expect( expectFn, message, details ) {
 		let helper = this.helper;
 		let value;
 		try {
-			value = eval(expression);
+			value = expectFn(helper);
 			this.list.push({
 				success: !!value,
 				time: this.time,
-				message: message
+				message: message,
+				details: details
 			});
 		} catch(e) {
 			debugger;
@@ -55,22 +80,27 @@ class TestResult {
 				success: false,
 				time: this.time,
 				exception: e.message+'\n'+e.stack,
-				message: message
+				message: message,
+				details: details
 			});
 			this.resolved = true;
 		}
-		let success = this.list[this.list.length-1].success;
+		let last = this.list[this.list.length-1];
+		console.log(last);
+		let success = last.success;
 		if( Tester.haltOnError && !success ) {
+			// Examine 'last' for details.
 			debugger;
-			eval(expression);	// just to help with debugging.
+			// Step into this to see the assessment fail.
+			expectFn(helper);
 		}
 		return success;
 	}
-	expectAt( time, expression, message ) {
+	expectAt( time, expectFn, message ) {
 		if( this.time !== time ) {
 			return;
 		}
-		return this.expect( expression, message );
+		return this.expect( expectFn, message );
 	}
 }
 
@@ -96,7 +126,6 @@ class Test {
 		this.valueRestore.forEach( restoreFn => restoreFn() );
 	}
 	think(entity) {
-		debugger;
 		if( this.result.resolved || !this.onThink ) {
 			return;
 		}
@@ -118,7 +147,7 @@ class Test {
 	check() {
 		if( this.simTimeLimit !== false && Time.sim.time >= this.simTimeLimit ) {
 			debugger;
-			this.result.expect( false, "Test exceeded time limit." );
+			this.result.expect( helper=>false, "Test exceeded time limit." );
 			this.result.resolved = true;
 			this.finish();
 			return true;
@@ -135,7 +164,7 @@ class Test {
 	start(testId,user) {
 		let test = TestList[testId];
 		if( test.themeId !== false ) {
-			this.alter( ThemeList[test.themeId],   test.theme, { injectList: test.injectList } );
+			this.alter( ThemeList[test.themeId], test.theme, { injectList: test.injectList } );
 		}
 		this.alter( MonsterTypeList['player'], test.player );
 		this.onCheck = test.check.bind(test);
@@ -150,10 +179,9 @@ class Test {
 				playerTypeId:	'player',
 				playerMarkerId:	test.player.atMarker
 			};
-			debugger;
 			user.startGame( config );
 			this.area = user.entity.area;
-			this.result = new TestResult(testId,new TestHelper(user));
+			this.result = new TestResult(testId,new TestHelper(user,test));
 //			user.tickWorld(false);
 			this.started = true;
 
@@ -264,7 +292,8 @@ class TestManager {
 		let user = area.entityList.find( e=>e.userControllingMe ).userControllingMe;
 		console.assert(user);
 
-		let myInterval = () => {
+		let testStarterIntervalFn = () => {
+			// If a halt is required, don't go starting more tests.
 			if( this.haltOnError && this.failCount > 0 ) {
 				return;
 			}
@@ -280,53 +309,47 @@ class TestManager {
 				this.test = new Test(testId,this.log.bind(this)).start(testId,user);
 			}
 		}
-		let intervalHandle = setInterval( myInterval, 1 );
+		let intervalHandle = setInterval( testStarterIntervalFn, 1 );
 	}
 }
 let Tester = new TestManager();
 
 class ViewTester {
 	constructor(divId,getPlayerFn) {
-		let run = function(testId) {
-			if( Tester.test || Tester.roster.length ) {
-				return;
-			}
-			Tester.run( testId, getPlayerFn().area, outputDivId );
-		}.bind(this);
-
-		let outputDivId = '#testResults';
+		this.outputDivId = '#testResults';
 		$(divId).empty();
+		this.getPlayerFn = getPlayerFn;
 
-		let inputConfig = $('<input id="configId" type="text" value="">')
+		let inputConfig = $('<input id="configId" type="text" value="" style="width:60px;">')
 			.appendTo(divId)
-			.html(Config.getConfigId())
+			.val(Config.getConfigId())
 			.change( function() {
 				Config.setConfigId( $(this).val() );
 			});
 
-		let inputTest = $('<input id="testId" type="text" value="makeAllItems">') //playFullGame">')
+		this.inputTest = $('<input id="testId" type="text" value="makeAllMonsters" style="width:100px;">') //playFullGame">')
 			.appendTo(divId)
 			.keydown( function(e) {
 				e.stopPropagation();
 			})
-			.change( function() {
-				run( $(this).val() );
+			.change( () => {
+				this.run( this.testName );
 			})
-			.keyup(function(e) {
+			.keyup( (e) => {
 				if(e.keyCode == 13) {
-					run( $(this).val() );
+					this.run(this.testName );
 				}
 			})
 		;
 		$('<button>GO</button>')
 			.appendTo(divId)
-			.click( function() {
-				run( $(inputTest).val() );
+			.click( () => {
+				this.run( this.testName );
 			});
 		$('<button>ALL</button><br>')
 			.appendTo(divId)
-			.click( function() {
-				run( null );
+			.click( () => {
+				this.run( null );
 			});
 		$('<input id="testHaltOnError" type="checkbox" '+(Tester.haltOnError?'checked':'')+'> Halt on error?</input><br>')
 			.appendTo(divId)
@@ -354,9 +377,23 @@ class ViewTester {
 			.appendTo(testStatus);
 		$('<span>)</span>')
 			.appendTo(testStatus);
-		$('<pre id="'+outputDivId.replace('#','')+'"></pre>')
+		$('<pre id="'+this.outputDivId.replace('#','')+'"></pre>')
 			.appendTo(divId)
 			.click( function() { $(this).hide(); } );
+	}
+	get testName() {
+		return $(this.inputTest).val();
+	}
+	run(testId) {
+		if( Tester.test || Tester.roster.length ) {
+			return;
+		}
+		Tester.run( testId, this.getPlayerFn().area, this.outputDivId );
+	}
+	message(msg,payload) {
+		if( msg=='runTest' ) {
+			this.run( payload || this.testName );
+		}
 	}
 	render() {
 	}

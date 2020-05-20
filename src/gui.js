@@ -71,7 +71,7 @@ class GuiManager {
 	render() {
 		let area = this.getPlayer().area;
 		Gab.setObserver( this.spectator );
-		guiMessage( 'observer', this.spectator );
+		guiMessage( 'setObserver', this.spectator );
 
 		area.vis.populateOpacityLookup();	// This could be maintained progressively, but it hasn't mattered yet.
 

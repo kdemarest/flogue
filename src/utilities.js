@@ -43,6 +43,7 @@ Module.add('utilities',function(){
 			this._seed = null;
 		}
 		seed(seed) {
+			console.assert( Number.isInteger(seed) );
 			this.seedOriginal = seed;
 			this._seed = seed % 2147483647;
 			if (this._seed <= 0) { this._seed += 2147483646; }
@@ -203,6 +204,10 @@ Module.add('utilities',function(){
 	}
 	Array.move = function(array, from, to) {
 	    array.splice(to, 0, array.splice(from, 1)[0]);
+	}
+
+	Object.isObject = function(obj) {
+		return typeof obj=='object' && obj !== null && !Array.isArray(obj);
 	}
 
 	Object.isEmpty = function(obj) {

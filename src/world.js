@@ -45,7 +45,7 @@ class World {
 		console.assert( userEntity.isUser );
 
 		if( userEntity.controlSuborned ) {
-			if( userEntity.command == Command.WAIT ) {
+			if( userEntity.command == Command.WAIT || userEntity.playerUnderTestControl ) {
 				this._timeFund720 += Time.one720;
 			}
 			userEntity.clearCommands();

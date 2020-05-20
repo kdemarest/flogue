@@ -92,7 +92,7 @@ async function main() {
 		// AWAIT IMAGE LOAD
 
 		guiMessage( 'create2DEngine' );
-		guiMessage( 'observer', this.entity );
+		guiMessage( 'setObserver', this.entity );
 		let scene = new Scene();
 		guiMessage( 'scene', scene );
 		$('#guiLoading').hide();

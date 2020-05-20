@@ -57,12 +57,12 @@ TestList.checkPlayerBasics = {
 		wearing:  'armor, helm, bracers, boots',
 	},
 	check(result,helper) {
-		result.expect( 'helper.player.naturalMeleeWeapon', 'player has a natural melee weapon' );
-		result.expect( 'helper.inventory(i=>i.isPotion && i.op=="heal")', 'player has a healing potion' );
-		result.expect( 'helper.inventory(i=>i.typeId=="armor" && i.inSlot).count', 'player wearing armor' );
-		result.expect( 'helper.inventory(i=>i.typeId=="helm" && i.inSlot).count', 'player wearing helm' );
-		result.expect( 'helper.inventory(i=>i.typeId=="bracers" && i.inSlot).count', 'player wearing bracers' );
-		result.expect( 'helper.inventory(i=>i.typeId=="boots" && i.inSlot).count', 'player wearing boots' );
+		result.expect( helper=>helper.player.naturalMeleeWeapon, 'player has a natural melee weapon' );
+		result.expect( helper=>helper.inventory(i=>i.isPotion && i.op=="heal"), 'player has a healing potion' );
+		result.expect( helper=>helper.inventory(i=>i.typeId=="armor" && i.inSlot).count, 'player wearing armor' );
+		result.expect( helper=>helper.inventory(i=>i.typeId=="helm" && i.inSlot).count, 'player wearing helm' );
+		result.expect( helper=>helper.inventory(i=>i.typeId=="bracers" && i.inSlot).count, 'player wearing bracers' );
+		result.expect( helper=>helper.inventory(i=>i.typeId=="boots" && i.inSlot).count, 'player wearing boots' );
 		result.resolved = true;
 	}
 }
@@ -86,12 +86,15 @@ TestList.simpleCombat = {
 			return true;
 		}
 	},
+	tick(helper) {
+		helper.player.playerUnderTestControl = true;
+	},
 	check(result,helper) {
-		result.expectAt( 0, '!helper.get("goblin").isDead()', 'goblin starts alive' );
+		result.expectAt( 0, helper=>!helper.get("goblin").isDead(), 'goblin starts alive' );
 		if( helper.player.commandList.length > 0 ) {
 			return;
 		}
-		result.expect( '!helper.get("goblin")', 'goblin is dead' );
+		result.expect( helper=>!helper.get("goblin"), 'goblin is dead' );
 		result.resolved = true;
 	}
 }
@@ -126,26 +129,140 @@ TestList.makeAllMonsters = {
 	check(result,helper) {
 		result.resolved = helper.done;
 		if( result.resolved ) return;
-		result.expect( '!helper.get(helper.findTypeId).isDead()', helper.findTypeId+' created' );
+		result.expect( helper=>!helper.get(helper.findTypeId).isDead(), helper.findTypeId+' created' );
 	}
 }
 
-TestList.legacies = {
+// RunAllEffects
+// The player runs each effect, independent of items, against a goblin.
+TestList.runAllEffects = {
+	themeId: 'testSimpleRoom',
+	depth: 0,
+	timeLimit: 300,
+	player: {
+		atMarker: 'center',
+		immortal: true,
+	},
+	think(entity,helper) {
+		if( entity.id === helper.player.id ) {
+			let effect = Object.assign( {}, EffectTypeList[helper.effectTypeId] );
+			helper.effect = effect;
+			helper.target = (effect.isHarm || effect.isDeb) ? helper.enemy : helper.player;
+			helper.effectOp = OpTypeHash[effect.op];
+			console.assert( helper.effectOp );
+			helper.effectStat = effect.stat;
+			helper.effectResult = effectApply( effect, helper.target, helper.player, null, 'test' );
+
+			// Critical to stop the player from attacking, which might halt invisibility or change something...
+			entity.command = Command.WAIT;
+		}
+		else {
+			// We need the Goblin to just stand there and take it, not defend actively or attack
+			entity.command = Command.WAIT;
+		}
+		// Indicates that I did all the thinking for you. Don't try to think on your own.
+		return true;
+	},
+	tick(helper) {
+		if( !helper.effectList ) {
+			helper.effectList = Object.keys(EffectTypeList).filter( effectId => !EffectTypeList[effectId].testSkip );
+		}
+		if( helper.effectList.length == 0 ) {
+			helper.done = true;
+			helper.player.playerUnderTestControl = false;
+			return;
+		}
+		let area = helper.area;
+		if( helper.enemy ) {
+			helper.enemy.testerDestroying = true;
+		}
+
+		// Doing this tests onEnd
+		DeedManager.end( deed => deed.target.id === helper.player.id );
+		helper.player.testerDestroying = true;
+
+		helper.effectTypeId = helper.effectList.shift();
+		if( helper.effectTypeId === 'eInvisible' ) {
+			debugger;
+		}
+
+		helper.makeFreshPlayer();
+
+		helper.enemy = helper.makeEnemy( 'goblin', 'topLeft' );
+	},
+	check(result,helper) {
+		result.resolved = helper.done;
+		if( result.resolved ) return;
+		let assessEffectResult = helper => {
+			let stat = helper.effectStat;
+			let target = helper.target;
+			if( EffectTypeList[helper.effectTypeId].testVerifyFn ) {
+				debugger;
+				return EffectTypeList[helper.effectTypeId].testVerifyFn(helper.target);
+			}
+			if( helper.effectOp.calcFn ) {
+				return target[stat] !== target.baseType[stat];
+			}
+			// Each OpType will have to just figure out how to discover whether its test worked.
+			return true;
+		}
+		result.expect( assessEffectResult, helper.effectTypeId+' functioned', helper.effectResult );
+	}
+}
+
+
+TestList.makeAllLegacies = {
 	themeId: 'testSimpleRoom',
 	depth: 0,
 	timeLimit: 3300+4000,
 	player: {
-		atMarker: 'topLeft',
+		atMarker: 'center',
 		immortal: true,
 	},
+	think(entity,helper) {
+		if( entity.id === helper.player.id ) {
+			// Here is where we'd use all our skills.
+			// Critical to stop the player from attacking, which might halt invisibility or change something...
+			entity.command = Command.WAIT;
+		}
+		else {
+			// We need the Goblin to just stand there and take it, not defend actively or attack
+			entity.command = Command.WAIT;
+		}
+		// Indicates that I did all the thinking for you. Don't try to think on your own.
+		return true;
+	},
 	tick(helper) {
-		helper.player.legacyId = 'brawler';
-		helper.player.carrying = '2x weapon.club, 10x ammo.rock';
+		if( !helper.legacyList ) {
+			helper.legacyList = Object.keys(LegacyList);
+		}
+		if( helper.legacyList.length == 0 ) {
+			helper.done = true;
+			helper.player.playerUnderTestControl = false;
+			return;
+		}
+		if( helper.enemy ) {
+			helper.enemy.testerDestroying = true;
+		}
 
-//	MonsterTypeList.player.carrying = 'armor, helm, bracers, boots, stuff.lamp, 2x weapon, shield, weapon.bow';
-//	MonsterTypeList.player.legacyId = 'monk';
+		helper.player.testerDestroying = true;
 
+		helper.legacyId = helper.legacyList.shift();
 
+		let playerData = {
+			legacyId: helper.legacyId,
+			level: 20
+		};
+		helper.makeFreshPlayer('center',playerData);
+		helper.enemy = helper.makeEnemy( 'goblin', 'topLeft' );
+	},
+	check(result,helper) {
+		result.resolved = helper.done;
+		if( result.resolved ) return;
+		let assessLegacyResult = helper => {
+			return true;
+		}
+		result.expect( assessLegacyResult, helper.legacyId+' created' );
 	}
 }
 
@@ -199,8 +316,8 @@ TestList.makeAllItems = {
 		result.resolved = helper.done;
 		if( result.resolved ) return;
 		helper.typeId = helper.findTypeFilter.split('.')[0];
-		result.expect( 'helper.get(helper.typeId)', helper.findTypeFilter+' created' );
-		result.expect( 'helper.get(helper.typeId).matter !== undefined', helper.findTypeFilter+' has matter' );
+		result.expect( helper=>helper.get(helper.typeId), helper.findTypeFilter+' created' );
+		result.expect( helper=>helper.get(helper.typeId).matter !== undefined, helper.findTypeFilter+' has matter' );
 	}
 }
 
@@ -250,7 +367,6 @@ TestList.playFullGame = {
 		}
 		let map = entity.map;
 		entity.brainPath = true;
-		entity.playerUseAi = true;
 		entity.healthMax = 10000;
 		entity.strictAmmo = false;
 		entity.brainIgnoreClearShots = 30;	// So that we don't spam a spell of confusion endlessly at range...
@@ -331,7 +447,7 @@ TestList.playFullGame = {
 			helper.visited = {};
 			helper.initialized = true;
 		}
-
+		entity.player.playerUnderTestControl = true;
 	},
 	check(result,helper) {
 		result.resolved = helper.player.area.depth == Rules.DEPTH_MAX;

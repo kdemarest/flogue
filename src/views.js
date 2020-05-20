@@ -35,7 +35,7 @@ class ViewObserver {
 	// Message passing
 	//
 	message(msg,payload) {
-		if( msg == 'observer' && payload !== this.observer ) {
+		if( msg == 'setObserver' && payload !== this.observer ) {
 			this.observerDefault = payload;
 			if( this.onSetObserver ) {
 				this.onSetObserver(payload);

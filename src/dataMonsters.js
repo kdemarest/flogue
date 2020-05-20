@@ -372,6 +372,9 @@ senseBlind		- when set the creature is blind
 sensePerception	- shows you where others could target you, eg roughly their reach and range
 senseAlert		- shows, based on your sneaking ability, how close you'd have to be to them to alert
 
+blindFight		- you can't actually see, but you don't suffer a miss chance when fighting blind.
+blindShot		- you can't actually see, but you don't suffer a miss chance when shooting blind.
+
 imgChoices	- If you want to get fancier than just using core.img you can put some image choices here.
 imgChooseFn	- pairs with imgChoices to determine what to show. Returns the image path.
 
@@ -597,7 +600,7 @@ Type.register( 'MonsterType', {
 		naturalWeapon: {
 			typeFilter: 'weapon.hands',
 		},
-		speedAction: 2.0,
+		speedAction: 1.0,
 		braceBonus: 0,
 		carrying: '',
 		wearing: '',
@@ -852,6 +855,7 @@ Type.register( 'MonsterType', {
 	},
 	"daimaul": {	// (bash)
 		core: [ 24, '3:5', 'evil', 'bash', 'demon', 'wingedBiped', 'mon/demon/daimaul.png', 'it' ],
+		size: 2,
 		glow: 1,
 		light: 1,
 		immune: DemonImmunity,
@@ -860,7 +864,7 @@ Type.register( 'MonsterType', {
 		carrying: '',
 		loot: '30% gem, 50% potion, 30% demonScale, 30% demonEye',
 		resist: DemonResistance,
-		scale: 0.65,
+		scale: 1.2,
 		vuln: DemonVulnerability,
 	},
 	"daiskorsh": {	// (burn)

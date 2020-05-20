@@ -178,13 +178,13 @@ const QuickName = ['','clumsy','normal','nimble','lithe'];
 let ResistanceList = [];
 
 const MiscImmunity = { SPEED: "speed", STUN: "stun", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField", HEALING: "healing" };
-ResistanceList.push(MiscImmunity);
+ResistanceList.push(...Object.values(MiscImmunity));
 
 // WARNING: the damage type names are re-used in their icon names in StickerList. Maintain both.
 const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", CHOP: "chop", BASH: "bash",
 					BURN: "burn", FREEZE: "freeze", WATER: "water", LIGHT: "light", SHOCK: "shock",
 					CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot", SUFFOCATE: 'suffocate' };
-ResistanceList.push(DamageType);
+ResistanceList.push(...Object.values(DamageType));
 
 const Damage = {
 	All: 		Object.values(DamageType).join(',')+','+Object.values(MiscImmunity).join(','),
@@ -203,7 +203,7 @@ const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked
 				FEARFUL: "fearful", CALM: "calm", BUSY: "busy",
 				AWAIT: "await", WORSHIP: "worshipping",
 				AGGRESSIVE: "aggressive", PATROL: "patroling", HUNT: "hunting", HESITANT: "hesitant", WANDER: "wandering" };
-ResistanceList.push(Attitude);
+ResistanceList.push(...Object.values(Attitude));
 
 
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};

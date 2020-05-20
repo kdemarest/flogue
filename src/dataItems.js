@@ -204,7 +204,6 @@ const WeaponMaterialList = ({ //Type.establish('WeaponMaterial',{},{
 	"deepium": 		{ level: 70, fixins: 'deepium ingot', name: 'deepium', matter: 'metal' },
 	"solarium": 	{ level: 85, fixins: 'solarium ingot', name: 'solarium', matter: 'metal' },
 });
-ResistanceList.push(WeaponMaterialList);
 
 const BowMaterialList = ({ //Type.establish('BowMaterial',{},{
 	"ash": 			{ level:  0, fixins: 'wood' },		// level MUST be zero
@@ -215,7 +214,6 @@ const BowMaterialList = ({ //Type.establish('BowMaterial',{},{
 	"deepium": 		{ level: 70, fixins: 'ingotDeepium' },
 	"solarium": 	{ level: 85, fixins: 'ingotSolarium' },
 });
-ResistanceList.push(BowMaterialList);
 
 const SlingMaterialList = ({
 	"ash": 			{ level:  0, fixins: 'wood' /* very important this be zero!*/ },
@@ -2134,6 +2132,9 @@ ItemTypeList = Type.establish( 'ItemType', {
 		Object.each( itemType.varieties, variety=>{
 			// The bow and others override the main weapon material lists, so these need typeIds as well.
 			Type.giveTypeIds(variety.materials);
+		});
+		Object.each( itemType.materials, material=>{
+			ResistanceList.push( material.typeId );
 		});
 
 		itemType.xPrice 		= Rules.ItemBag[itemType.typeId].xPrice;

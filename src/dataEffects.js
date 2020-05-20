@@ -29,15 +29,11 @@ onTargetPosition	- if the victim is moving around, things like burn have effects
 let EffectTypeList = {
 	eInert: {
 		level: 0,
-		isInert: 1
+		isInert: 1,
+		testSkip: true
+
 		// Very important not to have rarity 0
 	}, // this is special, used in the picker effect proxy! Do not change!
-	eBlank: {
-		level: 0,
-		rarity: 1.00,
-		isBlank: 1,
-		name: 'blank paper'
-	},
 	eKillLabel: {
 		level: 0,
 		rarity: 1.00,
@@ -191,7 +187,8 @@ let EffectTypeList = {
 		isHelp: true,
 		name: 'return',
 		icon: 'gui/icons/eTeleport.png',
-		about: 'Gate to somewhere else.'
+		about: 'Gate to somewhere else.',
+		testSkip: true
 	},
 	eOdorless: {
 		isTac: 1,
@@ -215,7 +212,7 @@ let EffectTypeList = {
 		isHarm: true,
 		name: 'stink',
 		icon: 'gui/icons/eFragrance.png',
-		about: 'Increase the scent of a target to overwhelming levels, hiding other scents.'
+		about: 'Increase the scent of a target to overwhelming levels, hiding other scents.',
 	},
 	eMap: {
 		isTac: 1,
@@ -273,7 +270,10 @@ let EffectTypeList = {
 		value: 2,
 		isHelp: 1,
 		xPrice: 3,
-		requires: e => e.speed < 5,
+		requires: e => {
+			console.assert( Number.isFinite(e.speedAction) );
+			return e.speedAction < 5;
+		},
 		icon: 'gui/icons/eHaste.png',
 		about: 'Move one extra square per round.'
 	},
@@ -675,7 +675,7 @@ let EffectTypeList = {
 		stat: 'immobile',
 		value: 1,
 		xDuration: 1.0,
-		requires: e => !e.immobile,
+		requires: target => !target.immobile,
 		icon: 'gui/icons/eImmobile.png',
 		about: 'Makes a target unable to move for their spot.'
 	},
@@ -938,8 +938,9 @@ EffectTypeList = Type.establish(
 		onRegister: (effectType) => {
 			// all effect bearing items have a bigger price.
 			effectType.xPrice = Rules.effectPriceMultiplierByRarity(effectType.rarity);
-		},
-		onFinalize: () => ResistanceList.push( EffectTypeList )
+			console.assert( effectType.typeId );
+			ResistanceList.push( effectType.typeId )
+		}
 	},
 	EffectTypeList
 );

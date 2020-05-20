@@ -41,7 +41,7 @@ Checker.checkResistance = irvString => {
 	if( !irvString ) return;
 
 	let resistanceList = {}
-	ResistanceList.forEach( res => Object.assign(resistanceList,res) );
+	ResistanceList.forEach( res => resistanceList[res] = true );
 
 	let irvArray = String.arSplit(irvString);
 	irvArray.forEach( irv => {
