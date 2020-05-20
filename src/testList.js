@@ -407,19 +407,19 @@ TestList.playFullGame = {
 			let thing = entity.testerThing;
 			// Is it a chest? Bump it.
 			if( thing.isSolarAltar && (!entity.deathReturn || entity.deathReturn.altarId!==thing.id) ) {
-				entity.brainState.activity = "Arrived at altar. bumping.";
+				entity.activity = "Arrived at altar. bumping.";
 				let dir = entity.dirToPosNatural(thing.x,thing.y);
 				entity.command = Direction.toCommand(dir);
 				return true;
 			}
 			if( thing.isContainer && !thing.isRemovable && thing.inventory.length) {
-				entity.brainState.activity = "Arrived at container. bumping.";
+				entity.activity = "Arrived at container. bumping.";
 				let dir = entity.dirToPosNatural(thing.x,thing.y);
 				entity.command = Direction.toCommand(dir);
 				return true;
 			}
 			if( thing.isStairsDown && thing.area.id == helper.player.area.id ) {
-				entity.brainState.activity = "Arrived at stairs. descending.";
+				entity.activity = "Arrived at stairs. descending.";
 				entity.command = Command.ENTERGATE;
 				return true;
 			}
@@ -436,7 +436,7 @@ TestList.playFullGame = {
 				//debugger;
 				helper.visited[entity.testerThing.id] = true;
 				console.log('Skipping '+entity.testerThing.id+'.');
-				entity.brainState.activity = "Stalled heading towards "+entity.testerThing.id+". Skipping.";
+				entity.activity = "Stalled heading towards "+entity.testerThing.id+". Skipping.";
 			}
 		}
 
@@ -447,7 +447,7 @@ TestList.playFullGame = {
 			helper.visited = {};
 			helper.initialized = true;
 		}
-		entity.player.playerUnderTestControl = true;
+		helper.player.playerUnderTestControl = true;
 	},
 	check(result,helper) {
 		result.resolved = helper.player.area.depth == Rules.DEPTH_MAX;

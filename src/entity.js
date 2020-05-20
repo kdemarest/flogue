@@ -2287,7 +2287,6 @@ class Entity {
 				value: false,
 				duration: 10,
 			};
-			debugger;
 			DeedManager.forceSingle(turnVisibleEffect,attacker,null,null);
 		}
 
@@ -3722,7 +3721,7 @@ class Entity {
 				}
 			}
 			case Command.DEBUGTEST: {
-				guiMessage('runTest','makeAllLegacies');
+				guiMessage('runTest','playFullGame');
 				break;
 			}
 			case Command.DEBUGKILL: {
