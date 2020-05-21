@@ -81,14 +81,13 @@ class ViewNarrative extends ViewObserver {
 		super.message(msg,payload);
 		if( msg=='receive' ) {
 			this.history = payload;
-			while( history.length > 50 ) {
-				history.shift();
-			}
 			this.dirty = true;
 		}
 	}
 	render() {
-		$(this.divId).html( this.history.join('\n') ).scrollTop( $(this.divId).prop('scrollHeight') );
+		// Apparently getting scrollHeight takes a lot of time. Perhaps we can just scroll to the bottom
+		// all the time with a very high number...
+		$(this.divId).html( this.history.join('\n') ).scrollTop( 9999999 /*$(this.divId).prop('scrollHeight')*/ );
 	}
 }
 

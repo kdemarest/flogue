@@ -177,7 +177,12 @@ class Entity {
 	get entityList() {
 		return this.area.entityList;
 	}
-
+	get isWalking() {
+		return this.travelMode=='walk';
+	}
+	get isFlying() {
+		return this.travelMode=='fly';
+	}
 	record(s,pending) {
 		//$('<div>'+s+'</div>').prependTo('#guiPathDebug');
 		if( pending ) {
@@ -1101,7 +1106,7 @@ class Entity {
 
 				let success = this.path.findPath(this,this.x,this.y,x,y,closeEnough);
 				if( success ) {
-					this.record( "Pathing "+this.path.path[0]+" from ("+this.x+','+this.y+') to reach ('+x+','+y+')', target ? target.id : '' );
+					this.record( "Pathing "+this.path.path[2]+" from ("+this.x+','+this.y+') to reach ('+x+','+y+')', target ? target.id : '' );
 					stallSet(false);
 				}
 				else {
@@ -3626,6 +3631,9 @@ class Entity {
 			}
 			case Command.ENTERGATE: {
 				let gate = this.map.findItemAt(this.x,this.y).filter( gate=>gate.gateDir!==undefined ).first;
+				if( gate===false ) {
+					debugger;
+				}
 				return this.actEnterGate(gate);
 			}
 			case Command.EXECUTE: {
@@ -3948,9 +3956,16 @@ class Entity {
 	findSafeGateDestination(area,x,y) {
 		let c = !area.map.inBounds(x,y) ? true : GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
 		if( c ) {
-			[x,y] = area.map.spiralFind( x, y, (x,y,tile) => {
-				return tile && tile.mayWalk && !tile.isProblem && !GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
-			});
+			let findFn = (x,y,tile) => {
+				// this is expanded for debugging.
+				if( !tile ) return false;
+				if( !tile.mayWalk ) return false;
+				if( tile.isProblem ) return false;
+				let collider = GlobalFindFirstCollider(this,this.travelMode,area.map,x,y,this);
+				return !collider;
+			};
+			let map = area.map;	// For debugging.
+			[x,y] = map.spiralFind( x, y, findFn );
 			console.assert( x!==false );
 		}
 		return [x,y];
@@ -4087,7 +4102,7 @@ class Entity {
 		if( dest && this.nearTarget(dest,dest.closeEnough) ) {
 			this.record( "ARRIVED", true );
 			if( dest.onArrive ) {
-				dest.onArrive(this.dest);
+				dest.onArrive(this.dest,this);
 			}
 			this.destination = null;
 		}

@@ -45,6 +45,10 @@ let Narrative = (new class {
 						recipient.history.push( recipient.buffer.pop() );
 					}
 					recipient.history.push(message);
+					while( recipient.history.length > Rules.narrativeHistoryLength ) {
+						recipient.history.shift();
+					}
+
 				}
 				recipient.receiveFn(message,recipient.history);
 			}

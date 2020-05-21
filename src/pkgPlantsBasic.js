@@ -162,6 +162,14 @@ ItemTypeList.mushroom.onTickRound = function() {
 	this.spriteSetMember('scale',this.scale);
 }
 
+MushroomVarietyList.amanitaMushroom.isProblem = function(entity,self) {
+	if( entity.mindset('harvest') ) {
+		return Problem.MILD;
+	}
+	return Problem.NONE;
+}
+
+
 MushroomVarietyList.blurellaMushroom.onHarvest = function(harvester,item) {
 }
 

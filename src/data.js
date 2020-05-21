@@ -125,9 +125,9 @@ let MaxVis = 8;			// The vision distance max any monster can see
 
 // Pathfinding and terrain isProblem
 let Problem = {
-	NONE:  0.0,
+	NONE:  0.0,			// Must be ZERO so that boolean ops work on it
 	TINY: 0.1,
-	DOOR: 0.1,		// be wary of changing this!
+	DOOR: 0.1,			// be wary of changing this!
 	ENTITY: 0.2,		// be wary of changing this!
 	MILD:  0.3,
 	HARSH: 0.7,

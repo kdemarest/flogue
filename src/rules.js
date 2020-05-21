@@ -65,6 +65,7 @@ let Rules = new class {
 		this.numTypesOfArmor				= 5;
 		this.breathLimitToDamage			= 6;
 		this.foodAidByLevel					= 2;
+		this.narrativeHistoryLength			= 100;
 
 		this.effectShapePriceMult = {
 			single: 1.0,

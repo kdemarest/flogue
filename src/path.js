@@ -192,9 +192,11 @@ class Path {
 				if( typeof v !== 'number' ) {
 					v = v.isProblem(entity,v);
 					console.assert( (v>=0 && v<=1) || v == Problem.DEATH );
-					if( entity.immortal && v == Problem.DEATH ) {
-						v = Problem.NEARDEATH;
-					}
+
+// This seems to make us fall down pits a lot... I think pits need a different marking than DEATH.
+//					if( entity.immortal && v == Problem.DEATH ) {
+//						v = Problem.NEARDEATH;
+//					}
 				}
 				if( v >= 1 ) {
 					return false;	// 1 or greater means you have already visited, or tht you will die/hit wall entering this square
@@ -251,6 +253,7 @@ class Path {
 							// Move the end, so that we can back-search from it.
 							self.exActual = nx;
 							self.eyActual = ny;
+							self.closeEnough = closeEnough;
 							return true;
 						}
 					}

@@ -593,6 +593,7 @@ class Map extends SimpleMap {
 			[x,y] = this.spiralFind(1,1,(x,y,tile) => {
 				return maySafelyExist(x,y) === Problem.NONE
 			});
+			console.assert( x !== false && y !== false );
 			f = { first: {x:x,y:y} };
 		}
 		return [f.first.x,f.first.y];
@@ -639,7 +640,8 @@ class Map extends SimpleMap {
 				remain = span;
 			}
 		} while( --reps > 0 );
-		return false;
+		debugger;
+		return [false,false];
 	}
 
 	getSiteAt(x,y) {

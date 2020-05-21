@@ -323,17 +323,23 @@ TestList.makeAllItems = {
 
 // PlayFullGame
 // Run the plauer through the entire game.
-TestList.playFullGame = {
-	themeId: false,
-	depth: 0,
-	timeLimit: 1000*200,
-	player: {
-		immortal: true,
-	},
+TestList.playFullGame = new class {
+	constructor() {
+		Object.assign( this, {
+			themeId: false,
+			depth: 0,
+			timeLimit: 1000*200,
+			player: {
+				immortal: true,
+			}
+		});
+	}
 	findNextDestination(entity,helper,onArrive,onStall) {
+		let maySafelyExist = pWalk(entity.area.map,true);
+
 		let altar = entity.map.findItem(entity).filter( item => !helper.visited[item.id] && item.isSolarAltar );
 		let items = entity.map.findItem(entity).filter( item => !helper.visited[item.id] && (item.isTreasure || (item.isContainer && item.inventory.length)) ).byDistanceFromMe();
-		let sites = entity.area.findSite(entity).filter( site => !helper.visited[site.id] ).byDistanceFromMe();
+		let sites = entity.area.findSite(entity).filter( site => !helper.visited[site.id] && maySafelyExist(site.x,site.y) === Problem.NONE ).byDistanceFromMe();
 		let stairs = entity.map.findItem(entity).filter( item => !helper.visited[item.id] && item.isStairsDown ).byDistanceFromMe();
 		let closer = items.first;
 		if( items.first && sites.first && entity.getDistance(sites.first.x,sites.first.y) < entity.getDistance(items.first.x,items.first.y) ) {
@@ -342,7 +348,7 @@ TestList.playFullGame = {
 		let desire = altar.first || closer || stairs.first;
 		console.assert(desire);
 		console.assert(desire.area);
-		let closeEnough = desire.isSite || desire.isSolarAltar || (desire.isContainer && !desire.isRemovable) ? 1 : 0;
+		let closeEnough = desire.isSite ? 2 : desire.isSolarAltar || (desire.isContainer && !desire.isRemovable) ? 1 : 0;
 		entity.testerThing = desire;
 		entity.testerStallCount = 0;
 		entity.destination = {
@@ -360,10 +366,49 @@ TestList.playFullGame = {
 			onArrive: onArrive,
 			onStall: onStall
 		};
-	},
+	}
+	handleArrival(entity,helper) {
+		let thing = entity.testerThing;
+
+		// Is it a chest? Bump it.
+		if( thing.isSolarAltar && (!entity.deathReturn || entity.deathReturn.altarId!==thing.id) ) {
+			entity.activity = "Arrived at altar. bumping.";
+			let dir = entity.dirToPosNatural(thing.x,thing.y);
+			entity.command = Direction.toCommand(dir);
+			return true;
+		}
+		if( thing.isContainer && !thing.isRemovable && thing.inventory.length && !entity.isFlying ) {
+			entity.activity = "Arrived at container. bumping.";
+			let dir = entity.dirToPosNatural(thing.x,thing.y);
+			entity.command = Direction.toCommand(dir);
+			return true;
+		}
+		if( thing.isStairsDown && thing.area.id == helper.player.area.id ) {
+			if( thing.isSite ) {
+				debugger;
+			}
+			entity.activity = "Arrived at stairs. descending.";
+			let gate = entity.map.findItemAt(entity.x,entity.y).filter( gate=>gate.gateDir!==undefined ).first;
+			if( !gate ) {
+				debugger;
+			}
+			entity.command = Command.ENTERGATE;
+			return true;
+		}
+		helper.visited[thing.id] = true;
+		helper.arrived = false;
+	}
 	think(entity,helper) {
 		if( !entity.isUser ) {
 			return;
+		}
+		if( helper.arrived ) {
+			// It is critical that this be first, because otherwise you might be made to walk
+			// off of the stairs, or the site etc.
+			let result = this.handleArrival(entity,helper);
+			if( result ) {
+				return result;
+			}
 		}
 		let map = entity.map;
 		entity.brainPath = true;
@@ -403,31 +448,7 @@ TestList.playFullGame = {
 			}
 			return;
 		}
-		if( helper.arrived ) {
-			let thing = entity.testerThing;
-			// Is it a chest? Bump it.
-			if( thing.isSolarAltar && (!entity.deathReturn || entity.deathReturn.altarId!==thing.id) ) {
-				entity.activity = "Arrived at altar. bumping.";
-				let dir = entity.dirToPosNatural(thing.x,thing.y);
-				entity.command = Direction.toCommand(dir);
-				return true;
-			}
-			if( thing.isContainer && !thing.isRemovable && thing.inventory.length) {
-				entity.activity = "Arrived at container. bumping.";
-				let dir = entity.dirToPosNatural(thing.x,thing.y);
-				entity.command = Direction.toCommand(dir);
-				return true;
-			}
-			if( thing.isStairsDown && thing.area.id == helper.player.area.id ) {
-				entity.activity = "Arrived at stairs. descending.";
-				entity.command = Command.ENTERGATE;
-				return true;
-			}
-			helper.visited[thing.id] = true;
-			helper.arrived = false;
-		}
-		let onArrive = () => {
-			//debugger;
+		let onArrive = (dest,entity) => {
 			helper.arrived = true;
 		}
 		let onStall = (entity,destination) => {
@@ -441,14 +462,14 @@ TestList.playFullGame = {
 		}
 
 		this.findNextDestination(entity,helper,onArrive,onStall);
-	},
+	}
 	tick(helper) {
 		if( !helper.initialized ) {
 			helper.visited = {};
 			helper.initialized = true;
 		}
 		helper.player.playerUnderTestControl = true;
-	},
+	}
 	check(result,helper) {
 		result.resolved = helper.player.area.depth == Rules.DEPTH_MAX;
 		if( result.resolved ) return;
