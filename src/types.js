@@ -54,9 +54,9 @@ let TypeUnique = new class {
 }
 
 let levelAdjust = (type) => {
-	if( type.level !== undefined ) {
+	if( type.power !== undefined ) {
 		console.assert(!type.levelAdjusted);
-		type.level = Math.floor(type.level/100*Rules.DEPTH_SPAN);
+		type.level = Math.floor(type.power/100*Rules.DEPTH_SPAN);
 		type.levelAdjusted = true;
 	}
 }
@@ -213,6 +213,15 @@ let Type = new class {
 				Symbol.allocate( typeData );
 			}
 			levelAdjust(typeData);
+			if( typeData.materials ) {
+				Object.each( typeData.materials, material => levelAdjust(material) );
+			}
+			if( typeData.varieties ) {
+				Object.each( typeData.varieties, variety => levelAdjust(variety) );
+			}
+			if( typeData.qualities ) {
+				Object.each( typeData.qualities, quality => levelAdjust(quality) );
+			}
 			if( policy.onFinalize ) {
 				policy.onFinalize( typeData, typeId, checker );
 			}

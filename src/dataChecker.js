@@ -16,8 +16,8 @@ Checker.checkSupply = function(supplyMixed,sourceId,allowTilesAndMonsters) {
 		if( allowTilesAndMonsters && TypeIdToSymbol[make.typeFilter] ) {
 			return;
 		}
-		let any = (''+make.typeFilter).toLowerCase()==='any';
-		let type = picker.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ').trim(), null, false );
+		let any = Picker.testAny(make.typeFilter);
+		let type = picker.pickItem( Picker.defaultToTreasure(any,make.typeFilter), null, false );
 		if( any && type && !type.isTreasure ) {
 			debugger;
 		}

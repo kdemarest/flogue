@@ -5,6 +5,7 @@ let Rules = new class {
 		Object.assign( this, {
 			DEPTH_MIN: 0,
 			DEPTH_MAX: 19,
+			POWER_MAX: 100,
 			SCENT_AGE_LIMIT: 100000,
 			ARMOR_EFFECT_CHANCE_TO_FIRE: 10,
 			ARMOR_EFFECT_CHANCE_TO_FIRE_MAX: 25,
@@ -75,6 +76,9 @@ let Rules = new class {
 			blast5: 5.0,
 			blast6: 6.0
 		};
+	}
+	depthToPower(depth) {
+		return Math.floor( (Math.min(depth,this.DEPTH_MAX)/this.DEPTH_MAX) * this.POWER_MAX );
 	}
 	armorDurability(fightsToLast) {
 		return Math.floor( fightsToLast * this.expectedHitsPerMonster / this.numTypesOfArmor );

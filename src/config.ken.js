@@ -173,9 +173,10 @@ Module.add('config.ken',function(X,moduleId) {
 		// soldier, brawler, monk, archer, ninja, not quite blaster
 		mergeWithExistingData: true,
 		legacyId: 'brawler', //'ninja',
-		carrying: '4x weapon.club, 40x ammo.arrow, 20x ammo.rock, 20x ammo.dart, spell.eBlink, spell.eTeleport, 2x spell.eAlliance, 2x spell.eTame, 2x spell.eThrall, lumpOfMeat, 20x potion, 5x weapon, weapon.bow', //'5x wood, 100x part, 4x potion.eWater, 4x part isWing, 4x part isSkin, 4x ore, 3x stuff.leather, 3x oreMalachite, 3x stuff.demonLeather', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
+//		carrying: '4x weapon.club, 40x ammo.arrow, 20x ammo.rock, 20x ammo.dart, spell.eBlink, spell.eTeleport, 2x spell.eAlliance, 2x spell.eTame, 2x spell.eThrall, lumpOfMeat, 20x potion, 5x weapon, weapon.bow', //'5x wood, 100x part, 4x potion.eWater, 4x part isWing, 4x part isSkin, 4x ore, 3x stuff.leather, 3x oreMalachite, 3x stuff.demonLeather', //stuff.magicMap, 10x potion, 5x part.redOozeSlime, 5x stuff.spinneret, 5x stuff.poisonGland, 10x potion.eWater',
 //		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, cloak.eInvisibility, 2x weapon.glass, 2x weapon.ice, weapon.bow',
-		wearing:  'shield, armor, helm, bracers, boots, stuff.lamp, spell.eShove',
+		carrying: '2x spell, 10x weapon.club atLevel, 6x ammo.dart.eStun, 100x part isArborian, spell.eBlink, 6x charm.solarOrbH, 200x potion',
+		wearing:  'shield, armor atLevel, helm.eMentalFence, bracers, boots, stuff.lamp, spell.eShove',
 		//sensePerception = true,
 		//senseAlert: true,
 		//senseSmell: 200,
@@ -183,7 +184,7 @@ Module.add('config.ken',function(X,moduleId) {
 		light: 2,
 		experience: 1000,
 		inject: {
-			level: 7,
+			level: 17,
 			//immortal: true,
 			//invulnerable: true
 		}
@@ -191,11 +192,11 @@ Module.add('config.ken',function(X,moduleId) {
 
 	// If you are doing graphics work comment these in. Unlike the rest of the plugin, this directly changes a global variable!
 	//IMG_BASE = 'http://localhost:3010/force/';	// forces reprocessing of all images.
-	//IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
+	IMG_BASE = 'http://localhost:3010/tiles/';	// Regular processing that caches.
 
 	plugin.MonsterTypeList.player = player;
 	plugin.Config = {
-		startingDepth: 2,
+		startingDepth: 1,
 //		themeId: 'kenDwarfTown',
 		saveBattery: true,
 		playerInject: player.inject

@@ -30,8 +30,8 @@ outline.threshold: 0x20		- Only outline things with this level or transparency o
 outline.color: '#000000FF'	- Color of the outline
 */
 
-let decorWall  = { normalize: false, brightness: -0.3, outline: false };
-let decorFloor = { brightness: -0.6, outline: false };
+let terrainWall  = { normalize: false, brightness: -0.3 };
+let terrainFloor = { brightness: -0.6 };
 
 FilterSpec = {
 	"mon/solarCenturion.png": 		{ shadow: { yRatio: 0.3 }, edgeFade: 0.03 },
@@ -63,36 +63,46 @@ FilterSpec = {
 	"item/weapon/hammer.png":		{ bgRemove: {find:0,remove:10}, despeckle: 1, edgeFade:0.03, url: 'https://images-na.ssl-images-amazon.com/images/I/61uKosIDaSL._AC_SX425_.jpg' },
 	"decor/brazierLit.png": 		{ resize: false, autocrop: false, normalize: false, outline: false, brightness: 0.01 },
 	"decor/brazierUnlit.png": 		{ resize: false, autocrop: false, normalize: false, },
-	"decor/boulder1.png": 			decorWall,
-	"decor/boulder2.png": 			decorWall,
-	"decor/boulder3.png": 			decorWall,
-	"decor/boulder4.png": 			decorWall,
-	"decor/jagged1.png": 			decorWall,
-	"decor/jagged2.png": 			decorWall,
-	"decor/jagged3.png": 			decorWall,
-	"decor/jagged4.png": 			decorWall,
-	"decor/floorFancyTile.png": 	decorFloor,
-	"decor/floorSandstone.png": 	decorFloor,
-	"decor/floorSandstoneChunky.png": decorFloor,
-	"decor/floorDirt.png": 			{ outline: false, normalize: false, brightness: -0.6, desaturate: 0.2 },
-	"decor/floorSlate.png": 		decorFloor,
+	"terrain/boulder1.png": 		terrainWall,
+	"terrain/boulder2.png": 		terrainWall,
+	"terrain/boulder3.png": 		terrainWall,
+	"terrain/boulder4.png": 		terrainWall,
+	"terrain/jagged1.png": 			terrainWall,
+	"terrain/jagged2.png": 			terrainWall,
+	"terrain/jagged3.png": 			terrainWall,
+	"terrain/jagged4.png": 			terrainWall,
+	"terrain/floorFancyTile.png": 	terrainFloor,
+	"terrain/floorSandstone.png": 	terrainFloor,
+	"terrain/floorSandstoneChunky.png": terrainFloor,
+	"terrain/floorDirt.png": 		{ normalize: false, brightness: -0.6, desaturate: 0.2 },
+	"terrain/floorSlate.png": 		terrainFloor,
 	"effect/arrowInFlight.png": 	{ shadow: false },
 	"effect/dartInFlight.png": 		{ shadow: false },
 	"effect/lightRayCircle.png": 	{ normalize: false, shadow: false, outline: false },
 	"effect/fire.png": 				{ normalize: false, shadow: false, outline: false, brightness: 0.01 },
 	"effect/portal.png":			{ autocrop: false, normalize: false, shadow: false, outline: false },
-	"decor/water.png":				{ shadow: false, outline: false, normalize: false, brightness: -0.6, url: 'https://i.pinimg.com/originals/26/e3/2d/26e32d921f8820b4e459d27888276d4a.jpg' }
+	"decor/water.png":				{ shadow: false, outline: false, normalize: false, brightness: -0.6, url: 'https://i.pinimg.com/originals/26/e3/2d/26e32d921f8820b4e459d27888276d4a.jpg' },
 }
 
 DirSpec = {
 	"mon/": {
 		size: 192
 	},
+	"item/potion": {
+		size: 96,
+		shadow: false,
+		outline: false,
+	},
 	"item/": {
 		size: 96
 	},
 	"decor/": {
 		size: 96
+	},
+	"portal/": {
+		size: 96,
+		shadow: false,
+		outline: false,
 	},
 	"effect/":  {
 		size: 96
@@ -102,6 +112,14 @@ DirSpec = {
 	},
 	"mushroom/":  {
 		size: 96
+	},
+	"part/":  {
+		size: 96
+	},
+	"terrain/": {
+		size: 96,
+		shadow: false,
+		outline: false,
 	},
 }
 

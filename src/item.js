@@ -795,14 +795,15 @@ class Item {
 		}
 	}
 
-	// Durability decrements to zero and destroys the item.
-	checkDurability(result) {
-		if( !this.dead && Number.isFinite(this.durability) && this.durability > 0 ) {
-			this.durability = Math.max(0,this.durability-1);
-		}
 
-		if( !this.dead && Number.isFinite(this.durability) && this.durability <= 0 ) {
+	checkDurability(result) {
+		if( !this.dead || !Number.isFinite(this.durability) ) {
+			return;
+		}
+		if( this.durability <= 0 ) {
 			tell(mSubject,this,' breaks!');
+			// Someday we should just make this thing 'ruined' and not destroy it.
+			// Then the player can decide whether to repair or replace.
 			this.destroy();
 			result.itemBroken = true;
 		}
@@ -815,6 +816,21 @@ class Item {
 			this.destroy();
 			result.itemBroke = true;
 		}
+	}
+
+	// Durability reduces and may destroy the item.
+	harmDurability(damage, damageType, result) {
+		if( !this.dead || !Number.isFinite(this.durability) ) {
+			return;
+		}
+		if( this.durability > 0 ) {
+			let matter = this.matter || 'stone';
+			let magnitude = Matter[matter][damageType];
+			let harm = magnitude===undefined ? 1 : Math.max(1,Math.floor(damage*magnitude));
+			this.durability = Math.max(0,this.durability-harm);
+		}
+
+		this.checkDurability(result);
 	}
 
 	// It is kind of weird that you can send in an effect here, but items
@@ -839,7 +855,6 @@ class Item {
 		// Apply the effect passed in. Might not be the effect of the item.
 		let result = effectApply( effect, target, source, this, context );
 		this.checkCharges(result);
-		this.checkDurability(result);
 		this.checkBreakChance(result);
 		return result;
 	}

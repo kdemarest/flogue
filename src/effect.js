@@ -1,5 +1,14 @@
 Module.add( 'effect', ()=>{
 
+function makeResult(status,success,inject) {
+	let result = {
+		status: status,
+		success: success
+	};
+	Object.assign( result, inject );
+	return result;
+}
+
 class Effect {
 	constructor( depth, effectRaw, item=null, rechargeTime=0 ) {
 		console.assert( effectRaw );
@@ -21,7 +30,7 @@ class Effect {
 		}
 
 		// Only write into the value if you must. Otherwise, let the world builder or
-		// other systems (like 'power' in entity natural attacks) control.
+		// other systems (like 'brawn' in entity natural attacks) control.
 		if( effect.value === undefined && (effect.op == 'damage' || effect.op == 'heal') ) {
 			// WARNING! This could be healing as well as damaging...
 			effect.value = Rules.pickDamage(depth,rechargeTime||0,item);
@@ -284,13 +293,6 @@ Effect.applyTo = function(effect,target,source,item,context) {
 
 	function hasCoords(e) {
 		return !e.inVoid && e.x!==undefined;
-	}
-
-	function makeResult(status,success,inject) {
-		result.status = status;
-		result.success = success;
-		Object.assign( result, inject );
-		return result;
 	}
 
 	let result = {
@@ -595,6 +597,7 @@ Effect.applyTo = function(effect,target,source,item,context) {
 		// Remember that by this point the effect has the target, source and item already inside it.
 		result.effectResult = DeedManager.add(effect);
 	}
+	result.passesTime = (item && item.passesTime===false) || (effect.passesTime === false) ? false : true;
 	result.status  = result.effectResult.status || context;
 	result.success = result.effectResult.success;
 
@@ -642,6 +645,7 @@ Effect.applyTo = function(effect,target,source,item,context) {
 }
 
 return {
+	makeResult: makeResult,
 	Effect: Effect,
 	effectApply: effectApply
 }

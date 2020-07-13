@@ -12,7 +12,8 @@ Module.add('dataItems',function(){
 // The base unit for these effects is typically flesh, which should suffer 1.0 for nearly everything.
 const Matter = {
 	ether: 		{ damage: { } },
-	metal: 		{ damage: { corrode: 1 } },
+	energy: 	{ damage: { } },
+	metal: 		{ damage: { corrode: 1, bash: 0.5 } },
 	stone: 		{ damage: { bash: 1 } },
 	chitin: 	{ damage: { bash: 1 } },
 	glass: 		{ damage: { bash: 2, corrode: 1 } },
@@ -20,7 +21,7 @@ const Matter = {
 	leather: 	{ damage: { cut: 1, claw: 1, chop: 1, corrode: 1, rot: 2 } },
 	cloth: 		{ damage: { cut: 2, claw: 1, chop: 1, corrode: 1, rot: 2 } },
 	wax: 		{ damage: { cut: 1, claw: 1, chop: 1, bash: 0.5, burn: 2, corrode: 1 } },
-	wood: 		{ damage: { bite: 0.5, bash: 0.5, chop: 1, rot: 1 } },
+	wood: 		{ damage: { bite: 0.5, bash: 0.5, chop: 2, rot: 1 } },
 	liquid: 	{ damage: { burn: 0.5, freeze: 1, shock: 0.5, corrode: 0.5 } },
 	paper: 		{ damage: { cut: 1, bite: 1, chop: 1, burn: 1, water: 1, corrode: 1 } },
 	ivory: 		{ damage: { bash: 1, chop: 1, smite: 1 } },
@@ -28,38 +29,50 @@ const Matter = {
 	plant: 		{ damage: { cut: 1, bite: 0.5, chop: 1, burn: 1, freeze: 2, corrode: 0.5, smite: 1, rot: 1 } },
 	fungus: 	{ damage: { chop: 1, burn: 1, freeze: 2, corrode: 0.5, smite: 1, rot: 1 } },
 	flesh: 		{ damage: { cut: 1, stab: 1, bite: 1, claw: 1, bash: 1, chop: 1, burn: 1, freeze: 1, shock: 1, corrode: 1, smite: 1, rot: 2 } },
-	energy: 	{ damage: { } },
 	special: 	{ damage: { } },
 };
 
 const PotionImgChoices = {
-	eWater: 		{ img: "item/potion/cyan.png" },
-	eInvisibility: 	{ img: "item/potion/clear.png" },
-	eHaste: 		{ img: "item/potion/cyan.png" },
-	eSlow: 			{ img: "item/potion/silver.png" },
-	eRegeneration: 	{ img: "item/potion/orange.png" },
-	eFlight: 		{ img: "item/potion/brilliant_blue.png" },
-	eHealing: 		{ img: "item/potion/pink.png" },
-	ePoison: 		{ img: "item/potion/emerald.png" },
-	eBurn: 			{ img: "item/potion/ruby.png" }, 
-	eFreeze: 		{ img: "item/potion/brilliant_blue.png" }, 
-	ePanic: 		{ img: "item/potion/magenta.png" },
-	eRage: 			{ img: "item/potion/dark.png" },
-	ePacify: 		{ img: "item/potion/blue.png" },
-	eAlliance: 		{ img: "item/potion/cyan.png" },
-	eTame: 			{ img: "item/potion/cyan.png" },
-	eThrall: 		{ img: "item/potion/cyan.png" },
-	eConfusion: 	{ img: "item/potion/brown.png" },
-	eIgnore: 		{ img: "item/potion/white.png" },
-	eBlindness: 	{ img: "item/potion/black.png" },
-	eSenseXray: 	{ img: "item/potion/white.png" },
-	eSenseTreasure: { img: "item/potion/white.png" },
-	eSenseLiving: 	{ img: "item/potion/white.png" },
-	eLight: 		{ img: "item/potion/white.png" },
-	eVuln: 			{ img: "item/potion/black.png" },
-	eResistance: 	{ img: "item/potion/yellow.png" },
-	eShove: 		{ img: "item/potion/black.png" },
-	eOdorless: 		{ img: "item/potion/silver.png" }
+// Heal / Buff
+	eWater: 		{ img: "item/potion/roundedClear.png" },
+	eHealing: 		{ img: "item/potion/roundedRed.png" },
+	eInvisibility: 	{ img: "item/potion/roundedGray.png" },
+	eRegeneration: 	{ img: "item/potion/roundedGold.png" },
+	eCureDisease:	{ img: "item/potion/roundedGreen.png" },
+	eCurePoison:	{ img: "item/potion/roundedBlack.png" },
+	eResistance: 	{ img: "item/potion/roundedBlue.png" },
+	eBravery:	 	{ img: "item/potion/roundedMagenta.png" },
+	eImmunity: 		{ img: "item/potion/roundedSilver.png" },
+// Harm / Debuff
+	ePoison: 		{ img: "item/potion/squatBlack.png" },
+	eBurn: 			{ img: "item/potion/squatRed.png" }, 
+	eFreeze: 		{ img: "item/potion/squatCyan.png" }, 
+	eAcid: 			{ img: "item/potion/squatGreenBubble.png" }, 
+	eVulnerability:	{ img: "item/potion/squatPurple.png" },
+// Mental
+	ePanic: 		{ img: "item/potion/sqMagentaBlack.png" },
+	eRage: 			{ img: "item/potion/sqYellow.png" },
+	ePacify: 		{ img: "item/potion/sqBlue.png" },
+	eConfuse: 		{ img: "item/potion/sqCyan.png" },
+	eAlliance: 		{ img: "item/potion/sqPurple.png" },
+	eTame: 			{ img: "item/potion/sqPink.png" },
+	eThrall: 		{ img: "item/potion/sqBlack.png" },
+	eConfusion: 	{ img: "item/potion/sqBrown.png" },
+// Senses
+	eBlindness: 	{ img: "item/potion/tubeBlack.png" },
+	eCureBlindness:	{ img: "item/potion/tubeBlackBlue.png" },
+	eBlindImmunity:	{ img: "item/potion/tubeBlackSilver.png" },
+	eSeeInvisible: 	{ img: "item/potion/tubeGrayStripe.png" },
+	eSenseXray: 	{ img: "item/potion/tubeWhite.png" },
+	eDarkVision:	{ img: "item/potion/tubeGold.png" },
+	eSenseSmell: 	{ img: "item/potion/tubeRed.png" },
+	eOdorless: 		{ img: "item/potion/tubeYellow.png" },
+// Mobility
+	eHaste: 		{ img: "item/potion/flaskWhite.png" },
+	eSlow: 			{ img: "item/potion/flaskGray.png" },
+	eJump2:			{ img: "item/potion/flaskOrange.png" },
+	eJump3:			{ img: "item/potion/flaskOrange.png" },
+	eJump4:			{ img: "item/potion/flaskOrange.png" },
 };
 
 const ImgTables = {
@@ -80,18 +93,16 @@ const ImgSigns = {
 
 
 // do NOT assign NullEffects to make something have no effects. Instead, give it effectChance of 0.0001
-const NullEfects = { eInert: { level: 0, rarity: 1 } };
+const NullEfects = { eInert: { power: 0, rarity: 1 } };
 const PotionEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Senses things are potions because they affect your physical ability
 	'eDarkVision','eSenseSmell','eSeeInvisible','eSenseXray','eBlindness',
 	// Healing your body in any way also makes sense
-	'eHealing','eCureDisease','eCurePoison','eOdorless','eRegeneration',
+	'eHealing','eCureDisease','eCurePoison','eCureBlindness','eOdorless','eRegeneration',
 	// Drinking something that makes you physcially change - faster, slower, invisible, smelly
-	'eHaste','eSlow','eInvisibility','eStink',
+	'eHaste','eSlow','eJump2','eJump3','eJump4','eInvisibility','eStink',
 	// These seem less legit to me. It could be that something else should provide resistances
-	'eResistance','eIgnore','eVulnerability',
-	// Not as good.
-	'eFlight',
+	'eResistance','eImmunity','eVulnerability','eBlindImmunity',
 	// Certain kinds of mind alteration, that you could achieve with drugs IRL
 	'eConfusion','eRage','ePanic','eBravery',
 	// Splash damage from water or acid is sensible. Maybe we should make them generally blast2 or better.
@@ -167,7 +178,7 @@ const BracersEffects = Object.filter(EffectTypeList, (e,k)=>[
 
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Multiple armor pieces and rings can provide regen, each adding 1%
-	'eOdorless','eJump2','eJump3','eRegeneration','eIgnore','eFlight','eResistance'
+	'eOdorless','eJump2','eJump3','eRegeneration','eImmunity','eFlight','eResistance'
 	].includes(k) );
 
 // Gaps in the bow effects are shock (reserved for darts), and stun/slow/shove (reserved for slings)
@@ -196,49 +207,50 @@ const GemEffects = Object.filter(EffectTypeList, (e,k)=>[
 
 
 const WeaponMaterialList = ({ //Type.establish('WeaponMaterial',{},{
-	"iron": 		{ level:  0 /* very important this be zero!*/, fixins: 'ingotIron', name: 'iron', matter: 'metal' },
-	"silver": 		{ level:  5, fixins: 'ingotSilver', name: 'silver', matter: 'metal' },
-	"ice": 			{ level: 25, fixins: 'ice block', name: 'ice', matter: 'liquid', durability: Rules.weaponDurability(20) },
-	"lunarium": 	{ level: 40, fixins: 'lunarium ingot', name: 'lunarium', matter: 'metal' },
-	"glass": 		{ level: 55, fixins: 'oreMalachite', name: 'glass', matter: 'glass', breakChance: Rules.weaponBreakChance(20) },
-	"deepium": 		{ level: 70, fixins: 'deepium ingot', name: 'deepium', matter: 'metal' },
-	"solarium": 	{ level: 85, fixins: 'solarium ingot', name: 'solarium', matter: 'metal' },
+	"bronze": 		{ power:  0 /* very important this be zero!*/, fixins: 'ingotCopper', name: 'bronze', matter: 'metal' },
+	"iron": 		{ power:  5 /* very important this be zero!*/, fixins: 'ingotIron', name: 'iron', matter: 'metal' },
+	"silver": 		{ power: 10, fixins: 'ingotSilver', name: 'silver', matter: 'metal' },
+	"ice": 			{ power: 25, fixins: 'ice block', name: 'ice', matter: 'liquid', durability: Rules.weaponDurability(20) },
+	"lunarium": 	{ power: 40, fixins: 'lunarium ingot', name: 'lunarium', matter: 'metal' },
+	"glass": 		{ power: 55, fixins: 'oreMalachite', name: 'glass', matter: 'glass', breakChance: Rules.weaponBreakChance(20) },
+	"deepium": 		{ power: 70, fixins: 'deepium ingot', name: 'deepium', matter: 'metal' },
+	"solarium": 	{ power: 85, fixins: 'solarium ingot', name: 'solarium', matter: 'metal' },
 });
 
 const BowMaterialList = ({ //Type.establish('BowMaterial',{},{
-	"ash": 			{ level:  0, fixins: 'wood' },		// level MUST be zero
-	"oak": 			{ level:  5, fixins: 'wood' },
-	"maple": 		{ level: 25, fixins: 'wood' },
-	"lunarium": 	{ level: 40, fixins: 'ingotLunarium' },
-	"yew": 			{ level: 55, fixins: 'wood' },
-	"deepium": 		{ level: 70, fixins: 'ingotDeepium' },
-	"solarium": 	{ level: 85, fixins: 'ingotSolarium' },
+	"ash": 			{ power:  0, fixins: 'wood' },		// power MUST be zero
+	"oak": 			{ power:  5, fixins: 'wood' },
+	"maple": 		{ power: 25, fixins: 'wood' },
+	"lunarium": 	{ power: 40, fixins: 'ingotLunarium' },
+	"yew": 			{ power: 55, fixins: 'wood' },
+	"deepium": 		{ power: 70, fixins: 'ingotDeepium' },
+	"solarium": 	{ power: 85, fixins: 'ingotSolarium' },
 });
 
 const SlingMaterialList = ({
-	"ash": 			{ level:  0, fixins: 'wood' /* very important this be zero!*/ },
-	"oak": 			{ level:  5, fixins: 'wood' },
-	"maple": 		{ level: 25, fixins: 'wood' },
-	"lunarium": 	{ level: 40, fixins: 'wood' },
-	"yew": 			{ level: 55, fixins: 'wood' },
-	"deepium": 		{ level: 70, fixins: 'wood' },
-	"solarium": 	{ level: 85, fixins: 'wood' },
+	"ash": 			{ power:  0, fixins: 'wood' /* very important this be zero!*/ },
+	"oak": 			{ power:  5, fixins: 'wood' },
+	"maple": 		{ power: 25, fixins: 'wood' },
+	"lunarium": 	{ power: 40, fixins: 'wood' },
+	"yew": 			{ power: 55, fixins: 'wood' },
+	"deepium": 		{ power: 70, fixins: 'wood' },
+	"solarium": 	{ power: 85, fixins: 'wood' },
 });
 
 const ArrowMaterialList = ({
-	"ash": 			{ level:  0, fixins: 'wood' /* very important this be zero!*/ },
-	"oak": 			{ level:  5, fixins: 'wood' },
-	"maple": 		{ level: 25, fixins: 'wood' },
-	"lunarium": 	{ level: 40, fixins: 'wood' },
-	"yew": 			{ level: 55, fixins: 'wood' },
-	"deepium": 		{ level: 70, fixins: 'wood' },
-	"solarium": 	{ level: 85, fixins: 'wood' },
+	"ash": 			{ power:  0, fixins: 'wood' /* very important this be zero!*/ },
+	"oak": 			{ power:  5, fixins: 'wood' },
+	"maple": 		{ power: 25, fixins: 'wood' },
+	"lunarium": 	{ power: 40, fixins: 'wood' },
+	"yew": 			{ power: 55, fixins: 'wood' },
+	"deepium": 		{ power: 70, fixins: 'wood' },
+	"solarium": 	{ power: 85, fixins: 'wood' },
 });
 
 
 const AmmoVarietyList = ({ //Type.establish('AmmoVariety',{},{
 	"arrow":     	{
-		level:  0,
+		power:  0,
 		rarity: 1.0,
 		noLevelVariance: true,
 		attackVerb: 'shoot',
@@ -260,7 +272,7 @@ const AmmoVarietyList = ({ //Type.establish('AmmoVariety',{},{
 		flyingSpeed: 15,
 	},
 	"rock": {
-		level:  0,
+		power:  0,
 		rarity: 1.0,
 		bunchSize: 4,
 		xDamage: 0.40,
@@ -277,7 +289,7 @@ const AmmoVarietyList = ({ //Type.establish('AmmoVariety',{},{
 	},
 	// Sling stones give better damage and are quicker than irregularly shaped rocks.
 	"slingStone": {
-		level:  10,
+		power:  10,
 		rarity: 1.0,
 		bunchSize: 6,
 		xDamage: 0.60,					// More damage than regular rocks.
@@ -295,7 +307,7 @@ const AmmoVarietyList = ({ //Type.establish('AmmoVariety',{},{
 	// Darts are throw only. The unique thing about darts is that, when you hit somebody with one, it does very little
 	// damage but the effect ALWAYS happens.
 	"dart":     	{
-		level:  0,
+		power:  0,
 		rarity: 0.5,
 		bunchSize: 4,
 		xDamage: 0.30,
@@ -324,7 +336,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	// Since their primary damage is stab anything that wants some ranged protection can resist or immune to stab and do pretty well.
 	// Their natural ranged advantage is tempered by lower damage: 50% bow and 30% arrow.
 	"bow": {
-		level:  0,
+		power:  0,
 		rarity: 1.0,
 		xDamage: 0.5,	// The needs to be low, because the arrow takes up the rest or the damage.
 		xPrice: 1.4,
@@ -348,7 +360,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	// Although the Stealth Bow does much less damage it won't give away your location.
 	// We'll probably get rid of this entirely.
 	"stealthBow": {		// Less damage but it can hit nimble creatures.
-		level:  0,
+		power:  0,
 		rarity: 0.5,
 		xDamage: 0.3,
 		xPrice: 3.0,
@@ -372,7 +384,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	// Although slings are only useful at short ranges, they can do bash damage (unlike bows).
 	// With sling stone ammo they can do full damage, at range, although they are limited in their effects to bashing-like effects.
 	"sling": {
-		level:  0,
+		power:  0,
 		rarity: 1.0,
 		xDamage: 0.4,
 		xPrice: 1.4,
@@ -397,7 +409,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// The lithe melee and ranged weapon that stabs but seldom has special effects.
 	"dagger": {
-		level: 3,
+		power: 3,
 		rarity: 0.5,
 		xDamage: 0.70,
 		damageType: DamageType.STAB,
@@ -412,7 +424,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// Lithe, and does very special smite damage instead of cut or stab.
 	"solarBlade": {
-		level: 0,
+		power: 0,
 		rarity: 0,
 		xDamage: 0.33,	// This must be low to offset the fact that it is solarium.
 		damageType: DamageType.SMITE,
@@ -429,7 +441,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		img: 'item/weapon/solariumBlade.png'
 	},
 	"hands": {
-		level: 0,
+		power: 0,
 		rarity: 0,
 		xDamage: 0.3,
 		damageType: DamageType.BASH,
@@ -442,7 +454,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		name: 'hands{?effect}',
 	},
 	"claws": {
-		level: 0,
+		power: 0,
 		rarity: 0,
 		xDamage: 0.8,
 		damageType: DamageType.CLAW,
@@ -455,7 +467,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		isClaws: true
 	},
 	"bite": {
-		level: 0,
+		power: 0,
 		rarity: 0,
 		xDamage: 1.0,
 		damageType: DamageType.BITE,
@@ -468,7 +480,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		isBite: true
 	},
 	"pickaxe": {
-		level: 0,
+		power: 0,
 		rarity: 0.1,
 		xDamage: 0.70,
 		damageType: DamageType.STAB,
@@ -479,7 +491,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		img: 'item/weapon/pickaxe.png'
 	},
 	"club": {
-		level: 0,
+		power: 0,
 		rarity: 1.0,
 		xDamage: 0.70,
 		matter: 'wood',
@@ -491,7 +503,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// The only lithe bashing weapon. Modest damage, but at least it bashes.
 	"staff": {
-		level: 0,
+		power: 0,
 		rarity: 1.0,
 		xDamage: 0.60,
 		matter: 'wood',
@@ -504,7 +516,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// The standard weapon. It does regular damage, cutting, and can harm creatures up to nimble.
 	"sword": {
-		level: 1,
+		power: 1,
 		rarity: 1.0,
 		xDamage: 1.00,
 		damageType: DamageType.CUT,
@@ -514,7 +526,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// More damage than a sword, but only Quick.NORMAL
 	"broadsword": {
-		level: 3,
+		power: 3,
 		rarity: 0.5,
 		xDamage: 1.10,
 		damageType: DamageType.CUT,
@@ -524,7 +536,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// More damage than sword or broadsword, but Quick.CLUMSY
 	"greatsword": {
-		level: 5,
+		power: 5,
 		rarity: 0.3,
 		xDamage: 1.20,
 		damageType: DamageType.CUT,
@@ -533,7 +545,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		img: 'item/weapon/long_sword2.png'
 	},
 	"rapier": {
-		level: 1,
+		power: 1,
 		rarity: 0.2,
 		xDamage: 0.90,
 		damageType: DamageType.STAB,
@@ -542,7 +554,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		img: 'item/weapon/long_sword1.png'
 	},
 	"mace": {
-		level: 3,
+		power: 3,
 		rarity: 1.0,
 		xDamage: 0.90,
 		damageType: DamageType.BASH,
@@ -551,7 +563,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// Most damage in the game, but clumsy.
 	"hammer": {
-		level: 4,
+		power: 4,
 		rarity: 0.4,
 		xDamage: 1.30,
 		damageType: DamageType.BASH,
@@ -560,7 +572,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// Standard damage chopping weapon, throwable, but only NORMAL speed. Needs big swings.
 	"axe": {
-		level: 2,
+		power: 2,
 		rarity: 1.0,
 		xDamage: 1.00,
 		damageType: DamageType.CHOP,
@@ -572,7 +584,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// Higher damage chopper, but Quick.CLUMSY
 	"battleAxe": {
-		level: 5,
+		power: 5,
 		rarity: 0.2,
 		xDamage: 1.10,
 		damageType: DamageType.CHOP,
@@ -582,7 +594,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// Stabbing, throwable,, nimble reach weapon. A solid choice, if you're ok with the weaker damage
 	"spear": {
-		level: 8,
+		power: 8,
 		rarity: 0.9,
 		xDamage: 0.70,
 		matter: 'wood',
@@ -596,7 +608,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// The cutting weapon with reach and better damage than spear, but not throwable.
 	"pike": {
-		level: 12,
+		power: 12,
 		rarity: 0.7,
 		xDamage: 0.90,
 		matter: 'wood',
@@ -607,7 +619,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// Damage as good as a hammer, plus reach and close throw, but also clumsy; meant to be demon-like
 	"pitchfork": {
-		level: 16,
+		power: 16,
 		rarity: 0.5,
 		xDamage: 1.30,
 		matter: 'wood',
@@ -620,7 +632,7 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 	},
 	// Extra spines give a bit of extra damage, like a souped-up spear but not as nimble.
 	"trident": {
-		level: 12,
+		power: 12,
 		rarity: 0.5,
 		xDamage: 1.10,
 		matter: 'metal',
@@ -643,216 +655,219 @@ let BlockType = {
 	NOBLOCK: 	'noblock'
 };
 
-// Shield blocking in the xBlock plus 20%*level/MAX_DEPTH
+// Shield blocking in the xBlock plus 20%*power/POWER_MAX
 const ShieldVarietyList = ({ //Type.establish('ShieldVariety',{},{
-	"buckler":     	{ level:  0, rarity: 1.0, xArmor: 0.70, xBlock: 0.20, img: 'item/shield/shieldBuckler.png' },
-	"targe":     	{ level:  5, rarity: 1.0, xArmor: 0.80, xBlock: 0.25, block: 'thrown', img: 'item/shield/shieldTarge.png' },
-	"heater":     	{ level: 10, rarity: 0.8, xArmor: 0.90, xBlock: 0.30, block: 'thrown,shot', img: 'item/shield/shieldHeater.png' },
-	"kite":     	{ level: 20, rarity: 0.6, xArmor: 1.00, xBlock: 0.35, block: 'thrown,shot', img: 'item/shield/shieldKite.png' },
-	"pavise":     	{ level: 40, rarity: 0.1, xArmor: 1.20, xBlock: 0.40, block: 'thrown,shot', img: 'item/shield/shieldPavise.png' },
+	"buckler":     	{ power:  0, rarity: 1.0, xArmor: 0.70, xBlock: 0.20, img: 'item/shield/shieldBuckler.png' },
+	"targe":     	{ power:  5, rarity: 1.0, xArmor: 0.80, xBlock: 0.25, block: 'thrown', img: 'item/shield/shieldTarge.png' },
+	"heater":     	{ power: 10, rarity: 0.8, xArmor: 0.90, xBlock: 0.30, block: 'thrown,shot', img: 'item/shield/shieldHeater.png' },
+	"kite":     	{ power: 20, rarity: 0.6, xArmor: 1.00, xBlock: 0.35, block: 'thrown,shot', img: 'item/shield/shieldKite.png' },
+	"pavise":     	{ power: 40, rarity: 0.1, xArmor: 1.20, xBlock: 0.40, block: 'thrown,shot', img: 'item/shield/shieldPavise.png' },
 });
 
 const ShieldMaterialList = ({ //Type.establish('ShieldMaterial',{},{
-	"woodSM": 	{ level:  0, block: '', name: "wood", matter: 'wood' },
-	"silverSM":	{ level:  5, block: 'divine', name: "silver", matter: 'metal' },
-	"iron": 	{ level: 10, block: 'reach', name: 'iron', matter: 'metal' },
-	"beryl": 	{ level: 15, block: 'elemental', name: 'beryl', matter: 'crystal' },
-	"pearl": 	{ level: 20, block: 'elemental,reach', name: 'pearl', matter: 'glass' },
-	"opal": 	{ level: 30, block: 'elemental,divine', name: 'opal', matter: 'crystal' },
-	"solarium2": { level: 40, block: 'elemental,reach,divine', name: 'solarium', matter: 'metal' },
+	"woodSM": 	{ power:  0, block: '', name: "wood", matter: 'wood' },
+	"silverSM":	{ power:  5, block: 'divine', name: "silver", matter: 'metal' },
+	"iron": 	{ power: 10, block: 'reach', name: 'iron', matter: 'metal' },
+	"beryl": 	{ power: 15, block: 'elemental', name: 'beryl', matter: 'crystal' },
+	"pearl": 	{ power: 20, block: 'elemental,reach', name: 'pearl', matter: 'glass' },
+	"opal": 	{ power: 30, block: 'elemental,divine', name: 'opal', matter: 'crystal' },
+	"solarium2": { power: 40, block: 'elemental,reach,divine', name: 'solarium', matter: 'metal' },
 });
 
 const ArmorVarietyList = ({ //Type.establish('ArmorVariety',{},{
-	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather', fixins: 'part isSkin isAnimal', img: 'item/armour/animal_skin1.png' },
-	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather', fixins: '2x part isSkin isAnimal', img: 'item/armour/animal_skin2.png' },
-	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather', fixins: '2x stuff.leather', img: 'item/armour/leather_armour1.png' },
-	"studded": 		{ level:  3, rarity: 1.0, xArmor: 0.90, matter: 'leather', fixins: 'iron ingot', img: 'item/armour/banded_mail2.png' },
-	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95, fixins: 'ingotIron', img: 'item/armour/scale_mail1.png' },
-	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00, fixins: 'ingotIron', img: 'item/armour/chain_mail1.png' },
-	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00, fixins: 'ingotIron', img: 'item/armour/plate_mail1.png' },
-	"trollHideArmor": { level: 20, rarity: 1.0, xArmor: 1.00, fixins: 'troll hide', img: 'item/armour/troll_leather_armour.png' },
-	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00, fixins: 'chitin', img: 'item/armour/chain_mail2.png' },
-	"chitin": 		{ level: 35, rarity: 1.0, xArmor: 1.00, matter: 'chitin', fixins: 'chitin', img: 'item/armour/elven_leather_armor.png' },
-	"dwarven": 		{ level: 45, rarity: 1.0, xArmor: 1.00, fixins: 'chitin', img: 'item/armour/dwarven_ringmail.png' },
-	"ice": 			{ level: 50, rarity: 1.0, xArmor: 1.00, matter: 'liquid', fixins: 'ice block', img: 'item/armour/elven_ringmail.png',
+	"fur": 			{ power:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather', fixins: 'part isSkin isAnimal', img: 'item/armor/fur.png' },
+	"hide": 		{ power:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather', fixins: '2x part isSkin isAnimal', img: 'item/armor/hide.png' },
+	"leather": 		{ power:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather', fixins: '2x stuff.leather', img: 'item/armor/leather.png' },
+	"studded": 		{ power:  3, rarity: 1.0, xArmor: 0.90, matter: 'leather', fixins: 'iron ingot', img: 'item/armor/studded.png' },
+	"scale": 		{ power:  4, rarity: 1.0, xArmor: 0.95, fixins: 'ingotIron', img: 'item/armor/scale.png' },
+	"chain": 		{ power: 10, rarity: 1.0, xArmor: 1.00, fixins: 'ingotIron', img: 'item/armor/chain.png' },
+	"steelPlate": 	{ power: 15, rarity: 1.0, xArmor: 1.00, fixins: 'ingotIron', img: 'item/armor/steelPlate.png' },
+	"trollHideArmor": { power: 20, rarity: 1.0, xArmor: 1.00, fixins: 'troll hide', img: 'item/armor/trollHide.png' },
+	"elven": 		{ power: 30, rarity: 1.0, xArmor: 1.00, fixins: 'chitin', img: 'item/armor/elven.png.png' },
+	"chitin": 		{ power: 35, rarity: 1.0, xArmor: 1.00, matter: 'chitin', fixins: 'chitin', img: 'item/armor/chitin.png' },
+	"dwarven": 		{ power: 45, rarity: 1.0, xArmor: 1.00, fixins: 'chitin', img: 'item/armor/dwarven.png' },
+	"ice": 			{ power: 50, rarity: 1.0, xArmor: 1.00, matter: 'liquid', fixins: 'ice block', img: 'item/armor/ice.png',
 					durability: Rules.armorDurability(40)
 					},
-	"glass": 		{ level: 55, rarity: 1.0, xArmor: 1.00, matter: 'glass', fixins: 'oreMalachite', img: 'item/armour/crystal_plate_mail.png',
+	"glass": 		{ power: 55, rarity: 1.0, xArmor: 1.00, matter: 'glass', fixins: 'oreMalachite', img: 'item/armor/crystal.png',
 					breakChance: Rules.armorBreakChance(40)
 					},
-	"demonHide":	{ level: 65, rarity: 1.0, xArmor: 1.00, fixins: 'oreMalachite, stuff.demonLeather', img: 'item/armour/orcish_platemail.png' },
-	"lunar": 		{ level: 50, rarity: 1.0, xArmor: 1.00, fixins: 'lunarium ingot', img: 'item/armour/blue_dragon_scale_mail.png' },
-	"deep": 		{ level: 80, rarity: 1.0, xArmor: 1.00, fixins: 'deepium ingot', img: 'item/armour/gold_dragon_armour.png' },
-	"solar": 		{ level: 85, rarity: 1.0, xArmor: 1.00, fixins: 'solarium ingot', img: 'item/armour/crystal_plate_mail.png' },
+	"demonHide":	{ power: 65, rarity: 1.0, xArmor: 1.00, fixins: 'oreMalachite, stuff.demonLeather', img: 'item/armor/demonHide.png' },
+	"lunar": 		{ power: 50, rarity: 1.0, xArmor: 1.00, fixins: 'lunarium ingot', img: 'item/armor/lunar.png' },
+	"deep": 		{ power: 80, rarity: 1.0, xArmor: 1.00, fixins: 'deepium ingot', img: 'item/armor/deepium.png' },
+	"solar": 		{ power: 85, rarity: 1.0, xArmor: 1.00, fixins: 'solarium ingot', img: 'item/armor/solar.png' },
 });
 
 const CloakVarietyList = ({ //Type.establish('CloakVariety',{},{
-	"corduroyCloak": 	{ level:  0, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
-	"canvasCloak": 		{ level: 10, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
-	"linenCloak": 		{ level: 20, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
-	"linenRobes": 		{ level: 20, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
-	"silkCloak": 		{ level: 30, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
-	"elvishCloak": 		{ level: 40, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
-	"dwarvishCloak":	{ level: 50, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
-	"demonCloak": 		{ level: 60, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
-	"lunarCloak": 		{ level: 70, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"corduroyCloak": 	{ power:  0, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"canvasCloak": 		{ power: 10, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"linenCloak": 		{ power: 20, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"linenRobes": 		{ power: 20, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"silkCloak": 		{ power: 30, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"elvishCloak": 		{ power: 40, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"dwarvishCloak":	{ power: 50, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"demonCloak": 		{ power: 60, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
+	"lunarCloak": 		{ power: 70, rarity: 1.0, xArmor: 0.01, img: 'item/armour/cloak3.png' },
 });
 
 
 const HelmVarietyList = ({ //Type.establish('HelmVariety',{},{
-	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather' },
-	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather' },
-	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather' },
-	"studded": 		{ level:  3, rarity: 1.0, xArmor: 0.90, matter: 'leather' },
-	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95 },
-	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00, matter: 'chitin' },
-	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00 },
-	"trollHideArmor": 	{ level: 20, rarity: 1.0, xArmor: 1.00 },
-	"chitin": 		{ level: 25, rarity: 1.0, xArmor: 1.00 },
-	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00 },
-	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.00 },
-	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid', durability: Rules.armorDurability(20) },
-	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass', breakChance: Rules.armorBreakChance(20) },
-	"demon": 		{ level: 50, rarity: 1.0, xArmor: 1.00 },
-	"lunar": 		{ level: 55, rarity: 1.0, xArmor: 1.00 },
-	"solar": 		{ level: 60, rarity: 1.0, xArmor: 1.00 },
-	"deep": 		{ level: 65, rarity: 1.0, xArmor: 1.00 },
+	"fur": 			{ power:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather' },
+	"hide": 		{ power:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather' },
+	"leather": 		{ power:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather' },
+	"studded": 		{ power:  3, rarity: 1.0, xArmor: 0.90, matter: 'leather' },
+	"scale": 		{ power:  4, rarity: 1.0, xArmor: 0.95 },
+	"chain": 		{ power: 10, rarity: 1.0, xArmor: 1.00, matter: 'chitin' },
+	"steelPlate": 	{ power: 15, rarity: 1.0, xArmor: 1.00 },
+	"trollHideArmor": 	{ power: 20, rarity: 1.0, xArmor: 1.00 },
+	"chitin": 		{ power: 25, rarity: 1.0, xArmor: 1.00 },
+	"elven": 		{ power: 30, rarity: 1.0, xArmor: 1.00 },
+	"dwarven": 		{ power: 35, rarity: 1.0, xArmor: 1.00 },
+	"ice": 			{ power: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid', durability: Rules.armorDurability(20) },
+	"glass": 		{ power: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass', breakChance: Rules.armorBreakChance(20) },
+	"demon": 		{ power: 50, rarity: 1.0, xArmor: 1.00 },
+	"lunar": 		{ power: 55, rarity: 1.0, xArmor: 1.00 },
+	"solar": 		{ power: 60, rarity: 1.0, xArmor: 1.00 },
+	"deep": 		{ power: 65, rarity: 1.0, xArmor: 1.00 },
 });
 
 const BracerVarietyList = ({ //Type.establish('BracerVariety',{},{
-	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather' },
-	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather' },
-	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather' },
-	"studded": 		{ level:  3, rarity: 1.0, xArmor: 0.90, matter: 'leather' },
-	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95 },
-	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00 },
-	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00 },
-	"trollHideArmor": 	{ level: 20, rarity: 1.0, xArmor: 1.00 },
-	"chitin": 		{ level: 25, rarity: 1.0, xArmor: 1.00, matter: 'chitin' },
-	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00 },
-	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.00 },
-	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid', durability: Rules.armorDurability(20) },
-	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass', breakChance: Rules.armorBreakChance(20) },
-	"demon": 		{ level: 50, rarity: 1.0, xArmor: 1.00 },
-	"lunar": 		{ level: 55, rarity: 1.0, xArmor: 1.00 },
-	"solar": 		{ level: 60, rarity: 1.0, xArmor: 1.00 },
-	"deep": 		{ level: 65, rarity: 1.0, xArmor: 1.00 },
+	"fur": 			{ power:  0, rarity: 1.0, xArmor: 0.50, matter: 'leather' },
+	"hide": 		{ power:  1, rarity: 1.0, xArmor: 0.80, matter: 'leather' },
+	"leather": 		{ power:  2, rarity: 1.0, xArmor: 0.85, matter: 'leather' },
+	"studded": 		{ power:  3, rarity: 1.0, xArmor: 0.90, matter: 'leather' },
+	"scale": 		{ power:  4, rarity: 1.0, xArmor: 0.95 },
+	"chain": 		{ power: 10, rarity: 1.0, xArmor: 1.00 },
+	"steelPlate": 	{ power: 15, rarity: 1.0, xArmor: 1.00 },
+	"trollHideArmor": 	{ power: 20, rarity: 1.0, xArmor: 1.00 },
+	"chitin": 		{ power: 25, rarity: 1.0, xArmor: 1.00, matter: 'chitin' },
+	"elven": 		{ power: 30, rarity: 1.0, xArmor: 1.00 },
+	"dwarven": 		{ power: 35, rarity: 1.0, xArmor: 1.00 },
+	"ice": 			{ power: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid', durability: Rules.armorDurability(20) },
+	"glass": 		{ power: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass', breakChance: Rules.armorBreakChance(20) },
+	"demon": 		{ power: 50, rarity: 1.0, xArmor: 1.00 },
+	"lunar": 		{ power: 55, rarity: 1.0, xArmor: 1.00 },
+	"solar": 		{ power: 60, rarity: 1.0, xArmor: 1.00 },
+	"deep": 		{ power: 65, rarity: 1.0, xArmor: 1.00 },
 });
 
 const BootVarietyList = ({ //Type.establish('BootVariety',{},{
-	"fur": 			{ level:  0, rarity: 1.0, xArmor: 0.50 },
-	"hide": 		{ level:  1, rarity: 1.0, xArmor: 0.80 },
-	"leather": 		{ level:  2, rarity: 1.0, xArmor: 0.85 },
-	"studded": 		{ level:  3, rarity: 1.0, xArmor: 0.90 },
-	"scale": 		{ level:  4, rarity: 1.0, xArmor: 0.95, matter: 'metal' },
-	"chain": 		{ level: 10, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
-	"steelPlate": 	{ level: 15, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
-	"trollHideArmor": 	{ level: 20, rarity: 1.0, xArmor: 1.00 },
-	"chitin": 		{ level: 25, rarity: 1.0, xArmor: 1.00, matter: 'chitin' },
-	"elven": 		{ level: 30, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
-	"dwarven": 		{ level: 35, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
-	"ice": 			{ level: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid', durability: Rules.armorDurability(20) },
-	"glass": 		{ level: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass', breakChance: Rules.armorBreakChance(20) },
-	"demon": 		{ level: 50, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
-	"lunar": 		{ level: 55, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
-	"solar": 		{ level: 60, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
-	"deep": 		{ level: 65, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
+	"fur": 			{ power:  0, rarity: 1.0, xArmor: 0.50 },
+	"hide": 		{ power:  1, rarity: 1.0, xArmor: 0.80 },
+	"leather": 		{ power:  2, rarity: 1.0, xArmor: 0.85 },
+	"studded": 		{ power:  3, rarity: 1.0, xArmor: 0.90 },
+	"scale": 		{ power:  4, rarity: 1.0, xArmor: 0.95, matter: 'metal' },
+	"chain": 		{ power: 10, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
+	"steelPlate": 	{ power: 15, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
+	"trollHideArmor": 	{ power: 20, rarity: 1.0, xArmor: 1.00 },
+	"chitin": 		{ power: 25, rarity: 1.0, xArmor: 1.00, matter: 'chitin' },
+	"elven": 		{ power: 30, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
+	"dwarven": 		{ power: 35, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
+	"ice": 			{ power: 40, rarity: 1.0, xArmor: 1.00, matter: 'liquid', durability: Rules.armorDurability(20) },
+	"glass": 		{ power: 45, rarity: 1.0, xArmor: 1.00, matter: 'glass', breakChance: Rules.armorBreakChance(20) },
+	"demon": 		{ power: 50, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
+	"lunar": 		{ power: 55, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
+	"solar": 		{ power: 60, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
+	"deep": 		{ power: 65, rarity: 1.0, xArmor: 1.00, matter: 'metal' },
 });
 
 const GloveVarietyList = ({ //Type.establish('GloveVariety',{},{
-	"furGloves": 		{ level:  0, rarity: 1.0 },
-	"leatherGloves": 	{ level:  1, rarity: 1.0 },
-	"assassinGloves": 	{ level:  0, rarity: 0.3, effect: EffectTypeList.eAssassin },
-	"studdedGloves": 	{ level:  9, rarity: 1.0 },
-	"trollHideGloves": 	{ level: 14, rarity: 1.0, name: 'troll hide gloves',
+	"furGloves": 		{ power:  0, rarity: 1.0 },
+	"leatherGloves": 	{ power:  1, rarity: 1.0 },
+	"assassinGloves": 	{ power:  0, rarity: 0.3, effect: EffectTypeList.eAssassin },
+	"studdedGloves": 	{ power:  9, rarity: 1.0 },
+	"trollHideGloves": 	{ power: 14, rarity: 1.0, name: 'troll hide gloves',
 							effect: { op: 'add', stat: 'immune', value: 'frogSpine' } },
-	"scaleGauntlets":	{ level: 24, rarity: 1.0, matter: 'metal' },
-	"chainGauntlets":	{ level: 34, rarity: 1.0, matter: 'metal' }
+	"scaleGauntlets":	{ power: 24, rarity: 1.0, matter: 'metal' },
+	"chainGauntlets":	{ power: 34, rarity: 1.0, matter: 'metal' }
 });
 
 
 
 const VeinVarietyList = ({ //Type.establish('VeinVariety',{},{
-	"veinCoal": 		{ level:  0, rarity:  1.0, name: "coal vein", mineId: 'coal', img: 'ore/oreLumpBlack.png' },
-	"veinTin": 		{ level:  5, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin', img: 'ore/oreMetalWhite.png' },
-	"veinIron": 		{ level: 10, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron', img: 'ore/oreMetalBlack.png' },
-	"veinCopper": 	{ level: 25, rarity:  0.6, name: "copper ore vein", mineId: 'oreCopper', img: 'ore/oreMetalOrange.png' },
-	"veinSilver": 	{ level: 30, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver', img: 'ore/oreMetalWhite.png' },
-	"veinGold": 		{ level: 45, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold', img: 'ore/oreMetalYellow.png' },
-	"veinPlatinum": 	{ level: 55, rarity:  0.3, name: "platinum ore vein", mineId: 'orePlatinum', img: 'ore/oreMetalBlue.png' },
-	"veinLunarium": 	{ level: 75, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'ore/oreGemCyan.png' },
-	"veinSolarium": 	{ level: 60, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium', img: 'ore/oreGemYellow.png' },
-	"veinDeepium": 	{ level: 85, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium", img: 'ore/oreGemBlack.png' },
-	"veinGarnet": 	{ level: 20, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", img: 'ore/oreGemPurple.png', isGemOre: true },
-	"veinOpal": 		{ level: 35, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", img: 'ore/oreGemWhite.png', isGemOre: true },
-	"veinRuby": 		{ level: 40, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", img: 'ore/oreGemRed.png', isGemOre: true },
-	"veinEmerald": 	{ level: 50, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", img: 'ore/oreGemGreen.png', isGemOre: true },
-	"veinSapphire": 	{ level: 65, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", img: 'ore/oreGemBlue.png', isGemOre: true },
-	"veinDiamond": 	{ level: 80, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", img: 'ore/oreGemWhite.png', isGemOre: true },
+	"veinCoal": 	{ power:  0, rarity:  1.0, name: "coal vein", mineId: 'coal', img: 'ore/oreLumpBlack.png' },
+	"veinTin": 		{ power:  5, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin', img: 'ore/oreMetalWhite.png' },
+	"veinCopper": 	{ power:  5, rarity:  0.8, name: "copper ore vein", mineId: 'oreCopper', img: 'ore/oreMetalOrange.png' },
+	"veinIron": 	{ power: 10, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron', img: 'ore/oreMetalBlack.png' },
+	"veinSilver": 	{ power: 30, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver', img: 'ore/oreMetalWhite.png' },
+	"veinGold": 	{ power: 45, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold', img: 'ore/oreMetalYellow.png' },
+	"veinPlatinum": { power: 55, rarity:  0.3, name: "platinum ore vein", mineId: 'orePlatinum', img: 'ore/oreMetalBlue.png' },
+	"veinLunarium": { power: 75, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'ore/oreGemCyan.png' },
+	"veinSolarium": { power: 60, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium', img: 'ore/oreGemYellow.png' },
+	"veinDeepium": 	{ power: 85, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium", img: 'ore/oreGemBlack.png' },
+	"veinGarnet": 	{ power: 20, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", img: 'ore/oreGemPurple.png', isGemOre: true },
+	"veinOpal": 	{ power: 35, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", img: 'ore/oreGemWhite.png', isGemOre: true },
+	"veinRuby": 	{ power: 40, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", img: 'ore/oreGemRed.png', isGemOre: true },
+	"veinEmerald": 	{ power: 50, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", img: 'ore/oreGemGreen.png', isGemOre: true },
+	"veinSapphire": { power: 65, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", img: 'ore/oreGemBlue.png', isGemOre: true },
+	"veinDiamond": 	{ power: 80, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", img: 'ore/oreGemWhite.png', isGemOre: true },
 	// must be last!
-	"veinNone": 			{ level:  0, rarity: 0.001, isNone: true, name: "ore vein", img: 'ore/oreVein.png' },
+	"veinNone": 	{ power:  0, rarity: 0.001, isNone: true, name: "ore vein", img: 'ore/oreVein.png' },
 });
 
 
 const OreVarietyList = ({ //Type.establish('OreVariety',{},{
-	"coal": 		{ level:  0, rarity: 1.0, name: "coal", img: 'ore/oreLumpBlack.png', scale: 0.5, isFuel: true },
-	"oreTin": 		{ level:  2, rarity: 1.0, name: "tin ore", img: 'ore/oreMetalWhite.png', scale: 0.5 },
-	"oreIron": 		{ level:  5, rarity: 0.8, name: "iron ore", img: 'ore/oreMetalBlack.png', scale: 0.5 },
-	"oreCopper": 	{ level: 10, rarity: 0.6, name: "copper ore", img: 'ore/oreMetalOrange.png', scale: 0.5 },
-	"oreSilver": 	{ level: 15, rarity: 0.5, name: "silver ore", img: 'ore/oreMetalWhite.png', scale: 0.5 },
-	"oreGold": 		{ level: 20, rarity: 0.3, name: "gold ore", img: 'ore/oreMetalYellow.png', scale: 0.5 },
-	"oreMalachite": { level: 25, rarity: 0.3, name: "malachite shards", img: 'ore/oreGemGreen.png', scale: 0.5 },
-	"oreLunarium": 	{ level: 30, rarity: 0.2, name: "lunarium ore", img: 'ore/oreGemCyan.png', scale: 0.5 },
-	"oreSolarium": 	{ level: 35, rarity: 0.1, name: "solarium ore", img: 'ore/oreGemYellow.png', scale: 0.5 },
-	"oreDeepium": 	{ level: 40, rarity: 0.1, name: "deepium ore", img: 'ore/oreGemBlack.png', scale: 0.5 },
+	"coal": 		{ power:  0, rarity: 1.0, name: "coal", img: 'ore/oreLumpBlack.png', scale: 0.5, isFuel: true },
+	"oreTin": 		{ power:  2, rarity: 1.0, name: "tin ore", img: 'ore/oreMetalWhite.png', scale: 0.5 },
+	"oreIron": 		{ power:  5, rarity: 0.8, name: "iron ore", img: 'ore/oreMetalBlack.png', scale: 0.5 },
+	"oreCopper": 	{ power: 10, rarity: 0.6, name: "copper ore", img: 'ore/oreMetalOrange.png', scale: 0.5 },
+	"oreSilver": 	{ power: 15, rarity: 0.5, name: "silver ore", img: 'ore/oreMetalWhite.png', scale: 0.5 },
+	"oreGold": 		{ power: 20, rarity: 0.3, name: "gold ore", img: 'ore/oreMetalYellow.png', scale: 0.5 },
+	"oreMalachite": { power: 25, rarity: 0.3, name: "malachite shards", img: 'ore/oreGemGreen.png', scale: 0.5 },
+	"oreLunarium": 	{ power: 30, rarity: 0.2, name: "lunarium ore", img: 'ore/oreGemCyan.png', scale: 0.5 },
+	"oreSolarium": 	{ power: 35, rarity: 0.1, name: "solarium ore", img: 'ore/oreGemYellow.png', scale: 0.5 },
+	"oreDeepium": 	{ power: 40, rarity: 0.1, name: "deepium ore", img: 'ore/oreGemBlack.png', scale: 0.5 },
 });
 
 const GemQualityList = ({ //Type.establish('GemQuality',{},{
-	"flawed": 		{ level:  0, rarity: 1.0, xPrice: 0.5 },
-	"average": 		{ level:  5, rarity: 0.8, xPrice: 1.0 },
-	"large": 		{ level: 10, rarity: 0.6, xPrice: 1.2 },
-	"flawless": 	{ level: 15, rarity: 0.4, xPrice: 1.5 },
-	"sublime": 		{ level: 20, rarity: 0.2, xPrice: 2.0 }
+	"flawed": 		{ power:  0, rarity: 1.0, xPrice: 0.5 },
+	"average": 		{ power:  5, rarity: 0.8, xPrice: 1.0 },
+	"large": 		{ power: 10, rarity: 0.6, xPrice: 1.2 },
+	"flawless": 	{ power: 15, rarity: 0.4, xPrice: 1.5 },
+	"sublime": 		{ power: 20, rarity: 0.2, xPrice: 2.0 }
 });
 
 const GemVarietyList = ({ //Type.establish('GemVariety',{},{
-	"garnet": 		{ level:  0, rarity:  0.3, img: "gems/Gem Type1 Red.png" },
-	"opal": 		{ level:  3, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"turquoise": 	{ level:  6, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"amethyst": 	{ level:  9, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"pearl": 		{ level: 12, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"amber": 		{ level: 15, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"jade": 		{ level: 18, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"lapisLazuli":  { level: 21, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"topaz": 		{ level: 24, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"moonstone": 	{ level: 27, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"agate": 		{ level: 30, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"tourmaline": 	{ level: 33, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"peridot": 		{ level: 36, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"malachite": 	{ level: 39, rarity:  0.3, img: "gems/Gem Type1 Green.png" },
-	"citrine": 		{ level: 42, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"jasper": 		{ level: 45, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"carnelian": 	{ level: 48, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"chalcedony": 	{ level: 51, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"beryl": 		{ level: 54, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"spinel": 		{ level: 57, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"ruby": 		{ level: 60, rarity:  0.2, img: "gems/Gem Type2 Red.png" },
-	"emerald": 		{ level: 65, rarity:  0.2, img: "gems/Gem Type2 Green.png" },
-	"sapphire": 	{ level: 70, rarity:  0.2, img: "gems/Gem Type2 Blue.png" },
-	"diamond": 		{ level: 75, rarity:  0.1, img: "gems/Gem Type3 Black.png" },
+	"garnet": 		{ power:  0, rarity:  0.3, img: "gems/Gem Type1 Red.png" },
+	"opal": 		{ power:  3, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"turquoise": 	{ power:  6, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"amethyst": 	{ power:  9, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"pearl": 		{ power: 12, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"amber": 		{ power: 15, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"jade": 		{ power: 18, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"lapisLazuli":  { power: 21, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"topaz": 		{ power: 24, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"moonstone": 	{ power: 27, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"agate": 		{ power: 30, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"tourmaline": 	{ power: 33, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"peridot": 		{ power: 36, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"malachite": 	{ power: 39, rarity:  0.3, img: "gems/Gem Type1 Green.png" },
+	"citrine": 		{ power: 42, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"jasper": 		{ power: 45, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"carnelian": 	{ power: 48, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"chalcedony": 	{ power: 51, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"beryl": 		{ power: 54, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"spinel": 		{ power: 57, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"ruby": 		{ power: 60, rarity:  0.2, img: "gems/Gem Type2 Red.png" },
+	"emerald": 		{ power: 65, rarity:  0.2, img: "gems/Gem Type2 Green.png" },
+	"sapphire": 	{ power: 70, rarity:  0.2, img: "gems/Gem Type2 Blue.png" },
+	"diamond": 		{ power: 75, rarity:  0.1, img: "gems/Gem Type3 Black.png" },
 });
 
 const CharmVarietyList = ({ //Type.establish('CharmVariety',{},{
-	"centurionFigurine":{ level: 44, rarity: 0.1, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/solarCenturionFigurine.png',
+	"centurionFigurine":{ power: 44, rarity: 0.1, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/solarCenturionFigurine.png',
 						effect: { op: 'summon', value: 'solarCenturion', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
 						},
-	"bearFigurine": 	{ level: 9, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
+	"batFigurine": 		{ power: 1, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
+						effect: { op: 'summon', value: 'bat', isServant: true, xDuration: 1.0, doesTiles: true, name: false }
+						},
+	"bearFigurine": 	{ power: 9, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
 						effect: { op: 'summon', value: 'bear', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
 						},
-	"dogFigurine": 		{ level: 0, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
+	"dogFigurine": 		{ power: 0, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
 						effect: { op: 'summon', value: 'dog', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
 						},
-	"viperFigurine": 	{ level: 24, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
+	"viperFigurine": 	{ power: 24, rarity: 1.0, matter: 'stone', mayThrow: true, mayTargetPosition: true, rechargeTime: 10*50, img: 'item/stuff/figurine.png',
 						effect: { op: 'summon', value: 'viper', isServant: true, xDuration: 5.0, doesTiles: true, name: false }
 						},
 	"sunCrystal":   	{ rarity: 0.6, matter: 'crystal', mayThrow: true, range: 7, light: 12, glow: 1, attackVerb: 'throw', img: "item/stuff/sunCrystal.png", mayTargetPosition: true,
@@ -871,6 +886,7 @@ const CharmVarietyList = ({ //Type.establish('CharmVariety',{},{
 	"solarOrbS":   		{ rarity: 1.0, matter: 'energy', xPrice: 4.0, mayThrow: true, range: 6, mayTargetPosition: true, light: 12, glow: 1, scale: 0.3, img: "item/stuff/solarOrb.png", name: 'small solar orb' },
 	"solarOrbM":   		{ rarity: 0.6, matter: 'energy', xPrice: 5.0, mayThrow: true, range: 5, mayTargetPosition: true, light: 15, glow: 1, scale: 0.4, img: "item/stuff/solarOrb.png", name: 'medium solar orb' },
 	"solarOrbL":   		{ rarity: 0.2, matter: 'energy', xPrice: 7.0, mayThrow: true, range: 4, mayTargetPosition: true, light: 18, glow: 1, scale: 0.5, img: "item/stuff/solarOrb.png", name: 'large solar orb' },
+	"solarOrbH":   		{ rarity: 0.2, matter: 'energy', xPrice: 9.0, mayThrow: true, range: 4, mayTargetPosition: true, light: 22, glow: 1, scale: 0.6, img: "item/stuff/solarOrb.png", name: 'huge solar orb' },
 });
 
 // Artifact, Relic, Talisman, Amulet
@@ -905,13 +921,9 @@ const StuffVarietyList = ({ //Type.establish('StuffVariety',{},{
 	"demonEye": 		{ rarity: 0.2, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, isGem: true, img: 'item/misc/demonEye.png' },
 	"ghoulFlesh": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/food/chunk_rotten.png' },
 	"pinchOfEarth": 	{ rarity: 1.0, matter: 'stone', img: 'item/weapon/ranged/rock.png' },
-	"impBrain": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true },
-	"ogreDrool": 		{ rarity: 1.0, matter: 'liquid', mayThrow: true, mayTargetPosition: true, isEdible: true, img: 'item/misc/ogreDrool.png' },
-	"scarabCarapace": 	{ rarity: 1.0, matter: 'chitin', },
 	"markOfReturn": 	{ rarity: 0.0, matter: 'stone', isMarkOfReturn: true, noPermute: true, command: Command.TRIGGER, name: 'mark of return',
 						effect: { name: 'return', op: 'gate', twoWay: true, duration: 0, isTac: true, description: 'Use this to return to a marked location, and then use it AGAIN to return to you origin point.' } },
 	"darkEssence": 		{ rarity: 0.1, matter: 'special', },
-	"facetedEye": 		{ rarity: 0.4, matter: 'flesh', mayThrow: true, mayTargetPosition: true, isEdible: true, isJewelry: true },
 	"trollBlood": 		{ rarity: 0.6, matter: 'liquid' },
 	"spinneret": 		{ rarity: 0.4, matter: 'flesh', bitPoison: true },
 	"chitin": 			{ rarity: 1.0, matter: 'chitin', },
@@ -928,16 +940,16 @@ const StuffVarietyList = ({ //Type.establish('StuffVariety',{},{
 	"lunarEssence": 	{ rarity: 0.6, matter: 'energy', },
 	"frogSpine": 		{ rarity: 0.8, matter: 'flesh', },
 	"wool": 			{ rarity: 1.0, matter: 'flesh', isFabricIngredient: true },
-	"magicMap":			{ rarite: 1.0, matter: 'paper', effect: EffectTypeList.eMap, charges: 1, command: Command.TRIGGER, description: "One glance at this magic map will reveal the structure of whatever level you are on, but the map will vanish." },
+	"magicMap":			{ rarite: 1.0, matter: 'paper', effect: EffectTypeList.eMap, charges: 1, command: Command.TRIGGER, description: "One glance at this magic map blaze the area into your memory." },
 
-	"ingotTin": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, fixins: '3x oreTin', name: 'tin ingot' },
-	"ingotIron": 		{ level:  0, rarity: 1.0, matter: 'metal', isIngot: true, fixins: '3x oreIron', name: 'iron ingot' },
-	"ingotCopper": 		{ level:  5, rarity: 0.9, matter: 'metal', isIngot: true, fixins: '3x oreCopper', name: 'copper ingot' },
-	"ingotSilver": 		{ level:  5, rarity: 0.8, matter: 'metal', isIngot: true, fixins: '3x oreSilver', name: 'silver ingot' },
-	"ingotGold": 		{ level: 15, rarity: 0.7, matter: 'metal', isIngot: true, fixins: '3x oreGold', name: 'gold ingot' },
-	"ingotLunarium": 	{ level: 40, rarity: 0.5, matter: 'metal', isIngot: true, fixins: '3x oreLunarium', name: 'lunarium ingot' },
-	"ingotDeepium": 	{ level: 70, rarity: 0.3, matter: 'metal', isIngot: true, fixins: '3x oreDeepium', name: 'deepium ingot' },
-	"ingotSolarium": 	{ level: 85, rarity: 0.4, matter: 'metal', isIngot: true, fixins: '3x oreSolarium', name: 'solarium ingot' },
+	"ingotTin": 		{ power:  0, rarity: 1.0, matter: 'metal', isIngot: true, fixins: '3x oreTin', name: 'tin ingot' },
+	"ingotCopper": 		{ power:  0, rarity: 1.0, matter: 'metal', isIngot: true, fixins: '3x oreCopper', name: 'copper ingot' },
+	"ingotIron": 		{ power:  5, rarity: 1.0, matter: 'metal', isIngot: true, fixins: '3x oreIron', name: 'iron ingot' },
+	"ingotSilver": 		{ power:  5, rarity: 0.8, matter: 'metal', isIngot: true, fixins: '3x oreSilver', name: 'silver ingot' },
+	"ingotGold": 		{ power: 15, rarity: 0.7, matter: 'metal', isIngot: true, fixins: '3x oreGold', name: 'gold ingot' },
+	"ingotLunarium": 	{ power: 40, rarity: 0.5, matter: 'metal', isIngot: true, fixins: '3x oreLunarium', name: 'lunarium ingot' },
+	"ingotDeepium": 	{ power: 70, rarity: 0.3, matter: 'metal', isIngot: true, fixins: '3x oreDeepium', name: 'deepium ingot' },
+	"ingotSolarium": 	{ power: 85, rarity: 0.4, matter: 'metal', isIngot: true, fixins: '3x oreSolarium', name: 'solarium ingot' },
 
 });
 
@@ -962,19 +974,19 @@ StuffVarietyList.poisonSlime.onTouch 	= TouchDamage.onTouchWalk;
 
 
 const RingMaterialList = ({ //Type.establish('RingMaterial',{},{
-	"brass": 	{ level: 0, img: 'item/ring/brass.png' },
-	"copper": 	{ level: 1, img: 'item/ring/bronze.png' },
-	"silver": 	{ level: 3, img: 'item/ring/silver.png' },
-	"gold": 	{ level: 7, img: 'item/ring/gold.png' }
+	"brass": 	{ power: 0, img: 'item/ring/brass.png' },
+	"copper": 	{ power: 1, img: 'item/ring/bronze.png' },
+	"silver": 	{ power: 3, img: 'item/ring/silver.png' },
+	"gold": 	{ power: 7, img: 'item/ring/gold.png' }
 });
 
 const RingVarietyList = ({ //Type.establish('RingVariety',{},{
-	"garnetSetting": 	{ level:  0, rarity:  0.3, name: 'garnet' },
-	"opalSetting": 		{ level:  5, rarity:  0.3, name: 'opal' },
-	"rubySetting": 		{ level: 20, rarity:  0.2, name: 'ruby' },
-	"emeraldSetting": 	{ level: 40, rarity:  0.2, name: 'emerald' },
-	"sapphireSetting": 	{ level: 60, rarity:  0.2, name: 'sapphire' },
-	"diamondSetting": 	{ level: 80, rarity:  0.1, name: 'diamond' }
+	"garnetSetting": 	{ power:  0, rarity:  0.3, name: 'garnet' },
+	"opalSetting": 		{ power:  5, rarity:  0.3, name: 'opal' },
+	"rubySetting": 		{ power: 20, rarity:  0.2, name: 'ruby' },
+	"emeraldSetting": 	{ power: 40, rarity:  0.2, name: 'emerald' },
+	"sapphireSetting": 	{ power: 60, rarity:  0.2, name: 'sapphire' },
+	"diamondSetting": 	{ power: 80, rarity:  0.1, name: 'diamond' }
 });
 
 const CoinImgChoices = ({ //Type.establish('CoinStack',{},{
@@ -991,15 +1003,15 @@ let CoinImgChooseFn = self => {
 
 const DoorStates = {
 	open:   {
-		img: 'dc-dngn/dngn_open_door.png',
+		img: 'portal/door1Open.png',
 		mayWalk: true, mayFly: true, opacity: 0,
 	},
 	shut:   {
-		img: 'dc-dngn/dngn_closed_door.png',
+		img: 'portal/door1Shut.png',
 		mayWalk: false, mayFly: false, opacity: 1,
 	},
 	locked: {
-		img: 'dc-dngn/dngn_locked_door.png',
+		img: 'portal/door1Locked.png',
 		mayWalk: false, mayFly: false, opacity: 1,
 	}
 };
@@ -1047,10 +1059,11 @@ onAttacked(attacker,amount,damageType) - when attacked.
 // mayThrow			- you can throw this
 // opacity			- how well can normal sight see past this thing? 0.0 clear through 1.0 opaque
 // img, imgChoices	- images ou can show for this item
+// imgSpin			- rate at which this image spins
 // isDecor			- this may not go in a container.
 // isWall			- generally impassable.
 // isFloor			- passable.
-// isGate			- leads to another level. Needs a gateDir and gateInverse.
+// isGate			- leads to another area. Needs a gateDir and gateInverse.
 // qualities		- 1 of 3 things the picker randomizes on an item
 // materials		- 2 of 3 things the picker randomizes on an item
 // varieties		- 3 of 3 things the picker randomizes on an item
@@ -1074,7 +1087,7 @@ let ItemTypeList = {
 		isStairsDown: true,
 		mayPickup: false,
 		useVerb: 'descend',
-		img: "dc-dngn/gateways/stone_stairs_down.png"
+		img: "portal/stairsDown.png"
 	},
 	"stairsUp": {
 		symbol: '<',
@@ -1085,7 +1098,7 @@ let ItemTypeList = {
 		isStairsUp: true,
 		mayPickup: false,
 		useVerb: 'ascend',
-		img: "dc-dngn/gateways/stone_stairs_up.png"
+		img: "portal/stairsUp.png"
 	},
 	"gateway": {
 		symbol: 'O',
@@ -1095,7 +1108,7 @@ let ItemTypeList = {
 		gateInverse: 'gateway',
 		mayPickup: false,
 		useVerb: 'enter',
-		img: "decor/gateStone.png"
+		img: "portal/arch1.png"
 	},
 	"portal":     {
 		symbol: '0',
@@ -1105,7 +1118,10 @@ let ItemTypeList = {
 		gateInverse: 'portal',
 		mayPickup: false,
 		useVerb: 'touch',
-		img: "effect/portal.png" //"dc-dngn/gateways/dngn_portal.png"
+		glow: 1,
+		light: 4,
+		imgSpin: 0.01,
+		img: "portal/portal.png"
 	},
 	"pitDrop": {
 		symbol: '`',
@@ -1429,6 +1445,7 @@ let ItemTypeList = {
 		glow: 			true,
 		attackVerb: 	'splash',
 		isPotion: 		true,
+		scale:			0.6,
 		range: 			Rules.rangePotion,
 		effects: 		PotionEffects,
 		effectWhen: 	{ isHarm: 'throw', DEFAULT: 'quaff'},
@@ -1698,6 +1715,7 @@ let ItemTypeList = {
 		varieties:		{},	// This gets auto-filled during the monsterPreProcess()
 		name:			'{variety}$',
 		img: 			'item/misc/misc_rune.png',
+		scale:			0.50,
 		icon: 			'/gui/icons/stuff.png'
 	},
 
@@ -1994,7 +2012,7 @@ ItemTypeList.fountain.onBump = function(toucher,self) {
 		tell(mSubject,toucher,' could fill a vial with water, if you had an empty vial.');
 		return;
 	}
-	Inventory.lootTo( toucher, 'potion.eWater', toucher.map.level || self.level || 1, self, true );
+	Inventory.lootTo( toucher, 'potion.eWater', toucher.map.depth || self.level || 1, self, true );
 	self.destroy();
 	tell(mSubject,toucher,' ',mVerb,'fill',' a vial with water from the fountain.');
 }
@@ -2165,6 +2183,9 @@ ItemTypeList = Type.establish( 'ItemType', {
 				}
 			}
 		}
+//		if( itemType.typeId=='armor' ) {
+//			debugger;
+//		}
 	}
 }, ItemTypeList);
 

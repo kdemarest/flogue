@@ -575,6 +575,10 @@ Module.add('dataMason',function() {
 					// Only use greater-than. This way, all the equal distances will have a chance.
 					return false;
 				}
+//somehow setVal() is calling ext(x,y) all the time
+
+//Perhaps this thing is miscounting the number of tiles consumed?
+
 				let x = sx+p.x;
 				let y = sy+p.y;
 				let zoneId = zoneIdLookup[y*xLen+x]; //this.getZoneId(x,y);

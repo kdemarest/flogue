@@ -53,7 +53,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 
 		// NOTE: We want to count gaps here because we don't want impassable containers  blocking up passageways.
 		// WARNING! What we really want is to do all this ad-hoc chest and barrel business AFTER
-		// scanning the entire level. That way they won't interfere with place-created containers.
+		// scanning the entire area. That way they won't interfere with place-created containers.
 //		if( !container ) {
 //			debugger;
 //			console.log( 'item '+item.typeId+' isContainable='+item.isContainable()+' gaps='+area.map.countGaps(x,y) );
@@ -315,6 +315,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	let injectList = [];
 	area.siteList = [];
 
+//debugger;
 	let masonMap = Mason.masonConstruct(
 		area.theme,
 		tileQuota,
@@ -557,8 +558,8 @@ class Area {
 
 		//On really huge maps entityList gets to be aroound 400 entities.
 		//So, do we really want to tick all of them? Or do we put them all on some
-		//kind of deferred schedule... And then only tick the last level around the gate that
-		//was used to get to the current level...
+		//kind of deferred schedule... And then only tick the last area around the gate that
+		//was used to get to the current area...
 
 		// WARNING! Don't do anything here that would need to happen before
 		// the player went, so that the world doing th player isn't off.

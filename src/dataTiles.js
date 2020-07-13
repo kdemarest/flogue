@@ -46,13 +46,13 @@ let CaveWallImgChooseFn = self => {
 
 Type.register('TileType',{
 	"floorCave":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "cave floor",
-					img: "decor/floorSlate.png",
+					img: "terrain/floorSlate.png",
 					isFloor: true },
 	"floorDirt":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "dirt floor",
-					img: "decor/floorDirt.png",
+					img: "terrain/floorDirt.png",
 					isFloor: true },
 	"floorSlate":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "slate floor",
-					img: "decor/floorSlate.png",
+					img: "terrain/floorSlate.png",
 					isFloor: true },
 	"floorStone":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "stone floor",
 					img: "dc-dngn/floor/rect_gray1.png", isFloor: true
@@ -60,10 +60,10 @@ Type.register('TileType',{
 	"wallCave":   { mayWalk: false, mayFly: false, opacity: 1, name: "cave wall", 
 					addFloor: true,
 					imgChoices: {
-						0: { img: "decor/boulder1.png" },
-						1: { img: "decor/boulder2.png" },
-						2: { img: "decor/boulder3.png" },
-						3: { img: "decor/boulder4.png" },
+						0: { img: "terrain/boulder1.png" },
+						1: { img: "terrain/boulder2.png" },
+						2: { img: "terrain/boulder3.png" },
+						3: { img: "terrain/boulder4.png" },
 					},
 					imgChooseFn: CaveWallImgChooseFn,
 					isWall: true
@@ -71,10 +71,10 @@ Type.register('TileType',{
 	"wallJagged":   { mayWalk: false, mayFly: false, opacity: 1, name: "jagged wall", 
 					addFloor: true,
 					imgChoices: {
-						0: { img: "decor/jagged1.png" },
-						1: { img: "decor/jagged2.png" },
-						2: { img: "decor/jagged3.png" },
-						3: { img: "decor/jagged4.png" },
+						0: { img: "terrain/jagged1.png" },
+						1: { img: "terrain/jagged2.png" },
+						2: { img: "terrain/jagged3.png" },
+						3: { img: "terrain/jagged4.png" },
 					},
 					imgChooseFn: CaveWallImgChooseFn,
 					isWall: true,

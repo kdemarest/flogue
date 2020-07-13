@@ -221,6 +221,10 @@ class EntitySprite extends Sprite {
 			console.assert(Light.Alpha[light]!==undefined);
 			this.alpha = Light.Alpha[Math.floor(light)];
 
+			if( Number.isFinite(this.entity.imgSpin) ) {
+				this.rotation += this.entity.imgSpin * 2*Math.PI*dt;
+			}
+
 			console.watchSprite( this, 'in Pane. visible='+this.visible );
 		}
 		else {
