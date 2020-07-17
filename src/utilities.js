@@ -1,5 +1,21 @@
+Module.add('profileNull',function(extern){
+	// If you really want profiling, you need to instantiate your own profiler
+	// in the .html file before loading. This is just to make sure that, if you
+	// decide you DON'T want it, that all the calls to Profile do nothing.
+	if( !extern.Profile ) {
+		extern.Profile = new class {
+			start()	{ return this; }
+			end()	{ return this; }
+			tell()	{ return this; }
+		}
+	}
+	return {
+		Profile: extern.Profile
+	}
+});
+
 // STATIC UTILITY FUNCTIONS
-Module.add('utilities',function(){
+Module.add('utilities',function(extern){
 
 	let RandomBase = class {
 		intRange(min, max) {

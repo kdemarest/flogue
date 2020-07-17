@@ -45,7 +45,7 @@ Type.register('Part', {
 	},
 	tooth:		{
 		matter: 'bone',
-		makes: ['eAssassin', 'eBash', 'eResistance'],
+		makes: ['eAssassin', 'eBash'],
 		img: 'part/tooth.png',
 	},
 	claw:		{
@@ -417,8 +417,9 @@ senseAlert		- shows, based on your sneaking ability, how close you'd have to be 
 blindFight		- you can't actually see, but you don't suffer a miss chance when fighting blind.
 blindShot		- you can't actually see, but you don't suffer a miss chance when shooting blind.
 
-imgChoices	- If you want to get fancier than just using core.img you can put some image choices here.
-imgChooseFn	- pairs with imgChoices to determine what to show. Returns the image path.
+imgChoices		- If you want to get fancier than just using core.img you can put some image choices here.
+imgChooseFn		- pairs with imgChoices to determine what to show. Returns the image path.
+imgDetermine	- picks an image based on what else is around it.
 
 Statuses
 breathStopped	- if you require breath you'll start taking damage after Rules.breathLimitToDamage
@@ -1195,7 +1196,7 @@ Type.register( 'MonsterType', {
 		vuln: 'glass'
 	},
 	"shade": {
-		core: [ 4, '1.5:16', 'evil', 'rot', 'undeadDumb', 'humanoid', 'mon/shade.png', '*' ],
+		core: [ 4, '1.5:16', 'evil', 'rot', 'undeadDumb', 'humanoid', 'mon/undead/shade.png', '*' ],
 		attitude: Attitude.HUNT,
 		bloodId: 'bloodBlack',
 		immune: UndeadImmunity,
@@ -1527,7 +1528,7 @@ Type.register( 'MonsterType', {
 		stink: 0.8,
 	},
 	"bear": {
-		core: [ 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/bear.png', 'it' ],
+		core: [ 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/animal/bear.png', 'it' ],
 		size: 2.0,
 		name: "bear",
 		attitude: Attitude.WANDER,
@@ -1597,7 +1598,7 @@ Type.register( 'MonsterType', {
 
 // NEUTRAL TEAM
 	"bat": {
-		core: [ 1, '2:20', 'neutral', 'bite', 'animal', 'wingedBiped', 'dc-mon/animals/giant_bat.png', 'it' ],
+		core: [ 1, '2:20', 'neutral', 'bite', 'animal', 'wingedBiped', 'mon/animal/giantBat.png', 'it' ],
 		attitude: Attitude.WANDER,
 		dodge: Quick.LITHE,
 		isAnimal: true,

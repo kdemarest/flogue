@@ -26,6 +26,43 @@ onTargetPosition	- if the victim is moving around, things like burn have effects
 
 */
 
+let makeResist = function( damageType, damageTypeName, inject ) {
+	return Object.assign(
+		{}, 
+		{
+			isBuf: 1,
+			isHelp: 1,
+			rarity: 1.00,
+			op: 'add',
+			stat: 'resist',
+			value: damageType,
+			name: 'resist '+damageTypeName+'',
+			icon: 'gui/icons/eResist.png',
+			about: 'Suffer only half the effect of '+damageTypeName+'.'
+		},
+		inject
+	);
+}
+
+let makeImmune = function( damageType, damageTypeName, inject ) {
+	return Object.assign(
+		{},
+		 {
+			isBuf: 1,
+			isHelp: 1,
+			rarity: 0.30,
+			op: 'add',
+			stat: 'immune',
+			value: damageType,
+			xDuration: 4.0,
+			name: 'immunity to '+damageTypeName,
+			icon: 'gui/icons/eImmune.png',
+			about: 'Target becomes immune to '+damageTypeName+'.'
+		},
+		inject
+	);
+}
+
 let EffectTypeList = {
 	eInert: {
 		isInert: 1,
@@ -270,17 +307,6 @@ let EffectTypeList = {
 		icon: 'gui/icons/eHaste.png',
 		about: 'Move one extra square per round.'
 	},
-	eBlindImmunity: {
-		isBuf: 1,
-		rarity: 0.30,
-		op: 'add',
-		stat: 'immune',
-		value: 'senseBlind',
-		xDuration: 4.0,
-		name: 'immunity to blindness',
-		icon: 'gui/icons/eBlind.png',
-		about: 'Target becomes immune to blindness.'
-	},
 	eBravery: {
 		isBuf: 1,
 		rarity: 0.50,
@@ -355,17 +381,33 @@ let EffectTypeList = {
 		icon: 'gui/icons/eImmune.png',
 		about: 'Longer immunity to panic, confusion and hesitation.'
 	},
-	eResistance: {
-		isBuf: 1,
-		rarity: 0.50,
-		op: 'add',
-		stat: 'resist',
-		valuePick: () => pick(PickResist),
-		isHelp: 1,
-		name: 'resist {value}s',
-		icon: 'gui/icons/eResist.png',
-		about: 'Suffer only half the effect of {value}.'
-	},
+
+	eResistBurn:	makeResist( DamageType.BURN, 'fire' ),
+	eResistFreeze:	makeResist( DamageType.FREEZE, 'cold' ),
+	eResistShock:	makeResist( DamageType.SHOCK, 'shock' ),
+	eResistWater:	makeResist( DamageType.WATER, 'water' ),
+	eResistLight:	makeResist( DamageType.LIGHT, 'light' ),
+	eResistCorrode:	makeResist( DamageType.CORRODE, 'acid' ),
+	eResistPoison:	makeResist( DamageType.POISON, 'poison' ),
+	eResistSmite:	makeResist( DamageType.SMITE, 'smite' ),
+	eResistRot:		makeResist( DamageType.ROT, 'rot' ),
+	eResistSuffocate:makeResist( DamageType.SUFFOCATE, 'suffocation' ),
+	eResistBlind:	makeResist( 'senseBlind', 'blindness' ),
+	eResistShove:	makeResist( 'shove', 'shoving' ),
+
+	eImmuneBurn:	makeImmune( DamageType.BURN, 'fire' ),
+	eImmuneFreeze:	makeImmune( DamageType.FREEZE, 'cold' ),
+	eImmuneShock:	makeImmune( DamageType.SHOCK, 'shock' ),
+	eImmuneWater:	makeImmune( DamageType.WATER, 'water' ),
+	eImmuneLight:	makeImmune( DamageType.LIGHT, 'light' ),
+	eImmuneCorrode:	makeImmune( DamageType.CORRODE, 'acid' ),
+	eImmunePoison:	makeImmune( DamageType.POISON, 'poison' ),
+	eImmuneSmite:	makeImmune( DamageType.SMITE, 'smite' ),
+	eImmuneRot:		makeImmune( DamageType.ROT, 'rot' ),
+	eImmuneSuffocate:makeImmune( DamageType.SUFFOCATE, 'suffocation' ),
+	eImmuneBlind:	makeImmune( 'senseBlind', 'blindness' ),
+	eImmuneShove:	makeImmune( 'shove', 'shoving' ),
+
 	eDeflect: {
 		isBuf: 1,
 		rarity: 0.50,
@@ -413,17 +455,6 @@ let EffectTypeList = {
 		xRecharge: 1.5,
 		icon: 'gui/icons/eInvisible.png',
 		about: 'Target becomes invisible to sight.'
-	},
-	eImmunity: {
-		isBuf: 1,
-		rarity: 1.00,
-		op: 'add',
-		stat: 'immune',
-		valuePick: () => pick(PickIgnore),
-		isHelp: 1,
-		name: 'ignore {value}',
-		icon: 'gui/icons/eImmune.png',
-		about: 'Target is no longer affected by {value}.'
 	},
 	eRechargeFast: {
 		isBuf: 1,

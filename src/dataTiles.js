@@ -94,7 +94,7 @@ Type.register('TileType',{
 		// NOTE! Technically the pit isRemovable when you build bridges with a hammer. But
 		// that is for another day.
 		wantsBridge: true,
-		img: "dc-dngn/pit.png"
+		img: "terrain/pit.png"
 	},
 	"bridge": {
 		mayWalk: true,
@@ -119,7 +119,7 @@ Type.register('TileType',{
 		mayJump: true,
 		wantsBridge: true,
 		name: "water",
-		img: "decor/water.png" //dc-dngn/water/dngn_shoals_shallow_water1.png"
+		img: "decor/water.png"
 	},
 	"grass": {
 		mayWalk: true,
@@ -145,7 +145,7 @@ Type.register('TileType',{
 		name: "shaft",
 		mayJump: true,
 		addFloor: true,
-		img: "dc-dngn/dngn_trap_shaft.png"
+		img: "terrain/shaft.png"
 	},
 	"flames": {
 		mayWalk: true,
@@ -186,7 +186,7 @@ Type.register('TileType',{
 			duration: 0,
 			icon: 'gui/icons/eBurn.png'
 		},
-		img: "UNUSED/features/dngn_lava.png"
+		img: "terrain/floorLava.png"
 	},
 	"mist": {
 		mayWalk: true,
@@ -195,7 +195,7 @@ Type.register('TileType',{
 		name: "mist",
 		zOrder: Tile.zOrder.MIST,
 		addFloor: true,
-		img: "effect/cloud_grey_smoke.png",
+		img: "effect/smoke.png",
 		layer: 3
 	},
 	"mud": {
@@ -205,7 +205,7 @@ Type.register('TileType',{
 		noScent: true,
 		mayJump: true,
 		name: "mud",
-		img: "dc-dngn/floor/dirt0.png"
+		img: "terrain/floorMud.png"
 	},
 	"ghostStone": {
 		mayWalk: false,
@@ -213,7 +213,7 @@ Type.register('TileType',{
 		opacity: 0,
 		name: "ghost stone",
 		addFloor: true,
-		img: "dc-dngn/altars/dngn_altar_vehumet.png",
+		img: "terrain/ghostStone.png",
 		effect: {
 			op: 'set',
 			stat: 'invisible',
@@ -226,7 +226,7 @@ Type.register('TileType',{
 		opacity: 0,
 		name: "obsidian obelisk",
 		addFloor: true,
-		img: "dc-dngn/altars/dngn_altar_sif_muna.png",
+		img: "terrain/obelisk.png",
 		effect: {
 			op: 'set',
 			stat: 'senseBlind',
@@ -240,7 +240,7 @@ Type.register('TileType',{
 		name: "shimmering crystal",
 		glow: 1,
 		addFloor: true,
-		img: "dc-dngn/altars/dngn_altar_beogh.png",
+		img: "terrain/crystal.png",
 		effect: {
 			op: 'add',
 			stat: 'speed',
@@ -255,7 +255,7 @@ Type.register('TileType',{
 		light: 3,
 		glow: 1,
 		addFloor: true,
-		img: "spells/air/static_discharge.png"
+		img: "terrain/forcefield.png"
 	},
 });
 
@@ -431,7 +431,7 @@ TileTypeList.ghostStone.onBump = function(toucher,self) {
 }
 
 
-TileTypeList.bridge.imgChoose = function(map,x,y) {
+TileTypeList.bridge.imgDetermine = function(map,x,y) {
 	let w = map.tileTypeGet(x-1,y);
 	let e = map.tileTypeGet(x+1,y);
 	let n = map.tileTypeGet(x,y-1);

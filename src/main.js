@@ -113,7 +113,8 @@ async function main() {
 	PluginManager.addForLoad('pkgPlantsBasic', 'pkgPlantsBasic.js');
 	await PluginManager.loadAll();
 	
-	// This executes the initializers for all the plugins, putting the data in the PluginManager
+	// This executes the initializers for all not-yet-run code, that is, the plugins,
+	// putting the data in the PluginManager
 	Module.realize();
 
 	// We condition the heck out of our data, and we have to do it in the right order.
@@ -122,7 +123,10 @@ async function main() {
 	Type.merge();
 	Type.finalize(Checker);
 
-	window.ImageRepo =  new PixiImageRepo(PIXI.loader);
+	let imageCache =  new PixiImageRepo(PIXI.loader);
+	imageCache.scanTypes();
+
+	window.ImageRepo =  new ImageMaker(imageCache);
 	ImageRepo.scanTypes();
 	setInterval( () => ImageRepo.tick(), 250 );
 

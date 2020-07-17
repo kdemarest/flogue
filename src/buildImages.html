@@ -1,0 +1,109 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+
+<script src="jquery.3.3.1.js" charset="utf-8"></script>
+<script src="utilModule.js" charset="utf-8"></script>
+
+<script src="pixi.js" charset="utf-8"></script>
+<script src="utilities.js" charset="utf-8"></script>
+<script src="utilPick.js" charset="utf-8"></script>
+<script src="utilChance.js" charset="utf-8"></script>
+<script src="utilPlugin.js" charset="utf-8"></script>
+<script src="time.js" charset="utf-8"></script>
+<script src="rules.js" charset="utf-8"></script>
+<script src="types.js" charset="utf-8"></script>
+<script src="data.js" charset="utf-8"></script>
+<script src="dataStickers.js" charset="utf-8"></script>
+<script src="dataEffects.js" charset="utf-8"></script>
+<script src="dataTiles.js" charset="utf-8"></script>
+<script src="dataItems.js" charset="utf-8"></script>
+<script src="dataMonsters.js" charset="utf-8"></script>
+<script src="dataJobs.js" charset="utf-8"></script>
+<script src="dataLegacy.js" charset="utf-8"></script>
+<script src="dataHumanNames.js" charset="utf-8"></script>
+<script src="dataPlaces.js" charset="utf-8"></script>
+<script src="dataThemes.js" charset="utf-8"></script>
+<script src="dataChecker.js" charset="utf-8"></script>
+<script src="dataPermute.js" charset="utf-8"></script>
+<script src="dataPicker.js" charset="utf-8"></script>
+<script src="dataMason.js" charset="utf-8"></script>
+<script src="imageRepo.js" charset="utf-8"></script>
+<script src="config.js" charset="utf-8"></script>
+<script src="debugProxy.js" charset="utf-8"></script>
+
+<script>
+
+function guiMessage( message, payload ) {
+	if( message == 'imgLoaded' ) {
+		document
+			.getElementById("result")
+			.appendChild(document.createTextNode(payload+'\n'))
+		;
+	}
+}
+
+async function main() {
+
+	window.Debug = DebugSetup({
+		imgLoader: true
+	});
+
+
+	Module.realize();
+	Random.seed(123456);
+	Time.sim = new Time.TimeKeeper();
+
+	let configId = Config.getConfigId();
+	let config = new Config(configId);
+	window.config = config;
+
+	configId ? PluginManager.addForLoad(config.id,'config.'+config.id+'.js') : null;
+	PluginManager.addForLoad('pkgPlantsBasic', 'pkgPlantsBasic.js');
+	await PluginManager.loadAll();
+	
+	// This executes the initializers for all not-yet-run code, that is, the plugins,
+	// putting the data in the PluginManager
+	Module.realize();
+
+	// We condition the heck out of our data, and we have to do it in the right order.
+	Type.establish('PLUGINS',{});
+	Type.register('PLUGINS', PluginManager.list );
+	Type.merge();
+	Type.finalize(Checker);
+
+	IMG_BASE = 'http://localhost:3010/force/';	// forces reprocessing of all images.
+
+	window.ImageRepo =  new PixiImageRepo(PIXI.loader);
+	ImageRepo.scanTypes();
+	ImageRepo.requestAll();
+	console.assert( !ImageRepo.loading );
+
+	setInterval( () => {
+		ImageRepo.tick();
+		let stateList = {
+			requested: [],
+			pending: [],
+			loaded: []
+		}
+		ImageRepo.getStateList(stateList);
+		document.getElementById('state').innerHTML = "Pending: "+stateList.pending.length+" Loaded: "+stateList.loaded.length;
+	}, 100 );
+
+
+}
+
+</script>
+
+</head>
+<body>
+	<h1>Image processing</h1>
+	<div id="state"></div>
+	<div id="result" style="white-space:pre;"></div>
+	<script>
+	document.addEventListener("DOMContentLoaded", () => {
+		main();
+	})
+	</script>
+</body>
+</html>

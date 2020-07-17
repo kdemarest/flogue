@@ -40,9 +40,27 @@ const PotionImgChoices = {
 	eRegeneration: 	{ img: "item/potion/roundedGold.png" },
 	eCureDisease:	{ img: "item/potion/roundedGreen.png" },
 	eCurePoison:	{ img: "item/potion/roundedBlack.png" },
-	eResistance: 	{ img: "item/potion/roundedBlue.png" },
+	eResistBurn:	{ img: "item/potion/roundedBlue.png" },
+	eResistFreeze:	{ img: "item/potion/roundedBlue.png" },
+	eResistShock:	{ img: "item/potion/roundedBlue.png" },
+	eResistWater:	{ img: "item/potion/roundedBlue.png" },
+	eResistLight:	{ img: "item/potion/roundedBlue.png" },
+	eResistCorrode:	{ img: "item/potion/roundedBlue.png" },
+	eResistPoison:	{ img: "item/potion/roundedBlue.png" },
+	eResistSmite:	{ img: "item/potion/roundedBlue.png" },
+	eResistRot:		{ img: "item/potion/roundedBlue.png" },
+	eResistSuffocate: { img: "item/potion/roundedBlue.png" },
 	eBravery:	 	{ img: "item/potion/roundedMagenta.png" },
-	eImmunity: 		{ img: "item/potion/roundedSilver.png" },
+	eImmuneBurn:	{ img: "item/potion/roundedSilver.png" },
+	eResistFreeze:	{ img: "item/potion/roundedSilver.png" },
+	eImmuneShock:	{ img: "item/potion/roundedSilver.png" },
+	eImmuneWater:	{ img: "item/potion/roundedSilver.png" },
+	eImmuneLight:	{ img: "item/potion/roundedSilver.png" },
+	eImmuneCorrode:	{ img: "item/potion/roundedSilver.png" },
+	eImmunePoison:	{ img: "item/potion/roundedSilver.png" },
+	eImmuneSmite:	{ img: "item/potion/roundedSilver.png" },
+	eImmuneRot:		{ img: "item/potion/roundedSilver.png" },
+	eImmuneSuffocate: { img: "item/potion/roundedSilver.png" },
 // Harm / Debuff
 	ePoison: 		{ img: "item/potion/squatBlack.png" },
 	eBurn: 			{ img: "item/potion/squatRed.png" }, 
@@ -61,7 +79,8 @@ const PotionImgChoices = {
 // Senses
 	eBlindness: 	{ img: "item/potion/tubeBlack.png" },
 	eCureBlindness:	{ img: "item/potion/tubeBlackBlue.png" },
-	eBlindImmunity:	{ img: "item/potion/tubeBlackSilver.png" },
+	eResistBlind:	{ img: "item/potion/tubeBlackSilver.png" },
+	eImmuneBlind:	{ img: "item/potion/tubeBlackSilver.png" },
 	eSeeInvisible: 	{ img: "item/potion/tubeGrayStripe.png" },
 	eSenseXray: 	{ img: "item/potion/tubeWhite.png" },
 	eDarkVision:	{ img: "item/potion/tubeGold.png" },
@@ -101,8 +120,12 @@ const PotionEffects = Object.filter(EffectTypeList, (e,k)=>[
 	'eHealing','eCureDisease','eCurePoison','eCureBlindness','eOdorless','eRegeneration',
 	// Drinking something that makes you physcially change - faster, slower, invisible, smelly
 	'eHaste','eSlow','eJump2','eJump3','eJump4','eInvisibility','eStink',
+	// You can resist physical stuff by drinking things
+	'eResistBurn','eResistFreeze','eResistShock','eResistPoison','eResistRot','eResistSuffocate','eResistBlind',
+	// You can be immune to physical stuff by drinking things
+	'eImmuneBurn','eImmuneFreeze','eImmuneShock','eImmunePoison','eImmuneRot','eImmuneSuffocate','eImmuneBlind',
 	// These seem less legit to me. It could be that something else should provide resistances
-	'eResistance','eImmunity','eVulnerability','eBlindImmunity',
+	'eVulnerability',
 	// Certain kinds of mind alteration, that you could achieve with drugs IRL
 	'eConfusion','eRage','ePanic','eBravery',
 	// Splash damage from water or acid is sensible. Maybe we should make them generally blast2 or better.
@@ -122,7 +145,8 @@ const SpellEffects = Object.filter(EffectTypeList, (e,k)=>[
 
 const RingEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Since rings are rarest, most of their capabilities are awesome, with senseTreasure being the odd man out.
-	'eSenseSmell','eOdorless','eRegeneration','eResistance','eSenseTreasure','eMobility','eSeeInvisible'
+	'eSenseSmell','eOdorless','eRegeneration','eSenseTreasure','eMobility','eSeeInvisible',
+	'eResistRot','eResistSmite','eResistBurn','eResistFreeze','eResistShock','eResistPoison','eResistSuffocate',
 	].includes(k) );
 
 // Weapons only keep their magic for a little while. Apply runes in order to re-enhance them
@@ -143,12 +167,12 @@ const WeaponEffects = Object.filter(EffectTypeList, (e,k)=>[
 //const AmmoEffects = Object.filter(EffectTypeList, (e,k)=>['eSmite','eSmite3','eSmite5','eSmite7','ePoison','eBurn','eFreeze','eBlindness','eSlow','eConfusion'].includes(k) );
 
 const ShieldEffects = Object.filter(EffectTypeList, (e,k)=>[
-	'eStun','eShove','eDeflect','eDeflectRot','eResistance'
+	'eStun','eShove','eDeflect','eDeflectRot','eResistBurn','eResistShock','eResistCorrode','eImmuneCorrode'
 	].includes(k) );
 
 const HelmEffects = Object.filter(EffectTypeList, (e,k)=>[
-	// All armor can provide resistances, but it probably isn't their best use.
-	'eResistance',
+	// Guarding your eyes seems legit.
+	'eResistBlind',
 	// A shining beacon of light for the player.
 	'eLight',
 	// A couple of permanently useful visions you might want, but smell and xray are purposely omitted.
@@ -164,12 +188,12 @@ const HelmEffects = Object.filter(EffectTypeList, (e,k)=>[
 const ArmorEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Multiple armor pieces and rings can provide regen, each adding 1%
 	'eRegeneration',
-	// All armor can provide resistances, but it probably isn't their best use.
-	'eResistance'
+	// Body armor can keep you warm,and shunt acid
+	'eResistFreeze', 'eResistCorrode',
 	].includes(k) );
 
 const CloakEffects = Object.filter(EffectTypeList, (e,k)=>[
-	'eInvisibility', 'eOdorless', 'eRechargeFast', 'eResistance'
+	'eInvisibility', 'eOdorless', 'eRechargeFast', 'eResistBurn', 'eResistFreeze'
 	].includes(k) );
 
 const BracersEffects = Object.filter(EffectTypeList, (e,k)=>[
@@ -178,7 +202,12 @@ const BracersEffects = Object.filter(EffectTypeList, (e,k)=>[
 
 const BootsEffects = Object.filter(EffectTypeList, (e,k)=>[
 	// Multiple armor pieces and rings can provide regen, each adding 1%
-	'eOdorless','eJump2','eJump3','eRegeneration','eImmunity','eFlight','eResistance'
+	'eOdorless','eJump2','eJump3','eRegeneration','eFlight','eResistShove'
+	].includes(k) );
+
+const AmuletEffects = Object.filter(EffectTypeList, (e,k)=>[
+	// Multiple armor pieces and rings can provide regen, each adding 1%
+	'eRegeneration','eResistRot','eResistSmite','eResistPoison'
 	].includes(k) );
 
 // Gaps in the bow effects are shock (reserved for darts), and stun/slow/shove (reserved for slings)
@@ -683,7 +712,7 @@ const ArmorVarietyList = ({ //Type.establish('ArmorVariety',{},{
 	"chain": 		{ power: 10, rarity: 1.0, xArmor: 1.00, fixins: 'ingotIron', img: 'item/armor/chain.png' },
 	"steelPlate": 	{ power: 15, rarity: 1.0, xArmor: 1.00, fixins: 'ingotIron', img: 'item/armor/steelPlate.png' },
 	"trollHideArmor": { power: 20, rarity: 1.0, xArmor: 1.00, fixins: 'troll hide', img: 'item/armor/trollHide.png' },
-	"elven": 		{ power: 30, rarity: 1.0, xArmor: 1.00, fixins: 'chitin', img: 'item/armor/elven.png.png' },
+	"elven": 		{ power: 30, rarity: 1.0, xArmor: 1.00, fixins: 'chitin', img: 'item/armor/elven.png' },
 	"chitin": 		{ power: 35, rarity: 1.0, xArmor: 1.00, matter: 'chitin', fixins: 'chitin', img: 'item/armor/chitin.png' },
 	"dwarven": 		{ power: 45, rarity: 1.0, xArmor: 1.00, fixins: 'chitin', img: 'item/armor/dwarven.png' },
 	"ice": 			{ power: 50, rarity: 1.0, xArmor: 1.00, matter: 'liquid', fixins: 'ice block', img: 'item/armor/ice.png',
@@ -784,25 +813,51 @@ const GloveVarietyList = ({ //Type.establish('GloveVariety',{},{
 
 
 
-const VeinVarietyList = ({ //Type.establish('VeinVariety',{},{
-	"veinCoal": 	{ power:  0, rarity:  1.0, name: "coal vein", mineId: 'coal', img: 'ore/oreLumpBlack.png' },
-	"veinTin": 		{ power:  5, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin', img: 'ore/oreMetalWhite.png' },
-	"veinCopper": 	{ power:  5, rarity:  0.8, name: "copper ore vein", mineId: 'oreCopper', img: 'ore/oreMetalOrange.png' },
-	"veinIron": 	{ power: 10, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron', img: 'ore/oreMetalBlack.png' },
-	"veinSilver": 	{ power: 30, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver', img: 'ore/oreMetalWhite.png' },
-	"veinGold": 	{ power: 45, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold', img: 'ore/oreMetalYellow.png' },
-	"veinPlatinum": { power: 55, rarity:  0.3, name: "platinum ore vein", mineId: 'orePlatinum', img: 'ore/oreMetalBlue.png' },
-	"veinLunarium": { power: 75, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium', img: 'ore/oreGemCyan.png' },
-	"veinSolarium": { power: 60, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium', img: 'ore/oreGemYellow.png' },
-	"veinDeepium": 	{ power: 85, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium", img: 'ore/oreGemBlack.png' },
-	"veinGarnet": 	{ power: 20, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", img: 'ore/oreGemPurple.png', isGemOre: true },
-	"veinOpal": 	{ power: 35, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", img: 'ore/oreGemWhite.png', isGemOre: true },
-	"veinRuby": 	{ power: 40, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", img: 'ore/oreGemRed.png', isGemOre: true },
-	"veinEmerald": 	{ power: 50, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", img: 'ore/oreGemGreen.png', isGemOre: true },
-	"veinSapphire": { power: 65, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", img: 'ore/oreGemBlue.png', isGemOre: true },
-	"veinDiamond": 	{ power: 80, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", img: 'ore/oreGemWhite.png', isGemOre: true },
+const VeinImageList = ({ //Type.establish('VeinVariety',{},{
+	"veinCoal": 	{ img: 'ore/oreLumpBlack.png' },
+	"veinTin": 		{ img: 'ore/oreMetalGray.png' },
+	"veinCopper": 	{ img: 'ore/oreMetalOrange.png' },
+	"veinIron": 	{ img: 'ore/oreMetalRed.png' },
+	"veinSilver": 	{ img: 'ore/oreMetalSilver.png' },
+	"veinGold": 	{ img: 'ore/oreMetalYellow.png' },
+	"veinPlatinum": { img: 'ore/oreMetalBlue.png' },
+	"veinLunarium": { img: 'ore/oreGemCyan.png' },
+	"veinSolarium": { img: 'ore/oreGemYellow.png' },
+	"veinDeepium": 	{ img: 'ore/oreGemBlack.png' },
+	"veinGarnet": 	{ img: 'ore/oreGemPurple.png' },
+	"veinOpal": 	{ img: 'ore/oreGemWhite.png' },
+	"veinRuby": 	{ img: 'ore/oreGemRed.png' },
+	"veinEmerald": 	{ img: 'ore/oreGemGreen.png' },
+	"veinSapphire": { img: 'ore/oreGemBlue.png' },
+	"veinDiamond": 	{ img: 'ore/oreGemWhite.png' },
 	// must be last!
-	"veinNone": 	{ power:  0, rarity: 0.001, isNone: true, name: "ore vein", img: 'ore/oreVein.png' },
+	"veinNone": 	{ img: 'ore/oreVein.png' },
+});
+
+function mapTypeId(list) {
+	Object.each( list, (data,key)=>{data.typeId=key;} );
+	return list;
+}
+
+const VeinVarietyList = mapTypeId({ //Type.establish('VeinVariety',{},{
+	"veinCoal": 	{ power:  0, rarity:  1.0, name: "coal vein", mineId: 'coal' },
+	"veinTin": 		{ power:  5, rarity:  1.0, name: "tin ore vein", mineId: 'oreTin' },
+	"veinCopper": 	{ power:  5, rarity:  0.8, name: "copper ore vein", mineId: 'oreCopper' },
+	"veinIron": 	{ power: 10, rarity:  0.8, name: "iron ore vein", mineId: 'oreIron' },
+	"veinSilver": 	{ power: 30, rarity:  0.5, name: "silver ore vein", mineId: 'oreSilver' },
+	"veinGold": 	{ power: 45, rarity:  0.3, name: "gold ore vein", mineId: 'oreGold' },
+	"veinPlatinum": { power: 55, rarity:  0.3, name: "platinum ore vein", mineId: 'orePlatinum' },
+	"veinLunarium": { power: 75, rarity:  0.2, name: "lunarium ore vein", mineId: 'oreLunarium' },
+	"veinSolarium": { power: 60, rarity:  0.2, name: "solarium ore vein", mineId: 'oreSolarium' },
+	"veinDeepium": 	{ power: 85, rarity:  0.1, name: "deepium ore vein", mineId: "oreDeepium" },
+	"veinGarnet": 	{ power: 20, rarity:  0.3, name: "garnet ore vein", mineId: "gem.garnet", isGemOre: true },
+	"veinOpal": 	{ power: 35, rarity:  0.3, name: "opal ore vein", mineId: "gem.opal", isGemOre: true },
+	"veinRuby": 	{ power: 40, rarity:  0.2, name: "ruby ore vein", mineId: "gem.ruby", isGemOre: true },
+	"veinEmerald": 	{ power: 50, rarity:  0.2, name: "emerald ore vein", mineId: "gem.emerald", isGemOre: true },
+	"veinSapphire": { power: 65, rarity:  0.2, name: "sapphire ore vein", mineId: "gem.sapphire", isGemOre: true },
+	"veinDiamond": 	{ power: 80, rarity:  0.1, name: "diamond ore vein", mineId: "gem.diamond", isGemOre: true },
+	// must be last!
+	"veinNone": 	{ power:  0, rarity: 0.001, isNone: true, name: "ore vein" },
 });
 
 
@@ -811,7 +866,7 @@ const OreVarietyList = ({ //Type.establish('OreVariety',{},{
 	"oreTin": 		{ power:  2, rarity: 1.0, name: "tin ore", img: 'ore/oreMetalWhite.png', scale: 0.5 },
 	"oreIron": 		{ power:  5, rarity: 0.8, name: "iron ore", img: 'ore/oreMetalBlack.png', scale: 0.5 },
 	"oreCopper": 	{ power: 10, rarity: 0.6, name: "copper ore", img: 'ore/oreMetalOrange.png', scale: 0.5 },
-	"oreSilver": 	{ power: 15, rarity: 0.5, name: "silver ore", img: 'ore/oreMetalWhite.png', scale: 0.5 },
+	"oreSilver": 	{ power: 15, rarity: 0.5, name: "silver ore", img: 'ore/oreMetalSilver.png', scale: 0.5 },
 	"oreGold": 		{ power: 20, rarity: 0.3, name: "gold ore", img: 'ore/oreMetalYellow.png', scale: 0.5 },
 	"oreMalachite": { power: 25, rarity: 0.3, name: "malachite shards", img: 'ore/oreGemGreen.png', scale: 0.5 },
 	"oreLunarium": 	{ power: 30, rarity: 0.2, name: "lunarium ore", img: 'ore/oreGemCyan.png', scale: 0.5 },
@@ -898,7 +953,7 @@ const StuffVarietyList = ({ //Type.establish('StuffVariety',{},{
 		mineSpeed: 0.2,
 		isShovel: true,
 		effects: { eInert: EffectTypeList.eInert},
-		img: 'item/stuff/shovel.png'
+		img: 'item/tool/shovel.png'
 	},
 	"wood":				{ rarity: 0.6, matter: 'wood', xPrice:  0.1, isWood: 1 },
 	"leather":			{ rarity: 0.6, matter: 'leather', xPrice:  0.1, isLeather: 1, recipe: 'part isAnimal isSkin' },
@@ -1330,7 +1385,7 @@ let ItemTypeList = {
 		glow: 1,
 		isDecor: true,
 		sign: "Glorious light streams from this strange rift in reality.",
-		img: "dc-dngn/mana/fontSolar.png"
+		img: "terrain/fontSolar.png"
 	},
 	"fontDeep": {
 		symbol: 'D',
@@ -1349,7 +1404,7 @@ let ItemTypeList = {
 		lightDestroys: 3,
 		isDecor: true,
 		sign: "Sinister anti-light plagues this unsettling rift in reality.",
-		img: "dc-dngn/mana/fontDeep.png"
+		img: "terrain/fontDeep.png"
 	},
 // ORE VEINS
 	"vein":    {
@@ -1361,9 +1416,11 @@ let ItemTypeList = {
 		opacity: 	1,
 		isWall: 	true,
 		noneChance: 0.90,
-		imgChooseFn: self => self.variety.img,
+		zOrder:		Tile.zOrder.VEIN,
+		imgBg:		'oreVein.png',
+		imgChooseFn: self => self.imgChoices[self.variety.typeId].img,
 		matter: 	'stone',
-		imgChoices: VeinVarietyList,
+		imgChoices: VeinImageList,
 		varieties: 	VeinVarietyList,
 		mineSwings: 14
 	},
@@ -1418,7 +1475,7 @@ let ItemTypeList = {
 		isTreasure: 	1,
 		isKey: 			true,
 		noSell: 		true,
-		img: 			"UNUSED/other/key.png",
+		img: 			"item/misc/key.png",
 		icon: 			'/gui/icons/key.png'
 	},
 // TREASURE
@@ -1483,7 +1540,7 @@ let ItemTypeList = {
 	"gem": 		{
 		symbol: 		"g",
 		isTreasure: 	1,
-		name:		 	'{quality} {variety}${+plus}{?effect}',
+		name:		 	'{quality} {variety} $ {?effect}',
 		matter: 		'crystal',
 		qualities: 		GemQualityList,
 		varieties: 		GemVarietyList,
@@ -1664,6 +1721,21 @@ let ItemTypeList = {
 		triggerOnUseIfHelp: true,
 		effectDecorate: { duration: true },
 		img:			"item/armour/boots2_jackboots.png",
+		icon:			'/gui/icons/boots.png'
+	},
+	"amulet": {
+		isTreasure: 	1,
+		name:		 	"amulet{?effect}",
+		matter: 		'stone',
+		durability:		Rules.armorDurability(100),
+		slot: 			Slot.NECK,
+		isAmulet: 		true,
+		effects: 		AmuletEffects,
+		effectWhen: 	'use',
+		useVerb: 		'wear',
+		triggerOnUseIfHelp: true,
+		effectDecorate: { duration: true },
+		img:			"item/amulet.png",
 		icon:			'/gui/icons/boots.png'
 	},
 	"ring": {
@@ -1873,7 +1945,7 @@ ItemTypeList.altar.onTickRound = function() {
 	this.light = this.rechargeLeft ? 0 : ItemTypeList.altar.light;
 }
 
-ItemTypeList.table.imgChoose = function(map,x,y) {
+ItemTypeList.table.imgDetermine = function(map,x,y) {
 	let w = map.findItemAt(x-1,y).filter(item=>item.isTable).count;
 	let e = map.findItemAt(x+1,y).filter(item=>item.isTable).count;
 	if( e || w ) {
@@ -1890,13 +1962,13 @@ ItemTypeList.table.imgChoose = function(map,x,y) {
 }
 
 
-ItemTypeList.bed.imgChoose = function(map,x,y) {
+ItemTypeList.bed.imgDetermine = function(map,x,y) {
 	let n = map.findItemAt(x,y-1).filter(item=>item.isBed).first;
 	this.img = this.imgChoices[n?'head':'foot'].img;
 }
 
 
-ItemTypeList.sign.imgChoose = function(map,x,y) {
+ItemTypeList.sign.imgDetermine = function(map,x,y) {
 	let tile = map.tileTypeGet(x,y);
 	let item = map.findItemAt(x,y).filter(item=>!item.mayWalk).first;
 	if( !tile.mayWalk || item ) {

@@ -235,9 +235,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 
 	function postProcess(map, entityList) {
 		map.traverse( (x,y,tile) => {
-			if( tile.imgChoose ) {
+			if( tile.imgDetermine ) {
 				let tile = map.getTileEntity(x,y);
-				tile.imgChoose.call(tile,map,x,y);
+				tile.imgDetermine.call(tile,map,x,y);
 				console.assert( typeof tile.img == 'string' );
 			}
 		});
@@ -247,9 +247,9 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 					item.sign = String.capitalize(JobTypeList[entity.jobId].name || 'NONAME');
 				});
 			}
-			if( item.imgChoose ) {
-				item.imgChoose.call(item,map,item.x,item.y);
-				console.assert( typeof item.img == 'string' );
+			if( item.imgDetermine ) {
+				item.imgDetermine.call(item,map,item.x,item.y);
+				console.assert( PixiImageRepo.isValidImg(item.img) );
 			}
 		});
 		new Finder( entityList ).forEach( entity => {

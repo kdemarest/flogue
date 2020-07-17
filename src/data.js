@@ -146,6 +146,7 @@ let Tile = {
 		FLOOR: 6,
 		TILE: 8,
 		WALL: 10,
+		VEIN: 11,
 		GATE: 20,
 		TABLE: 24,
 		DECOR: 22,
@@ -177,7 +178,7 @@ const QuickName = ['','clumsy','normal','nimble','lithe'];
 
 let ResistanceList = [];
 
-const MiscImmunity = { SPEED: "speed", STUN: "stun", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField", HEALING: "healing" };
+const MiscImmunity = { SPEED: "speed", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField", HEALING: "healing" };
 ResistanceList.push(...Object.values(MiscImmunity));
 
 // WARNING: the damage type names are re-used in their icon names in StickerList. Maintain both.
@@ -185,6 +186,9 @@ const DamageType = { CUT: "cut", STAB: "stab", BITE: "bite", CLAW: "claw", CHOP:
 					BURN: "burn", FREEZE: "freeze", WATER: "water", LIGHT: "light", SHOCK: "shock",
 					CORRODE: "corrode", POISON: "poison", SMITE: "smite", ROT: "rot", SUFFOCATE: 'suffocate' };
 ResistanceList.push(...Object.values(DamageType));
+
+const ConditionType = { STUN: "stun", IMMOBILE: "immobile", POSSESS: "possess" };
+ResistanceList.push(...Object.values(ConditionType));
 
 const Damage = {
 	All: 		Object.values(DamageType).join(',')+','+Object.values(MiscImmunity).join(','),

@@ -4,16 +4,23 @@
 /*
 Options:
 size						- the x,y size for the final processed image
+url							- a source URL to pull this thing from, when not already cached
+
+resize: true				- turn this off if you need to make sure that multiple frames of an image must stay aligned
+autocrop: 0.0				- shrinks the edges down to only pixels <strip> alpha or above. Set false to not autocrop.
+
 normalize: false			- auto-adjust the image brightness and contrast
 brightness: 0.0				- Adjust the brightness plus or minus
 contrast: 0					- Adjust the contrast up or down
 desaturate: 0				- Desaturates the image, from 0.0 to 1.0 
+ungradient: null			- Removes a background gradient. 0x20 is common
+despeckle: null				- Removes singleton dots from the image. despeckle: 3 does 3 passes
 
 flying: 0					- 1 means appear as if flying by placing the shadow as low as possible.
 glow: null					- A color to make the thing glow. Nullifies shadow and outline.
 strip: null					- Remove all translucency less opaque than this. Cleans up speckles.
 sweep: fn					- Process every single pixel, returning a color to change it to, or null if no change needed
-edgeFade: 0					- Fade the edges of the image N pixels deep, where N is a percentage of image width, to remove hard pixel edges. Default = 0
+edgeFade: 0					- Fade the edges of the image N pixels deep, where N is a decimal percentage of image width, to remove hard pixel edges. Default = 0
 
 bgFlood.find				- find pixels of this color
 bgFlood.remove				- and then floodfill with this color and remove all found
@@ -93,7 +100,11 @@ DirSpec = {
 		shadow: false,
 		outline: false,
 	},
+	"item/armor": {
+		size: 96,
+	},
 	"item/": {
+		edgeFade: 0.01,
 		size: 96
 	},
 	"decor/": {
@@ -107,6 +118,11 @@ DirSpec = {
 	"effect/":  {
 		size: 96
 	},
+	"ore/": {
+		size: 96,
+		shadow: false,
+		outline: false,
+	},
 	"plant/":  {
 		size: 96
 	},
@@ -114,7 +130,10 @@ DirSpec = {
 		size: 96
 	},
 	"part/":  {
-		size: 96
+		size: 96,
+		shadow: false,
+		threshold: 0x20,
+		edgeFade: 0.01,
 	},
 	"terrain/": {
 		size: 96,
@@ -147,6 +166,7 @@ FilterDefault = {
 	outline: {
 		thickness: 0.03,
 		threshold: 0x20,
-		color: '#000000FF'
+		color: '#000000FF',
+		antialias: true
 	},
 };

@@ -225,6 +225,9 @@ let Type = new class {
 			if( policy.onFinalize ) {
 				policy.onFinalize( typeData, typeId, checker );
 			}
+			if( checker && policy.onValidate ) {
+				policy.onValidate( typeData, typeId, checker );
+			}
 		});
 	}
 }
