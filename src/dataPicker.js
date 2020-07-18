@@ -68,7 +68,7 @@ class Picker {
 			typeId: 'eInert',
 			name: 'inert',
 			level: 0,
-			rarity: 0,		// Keep me. This appears weaird, because code below checks for 0, but we LATER check again for eInert
+			rarity: 0,		// Keep me. This appears weird, because code below checks for 0, but we LATER check again for eInert
 			isInert: 1
 		};
 		let l0 = { level: 0 };
@@ -93,9 +93,7 @@ class Picker {
 
 			let vRarityTotal = 0;
 			let vAppearTotal = 0;
-			if( item.typeId == 'mushroomBread' ) {
-				debugger;
-			}
+
 			let varietyArray = Object.values( item.varieties || one );
 			for( let vIndex=0 ; vIndex < varietyArray.length ; ++vIndex ) {
 				let v = varietyArray[vIndex];
@@ -131,6 +129,13 @@ class Picker {
 							continue;
 						}
 
+						let levelWithoutEffect = Math.max( 0, (item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) );
+						if( filter.atLevel && levelWithoutEffect < depth ) {
+							//debugger;
+							//console.log('Rejecting ',ii,vi,mi,qi);
+							continue;
+						}
+
 						// WARNING! If the items has an effect: set, then no matter what you specify for the effect (like eInert) it simply
 						// won't happen and the effect specified will ALWAYS be what it gets. They only way to make that effect
 						// specifyable or simetimes-occuring is to set effectChance:100 and effects: { myEffectid: { theEffect }}
@@ -157,7 +162,8 @@ class Picker {
 							let id = ii+(!v.skip?'.'+vi:'')+(!m.skip?'.'+mi:'')+(!q.skip?'.'+qi:'')+(!e.skip && !e.isInert?'.'+ei:'');
 							//if( done[id] ) { debugger; continue; }
 							//done[id] = 1;
-							let level = Math.max(0,(item.level||0) + (v.level||0) + (m.level||0) + (q.level||0) + (e.isInert ? 0 : (e.level||0)));
+							let level = Math.max( 0, levelWithoutEffect + (e.isInert ? 0 : (e.level||0)) );
+
 							let appear = ChanceToAppear.Ramp(level,depth);
 
 							let rarity;
@@ -298,11 +304,16 @@ pickItem()
 		// Make a table with all the chances to appear figured out.
 		let p = new Pick.Table().scanArray( table, thing=> thing.appear*thing.rarity );
 		// Pick an item, based on chance to appear.
+		// NOTE: If we are just calling checkSupply then depth will be zero and all it
+		// cares about if that there was SOMETHING to pick from.
 		let depth = this.depth;
 		let choice = p.total ? p.pick() : function() {
 			// If all the items have zero chance to appear, then choose an item
 			// closest in level to the current depth, with the most common rarity.
 			table.sort( (a,b) => a.level == b.level ? b.rarity-a.rarity : Math.abs(a.level-depth)-Math.abs(b.level-depth) );
+			if( depth > 0 && table.length > 1 ) {
+			//	debugger;
+			}
 			return table[0];
 		}();
 		return choice;
@@ -317,8 +328,8 @@ pickItem()
 		let makeList = new Finder( Array.supplyToMake(supplyArray,Rules.xLootFrequency) );
 		let list = [];
 		makeList.forEach( make => {
-			let any = (''+make.typeFilter).toLowerCase()==='any';
-			let type = this.pickItem( [any ? '' : make.typeFilter,any ? 'isTreasure' : ''].join(' ').trim() );
+			let any = Picker.testAny(make.typeFilter);
+			let type = this.pickItem( Picker.defaultToTreasure(any,make.typeFilter) );
 			if( !type ) {
 				debugger;
 				return;
@@ -495,11 +506,16 @@ class SupplyFilter {
 		if( filterString ) {
 			filterString = filterString.trim();
 		}
-		filterString.replace( /\s*(!)*(is|may|bit|of)*(\S+|\S+)/g, ( whole, not, is, token ) => {
+		filterString.replace( /\s*(!)*(is|may|bit|of|at)*(\S+|\S+)/g, ( whole, not, is, token ) => {
 			if( is ) {
 				if( is == 'of' ) {
 					// special case hack to detect matter
 					this.matter = token.toLowerCase();
+				}
+				else
+				if( is == 'at' ) {
+					// special case hack to detect matter
+					this.atLevel = true;
 				}
 				else {
 					(not ? this.killIs.push(is+token) : this.keepIs.push(is+token));
@@ -536,6 +552,13 @@ class SupplyFilter {
 }
 
 
+Picker.testAny = function(typeFilter) {
+	return (''+typeFilter).toLowerCase()==='any';
+}
+
+Picker.defaultToTreasure = function(any,typeFilter) {
+	return [any ? '' : typeFilter,any ? 'isTreasure' : ''].join(' ').trim();
+}
 
 Picker.filterStringParse = function(filterString) {
 	return new SupplyFilter().parse(filterString);

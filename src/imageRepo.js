@@ -5,19 +5,26 @@ let HourglassURI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAA
 let imgSTANDBY		= 1;
 let imgREQUESTED	= 2;
 let imgPENDING		= 3;
-let imgLOADED		= 4;
-let imgSPREAD		= 5;
+let imgPROCESSING	= 4;
+let imgREADY		= 5;
 
 function DefaultImgChooseFn(self) {
 	return self.img;
 }
 
+function imageLoad(imgUrl,onLoadFn) {
+	let img = new Image();
+	img.onload = ()=>onLoadFn(img);
+	img.src = imgUrl;
+	return img;
+}
+
+
 class PixiImageRepo {
-	constructor(loader) {
-		this.imgPathList		= {};
-		this.imgChooseFnList	= {};
-		this.loader  			= loader;
-		this.loading 			= false;
+	constructor(onLoadFn) {
+		this.imgList			= {};
+		this.imgStateList		= {};
+		this.onLoadFn			= onLoadFn;
 		this.placeholderResource = {
 			isPlaceholder: true,
 			texture: PIXI.Texture.fromImage(HourglassURI)
@@ -26,122 +33,174 @@ class PixiImageRepo {
 	}
 	scanTypes() {
 
-		let addImg = (img) => {
+		let addImgPath = (img) => {
 			if( img === undefined ) {
 				debugger;
 			}
 			if( !img ) {
 				return;
 			}
+
 			//console.log(imgPath);
-			let imgPath = IMG_BASE+img;
-			this.imgPathList[imgPath] = this.imgPathList[imgPath] || imgSTANDBY;
+			let imgStem = (typeof img === 'string' ? img : img.src );
+			if( imgStem.substring(0,1) == '/' ) {
+				imgStem = imgStem.substr(1);
+			}
+			this.imgList[imgStem] = img;
+			let imgPath = IMG_BASE + imgStem;
+			this.imgStateList[imgPath] = this.imgStateList[imgPath] || imgSTANDBY;
 		}
 
-		function scan(typeId,type,member) {
-			if( type[member] ) {
-				if( typeId ) {
-					self.imgChooseFnList[typeId] = type.imgChooseFn || DefaultImgChooseFn;
+		function scanForIcons(type) {
+			if( type.icon ) 				{ addImgPath( type.icon ); }
+			if( type.effect ) {
+				if( type.effect.icon )		{ addImgPath( type.effect.icon ); }
+				if( type.effect.iconCloud )	{ addImgPath( type.effect.iconCloud ); }
+				if( type.effect.iconOver )	{ addImgPath( type.effect.iconOver ); }
+			}
+		}
+
+		// Pick up all icons
+		Type.traverse( (type,typeId,policy) => {
+			scanForIcons(type);
+			['qualities','materials','varieties','effects'].forEach( member => {
+				if( type[member] ) {
+					Object.each( type[member], ref => {
+						scanForIcons( ref );
+					});
 				}
-				addImg(type[member]);
-			}
-		}
+			});
+		});
 
-		function scanIcon(typeList,member) {
-			for( let t in typeList ) {
-				scan(null,typeList[t],member);
-			}
-		}
-		function scanTypeList(typeList,member) {
-			for( let typeId in typeList ) {
-				let type = typeList[typeId];
-				scan( typeId, type, member );
-				if( type.effect ) {
-					scan( null, type.effect, 'icon' );
-					scan( null, type.effect, 'iconCloud' );
-					scan( null, type.effect, 'iconOver' );
+		// Find all the img URLs
+		Type.traverse( (type,typeId,policy) => {
+			['qualities','materials','varieties','effects'].forEach( member => {
+				if( type[member] ) {
+					Object.each( type[member], ref => {
+						if( ref.img ) {
+							addImgPath( ref.img );
+						}
+					});
+				}
+			});
+			if( type.imgChoices ) {
+				for( let key in type.imgChoices ) {
+					if( type.imgChoices[key].img ) {
+						addImgPath( type.imgChoices[key].img || type.imgDefault );
+					}
 				}
 			}
+			if( type.img ) {
+				addImgPath(type.img);
+			}
+		});
+
+		console.log('Found',Object.count(this.imgStateList));
+	}
+
+	request(imgPath) {
+		console.assert( this.imgStateList[imgPath] === imgSTANDBY );
+		this.imgStateList[imgPath] = imgREQUESTED;
+	}
+
+	getStateList(stateList) {
+		Object.each( this.imgStateList, (state,imgPath) => {
+			if( state == imgREQUESTED ) {
+				stateList.requested.push(imgPath);
+			}
+			if( state == imgPENDING ) {
+				stateList.pending.push(imgPath);
+			}
+			if( state == imgREADY ) {
+				stateList.ready.push(imgPath);
+			}
+		});
+		return stateList;
+	}
+
+	requestAll() {
+		Object.each( this.imgStateList, (state,imgPath) => {
+			this.request( imgPath );
+		});
+	}
+
+	tick() {
+		Object.each( this.imgStateList, (state,imgPath) => {
+			if( state == imgREQUESTED ) {
+				this.imgStateList[imgPath] = imgPENDING;
+				let imgStem = imgPath.substring( IMG_BASE.length )
+				Jimp.read( imgPath ).then( buffer => {
+					this.imgStateList[imgPath] = imgPROCESSING;
+					this.onLoadFn( imgStem, buffer, this.imgList[imgStem] );
+				});
+			}
+		});
+	}
+}
+
+PixiImageRepo.isValidImg = (img) => {
+	return typeof img === 'string' || typeof img.src === 'string';
+}
+
+class ImageMaker {
+	constructor(imageRepo) {
+		this.resources = {};
+		this.repo = new PixiImageRepo( this.postProcess.bind(this) );
+		this.imgChooseFnList	= {};
+		this.resetMinimapHandle = null;
+	}
+
+	async postProcess( imgStem, jimpImage, img ) {
+
+		if( typeof img !== 'string' ) {
+			debugger;
+			if( img.resize === undefined ) {
+				img.resize = false;
+			}
+			if( img.size === undefined ) {
+				img.size = false;
+			}
+			if( img.autocrop === undefined ) {
+				img.autocrop = false;
+			}
+			await filterImageInPlace(jimp,jimpImage,img);
 		}
 
+		let nativeImageData = await jimpImage.getBase64Async( Jimp.AUTO );
 
-		// Pre-load all of the images by running the real imagGets with the SECOND variable forced to each
-		// variation of imgChoices. It is the responsibilty of the type to implement this properly.
-		for( let symbol in SymbolToType ) {
-			let type = SymbolToType[symbol];
-			console.assert( this.imgChooseFnList[type.typeId] === undefined );
-			this.imgChooseFnList[type.typeId] = type.imgChooseFn || DefaultImgChooseFn;
+		let imgPath = IMG_BASE+imgStem;
+		let nativeImage = new Image(jimpImage.bitmap.width, jimpImage.bitmap.height);
+		nativeImage.onload = async () => {
+			this.resources[imgStem] = {
+				texture: PIXI.Texture.from( nativeImage )
+			};
+
+			console.log('img ready',imgStem);
+
+			this.repo.imgStateList[imgPath] = imgREADY;
+			guiMessage( 'imgReady', imgStem );
+
+			clearTimeout( this.resetMinimapHandle );
+			this.resetMinimapHandle = setTimeout( ()=>guiMessage('resetMinimap'), 1000 );
+		}
+		nativeImage.src = nativeImageData;
+	}
+
+
+	scanTypes() {
+		this.repo.scanTypes();
+		Type.traverse( (type,typeId,policy) => {
+			if( !type.img && !type.imgChoices ) {
+				return;
+			}
+			console.assert( this.imgChooseFnList[typeId] === undefined );
+			this.imgChooseFnList[typeId] = type.imgChooseFn || DefaultImgChooseFn;
 			if( type.imgChooseFn && !type.imgChoices ) {
 				// if you make a chooseFn then you MUST enumerate all possible imgChoices so that
 				// we can scan through and pre-load them.
 				debugger;
 			}
-			if( type.imgChoices ) {
-				for( let key in type.imgChoices ) {
-					addImg( type.imgChoices[key].img || type.imgDefault );
-				}
-			}
-			else {
-				addImg(type.img);
-			}
-			if( type.icon ) {
-				addImg( type.icon );
-			}
-		}
-
-		let self = this;
-		scanTypeList(StickerList,'img');
-		Object.each( ItemTypeList, itemType => {
-			if( !itemType.noScan ) {
-				scanTypeList( itemType.qualities || {},'img');
-				scanTypeList( itemType.materials || {},'img');
-				scanTypeList( itemType.varieties || {},'img');
-				scanTypeList( itemType.effects || {},'img');
-			}
 		});
-		scanIcon(EffectTypeList,'icon');
-
-		console.log('Found',Object.count(this.imgPathList));
-	}
-
-	request(imgPath) {
-		console.assert( this.imgPathList[imgPath] === imgSTANDBY );
-		this.imgPathList[imgPath] = imgREQUESTED;
-	}
-
-	tick() {
-		if( this.loading ) {
-			return;
-		}
-
-		let addList = [];
-		Object.each( this.imgPathList, (state,imgPath) => {
-			if( state == imgREQUESTED ) {
-				addList.push(imgPath);
-				this.imgPathList[imgPath] = imgPENDING;
-			}
-		});
-
-		if( addList.length ) {
-			console.logImgLoader('Loading '+addList.length);
-			this.loading = true;
-			this.loader.add(addList).load( ()=>this.onLoadComplete() );
-		}
-	}
-
-	onLoadComplete() {
-		Object.each( this.imgPathList, (state,imgPath) => {
-			if( state == imgPENDING ) {
-				this.imgPathList[imgPath] = imgLOADED;
-				let img = imgPath.substring( IMG_BASE.length )
-				console.logImgLoader('Loader propagating',img);
-				guiMessage( 'imgLoaded', img );
-				this.imgPathList[imgPath] = imgSPREAD;
-			}
-		});
-		guiMessage('resetMinimap');
-		this.loading = false;
-		console.logImgLoader('Loading complete');
 	}
 
 	getImg(entity) {
@@ -150,28 +209,30 @@ class PixiImageRepo {
 		return entity.img;
 	}
 
-	getResourceByImg(imgWithoutBase) {
-		let imgPath = IMG_BASE+imgWithoutBase;
-		let state = this.imgPathList[imgPath];
+	getResourceByImg(img) {
+		let isString = typeof img === 'string';
+		let imgStem = isString ? img : img.src;
+		let imgPath = IMG_BASE+imgStem;
+		let state = this.repo.imgStateList[imgPath];
 		if( state === undefined ) {
 			// Not a detected img!
 			debugger;
 		}
-		if( state == imgLOADED || state == imgSPREAD ) {
-			return this.loader.resources[imgPath];
+		if( state == imgREADY ) {
+			return this.resources[imgStem];
 		}
 		if( state == imgSTANDBY ) {
-			this.request(imgPath);
+			this.repo.request(imgPath);
 		}
-		return this.placeholderResource;
+		return this.repo.placeholderResource;
 	}
-
 	getResource(entity) {
 		return this.getResourceByImg( this.getImg(entity) );
 	}
 
 	getImgFullPath(entity) {
-		return IMG_BASE+this.getImg(entity);
+		let imgStem = this.getImg(entity);
+		return IMG_BASE + (typeof imgStem === 'string' ? imgStem : imgStem.src);
 	}
 
 	createSprite(img) {
@@ -182,10 +243,15 @@ class PixiImageRepo {
 		}
 		return pixiSprite;
 	}
+
+	tick() {
+		this.repo.tick();
+	}
 }
 
 return {
-	PixiImageRepo: PixiImageRepo
+	PixiImageRepo: PixiImageRepo,
+	ImageMaker: ImageMaker
 }
 
 });

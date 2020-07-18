@@ -81,7 +81,7 @@ class Entity {
 			inits.experience 		= monsterType.experience || 0;
 		}
 		else {
-			let hits = monsterType.power.split(':');
+			let hits = monsterType.brawn.split(':');
 			let hitsToKillMonster 	= parseFloat(hits[0]);
 			let hitsToKillPlayer 	= parseFloat(hits[1]);
 			inits.healthMax 		= Rules.monsterHealth(level,hitsToKillMonster);
@@ -145,7 +145,7 @@ class Entity {
 			naturalMeleeWeapon.damage = Math.max(1,Math.floor(Rules.playerDamage(level)*damageWhenJustStartingOut));
 		}
 		else {
-			let hitsToKillPlayer = parseFloat( monsterType.power.split(':')[1] );
+			let hitsToKillPlayer = parseFloat( monsterType.brawn.split(':')[1] );
 			naturalMeleeWeapon.damage = Rules.monsterDamage(level,hitsToKillPlayer);
 		}
 
@@ -2029,13 +2029,13 @@ class Entity {
 		//
 		// Sneak damage only can happen for Quick.LITHE weapons, the very fastest. Otherwise there is a whooshing sound that victim would hear
 		let isSneak = false;
-		if( !isOngoing && !isCharge && attacker && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=Quick.LITHE ) {
+		if( !isOngoing && !isCharge && attacker && attacker.isMonsterType && !this.canPerceiveEntity(attacker) && item && item.getQuick()>=Quick.LITHE ) {
 			isSneak = true;
 			amount *= attacker.sneakAttackMult||2;	// perk touches stat directly.
 		}
 
 		//
-		// Harm Armor
+		// Harm or Break Armor
 		//
 		let armorHit = null;
 		let armorBroke = false;
@@ -2047,7 +2047,7 @@ class Entity {
 			if( index < armorList.count ) {
 				armorHit = armorList.result[index];
 				let result = {};
-				armorHit.checkDurability(result);
+				armorHit.harmDurability(amount,damageType,result);
 				armorHit.checkBreakChance(result);
 				if( armorHit.dead ) {
 					armorBroke = result;
@@ -2647,7 +2647,7 @@ class Entity {
 	}
 
 	partsGenerate() {
-		if( this.isIncorporeal || this.isEnergy ) {
+		if( this.dropParts === false ) {
 			// Eventually you only get parts from incorporeal and energy beings when you kill them with the right
 			// kind of silk touch weaponry.
 			return [];
@@ -3201,18 +3201,12 @@ class Entity {
 		if( this.control !== Control.EMPTY ) {
 			tell(mSubject|mCares,this,' ',mVerb,'spend', ' time recovering.');
 		}
-		return {
-			status: 'loseturn',
-			success: true
-		}
+		return makeResult( 'loseturn', true );
 	}
 
 	actWait() {
 		tell(mSubject|mCares,this,' ',mVerb,'wait','.');
-		return {
-			status: 'wait',
-			success: true
-		}
+		return makeResult( 'wait', true );
 	}
 
 	createGateEffect( gate ) {
@@ -3617,6 +3611,14 @@ class Entity {
 	}
 
 	actOnCommand() {
+		let result = this._actOnCommand();
+		if( !result || result.success === undefined ) {
+			debugger;
+			result = { success: true };
+		}
+		return result;
+	}
+	_actOnCommand() {
 		if( this.command == undefined ) debugger;
 
 		switch( this.command ) {
@@ -3723,26 +3725,23 @@ class Entity {
 				if( Random.chance100(15) ) {
 					tell(mSubject,this,': ',this.sayPrayer || '<praying...>');
 				}
-				return {
-					status: 'pray',
-					success: true
-				}
+				return makeResult('pray',true);
 			}
 			case Command.DEBUGTEST: {
 				guiMessage('runTest','playFullGame');
-				break;
+				return makeResult('Debug',true);
 			}
 			case Command.DEBUGKILL: {
 				let target = this.commandTarget;
 				tell(mSubject,target,' killed.');
 				target.health = -1000;
-				break;
+				return makeResult('Debug',true);
 			}
 			case Command.DEBUGTHRIVE: {
 				this.healthMax = 100000;
 				this.health = this.healthMax;
 				this.damage = 100000;
-				break;
+				return makeResult('Debug',true);
 			}
 			case Command.DEBUGVIEW: {
 				if( !this.senseTreasure ) {
@@ -3754,12 +3753,14 @@ class Entity {
 					this.senseLiving = false;
 				}
 				guiMessage('revealMinimap');
-				break;
+				return makeResult('Debug',true);
 			}
 			case Command.DEBUGANIM: {
-				break;
+				return makeResult('Debug',true);
 			}
 		};
+		// We should never reach this
+		debugger;
 	}
 	mayDon(item) {
 		return item.slot && this.bodySlots && this.bodySlots[item.slot] && this.getItemsInSlot(item.slot).count < this.bodySlots[item.slot];
@@ -3876,6 +3877,9 @@ class Entity {
 	}
 
 	act() {
+		console.assert( this.commandSpeed === undefined || this.commandSpeed === 0 );
+		this.commandSpeed = 0;
+
 		let dir = Direction.fromCommand(this.command);
 		if( this.isDead() ) {
 			if( this.isSpectator && dir !== false ) {
@@ -3886,7 +3890,6 @@ class Entity {
 					this.y = y;
 				}
 			}
-			this.commandSpeed = 0;
 			return true;
 		}
 
@@ -3894,7 +3897,6 @@ class Entity {
 		// Move a direction, or take an action
 		//
 		if( this.command === Command.NONE ) {
-			this.commandSpeed = 0;
 			return false;
 		}
 
@@ -3911,11 +3913,16 @@ class Entity {
 			if( this.isUser && result.success ) {
 				guiMessage('hideInfo','user moved');
 			}
+			if( Direction.fromCommand(this.command) !== false ) {
+				result = makeResult('failedMove',true);
+			}
 		}
 
 		if( !result || !result.success ) {
 			result = this.actOnCommand();
-			this.commandSpeed = Command.Free.includes(this.command) ? 0 : this.speedAction;
+			//if( this.isUser ) debugger;
+			let zeroTime = Command.Free.includes(this.command) || result.passesTime === false;
+			this.commandSpeed = zeroTime ? 0 : this.speedAction;
 		}
 
 		console.watchCommand( this, this.command, result );

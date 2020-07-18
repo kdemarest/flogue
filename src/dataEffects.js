@@ -8,7 +8,7 @@ const PickBlock   		= [DamageType.CUT,DamageType.STAB,DamageType.CHOP,DamageType
 
 /**
 
-	level
+	power (always zero so as not to tint item calculation)
 	isInert
 	rarity
 	op
@@ -26,16 +26,51 @@ onTargetPosition	- if the victim is moving around, things like burn have effects
 
 */
 
+let makeResist = function( damageType, damageTypeName, inject ) {
+	return Object.assign(
+		{}, 
+		{
+			isBuf: 1,
+			isHelp: 1,
+			rarity: 1.00,
+			op: 'add',
+			stat: 'resist',
+			value: damageType,
+			name: 'resist '+damageTypeName+'',
+			icon: 'gui/icons/eResist.png',
+			about: 'Suffer only half the effect of '+damageTypeName+'.'
+		},
+		inject
+	);
+}
+
+let makeImmune = function( damageType, damageTypeName, inject ) {
+	return Object.assign(
+		{},
+		 {
+			isBuf: 1,
+			isHelp: 1,
+			rarity: 0.30,
+			op: 'add',
+			stat: 'immune',
+			value: damageType,
+			xDuration: 4.0,
+			name: 'immunity to '+damageTypeName,
+			icon: 'gui/icons/eImmune.png',
+			about: 'Target becomes immune to '+damageTypeName+'.'
+		},
+		inject
+	);
+}
+
 let EffectTypeList = {
 	eInert: {
-		level: 0,
 		isInert: 1,
 		testSkip: true
 
 		// Very important not to have rarity 0
 	}, // this is special, used in the picker effect proxy! Do not change!
 	eKillLabel: {
-		level: 0,
 		rarity: 1.00,
 		op: 'killLabel',
 		duration: 0,
@@ -46,7 +81,6 @@ let EffectTypeList = {
 //=============================================================================
 	eLight: {
 		isTac: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'max',
 		stat: 'light',
@@ -59,7 +93,6 @@ let EffectTypeList = {
 	},
 	eDark: {
 		isTac: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'add',
 		stat: 'dark',
@@ -72,7 +105,6 @@ let EffectTypeList = {
 	},
 	eDarkVision: {
 		isTac: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'max',
 		stat: 'senseDarkVision',
@@ -85,7 +117,6 @@ let EffectTypeList = {
 	},
 	eSenseTreasure: {
 		isTac: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'set',
 		stat: 'senseTreasure',
@@ -98,7 +129,6 @@ let EffectTypeList = {
 	},
 	eSenseLiving: {
 		isTac: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'set',
 		stat: 'senseLiving',
@@ -111,7 +141,6 @@ let EffectTypeList = {
 	},
 	eSeeInvisible: {
 		isTac: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'set',
 		stat: 'senseInvisible',
@@ -124,7 +153,6 @@ let EffectTypeList = {
 	},
 	eSenseXray: {
 		isTac: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'set',
 		stat: 'senseXray',
@@ -137,7 +165,6 @@ let EffectTypeList = {
 	},
 	eSenseSmell: {
 		isTac: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'set',
 		stat: 'senseSmell',
@@ -149,7 +176,6 @@ let EffectTypeList = {
 	},
 	eTeleport: {
 		isTac: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'teleport',
 		random: true,
@@ -162,7 +188,6 @@ let EffectTypeList = {
 	},
 	eBlink: {
 		isTac: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'teleport',
 		targetMe: true,
@@ -177,7 +202,6 @@ let EffectTypeList = {
 	},
 	eGate: {
 		isTac: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'gate',
 		targetMe: true,
@@ -192,7 +216,6 @@ let EffectTypeList = {
 	},
 	eOdorless: {
 		isTac: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'max',
 		stat: 'scentReduce',
@@ -204,7 +227,6 @@ let EffectTypeList = {
 	},
 	eStink: {
 		isTac: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'max',
 		stat: 'stink',
@@ -216,7 +238,6 @@ let EffectTypeList = {
 	},
 	eMap: {
 		isTac: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'custom',
 		customFn: () => guiMessage('revealMinimap')
@@ -226,7 +247,6 @@ let EffectTypeList = {
 //=============================================================================
 	eFlight: {
 		isBuf: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'set',
 		stat: 'travelMode',
@@ -241,9 +261,9 @@ let EffectTypeList = {
 	},
 	eJump2: {
 		isBuf: 1,
-		level: 0,
-		rarity: 0.50,
-		op: 'set',
+		rarity: 1.0,
+		xPrice: 0.2,
+		op: 'max',
 		stat: 'jumpMax',
 		value: 2,
 		isHelp: 1,
@@ -252,18 +272,28 @@ let EffectTypeList = {
 	},
 	eJump3: {
 		isBuf: 1,
-		level: 0,
-		rarity: 0.50,
-		op: 'set',
+		rarity: 0.80,
+		xPrice: 0.2,
+		op: 'max',
 		stat: 'jumpMax',
 		value: 3,
 		isHelp: 1,
 		icon: 'gui/icons/eHaste.png',
 		about: 'Improve your jump distance to 3.'
 	},
+	eJump4: {
+		isBuf: 1,
+		rarity: 0.60,
+		xPrice: 0.2,
+		op: 'max',
+		stat: 'jumpMax',
+		value: 4,
+		isHelp: 1,
+		icon: 'gui/icons/eHaste.png',
+		about: 'Improve your jump distance to 4.'
+	},
 	eHaste: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.30,
 		op: 'mult',
 		stat: 'speedAction',
@@ -279,7 +309,6 @@ let EffectTypeList = {
 	},
 	eBravery: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'add',
 		stat: 'immune',
@@ -292,7 +321,6 @@ let EffectTypeList = {
 	},
 	eClearMind: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'add',
 		stat: 'immune',
@@ -305,7 +333,6 @@ let EffectTypeList = {
 	},
 	eStalwart: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'add',
 		stat: 'immune',
@@ -318,7 +345,6 @@ let EffectTypeList = {
 	},
 	eIronWill: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.30,
 		op: 'add',
 		stat: 'immune',
@@ -331,7 +357,6 @@ let EffectTypeList = {
 	},
 	eMentalFence: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'add',
 		stat: 'resist',
@@ -345,7 +370,6 @@ let EffectTypeList = {
 	},
 	eMentalWall: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.05,
 		op: 'add',
 		stat: 'immune',
@@ -357,21 +381,35 @@ let EffectTypeList = {
 		icon: 'gui/icons/eImmune.png',
 		about: 'Longer immunity to panic, confusion and hesitation.'
 	},
-	eResistance: {
-		isBuf: 1,
-		level: 0,
-		rarity: 0.50,
-		op: 'add',
-		stat: 'resist',
-		valuePick: () => pick(PickResist),
-		isHelp: 1,
-		name: 'resist {value}s',
-		icon: 'gui/icons/eResist.png',
-		about: 'Suffer only half the effect of {value}.'
-	},
+
+	eResistBurn:	makeResist( DamageType.BURN, 'fire' ),
+	eResistFreeze:	makeResist( DamageType.FREEZE, 'cold' ),
+	eResistShock:	makeResist( DamageType.SHOCK, 'shock' ),
+	eResistWater:	makeResist( DamageType.WATER, 'water' ),
+	eResistLight:	makeResist( DamageType.LIGHT, 'light' ),
+	eResistCorrode:	makeResist( DamageType.CORRODE, 'acid' ),
+	eResistPoison:	makeResist( DamageType.POISON, 'poison' ),
+	eResistSmite:	makeResist( DamageType.SMITE, 'smite' ),
+	eResistRot:		makeResist( DamageType.ROT, 'rot' ),
+	eResistSuffocate:makeResist( DamageType.SUFFOCATE, 'suffocation' ),
+	eResistBlind:	makeResist( 'senseBlind', 'blindness' ),
+	eResistShove:	makeResist( 'shove', 'shoving' ),
+
+	eImmuneBurn:	makeImmune( DamageType.BURN, 'fire' ),
+	eImmuneFreeze:	makeImmune( DamageType.FREEZE, 'cold' ),
+	eImmuneShock:	makeImmune( DamageType.SHOCK, 'shock' ),
+	eImmuneWater:	makeImmune( DamageType.WATER, 'water' ),
+	eImmuneLight:	makeImmune( DamageType.LIGHT, 'light' ),
+	eImmuneCorrode:	makeImmune( DamageType.CORRODE, 'acid' ),
+	eImmunePoison:	makeImmune( DamageType.POISON, 'poison' ),
+	eImmuneSmite:	makeImmune( DamageType.SMITE, 'smite' ),
+	eImmuneRot:		makeImmune( DamageType.ROT, 'rot' ),
+	eImmuneSuffocate:makeImmune( DamageType.SUFFOCATE, 'suffocation' ),
+	eImmuneBlind:	makeImmune( 'senseBlind', 'blindness' ),
+	eImmuneShove:	makeImmune( 'shove', 'shoving' ),
+
 	eDeflect: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'add',
 		stat: 'resist',
@@ -383,7 +421,6 @@ let EffectTypeList = {
 	},
 	eDeflectRot: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'add',
 		stat: 'resist',
@@ -395,7 +432,6 @@ let EffectTypeList = {
 	},
 	eBlock: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'add',
 		stat: 'resist',
@@ -407,7 +443,6 @@ let EffectTypeList = {
 	},
 	eInvisibility: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'set',
 		stat: 'invisible',
@@ -421,21 +456,8 @@ let EffectTypeList = {
 		icon: 'gui/icons/eInvisible.png',
 		about: 'Target becomes invisible to sight.'
 	},
-	eIgnore: {
-		isBuf: 1,
-		level: 0,
-		rarity: 1.00,
-		op: 'add',
-		stat: 'immune',
-		valuePick: () => pick(PickIgnore),
-		isHelp: 1,
-		name: 'ignore {value}',
-		icon: 'gui/icons/eImmune.png',
-		about: 'Target is no longer affected by {value}.'
-	},
 	eRechargeFast: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'max',
 		stat: 'rechargeRate',
@@ -447,7 +469,6 @@ let EffectTypeList = {
 	},
 	eMobility: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'add',
 		stat: 'immune',
@@ -459,7 +480,6 @@ let EffectTypeList = {
 	},
 	eAssassin: {
 		isBuf: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'max',
 		stat: 'sneakAttackMult',
@@ -476,7 +496,6 @@ let EffectTypeList = {
 // All debuffs are reduced duration or effectiveness based on (critterLevel-potionLevel)*ratio
 	eStun: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'set',
 		isHarm: 1,
@@ -488,7 +507,6 @@ let EffectTypeList = {
 	},
 	eShove: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.50,
 		op: 'shove',
 		isHarm: 1,
@@ -499,7 +517,6 @@ let EffectTypeList = {
 	},
 	eHesitate: {
 		isDeb: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'set',
 		stat: 'attitude',
@@ -512,7 +529,6 @@ let EffectTypeList = {
 	},
 	eStartle: {
 		isDeb: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'set',
 		stat: 'attitude',
@@ -525,7 +541,6 @@ let EffectTypeList = {
 	},
 	eVulnerability: {
 		isDeb: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'add',
 		isHarm: 1,
@@ -541,7 +556,6 @@ let EffectTypeList = {
 	// eNoseless - note there is no way to debuff the ability to smell. You must instead mask your own scent.
 	eSlow: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'mult',
 		isHarm: 1,
@@ -554,7 +568,6 @@ let EffectTypeList = {
 	},
 	eBlindness: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.30,
 		op: 'set',
 		isHarm: 1,
@@ -568,7 +581,6 @@ let EffectTypeList = {
 	},
 	eConfusion: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'set',
 		stat: 'attitude',
@@ -581,7 +593,6 @@ let EffectTypeList = {
 	},
 	ePanic: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'set',
 		stat: 'attitude',
@@ -594,7 +605,6 @@ let EffectTypeList = {
 	},
 	eRage: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'set',
 		stat: 'attitude',
@@ -607,7 +617,6 @@ let EffectTypeList = {
 	},
 	ePacify: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.40,
 		op: 'set',
 		stat: 'attitude',
@@ -620,7 +629,6 @@ let EffectTypeList = {
 	},
 	eAlliance: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.40,
 		op: 'set',
 		stat: 'team',
@@ -634,7 +642,6 @@ let EffectTypeList = {
 	eTame: {
 		isDeb: 1,
 		isHarm: 1,
-		level: 0,
 		rarity: 1,
 		op: 'tame',
 		xDuration: 0.5,
@@ -646,7 +653,6 @@ let EffectTypeList = {
 	eThrall: {
 		isDeb: 1,
 		isHarm: 1,
-		level: 0,
 		rarity: 1,
 		op: 'tame',
 		xDuration: 0.5,
@@ -657,7 +663,6 @@ let EffectTypeList = {
 	},
 	ePossess: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.20,
 		op: 'possess',
 		isHarm: 1,
@@ -668,7 +673,6 @@ let EffectTypeList = {
 	},
 	eImmobilize: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.40,
 		op: 'set',
 		isHarm: 1,
@@ -681,7 +685,6 @@ let EffectTypeList = {
 	},
 	eDrain: {
 		isDeb: 1,
-		level: 0,
 		rarity: 0.40,
 		op: 'drain',
 		isHarm: 1,
@@ -693,7 +696,6 @@ let EffectTypeList = {
 //=============================================================================
 	eHealing: {
 		isHel: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'heal',
 		xDamage: 6.00,
@@ -705,7 +707,6 @@ let EffectTypeList = {
 	},
 	eRegeneration: {
 		isHel: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'add',
 		stat: 'regenerate',
@@ -718,7 +719,6 @@ let EffectTypeList = {
 	},
 	eTrollBlood: {
 		isHel: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'add',
 		stat: 'regenerate',
@@ -731,7 +731,6 @@ let EffectTypeList = {
 	},
 	eCurePoison: {
 		isHel: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'strip',
 		stripFn: deed => deed.isPoison || deed.damageType == DamageType.POISON,
@@ -742,7 +741,6 @@ let EffectTypeList = {
 	},
 	eCureDisease: {
 		isHel: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'strip',
 		stripFn: deed => deed.isDisease,
@@ -751,12 +749,21 @@ let EffectTypeList = {
 		icon: 'gui/icons/eHeal.png',
 		about: 'Cures any disease on the target.'
 	},
+	eCureBlindness: {
+		isHel: 1,
+		rarity: 1.00,
+		op: 'strip',
+		stripFn: deed => deed.stat == 'senseBlind',
+		isHelp: 1,
+		duration: 0,
+		icon: 'gui/icons/eHeal.png',
+		about: 'Removes blindness from the target.'
+	},
 //
 // Damage effects
 //=============================================================================
 	eBash: {
 		isDmg: 1,
-		level: 0,
 		rarity: 0.00,
 		op: 'damage',
 		xDamage: 1.00,
@@ -769,7 +776,6 @@ let EffectTypeList = {
 	},
 	eWater: {
 		isDmg: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'damage',
 		xDamage: 1.00,
@@ -783,7 +789,6 @@ let EffectTypeList = {
 	},
 	eBurn: {
 		isDmg: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'damage',
 		xDamage: 1.00,
@@ -797,7 +802,6 @@ let EffectTypeList = {
 	},
 	eFreeze: {
 		isDmg: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'damage',
 		xDamage: 0.80,
@@ -811,7 +815,6 @@ let EffectTypeList = {
 	},
 	eShock: {
 		isDmg: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'damage',
 		xDamage: 0.70,
@@ -824,7 +827,6 @@ let EffectTypeList = {
 	},
 	eSmite: {
 		isDmg: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'damage',
 		xDamage: 1.00,
@@ -838,7 +840,6 @@ let EffectTypeList = {
 	},
 	eRot: {
 		isDmg: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'damage',
 		xDamage: 0.2,
@@ -851,7 +852,6 @@ let EffectTypeList = {
 	},
 	eAcid: {
 		isDmg: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'damage',
 		xDamage: 0.30,
@@ -864,7 +864,6 @@ let EffectTypeList = {
 	},
 	ePoison: {
 		isDmg: 1,
-		level: 0,
 		rarity: 1.00,
 		op: 'damage',
 		xDamage: 0.50,
@@ -877,7 +876,6 @@ let EffectTypeList = {
 	},
 	ePoisonForever: {
 		isDmg: 1,
-		level: 0,
 		rarity: 0.01,
 		op: 'damage',
 		xDamage: 0.05,
@@ -891,7 +889,6 @@ let EffectTypeList = {
 	},
 	eLeech: {
 		isDmg: 1,
-		level: 0,
 		rarity: 0.30,
 		op: 'damage',
 		xDamage: 0.70,
@@ -933,6 +930,7 @@ EffectTypeList = Type.establish(
 	'EffectType',
 	{
 		defaults: {
+			power: 0,
 			isEffect: true
 		},
 		onRegister: (effectType) => {

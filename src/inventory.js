@@ -4,16 +4,16 @@ Module.add('inventory',function() {
 	class Inventory {
 	};
 
-	Inventory.lootGenerate = function( lootSpec, level ) {
+	Inventory.lootGenerate = function( lootSpec, depth ) {
 		let itemList = [];
-		new Picker(level).pickLoot( lootSpec, item=>{
+		new Picker(depth).pickLoot( lootSpec, item=>{
 			item._addToListAndBunch(itemList);
 		});
 		return itemList;
 	}
 
-	Inventory.lootTo = function( target, lootSpec, level, originatingEntity, quiet, onEachRaw, onEachGiven ) {
-		let itemList = Inventory.lootGenerate( lootSpec, level );
+	Inventory.lootTo = function( target, lootSpec, depth, originatingEntity, quiet, onEachRaw, onEachGiven ) {
+		let itemList = Inventory.lootGenerate( lootSpec, depth );
 		Inventory.giveTo( target, itemList, originatingEntity, quiet, onEachRaw, onEachGiven);
 		return itemList;
 	}

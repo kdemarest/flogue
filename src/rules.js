@@ -5,6 +5,7 @@ let Rules = new class {
 		Object.assign( this, {
 			DEPTH_MIN: 0,
 			DEPTH_MAX: 19,
+			POWER_MAX: 100,
 			SCENT_AGE_LIMIT: 100000,
 			ARMOR_EFFECT_CHANCE_TO_FIRE: 10,
 			ARMOR_EFFECT_CHANCE_TO_FIRE_MAX: 25,
@@ -75,6 +76,9 @@ let Rules = new class {
 			blast5: 5.0,
 			blast6: 6.0
 		};
+	}
+	depthToPower(depth) {
+		return Math.floor( (Math.min(depth,this.DEPTH_MAX)/this.DEPTH_MAX) * this.POWER_MAX );
 	}
 	armorDurability(fightsToLast) {
 		return Math.floor( fightsToLast * this.expectedHitsPerMonster / this.numTypesOfArmor );
@@ -285,9 +289,10 @@ Rules.ItemBag = (function() {
 		ammo: 	[	15.0, 	 0.30,	  0.1,	['material','effect','variety'], ],
 		shield: [	 3.0, 	 0.25,	  3.0,	['material','effect','variety'], ],
 		helm: 	[	 2.5, 	 0.15,	  2.5,	['variety','effect'], ],
-		armor: 	[	 7.0, 	 0.10,	  8.0,	['variety','effect'], ],
+		armor: 	[	 7.0, 	 0.15,	  8.0,	['variety','effect'], ],
 		cloak: 	[	 3.0, 	 0.20,	  8.0,	['variety','effect'], ],
-		bracers:[	 2.0, 	 0.15,	  3.5,	['variety','effect'], ],
+		bracers:[	 1.0, 	 0.15,	  3.5,	['variety','effect'], ],
+		amulet:	[	 1.0, 	 0.70,	  1.5,	['effect'], ],
 		gloves: [	 0.5, 	 0.50,	  1.0,	['variety','effect'], ],
 		boots: 	[	 2.0, 	 0.15,	  1.8,	['variety','effect'], ],
 		ring: 	[	 2.0, 	 0.50,	  6.0,	['material','effect'], ],

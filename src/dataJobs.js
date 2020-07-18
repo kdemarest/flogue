@@ -36,7 +36,7 @@ let JobTypeList = {
 		sign: "Concoctions to change your outlook!",
 		carrying: 
 			'6x 70% potion.eHealing, 2x 90% potion.eCureDisease, 2x 90% potion.eCurePoison, 2x 90% potion.eSeeInvisible, '+
-			'1x 50% potion.eFlight, 1x 50% potion.eHaste, 1x 50% potion.eInvisibility, '+
+			'4x 50% potion.eJump3, 4x 50% potion.eJump4, 1x 50% potion.eHaste, 1x 50% potion.eInvisibility, '+
 			'20x 50% potion, 10x 50% stuff ofLiquid, 10x seed, 8x 80% vial'
 	},
 	botanist: {
@@ -68,7 +68,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isSpell || item.isPaper,
-		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,/*bonus:1,*/charges:1,price:1},
 		sign: "Arcane scribing for the gifted!",
 		carrying: '20x 50% spell'
 	},
@@ -79,7 +79,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isArmor || item.isShield || item.isOre || item.ofMetal,
-		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,/*bonus:1,*/charges:1,price:1},
 		sign: "Come back safe and sound!",
 		carrying: '15x 50% armor, 6x 50% helm, 6x 50% bracers, 15x 50% shield, 20x 50% armor'
 	},
@@ -89,7 +89,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isCloak || item.isGloves || item.isFabricIngredient,
-		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,bonus:1,charges:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,/*bonus:1,*/charges:1,price:1},
 		sign: "The finest clothes and cloaks!",
 		carrying: '10x cloak, 5x gloves, 10x 50% stuff isFabricIngredient'
 	},
@@ -100,7 +100,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isWeapon || item.isAmmo || item.isOre || item.ofMetal || item.isDart,
-		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,/*bonus:1,*/charges:1,price:1},
 		sign: "Defend yourself, or press the attack!",
 		carrying: '20x weapon, 20x 50% weapon, 10x stuff ofMetal, 5x ammo.dart'
 	},
@@ -112,7 +112,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isBow || item.isAmmo || item.mayThrow,
-		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,bonus:1,charges:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,damage:1,/*bonus:1,*/charges:1,price:1},
 		sign: "Shoot from a distance to triumph safely!",
 		carrying: '20x 50% weapon.bow, 40x ammo.arrow, 5x weapon mayThrow, 5x 50% weapon mayShoot'
 	},
@@ -124,7 +124,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isBoots,
-		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,bonus:1,charges:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,/*bonus:1,*/charges:1,price:1},
 		sign: "Shoes and boots that last!",
 		carrying: '10x boots, 20x 50% boots, 12x 50% weapon.sling, 20x ammo isSlingable'
 	},
@@ -137,7 +137,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isGloves || item.isSling,
-		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,/*bonus:1,*/price:1},
 		sign: "Gloves for any hand!",
 		carrying: '10x gloves, 10x 50% gloves, 6x 50% weapon.sling, 10x ammo isSlingable'
 	},
@@ -148,7 +148,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isGem || item.isJewelry,
-		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,/*bonus:1,*/price:1},
 		sign: "The finest gems, custom cut!",
 		carrying: '20x 50% gem'
 	},
@@ -159,7 +159,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isJewelry || item.isGem || item.isOre,
-		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,/*bonus:1,*/price:1},
 		sign: "Rings, amulets, you name it!",
 		carrying: '10x 50% ring'
 	},
@@ -171,9 +171,9 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isTreasure,
-		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,/*bonus:1,*/charges:1,price:1},
 		sign: "I sell goods of all kinds!",
-		carrying: '10x stuff, 10x 50% stuff, 5x 50% ammo.dart, 2x stuff isLight, 7x 50% vial, 5x 50% charm'
+		carrying: '1x charm.batFigurine, 10x stuff, 10x 50% stuff, 5x 50% ammo.dart, 2x stuff isLight, 7x 50% vial, 5x 50% charm'
 	},
 	glassBlower: {
 		name: 'glass blower',
@@ -182,7 +182,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isTreasure && item.matter=='glass',
-		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,armor:1,damage:1,/*bonus:1,*/charges:1,price:1},
 		sign: "I blow glass objects of both delicacy and strength!",
 		carrying: '2x weapon ofGlass, 2x armor ofGlass, 2x helm ofGlass, 2x shield ofGlass, 2x boots ofGlass, 2x bracers ofGlass, 12x 90% vial, 3x stuff.lantern'
 	},
@@ -194,7 +194,7 @@ let JobTypeList = {
 		attitude: Attitude.AWAIT,
 		tether: 2,
 		buyTest: item => item.isOre || item.isArmor || item.isWeapon || item.ofMetal,
-		colFilter: {slot:1,key:1,icon:1,description:1,bonus:1,price:1},
+		colFilter: {slot:1,key:1,icon:1,description:1,/*bonus:1,*/price:1},
 		sign: "Raw material from the depths!",
 		carrying: '20x ore, 20x 50% ore, 2x weapon.pickaxe, 4x stuff isLight' // This made them use dark lamps!!! , 2x stuff isLight'
 	},

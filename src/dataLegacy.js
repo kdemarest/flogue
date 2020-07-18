@@ -104,10 +104,13 @@ By default like perks do NOT stack - they are each assigned a singularId and tha
 // Do it singly, then more forcefully, then to groups: push into pits, walls or hazards
 // Deprive the ability to hear (alerts), to speak (can't cast or alert friends), and eventually to breath
 // Push any direction, pull enemies that prefer to stay at range or make one arrive sooner
+// AoE push-away to get breathing room
 // Assisted jump, fly, speedier run +25%, +50%
+// Swap places with victim, so you swap then push them into pits, fires etc.
 // Deflect incoming arrows, potions, etc with a passive wind defense
 // Throw or shoot things longer distances: darts, potions, maybe not arrows
-// On the moon air mages lose all their powers
+// In vacuum air mages lose all their powers, except they can uniquely easily make air bubbles to breathe
+// Blow wind to spread fire or increase fire damage duration, blow blinding sand, etc.
 LegacyList.airMage = compose('air mage',[
 
 	range( [1,8,16], (index) => ({
@@ -182,7 +185,12 @@ LegacyList.airMage = compose('air mage',[
 //===================================================
 // Archer
 //
+// Maybe we should convert this to "hunter", who knows how to set snares, immitate
+// many animal calls to distract, divert or calm; camoflage, know vulnerabilities
+// and have pretty decent Habeology.
+//
 // High Concept: Master of the bow
+// Toss an object into a room, then shoot it to explode
 LegacyList.archer = compose( 'archer', [
 	range( [1,3,5,7,9,11,13,15,17,19], (index) => ({
 		name: 'Marksman +'+((index+1)*10)+'%',
@@ -345,6 +353,9 @@ allow the use to select a point to blink to...
 
 //===================================================
 // Brawler
+// Lift enemies of (small, med, large, huge) with one open hand (leave it unarmed) and smash them to the ground
+// Hurl eneies of same sizes as Lift across the room and into hazardous terrain, or just
+// bash damage against a wall. Or into eachother, knocking all prone.
 //
 LegacyList.brawler = compose('brawler',[
 	range( [1,5,9,13,17], (index) => ({
@@ -480,6 +491,9 @@ LegacyList.druid = compose('druid',[
 // High Concept: Primal forces of earth are yours to command
 // Simply walk through stone as if it were air
 // Make temporary stone walls, slow enemies with mud, quiksand, or rubble terrain
+// Walls don't solve your real problems, so make them cheap.
+// Make pits for enemies to fall into. Maybe even LOTS of random pits.
+// Crack the ceiling and make rocks fall on their heads. (helmets halve this damage; fliers may be downed and stunned)
 // Defend yourself with skin of stone, which also defeats knockback and shove due to your weight
 // Bludgeon is your forte, with special skill with a hammer
 // Tremors knock foes prone

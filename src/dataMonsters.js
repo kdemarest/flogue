@@ -11,120 +11,152 @@ Type.register('Part', {
 	blood: 		{
 		matter: 'liquid',
 		makes: ['eRechargeFast', 'eBlindness', 'eRage', 'eHealing', 'eRegeneration', 'eWater'],
+		img: 'part/blood.png',
 	},
 	eye: 		{
 		matter: 'flesh',
 		makes: ['eLight', 'eDark', 'eDarkVision', 'eSeeInvisible', 'eSenseXray'],
-	},
-	ear: 		{
-		matter: 'flesh',
-		makes: ['eSenseLiving', 'eConfusion'],
-	},
-	nose: 		{
-		matter: 'flesh',
-		makes: ['eSenseSmell', 'ePanic', 'eOdorless'],
+		img: 'part/eye.png',
 	},
 	tongue: 	{
 		matter: 'flesh',
 		makes: ['eShove', 'eHesitate', 'eStartle'],
+		img: 'part/tongue.png',
 	},
 	skin: 	{
 		matter: 'leather',
 		makes: [],
+		img: 'part/skin.png',
 	},
 	brain: 		{
 		matter: 'flesh',
 		makes: ['eSenseTreasure', 'eBravery', 'eClearMind', 'eStalwart', 'eMentalFence','ePacify','eAlliance','eTame','eThrall'],
+		img: 'part/brain.png',
 	},
 	bone: 		{
 		matter: 'bone',
 		makes: [],
-		augs: { augBlast:1 },
+		img: 'part/bone.png',
 	},
 	skull: 		{
 		matter: 'bone',
 		makes: ['eIronWill', 'eSlow'],
+		img: 'part/skull.png',
 	},
 	tooth:		{
 		matter: 'bone',
-		makes: ['eAssassin', 'eBash', 'eResistance'],
+		makes: ['eAssassin', 'eBash'],
+		img: 'part/tooth.png',
 	},
 	claw:		{
 		matter: 'bone',
 		makes: ['eJump2', 'eMobility'],
+		img: 'part/claw.png',
+	},
+	horn:		{
+		matter: 'bone',
+		makes: ['eJump2', 'eMobility'],
+		img: 'part/horn.png',
 	},
 	heart:		{
 		matter: 'flesh',
 		makes: ['eSenseLiving', 'ePossess', 'eSmite'],
+		img: 'part/heart.png',
 	},
 	liver:		{
 		matter: 'flesh',
 		makes: ['eVulnerability', 'eCurePoison', 'eCureDisease'],
+		img: 'part/liver.png',
 	},
 	gland:		{
 		matter: 'flesh',
 		makes: ['eStink', 'eDrain', 'eAcid', 'ePoison'],
+		img: 'part/gland.png',
+	},
+	tentacle:	{
+		matter: 'flesh',
+		makes: ['eStink', 'eDrain', 'eAcid', 'ePoison'],
+		img: 'part/tentacle.png',
 	},
 	wing:		{
 		matter: 'leather',
 		makes: ['eFlight', 'eHaste'],
+		img: 'part/wing.png',
 	},
 	chitin:		{
 		matter: 'chitin',
 		makes: ['eStun', 'eLeech'],
+		img: 'part/chitin.png',
+	},
+	spinneret:		{
+		matter: 'chitin',
+		makes: ['eSlow'],
+		img: 'part/chitin.png',
 	},
 	icor:		{
 		matter: 'liquid',
 		makes: ['eTeleport', 'eImmobilize', 'eBurn', 'eFreeze', 'eRot'],
+		img: 'part/icor.png',
 	},
-	inductor:	{
+	oculus:	{
 		matter: 'metal',
 		makes: ['eShock'],
+		img: 'part/oculus.png',
 	},
 	gear:	{
 		matter: 'metal',
 		makes: [],
+		img: 'part/gear.png',
 	},
-	strut:	{
+	hasp:	{
 		matter: 'metal',
 		makes: [],
+		img: 'part/hasp.png',
 	},
-	cam:	{
+	spring:	{
 		matter: 'metal',
 		makes: [],
+		img: 'part/tooth.png',
 	},
 	oil:	{
 		matter: 'metal',
 		makes: [],
+		img: 'part/oil.png',
 	},
 	leaf:	{
 		matter: 'plant',
 		makes: [],
+		img: 'part/leaf.png',
 	},
 	sap:	{
 		matter: 'plant',
 		makes: [],
+		img: 'part/sap.png',
 	},
 	bark:	{
 		matter: 'plant',
 		makes: [],
+		img: 'part/bark.png',
 	},
 	flower:	{
 		matter: 'plant',
 		makes: [],
+		img: 'part/flower.png',
 	},
 	stem:	{
 		matter: 'fungus',
 		makes: [],
+		img: 'part/stem.png',
 	},
 	gill:	{
 		matter: 'fungus',
 		makes: [],
+		img: 'part/gill.png',
 	},
 	slime:		{
 		matter: 'liquid',
 		makes: ['eInvisibility', 'eAcid'],
-		augs: { augAfterDamage:1 },
+		img: 'part/slime.png',
 	},
 });
 
@@ -133,10 +165,10 @@ let SpeciesList = Type.establish('Species',{
 
 Type.register( 'Species', {
 	isAnimal: {
-		parts: ['blood','eye','ear','nose','tongue','skin','brain','bone','skull','tooth','claw','heart','liver'],
+		parts: ['blood','eye','tongue','skin','brain','bone','skull','tooth','claw','heart','liver'],
 	},
 	isEarthChild: {
-		parts: ['blood','eye','ear','tongue','brain','bone','skull','tooth','heart','liver'],
+		parts: ['blood','eye','tongue','brain','bone','skull','tooth','heart','liver'],
 	},
 	isSunChild: {
 		parts: ['blood','brain','bone','skull','tooth','heart'],
@@ -145,19 +177,25 @@ Type.register( 'Species', {
 		parts: ['blood','brain','bone','skull','tooth','heart','liver'],
 	},
 	isUndead: {
-		parts: ['eye','ear','tongue','brain','bone','skull','tooth','claw'],
+		parts: ['eye','tongue','brain','bone','skull','tooth','claw'],
 	},
 	isDemon: {
-		parts: ['blood','eye','ear','nose','tongue','skin','brain','bone','skull','tooth','claw','heart','liver'],
+		parts: ['blood','eye','tongue','skin','brain','bone','skull','tooth','claw','heart','liver'],
 	},
 	isInsect: {
-		parts: ['eye','tongue','brain','gland','wing','chitin','icor'],
+		parts: ['eye','brain','chitin','icor'],
+	},
+	isWinged: {
+		parts: ['eye','brain','chitin','icor'],
+	},
+	isSpider: {
+		parts: ['spinneret'],
 	},
 	isPlanar: {
 		parts: ['eye','tongue','brain','heart','liver','gland','icor'],
 	},
 	isConstruct: {
-		parts: ['inductor','gear','strut','cam','oil'],
+		parts: ['oculus','gear','hasp','spring','oil'],
 	},
 	isOoze: {
 		parts: ['slime'],
@@ -231,6 +269,10 @@ function launcher(obj) {
 // alert		- I'll set nearby friends that I can see, and who are in my pack if I have one, to aggressive if they were WANDER or AWAIT
 // fleeWhenAttacked - I'll run from any attacker
 
+//
+// LEP stands for "last enemy position", which helps the enemies know where you attacked from, even if you
+// vanished from or were outside their perception.
+//
 let BrainMindset = {
 	hero: 			'pickup,harvest,open,don,fleeWhenHurt',
 	sentient: 		'alert,fleeWhenHurt,lep,pack,don',
@@ -299,8 +341,8 @@ let PlayerImgChoices = {
 /**
 Monster core is arranged as follows:
 symbol	- the default symbol you can use for me in dataPlaces
-level	- what level I appear on
-power	- helps generate my health and damage. it is [hitsToKillMe : hitsToKillPlayer]
+power	- how strong I am, and thus what depth I appear at
+brawn	- helps generate my health and damage. it is [hitsToKillMe : hitsToKillPlayer]
 team		- good, evil etc indicates who I like and hate
 naturalDamage (cut, stab, burn etc) using my natural weaponry
 brain	- my basic abilities (cast, shoot, talk) and my mindset (do I flee when hurt, am I pack animal, etc)
@@ -375,8 +417,9 @@ senseAlert		- shows, based on your sneaking ability, how close you'd have to be 
 blindFight		- you can't actually see, but you don't suffer a miss chance when fighting blind.
 blindShot		- you can't actually see, but you don't suffer a miss chance when shooting blind.
 
-imgChoices	- If you want to get fancier than just using core.img you can put some image choices here.
-imgChooseFn	- pairs with imgChoices to determine what to show. Returns the image path.
+imgChoices		- If you want to get fancier than just using core.img you can put some image choices here.
+imgChooseFn		- pairs with imgChoices to determine what to show. Returns the image path.
+imgDetermine	- picks an image based on what else is around it.
 
 Statuses
 breathStopped	- if you require breath you'll start taking damage after Rules.breathLimitToDamage
@@ -394,9 +437,9 @@ function monsterTypePreProcess(typeId,m) {
 	let brain = null;
 	let naturalDamageType;
 	if( m.core ) {
-		m.level = m.core[0];
-		console.assert( Number.isFinite(m.level) );
-		m.power = m.core[1];
+		m.power = m.core[0];
+		console.assert( Number.isFinite(m.power) );
+		m.brawn = m.core[1];
 		m.team  = m.core[2];
 		naturalDamageType = m.core[3];
 		brain = m.core[4];
@@ -517,6 +560,10 @@ function monsterTypePreProcess(typeId,m) {
 	}, m.naturalWeapon );
 	m.naturalWeapon = natWeapon;
 
+	if( (m.isIncorporeal || m.isEnergy) && m.dropParts === undefined ) {
+		m.dropParts = false;
+	}
+
 	// Generate all the parts of this creature as items.
 	let species = Object.findByFlag( m, SpeciesList );
 	let partList = m.parts || species.parts;
@@ -532,8 +579,8 @@ function monsterTypePreProcess(typeId,m) {
 			typeId:		m.typeId+String.capitalize(partId),				// goblinHeart
 			name:		(m.name||String.uncamelTypeId(m.typeId))+' '+(part.name||String.uncamelTypeId(partId)),				// goblin heart, ooze slime
 			matter:		part.matter,									// matter: liquid or matter: flash
+			img: 		part.img || 'item/misc/misc_rune.png',
 		};
-		inject[String.getIs(m.typeId)] = true;					// isGoblin: true
 		inject[String.getIs(m.typeId)] = true;					// isGoblin: true
 		inject[String.getIs(partId)] = true;					// isHeart: true or isSlime: true
 		inject[species.typeId] = true;							// isDemon, isAnimal, etc.
@@ -543,9 +590,6 @@ function monsterTypePreProcess(typeId,m) {
 				inject[bitId] = true;
 			});
 		}
-		if( part.augs ) {
-			Object.assign( inject, part.augs );
-		}
 		ItemTypeList.part.varieties[inject.typeId] = inject;
 	});
 
@@ -554,7 +598,7 @@ function monsterTypePreProcess(typeId,m) {
 
 const monsterTypeDefaults = {
 	isMonsterType: true,
-	level: 0, power: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
+	power: 0, brawn: '3:10', team: Team.EVIL, damageType: DamageType.CUT, img: "dc-mon/acid_blob.png", pronoun: 'it',
 	attitude: Attitude.AGGRESSIVE,
 	light: 0,
 	senseBlind: false, senseXray: false, senseTreasure: false, senseLiving: false,
@@ -800,7 +844,7 @@ Type.register( 'MonsterType', {
 		attitude: Attitude.HUNT,
 		brainMindset: 'ravenous',
 		dodge: Quick.NIMBLE,
-		immune: DemonImmunity,
+		immune: ['deepium',DamageType.POISON,DamageType.ROT,Attitude.PACIFIED].join(','),
 		isDemon: true,
 		isDemonHound: true,
 		loot: '30% demonEye',
@@ -1079,7 +1123,8 @@ Type.register( 'MonsterType', {
 		isDemon: true,
 		isDailess: true,
 		carrying: '',
-		loot: '30% gem, 10% potion, 30% demonEye',
+		loot: '30% gem, 10% potion',
+		parts: ['tentacle','tongue','eye'],
 		naturalWeapon: {
 			chanceEffectFires: 50,
 			effect: { basis: 'eBlindness', singularId: 'dailess' }
@@ -1143,6 +1188,7 @@ Type.register( 'MonsterType', {
 		invisible: true,
 		isPlanar: true,
 		isEthermite: true,
+		parts: SpeciesList.IsInsect,
 		light: 6,
 		loot: '2% gem.eSeeInvisible, 10% potion.eSeeInvisible, 50% any',
 		senseInvisible: true,
@@ -1150,7 +1196,7 @@ Type.register( 'MonsterType', {
 		vuln: 'glass'
 	},
 	"shade": {
-		core: [ 4, '1.5:16', 'evil', 'rot', 'undeadDumb', 'humanoid', 'mon/shade.png', '*' ],
+		core: [ 4, '1.5:16', 'evil', 'rot', 'undeadDumb', 'humanoid', 'mon/undead/shade.png', '*' ],
 		attitude: Attitude.HUNT,
 		bloodId: 'bloodBlack',
 		immune: UndeadImmunity,
@@ -1226,7 +1272,7 @@ Type.register( 'MonsterType', {
 		immune: DamageType.BURN,
 		isDemon: true,
 		carrying: '2x ammo.dart.eBlindness',
-		loot: '30% potion.eBurn, 30% impBrain',
+		loot: '30% potion.eBurn',
 		senseInvisible: true,
 		travelMode: "fly",
 		vuln: DemonVulnerability
@@ -1246,7 +1292,7 @@ Type.register( 'MonsterType', {
 		name: "ogre child",
 		carrying: 'ammo.rock',
 		isEarthChild: true,
-		loot: '50% weapon.club, 20% ogreDrool',
+		loot: '50% weapon.club',
 		resist: DamageType.CUT,
 		speedMove: 0.75,
 		stink: 0.6,
@@ -1265,7 +1311,7 @@ Type.register( 'MonsterType', {
 		dodge: Quick.CLUMSY,
 		isEarthChild: true,
 		isOgre: true,
-		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club, 20% ogreDrool',
+		loot: '90% coin, 90% coin, 90% coin, 50% weapon.club',
 		resist: [DamageType.CUT,DamageType.STAB].join(','),
 		speedMove: 0.5,
 		speedAction: 0.5,
@@ -1379,7 +1425,7 @@ Type.register( 'MonsterType', {
 		isInsect: true,
 		isScarab: true,
 		isBlueScarab: true,
-		loot: '30% gem, 50% scarabCarapace',
+		loot: '30% gem',
 		travelMode: "fly",
 		vuln: 'glass,'+DamageType.BURN
 	},
@@ -1393,7 +1439,7 @@ Type.register( 'MonsterType', {
 		isInsect: true,
 		isScarab: true,
 		isRedScarab: true,
-		loot: '30% gem, 50% scarabCarapace',
+		loot: '30% gem',
 		travelMode: "fly",
 		vuln: 'glass,'+DamageType.FREEZE
 	},
@@ -1416,6 +1462,16 @@ Type.register( 'MonsterType', {
 		loot: '50% darkEssence, 20% potion.eBlindness',
 		speedMove: 0.75,
 		vuln: ['silver',DamageType.SMITE].join(',')
+	},
+	"crawler": {
+		core: [ 1, '2:15', 'evil', 'bite', 'undeadDumb', 'humanoid', 'mon/undead/crawler.png', 'it' ],
+		attitude: Attitude.HUNT,
+		immune: SkeletonImmunity,
+		isUndead: true,
+		isSkeleton: true,
+		speedMove: 0.5,
+		loot: '50% dagger, 50% helm',
+		vuln: 'silver'
 	},
 	"skeleton": {
 		core: [ 19, '2:10', 'evil', 'claw', 'undeadDumb', 'humanoid', 'dc-mon/undead/skeletons/skeleton_humanoid_small.png', 'it' ],
@@ -1453,7 +1509,7 @@ Type.register( 'MonsterType', {
 		name: "soldier ant",
 		brainMindset: 'greedy',
 		greedField: 'isAntFood',
-		loot: '10% potion, 20% facetedEye, 10% antGrubMush',
+		loot: '10% potion, 10% antGrubMush',
 		isInsect: true,
 		isSmall: true,
 		senseSmell: 200,
@@ -1472,7 +1528,7 @@ Type.register( 'MonsterType', {
 		stink: 0.8,
 	},
 	"bear": {
-		core: [ 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/bear.png', 'it' ],
+		core: [ 9, '6:7', 'evil', 'claw', 'animal', 'quadruped', 'mon/animal/bear.png', 'it' ],
 		size: 2.0,
 		name: "bear",
 		attitude: Attitude.WANDER,
@@ -1542,13 +1598,14 @@ Type.register( 'MonsterType', {
 
 // NEUTRAL TEAM
 	"bat": {
-		core: [ 1, '2:20', 'neutral', 'bite', 'animal', 'wingedBiped', 'dc-mon/animals/giant_bat.png', 'it' ],
+		core: [ 1, '2:20', 'neutral', 'bite', 'animal', 'wingedBiped', 'mon/animal/giantBat.png', 'it' ],
 		attitude: Attitude.WANDER,
 		dodge: Quick.LITHE,
 		isAnimal: true,
 		isBat: true,
+		isWinged: true,
 		loot: '',
-		parts: ['wing','ear','tongue','claw'],
+		parts: ['wing','tongue','claw'],
 		brainPackAnimal: true,
 		senseInvisible: true,
 		senseLiving: true,
@@ -1564,6 +1621,7 @@ Type.register( 'MonsterType', {
 		isAnimal: true,
 		isGiant: true,
 		isSnail: true,
+		parts: ['shell'],
 		tooClose: 1,
 		loot: '50% snailSlime',
 		scentReduce: -1,	// Makes it always override any scent

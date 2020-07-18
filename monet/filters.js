@@ -4,16 +4,23 @@
 /*
 Options:
 size						- the x,y size for the final processed image
+url							- a source URL to pull this thing from, when not already cached
+
+resize: true				- turn this off if you need to make sure that multiple frames of an image must stay aligned
+autocrop: 0.0				- shrinks the edges down to only pixels <strip> alpha or above. Set false to not autocrop.
+
 normalize: false			- auto-adjust the image brightness and contrast
 brightness: 0.0				- Adjust the brightness plus or minus
 contrast: 0					- Adjust the contrast up or down
 desaturate: 0				- Desaturates the image, from 0.0 to 1.0 
+ungradient: null			- Removes a background gradient. 0x20 is common
+despeckle: null				- Removes singleton dots from the image. despeckle: 3 does 3 passes
 
 flying: 0					- 1 means appear as if flying by placing the shadow as low as possible.
 glow: null					- A color to make the thing glow. Nullifies shadow and outline.
 strip: null					- Remove all translucency less opaque than this. Cleans up speckles.
 sweep: fn					- Process every single pixel, returning a color to change it to, or null if no change needed
-edgeFade: 0					- Fade the edges of the image N pixels deep, where N is a percentage of image width, to remove hard pixel edges. Default = 0
+edgeFade: 0					- Fade the edges of the image N pixels deep, where N is a decimal percentage of image width, to remove hard pixel edges. Default = 0
 
 bgFlood.find				- find pixels of this color
 bgFlood.remove				- and then floodfill with this color and remove all found
@@ -30,8 +37,8 @@ outline.threshold: 0x20		- Only outline things with this level or transparency o
 outline.color: '#000000FF'	- Color of the outline
 */
 
-let decorWall  = { normalize: false, brightness: -0.3, outline: false };
-let decorFloor = { brightness: -0.6, outline: false };
+let terrainWall  = { normalize: false, brightness: -0.3 };
+let terrainFloor = { brightness: -0.6 };
 
 FilterSpec = {
 	"mon/solarCenturion.png": 		{ shadow: { yRatio: 0.3 }, edgeFade: 0.03 },
@@ -63,45 +70,75 @@ FilterSpec = {
 	"item/weapon/hammer.png":		{ bgRemove: {find:0,remove:10}, despeckle: 1, edgeFade:0.03, url: 'https://images-na.ssl-images-amazon.com/images/I/61uKosIDaSL._AC_SX425_.jpg' },
 	"decor/brazierLit.png": 		{ resize: false, autocrop: false, normalize: false, outline: false, brightness: 0.01 },
 	"decor/brazierUnlit.png": 		{ resize: false, autocrop: false, normalize: false, },
-	"decor/boulder1.png": 			decorWall,
-	"decor/boulder2.png": 			decorWall,
-	"decor/boulder3.png": 			decorWall,
-	"decor/boulder4.png": 			decorWall,
-	"decor/jagged1.png": 			decorWall,
-	"decor/jagged2.png": 			decorWall,
-	"decor/jagged3.png": 			decorWall,
-	"decor/jagged4.png": 			decorWall,
-	"decor/floorFancyTile.png": 	decorFloor,
-	"decor/floorSandstone.png": 	decorFloor,
-	"decor/floorSandstoneChunky.png": decorFloor,
-	"decor/floorDirt.png": 			{ outline: false, normalize: false, brightness: -0.6, desaturate: 0.2 },
-	"decor/floorSlate.png": 		decorFloor,
+	"terrain/boulder1.png": 		terrainWall,
+	"terrain/boulder2.png": 		terrainWall,
+	"terrain/boulder3.png": 		terrainWall,
+	"terrain/boulder4.png": 		terrainWall,
+	"terrain/jagged1.png": 			terrainWall,
+	"terrain/jagged2.png": 			terrainWall,
+	"terrain/jagged3.png": 			terrainWall,
+	"terrain/jagged4.png": 			terrainWall,
+	"terrain/floorFancyTile.png": 	terrainFloor,
+	"terrain/floorSandstone.png": 	terrainFloor,
+	"terrain/floorSandstoneChunky.png": terrainFloor,
+	"terrain/floorDirt.png": 		{ normalize: false, brightness: -0.6, desaturate: 0.2 },
+	"terrain/floorSlate.png": 		terrainFloor,
 	"effect/arrowInFlight.png": 	{ shadow: false },
 	"effect/dartInFlight.png": 		{ shadow: false },
 	"effect/lightRayCircle.png": 	{ normalize: false, shadow: false, outline: false },
 	"effect/fire.png": 				{ normalize: false, shadow: false, outline: false, brightness: 0.01 },
 	"effect/portal.png":			{ autocrop: false, normalize: false, shadow: false, outline: false },
-	"decor/water.png":				{ shadow: false, outline: false, normalize: false, brightness: -0.6, url: 'https://i.pinimg.com/originals/26/e3/2d/26e32d921f8820b4e459d27888276d4a.jpg' }
+	"decor/water.png":				{ shadow: false, outline: false, normalize: false, brightness: -0.6, url: 'https://i.pinimg.com/originals/26/e3/2d/26e32d921f8820b4e459d27888276d4a.jpg' },
 }
 
 DirSpec = {
 	"mon/": {
 		size: 192
 	},
+	"item/potion": {
+		size: 96,
+		shadow: false,
+		outline: false,
+	},
+	"item/armor": {
+		size: 96,
+	},
 	"item/": {
+		edgeFade: 0.01,
 		size: 96
 	},
 	"decor/": {
 		size: 96
 	},
+	"portal/": {
+		size: 96,
+		shadow: false,
+		outline: false,
+	},
 	"effect/":  {
 		size: 96
+	},
+	"ore/": {
+		size: 96,
+		shadow: false,
+		outline: false,
 	},
 	"plant/":  {
 		size: 96
 	},
 	"mushroom/":  {
 		size: 96
+	},
+	"part/":  {
+		size: 96,
+		shadow: false,
+		threshold: 0x20,
+		edgeFade: 0.01,
+	},
+	"terrain/": {
+		size: 96,
+		shadow: false,
+		outline: false,
 	},
 }
 
@@ -129,6 +166,7 @@ FilterDefault = {
 	outline: {
 		thickness: 0.03,
 		threshold: 0x20,
-		color: '#000000FF'
+		color: '#000000FF',
+		antialias: true
 	},
 };

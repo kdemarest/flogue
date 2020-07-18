@@ -22,7 +22,7 @@ ChanceToAppear.Simple = function(entityLevel,mapLevel) {
 }
 
 ChanceToAppear.Ramp = function(entityLevel,mapLevel) {
-	if( mapLevel < entityLevel ) {
+	if( entityLevel > mapLevel ) {
 		return 0;
 	}
 

@@ -155,7 +155,12 @@ class EntitySprite extends Sprite {
 		this.xVisual = entity.x;
 		this.yVisual = entity.y;
 
-		this.initSpriteByImg( ImageRepo.getImg(entity) );
+		let imgData = ImageRepo.getImg(entity);
+		if( !imgData ) {
+			debugger;
+			ImageRepo.getImg(entity)
+		}
+		this.initSpriteByImg( imgData );
 
 		this.xAnchor    = entity.xAnchor || 0.5;
 		this.yAnchor    = entity.yAnchor || 0.5;
@@ -220,6 +225,10 @@ class EntitySprite extends Sprite {
 			}
 			console.assert(Light.Alpha[light]!==undefined);
 			this.alpha = Light.Alpha[Math.floor(light)];
+
+			if( Number.isFinite(this.entity.imgSpin) ) {
+				this.rotation += this.entity.imgSpin * 2*Math.PI*dt;
+			}
 
 			console.watchSprite( this, 'in Pane. visible='+this.visible );
 		}

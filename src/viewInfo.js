@@ -76,10 +76,12 @@ class ViewInfo extends ViewObserver {
 			let mine = you.inventory.find(i=>i.id==item.id)
 			let s = '';
 			if( header ) {
-				let lvl = !item.isTreasure ? '' : ' Level '+item.level+'<br>Value '+ex.priceWithCommas;
-				s += true||item.isUnique ? '<img class="itemImage" src="'+ImageRepo.getImgFullPath(item)+'"><br>' :
-					'<table class="itemIconTable"><tr><td>'+ex.icon+'</td><td>'+lvl+'</td></tr></table><br>';
+				let lvl = !item.isTreasure ? '' : ' Level '+item.level+' Value '+ex.priceWithCommas;
+				let iImage = '<img class="itemImage" src="'+ImageRepo.getImgFullPath(item)+'"><br>';
+				let iTable = '<table class="itemIconTable"><tr><td>'+ex.icon+'</td><td>'+lvl+'</td></tr></table><br>';
+				s += true||item.isUnique ? iImage : iTable;
 				s += ex.description+(ex.permutation?' '+ex.permutation:'')+'<br>';
+				s += lvl+'<br>';
 				if( ex.effectAbout ) {
 					s += ex.effectAbout+'<br>';
 				}

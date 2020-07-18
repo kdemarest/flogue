@@ -14,7 +14,7 @@ class ViewInventory extends ViewObserver {
 		this.filterId = '';
 		this.inventoryFn = null;
 		this.visibleFn = null;
-		this.colFilter = colFilter || {slot:1,key:1,icon:1,description:1,armor:1,damage:1,bonus:1,charges:1};
+		this.colFilter = colFilter || {slot:1,key:1,icon:1,description:1,armor:1,damage:1,/*bonus:1,*/charges:1};
 		this.sortColId = 'icon';
 		this.sortAscending = true;
 
@@ -209,7 +209,7 @@ class ViewInventory extends ViewObserver {
 			cell.description 	= td( spc, '', exDescription );
 			cell.armor 			= td( spc, 'ctr', ex.armor );
 			cell.damage 		= td( spc, 'right', ex.damage ) + td( spc, '', ex.damageType );
-			cell.bonus 			= td( spc, 'right', ex.bonus );
+			//cell.bonus 			= td( spc, 'right', ex.bonus );
 			cell.charges 		= td( spc, 'ctr', ex.recharge || '&nbsp;' );
 			cell.price 			= td( spc, 'right'+(mode=='buy' && ex.price>observer.coinCount?' tooExpensive':''), ex.priceWithCommas || '&nbsp;' );
 
@@ -283,7 +283,7 @@ class ViewInventory extends ViewObserver {
 			description: 	'<td class="invDescription">Description</td>',
 			armor: 			'<td class="invArmor">Armor</td>',
 			damage: 		'<td class="invDamage"colspan="2">Damage</td>',
-			bonus: 			'<td class="invBonus right">Bonus</td>',
+//			bonus: 			'<td class="invBonus right">Bonus</td>',
 			charges: 		'<td class="invCharges right">Chg</td>',
 			price: 			'<td class="invPrice right">Price</td>'
 		}
@@ -293,7 +293,7 @@ class ViewInventory extends ViewObserver {
 			description: 	(a,b,sortDir) => sortOrder(a,b,sortDir,'name'),
 			armor: 			(a,b,sortDir) => sortOrder(a,b,sortDir,'armor','typeOrder','name'),
 			damage: 		(a,b,sortDir) => sortOrder(a,b,sortDir,'damage','typeOrder','name'),
-			bonus: 			(a,b,sortDir) => sortOrder(a,b,sortDir,'bonus','typeOrder','name'),
+//			bonus: 			(a,b,sortDir) => sortOrder(a,b,sortDir,'bonus','typeOrder','name'),
 			charges: 		(a,b,sortDir) => sortOrder(a,b,sortDir,'recharge','typeOrder','name'),
 			price: 			(a,b,sortDir) => sortOrder(a,b,sortDir,'price','name'),
 		}
@@ -305,7 +305,7 @@ class ViewInventory extends ViewObserver {
 			description: true,
 			armor: false,
 			damage: false,
-			bonus: false,
+//			bonus: false,
 			charges: false,
 			price: false
 		}

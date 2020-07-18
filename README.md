@@ -47,8 +47,12 @@ Click Sublime / Preferences / Settings, and set all of the following:
 
 Install Sublime Hooks and Hjson highlighting:
 1. Install "Package Control" in Sublime: https://packagecontrol.io/installation
-2. Paste that text into Sublime console: Ctrl+Backtick then paste
-3. Restart Sublime.
+2. Go to Preferences / Package Control / Install Package
+Install:
+- BetterFindBuffer
+- HJson
+- iOpener
+4. Restart Sublime.
 
 ## Mac HID setup
 This KeyRepeat rate might be too fast for you. For me, it is perfect.
@@ -56,8 +60,9 @@ This KeyRepeat rate might be too fast for you. For me, it is perfect.
 defaults write -g InitialKeyRepeat -int 10
 defaults write -g KeyRepeat -int 1
 defaults write -g com.apple.keyboard.fnState -int 1
-Then logout from your machine & login to make the changes take effect
 ```
+Then logout from your machine & login to make the changes take effect
+
 If you use a roller mouse:
 * Uninstall any Logitech Control Center (LCC)
 * Install SteerMouse

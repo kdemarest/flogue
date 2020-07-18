@@ -389,7 +389,7 @@ ThemeList.corePits = {
 	rUNCOMMON: 	'mushrooms, secretChest, camp_human, antHive, tinyRoom, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, floodWater',
 	rRARE: 		'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
+	monsters: 	['brawn','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreBridges = {
@@ -401,7 +401,7 @@ ThemeList.coreBridges = {
 	rUNCOMMON: 	'mushrooms, secretChest, camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle',
 	rRARE: 		'goblinGathering, tinyRoom, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre',
 	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
+	monsters: 	['brawn','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreMaze = {
@@ -441,7 +441,7 @@ ThemeList.coreCavernSomewhatOpen = {
 	rUNCOMMON: 	'secretChest, camp_human, antHive, trollBridge, trollPit, shaft, collonade, fountain1, fountain4, patch, veil, pitEncircle, miniMaze, microMaze',
 	rRARE: 		'goblinGathering, demonNest, hellPortal, circle, ruin, swamp, etherHive, firePit, floodOre, barrelStorage',
 	rEPIC: 		'graveYard, lunarEmbassy',
-	monsters: 	['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
+	monsters: 	['brawn','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreSea = {
@@ -457,7 +457,7 @@ ThemeList.coreSea = {
 	rREQUIRED: 			'mushrooms, floodWater',
 	rCOMMON: 			'floodWaterSmall',
 	rUNCOMMON: 			'floodWall,miniMaze, microMaze',
-	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon'],
+	monsters: 			['brawn','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon'],
 	enemyDensity: 		0.005,
 	itemDensity: 		0.005,
 }
@@ -473,7 +473,7 @@ ThemeList.coreSwamp = {
 	passageWander: 		100,
 	palette: 			{ basis: 'jaggedCave', outlineWall: 'mud', fillWall: 'mud' },
 	rCOMMON: 			'mushrooms, floodMud',
-	monsters: 			['power','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
+	monsters: 			['brawn','isUndead','isEarthChild','isPlanar','isAnimal','isInsect','isLunarChild','isDemon']
 }
 
 ThemeList.coreRooms = {
