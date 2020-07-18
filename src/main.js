@@ -123,10 +123,8 @@ async function main() {
 	Type.merge();
 	Type.finalize(Checker);
 
-	let imageCache =  new PixiImageRepo(PIXI.loader);
-	imageCache.scanTypes();
 
-	window.ImageRepo =  new ImageMaker(imageCache);
+	window.ImageRepo =  new ImageMaker();
 	ImageRepo.scanTypes();
 	setInterval( () => ImageRepo.tick(), 250 );
 

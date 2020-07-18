@@ -35,7 +35,7 @@
 <script>
 
 function guiMessage( message, payload ) {
-	if( message == 'imgLoaded' ) {
+	if( message == 'imgReady' ) {
 		document
 			.getElementById("result")
 			.appendChild(document.createTextNode(payload+'\n'))
@@ -84,10 +84,10 @@ async function main() {
 		let stateList = {
 			requested: [],
 			pending: [],
-			loaded: []
+			ready: []
 		}
 		ImageRepo.getStateList(stateList);
-		document.getElementById('state').innerHTML = "Pending: "+stateList.pending.length+" Loaded: "+stateList.loaded.length;
+		document.getElementById('state').innerHTML = "Pending: "+stateList.pending.length+" Ready: "+stateList.ready.length;
 	}, 100 );
 
 

@@ -509,12 +509,21 @@ async function filterImageInPlace(jimp,image,filter) {
 		}
 	}
 
-	let dim = filter.size || 92;
-	image.scaleToFit(dim,dim,jimp.RESIZE_HERMITE);
-	console.log('scale to '+dim+'x'+dim);
+	if( filter.size !== false ) {
+		let dim = filter.size || 92;
+		image.scaleToFit(dim,dim,jimp.RESIZE_HERMITE);
+		console.log('scale to '+dim+'x'+dim);
+	}
 
-	if( filter.flying ) { filter.outline.flying = filter.flying; } 
-	if( filter.glow ) 	{ filter.shadow = false; filter.outline.glow = true; filter.outline.color = filter.glow; } 
+	if( filter.flying ) {
+		filter.outline.flying = filter.flying;
+	}
+
+	if( filter.glow ) {
+		filter.shadow = false;
+		filter.outline.glow = true;
+		filter.outline.color = filter.glow;
+	} 
 
 	if( filter.normalize ) {
 		image.normalize();

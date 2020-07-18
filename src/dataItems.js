@@ -517,7 +517,10 @@ const WeaponVarietyList = ({ //Type.establish('WeaponVariety',{},{
 		attackVerb: 'strike',
 		mineSpeed: 1.0,
 		effects: { eInert: EffectTypeList.eInert},
-		img: 'item/weapon/pickaxe.png'
+		img: {
+			src: 'item/weapon/pickaxe.png',
+			desaturate: -1.0
+		}
 	},
 	"club": {
 		power: 0,
@@ -886,7 +889,10 @@ const GemVarietyList = ({ //Type.establish('GemVariety',{},{
 	"garnet": 		{ power:  0, rarity:  0.3, img: "gems/Gem Type1 Red.png" },
 	"opal": 		{ power:  3, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"turquoise": 	{ power:  6, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
-	"amethyst": 	{ power:  9, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
+	"amethyst": 	{ power:  9, rarity:  0.3, img: {
+		src:"item/gem/gem2Oct.png",
+		desaturate: -1.0
+	}},
 	"pearl": 		{ power: 12, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"amber": 		{ power: 15, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
 	"jade": 		{ power: 18, rarity:  0.3, img: "gems/Gem Type1 Yellow.png" },
