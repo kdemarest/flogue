@@ -147,12 +147,18 @@ let effectApply = function(effect,target,source,item,context) {
 		Anim.Upon( target.id, target, effect.iconOver, 0, effect.iconOverDuration || 0.4, effect.iconOverScale || 0.75 );
 	}
 
+	// REWORK THIS to accumulate positions in a big array. Then step through the array one by one
+	// and propagate per the GDD.
+
 	let effectShape = Perk.apply( 'effectShape', effect).effectShape || EffectShape.SINGLE;
 	if( effectShape == EffectShape.SINGLE ) {
 		let result = Effect.applyTo(effect,target,source,item,context);
 		globalEffectDepth--;
 		return result;
 	}
+
+	// REWORK: These should all be pre-constructed FUNCTIONS (stop using the shape cache) so that rays
+	// can be blocked by a hit, and explosions from a center can be blocked etc)
 	let radius = 0;
 	let shape = '';
 	if( effectShape == EffectShape.BLAST2 ) {
@@ -192,6 +198,8 @@ let effectApply = function(effect,target,source,item,context) {
 				x = x + target.x;
 				y = y + target.y;
 				let reached = shootRange(target.x,target.y,x,y, (x,y) => area.map.tileTypeGet(x,y).mayFly);
+				// For circles we 
+
 				if( reached ) {
 					if( effect.isCloud ) {
 						Anim.Cloud( false, x, y, area, source.id, effect.iconCloud || StickerList.ePoof.img );

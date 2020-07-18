@@ -177,7 +177,7 @@ const QuickName = ['','clumsy','normal','nimble','lithe'];
 
 let ResistanceList = [];
 
-const MiscImmunity = { SPEED: "speed", STUN: "stun", IMMOBILE: "immobile", GAS: "gas", MUD: "mud", FORCEFIELD: "forceField", HEALING: "healing" };
+const MiscImmunity = { SPEED: "speed", STUN: "stun", IMMOBILE: "immobile", MUD: "mud", FORCEFIELD: "forceField", HEALING: "healing" };
 ResistanceList.push(...Object.values(MiscImmunity));
 
 // WARNING: the damage type names are re-used in their icon names in StickerList. Maintain both.
@@ -202,12 +202,15 @@ const ShieldDefendsAgainst = [DamageType.CUT,DamageType.STAB,DamageType.BITE,Dam
 const Attitude = { ENRAGED: "enraged", CONFUSED: "confused", PANICKED: "panicked", PACIFIED: "pacified",
 				FEARFUL: "fearful", CALM: "calm", BUSY: "busy",
 				AWAIT: "await", WORSHIP: "worshipping",
-				AGGRESSIVE: "aggressive", PATROL: "patroling", HUNT: "hunting", HESITANT: "hesitant", WANDER: "wandering" };
+				AGGRESSIVE: "aggressive", PATROL: "patrolling", HUNT: "hunting", HESITANT: "hesitant", WANDER: "wandering" };
 ResistanceList.push(...Object.values(Attitude));
 
 
 const Team = { EVIL: "evil", GOOD: "good", NEUTRAL: "neutral", LUNAR: "lunar"};
-const Slot = { HEAD: "head", NECK: "neck", ARMS: "arms", HANDS: "hands", FINGERS: "fingers", WAIST: "waist", HIP: "hip", FEET: "feet", ARMOR: "armor", WEAPON: "weapon", AMMO: "ammo", SHIELD: "shield", SKILL: "skill" };
+const Slot = {
+	HEAD: "head", NECK: "neck", ARMS: "arms", HANDS: "hands", FINGERS: "fingers", WAIST: "waist", HIP: "hip",
+	FEET: "feet", ARMOR: "armor", WEAPON: "weapon", AMMO: "ammo", SHIELD: "shield", SKILL: "skill"
+};
 
 
 
