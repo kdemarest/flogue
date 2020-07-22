@@ -17,7 +17,9 @@ Module.add('profileNull',function(extern){
 // STATIC UTILITY FUNCTIONS
 Module.add('utilities',function(extern){
 
-	let RandomBase = class {
+	let Random = {};
+
+	Random.Base = class {
 		intRange(min, max) {
 			return Math.floor( this.randomFloat * (max - min) ) + min;
 		}
@@ -40,7 +42,7 @@ Module.add('utilities',function(extern){
 		}
 	}
 
-	let TrueRandom = new class extends RandomBase {
+	Random.TrueGenerator = class extends Random.Base {
 		constructor() {
 			super();
 			this.trueRandom = Math.random;
@@ -51,8 +53,9 @@ Module.add('utilities',function(extern){
 		}
 	}
 
+	Random.True = new Random.TrueGenerator();
 
-	let Random = new class extends RandomBase {
+	Random.PseudoGenerator = class extends Random.Base {
 		constructor() {
 			super();
 			this.seedOriginal = null;
@@ -73,6 +76,8 @@ Module.add('utilities',function(extern){
 			return this.randomMaxInt / 2147483647;
 		}
 	};
+
+	Random.Pseudo = new Random.PseudoGenerator();
 
 
 	Math.clamp = function(value,min,max) {
@@ -186,14 +191,14 @@ Module.add('utilities',function(extern){
 		});
 		return total;
 	}
-	Array.shuffle = function(array,randomGenerator=Random) {
+	Array.shuffle = function(array,randomGenerator=Random.Pseudo) {
 		for (let i = array.length - 1; i > 0; i--) {
 			let j = randomGenerator.intRange( 0, (i + 1) );
 			[array[i], array[j]] = [array[j], array[i]];
 		}
 		return array;
 	}
-	Array.shufflePairs = function(array,randomGenerator=Random) {
+	Array.shufflePairs = function(array,randomGenerator=Random.Pseudo) {
 		for (let i = array.length/2 - 1; i > 0; i-=1) {
 			let j = randomGenerator.intRange( 0, (i + 1) );
 			[array[2*i+0],array[2*i+1], array[2*j+0],array[2*j+1]] = [array[2*j+0],array[2*j+1], array[2*i+0],array[2*i+1]];
@@ -215,7 +220,7 @@ Module.add('utilities',function(extern){
 		}
 	}
 	Array.pickFromPairs = function(array) {
-		let n = Random.intRange(0,array.length/2) * 2;
+		let n = Random.Pseudo.intRange(0,array.length/2) * 2;
 		return [array[n+0],array[n+1]];
 	}
 	Array.move = function(array, from, to) {
@@ -434,7 +439,7 @@ ARRAY FORM
 			}
 			for( let i=0 ; i<(supply.count||1) ; ++i ) {
 				let chance = supply.chance || 100;
-				if( Random.chance100(chance>= 100 ? 100 : chance*sandBag) ) {
+				if( Random.Pseudo.chance100(chance>= 100 ? 100 : chance*sandBag) ) {
 					let temp = Object.assign({},supply);
 					delete temp.count;
 					delete temp.chance;
@@ -585,11 +590,11 @@ ARRAY FORM
 	})();
 
 	return {
-		Random: Random,
-		TrueRandom: TrueRandom
+		Random: Random
 	}
 
 });
+
 
 Module.add('utilities2',function() {
 
@@ -621,6 +626,7 @@ Module.add('utilities2',function() {
 		}
 	}
 
+
 	function pick(listRaw) {
 		let list = listRaw;
 		if( typeof list == 'object' && !Array.isArray(list) ) {
@@ -630,12 +636,12 @@ Module.add('utilities2',function() {
 			}
 			let n;
 			do {
-				n = Random.intRange(0,keys.length);
+				n = Random.Pseudo.intRange(0,keys.length);
 			} while( list[keys[n]].neverPick );
 
 		    return list[keys[n]];
 		}
-		return list.length==0 ? null : list[Random.intRange(0,list.length)];
+		return list.length==0 ? null : list[Random.Pseudo.intRange(0,list.length)];
 	}
 
 

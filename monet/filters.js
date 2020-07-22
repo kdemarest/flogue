@@ -92,6 +92,15 @@ FilterSpec = {
 }
 
 DirSpec = {
+	"gui/": {
+		autocrop: false,
+		resize: false,
+		despeckle: false,
+		normalize: false,
+		size: false,
+		shadow: false,
+		outline: false,
+	},
 	"mon/": {
 		size: 192
 	},

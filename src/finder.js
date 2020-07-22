@@ -64,7 +64,7 @@ class Finder {
 		return this;
 	}
 	random() {
-		return this.result[Random.intRange(0,this.result.length-1)];
+		return this.result[Random.Pseudo.intRange(0,this.result.length-1)];
 	}
 	isAt(x,y) {
 		return this.filter( e => Distance.isAt(e.x,e.y,x,y) );

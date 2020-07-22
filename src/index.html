@@ -107,6 +107,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jimp/0.14.0/jimp.js" charset="utf-8"></script>
 <script src="../monet/jpro.js" charset="utf-8"></script>
 
+<script src="game.js" charset="utf-8"></script>
 <script src="main.js" charset="utf-8"></script>
 
 </head>
@@ -144,9 +145,10 @@
 		</div>
 	</div>
 	<script>
-	document.addEventListener("DOMContentLoaded", () => {
-		main();
-	})
+		Module.entryPoint( () => {
+			Profile.end('scripts').tell();
+			main();
+		});
 	</script>
 </body>
 </html>

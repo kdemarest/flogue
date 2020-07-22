@@ -85,7 +85,7 @@ const Direction = new class {
 		let ay = Math.abs(dy);
 		if( ax != ay ) {
 			// We want to flatten our trajectory sometimes.
-			if( Random.floatRange(0,ax+ay)<Math.max(ax,ay) ) {
+			if( Random.Pseudo.floatRange(0,ax+ay)<Math.max(ax,ay) ) {
 				if( ax < ay ) { dx=0; } else { dy=0; }
 			}
 		}

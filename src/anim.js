@@ -405,7 +405,7 @@ class AnimationManager {
 	}
 }
 
-
+Random.anim = Random.True;
 
 return {
 	Anim: Anim,

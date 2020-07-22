@@ -26,13 +26,16 @@ class Plugin {
 	}
 }
 
-let PluginManager = new class {
+Plugin.Manager = new class {
 	constructor() {
 		this.list = {};
 		this.status = {};
 	}
 	addForLoad(pluginId,url) {
 		console.assert( !this.list[pluginId] && !this.status[pluginId] );
+		if( !url ) {
+			url = pluginId + '.js';
+		}
 		this.status[pluginId] = {
 			id:			pluginId,
 			url:		url,
@@ -86,10 +89,9 @@ let PluginManager = new class {
 			fn(plugin);
 		});
 	}
-}
+}();
 
 return {
-	Plugin: Plugin,
-	PluginManager: PluginManager
+	Plugin: Plugin
 }
 });

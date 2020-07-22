@@ -3,14 +3,6 @@
 <head>
 <meta charset="utf-8"/>
 
-<script>
-	window.Profile = {
-		start:()=>{},
-		end:()=>{},
-		tell:()=>{}
-	}
-</script>
-
 <script src="jquery.3.3.1.js" charset="utf-8"></script>
 <script src="utilModule.js" charset="utf-8"></script>
 <script src="utilPlugin.js" charset="utf-8"></script>
@@ -53,7 +45,6 @@ pre {
 
 		Module.realize();
 		window.config = {};
-//		window.MonsterType = {};
 
 
 		PluginManager.addForLoad('pkgPlantsBasic', 'pkgPlantsBasic.js');
@@ -66,22 +57,22 @@ pre {
 		Type.establish('PLUGINS',{});
 		Type.register('PLUGINS', PluginManager.list );
 		Type.merge();
-		let noCheck = {
+		let nullChecker = {
 			checkSupply: ()=>{},
 			checkLoot: ()=>{},
 			checkResistance: ()=>{}
 		};
-		Type.finalize(noCheck);
+		Type.finalize(nullChecker);
 
 		let palette = {
-			bridge: "bridge",
-			door: "door",
-			fillFloor: "floorDirt",
-			fillWall: "wallCave",
-			floor: "floorDirt",
-			outlineWall: "wallCave",
-			passageFloor: "floorStone",
-			wall: "wallCave"
+			bridge:			"bridge",
+			door:			"door",
+			fillFloor:		"floorDirt",
+			fillWall:		"wallCave",
+			floor:			"floorDirt",
+			outlineWall:	"wallCave",
+			passageFloor:	"floorStone",
+			wall:			"wallCave"
 		};
 
 		let sideDimension = 40; //Random.intRange(40,150);
@@ -96,9 +87,9 @@ pre {
 		// Higher number (0.50) means lots of little rooms that connect.
 		// floor=0.50, seed 0.02, passageWander false, makes nice connected rooms
 		let scape = {
-			dim: sideDimension,
-			architecture: "cave",
-			mustConnect: false,
+			dim:			sideDimension,
+			architecture:	"cave",
+			mustConnect:	false,
 			passageWander: 	100,
 			floorDensity: 	0.40,
 			seedPercent: 	0.20,
@@ -117,7 +108,7 @@ pre {
 		let tileQuota  = [];
 		let siteList   = [];
 
-		let masonMap = Mason.masonConstruct(
+		let masonMap = Mason.construct(
 			theme,
 			tileQuota,
 			injectList,

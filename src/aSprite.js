@@ -50,7 +50,7 @@ class AnimSprite extends Sprite {
 	sQuiver(rate,range=0.5) {
 		this.quiver = (this.quiver||0) - this.dt;
 		if( this.quiver <= 0 ) {
-			let rad = Random.floatRange(0,2*Math.PI);
+			let rad = Random.anim.floatRange(0,2*Math.PI);
 			this.qx = Math.cos(rad)*range;
 			this.qy = Math.sin(rad)*range;
 			this.quiver += rate;

@@ -1,5 +1,7 @@
 Module.add( 'effect', ()=>{
 
+let Rand = Random.Pseudo
+
 function makeResult(status,success,inject) {
 	let result = {
 		status: status,
@@ -394,7 +396,7 @@ Effect.applyTo = function(effect,target,source,item,context) {
 			if( !isRanged && source.blindFight ) {
 				chanceToMiss = 0;
 			}
-			if( !(source.senseLiving && target.isLiving) && Random.chance100(chanceToMiss) ) {
+			if( !(source.senseLiving && target.isLiving) && Rand.chance100(chanceToMiss) ) {
 				tell(mSubject,source,' ',mVerb,'attack',' ',mObject,target,' but in the wrong direction!');
 				let resultName = 'notVisible';
 				if( sourceIsBlind() ) {
@@ -418,7 +420,7 @@ Effect.applyTo = function(effect,target,source,item,context) {
 		let quick = getQuickBest(source,item,effect);
 		let dodge = target.getDodge();
 		let missChance = [0,60,80,90][Math.clamp(dodge-quick,0,3)];
-		if( !effect.isSecondary && !isSelf && isHarm && Random.chance100(missChance) ) {
+		if( !effect.isSecondary && !isSelf && isHarm && Rand.chance100(missChance) ) {
 			tell(
 				mSubject,
 				target,
@@ -434,7 +436,7 @@ Effect.applyTo = function(effect,target,source,item,context) {
 			if( source ) {
 				let dx = target.x - source.x;
 				let dy = target.y - source.y;
-				let deg = deltaToDeg(dx,dy)+Random.floatRange(-45,45);
+				let deg = deltaToDeg(dx,dy)+Rand.floatRange(-45,45);
 				// Show a dodging icon on the entity
 				new Anim({
 					follow: 	target,
@@ -474,7 +476,7 @@ Effect.applyTo = function(effect,target,source,item,context) {
 		let shield 		= target.getFirstItemInSlot(Slot.SHIELD);
 		let blockType 	= Item.getBlockType(item,effect.damageType);
 		let block 		= shield ? shield.calcBlockChance(blockType,isRanged,target.isBraced) : 0;
-		if( Random.chance100(block*100) ) {
+		if( Rand.chance100(block*100) ) {
 			tell(mSubject,target,' ',mVerb,'block',' ',mObject,item || {name:'blow'},' with ',mSubject|mPossessive,target,' ',mObject|mPossessed,shield);
 			// Overlay a shield icon to show it happened.
 			new Anim({
@@ -547,7 +549,7 @@ Effect.applyTo = function(effect,target,source,item,context) {
 	isResist = isResist || (effect.op=='set' && target.isResist && target.isResist(effect.value));
 	effect.isResist = isResist;
 
-	if( isResist && effect.duration===0 && Random.chance100(50) ) {
+	if( isResist && effect.duration===0 && Rand.chance100(50) ) {
 		tell(mSubject,target,' ',mVerb,'resist',' the effects of ',mObject,effect,'.');
 		Anim.Upon(delayId,target,StickerList.showResistance.img);
 		return makeResult('resist',false);
@@ -618,7 +620,7 @@ Effect.applyTo = function(effect,target,source,item,context) {
 		result.secondary = [];
 		secondary.forEach( sec => {
 			console.assert( sec.chance !== undefined );
-			if( Random.chance100(sec.chance) ) {
+			if( Rand.chance100(sec.chance) ) {
 				let eff = Object.assign( {}, sec.effect );
 				eff.isSecondary = true;
 				result.secondary.push( item.trigger( target, source, context, eff ) );

@@ -376,7 +376,7 @@ async function run() {
 	await loadFilterSpec(filterFilePath);
 
 	const app = express();
-	app.cwd = process.cwd().replace( '/monet', '' );
+	app.cwd = process.cwd().replace( /[\\\/]monet/, '' );
 
 	watch( filterFilePath, {}, async function(evt,name) {
 		console.log( 'Reload '+filterFilePath );
@@ -417,6 +417,7 @@ async function run() {
 			}
 			console.log( "sending "+filePath );
 			res.sendFile( filePath );
+console.log('sent',filePath);
 		} catch(e) {
 			console.log('Error processing',fileName);
 			return next(e);

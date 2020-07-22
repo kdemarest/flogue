@@ -95,7 +95,7 @@ Pick.Table = class {
 		}
 	}
 	pick() {
-		let n = Random.floatRange(0,this.total);
+		let n = Random.Pseudo.floatRange(0,this.total);
 		for( let i=0 ; i<this.table.length ; ++i ) {
 			n -= Math.max(0,this.chance[i]);
 			if( n<=0 ) {

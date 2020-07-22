@@ -74,7 +74,7 @@ A policy contains
 When declaring a type, especially in a plugin, any type. Note the use of the word "Addition"
 at the end of certain words.
 
-( window.config,	type.config );
+( -- no longer exists -- window.config,	type.config );
 ( Rules,			type.rules);
 ( DamageType,		type.damageTypeAddition);
 ( Attitude,			type.attitudeAddition);
@@ -171,7 +171,7 @@ let Type = new class {
 
 		console.assert( !type.effectList );
 
-		Object.assign( window.config,	type.Config );
+		Object.assign( Config.instance,	type.Config );
 
 		this.mergeObj( Rules,			type.Rules);
 		this.mergeObj( DamageType,		type.DamageType);

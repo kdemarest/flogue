@@ -1,5 +1,6 @@
 Module.add('area',function() {
 
+let Rand = Random.Pseudo;
 
 function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	let picker = new Picker(area.depth);
@@ -59,7 +60,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 //			console.log( 'item '+item.typeId+' isContainable='+item.isContainable()+' gaps='+area.map.countGaps(x,y) );
 //		}
 		// We check isFloor here so that, for example, we don't contain something hung on a wall.
-		if( !container && item.isContainable() && area.map.tileTypeGet(x,y).isFloor && Random.chance100(theme.containerChance||0) && area.map.countGaps(x,y)<=1 ) {
+		if( !container && item.isContainable() && area.map.tileTypeGet(x,y).isFloor && Rand.chance100(theme.containerChance||0) && area.map.countGaps(x,y)<=1 ) {
 			let containerTypeId = pick(['barrel','chest','coffin']);
 			container = area.map.itemCreateByType(x,y,ItemTypeList[containerTypeId],{},{});
 		}
@@ -179,11 +180,11 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 		}
 
 		while( preferList.length && madeList.length<count ) {
-			tryMake(preferList,Random.intRange(0,preferList.length/2)*2);
+			tryMake(preferList,Rand.intRange(0,preferList.length/2)*2);
 		}
 
 		while( floorList.length && madeList.length<count ) {
-			tryMake(floorList,Random.intRange(0,floorList.length/2)*2);
+			tryMake(floorList,Rand.intRange(0,floorList.length/2)*2);
 		}
 		return madeList;
 	}
@@ -316,7 +317,7 @@ function areaBuild(area,theme,tileQuota,isEnemyFn) {
 	area.siteList = [];
 
 //debugger;
-	let masonMap = Mason.masonConstruct(
+	let masonMap = new Mason().construct(
 		area.theme,
 		tileQuota,
 		injectList,
@@ -596,7 +597,7 @@ class Area {
 	}
 	pickSite(fn) {
 		let list = this.siteList.filter( fn );
-		let n = Random.intRange(0,list.length);
+		let n = Rand.intRange(0,list.length);
 		return list[n];
 	}
 	getSiteAt(x,y) {

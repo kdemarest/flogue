@@ -40,7 +40,8 @@ Click Sublime / Preferences / Settings, and set all of the following:
 	"auto_complete": false,
 	"auto_match_enabled": false,
 	"tab_completion": false,
-	"word_wrap": "false"
+	"word_wrap": false,
+  "scroll_speed": 0.0,
 }
 
 ```
@@ -52,7 +53,13 @@ Install:
 - BetterFindBuffer
 - HJson
 - iOpener
-4. Restart Sublime.
+- PackageResourceViewer
+3. Hit Ctrl-Shift-P (or Cmd-ShiftP) top open the so-called Command Palette
+4. Type "prv" to get to "PackageResourceViewer: Open Resource"
+5. Choose "Javascript"
+6. Select Snippets and then "Object-key-key-value.sublime-snippet"
+7. Comment out this: <!-- tabTrigger>:</tabTrigger -->
+8. Restart Sublime.
 
 ## Mac HID setup
 This KeyRepeat rate might be too fast for you. For me, it is perfect.

@@ -1,18 +1,17 @@
 Module.add('config',function() {
 
 class Config {
-	constructor() {
-		this.id = Config.getConfigId();
+	constructor(cookieId) {
+		Config.instance = this;
+		this.cookieId = cookieId;
+		this.id = Cookie.get(this.cookieId);
 	}
 }
 
-Config.configCookie = 'flogueConfigId';
+Config.instance = null;
 
-Config.getConfigId = function() {
-	return Cookie.get(this.configCookie);
-}
 Config.setConfigId = function(value) {
-	Cookie.set(this.configCookie,value);
+	Cookie.set(Config.instance.cookieId,value);
 	window.alert('You must reload for new configId to take effect.');
 }
 

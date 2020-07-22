@@ -322,7 +322,7 @@ class ViewTester {
 
 		let inputConfig = $('<input id="configId" type="text" value="" style="width:60px;">')
 			.appendTo(divId)
-			.val(Config.getConfigId())
+			.val(Config.id)
 			.change( function() {
 				Config.setConfigId( $(this).val() );
 			});
