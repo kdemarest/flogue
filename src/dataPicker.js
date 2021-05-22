@@ -393,7 +393,7 @@ pickItem()
 		debug += 'a';
 		debug = '';
 
-		let n = Random.floatRange(0,total);
+		let n = Random.Pseudo.floatRange(0,total);
 		let i = -2;
 		do {
 			i += 2;

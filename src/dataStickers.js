@@ -1,7 +1,7 @@
 Module.add( 'dataStickers', ()=>{
 
 let StickerList = Type.establish( 'Sticker', {}, {
-	mmWall: { img: "dc-dngn/wallProxy.png" },
+	mmWall: { img: "terrain/wallProxy.png" },
 	mmObserver: { img: "gems/Gem Type2 Yellow.png" },
 	mmEnemy: { img: "gems/Gem Type2 Red.png" },
 	mmFriend: { img: "gems/Gem Type2 Green.png" },

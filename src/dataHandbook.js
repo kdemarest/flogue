@@ -14,29 +14,30 @@ Progression
 - Leveling
 - Helping dwarf cities
 - Fonts dark and light
-Attacking
+Combat
 - Melee attacks
 - Quickness - Dodge vs weapon quickness
 - Ranged attacks, throw vs shoot, weaponry, shielding, catching
 - Damage Types, immunity, resistance and vulnerability
 - Shields and charging, and hints
 - Traps
-Enemies
+Creatures
 - Just like you, with special powers
 - Types - constructs, demons, etc
 - Childs - lunar, solar, deep
 - Body form effects, mind effects, how they think
 - Tips on attacking, luring, possessing, etc.
-Treasure
-- Using items, gems, etc
-Classes
-- Skills passive, activatable, or equippable
 Companions & Possession
 - Pets & taming
 - Possession & hints on using it
+Items
+- Treasure: gold, gems, ore, parts
+- Magic: armor, weapons, potions, 
 Plants
 - seeds, growth, harvesting & risks
 - Plants vs Mushrooms
+Classes
+- Skills passive, activatable, or equippable
 Perception
 - Vision - normal, darkVision, xRay vision, map memory (items & tiles, not monsters); terrain opacity
 - vision distance and sneaking, blindness, dark vision

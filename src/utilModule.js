@@ -49,4 +49,10 @@ window.Module = new class {
 			}
 		}
 	}
+	entryPoint(fn) {
+		document.addEventListener("DOMContentLoaded", () => {
+			this.realize();
+			fn();
+		});
+	}
 };

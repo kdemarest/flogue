@@ -1,4 +1,6 @@
-Module.add('dataMason',function() {
+Module.add('dataMason',function(extern) {
+
+	let Rand = Random.Pseudo;
 
 	let MAX_CLOSEST_SEARCH = 30;
 
@@ -33,7 +35,7 @@ Module.add('dataMason',function() {
 	function directionNaturalOrtho(dx,dy) {
 		let ax = Math.abs(dx);
 		let ay = Math.abs(dy);
-		if( Random.floatRange(0,ax+ay) < ay ) { dx=0; } else { dy=0; }
+		if( Rand.floatRange(0,ax+ay) < ay ) { dx=0; } else { dy=0; }
 		return directionPredictable(dx,dy);
 	}
 	function deltasToDirFarthestOrtho(dx,dy,alwaysReturnDirection) {
@@ -320,14 +322,14 @@ Module.add('dataMason',function() {
 		randPos(expand=0) {
 			let xExpand = expand;
 			let yExpand = expand;
-			let x = Random.intRange(this.xMin-xExpand,this.xMax+1+xExpand);
-			let y = Random.intRange(this.yMin-yExpand,this.yMax+1+yExpand);
+			let x = Rand.intRange(this.xMin-xExpand,this.xMax+1+xExpand);
+			let y = Rand.intRange(this.yMin-yExpand,this.yMax+1+yExpand);
 			return [x,y];
 		}
 		randPos4(xa=0,ya=0,xb=0,yb=0) {
 			return [
-				Random.intRange(this.xMin+xa,this.xMax+1+xb),
-				Random.intRange(this.yMin+ya,this.xMax+1+yb)
+				Rand.intRange(this.xMin+xa,this.xMax+1+xb),
+				Rand.intRange(this.yMin+ya,this.xMax+1+yb)
 			];
 		}
 
@@ -508,7 +510,7 @@ Module.add('dataMason',function() {
 			let remain = count;
 			let ch = 100;
 			let tileList = this.flood( x, y, true, true,
-				(x,y,tile) => Random.chance100(ch) && remain>0 && (isUnknown(tile) /*|| isWalkable(tile)*/) && this.countGaps(x,y)<=1, 
+				(x,y,tile) => Rand.chance100(ch) && remain>0 && (isUnknown(tile) /*|| isWalkable(tile)*/) && this.countGaps(x,y)<=1, 
 				(x,y,t) => { --remain; ch = Math.max(70,ch-1); assignFn(x,y,t); }
 			);
 			let spot = Math.max(1,(count-remain)*sparkRatio);
@@ -770,7 +772,7 @@ Module.add('dataMason',function() {
 					let site0 = this.getAll(p.x,p.y).siteId;	// allowed to be undefined
 					let site1 = this.getAll(p.tx,p.ty).siteId;	// allowed to be undefined
 
-					let width = Random.chance100(passageWidth2) ? 2 : ( Random.chance100(passageWidth3) ? 3 : 1 );
+					let width = Rand.chance100(passageWidth2) ? 2 : ( Rand.chance100(passageWidth3) ? 3 : 1 );
 
 					// We don't really want to intrude into whatever space we're connecting to. That often looks
 					// pretty bad. So jut out from either end.
@@ -783,7 +785,7 @@ Module.add('dataMason',function() {
 						doorCheck.push(p.tx,p.ty);
 					}
 
-					let lean = Random.chance100(50);
+					let lean = Rand.chance100(50);
 					function deltasToDirStrict(dx,dy) {
 						if( dx && dy ) {
 							if( lean ) { dx=0; } else { dy=0; }
@@ -791,7 +793,7 @@ Module.add('dataMason',function() {
 						return directionPredictable(dx,dy);
 					}
 					if( p.x!=p.tx || p.y!=p.ty ) {
-						let linkFn = Random.chance100(passageWander) ? directionNaturalOrtho : deltasToDirStrict;
+						let linkFn = Rand.chance100(passageWander) ? directionNaturalOrtho : deltasToDirStrict;
 						let ok = this.zoneLinkByPath(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
 						if( !ok ) {
 							this.zoneLink(p.x,p.y,p.tx,p.ty,p.zoneId,p.tZoneId,linkFn,marks,width);
@@ -1224,7 +1226,7 @@ Module.add('dataMason',function() {
 			console.assert( map.xLen == xLen && map.yLen == yLen );
 			let deadEnds = [];
 			let stack = [];
-			let sx = Random.intRange(0+1,xLen-1*2);
+			let sx = Rand.intRange(0+1,xLen-1*2);
 			let sy = 0;
 			let lastDir = 4;
 			map.tileSymbolSet(sx,sy,floorSymbol);
@@ -1250,7 +1252,7 @@ Module.add('dataMason',function() {
 					continue;
 				}
 				freshPop = true;
-				let dir = hasLastDir && Random.chance100(50) ? lastDir : options[Random.intRange(0,options.length)];
+				let dir = hasLastDir && Rand.chance100(50) ? lastDir : options[Rand.intRange(0,options.length)];
 				sx += DirAdd[dir].x;
 				sy += DirAdd[dir].y;
 				map.tileSymbolSet(sx,sy,floorSymbol);
@@ -1262,7 +1264,7 @@ Module.add('dataMason',function() {
 				let supplyArray = Array.supplyParse( supply );
 				let makeArray   = Array.supplyToMake(supplyArray);
 				makeArray.forEach( make => {
-					let i = Random.intRange(0,deadEnds.length/2) * 2;
+					let i = Rand.intRange(0,deadEnds.length/2) * 2;
 					let x = deadEnds[i+0];
 					let y = deadEnds[i+1];
 					let pPos = ''+x+','+y;
@@ -1690,7 +1692,7 @@ Module.add('dataMason',function() {
 			while( list.length ) {
 				let y = list.pop();
 				let x = list.pop();
-				if( Random.intRange(0,100) < makeChance ) {
+				if( Rand.intRange(0,100) < makeChance ) {
 					map.setTile(x,y,floorSymbol);
 					++floorMade;
 				}
@@ -1802,11 +1804,11 @@ Module.add('dataMason',function() {
 
 		let x,y,xLen,yLen;
 		[x,y,xLen,yLen] = locationPick(map, {
-			xLenFn: () => Math.floor(Random.intRange(2,xLenMax) / 2),
+			xLenFn: () => Math.floor(Rand.intRange(2,xLenMax) / 2),
 			yLenFn: (xLen) => xLen
 		});
 		let overlap = map.fillCircle(x,y,xLen+1,overlapTest);
-		if( overlap && !Random.chance100(overlapChance) ) return false;
+		if( overlap && !Rand.chance100(overlapChance) ) return false;
 		map.fillCircle(x,y,xLen,filler);
 		return true;
 	}
@@ -1817,11 +1819,11 @@ Module.add('dataMason',function() {
 
 		let x,y,xLen,yLen;
 		[x,y,xLen,yLen] = locationPick(map, {
-			xLenFn: () => Math.floor(Random.intRange(2,xLenMax)),
-			yLenFn: (xLen) => Random.intRange(Math.floor(Math.max(2,xLen/2)),Math.floor(Math.min(xLenMax,xLen*2)))
+			xLenFn: () => Math.floor(Rand.intRange(2,xLenMax)),
+			yLenFn: (xLen) => Rand.intRange(Math.floor(Math.max(2,xLen/2)),Math.floor(Math.min(xLenMax,xLen*2)))
 		});
 		let overlap = map.fillRect(x-1,y-1,xLen+1,yLen+1,overlapTest);
-		if( overlap && !Random.chance100(overlapChance) ) return false;
+		if( overlap && !Rand.chance100(overlapChance) ) return false;
 		map.fillRect(x,y,xLen,yLen,filler);
 		return true;
 	}
@@ -1903,45 +1905,44 @@ Module.add('dataMason',function() {
 	};
 
 
-	function masonConstruct(theme,quota,injectList,siteList,onStep) {
-		let drawZones = false;
-		function render() {
-			let s = map.renderToString(drawZones);
-			onStep(s);
+	class Mason {
+		construct(theme,quota,injectList,siteList,onStep) {
+			let drawZones = false;
+			function render() {
+				let s = map.renderToString(drawZones);
+				onStep(s);
+			}
+
+			// Temporary just for easier masonry!
+			TileTypeList.pit.mayWalk = false;
+
+			paletteCommit( theme.palette );
+
+			let mapOffset = { x: -1, y: -1 };	// this is merely a likely offset. The final sizeToExtent will really deal with it...
+			let map = new MasonMap();
+			map.setDimensions(theme.dim);
+
+			let numPlaceTiles = Math.floor(map.xLen*map.yLen*theme.floorDensity*theme.placeDensity);
+			positionPlaces(theme.depth,map,numPlaceTiles,quota,theme.rREQUIRED,theme.rarityHash,injectList,siteList,mapOffset);
+
+			console.assert( architectureList[theme.architecture] );
+			architectureList[theme.architecture].build(map,theme);
+
+			map.assembleSites(siteList);
+			map.connectAll(siteList,theme.passageWander,theme.preferDoors,theme.passageWdth2||0,theme.passageWidth3||0);
+			map.removePointlessDoors();
+			map.wallify(T.OutlineWall);
+			map.sizeToExtentsWithBorder(injectList,siteList,1);
+			map.convert(T.Unknown,T.FillWall);
+
+			TileTypeList.pit.mayWalk = true;
+
+			return map;
 		}
-
-		// Temporary just for easier masonry!
-		TileTypeList.pit.mayWalk = false;
-
-		paletteCommit( theme.palette );
-
-		let mapOffset = { x: -1, y: -1 };	// this is merely a likely offset. The final sizeToExtent will really deal with it...
-		let map = new MasonMap();
-		map.setDimensions(theme.dim);
-
-		let numPlaceTiles = Math.floor(map.xLen*map.yLen*theme.floorDensity*theme.placeDensity);
-		positionPlaces(theme.depth,map,numPlaceTiles,quota,theme.rREQUIRED,theme.rarityHash,injectList,siteList,mapOffset);
-
-		console.assert( architectureList[theme.architecture] );
-		architectureList[theme.architecture].build(map,theme);
-
-		map.assembleSites(siteList);
-		map.connectAll(siteList,theme.passageWander,theme.preferDoors,theme.passageWdth2||0,theme.passageWidth3||0);
-		map.removePointlessDoors();
-		map.wallify(T.OutlineWall);
-		map.sizeToExtentsWithBorder(injectList,siteList,1);
-		map.convert(T.Unknown,T.FillWall);
-
-		//map.quotaMakeOthers(quota,injectList);
-		TileTypeList.pit.mayWalk = true;
-
-		return map;
 	}
 
 	return {
-		Mason: {
-			masonConstruct: masonConstruct
-		}
+		Mason: Mason
 	}
 
 });

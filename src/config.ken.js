@@ -1,6 +1,6 @@
 Module.add('config.ken',function(X,moduleId) {
 
-	let plugin = new Plugin('ken');
+	let plugin = new Plugin('config.ken');
 
 	plugin.ScapeList.kenCave = theme => ({
 		dim: 				60,
@@ -202,7 +202,7 @@ Module.add('config.ken',function(X,moduleId) {
 		playerInject: player.inject
 	}
 
-	PluginManager.register( plugin );
+	Plugin.Manager.register( plugin );
 
 return {
 }

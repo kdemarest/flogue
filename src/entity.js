@@ -1,5 +1,6 @@
 Module.add('entity',function() {
 
+let Rand = Random.Pseudo;
 
 // NOTE: This collides with monsters first, then items, then tiles. It could be a LOT
 // more efficient if it checked the tile first, but that probably isn't best game-wise.
@@ -91,7 +92,7 @@ class Entity {
 		inits.health = inits.healthMax;
 
 		if( monsterType.pronoun == '*' ) {
-			inits.pronoun = Random.chance100(70) ? 'he' : 'she';
+			inits.pronoun = Rand.chance100(70) ? 'he' : 'she';
 		}
 
 		let jobId = values.jobId || (inject ? inject.jobId : '') || inits.jobId || monsterType.jobId;
@@ -269,7 +270,7 @@ class Entity {
 			let lx = self.x;
 			let ly = self.y;
 			if( this.lootFling ) {
-				let dir = Random.intRange(0,8);
+				let dir = Rand.intRange(0,8);
 				lx += Direction.add[dir].x*this.lootFling;
 				ly += Direction.add[dir].y*this.lootFling;
 			}
@@ -415,7 +416,7 @@ class Entity {
 			duration: 		Anim.Duration.untilAllDead,
 			onInit: 		a => { },
 			onTick: 		a => a.createPerSec(40,2),
-			onSpriteMake: 	s => s.sScale(0.30).sVel(Random.floatRange(-30,30),Random.floatRange(5,10)).duration=1,
+			onSpriteMake: 	s => s.sScale(0.30).sVel(Random.anim.floatRange(-30,30),Random.anim.floatRange(5,10)).duration=1,
 			onSpriteTick: 	s => s.sMoveRel(s.xVel,s.yVel).sGrav(10)
 		});
 		// You also jump back and quiver
@@ -1131,13 +1132,13 @@ class Entity {
 		let dir = this.dirToPosNatural(x,y);
 		if( dir === false ) {
 			// Weird, I am already upon my target. Possibly I should step away from them.
-			dir = Random.intRange(0,8);
+			dir = Rand.intRange(0,8);
 		}
 		// Aggressive creatures will completely avoid problems if 1/3 health, otherwide they
 		// avoid problems most of the time, but eventually will give in and take the risk.
 		let problemTolerance = this.problemTolerance();
 		// If you're aggressive and healthy, there is a 15% change you will charge forward through problems.
-		if( this.attitude == Attitude.AGGRESSIVE && Random.chance100(15) ) {
+		if( this.attitude == Attitude.AGGRESSIVE && Rand.chance100(15) ) {
 			problemTolerance = Problem.HARSH;
 		}
 		this.record( 'Problem tolerance = '+problemTolerance, true );
@@ -1151,16 +1152,16 @@ class Entity {
 
 	thinkStumbleF(chanceToNotMove=50) {
 		this.activity = 'Stumbling around in confusion.';
-		let wait = Random.chance100(chanceToNotMove);
+		let wait = Rand.chance100(chanceToNotMove);
 		this.record('stumble'+(wait?' wait':''), true);
 		if( wait ) return Command.WAIT;
 		const RandCommand = [Command.N, Command.NE, Command.E, Command.SE, Command.S, Command.SW, Command.W, Command.NW];
-		return RandCommand[Random.intRange(0,RandCommand.length)];
+		return RandCommand[Rand.intRange(0,RandCommand.length)];
 	}
 
 	thinkTetherReturn(tetherMagnet=70) {
 		let returnChance = this.beyondTether() ? tetherMagnet : ( !this.isAtTarget(this.origin) ? tetherMagnet/2 : 0 );
-		if( Random.chance100(returnChance) ) {
+		if( Rand.chance100(returnChance) ) {
 			this.record('wander return', true);
 			this.activity = 'Returning to a preferred place.';
 			let c = this.thinkApproachTarget(this.origin);
@@ -1219,7 +1220,7 @@ class Entity {
 			if( c ) return c;
 		}
 
-		if( this.commandLast == Command.WAIT && Random.chance100(100/avgPause) ) {
+		if( this.commandLast == Command.WAIT && Rand.chance100(100/avgPause) ) {
 			this.record('wander pause', true);
 			this.activity = 'Pausing for a bit during a wander.';
 			return Command.WAIT;
@@ -1232,7 +1233,7 @@ class Entity {
 
 		let dirLast = Direction.fromCommand(this.commandLast);
 		if( dirLast !== false ) {
-			if( Random.chance100(100/avgWanderDist) && this.mayGo(dirLast,this.problemTolerance()) ) {
+			if( Rand.chance100(100/avgWanderDist) && this.mayGo(dirLast,this.problemTolerance()) ) {
 				this.record('wander forward',true);
 				return this.commandLast;
 			}
@@ -1241,7 +1242,7 @@ class Entity {
 
 		let reps = 4;
 		do {
-			let dir = Random.intRange(0,8);
+			let dir = Rand.intRange(0,8);
 			if( this.mayGo(dir,this.problemTolerance()) ) {
 				return Direction.toCommand(dir);
 			}
@@ -1250,7 +1251,7 @@ class Entity {
 	}
 
 	thinkRetreat(dirAwayPerfect,panic=false) {
-		let dirAwayRandom = (dirAwayPerfect+8+Random.intRange(0,3)-1) % Direction.count;
+		let dirAwayRandom = (dirAwayPerfect+8+Rand.intRange(0,3)-1) % Direction.count;
 		let dirAway = [dirAwayRandom,dirAwayPerfect,(dirAwayPerfect+8-1)%Direction.count,(dirAwayPerfect+1)%Direction.count];
 		while( dirAway.length ) {
 			let dir = dirAway.shift();
@@ -1477,7 +1478,7 @@ class Entity {
 			// pick a random map location.
 			site = this.area.pickSite( site => (site.isRoom || site.isPlace) && site.marks.length );
 			console.assert( site.marks.length > 0 );
-			let i = Random.intRange(0,site.marks.length/2) * 2;
+			let i = Rand.intRange(0,site.marks.length/2) * 2;
 			x = site.marks[i+0];
 			y = site.marks[i+1];
 		} while( !safeSpot(x,y) );
@@ -1539,7 +1540,7 @@ class Entity {
 			return;
 		}
 
-		let willHesitate = (this.attitude == Attitude.HESITANT && Random.chance100(40));
+		let willHesitate = (this.attitude == Attitude.HESITANT && Rand.chance100(40));
 
 		if( this.control == Control.EMPTY ) {
 			this.command = Command.LOSETURN;
@@ -1609,7 +1610,7 @@ class Entity {
 					// Technically we should have to follow the scent trails of dead people
 					// around, but that is rather inconvenient.
 					if( smelled && !smelled.isDead() && this.isMyEnemy(smelled) ) {
-						if( !this.lastScent || this.lastScent.id != smelled.id || Random.chance100(5) ) {
+						if( !this.lastScent || this.lastScent.id != smelled.id || Rand.chance100(5) ) {
 							tell('<b>',mSubject|mCares,smelled,' ',mVerb,'hear',' ',mA|mObject,this,' howling!','</b>');
 						}
 						// This migth be a mistake, perhaps, and instead we should be finding dirToBestScent
@@ -2043,7 +2044,7 @@ class Entity {
 			let armorList = new Finder(this.inventory).filter( item => item.inSlot && (item.isArmor || item.isShield) );
 			// You can wear up to six types of armor, and we need them all to wear out evenly no matter how much
 			// armor you're wearing. Hence this selection method.
-			let index = Random.intRange(0,6);
+			let index = Rand.intRange(0,6);
 			if( index < armorList.count ) {
 				armorHit = armorList.result[index];
 				let result = {};
@@ -2140,7 +2141,7 @@ class Entity {
 				delay: 		delay,
 				duration: 	0.2,
 				onInit: 		a => { a.create(4+Math.floor(7*mag)); },
-				onSpriteMake: 	s => { s.sScale(0.20+0.10*mag).sVel(Random.floatRange(deg-arc,deg+arc),4+Random.floatRange(0,3+7*mag)); },
+				onSpriteMake: 	s => { s.sScale(0.20+0.10*mag).sVel(Random.anim.floatRange(deg-arc,deg+arc),4+Random.anim.floatRange(0,3+7*mag)); },
 				onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel); }
 			});
 
@@ -2275,7 +2276,7 @@ class Entity {
 			retaliationEffects.forEach( item => {
 				if( item.effect && item.effect.isHarm ) {
 					console.assert( item.chanceEffectFires !== undefined );
-					let fireEffect = Random.chance100(item.chanceEffectFires);
+					let fireEffect = Rand.chance100(item.chanceEffectFires);
 					if( fireEffect ) {
 						item.trigger( attacker, this, 'retaliate', item.effect );
 						isRetaliation++;
@@ -2609,7 +2610,7 @@ class Entity {
 		// WARNING! For the naturalWeapon this gets ignored, because once all weapons are
 		// eliminated the natural weapon is the fallback.
 		weaponList.filter( item => {
-			if( Random.chance100(this.brainIgnoreClearShots||0) ) return false;
+			if( Rand.chance100(this.brainIgnoreClearShots||0) ) return false;
 			let r = ( item.range || item.reach || 1 );
 			return self.shotClear(self.x,self.y,target.x,target.y);
 		});
@@ -2652,7 +2653,7 @@ class Entity {
 			// kind of silk touch weaponry.
 			return [];
 		}
-		let partCount = Random.intRange(0,1);
+		let partCount = Rand.intRange(0,1);
 		let partFrom = 'is'+String.capitalize(this.typeId); 
 		return Inventory.lootGenerate( partCount+'x part '+partFrom, this.level )
 	}
@@ -2783,7 +2784,7 @@ class Entity {
 		item = item.giveToSingly(this.map,target.x,target.y);
 
 		// Can we catch the thrown item?
-		if( Random.chance100(target.catchThrown||target.stopThrown||target.stopIncoming||0) ) {
+		if( Rand.chance100(target.catchThrown||target.stopThrown||target.stopIncoming||0) ) {
 			let whoDidIt = target;
 			if( target.isMonsterType ) {
 				let deed = target.deedFind( deed=>['catchThrown','stopThrown','stopIncoming'].includes(deed.stat) );
@@ -2976,7 +2977,7 @@ class Entity {
 		}
 
 		// Can the target catch the shot?
-		if( Random.chance100(target.catchShot||target.stopShot||target.stopIncoming||0) ) {
+		if( Rand.chance100(target.catchShot||target.stopShot||target.stopIncoming||0) ) {
 			delete ammo.shooter;
 			if( target.catchShot ) {
 				ammo.giveTo( target, target.x, target.y );
@@ -3725,7 +3726,7 @@ class Entity {
 				return this.actSell(item,buyer);
 			}
 			case Command.PRAY: {
-				if( Random.chance100(15) ) {
+				if( Rand.chance100(15) ) {
 					tell(mSubject,this,': ',this.sayPrayer || '<praying...>');
 				}
 				return makeResult('pray',true);

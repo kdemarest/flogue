@@ -1,5 +1,7 @@
 Module.add('animHelpers',function() {
 
+
+
 Anim.Duration = {
 	untilAllDead: a => a.spritesMade && a.spritesAlive==0,
 };
@@ -94,7 +96,7 @@ Anim.Fountain = function(delayId,entity,num=40,duration=2,velocity=0.6,img) {
 		duration: 		Anim.Duration.untilAllDead,
 		onInit: 		a => { },
 		onTick: 		a => a.createPerSec(num,duration),
-		onSpriteMake: 	s => s.sScale(0.30).sVel(Random.floatRange(-30,30),Random.floatRange(velocity,2*velocity)).duration=1,
+		onSpriteMake: 	s => s.sScale(0.30).sVel(Random.anim.floatRange(-30,30),Random.anim.floatRange(velocity,2*velocity)).duration=1,
 		onSpriteTick: 	s => s.sMoveRel(s.xVel,s.yVel).sGrav(10)
 	});
 }
@@ -113,7 +115,7 @@ Anim.Homing = function(delayId,entity,target,img,offAngle=45,num=40,duration=2,v
 		duration: 		Anim.Duration.untilAllDead,
 		onInit: 		a => { },
 		onTick: 		a => a.createPerSec(num,duration),
-		onSpriteMake: 	s => s.sScale(0.30).sVel(deg+Random.floatRange(-offAngle,offAngle),Random.floatRange(velocity,2*velocity)).duration=duration,
+		onSpriteMake: 	s => s.sScale(0.30).sVel(deg+Random.anim.floatRange(-offAngle,offAngle),Random.anim.floatRange(velocity,2*velocity)).duration=duration,
 		onSpriteTick: 	s => !s.sPursuit().sArrived(0.3),
 	});
 }
@@ -152,7 +154,7 @@ Anim.Missile = function(p) {
 		onInit: 		a => { },
 		onTick: 		a => a.createPerSec(p.numPerSec,p.fireDuration),
 		onSpriteMake: 	s => {
-			s.sDuration(p.flightDuration).divergence=Random.floatRange(p.divergeMin,p.divergeMax)*p.divergeSign;
+			s.sDuration(p.flightDuration).divergence=Random.anim.floatRange(p.divergeMin,p.divergeMax)*p.divergeSign;
 			p.divergeSign = p.divergeSign*p.divergeSwap;
 		},
 		onSpriteTick: 	s => !s.sMissile( s[p.flightWay] ).sDiverge( s[p.divergeWay] ).sArrived(0.001),
@@ -166,7 +168,7 @@ Anim.Blam = function(delayId, target, scale=0.20, num=10, duration=0.2, fromDeg=
 		delayId: 	delayId,
 		duration: 	duration,
 		onInit: 		a => { a.create(num); },
-		onSpriteMake: 	s => { s.sScale(scale).sVel(Random.floatRange(fromDeg-arc,fromDeg+arc),Random.floatRange(mag0,mag1)); },
+		onSpriteMake: 	s => { s.sScale(scale).sVel(Random.anim.floatRange(fromDeg-arc,fromDeg+arc),Random.anim.floatRange(mag0,mag1)); },
 		onSpriteTick: 	s => { s.sMoveRel(s.xVel,s.yVel).sGrav(grav); s.rotation += rot*s.dt; }
 	});
 }

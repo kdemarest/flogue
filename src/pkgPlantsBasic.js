@@ -211,7 +211,7 @@ Object.assign(plugin,{
 });
 
 
-PluginManager.register( plugin );
+Plugin.Manager.register( plugin );
 
 return {
 }

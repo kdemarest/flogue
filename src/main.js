@@ -1,47 +1,27 @@
 
 async function main() {
 
+	function userCreate(user) {
 
-	Profile.end('scripts').tell();
+		user.tickGui = function(dt) {
+			this.autoFavorite();
+			this.gui.tick(dt);
+			this.gui.render();
+		}.bind(user);
 
+		user.onEvent = function(event) {
+			this.commandHandler.evalCommand(this.entity,event);
+		}.bind(user);
 
-	window.Debug = DebugSetup({
-		ai: false,
-		anim: false,
-		sprite: false,
-		command: true,
-		cmd: false,
-		range: false,
-		info: false,
-		deed: false,
-		item: false,
-		vis: false,
-		areaBuild: false,
-		imgLoader: true
-	});
+		return user;
+	}
 
-	// This executes the initializers for all the static .js files
-	Module.realize();
-	Random.seed(123456);
-	Time.sim = new Time.TimeKeeper();
-	let User = new HumanUser();
-
-	User.tickGui = function(dt) {
-		this.autoFavorite();
-		this.gui.tick(dt);
-		this.gui.render();
-	}.bind(User);
-
-	User.onEvent = function(event) {
-		this.commandHandler.evalCommand(this.entity,event);
-	}.bind(User);
-
-	User.startGame = function(config) {
+	function startGame( config, user ) {
 		let startingDepth  = config.startingDepth || 0;
 		let playerTypeId   = config.playerTypeId || 'player';
 		let playerMarkerId = config.playerMarkerId || 'playerStartHere';
 
-		let gui = Gui.createManager( ()=>this.entity );
+		let gui = Gui.createManager( ()=>user.entity );
 		gui.create( function() {
 			this.add('full',new ViewFull('#guiControls','#guiMain'));
 			this.add('zoom',new ViewZoom('#guiControls'));
@@ -58,11 +38,11 @@ async function main() {
 			this.add('miniMap',new ViewMiniMap('#guiMiniMap','#guiMiniMapCaption'));
 			this.add('tester',new ViewTester('#guiTester',this.getPlayer));
 		});
-		gui.subscribe( 'user', 'command', this.onEvent.bind(this) );
-		this.gui = gui;
+		gui.subscribe( 'user', 'command', user.onEvent.bind(user) );
+		user.gui = gui;
 		guiMessage('saveBattery',config.saveBattery);
 
-		this.commandHandler = new UserCommandHandler(this,gui.view.inventory,gui.view.range);
+		user.commandHandler = new UserCommandHandler(user,gui.view.inventory,gui.view.range);
 
 		let planList  = new PlanList(PlanData)
 		let world     = new World(planList);
@@ -76,58 +56,57 @@ async function main() {
 		player.logId  = 'player';
 		//player.watch  = true;
 
-		this.takeControlOf(player);
-		Gab.observer = this.entity;
+		user.takeControlOf(player);
+		Gab.observer = user.entity;
 		let startPos = area.map.pickPosToStartGame(playerMarkerId);
-		this.entity.requestGateTo(area,...startPos);
+		user.entity.requestGateTo(area,...startPos);
 		area.underConstruction = false;
 		Narrative.addRecipient(
-			() => this.entity,
+			() => user.entity,
 			(observer,entity) => !observer ? true : observer.canPerceiveEntity(entity),
 			(message,history) => guiMessage('receive',history,'narrative')
 		);
-		world.userList.push(this);
-		this.world = world;
+		world.userList.push(user);
+		user.world = world;
 
 		// AWAIT IMAGE LOAD
 
 		guiMessage( 'create2DEngine' );
-		guiMessage( 'setObserver', this.entity );
+		guiMessage( 'setObserver', user.entity );
 		let scene = new Scene();
 		guiMessage( 'scene', scene );
 		$('#guiLoading').hide();
 		$( window ).resize( () => { guiMessage('resize'); });
 		$('#guiMain').show();
-		tell([this.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
+		tell([user.entity,null,"Welcome to Flogue! Use the arrow keys to move, and '.' to wait."]);
 		guiMessage('resize');
-		Gui.keyHandler.add( 'main', this.onEvent.bind(this) );
+		Gui.keyHandler.add( 'main', user.onEvent.bind(user) );
 		guiMessage( 'start2DEngine' );
+	}
 
-	}.bind(User);
+	window.Debug = DebugSetup({
+		ai: false,
+		anim: false,
+		sprite: false,
+		command: true,
+		cmd: false,
+		range: false,
+		info: false,
+		deed: false,
+		item: false,
+		vis: false,
+		areaBuild: false,
+		imgLoader: true,
+		mason: true,
+	});
 
-	let configId = Config.getConfigId();
-	let config = new Config(configId);
-	window.config = config;
+	let game = new Game( 123456, 'flogueConfigId' );
+	await game.initPlugins( [ 'pkgPlantsBasic' ] );
+	await game.initTypes( checkerFn = ()=>Checker );
+	await game.initImages();
 
-	configId ? PluginManager.addForLoad(config.id,'config.'+config.id+'.js') : null;
-	PluginManager.addForLoad('pkgPlantsBasic', 'pkgPlantsBasic.js');
-	await PluginManager.loadAll();
-	
-	// This executes the initializers for all not-yet-run code, that is, the plugins,
-	// putting the data in the PluginManager
-	Module.realize();
+	Time.sim = new Time.TimeKeeper();
+	let user = userCreate( new HumanUser() );
 
-	// We condition the heck out of our data, and we have to do it in the right order.
-	Type.establish('PLUGINS',{});
-	Type.register('PLUGINS', PluginManager.list );
-	Type.merge();
-	Type.finalize(Checker);
-
-
-	window.ImageRepo =  new ImageMaker();
-	ImageRepo.scanTypes();
-	setInterval( () => ImageRepo.tick(), 250 );
-
-	// We should convert all this to promises.
-	User.startGame( config );
+	startGame( game.config, user );
 }

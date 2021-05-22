@@ -280,7 +280,6 @@ mon/snail.png
 mon/snailInShell.png
 dc-mon/animals/sheep.png
 mon/earth/goblinPriest.png
-dc-dngn/wallProxy.png
 gems/Gem Type2 Yellow.png
 gems/Gem Type2 Purple.png
 gui/mapUnvisited.png

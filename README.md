@@ -40,15 +40,26 @@ Click Sublime / Preferences / Settings, and set all of the following:
 	"auto_complete": false,
 	"auto_match_enabled": false,
 	"tab_completion": false,
-	"word_wrap": "false"
+	"word_wrap": false,
+  "scroll_speed": 0.0,
 }
 
 ```
 
 Install Sublime Hooks and Hjson highlighting:
 1. Install "Package Control" in Sublime: https://packagecontrol.io/installation
-2. Paste that text into Sublime console: Ctrl+Backtick then paste
-3. Restart Sublime.
+2. Go to Preferences / Package Control / Install Package
+Install:
+- BetterFindBuffer
+- HJson
+- iOpener
+- PackageResourceViewer
+3. Hit Ctrl-Shift-P (or Cmd-ShiftP) top open the so-called Command Palette
+4. Type "prv" to get to "PackageResourceViewer: Open Resource"
+5. Choose "Javascript"
+6. Select Snippets and then "Object-key-key-value.sublime-snippet"
+7. Comment out this: <!-- tabTrigger>:</tabTrigger -->
+8. Restart Sublime.
 
 ## Mac HID setup
 This KeyRepeat rate might be too fast for you. For me, it is perfect.
@@ -56,8 +67,9 @@ This KeyRepeat rate might be too fast for you. For me, it is perfect.
 defaults write -g InitialKeyRepeat -int 10
 defaults write -g KeyRepeat -int 1
 defaults write -g com.apple.keyboard.fnState -int 1
-Then logout from your machine & login to make the changes take effect
 ```
+Then logout from your machine & login to make the changes take effect
+
 If you use a roller mouse:
 * Uninstall any Logitech Control Center (LCC)
 * Install SteerMouse
