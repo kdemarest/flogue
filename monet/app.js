@@ -396,6 +396,7 @@ async function run() {
 	}
 
 	app.use(function(req, res, next) {
+		console.log("wildcard origin allowed.");
 		res.header("Access-Control-Allow-Origin", "*");
 		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 		next();

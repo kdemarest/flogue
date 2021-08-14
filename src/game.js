@@ -6,7 +6,9 @@ class Game {
 		Random.Pseudo.seed(seed);
 
 		this.config = new Config(configId);
-		this.config.id ? Plugin.Manager.addForLoad('config.'+this.config.id) : null;
+		let configFileName = 'config.'+this.config.id;
+		this.config.id ? Plugin.Manager.addForLoad(configFileName) : null;
+		console.log('Loading config '+configFileName+'.cfg  Random Seed='+seed);
 	}
 
 	async initPlugins( pluginList ) {

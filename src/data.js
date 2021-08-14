@@ -258,6 +258,7 @@ class KeyMap {
 			V: Command.DEBUGVIEW,
 			Z: Command.DEBUGANIM,
 //			a: Command.ATTACK,
+			' ': Command.ATTACK,
 			i: Command.INVENTORY,
 			f: Command.FAVORITE,
 			t: Command.THROW,

@@ -100,7 +100,9 @@ async function main() {
 		mason: true,
 	});
 
-	let game = new Game( 123456, 'flogueConfigId' );
+	let pseudoRandomSeed = 1236;
+	let flogueConfigEnvVariableId = 'flogueConfigId';
+	let game = new Game( pseudoRandomSeed, flogueConfigEnvVariableId );
 	await game.initPlugins( [ 'pkgPlantsBasic' ] );
 	await game.initTypes( checkerFn = ()=>Checker );
 	await game.initImages();

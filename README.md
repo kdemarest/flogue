@@ -117,6 +117,7 @@ In Terminal
 * In /Applications rename Sublime Text to sublime and Google Chrome to chrome
 
 # Running Flogue
+* To use a custom config, as a developer, set a flogueConfigId cookie to your name. This will load config.name.cfg
 * You probably want to run each of these in its own terminal, expecially if you're editing Monet.
 * In /flogue/monet run "nodemon app.js"
 * In /flogue run "http-server ./"
