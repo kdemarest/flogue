@@ -3182,6 +3182,9 @@ class Entity {
 
 		let itemList = [item];
 		if( !item.dead && item.lootOnDrop ) {
+			if( item.bunch && item.bunch>1 ) {
+				item = item.single();
+			}
 			itemList = Inventory.lootGenerate( item.lootOnDrop, item.level );
 			item.destroy();
 		}
@@ -4027,7 +4030,7 @@ class Entity {
 		if( tileType.isPit && this.travelMode != 'fly' && !this.jumpLeft ) {
 			let stairs = this.map.findItem(this).filter( item=>item.gateDir==1 ).first;
 			if( !stairs && !this.isUser ) {
-				return vanishIntoPit();
+				return this.vanishIntoPit();
 			}
 			if( !stairs ) {
 				// HEY! If there are no stairs, have the mason scan the map and just put floor where ever
